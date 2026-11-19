@@ -39,6 +39,7 @@ jobs:
           test "$(git hash-object modern/tests/original-perl/sc-s.cgi)" = "0bada620cff769bed782707d61b87e48cce0a58c"
           test "$(git hash-object modern/tests/original-perl/market.cgi)" = "1aca77e9b373c25e53e445d64c101a7cc2246825"
           test "$(git hash-object modern/tests/original-perl/whole.cgi)" = "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+          test "$(git hash-object modern/tests/original-perl/buy-s.cgi)" = "6ba8df9a733ed16c490389414cd94934fe1185ca"
       - name: Run isolated original Perl Core tests
         working-directory: modern/tests/original-perl
         run: prove -v *.t
