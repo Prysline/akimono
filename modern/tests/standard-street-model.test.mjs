@@ -95,7 +95,7 @@ test('original _config.cgi and DEFINE agree with fixed model timings', () => {
 test('safe numeric DSL subset supports simple multiplications and duration suffixes', () => {
   assert.equal(parseSourceNumber('12*60*60'), 43200);
   assert.equal(parseSourceNumber('10m'), 600);
-  assert.equal(parseSourceNumber('20s'.replace(/s$/, '')), 20); // seconds are plain numbers
+  assert.throws(() => parseSourceNumber('20s'), /Unsupported/); // unsupported, never guess
   assert.equal(parseSourceNumber('3h'), 10800);
   assert.equal(parseSourceNumber('2k'), 2000);
   assert.throws(() => parseSourceNumber('process.exit(1)'), /Unsupported/);
