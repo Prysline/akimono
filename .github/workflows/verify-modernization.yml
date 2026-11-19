@@ -1,0 +1,37 @@
+name: Verify modernization sources and original Perl baseline
+
+on:
+  push:
+    branches:
+      - test/task02-baseline-on-s1
+  pull_request:
+    paths:
+      - 'modern/**'
+      - 'custom/inc-item-data.cgi'
+      - 'custom/inc-rebel-data.cgi'
+      - '.github/workflows/verify-modernization.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify existing Standard Street DSL source audit
+        working-directory: modern
+        run: |
+          npm test
+          npm run audit
+      - name: Verify pinned original Core source blobs
+        run: |
+          test "$(git hash-object modern/tests/original-perl/calc.cgi)" = "586354a9a300e26d0e12a4efa512fa25760e3197"
+          test "$(git hash-object modern/tests/original-perl/item.cgi)" = "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+      - name: Run isolated original Perl Core tests
+        working-directory: modern/tests/original-perl
+        run: prove -v baseline.t
