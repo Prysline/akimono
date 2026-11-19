@@ -5,9 +5,9 @@ use Test::More;
 binmode STDOUT, ':encoding(UTF-8)';
 our (%Q,@ITEM,@DT,%marketitemlist,$DT,$DTpeople,$SALE_SPEED,$MAX_ITEM,$MAX_MONEY,
      $NOW_TIME,$MAX_STOCK_TIME,$TIME_EDIT_SHOWCASE,$USER,$NOMENU,$disp,$ret,
-     $TBT,$TRT,$TD,$TRE,$TBE,$commits,$writes,$logs);
+     $TBT,$TRT,$TD,$TRE,$TBE,$commits,$writes,$logs,$last_error,$rendered);
 sub l { return $_[0]; }
-sub OutError { die "GAME_ERROR:".$_[0]."\n"; }
+sub OutError { $last_error=$_[0]; die "GAME_ERROR:".$_[0]."\n"; }
 sub Lock { return 1; }
 sub UnLock { return 1; }
 sub DataRead { return 1; }
@@ -19,7 +19,7 @@ sub RenewLog { return 1; }
 sub GetMoneyString { return $_[0]; }
 sub GetTagImgJob { return ''; }
 sub GetMenuTag { return ''; }
-sub OutSkin { die "__OUT_SKIN_CAPTURED__\n"; }
+sub OutSkin { ++$rendered; die "__OUT_SKIN_CAPTURED__\n"; }
 require './calc.cgi';
 require './market.cgi';
 
@@ -67,9 +67,10 @@ sub reset_showcase {
     $commits=$writes=$logs=0;
 }
 sub execute_original_showcase {
-    local $@;
-    my $answer=eval { do './sc-s.cgi' };
-    return $@;
+    $last_error=''; $rendered=0;
+    eval { do './sc-s.cgi' };
+    return $last_error ? "GAME_ERROR:$last_error" :
+           $rendered ? '__OUT_SKIN_CAPTURED__' : 'UNEXPECTED_EXIT';
 }
 reset_showcase(2,10,0);
 like(execute_original_showcase(),qr/__OUT_SKIN_CAPTURED__/,
