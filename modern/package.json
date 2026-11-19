@@ -7,6 +7,7 @@
   "scripts": {
     "audit": "node scripts/audit.mjs",
     "audit:write": "node scripts/audit.mjs --write",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "demo:state": "node scripts/demo-state.mjs"
   }
 }
