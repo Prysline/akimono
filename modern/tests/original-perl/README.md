@@ -1,40 +1,57 @@
-# 任務 02｜原版 Core 隔離計算測試（31 項）
+# 任務 02｜原版 Core 隔離行為測試
 
-此目錄在既有 `migration/standard-street-s1` 的基礎上新增測試；不取代 `modern/src/parse-dsl.mjs` 的標準街靜態 DSL 來源稽核，也沒有改寫原版 CGI 遊戲。
+此目錄從既有 `migration/standard-street-s1` 建立，使用原版 Core 真實 Perl 程式，搭配固定世界狀態與 I/O 替身執行，**不取代** `modern/src/parse-dsl.mjs` 的標準街 DSL 靜態來源稽核，亦不修改原版 CGI。
 
-## 固定來源
+## 固定來源與完整性
 
-- 儲存庫：katelynn620/akimono-core
-- 原始 commit：738d71a2985fd088f2ca90f25145706392ee2365
-- `calc.cgi` 對應原版 `plug/calc.cgi`，Git Blob SHA：586354a9a300e26d0e12a4efa512fa25760e3197
-- `item.cgi` 對應原版 `plug/item.cgi`，Git Blob SHA：b39400d7dc0ab80062c392ae2bbc923e24ecacf8
+Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/katelynn620/akimono-core/tree/738d71a2985fd088f2ca90f25145706392ee2365)。
 
-兩個 CGI 快照是唯讀測試依據，未修改函式；本目錄的 `baseline.t` 是額外撰寫的 Test::More 案例。
+| 本目錄的固定快照 | 原始 Core 路徑 | Git Blob SHA |
+| --- | --- | --- |
+| `calc.cgi` | `plug/calc.cgi` | `586354a9a300e26d0e12a4efa512fa25760e3197` |
+| `item.cgi` | `plug/item.cgi` | `b39400d7dc0ab80062c392ae2bbc923e24ecacf8` |
+| `new.cgi` | `new.cgi` | `9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7` |
+| `sc-s.cgi` | `sc-s.cgi` | `0bada620cff769bed782707d61b87e48cce0a58c` |
+| `market.cgi` | `plug/market.cgi` | `1aca77e9b373c25e53e445d64c101a7cc2246825` |
+| `whole.cgi` | `plug/whole.cgi` | `778badaf157326bcfd1f8fa1e310d94f94995eb3` |
 
-## 執行
+CI 會以 `git hash-object` 核對以上六個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
-環境：Perl + Test::More（Perl 標準測試模組）。
+## 執行方式
 
-~~~sh
-cd modern/tests/original-perl
-prove -v baseline.t
-~~~
+環境：Perl 5.40 / Test::More、Node.js 22 以上。從本目錄執行：
 
-預期 `Tests=31`。此測試使用固定的 `NOW_TIME`、金額與商品價格及最小 `l()`、`OutError()` 測試替身，涵蓋時間、熟練度折減、交易時間、稅、金額界限與商品數量邊界。
+```sh
+prove -v *.t
+```
 
-另在 `modern/` 執行：
+目前已由 GitHub Actions 成功執行 **4 個 Perl 測試檔，88/88 個斷言**：
 
-~~~sh
+| 檔案 | 原版函式／流程 | 斷言 |
+| --- | --- | ---: |
+| `baseline.t` | 計算插件：時間／資金／交易／商品編號 | 31 |
+| `new-store.t` | 真正執行 `new.cgi` 的 Core 預設開店初始化 | 18 |
+| `showcase-market.t` | `sc-s.cgi` 陳列操作、`GetMarketStatus` 市場統計 | 26 |
+| `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore` | 13 |
+| **合計** | | **88** |
+
+CI：[Actions run 44585838281](https://github.com/Prysline/akimono/actions/runs/44585838281)，`Result: PASS`。
+
+原既有 Node 測試與來源稽核繼續由下列指令驗證：
+
+```sh
+cd ../../
 npm test
 npm run audit
-~~~
+```
 
-上述 Node 命令沿用舊分支原有的靜態 DSL 原始碼驗證，不代表已移植 Game Core。GitHub Actions 工作流程同時驗證兩組測試，但新增 CI 的實際結果應以 Actions run 為準。
+新建 `modern/tests/standard-init.test.mjs` 用讀取原版 DSL 的方式核對 `NewShopMoney=100000`、`NewShopTime=12*60*60`、`NewShopItem=展示架擴建拆卸工具:1:禮物卷:5` 與原版商品 ID `63`、`79`，**不代表已執行編譯後的 `@@FUNCNEW`**。
 
-## 注意
+## 隔離測試的範圍
 
-- 31 項是**原版函式局部測試**，不是原版完整 CGI 端對端／瀏覽器遊戲驗收。
-- 尚未測試標準街／麵店完整商品 DSL 編譯、開店、進貨、陳列、市場隨機銷售、髒碗、決算、事件或存讀檔。
-- 舊分支 README 曾提及外部 S1 v0.2.0 ZIP（TypeScript 語意模型）；該套件不在目前的 GitHub 分支中，**沒有聲稱已整合**。
-- Core 的 `feat/req` 屬另一個儲存庫的舊分支，與本次純函式測試無關；未被合併或重寫。
-- Notion [任務 01](https://app.notion.com/p/41db4185273f8175a24fcd08f48b4851)、[任務 02](https://app.notion.com/p/41db4185273f818f97d4fce172db36f8) 紀錄完整盤點及待測項目。
+- `new.cgi` 和 `sc-s.cgi` 的原版主要流程有實際執行，但 `Lock`、`DataRead`、`DataWrite`、`DataCommitOrAbort`、`OutSkin`、使用者授權等外部依賴以替身代替，不會讀寫正式世界資料。
+- `sc-s.cgi` 用固定商品庫存、價格、貨架和模擬時間；失敗操作檢查無呼叫資料 commit，不能宣稱完成真實資料庫交易。
+- `market.cgi`、`whole.cgi` 的原版市場函式使用固定多店資料，驗證數字與邊界，尚未跑完整每日週期。
+- **仍待**商品 DSL 由原版編譯器產出資料並執行商品使用、真實銷售、隨機事件、決算與實際檔案 round-trip（B-01 商品注入、B-02、B-06～B-14）。
+- 獨立 S1 v0.2.0 TypeScript 舊 ZIP 未出現在此儲存庫中，未宣稱已整合；Core 的 `feat/req` 是獨立且已分叉的委託所功能，未合併。
+- 請在 [Notion 任務 02](https://app.notion.com/p/41db4185273f818f97d4fce172db36f8) 追蹤已跑與待跑案例。
