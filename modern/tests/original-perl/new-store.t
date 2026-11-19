@@ -6,8 +6,8 @@ binmode STDOUT, ':encoding(UTF-8)';
 our (%Q,%name2pass,@image,@DT,$DT,$DTusercount,$DTnextid,$DTlasttime,$NOW_TIME,
      $MAX_ITEM,$MASTER_PASSWORD,$PASSWORD_CRYPT,$DEFINE_FUNCNEW,$DEFINE_FUNCNEW_NOLOG,
      $NEW_SHOP_ADMIN,$NEW_SHOP_BLOCKIP,$NEW_OTHERTOWN_BLOCK,$NEW_SHOP_KEYWORD,
-     $MAX_USER,$DTblockip,$ITEM_DIR,$DTusercount,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE);
-our ($writes,$commits,$logs,$unlocks);
+     $MAX_USER,$DTblockip,$ITEM_DIR,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE);
+our ($writes,$commits,$logs,$unlocks,$rendered);
 sub l { return $_[0]; }
 sub OutError { die "GAME_ERROR:".$_[0]."\n"; }
 sub GetTagImgKao { return ''; }
@@ -21,7 +21,7 @@ sub DataWrite { ++$writes; return 1; }
 sub DataCommitOrAbort { ++$commits; return 1; }
 sub PushLog { ++$logs; return 1; }
 sub RenewLog { return 1; }
-sub OutSkin { die "__OUT_SKIN_CAPTURED__\n"; }
+sub OutSkin { ++$rendered; die "__OUT_SKIN_CAPTURED__\n"; }
 
 $NOW_TIME=1_000_000;
 $MAX_ITEM=79;
@@ -40,7 +40,7 @@ $TB=$TR=$TD=$TRE=$TBE='';
     pass1=>'abc12345',pass2=>'abc12345',icon=>'3');
 
 my $result=eval { do './new.cgi' };
-like($@, qr/__OUT_SKIN_CAPTURED__/, 'B-01-A: 原版 new.cgi 真正執行至畫面輸出節點');
+is($rendered,1, 'B-01-A: 原版 new.cgi 真正執行至畫面輸出節點');
 is($DT->{id},42, 'B-01-B: 開店配置下個商店 ID');
 is($DT->{status},1, 'B-01-C: 新店營運狀態 1');
 is($DT->{money},100_000, 'B-01-D: Core 預設初始資金 100000');
