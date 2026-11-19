@@ -48,3 +48,28 @@ npm run demo:state
 **邊界與限制：** 這是「依已審查原始碼建立的可執行規則子集」，不是 CGI 編譯器的 Perl 回呼執行，也沒有實作商品使用、事件、隨機售出、真實市場週期、持久化、權限、安全或完整多人 Core；未提供的規則須逐項核對來源後才會增補。**禁止將這一階段的 Node 綠燈當成整體遊戲相容證明。**
 
 目前 CGI 環境不可用，這些模型與測試均不要求 CGI 伺服器。本節新增程式不會合入 `main`，除非審查通過。
+
+## 第二批：批發市場、交易報價、36 小時週期與部分決算
+
+新增 `src/economy-model.mjs`、`tests/economy-model.test.mjs`，以已固定的 Core Commit `738d71a2985fd088f2ca90f25145706392ee2365` 為依據；**不啟動 CGI、不執行 Perl 回呼、不讀寫正式世界資料**。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:economy
+```
+
+| Node 函式 | 原版程式依據 | 已實作的可重現範圍 |
+| --- | --- | --- |
+| `projectWholeStore` | `plug/whole.cgi::GetWholeStore` | 根據顯式提供的已編譯商品 `price/pricebase/pricehalf/sort` fixture 計算批發價及陳列順序；同排序值可能造成跨語言歧義，因此明確拒絕。 |
+| `checkWholeStockCaps` / `extractWholeStock` | `CheckWholeStore/SetWholeStore` | 含每店庫存上限、負數 `wslimit` 絕對上限、數量與商品 ID-1 的索引；不產生外部存檔。 |
+| `quoteUnguildedPurchase` | `buy-s.cgi`、`plug/item.cgi::GetTimeDeal/GetSaleTax` | 無公會、商品標準價格可確認時的預估數量、買家支出、賣家稅後所得、耗時。**只回傳報價，不變更買賣雙方狀態，更不代表完成交易。** |
+| `segmentAccountingPeriods` | `inc-turn.cgi` 第 10–37 行、標準街 `_config.cgi` | 決算 36 小時（129600 秒）、JST +9h、時間修正 6h，含跨單期、跨多期、恰好在邊界的 0 秒尾段。 |
+| `rollShopLedgerSubset` | `inc-period.cgi` 店鋪計算片段 | 固定排名、獲利平滑值、當期／前期帳轉移、維護費、經驗衰減及庫存上限；拒絕公會／龍賽／爵位等尚未實作的副作用。 |
+
+**原始碼完整性：** 此模組不是把 `inc-period.cgi`、`buy-s.cgi` 當作獨立 Node 程式自動翻譯；原版商品的 `limit`、市場 `sort`／`pricehalf`／`wslimit` 與城市參數若未有已編譯資料，需由測資顯式輸入，**不能自行猜測**。
+
+**缺口：** B-06 真正扣款、入庫、售出後人氣變動、公會費、商品 `funcbuy` 回呼與提交／回滾；B-11 城市／領主／公會／事件／隨機及備份等全套決算；B-12 真正執行跨期自然銷售與決算。以上均未驗收。
+
+對於要觀察執行結果的開發者，`npm run demo:economy` 提供 JSON，範例的已編譯批發數值是**合成測資**，並不是從 Perl 編譯器實際生成；買賣結果是**報價**而不是已提交的交易。
