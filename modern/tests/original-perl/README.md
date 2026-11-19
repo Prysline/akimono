@@ -14,8 +14,9 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `sc-s.cgi` | `sc-s.cgi` | `0bada620cff769bed782707d61b87e48cce0a58c` |
 | `market.cgi` | `plug/market.cgi` | `1aca77e9b373c25e53e445d64c101a7cc2246825` |
 | `whole.cgi` | `plug/whole.cgi` | `778badaf157326bcfd1f8fa1e310d94f94995eb3` |
+| `buy-s.cgi` | `buy-s.cgi` | `6ba8df9a733ed16c490389414cd94934fe1185ca` |
 
-CI 會以 `git hash-object` 核對以上六個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上七個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -65,3 +66,5 @@ npm run audit
 - `@@FUNCNEW`、`_local_` 與任意 Perl 回呼在既有 Node DSL parser 中目前僅保留原始片段；除非有可執行、已驗證的精確規則，不將它們當成可直接執行的 JS 或推定已編譯。
 - 完整 CGI HTTP、原版 `inc-makeitem.cgi` 在 CGI 管理入口的執行結果、真實世界存讀檔及完整跨期遊戲端到端測試均標記 **受環境限制、未驗證**。不因此停止目前不依賴 CGI 的開發。
 - [任務 02 Notion](https://app.notion.com/p/41db4185273f818f97d4fce172db36f8) 維持「進行中」。
+
+- `buy-s.cgi` 是為了 Node.js B-06 玩家交易移植保留的**原版只讀來源快照**。它不是新增的 Perl 執行測試：現有 88 項 Perl 斷言數量不因此改變；新增的狀態轉移由 `modern/tests/peer-trade-model.test.mjs` 以 Node.js 驗證。
