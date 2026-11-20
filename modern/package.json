@@ -21,6 +21,7 @@
     "demo:read-preflight": "node scripts/demo-world-read.mjs",
     "demo:one-shop": "node scripts/demo-world-one-shop.mjs",
     "demo:shop-history": "node scripts/demo-shop-history.mjs",
-    "demo:period-experience": "node scripts/demo-period-experience.mjs"
+    "demo:period-experience": "node scripts/demo-period-experience.mjs",
+    "demo:period-stock-use": "node scripts/demo-period-stock-use.mjs"
   }
 }
