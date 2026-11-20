@@ -342,6 +342,12 @@ test('B-33 six REAL original Perl source-compiler/Core cases match Node one by o
         assert.equal(x.world.shops[0].time,actual.time,c.case+' time');
         assert.deepEqual(x.details.gainedMaps,actual.result.additem,
           c.case+' source map additions');
+        assert.deepEqual(x.details.originalUseMsg,actual.result.usemsg,
+          c.case+' original source missing-message records');
+        assert.deepEqual(x.details.originalAddMsg,actual.result.addmsg,
+          c.case+' original source output message records');
+        assert.deepEqual(x.details.originalFunctionReturn,actual.result.function_return,
+          c.case+' no custom callback return');
         assert.deepEqual(x.details.spentGift,
           actual.result.useitem[0][1],c.case+' used vouchers');
         state=x.world;
