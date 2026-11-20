@@ -32,6 +32,13 @@ sub GetPath {
 }
 sub OutError { push @errors, $_[0]; die "original DataRead OutError: $_[0]"; }
 sub GetDTPoint {return 0}
+# Only a minimal tie placeholder for an empty or missing town record:
+# it never loads a real town, event, file or callback.
+{ package AutoVar;
+  sub TIESCALAR { return bless {},shift; }
+  sub FETCH { return ''; }
+  sub STORE {}
+}
 sub put_world {
   my $text=shift;
   open(my $fh,'>:raw',GetPath($DATA_FILE)) or die $!;
@@ -118,16 +125,14 @@ is($DTpeople,'NOT_A_NUMBER',
 my ($truncated,$truncatedError)=invoke(
   "1700000000\n100000,2,0,10,7\n4,0,3\n\n",1);
 ok(!$truncated,'B-16-S: truncated world with no // does not complete');
-diag("B-16-S actual error: ".($truncatedError // "<undef>"));
 like($truncatedError,qr/guarded missing delimiter timeout/,
   'B-16-T: original unbounded separator search requires external guard');
 
 my ($crlf,$crlfError)=invoke(
-  "1700000000\r\n100000,2,0,10,7\r\n4,0,3\r\n\r\n//\r\n",1);
-ok(!$crlf,'B-16-U: original LF-only split does not accept CRLF sentinel as //');
-diag("B-16-U actual error: ".($crlfError // "<undef>"));
+  "1700000000\n100000,2,0,10,7\n4,0,3\n\n//\r\n",1);
+ok(!$crlf,'B-16-U: CRLF delimiter in otherwise LF world is not exact //');
 like($crlfError,qr/guarded missing delimiter timeout/,
-  'B-16-V: CRLF sentinel is not exact // and can hang source loop');
+  'B-16-V: CRLF sentinel without exact // needs external guard');
 
 my ($noShop,$noShopError)=invoke("1700000000\n100000,2,0,10,7\n\n\n//\n");
 ok($noShop,'B-16-W: blank wholesale line can be accepted in original');
