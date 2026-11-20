@@ -10,7 +10,8 @@
  * explicitly-seeded TEST wholesale data. No real market/game is claimed.
  */
 import {parseDsl} from './parse-dsl.mjs';
-import {compileOrderedItemLimit} from './item-limit-model.mjs';
+import {compileOrderedItemLimit,compileLiteralItemLimit}
+  from './item-limit-model.mjs';
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
 
 const fail=s=>{throw new RangeError('B-33 reviewed gift map: '+s);};
@@ -98,15 +99,20 @@ export function compileReviewedGiftMapUse({itemDsl,rebelDsl,model}){
     const modelItem=model.items.find(x=>x.id===id);
     if(!modelItem||modelItem.code!==first(block,'code'))
       fail('mismatched ITEM model '+id);
-    if(!/^[1-9]\d*$/.test(priceRows[0].value)||
+    if(!/^\d+$/.test(priceRows[0].value)||
        !/^\d+(?:\/\d+(?:\.\d+)?)?$/.test(limitRows[0].value)||
        limitRows[0].line<priceRows[0].line)
       fail('unreviewed PRICE/LIMIT syntax or order at '+id);
-    const compiled=compileOrderedItemLimit({
-      price:Number(priceRows[0].value),
-      priceLine:priceRows[0].line,
-      limitRaw:limitRows[0].value,limitLine:limitRows[0].line,
-    });
+    // Frozen GetBuffer only installs a PRICE-based default when PRICE>0.
+    // Actual ITEM #13 book-work and #63 edit-showcase have PRICE 0
+    // followed by explicit LIMIT 1/1: preserve that source behavior.
+    const price=Number(priceRows[0].value);
+    const compiled=price===0
+      ? compileLiteralItemLimit(limitRows[0].value)
+      : compileOrderedItemLimit({
+          price,priceLine:priceRows[0].line,
+          limitRaw:limitRows[0].value,limitLine:limitRows[0].line,
+        });
     return {id,code:modelItem.code,limit:compiled.limit,wslimit:compiled.wslimit};
   });
   limits.sort((a,b)=>a.id-b.id);
