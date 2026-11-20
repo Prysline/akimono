@@ -294,4 +294,41 @@ npm test
 npm run demo:turn-wholesale
 ```
 
-**仍未完成：** 全部79件商品的 `PLUS` 編譯與同一時間片段跨商品 RNG 消耗順序、商品回呼與自然銷售／人氣、公會與跨期結算、事件、批發買入贈券、檔案鎖與實際 `DataWrite` 往返、真實原版 CGI HTTP 端到端。任務02維持進行中；PR Draft，不合併 `main`。
+**該階段仍未完成：** 全部79件商品的 `PLUS` 編譯與同一時間片段跨商品 RNG 消耗順序、商品回呼與自然銷售／人氣、公會與跨期結算、事件、批發買入贈券、檔案鎖與實際 `DataWrite` 往返、真實原版 CGI HTTP 端到端。第十二階段已補上**第三行庫存的純文字往返與原版 `DataWrite()` 暫存檔隔離測試**，但仍不代表完整正式存檔提交。任務02維持進行中；PR Draft，不合併 `main`。
+
+## 第十批：世界資料第三行的批發庫存讀寫契約（第十二階段）
+
+本批專門處理批發世界庫存的**序列化格式與記憶體 round-trip**，不啟動原版 CGI、不使用正式世界檔，也不把未審查的事件／城鎮／商店資料轉成 JavaScript 結構。
+
+固定 Core 原始碼證據：
+
+- `inc-func.cgi::DataRead` 依序讀取世界資料第1行 `$DTlasttime`、第2行世界／人口／稅率／狀態資訊，接著用 `@DTwholestore=split(/,/,$DATA[$idx++],$MAX_ITEM)` 讀取**第3行批發庫存**；第4行則為事件資料。
+- `plug/write.cgi::DataWrite` 寫出相同次序：時間行、世界資訊行、`join(",",@DTwholestore)."\n"`、事件行、城鎮資料、`//` 店家清單分隔符及後續各店資料。
+- `DataWrite` 本身是寫入暫存世界檔，真正的 `DataCommitOrAbort`、備份、鎖及正式資料目錄操作是**另一套有副作用的程序**，這次沒有模擬成已完成。
+
+相關固定來源在 `modern/tests/original-perl/` 新增兩份**未改動**檔案：`inc-func.cgi`（Git Blob `e7a8add7b0291901e71fe797783b664dff1568a0`）、`write.cgi`（原路徑 `plug/write.cgi`，Git Blob `203f33b37511e838800a45b84183af98fcf46e4c`）。連同前十一階段共有 **11 份原版 Core 快照**在 CI 使用 `git hash-object` 驗證。
+
+### 實作範圍
+
+新增 `src/world-wholesale-codec.mjs`：
+
+- `parseWorldWholesaleLine(csv, maxItem=79)`：將一行世界庫存 CSV 安全解析成0起始索引、79格、非負安全整數庫存陣列。原版 Perl 允許資料中存在未定義的欄位，故此受控子集將**空白或省略的欄位解讀為0**，保留來源的原始欄位數以便稽核。不接受負數、小數、指令片段、超出安全整數及超過79格等未驗證輸入。
+- `serializeWorldWholesaleLine(stock, maxItem=79)`：輸出完整79格十進位整數、逗號分隔。此為**正規化寫法**，不是原版所有奇異輸入格式的無損重現。
+- `readWorldWholesaleSnapshot(text)`：只抽取**第三行**批發庫存，不嘗試解析其餘世界狀態。要求有完整的前兩行和第三行，保留其他資料原文。
+- `writeWorldWholesaleSnapshot(text, nextStock)`：若數值未變，返回原始世界文字（即使第三行使用稀疏／空白欄位）；若有變化，只換第三行為正規化79格數字，前兩行和第4行起**逐字保留**，支援 LF／CRLF 與原始行尾狀態。所有輸入狀態不變，沒有檔案 IO。
+- 本模型只保證**已核對的安全整數子集**。原版 Perl 可能在其他情況下接受不同格式或有隱式數值轉換；不把沒有測過的語意當成完整相容。
+
+新增 `tests/world-wholesale-codec.test.mjs` **19項 Node.js 測試**：包括原版讀寫欄位來源原文、正規化與稀疏欄位、商品 #1／#10／#79 索引、CRLF、無最終換行、事件／城鎮／商店區塊完全保留、未定義或惡意數值拒絕，以及「讀取第3行 → 執行第十一階段 #10 `PLUS` 投影 → 寫回第3行 → 再讀取」的合成世界資料 round-trip。
+
+**跨語言來源驗證：** 新增 `modern/tests/original-perl/world-data.t`，使用 `File::Temp`、替身及原版**未修改**的 `plug/write.cgi::DataWrite()`，真的寫一份**隔離、測試用暫存世界檔**，核對前六行及79格庫存位置，並再次覆寫測試庫存；**沒有執行整個 `DataRead` 或正式 `DataCommitOrAbort`**。新增11項 Perl 隔離斷言，使總數從96增至 **107／107**；Node 從136增至 **155／155**。
+
+新增 `npm run demo:world`，使用**明確合成的世界文字**，執行讀取、#10 入庫、第三行重寫及還原，證明除庫存行之外的世界資料維持一致；CI 也會執行此示範。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:world
+```
+
+**尚未完成：** 真正完整的原版 `DataRead` 執行及店舖／城鎮／事件資訊解析、資料目錄與提交標記的原子性保證、跨進程鎖、備份復原、CGI HTTP、多商品週期及真正世界存檔的提交回滾。此批只構成批發庫存的隔離序列化契約，不可作為正式存檔服務。
