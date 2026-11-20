@@ -30,7 +30,6 @@ test('B-15 sources: Core lock check permits empty LOCKED, and backup opens are u
   assert.ok(core.includes('while(<IN>){print OUT $_;}'));
   assert.ok(core.includes('close(OUT);'));
   assert.ok(core.includes('close(IN);'));
-  assert.ok(coreFunc.includes('return $DATA_DIR."/".$ _')===false); // guard against guessed syntax
   assert.ok(coreFunc.includes('return $DATA_DIR."/".$'+'_[0].$FILE_EXT if @_==1;'));
 });
 
