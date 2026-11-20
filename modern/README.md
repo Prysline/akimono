@@ -68,7 +68,7 @@ npm run demo:economy
 | `segmentAccountingPeriods` | `inc-turn.cgi` 第 10–37 行、標準街 `_config.cgi` | 決算 36 小時（129600 秒）、JST +9h、時間修正 6h，含跨單期、跨多期、恰好在邊界的 0 秒尾段。 |
 | `rollShopLedgerSubset` | `inc-period.cgi` 店鋪計算片段 | 固定排名、獲利平滑值、當期／前期帳轉移、維護費、經驗衰減及庫存上限；拒絕公會／龍賽／爵位等尚未實作的副作用。 |
 
-**原始碼完整性：** 此模組不是把 `inc-period.cgi`、`buy-s.cgi` 當作獨立 Node 程式自動翻譯；原版商品的 `limit`、市場 `sort`／`pricehalf`／`wslimit` 與城市參數若未有已編譯資料，需由測資顯式輸入，**不能自行猜測**。
+**原始碼完整性：** 此模組不是把 `inc-period.cgi`、`buy-s.cgi` 當作獨立 Node 程式自動翻譯；三種已審查商品的純整數 `LIMIT` 現在依固定 Core 規則安全編譯，但其他商品的非字面值限額、市場 `sort`／`pricehalf` 與城市參數若未有已編譯資料，仍需明確測資，**不能自行猜測**。
 
 **缺口：** B-06 現已能在記憶體中處理「無公會、三種來源已審查商品」的玩家交易，含固定亂數注入的售罄人氣下降；仍缺商品泛用交易、公會費、商品 `funcbuy` 回呼及真實存檔提交／回滾；B-11 城市／領主／公會／事件／隨機及備份等全套決算；B-12 真正執行跨期自然銷售與決算。未涵蓋的範圍均未驗收。
 
@@ -89,7 +89,7 @@ npm run demo:peer
 
 - **玩家對玩家**（不包含批發市場）；雙方有效、不同 ID、不屬於公會。標準街商品 `#79 禮物卷` 的 `@@ITEM` 原始定義沒有 `funcb`，標準街全域 `@@FUNCBUY` 的贈券效果限 `$BUY->{whole}` 批發市場。**其他商品須逐一核對後才可擴展**。
 - **售罄處理**：若交易把賣家庫存扣至 0，依原版 `buy-s.cgi` 進行人氣下降；當下降基數介於0與1時，要求注入 `random()` 產生可重現的 `[0,1)` 數值。沒有亂數來源時明確拒絕；非售罄或下降基數為整數／大於1時不取亂數。
-- `itemLimit`（已編譯商品持有上限）、`baseTaxRate`（賣方基礎稅率）、`sendItemTime`（商品搬運基準時間）、`now` 等輸入須顯式提供。本函式不虛構商品編譯產物、城市稅率或管理者設定。
+- `itemLimit` 現已從白名單商品的原始字面值 `LIMIT` 依固定 Core 規則編譯；呼叫者如額外提供 `itemLimit`，必須與編譯值相等，否則拒絕。`baseTaxRate`（賣方基礎稅率）、`sendItemTime`（商品搬運基準時間）、`now` 仍須顯式提供。本函式不虛構城市稅率或其他尚未審查的設定。
 - 成功時重新檢查現時售價與庫存，依 `quoteUnguildedPurchase` 算出可購數，更新買方 `money/item/paytoday/time` 與賣方 `money/item/itemtoday/saletoday/taxtoday/trush`，時間存量先依 72 小時上限裁切。失敗時不返回任何更新狀態。無真實儲存層時，不聲稱已具備持久化原子提交。
 - `npm run demo:peer` 以商品 `#79`、售價 10000、購買4件建立固定 JSON：買家現金100000→60000、禮物卷5→9；賣家現金100000→136000、禮物卷5→1；稅4000、耗時1200秒；兩店合計商品件數守恆且現金總和加上稅額守恆。
 
@@ -145,8 +145,30 @@ npm run demo:peer
 
 `listReviewedPeerItems(model)` 返回經核對的三件白名單商品與來源行號；`settleUnguildedPeerPurchase` 不只檢查 ID，還比對原版名稱、代碼、價格、價格原文、限額原文、旗標、商品層級回呼、原檔路徑與行號。如果某欄位改動，**拒絕交易並要求重新審查**；不會自動把全部79件商品加入白名單。商品庫存索引與 `itemtoday` 均按被核對的實際商品 ID 更新，非寫死 #79。
 
-**請區分宣告與編譯結果：** `4000/1000`、`10/0` 等是來源中的原始限額文字，本模組並未執行 Perl 商品編譯器；交易時仍需提供 `itemLimit` 已確認的有效數值，此外 `baseTaxRate`、`sendItemTime` 也必須顯式傳入。不可把示範固定輸入誤稱「原版已編譯數值」。
+**編譯範圍更新：** 第八階段新增可安全解析的原版字面值 `LIMIT A/B` 與 `LIMIT A` 子集，並對這三件白名單商品自動產生 `limit/wslimit`（不是完整 Perl 商品編譯器）。`baseTaxRate`、`sendItemTime` 仍必須顯式傳入。詳見下方第八階段的來源對照與不支援語法。
 
 此階段增加 **10 個 Node.js 測試**，包括白名單完整比對、#1 與 #40 交易／售罄、連續跨商品購買、不同商品賣出紀錄分隔、非法 ID 與資料變更拒絕、價格過期、缺少編譯限額等。合計 **82 項 Node 測試／88 項原版 Perl 隔離斷言**。CI 同時跑來源稽核及 `npm run demo:peer`；示範會獨立輸出 #1、#40 和先前 #79 的狀態，不會寫入資料檔。
 
 仍未支援：其他商品及未審查之回呼、公會／批發交易、真正授權與多人持久化、CGI HTTP 端到端。後續擴充應採**逐商品固定來源審查**，不能僅以沒有直接 `funcb` 作為全面開放條件。
+
+## 第六批：精確重建原版字面值 LIMIT A/B 子集（第八階段）
+
+來源是固定 [Core `inc-makeitem.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-makeitem.cgi#L412-L426) 商品解析段，已將未修改原始檔存成 `modern/tests/original-perl/inc-makeitem.cgi`（Git Blob `1da8cce1e76ad6159325a37faec68efaa82c7f69`），CI 會驗證其 SHA。這是**來源稽核**，並不是在 Node 中執行 Perl 管理端商品編譯。
+
+Core 的 `LIMIT` 宣告不是算術除法：`A/B` 將 `A` 解析為店鋪上限 `limit`、`B` 解析為批發上限 `wslimit`；省略斜線時，`wslimit=limit`。在原編譯流程中，商品的 `price` 預設值可能先設定缺少的上限，但本批**只處理明確的正整數左值及可選的非負整數右值**，不推測缺失左值的預設或其他運算。
+
+| 審查商品 | 原始 `limitRaw` | 解析 `limit` | 解析 `wslimit` |
+| --- | --- | ---: | ---: |
+| #1 藥草 | `4000/1000` | 4000 | 1000 |
+| #40 木刀 | `600` | 600 | 600 |
+| #79 禮物卷 | `10/0` | 10 | 0 |
+
+新增 `src/item-limit-model.mjs` 的 `compileLiteralItemLimit(raw)`：
+
+- 只接受 `^[0-9]+(/[0-9]+)?$` 形式，回傳不可修改的 `{limit,wslimit,raw,mode}`；拒絕 0 店鋪上限、整數溢位、`lv5`、變數、算式、負值、小數與額外斜線。原版 `GetNumber` 可以執行 `eval`，本模組**絕不執行任意 Perl 或 JS 內容**。
+- `listReviewedPeerItems(model)` 現額外回傳 `limit` 與 `wslimit`。`settleUnguildedPeerPurchase` 在已審查 #1／#40／#79 交易時計算此限額，並用來源編譯結果作為實際買方庫存上限；呼叫端可以**省略** `itemLimit`，若傳入的數字與來源不相符就拒絕，不接受任意測試數值覆寫。
+- 售罄人氣、價格檢查、原本的純狀態不變性都保留；`baseTaxRate` 和 `sendItemTime` 仍需提供已審查的參數。此處 `wslimit` 作為來源核對數值列入回傳憑據，**尚未自動整合整個批發交易或商品生成流程**。
+
+新增 `tests/item-limit-model.test.mjs` **12項 Node 測試**，並將既有交易測試改為驗證來源限額、不允許呼叫端使用不一致的值。示範 `npm run demo:peer` 改由模型自動編譯三件商品的上限，不再把固定買家限額標成合成測資。最後的驗證結果依 GitHub Actions 當次執行紀錄為準；原有 **88 項 Perl 隔離斷言**數量不變。
+
+**未涵蓋：** 原版完整 `GetNumber` 與 `lv` 依賴、商品無 `LIMIT` 時的價格推定、批發市場全流程、全部 79 件商品、帳號／公會／回呼／CGI 實機與持久化。
