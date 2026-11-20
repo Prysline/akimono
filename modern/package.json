@@ -19,6 +19,7 @@
     "demo:lock": "node scripts/demo-world-lock.mjs",
     "demo:backup": "node scripts/demo-world-backup.mjs",
     "demo:read-preflight": "node scripts/demo-world-read.mjs",
-    "demo:one-shop": "node scripts/demo-world-one-shop.mjs"
+    "demo:one-shop": "node scripts/demo-world-one-shop.mjs",
+    "demo:shop-history": "node scripts/demo-shop-history.mjs"
   }
 }
