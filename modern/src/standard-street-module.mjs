@@ -8,6 +8,8 @@
  * transfer, persistence, default prices for opaque DSL fields, or CGI.
  */
 import {parseDsl} from './parse-dsl.mjs';
+import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
+  from './reviewed-gift-map-use.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -15,7 +17,7 @@ import {
 } from './standard-street-model.mjs';
 
 export const STANDARD_STREET_ID='standard-street';
-const actions=Object.freeze(['open-shop','edit-showcase']);
+const actions=Object.freeze(['open-shop','edit-showcase','gift-exchange-maps']);
 function bad(message){throw new RangeError('B-31 Standard Street: '+message);}
 function ownKeysExact(command,required,optional=[]){
   const allowed=new Set(['kind','expectedRevision',...required,...optional]);
@@ -75,6 +77,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
     bad('original DSL source text');
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
+  const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -82,13 +85,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
     modelSourceMode:model.sourceMode,
     opaqueCallbacks:true,
     unsupported:Object.freeze([...model.unsupported,
-      'item-use', 'market sales', 'period settlement', 'multiworld runtime']),
+      'other item-use actions', 'market sales', 'period settlement', 'multiworld runtime']),
   });
   return Object.freeze({
     id:STANDARD_STREET_ID,
     capabilities:actions,
     metadata,
     catalog,
+    reviewedGiftMapUse:giftMap,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -110,6 +114,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
             source:'fixed Core new.cgi + reviewed Standard Street FUNCNEW subset',
           },
         };
+      }
+      if(command.kind==='gift-exchange-maps'){
+        ownKeysExact(command,['shopId','requestedCount']);
+        const result=projectReviewedGiftMapUse({
+          world,shopId:command.shopId,
+          requestedCount:command.requestedCount,compiled:giftMap,
+        });
+        return result;
       }
       if(command.kind==='edit-showcase'){
         ownKeysExact(command,['shopId','shelf','itemId'],
