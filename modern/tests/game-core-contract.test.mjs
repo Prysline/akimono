@@ -55,6 +55,57 @@ test('B-31 StreetModule lists only source-reviewed supported commands',()=>{
   assert.equal(street.metadata.opaqueCallbacks,true);
   assert.ok(street.metadata.unsupported.includes('market sales'));
 });
+
+test('B-31 StreetModule exposes source-raw typed item/action/event catalogs',()=>{
+  assert.equal(street.catalog.items.length,79);
+  assert.equal(street.catalog.uses.length,116);
+  assert.equal(street.catalog.events.length,25);
+  assert.deepEqual(new Set(street.catalog.items.map(x=>x.id)),
+    new Set(Array.from({length:79},(_,i)=>i+1)));
+});
+test('B-31 catalog item data retains original ID/name/code, raw limits and source',()=>{
+  const item=street.catalog.items.find(x=>x.id===79);
+  const original=model.items.find(x=>x.id===79);
+  assert.equal(item.name,original.name);
+  assert.equal(item.code,original.code);
+  assert.equal(item.priceRaw,original.priceRaw);
+  assert.equal(item.limitRaw,original.limitRaw);
+  assert.equal(item.source,original.source);
+  assert.equal(item.line,original.line);
+  assert.equal(item.runtimeSupported,false);
+});
+test('B-31 raw USE records retain their DSL origin without executable callbacks',()=>{
+  const use=street.catalog.uses[0];
+  assert.equal(use.kind,'USE');
+  assert.ok(use.sourceFile.startsWith('custom/'));
+  assert.ok(Number.isSafeInteger(use.sourceLine));
+  assert.equal(use.runtimeSupported,false);
+  assert.equal(use.sourceMode,'raw-nonexecuting-dsl');
+  assert.ok(Object.keys(use.sourceFields).length>0);
+});
+test('B-31 raw EVENT records are metadata, never executed by GameCore',()=>{
+  assert.equal(street.catalog.events.every(x=>
+    x.kind==='EVENT'&&x.runtimeSupported===false),true);
+  assert.equal(street.capabilities.includes('event'),false);
+  assert.equal(street.capabilities.includes('event-trigger'),false);
+});
+test('B-31 raw catalog deeply freezes nested DSL source metadata',()=>{
+  assert.ok(Object.isFrozen(street.catalog));
+  assert.ok(Object.isFrozen(street.catalog.uses));
+  assert.ok(Object.isFrozen(street.catalog.uses[0].sourceFields));
+  const row=Object.values(street.catalog.uses[0].sourceFields)
+    .find(x=>x.length>0)?.[0];
+  assert.ok(Object.isFrozen(row));
+  assert.throws(()=>{row.raw='modified'},TypeError);
+});
+test('B-31 catalog does not promote raw DSL actions to runnable commands',()=>{
+  const r=apply(world(),{
+    kind:'raw-use',expectedRevision:0,sourceLine:street.catalog.uses[0].sourceLine,
+  });
+  assert.equal(r.code,'UNSUPPORTED_ACTION');
+  assert.deepEqual(r.world,world());
+});
+
 test('B-31 world factory leaves market and events UNMODELED, not invented',()=>{
   const w=world();
   assert.equal(w.schema,MEMORY_WORLD_SCHEMA);
