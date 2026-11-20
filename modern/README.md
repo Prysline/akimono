@@ -575,3 +575,34 @@ npm run demo:period-experience
 ```
 
 **仍未完成：** 完整 `inc-period.cgi` 真實每日結算（商店關閉、經濟與公會、事件、備份、隨機）、完整 `UseItem`（資格、材料／機率、時間金錢、動態商品回呼）、真實多商店世界存檔讀寫、跨程序安全鎖、原子提交／fsync、CGI HTTP 端到端。本次純模型結果只能供隔離推算／來源審查，絕不代表已有部署權限、資料持久化或真實商品使用。任務02維持「進行中」，Draft PR #1 未合併，不改 `main`。
+
+## 第十八批：每日庫存修正及 UseItem 材料／機率的隔離模型（第二十階段）
+
+依照固定 Core [`inc-period.cgi` 第77～82行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-period.cgi#L77-L82)、[ `plug/use.cgi::CheckUseItem` 第21～47行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L21-L47)、[`UseItem` 第64～104行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L64-L104) 與 [`MakeAmount` 第208～224行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L208-L224)，將可觀察的庫存上限、使用前置數量計算和**小額機率**拆成彼此無 I/O 的受限模型。上述固定 Core 來源原樣封存於既有 `modern/tests/original-perl/period.cgi` 與 `use.cgi`（Git Blob SHA 分別為 `6183e88e9dd69a16606a1064c8084e9a1411dbd5`、`1bf4537cc41e344c144d840d43175c4c232765bb`）。沒有新增原版來源快照；CI 保持 **14份 Core SHA** 核對。
+
+### 核對的來源行為
+
+| 領域 | 原版實際規則 | 新版受限子集的安全界線 |
+| --- | --- | --- |
+| 每日商品庫存 | 若 `DT.item[cnt-1] > ITEM[cnt].limit`，先設為商品上限；接著每格 `int()` 截去小數 | 需呼叫端提供長度恰79、非負且安全的合成庫存／整數上限；原版可能保留負值（如 `-1.9→-1`），本子集**拒絕負值** |
+| `UseItem` 使用次數 | 依熟練度／職業／分數／人氣／事件條件設為0，再依資金、時間、材料短缺依原始順序重新推算 `count`；真正動作前寫入 `USE.result.count` | 只推算次數，**不呼叫** `CheckUseItem` 的動態職業函式／`functionbefore`，亦不執行後續商品消耗、產出、事件回呼或任何實際金錢／時間扣減 |
+| 材料 `proba==0` | 前置短缺檢查使用一次材料需求，正機率則以需求量 × 當前 `count` 檢查；`MakeAmount` 自身在機率0時會回傳0 | 按固定 Core 原式保留這兩個不同決策；**前置材料檢查不是實際材料消耗** |
+| `MakeAmount` 機率 | `p<=0`→0，`p>=1000`→完整要求量；中間機率在 `cnt<20` 時每單位一次 `rand(1000)<p`，`cnt>=20` 時改用含 `sin`、`sqrt` 與兩個隨機數的不同公式 | Node 僅接受 `units=0..19`、`p=0..1000`；中間機率要呼叫端明確提供可重播的 `random()`，每單位取值落在 `[0,1)`；**20以上的機率公式刻意拒絕，不假稱已完成移植** |
+
+### 新增程式與驗證
+
+- [`modern/tests/original-perl/period-stock-use.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/period-stock-use.t)：**36項原版 Perl 隔離斷言**。直接從兩份已固定 SHA 的未修改 Core 原文擷取並編譯**每日庫存修正迴圈**、`UseItem` 從熟練度條件到 `result.count` 的前置程式、`CheckUseItem` **材料檢查迴圈**以及整份 `MakeAmount` 函式。只使用合成 Perl 商品、庫存、時間與資金資料；確認限額小數修正、原版負庫存仍可能為負、經驗／職業／分數／人氣／事件／資金／時間／材料短缺造成使用次數調整，以及 `MakeAmount` 的0／1000機率與小額、大額原版分支。對隨機分支使用固定 `srand` 比對可重播性，**未宣稱完全驗證大額機率分布**。沒有 require 有大量副作用的原始完整入口，也沒有真正商品交易、任意動態回呼或正式世界存檔。
+- [`modern/src/period-stock-use-model.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/period-stock-use-model.mjs)：新增 `REVIEWED_USE_LIMITS`、`projectReviewedPeriodStock`、`projectReviewedUsePreflight`、`sampleReviewedSmallMakeAmount`。三者均為純函式，輸出凍結的合成狀態／使用前置決策／隨機抽樣結果，不觸及正式存檔或 CGI。對負庫存、重複材料、安全整數乘積溢位、零使用時間、未確認排除動態回呼、非法亂數或未審查大額抽樣均採拒絕。**傳入 `callbacksConfirmedAbsent=true` 僅是呼叫端聲明，模型本身不會檢查實際 CGI／商品插件是否有回呼，也不會授權完整使用商品流程**。
+- [`modern/tests/period-stock-use-model.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/period-stock-use-model.test.mjs)：**38項 Node.js 測試**，核對固定來源字句、庫存上限與 `int`、資金／時間／材料短缺計算、必要事件／職業等前提、同來源不同材料機率判定、輸入型別、亂數 [0,1) 邊界、純結果不可變與前置檢查不授權真實交易。
+- [`modern/scripts/demo-period-stock-use.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-period-stock-use.mjs) 新增 `npm run demo:period-stock-use`，以固定合成資料展示每日庫存修正、各種使用資格／材料減量情況、0～19單位的小額機率抽樣與刻意拒絕的大額／負庫存來源風險；已納入 GitHub Actions。
+
+**階段累計：** Node 測試由323增至 **361／361**、原版 Perl 斷言由328增至 **364／364**，固定原版 Core Blob SHA 仍為14份，原始 DSL 稽核與所有示範繼續由 CI 驗證。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:period-stock-use
+```
+
+**尚未完成：** 真正 `CheckUseItem` 的動態職業／`functionbefore`、所有 `UseItem` 的交易副作用、`MakeAmount(cnt>=20)` 隨機公式跨語言統計／邊界驗證、商品回呼、完整每日期末庫存上限與真實商品編譯結果之整合、正式世界檔／安全備份與鎖／原子提交、CGI HTTP。此次的模型和成功測試都只限於**安全可重播的合成片段**；不能當作可部署的商品使用引擎。任務02「進行中」，PR #1 保持 Draft，不修改或合併 `main`。
