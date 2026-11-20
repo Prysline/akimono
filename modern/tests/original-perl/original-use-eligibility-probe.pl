@@ -164,7 +164,7 @@ sub run {
   return {case=>$input->{case},input=>$in,observed=>{
     records=>\@out,stock=>[@{$DT->{item}}],calls=>[@CALLS],
     selectedIndex=>$selectedIndex,
-    selectedNo=>($selectedIndex>=0&&defined $selectedIndex
+    selectedNo=>(defined $selectedIndex&&$selectedIndex>=0
       ?$records[$selectedIndex]{no}:0),
   }};
 }
