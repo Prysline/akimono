@@ -246,3 +246,11 @@ Node `original-multi-item-use-model.mjs` 只處理**合成數值**，接受多�
 驗證點包含：次數4先被現金限制到3、再被時間限制到2；原版先扣時間／金錢，之後多種材料與重複產出，市場最後一次修正；次數0直接返回不修正市場；`proba=0` 的材料雖然實際不消耗，前置仍檢查一份需求；重複材料**逐筆對原始庫存檢查**可能導致負庫存；過期記錄時間直到 `UseTime` 才依上限調整；`status=0` 的來源分支不推進時間；`expold` 覆蓋使用時間；固定 Perl `srand` 證明材料先抽樣、產出後抽樣。異常另外記於 `../../docs/original-behavior-issues.md`，**不修改來源**。
 
 Node 同範圍合成模型為 `../src/original-use-transaction-model.mjs`，測試為 `../tests/original-use-transaction-model.test.mjs`，示範 `npm run demo:transaction`。這次仍**不包含**完整 `CheckUseItem` 的動態職業與前置函式、產出後商品回呼、熟練度尾段、真實存檔、CGI、帳號與安全鎖；不能視為完整 `UseItem` 系統。
+
+## 第二十四階段：UseItem 回呼邊界之後的原版熟練度尾段
+
+在第二十三階段固定來源、合成交易基礎上，新增 `original-use-experience-transaction.t` **48項 Perl 隔離斷言**，與 `original-use-experience-probe.pl` 九案例 JSON 對照。從同一份未修改 SHA 固定 `use.cgi` 擷取資格→費用／時間→材料→產出→`CheckWholeStore` 原文，並擷取其**商品回呼之後**的完整熟練度尾段。將兩個未修改的來源片段接在合成無回呼場景中，配合未修改 `calc.cgi`、`whole.cgi`，不執行真正動態商品／職業 callback、CGI、世界存檔或其他來源頂層副作用。
+
+來源直接驗證：零次使用完全跳過熟練度尾段；若 `USE.exp=0`，即使商品使用成功也不覆寫 `result.expold`；非零則先記錄此前熟練度、計算 `expplus=USE.exp*USE.result.count` 並以 `1000-oldExp` 截斷。**原有熟練度1050會算出負的 expplus=-50，將熟練度降到1000**；負 `USE.exp` 同樣可能扣分；被扣到0的其他熟練度鍵會刪除，只有本次使用商品時總上限的超額可能無法消去。商品有同值熟練度時 `sort { exp[a] <=> exp[b] } keys` 只有值比較、**沒有商品 ID tie-break**。隔離 Perl 輸出實際的 sorted keys，供 Node 模型跟隨同一次排序；不可暗中用升冪商品 ID 代替。
+
+實際九案例 JSON Perl-to-Node 交叉對照驗證同一批合成商品數量、帳務、時間、逐筆商品紀錄及經驗尾段結果；Perl SHA 快照仍14份未修改。完整 CI 仍以 `prove -v *.t` 跑全部原版 Perl 斷言。不授權真實 `UseItem` CGI、回呼執行或資料存檔。
