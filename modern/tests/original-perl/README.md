@@ -27,15 +27,15 @@ CI 會以 `git hash-object` 核對以上八個固定快照。快照檔案未改�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **4 個 Perl 測試檔，88/88 個斷言**：
+目前已由 GitHub Actions 成功執行 **4 個 Perl 測試檔，96/96 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
 | `baseline.t` | 計算插件：時間／資金／交易／商品編號 | 31 |
 | `new-store.t` | 真正執行 `new.cgi` 的 Core 預設開店初始化 | 18 |
 | `showcase-market.t` | `sc-s.cgi` 陳列操作、`GetMarketStatus` 市場統計 | 26 |
-| `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore` | 13 |
-| **合計** | | **88** |
+| `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore`（含 0.5、1.5 的批發供貨係數） | 21 |
+| **合計** | | **96** |
 
 CI：[Actions run 44585838281](https://github.com/Prysline/akimono/actions/runs/44585838281)，`Result: PASS`。
 
@@ -70,4 +70,8 @@ npm run audit
 
 - `buy-s.cgi` 是為了 Node.js B-06 玩家交易移植保留的**原版只讀來源快照**。它不是新增的 Perl 執行測試：現有 88 項 Perl 斷言數量不因此改變；新增的狀態轉移由 `modern/tests/peer-trade-model.test.mjs` 以 Node.js 驗證。
 
-- `inc-makeitem.cgi` 是新增的第八個**完全未修改** Core 原始碼快照，供 Node.js `item-limit-model.test.mjs` 核對 `LIMIT` 文字拆分、`limit` 與 `wslimit` 的來源語意；它**不是**額外一份 Perl 執行測試。既有的原版 Perl 隔離斷言仍維持 88 項。
+- `inc-makeitem.cgi` 是第八個**完全未修改** Core 原始碼快照，供 Node.js `item-limit-model.test.mjs` 核對 `LIMIT` 文字拆分、`limit` 與 `wslimit` 的來源語意；它**不是**額外一份 Perl 執行測試。第十階段於原有 `whole-store.t` 新增8項小數批發上限斷言，因此最新原版 Perl 隔離測試總數為96項。
+
+## 第十階段：小數批發係數的原版 Perl 驗證
+
+原始 `plug/whole.cgi::CheckWholeStore` 仍直接以 `require './whole.cgi'` 引入，由 `whole-store.t` 使用手動固定的已編譯 `wslimit` 數值執行；新增 8 項斷言覆蓋 `0.5`、`1.5` 在 1／2／3 家商店及商店既有存量抵扣之後的市場整數庫存。這些數值來自固定標準街 DSL，但此處**沒有執行管理用商品編譯器，也沒有真正補貨或批發交易**。最新 CI 驗證為 96／96 項 Perl 斷言通過，與新 Node 小數解析模型獨立核對。
