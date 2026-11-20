@@ -32,7 +32,7 @@ sub bootstrap {
   my $dsl=read_text(File::Spec->catfile($FindBin::Bin,'..','..','..',
     'custom','inc-item-data.cgi'));
   my ($section)=$dsl=~/(^\@\@FUNCITEM\b[\s\S]*?)(?=^\@\@FUNCUPDATE\b)/m;
-  die "B-29 source @@FUNCITEM missing" unless defined $section;
+  die 'B-29 source @@FUNCITEM missing' unless defined $section;
   my ($book)=$section=~/(^sub lostbook\s*\n\{[\s\S]*?^\}\n)/m;
   die 'B-29 exact original lostbook missing' unless defined $book;
   $BODY{lostbook}=$book;
