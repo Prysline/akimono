@@ -35,3 +35,6 @@
 ## 使用方式
 
 執行 `npm test`、`npm run demo:original-outcomes`，以既有 GitHub Actions 同 SHA 報告為檢驗來源。任務02保持進行中、PR #1 保持 Draft，**不合併**。
+
+| CORE-09 | [`plug/use.cgi` 90–104、115–126](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L90-L126) | `UseItem` 的材料前置檢查逐筆以**當時尚未消耗的庫存**比較，每筆重複材料不先合併；正式消耗時才逐筆遞減。兩筆各需同一商品6件、原有8件時，每筆前置都可能通過，最後庫存為 `8-6-6=-4`。 | 如果移植時將材料合併檢查或將負值直接歸零，都會改變原版實際結果；這也提醒呼叫者完整 `CheckUseItem` 的原始前置限制與本合成片段有不同責任。 | B-23 真正原版 Perl 段落與 Node 合成交易模型對照；保留原版負值，僅記錄風險，不主動修復 |
+| CORE-10 | [`plug/use.cgi` 85–104、108–114](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L85-L114)、[`plug/calc.cgi::UseTime`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/calc.cgi) | 次數前置以原始 `DT.time` 計算可用時間；僅在次數確定為非零、真正呼叫 `UseTime` 時才把過久未用的 `DT.time` 更新為 `NOW_TIME-MAX_STOCK_TIME`，再加本次耗時。例：`NOW=1000000`、舊記錄700000、上限259200、使用耗時18，前置仍使用舊值；實際儲存時間變 `740818`。 | 不能提前修正時間上限再決定使用次數；新模型即使認為結果不合理，也不得更換處理順序。 | B-23 用未修改 Perl `GetItemUseTime / UseTime` 直接執行；Node 同值對照，無擅自修正 |
