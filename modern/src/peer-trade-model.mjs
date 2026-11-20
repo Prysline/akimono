@@ -10,8 +10,9 @@
  * - Peer store only (seller ID > 0), never wholesale (the original @@FUNCBUY
  *   market callback grants a gift for wholesale purchases >= 500000).
  * - Item #79 (gift voucher) only; its source @@ITEM has no funcb callback.
- * - No guilds, no sold-out purchases: original sold-out rank change can be
- *   randomized and is NOT silently discarded.
+ * - No guilds. Sold-out rank penalty is projected with the original formula;
+ *   a caller-supplied random() is REQUIRED only when the penalty is fractional.
+ *   No implicit Math.random() or silent omission of sold-out side effects.
  * - No compiler, persistence, I/O, authentication, locks, logs or CGI.
  * - This returns NEW state values; "settled" means only the modeled memory
  *   projection and must not be mistaken for a persisted game transaction.
@@ -47,7 +48,7 @@ function safeSum(left, right, label) {
  *
  * Request fields:
  *   now, shelf, itemId, offeredPrice, requestedCount,
- *   itemLimit, baseTaxRate, sendItemTime
+ *   itemLimit, baseTaxRate, sendItemTime, random? (only for fractional sold-out rankdown)
  *
  * The last 3 values MUST be supplied from a separately reviewed compiled
  * fixture and shop tax settings. They are not read from guessed DSL fields.
@@ -83,8 +84,29 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   const quote = quoteUnguildedPurchase(model, buyer, seller, request);
   const index = 78;
   const sellerStock = whole(seller.item[index], 'seller item #79');
-  if (sellerStock - quote.count <= 0) {
-    fail('Sold-out rank side effect is not modeled; transaction rejected');
+  const soldOut = sellerStock === quote.count;
+  // Core buy-s.cgi: sold-out rankdown = (seller.rank / 100)^3 / 1000.
+  // When 0 < rankdown < 1, the original uses rand(1 / rankdown) < 1 to
+  // round the penalty stochastically to 1, otherwise int(rankdown) = 0.
+  // All other amounts have deterministic int(rankdown), no RNG consumption.
+  let rankBefore = null;
+  let rawRankDown = 0;
+  let rankDown = 0;
+  let needsRandom = false;
+  if (soldOut) {
+    rankBefore = whole(seller.rank, 'seller rank');
+    rawRankDown = (rankBefore / 100) ** 3 / 1000;
+    if (!Number.isFinite(rawRankDown) || rawRankDown < 0) {
+      fail('Invalid sold-out rank penalty');
+    }
+    if (rawRankDown > 0 && rawRankDown < 1) {
+      if (typeof request.random !== 'function') {
+        fail('Fractional sold-out rank penalty requires injected random()');
+      }
+      needsRandom = true;
+    } else {
+      rankDown = Math.trunc(rawRankDown);
+    }
   }
   const buyerStock = whole(buyer.item[index], 'buyer item #79');
   const payable = whole(quote.buyerDebit, 'buyer debit');
@@ -113,6 +135,18 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   const nextSellerItem = [...seller.item];
   nextSellerItem[index] = sellerStock - quote.count;
 
+  // Resolve randomness only AFTER all other arithmetic has been validated.
+  // random() has no default: replaying the same injected value reproduces
+  // the same result. The external RNG's state is outside this pure-state API.
+  if (needsRandom) {
+    const draw = request.random();
+    if (typeof draw !== 'number' || !Number.isFinite(draw) || draw < 0 || draw >= 1) {
+      fail('Injected random() must return a finite number in [0, 1)');
+    }
+    rankDown = draw * (1 / rawRankDown) < 1 ? 1 : 0;
+  }
+  const rankAfter = soldOut ? Math.max(0, rankBefore - rankDown) : null;
+
   const nextBuyer = {
     ...buyer, money: newBuyerMoney, time: newTime,
     paytoday: buyerPaytoday, item: nextBuyerItem,
@@ -120,6 +154,7 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   const nextSeller = {
     ...seller, money: newSellerMoney, trush: sellerTrush,
     saletoday: sellerSaletoday, taxtoday: sellerTaxtoday,
+    ...(soldOut ? { rank: rankAfter } : {}),
     item: nextSellerItem,
     itemtoday: { ...(seller.itemtoday ?? {}), 79: nextItemToday },
   };
@@ -127,7 +162,8 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
     buyer: nextBuyer, seller: nextSeller,
     receipt: Object.freeze({
       ...quote, buyerId, sellerId, itemId: 79,
-      scope: 'in-memory unguilded non-sold-out peer transfer; no persistence',
+      soldOut, rankDown, rankBefore, rankAfter,
+      scope: 'in-memory unguilded peer transfer with sold-out rank projection; no persistence',
     }),
   };
 }
