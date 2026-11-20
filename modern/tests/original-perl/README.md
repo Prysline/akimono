@@ -254,3 +254,11 @@ Node 同範圍合成模型為 `../src/original-use-transaction-model.mjs`，測�
 來源直接驗證：零次使用完全跳過熟練度尾段；若 `USE.exp=0`，即使商品使用成功也不覆寫 `result.expold`；非零則先記錄此前熟練度、計算 `expplus=USE.exp*USE.result.count` 並以 `1000-oldExp` 截斷。**原有熟練度1050會算出負的 expplus=-50，將熟練度降到1000**；負 `USE.exp` 同樣可能扣分；被扣到0的其他熟練度鍵會刪除，只有本次使用商品時總上限的超額可能無法消去。商品有同值熟練度時 `sort { exp[a] <=> exp[b] } keys` 只有值比較、**沒有商品 ID tie-break**。隔離 Perl 輸出實際的 sorted keys，供 Node 模型跟隨同一次排序；不可暗中用升冪商品 ID 代替。
 
 實際九案例 JSON Perl-to-Node 交叉對照驗證同一批合成商品數量、帳務、時間、逐筆商品紀錄及經驗尾段結果；Perl SHA 快照仍14份未修改。完整 CI 仍以 `prove -v *.t` 跑全部原版 Perl 斷言。不授權真實 `UseItem` CGI、回呼執行或資料存檔。
+
+## 第二十五階段：CheckUseItem 原樣職業／前置回呼與商品回呼靜態邊界
+
+新增 `original-use-eligibility.t`，只從14份 Git Blob SHA 固定且完全未修改的 `use.cgi` 提取 `GetUseItemList`、`GetUseItemListSub`、`CheckUseItem`、`GetUseItem` 四個來源原樣子函式。測試的 `package item` 回呼是這份 .t 內定義的**安全合成替身**，不需原版 DSL 編譯器、`inc-item.cgi` 或真實商店。直接執行原版子函式後，核對職業專屬／共用 fallback 的優先順序、回呼更改 `functionbefore` 或材料／庫存、前置函式回傳2（只顯示）／1（拒絕）／其他（檢查材料），以及 `GetUseItem*` 的旗標只設1、不清理舊值。找不到 `functionbefore` 函式的 Perl 原始錯誤亦有明確斷言。測試絕不宣稱已執行編譯後街道任務或真實玩家資格。
+
+新增 `original-use-eligibility-probe.pl`，提供13組合成案例的 **直接原版 Perl** 觀察結果，以 JSON 交由 `../original-use-eligibility-model.test.mjs` 裡的 Node 測試逐案比對（材料／庫存改變、`useok/dispok` 旗標與受控回呼順序）。同時新增 `original-item-callback-contract.t`，用原版固定文字驗證商品產出後的市場調整、`RequireFile('inc-item.cgi')`、商品方法解析、欄位綁定、回傳值寫回以及熟練度尾段順序；**沒有執行這段真正動態回呼**。異常只記入 `../../docs/original-behavior-issues.md` 的 CORE-13／CORE-14，不改原版。
+
+實際測試可使用 `prove -v original-use-eligibility.t original-item-callback-contract.t` 或既有完整 `prove -v *.t`。以上仍不是正式 CGI、已編譯商品任意 Perl 程式或真實世界持久化測試。
