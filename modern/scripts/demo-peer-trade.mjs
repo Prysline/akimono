@@ -28,7 +28,7 @@ const originalQuantity = buyer.item[78] + seller.item[78];
 
 const result = settleUnguildedPeerPurchase(model, buyer, seller, {
   now, shelf: 0, itemId: 79, offeredPrice: 10000,
-  requestedCount: 4, itemLimit: 10, baseTaxRate: 10, sendItemTime: 1200,
+  requestedCount: 4, baseTaxRate: 10, sendItemTime: 1200,
 });
 
 // Separate deterministic sold-out replay: seller's 5 vouchers are all bought.
@@ -36,24 +36,25 @@ const result = settleUnguildedPeerPurchase(model, buyer, seller, {
 const soldOutSeller = { ...seller, rank: 500 };
 const soldOut = settleUnguildedPeerPurchase(model, buyer, soldOutSeller, {
   now, shelf: 0, itemId: 79, offeredPrice: 10000,
-  requestedCount: 5, itemLimit: 10, baseTaxRate: 10, sendItemTime: 1200,
+  requestedCount: 5, baseTaxRate: 10, sendItemTime: 1200,
   random: () => 0.05, // injected fixed draw for replay; no Math.random()
 });
 
 
-// Separate fixtures: limits are explicit examples, NOT evaluated from DSL.
+// Frozen literal LIMIT A/B values are compiled from reviewed item DSL metadata.
+// Tax and send-item time are still explicit fixtures, not a full Core compiler.
 const reviewedItems = listReviewedPeerItems(model);
 const herbSeller = { ...seller, item: [...seller.item], showcase: [1], price: [50] };
 herbSeller.item[0] = 10;
 const herbTrade = settleUnguildedPeerPurchase(model, buyer, herbSeller, {
   now, shelf: 0, itemId: 1, offeredPrice: 50,
-  requestedCount: 3, itemLimit: 4000, baseTaxRate: 10, sendItemTime: 1200,
+  requestedCount: 3, baseTaxRate: 10, sendItemTime: 1200,
 });
 const swordSeller = { ...seller, item: [...seller.item], showcase: [40], price: [1200] };
 swordSeller.item[39] = 8;
 const swordTrade = settleUnguildedPeerPurchase(model, buyer, swordSeller, {
   now, shelf: 0, itemId: 40, offeredPrice: 1200,
-  requestedCount: 2, itemLimit: 600, baseTaxRate: 10, sendItemTime: 1200,
+  requestedCount: 2, baseTaxRate: 10, sendItemTime: 1200,
 });
 
 console.log(JSON.stringify({
@@ -78,7 +79,8 @@ console.log(JSON.stringify({
       sellerQuantityAfter: herbTrade.seller.item[0],
       sellerTaxToday: herbTrade.seller.taxtoday,
       sellerItemToday: herbTrade.seller.itemtoday[1],
-      compiledItemLimit: 'explicit demonstration fixture 4000; not DSL evaluation',
+      compiledItemLimit: herbTrade.receipt.compiledItemLimit,
+      compiledWholesaleLimit: herbTrade.receipt.compiledWholesaleLimit,
     },
     {
       itemId: 40, name: '木刀', requestedCount: 2,
@@ -86,7 +88,8 @@ console.log(JSON.stringify({
       sellerQuantityAfter: swordTrade.seller.item[39],
       sellerTaxToday: swordTrade.seller.taxtoday,
       sellerItemToday: swordTrade.seller.itemtoday[40],
-      compiledItemLimit: 'explicit demonstration fixture 600; not DSL evaluation',
+      compiledItemLimit: swordTrade.receipt.compiledItemLimit,
+      compiledWholesaleLimit: swordTrade.receipt.compiledWholesaleLimit,
     },
   ],
   soldOutWithInjectedRng: {
