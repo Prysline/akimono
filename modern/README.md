@@ -43,7 +43,7 @@ npm run demo:state
 | `editShowcase(model, shop, edit)` | 純狀態轉移；按來源規則計算陳列商品、定價、600 秒操作時間、72 小時存量上限及缺貨／禁止陳列拒絕，輸入狀態不受修改。原 Perl `UseTime` 允許操作後時間變成負值，本模型保留此行為。 |
 | `summarizeMarket(model, shops, fixture)` | 使用固定多店資料計算陳列庫存、銷量、加權市價與供需點數。此階段 `popular` 必須由測資顯式提供，**不能把未編譯的 `pop`／`lv` 設定假裝已編譯**。 |
 
-**驗證結果：** [GitHub Actions 自動測試](https://github.com/Prysline/akimono/actions) 已於本分支執行 Node 原有來源稽核與新模型測試，以及 88 項隔離 Perl 測試。完整驗證以該次 CI run 紀錄為準。
+**驗證結果：** [GitHub Actions 自動測試](https://github.com/Prysline/akimono/actions) 已於本分支執行 Node 來源稽核與子集規則模型；第十階段已達 **121 項 Node 測試與 96 項原版 Perl 隔離斷言**，具體以最新 CI run 為準。
 
 **邊界與限制：** 這是「依已審查原始碼建立的可執行規則子集」，不是 CGI 編譯器的 Perl 回呼執行，也沒有實作商品使用、事件、隨機售出、真實市場週期、持久化、權限、安全或完整多人 Core；未提供的規則須逐項核對來源後才會增補。**禁止將這一階段的 Node 綠燈當成整體遊戲相容證明。**
 
@@ -165,7 +165,7 @@ Core 的 `LIMIT` 宣告不是算術除法：`A/B` 將 `A` 解析為店鋪上限 
 
 新增 `src/item-limit-model.mjs` 的 `compileLiteralItemLimit(raw)`：
 
-- 只接受 `^[0-9]+(/[0-9]+)?$` 形式，回傳不可修改的 `{limit,wslimit,raw,mode}`；拒絕 0 店鋪上限、整數溢位、`lv5`、變數、算式、負值、小數與額外斜線。原版 `GetNumber` 可以執行 `eval`，本模組**絕不執行任意 Perl 或 JS 內容**。
+- 第八階段起初只接受整數字面值 `LIMIT A/B` 或 `LIMIT A`；第十階段已將**斜線右側**的合法非負十進位小數納入安全解析。回傳不可修改的 `{limit,wslimit,raw,mode}`；左側持有上限仍須正整數，變數、任意算式、負值與多重斜線依然拒絕。原版 `GetNumber` 可以執行 `eval`，本模組**絕不執行任意 Perl 或 JS 內容**。
 - `listReviewedPeerItems(model)` 現額外回傳 `limit` 與 `wslimit`。`settleUnguildedPeerPurchase` 在已審查 #1／#40／#79 交易時計算此限額，並用來源編譯結果作為實際買方庫存上限；呼叫端可以**省略** `itemLimit`，若傳入的數字與來源不相符就拒絕，不接受任意測試數值覆寫。
 - 售罄人氣、價格檢查、原本的純狀態不變性都保留；`baseTaxRate` 和 `sendItemTime` 仍需提供已審查的參數。此處 `wslimit` 作為來源核對數值列入回傳憑據，**尚未自動整合整個批發交易或商品生成流程**。
 
@@ -183,7 +183,7 @@ Core 的 `LIMIT` 宣告不是算術除法：`A/B` 將 `A` 解析為店鋪上限 
 - `LIMIT lvN` 在已有價格預設值之後出現時，以 **`int(當前limit * N/5)`** 產生持有量上限；不含右側 `/B` 時 `wslimit=limit`，若有 `/B` 則獨立指定批發上限。使用正整數定價10000的合成例子，`lv2.5` → 店鋪50／批發50，`lv2.5/0` → 店鋪50／批發0。
 - **欄位順序不可互換：** 若 `LIMIT lvN` 出現在 `PRICE` 之前，在原版尚未有預設 `limit` 時，初始乘法取得0；隨後的 `PRICE` 才以價格公式填入預設值，覆蓋當時的批發值。定價10000、先 `lv2.5/8` 再 `PRICE` 的合成例子結果是店鋪100／批發100，不是50／8。
 - 明確的純數字 `LIMIT A/B` 繼續由前階段的 `compileLiteralItemLimit` 處理，與其現有交易模型行為一致。
-- 只接受正整數價格、安全行號、單次 `PRICE` 與可選的一次 `LIMIT`；`lvN` 的 `N` 限非負十進位數字，右側 `/B` 限非負整數。拒絕符號、任意 Perl 指令、超出安全整數範圍及未審查語法。某些合法 Perl 語法也會被此受限模型拒絕，不宣稱其完整相容。
+- 只接受正整數價格、安全行號、單次 `PRICE` 與可選的一次 `LIMIT`；`lvN` 的 `N` 限非負十進位數字，第十階段起右側 `/B` 也允許安全的非負十進位小數。拒絕符號、任意 Perl 指令、超出安全整數範圍及未審查語法。某些合法 Perl 語法仍會被此受限模型拒絕，不宣稱完整相容。
 
 **目前標準街來源實際情況：** 對固定 `custom/inc-item-data.cgi` 的79件 `@@ITEM` 逐項檢查後，**79件都有明確 `LIMIT`，0件使用 `LIMIT lvN`**。因此第九階段新增的 `lvN` 與缺省上限測試使用的是**合成商品編譯測資**，不是聲稱現有商品已啟用這兩種情形。Node 讀取器現在保留 `priceSourceLine`、`limitSourceLine` 來源資訊供日後審查；但若某商品的 `PRICE` 寫在 `@@USE` 區塊之後，現有 `parseDsl` 不一定把該欄位歸入 `@@ITEM`，需要直接查原始 DSL 行號而不是填入猜測值。原始商品 #63 的順序測試即直接核對固定原檔行1909與2007，不推定模型有解析該價格欄位。
 
@@ -198,3 +198,52 @@ npm run demo:peer
 ```
 
 `npm run demo:limits` 同時列出已確認的真實標準街 #1 商品限額，以及**分開標記**的合成預設與 `lvN` 範例；新增命令已加入 GitHub Actions。這仍是單機規則稽核，不是啟動 CGI、Perl 編譯器或持久化世界資料。
+
+## 第八批：批發市場的小數供貨上限（第十階段）
+
+**原始碼證據：** 固定 Core [`inc-makeitem.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-makeitem.cgi#L86-L105) 的 `GetNumber` 可解析十進位小數，`LIMIT`（第412–425行）把斜線右側數值直接指派給 `wslimit`；固定 Core [`plug/whole.cgi::CheckWholeStore`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/whole.cgi) 在非負上限時使用 `int(wslimit * (shopcount || 1) + 0.99)`，並扣除各店**已持有**的商品數量，得出批發市場還能保留的整數庫存上限。
+
+`LIMIT 20/0.5` 不是除法、不是保證每店有半件供應；是「店鋪持有上限20、批發總量計算係數0.5」。原版沒有在這個步驟生成新商品，只有把已存在的批發庫存修正至不超過總量上限。批發展示價格與買入贈券等程序仍是其他獨立規則。
+
+固定 `custom/inc-item-data.cgi`（Git Blob `7a18185e98b32aee82ca1ce30d6f3c395157dbcb`）有**恰好7件**使用非負小數 `wslimit`：
+
+| 商品 ID | 原版名稱 | 原始 `LIMIT` | 店鋪持有上限 `limit` | 批發係數 `wslimit` |
+| ---: | --- | --- | ---: | ---: |
+| 20 | 劍的鍛造方法 | `20/0.5` | 20 | 0.5 |
+| 21 | 盾的製作方法 | `20/0.5` | 20 | 0.5 |
+| 22 | 鎧的製作方法 | `20/0.5` | 20 | 0.5 |
+| 23 | 杖的製作方法 | `20/0.5` | 20 | 0.5 |
+| 25 | 米諾陶洛斯♀ | `20/1.5` | 20 | 1.5 |
+| 64 | 看門機器人 | `1/0.5` | 1 | 0.5 |
+| 66 | 裝飾品加工入門 | `20/0.5` | 20 | 0.5 |
+
+**注意：** #64 原版帶有 `noshowcase|onlysend` 旗標；這張表只是來源的**批發上限編譯資料**，不是玩家間交易白名單、批發購買權限，也不是宣稱七件商品皆可在市場購買。
+
+`src/item-limit-model.mjs` 的 `compileLiteralItemLimit` 現只在斜線右側允許非負十進位小數；左側 `limit` 仍限定正安全整數。拒絕 `1/.5`、`1/-0.5`、算式、浮點溢位、不安全精度及多重斜線；`compileOrderedItemLimit` 的 `lvN/B` 亦可使用右側已檢查的小數值，不需要執行 Perl `eval`。
+
+新增 `src/fractional-wholesale-model.mjs`：`listReviewedFractionalWholesaleItems(model)` 會逐件比對**商品 ID、代碼、名稱、原定價文字、原始 LIMIT、檔名及行號**；只針對完全相同的7件提供 `compiledFractionalWholesaleById(model)`，給既有 `checkWholeStockCaps` 使用。資料變更或突然新增其他小數商品時拒絕，不自行全面開放所有商品或進行交易。
+
+| 商店數 | 係數0.5 的整數總量上限 | 係數1.5 的整數總量上限 |
+| ---: | ---: | ---: |
+| 1 | 1 | 2 |
+| 2 | 1 | 3 |
+| 3 | 2 | 5 |
+| 4 | 2 | 6 |
+| 5 | 3 | 8 |
+
+例如三店時 `wslimit=0.5` 的總上限2；若商店已持有1，批發市場可剩1；`wslimit=1.5` 的總上限5、商店已持有2時批發市場可剩3。**此計算不代表市場一定能補滿上限。**
+
+驗證包含：
+
+- 新增 **6 個商品限額 Node 測試**及 **6 個批發市場 Node 測試**，合計目前 **121／121** 通過；與原始字面值來源、浮點解析與防止來源改動連動。
+- 在既有 `modern/tests/original-perl/whole-store.t` 新增 **8 項直接執行原版 Perl `CheckWholeStore` 的斷言**：由 88 項增為 **96／96 項原版 Perl 隔離測試成功**。這些 Perl 測試採明確的數值 fixture，不代表啟動原版商品管理 CGI 或完整 Perl 商品編譯。
+- 新增 `npm run demo:wholesale`（`scripts/demo-fractional-wholesale.mjs`）並納入 CI；示範使用**合成的初始批發庫存10**，以真實商品來源導出的係數顯示不同店數及已有庫存的結果。既有 Node 與 Perl 原版快照、DSL audit、其餘示範均保留。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:wholesale
+```
+
+**剩餘限制：** 沒有實作市場的補貨來源、批發買入回呼、完整商品編譯、使用者認證、公會、競爭交易鎖、真實資料持久化、完整跨期週期與 CGI HTTP。仍保持僅三種經審查的無公會玩家交易商品，未擴大買賣白名單。
