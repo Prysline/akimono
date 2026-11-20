@@ -183,7 +183,11 @@ sub run {
   $main::LIMIT_EXP=3600;
   $main::USER='synthetic-b33';
   %main::DTevent=();
-  my $stock=exists($o{stock})?$o{stock}:[(0)x78,5];
+  # The real Standard Street FUNCNEW source gives ONE showcase tool (#63)
+  # and FIVE gift vouchers (#79). This is still a synthetic world market.
+  my $defaultStock=[(0)x78,5];
+  $defaultStock->[62]=1;
+  my $stock=exists($o{stock})?$o{stock}:$defaultStock;
   my $whole=exists($o{wholesale})?$o{wholesale}:[(0)x79];
   die 'B-33 expects exactly 79 original ITEM slots'
     unless ref($stock) eq 'ARRAY'&&@$stock==79&&
