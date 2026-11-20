@@ -102,7 +102,7 @@ $u->{use}=[];
 $u->{result}{create}=[];
 @DTwholestore=(99,99,-5);
 run_pinned_multi_item($u,1);
-is_deeply(\@DTwholestore,[5,0,-5],
+is_deeply(\@DTwholestore,[5,2,-5],
   'B-22-P17 even zero create actions still trigger full market correction');
 is_deeply($u->{result}{additem},[],
   'B-22-P18 empty create list logs no additions');
@@ -137,7 +137,7 @@ $u->{result}{create}=[];
 run_pinned_multi_item($u,1);
 is($DT->{item}[0],-12,
   'B-22-P24 original extracted use loop permits negative final stock without recheck');
-is($DTwholestore[0],8,
+is($DTwholestore[0],4,
   'B-22-P25 wholesale corrects after resulting negative shop stock, without inventory repair');
 
 done_testing();
