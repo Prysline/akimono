@@ -57,6 +57,9 @@ export function parseIsolatedWorldReadEnvelope(text) {
   const withoutLastLF = text.endsWith('\n') ? text.slice(0,-1) : text;
   const lines = withoutLastLF.split('\n');
   if (lines.length < 5 || lines[4] !== '//') {
+    if (lines.slice(5).includes('//')) {
+      fail('Dynamic town/shop records are outside isolated world-read subset');
+    }
     fail('World header missing exact // separator in reviewed position');
   }
   if (lines.length !== 5) {
