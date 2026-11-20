@@ -104,7 +104,7 @@ sub compile {
     for my $field(@accepted){
       # All 79 PRICE/LIMIT statements are checked; do not eval arbitrary
       # expression syntax from a future changed source.
-      if($field->[2] eq 'price' && $field->[3]!~/^[1-9]\d*$/)
+      if($field->[2] eq 'price' && $field->[3]!~/^\d+$/)
         {die 'B-33 unsupported price';}
       if($field->[2] eq 'limit' && $field->[3]!~/^\d+(?:\/\d+(?:\.\d+)?)?$/)
         {die 'B-33 unsupported limit';}
