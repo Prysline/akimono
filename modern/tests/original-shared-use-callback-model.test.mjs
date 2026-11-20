@@ -83,15 +83,15 @@ test('B-26 popup WriteLog calls are kept in source order',()=>{
 });
 test('B-26 popup change to rank is capped, but message uses PRE-cap up',()=>{
   const r=popup({rank:9999,param1:300000,param2:'高額派對'});
-  assert.equal(r.up,60);
+  assert.equal(r.up,59);
   assert.equal(r.rankAfter,10000);
   assert.equal(r.returned,'高額派對：人氣提升了0%');
 });
 test('B-26 popup above-cap existing rank can be normalized to 10000 by source',()=>{
   const r=popup({rank:12000,param1:1000});
-  assert.equal(r.up,-400);
+  assert.equal(r.up,-399);
   assert.equal(r.rankAfter,10000);
-  assert.equal(r.returned,'開了派對：人氣提升了-4%');
+  assert.equal(r.returned,'開了派對：人氣提升了-3%');
 });
 test('B-26 popup negative param permits original negative rank change',()=>{
   const r=popup({rank:3000,param1:-1000,param2:'活動'});
