@@ -771,3 +771,24 @@ prove -v original-shared-callbacks.t
 ```
 
 **未涵蓋：** 其餘33個本地使用後函式、真正前置與商品層級回呼、事件回呼、原版商品完整 DSL 編譯和動態載入、外部 `UseItem`／`WriteLog` 的真正副作用、帳號、真正存檔／鎖／原子提交或 CGI。每個宣告的靜態引用不等於已實作對應規則。Task 02 持續進行，Draft PR #1 不合併。
+
+## 第二十七階段：原版商品13工作回呼／商品63展示架回呼的原文隔離
+
+接續 B-26 已盤點的 11 份本地 `func _local_`，本階段選定**商品13（`book-work`）、商品63（`edit-showcase`）**的兩份來源 Perl 本文，連同**原始 Core `GetMoneyString` 本文**，在**記憶體與測試專用 `WriteLog` 攔截器**下執行，再和 Node 原式純函式逐案對照。**沒有編譯整份 DSL、動態 require 原版商品包、真的修改商店或寫任何玩家／世界／日誌檔案。**
+
+- [逐來源與異常的完整 B-27 說明](docs/original-inline-callbacks.md)：原版商品13在 `custom/inc-item-data.cgi` 1860–1900行的2個 `@@USE` 共用 `_local_1`，商品63在1902–2013行的8個 `@@USE` 共用另一份 `_local_1`。兩組**名稱相同但來源不同**；測試按商品切換原版本文，**不宣稱已確認正式動態載入的同名函式相容性**。
+- [合成 Node 模型](src/original-inline-work-showcase-model.mjs)：工作按 `money+=param1*count`，以固定 Core `GetMoneyString` 的可表示整數格式生成返回文字，保存依原版順序的2組日誌參數；展示架先改 `showcasecount`，擴張逐格清0、縮減 `splice`，陣列多餘尾端、`undef` 洞與新舊數量相等時不整理的原版效果照樣保留。貨幣前後綴是**明確合成資料**而非宣稱原版所有世界的預設。
+- [原始 Perl 回呼安全隔離器](tests/original-perl/OriginalInlineCallbackHarness.pm)：只從原始 DSL 擷取上述兩組 `func _local_` 到結束標記的**原文字句**，按固定 `inc-makeitem.cgi` 的 `eval(<<'_eval_code_')` 包裝模板在記憶體中執行；金額格式用固定 `inc-func.cgi::GetMoneyString` **真正原版函式本文**。`WriteLog` 不寫檔，只記錄呼叫參數。
+- [52項原版 Perl 斷言](tests/original-perl/original-inline-work-showcase.t)／[13組原版 Perl JSON 探針](tests/original-perl/original-inline-work-showcase-probe.pl)／[31項 Node 測試](tests/original-inline-work-showcase-model.test.mjs) 真正跨語言比較金額、展示陣列、文字與日誌順序。
+- [獨立原版問題 CORE-16](docs/original-behavior-issues.md)：展示架欄位長度與 `showcasecount` 原本不一致時，原版不主動補齊或截短；如舊數量1、陣列 `[2,4,6,8,10]` 改成3，原版保留為 `[2,0,0,8,10]`。**這是人工不一致 fixture 的來源運算，不表示正常存檔一定出現。只記錄不修正。**
+- [合成示範](scripts/demo-original-inline-work-showcase.mjs)：`npm run demo:inline-callbacks` 已加入 CI。
+
+```sh
+cd modern
+npm test
+npm run demo:inline-callbacks
+cd tests/original-perl
+prove -v original-inline-work-showcase.t
+```
+
+**明確界線**：未執行完整 `UseItem`、所有動態商品／職業／事件回呼、原版編譯器全程、實際 `WriteLog`／`GetMoneyString` 的正式跨套件依賴、真實使用者與世界檔案。工作 callback 自身加錢與展示架 callback 自身改陣列，不等於完整交易的權限、成本或時間均已相容。Task 02 仍進行中，Draft PR 不合併，遊戲規則不擅自修正。
