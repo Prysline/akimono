@@ -75,8 +75,8 @@ is_deeply($second->{result}{useitem},[[1,2],[1,1]],
   'B-32 second source result is for second transaction (not stale results)');
 is_deeply($second->{wholesaleAtCallback},$second->{wholesale},
   'B-32 original callback sees wholesale after second market pass');
-is_deeply($second->{wholesale},[3,0,-1],
-  'B-32 original wholesale retains first changes and later C surplus');
+is_deeply($second->{wholesale},[3,0,-3],
+  'B-32 original wholesale C remains -3 after second source MakeAmount is capped at current item limit');
 ok($second->{originalPerlDraw}>=0 && $second->{originalPerlDraw}<1000,
   'B-32 second random value came from Perl rand, not JS equivalent');
 
