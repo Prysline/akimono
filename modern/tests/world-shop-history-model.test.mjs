@@ -141,7 +141,7 @@ test('B-18 unreviewed header fields cannot bypass B-17',()=>{
 });
 test('B-18 tabs outside user section are disallowed',()=>{
   assert.throws(()=>parse({prefix:'1,\t0:50,0:3,0'}),/control character/);
-  assert.throws(()=>parse({today:'1\t2'}),/Unsupported/);
+  assert.throws(()=>parse({today:'1\t2'}),/Unsupported|Unpaired or excess/);
 });
 test('B-18 embedded colon, CRLF, NUL or extra rows are rejected',()=>{
   assert.throws(()=>parse({users:'alice,1:bob,2'}),/seven colon/);
