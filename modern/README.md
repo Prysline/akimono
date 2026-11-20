@@ -403,3 +403,33 @@ npm run demo:lock
 ```
 
 **不可將此視為可部署的持久化引擎。** 尚未驗證實際跨進程鎖互斥性、檔案系統的斷電／fsync 行為、正式目錄的備份／崩潰復原、原版真實世界的所有檔案與 CGI HTTP 端到端。原版 `LockSub` 掃描舊鎖與寫入提交的競態風險仍存在；正式實作應另外設計可檢查擁有權、異常中止與復原的鎖保護機制，而非直接複製錯誤處理。
+
+## 第十三批：寫入前鎖持有權與備份成功證據（第十五階段）
+
+**來源限定：** 固定 Core [`plug/write.cgi::CheckLockStatus/DataWrite/DataFilesBackup`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi)、[`inc-func.cgi::GetPath`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi) 及目前標準街 `_config.cgi`。Core `GetPath` 在來源基底檔名後追加 `.cgi`；正式 `@BACKUP_FILES` 是 `log0`、`log1`、`log2`、`guildbal`、`play` 五種，`BACKUP_TIME=3600` 秒。此階段沒有新增或修改 Core 快照，仍維持 **12份 SHA 鎖定來源**。
+
+### 已確認的原版行為與不能照搬的風險
+
+1. 原版 `CheckLockStatus()` 直接 `return if $LOCKED eq '' || -e $LOCKED;`，所以空字串**不用持有任何鎖也通過**；非空但對應路徑已消失才記錄錯誤並 `OutError`。這只能稱為原版路徑檢查，**不是保證寫入者具有有效鎖持有權**。
+2. `DataWrite()` 先呼叫 `CheckLockStatus()`，再依備份 `play.cgi` 的 `stat(...)[9]` 與 `NOW_TIME-BACKUP_TIME` 判定是否需要呼叫 `DataFilesBackup()`。原版條件為**嚴格小於**：備份時間恰在門檻時不重備份，較舊才重備份；備份不存在時 `stat` 未定義，在原版數值上下文通常相當於0，當目前時間大於門檻時會觸發備份。它不會驗證備份內容是否仍正確。
+3. `DataFilesBackup()` 原版對五種檔案逐一 `open(IN, '<:encoding(UTF-8)', source)`、`open(OUT, '>:encoding(UTF-8)', backup)`、循環複製及 `close`，但**沒有檢查每一步的成功或失敗**。來源不存在時，`open(OUT, '>')` 甚至可能將先前有效備份截斷為空，函式卻照常返回；目的地不能開啟時也可能沒有備份產物、函式仍返回。這是原版缺陷／安全風險，不應移植為新版的有效備份判斷。
+4. 由於上述兩點，**原版 `DataWrite()` 可能在 `LOCKED=''` 的情形產生暫存世界檔**；執行備份步驟也**不代表五種備份真的存在且正確**。本次沒有做 fsync、真實資料庫交易、備份耐久性或任何正式目錄操作。
+
+### 新增的受限模型與測試
+
+- [`src/world-backup-preflight.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/world-backup-preflight.mjs)：`reviewWorldBackupAge` 與 `reviewWorldWritePreconditions`，透過**呼叫端顯式提供**的鎖擁有權證據、持有者鎖檔是否存在、巢狀層數、前次提交復原是否完成、時間與備份 mtime、五份備份的來源可讀／目的地可寫／內容已核對布林值，回傳不可變的預檢結果。未知或無鎖持有權、持有層數0、尚未復原、需要備份但五份任一未確認時均**拒絕下一步寫入**。未提供檔名、重複／缺漏來源、錯誤資料型別與未審查的未來 mtime 也會拒絕。
+- **刻意區分來源與新規則：** 在原版只看備份 mtime 是否過期的基礎上，本模型會對缺失 mtime 要求核對完整備份，對未來 mtime 採拒絕而非原版略過；對寫入權限要求**明確的擁有權證據**而非只靠 `LOCKED` 字串。回傳 `allowNextIsolatedStep=true` 也**只表示允許進入下一個隔離處理步驟**，不是宣告已有真實 OS 鎖、檔案系統安全／備份耐久性或允許正式寫入。
+- [`tests/world-backup-preflight.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/world-backup-preflight.test.mjs)：新增 **20項 Node.js 測試**，來源字句核對、備份時間嚴格門檻、五份備份精確清單與各種缺失／錯誤值，以及鎖檔消失、未持鎖／深度0、待恢復提交未完成的拒絕規則，確認輸入與回傳紀錄不可篡改。
+- [`tests/original-perl/backup-safety.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/backup-safety.t)：新增 **24項直接執行原版 Perl 的隔離斷言**，真的透過原版 `CheckLockStatus()`、`DataFilesBackup()`、`DataWrite()` 在自動清理的 `File::Temp` 根目錄讀寫測試資料。確認無鎖繞過、遺失鎖報錯、五檔備份、缺失來源**截斷備份但不報錯**、目的地無法開啟**未生成備份但不報錯**、缺失備份 mtime 會觸發備份，及備份 mtime 新近時略過。這些原版危險行為**只在測試資料中觀察**，不觸及正式遊戲存檔。
+- [`scripts/demo-world-backup.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-world-backup.mjs) 與 `npm run demo:backup`，展示各種假定的鎖與備份核對情境，完全**無 OS 檔案 I/O、無備份拷貝、無正式提交**；已加入 GitHub Actions 與 README。
+
+本階段相較前一階段增加 **20項 Node.js 測試**（總計 **218／218**）與 **24項原版 Perl 隔離斷言**（總計 **194／194**），仍由現有 DSL audit、全部示範與12份固定 Core Blob SHA 的 CI 驗證。完成前，不能將純預檢模型當成真正可部署的持久化引擎。
+
+在 `modern/` 目錄執行：
+
+```sh
+npm test
+npm run demo:backup
+```
+
+**待實作：** 使用實際 OS 鎖與持有者驗證、檔案 I/O 可靠錯誤處理與內容核對、fsync／原子替換、備份保留及斷電復原、全世界多檔資料與 CGI HTTP 端到端。任務 02 維持「進行中」；PR #1 維持 Draft，不合併、不修改 `main`。
