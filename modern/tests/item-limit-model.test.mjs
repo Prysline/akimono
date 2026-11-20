@@ -72,8 +72,8 @@ test('B-01 rejects dangerous Perl or JavaScript snippets without evaluation', ()
   }
 });
 
-test('B-01 rejects unsupported negative, fractional and blank limits', () => {
-  for (const raw of ['-1', '-1/3', '1/-1', '3.5', '1/2.5', '', '/100', '1/', ' 10/0 ', '0/0']) {
+test('B-01 rejects unsupported negative, fractional shop limits and blank limits', () => {
+  for (const raw of ['-1', '-1/3', '1/-1', '3.5', '1/.5', '', '/100', '1/', ' 10/0 ', '0/0']) {
     assert.throws(() => compileLiteralItemLimit(raw), /Unsupported/);
   }
 });
@@ -212,7 +212,7 @@ test('B-01 ordered compiler refuses zero/negative/noninteger/unsafe prices', () 
 });
 
 test('B-01 ordered compiler forbids dynamic Perl, malicious expressions and multiple slash segments', () => {
-  for(const raw of ['lv2+3','lv5/3/2','lv5/1.5','lv5;die','lvA','lv.5','lv1.','lv-1',
+  for(const raw of ['lv2+3','lv5/3/2','lv5/.5','lv5;die','lvA','lv.5','lv1.','lv-1',
     'lv2/3;system(1)','lvNaN','1/0;exit']) {
     assert.throws(()=>compileOrderedItemLimit({price:10000,priceLine:10,limitRaw:raw,limitLine:20}),
       /Unsupported/);
@@ -231,4 +231,70 @@ test('B-01 ordered compiler always returns immutable object', () => {
   const x=compileOrderedItemLimit({price:10000,priceLine:10,limitRaw:'lv5',limitLine:20});
   assert.ok(Object.isFrozen(x));
   assert.throws(()=>{x.limit=999;},TypeError);
+});
+
+
+test('B-01 source-backed fractional wholesale LIMIT A/B is not division', () => {
+  for (const [raw,limit,wslimit] of [
+    ['20/0.5',20,0.5],['1/0.5',1,0.5],['20/1.5',20,1.5],
+    ['20/0.0',20,0],['20/1.25',20,1.25],
+  ]) {
+    const result=compileLiteralItemLimit(raw);
+    assert.equal(result.limit,limit);
+    assert.equal(result.wslimit,wslimit);
+    assert.ok(Object.isFrozen(result));
+  }
+});
+
+test('B-01 the pinned GetNumber recognizes decimals and original LIMIT assigns wslimit directly', () => {
+  assert.match(originalCompiler,/if\(\$val =~ \/\^\(\[\\-\\d\\\.\]\+\)\(\|m\|h\|d\|k\|%\)\$\/i\)/);
+  assert.match(originalCompiler,/\$g_item->\{wslimit\}=GetNumber\(\$val\[1\]\) if \$val\[1\]ne''/);
+});
+
+test('B-01 fractional source audit exactly matches seven Standard Street item identities', () => {
+  const found=model.items.filter(x=>x.limitRaw && /^([0-9]+)\/([0-9]+\.[0-9]+)$/.test(x.limitRaw));
+  const expected=[
+    [20,'book-ken','20/0.5',20,0.5],
+    [21,'book-tate','20/0.5',20,0.5],
+    [22,'book-yoroi','20/0.5',20,0.5],
+    [23,'book-tue','20/0.5',20,0.5],
+    [25,'mino','20/1.5',20,1.5],
+    [64,'defence-manbiki','1/0.5',1,0.5],
+    [66,'book-sousyoku','20/0.5',20,0.5],
+  ];
+  assert.deepEqual(found.map(x=>x.id).sort((a,b)=>a-b),expected.map(x=>x[0]));
+  for (const [id,code,raw,limit,wslimit] of expected) {
+    const item=model.items.find(x=>x.id===id);
+    assert.equal(item.code,code);
+    assert.equal(item.limitRaw,raw);
+    const result=compileLiteralItemLimit(item.limitRaw);
+    assert.equal(result.limit,limit);
+    assert.equal(result.wslimit,wslimit);
+  }
+});
+
+test('B-01 fixed decimal wholesale source does not imply fractional item stock', () => {
+  for(const item of model.items.filter(x=>x.limitRaw && /\//.test(x.limitRaw) && /\.\d+$/.test(x.limitRaw))) {
+    const result=compileLiteralItemLimit(item.limitRaw);
+    assert.ok(Number.isSafeInteger(result.limit));
+    assert.ok(result.limit>=1);
+    assert.ok(result.wslimit%1!==0);
+  }
+});
+
+test('B-01 level LIMIT also honors source decimal wholesale /B with reviewed lv inputs', () => {
+  const result=compileOrderedItemLimit({price:10000,priceLine:10,limitRaw:'lv2.5/0.5',limitLine:11});
+  assert.equal(result.limit,50);
+  assert.equal(result.wslimit,0.5);
+  assert.equal(result.mode,'core-level-limit-subset');
+});
+
+test('B-01 untrusted decimal forms and unsafe fractional precision are rejected', () => {
+  for (const raw of ['1/1.','1/.5','1/-0.5','1/+0.5','1/1e2','1/NaN',
+    '1/0.5/2','1/Infinity','1/9007199254740991.5','1/9007199254740992.5']) {
+    assert.throws(()=>compileLiteralItemLimit(raw),/Unsupported|unsafe/);
+  }
+  assert.throws(()=>compileOrderedItemLimit({
+    price:10000,priceLine:10,limitRaw:'lv2.5/9007199254740991.5',limitLine:20,
+  }),/unsafe/);
 });
