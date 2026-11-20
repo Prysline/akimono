@@ -16,7 +16,7 @@ our ($LOCKED,$LOCKED_LEVEL,$LOCK_FILE,$DATA_DIR,$NOW_TIME,
 my $root=tempdir(CLEANUP=>1);
 $DATA_DIR=File::Spec->catdir($root,'isolated-data');
 mkdir $DATA_DIR or die $!;
-$LOCK_FILE='lock';
+$LOCK_FILE='lockfile';
 $NOW_TIME=1000;
 $AUTO_UNLOCK_TIME=60;
 $LOG_ERROR_FILE='test.log';
@@ -65,13 +65,13 @@ sub clear_dir {
 require './lock.cgi';
 
 clear_dir();
-put('lock','anchor');
+put('lockfile','anchor');
 Lock();
 is($LOCKED_LEVEL,1,'B-14-A: original Lock takes first lock at level one');
-like($LOCKED,qr{\Q$DATA_DIR\E/lock1000_\d+_192\.0\.2\.25\z},
+like($LOCKED,qr{\Q$DATA_DIR\E/lockfile1000_\d+_192\.0\.2\.25\z},
   'B-14-B: lock filename includes now, pid, remote address');
 ok(-e $LOCKED,'B-14-C: original lock file is renamed to owned path');
-ok(!-e file('lock'),'B-14-D: base anchor disappears while lock is held');
+ok(!-e file('lockfile'),'B-14-D: base anchor disappears while lock is held');
 is_deeply(\@recoveries,[1],'B-14-E: first lock invokes DataCommitOrAbort(1)');
 my $owned=$LOCKED;
 Lock();
@@ -83,31 +83,31 @@ is($LOCKED_LEVEL,1,'B-14-I: first nested UnLock only decrements depth');
 ok(-e $owned,'B-14-J: nested unlock keeps owned file');
 UnLock();
 is($LOCKED,'','B-14-K: outermost UnLock clears held lock path after rename');
-ok(-e file('lock'),'B-14-L: outermost UnLock restores base lock anchor');
+ok(-e file('lockfile'),'B-14-L: outermost UnLock restores base lock anchor');
 ok(!-e $owned,'B-14-M: owned lock suffix is no longer present');
 UnLock();
-ok(-e file('lock'),'B-14-N: unlocking without ownership is a no-op');
+ok(-e file('lockfile'),'B-14-N: unlocking without ownership is a no-op');
 
 clear_dir();
 # All 5 base-lock attempts fail (anchor missing), then the original scans
 # a stale lock timestamp and attempts to rename it to this process's path.
-put('lock800_555_198.51.100.2','stale');
+put('lockfile800_555_198.51.100.2','stale');
 Lock();
 ok(-e $LOCKED,'B-14-O: expired named lock can be reclaimed in isolation');
 is_deeply(\@recoveries,[1],'B-14-P: reclaiming stale lock runs recovery');
-ok(!-e file('lock800_555_198.51.100.2'),
+ok(!-e file('lockfile800_555_198.51.100.2'),
   'B-14-Q: reclaimed stale lock no longer exists at old path');
 UnLock();
-ok(-e file('lock'),'B-14-R: reclaimed lock releases back to anchor');
+ok(-e file('lockfile'),'B-14-R: reclaimed lock releases back to anchor');
 
 clear_dir();
-put('lock999_888_198.51.100.2','recent');
+put('lockfile999_888_198.51.100.2','recent');
 my $busy=eval { Lock(); 1 };
 ok(!$busy && $@ =~ /Core OutError: busy/,
   'B-14-S: recent foreign lock refuses acquisition');
 is($LOCKED,'','B-14-T: failed busy Lock clears tentative lock identity');
 is_deeply(\@recoveries,[],'B-14-U: busy path never performs commit recovery');
-ok(-e file('lock999_888_198.51.100.2'),
+ok(-e file('lockfile999_888_198.51.100.2'),
   'B-14-V: busy refuses to steal recent lock');
 
 clear_dir();
@@ -151,7 +151,7 @@ like(join('|',@errors),qr/write mode open error/,
   'B-14-AF: exhausted OpenAndCheck logs write failure');
 
 clear_dir();
-put('lock','owned');
+put('lockfile','owned');
 Lock();
 my $failed_path=$LOCKED;
 unlink($failed_path) or die $!;
@@ -162,7 +162,7 @@ is($LOCKED_LEVEL,0,
   'B-14-AH: original failed UnLock has already decremented depth to zero');
 like(join('|',@errors),qr/unlock error/,
   'B-14-AI: original UnLock logs error without raising OutError');
-ok(!-e file('lock'),
+ok(!-e file('lockfile'),
   'B-14-AJ: failed unlock does not recreate missing anchor');
 
 done_testing();
