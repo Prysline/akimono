@@ -26,11 +26,7 @@ $ENV{REMOTE_ADDR}='192.0.2.25';
 my @errors;
 my @recoveries;
 
-sub l {
-  my ($message,@rest)=@_;
-  $message =~ s/%(\d+)/$rest[$1-1] //ge;
-  return $message;
-}
+sub l { return $_[0]; }
 sub WriteErrorLog { push @errors, shift; }
 sub OutError { die "Core OutError: $_[0]"; }
 sub DataCommitOrAbort { push @recoveries, $_[0]; }
