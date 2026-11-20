@@ -51,10 +51,10 @@ is_deeply($one->{result}{additem},[[12,1],[9,1],[14,1]],
   'B-33 original source added result rows preserve order');
 ok(!defined $one->{result}{function_return},
   'B-33 no callback produces no original function_return');
-ok(!defined $one->{result}{usemsg},
-  'B-33 no source material message must not invent one');
-ok(!defined $one->{result}{addmsg},
-  'B-33 no source output message must not invent one');
+is_deeply($one->{result}{usemsg},[undef],
+  'B-33 original UseItem records undefined source message for each actual consumed row');
+is_deeply($one->{result}{addmsg},[undef,undef,undef],
+  'B-33 original UseItem appends three undefined message slots for three created maps');
 is($one->{itemLimits}[78][0],10,'B-33 compiler original gift warehouse cap ten');
 is($one->{itemLimits}[78][1],0,'B-33 original gift wholesale cap zero');
 for my $id(9,12,14){
