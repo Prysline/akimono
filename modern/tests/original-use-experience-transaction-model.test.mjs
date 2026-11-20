@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {projectOriginalUseWithExperience} from '../src/original-use-experience-transaction-model.mjs';
@@ -297,4 +298,39 @@ test('B-24 is callback-free numeric projection, no authorized persistence or CGI
   assert.match(r.scope,/callback-free/);
   assert.match(r.scope,/no callbacks, DSL, CGI or durable world execution/);
   assert.equal('authorizeTrade' in r,false);
+});
+
+
+test('B-24 live cross-language: unmodified Perl fragments and Node numeric outcomes agree',t=>{
+  const dir=path.join(root,'modern/tests/original-perl');
+  let input;
+  try{
+    input=execFileSync('perl',[path.join(dir,'original-use-experience-probe.pl')],{
+      cwd:dir,encoding:'utf8',timeout:10000,maxBuffer:1024*1024,
+    });
+  }catch(error){
+    if(error?.code==='ENOENT'){t.skip('Perl runtime not installed');return;}
+    throw error;
+  }
+  const probes=JSON.parse(input);
+  assert.equal(probes.length,9,'probe fixture count pinned');
+  for(const p of probes){
+    const r=run(p.input);
+    const expected=p.observed;
+    assert.equal(r.transaction.count,expected.count,p.case+' count');
+    assert.equal(r.transaction.money,expected.money,p.case+' money');
+    assert.equal(r.transaction.paytoday,expected.paytoday,p.case+' paytoday');
+    assert.equal(r.transaction.storedTimeSeconds,expected.time,p.case+' time');
+    assert.deepEqual(r.transaction.shops[0],expected.stock,p.case+' stock');
+    assert.deepEqual(r.transaction.wholesale,expected.wholesale,p.case+' wholesale');
+    assert.deepEqual(r.exp,expected.experience,p.case+' experience');
+    assert.equal(r.resultExpold,expected.expold,p.case+' expold');
+    assert.deepEqual(r.transaction.multiItem?.added.map(x=>[x.itemId,x.amount])??[],
+      expected.added,p.case+' ordered creation logs');
+    assert.deepEqual(r.transaction.multiItem?.consumed.map(x=>[x.itemId,x.amount])??[],
+      expected.consumed,p.case+' ordered consumption logs');
+    if(p.case==='perl-hash-tie')
+      assert.deepEqual(r.sourceSortedKeys,p.input.observedPerlSortedKeys,
+        'no JS-supplied tie break: observed original Perl order');
+  }
 });
