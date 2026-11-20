@@ -31,6 +31,8 @@
 | CORE-13 | [`plug/use.cgi` 的 `GetUseItemListSub`、`GetUseItem`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L5-L62) | 原版取得使用項目時，`CheckUseItem` 回傳2只執行 `dispok=1`，回傳1只執行 `useok=1`；**並不把上一次留下的另一旗標清零，回傳0也不清理兩個旗標**。例如先前 `useok=1`，之後前置函式回傳2／0，原版仍可能留著 `useok=1`。 | 若 Node 移植擅自清掉旗標，會改變原版欄位／顯示行為；反之，舊旗標不可被當成已重新授權的交易結果。 | B-25 原樣 Perl `CheckUseItem`／`GetUseItem` 測試及 Node 子模型保留欄位；只記錄，不自動修復 |
 | CORE-14 | [`plug/use.cgi::CheckUseItem`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L21-L47) | 若 `functionbefore` 非空，原版直接呼叫 `&{"item::".$funcbefore}($USE)`，未先檢查該函式是否存在；在固定 Perl 隔離測試中，將其設為不存在的函式名稱，會發生 `Undefined subroutine` 錯誤，而不是當作允許或拒絕。 | 不可為了讓測試通過而把缺失函式隱式視為成功／拒絕；錯誤路徑需與原版區分，同時不得在真實遊戲環境任意執行未知函式。 | B-25 來源原樣 Perl 隔離錯誤測試、Node 合成資料對缺失函式明確拒絕建模；模型拒絕屬安全邊界，並非聲稱原版成功運行 |
 
+| CORE-15 | [原版標準街 `custom/inc-item-data.cgi` 的 `@@FUNCITEM::popup`](https://github.com/Prysline/akimono/blob/7301b0c2b1e27226d1770e153fa3c68cfeae6d48/custom/inc-item-data.cgi#L3183-L3200) | `popup` 先按 `int(param1*(2-rank/5000))` 求人氣增加量、再僅對大於10000的結果設上限，最後仍用**未扣除上限截斷的增加量**生成「人氣提升了 int(up/100)%」文字。隔離 Perl 源碼實測：`rank=9999,param1=300000` 時浮點數截斷取得 **up=59** 而不是理想化60、最後人氣10000但訊息為0%；`rank=12000,param1=1000` 時 **up=-399**，最終人氣10000、訊息卻是「人氣提升了-3%」。 | 不能自行變換原式以取得數學上整數結果、對負人氣或百分比另行加規則，或讓顯示訊息改按 cap 後的實際變化計算。 | B-26 原樣 Perl `sub popup` 以記錄型 `WriteLog` 替身隔離執行，Node 按原式及輸出逐案比對；只記錄不修復 |
+
 ## 不屬於改規則的技術限制
 
 - 浮點運算的語意以來源 Perl 表達式為準；JS `Math.sin`、`Math.sqrt`、原版 `rand` 與 JS 隨機種子的**位元級一致性尚未獲得全面證明**。B-21 先驗證相同兩次隨機輸入對公式的結果。
