@@ -31,7 +31,7 @@ CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **9 個 Perl 測試檔，218/218 個斷言**：
+目前已由 GitHub Actions 成功執行 **10 個 Perl 測試檔，252/252 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -44,9 +44,10 @@ prove -v *.t
 | `lock-safety.t` | 原版 `Lock`／`UnLock`／`LockSub`／`RenameAndCheck`／`OpenAndCheck` 的隔離檔案測試 | 36 |
 | `backup-safety.t` | 原版 `CheckLockStatus`／`DataFilesBackup`／`DataWrite` 鎖與備份錯誤路徑（隔離暫存目錄） | 24 |
 | `world-read-safety.t` | 擷取**未修改**的固定 Core `DataRead` 函式，在隔離世界檔驗證缺失、損壞與缺少 `//` 的有界中止 | 24 |
-| **合計** | | **218** |
+| `world-one-shop.t` | 使用固定 `@DTindexnamelist` 與原版 `DataRead` 函式本體，驗證空城鎮、一／兩店、重複 ID、缺少商店第二行的原版行為 | 34 |
+| **合計** | | **252** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十六階段累計 **218／218 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十七階段累計 **252／252 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -146,3 +147,16 @@ Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` �
 為避免把原版的不安全容忍度視為現代化讀取契約，新增純 Node `world-read-preflight.mjs`，只檢查**五行、LF、無動態事件／城鎮／商店、商品庫存最多79格**的保守子集，且要求輸入文字位元組數與外部明示的檔案大小／讀取量一致。缺少分隔符、CRLF、資料欄位／數字損壞、事件 require、未知商店段、未讀完、超過1MiB 合成測試上限等情況拒絕。它不進行任何真實開檔、檔案鎖、原版 Perl 執行、資料修改或持久化提交。即使通過也只代表**可以進行隔離範圍內的檢查**，不是准許讀寫正式世界資料、完整相容原版世界檔或保證任何交易安全。
 
 此次 Perl 從194增至 **218／218項**；Node 新增22項，累計 **240／240項**。原版 Core 12份 blob SHA 驗證不變。
+
+## 第十七階段：原版世界中的商店兩行結構與安全單店子集
+
+新增 `world-one-shop.t` **34項原版 Perl 隔離斷言**。延續前一階段的操作方式，從 SHA 固定、**未修改**的 `inc-func.cgi` 擷取 `sub DataRead` 原始函式本體；另從相同固定快照精確擷取 `@DTindexnamelist=qw(...)` 的**32個欄位順序**，不靠 Node 自行推定。以 `File::Temp` 合成世界文字、最小 `AutoVar::TIESCALAR` 與 `GetDTPoint` 等外部替身執行原版 DataRead，本體仍未修改。不啟動原版 `inc-func.cgi` 頂層初始化、事件 require、任何真正商店／世界資料或 CGI HTTP。
+
+直接核對：
+- 原版世界先有時間／世界 metadata／批發庫存／事件行，其後可有一行交給 `AutoVar` 的城鎮原文（若下一行已為 `//`，可沒有城鎮行），接著以精確 `//` 表示商店開始。
+- 每間商店使用**兩行**：32欄 `@DTindexnamelist` 順序的 CSV 表頭（第1欄 `id`、第3欄 `name`、第5欄 `pass`、第30欄 `foundation`），之後一行經 `split(/:/,$DATA[$idx],7)` 分段；前兩段是 `showcase`、`price`，第3段交給 `AutoVar` 商品庫存，第4～6段由雜項散列表接收，第7段可能觸發另一個 `AutoVar` 用戶資料。
+- 原版對一間或兩間來源結構均可解析；但**重複商店 ID 會覆寫 `id2idx` 映射**，**只剩表頭而缺少第二行時，來源仍可能增加商店數**。此兩項是直接執行原版所確認的容錯／風險，並非應移植的新規則。非空城鎮原文會轉交外部 AutoVar，本測試只觀察它的傳入值，沒有執行真正 AutoVar 的解析語意。
+
+Node 新增 `src/world-one-shop-parser.mjs` 採更嚴格的**獨立唯讀單店**模型，對動態事件／非空城鎮／第二間商店、缺失的商店第二行、32欄之外或尚未審查的欄位、非整數展示／價格／庫存、商品 user 與 yesterday／today／exp 區段均拒絕。不輸出第5欄 `pass` 原文。**第十六階段五行純世界預檢未放寬**，不能把單店示範當作真實商店、認證、交易或存檔支援。
+
+本階段 Perl 從218增加34至 **252／252**；Node 從240增加25至 **265／265**。原版 Core 快照仍是12份，且既有 CGI／正式世界資料均未修改。
