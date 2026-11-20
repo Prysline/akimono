@@ -37,6 +37,7 @@ my $third=OriginalGiftMapUseHarness::run(
 );
 push @rows,{case=>'three-sequential',steps=>[$first,$second,$third]};
 my $capped=[(0)x78,5];
+$capped->[62]=1;
 $capped->[11]=3;$capped->[8]=3;$capped->[13]=3;
 push @rows,{
   case=>'map-storage-full',
