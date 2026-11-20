@@ -856,3 +856,21 @@ prove -v original-full-use-lostbook.t
 ```
 
 原版兩份 DSL、18份固定 Core Blob、`main`、`migration/standard-street-s1` 均未改動；只更新獨立測試分支及 Draft PR #1，不合併。
+
+## 第三十一階段：Game Core／Street Module／World State 的第一個可執行契約
+
+已從原版規則基準跨到**正式 Notion 任務04的初版實作**，但**任務04尚未完成驗收**：新增 [`game-core-contract.mjs`](src/game-core-contract.mjs) 的純 Game Core 命令 `applyGameCommand`、不可變 `WorldState`、JSON 純文字快照及只在記憶體中 `compareAndSwap` 的 `createMemoryWorldAdapter`／`executeMemoryCommand`；加入 [`standard-street-module.mjs`](src/standard-street-module.mjs) 作來源已審核的標準街獨立模組。
+
+**目前真正可執行的兩項標準街命令**：`open-shop` 使用固定 Core `new.cgi` 與兩份原始 DSL 已審核的初始商店模型；`edit-showcase` 使用固定 Core `sc-s.cgi` 的展示架模型。都能在同一個記憶體世界按 `revision` 依序執行、產生不修改舊快照的結果。來源已知的 DSL 商品79筆、USE動作116筆、事件25筆只作**原文欄位的非執行型目錄**（含來源檔案、行號、原始值）；`item-use`、市場銷售、期間決算、事件、未知回呼與其他街道，**一律不被暗中視為已支援**。
+
+[**第一版契約、技術取捨與驗收邊界**](docs/game-core-contract-v1.md) 明確說明本機／伺服器可共用純規則但仍需要不同的實際儲存、權限與資料同步層；目前 `market` 和 `events` 都是 **null（未建模）**，並非原版數值0；`encodeMemorySnapshot`／`decodeMemorySnapshot` 是純資料序列化，**不是真正存讀檔**。這次 [**41項 Node 測試**](tests/game-core-contract.test.mjs) 涵蓋真原版來源建店、展示架、不可變世界、過期版本、未知命令、相同版本競爭提案、決定性重播、79／116／25來源原文目錄；既有原版 Perl 隔離測試不變。
+
+```sh
+cd modern
+npm test
+npm run demo:game-core
+```
+
+此階段示範和全部原版來源稽核都納入既有 GitHub Actions。**正式 Notion 狀態為 01已完成／02及04進行中／03與05～12待辦**；不可將純記憶體第一版 API 算成可玩的標準街、具備權限的多人伺服器或實際磁碟存檔。
+
+接續優先：完成任務04剩下的商品命令／事件效果掛鉤與世界模型，再逐步讓已核對的商品使用、市場銷售與週期結算加入同一條可重現經營流程，不能用未經原版審閱的自創數值填空。正式 `main`／`migration/standard-street-s1`、兩份原始 DSL、所有18份固定 Core 原文及 CORE-01～CORE-20 紀錄都不改動。
