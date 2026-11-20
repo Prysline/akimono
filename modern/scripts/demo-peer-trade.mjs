@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadStandardStreetModel, createStandardStreetShop } from '../src/standard-street-model.mjs';
-import { settleUnguildedPeerPurchase } from '../src/peer-trade-model.mjs';
+import { settleUnguildedPeerPurchase, listReviewedPeerItems } from '../src/peer-trade-model.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const [items, rebels] = await Promise.all([
@@ -41,6 +41,21 @@ const soldOut = settleUnguildedPeerPurchase(model, buyer, soldOutSeller, {
 });
 
 
+// Separate fixtures: limits are explicit examples, NOT evaluated from DSL.
+const reviewedItems = listReviewedPeerItems(model);
+const herbSeller = { ...seller, item: [...seller.item], showcase: [1], price: [50] };
+herbSeller.item[0] = 10;
+const herbTrade = settleUnguildedPeerPurchase(model, buyer, herbSeller, {
+  now, shelf: 0, itemId: 1, offeredPrice: 50,
+  requestedCount: 3, itemLimit: 4000, baseTaxRate: 10, sendItemTime: 1200,
+});
+const swordSeller = { ...seller, item: [...seller.item], showcase: [40], price: [1200] };
+swordSeller.item[39] = 8;
+const swordTrade = settleUnguildedPeerPurchase(model, buyer, swordSeller, {
+  now, shelf: 0, itemId: 40, offeredPrice: 1200,
+  requestedCount: 2, itemLimit: 600, baseTaxRate: 10, sendItemTime: 1200,
+});
+
 console.log(JSON.stringify({
   mode: 'isolated in-memory peer transfer: no CGI, no persistence, no callbacks',
   before: {
@@ -55,6 +70,25 @@ console.log(JSON.stringify({
     sellerTaxToday: result.seller.taxtoday,
   },
   receipt: result.receipt,
+  reviewedPeerItemAllowlist: reviewedItems,
+  additionalReviewedPeerTrades: [
+    {
+      itemId: 1, name: '藥草', requestedCount: 3,
+      buyerQuantityAfter: herbTrade.buyer.item[0],
+      sellerQuantityAfter: herbTrade.seller.item[0],
+      sellerTaxToday: herbTrade.seller.taxtoday,
+      sellerItemToday: herbTrade.seller.itemtoday[1],
+      compiledItemLimit: 'explicit demonstration fixture 4000; not DSL evaluation',
+    },
+    {
+      itemId: 40, name: '木刀', requestedCount: 2,
+      buyerQuantityAfter: swordTrade.buyer.item[39],
+      sellerQuantityAfter: swordTrade.seller.item[39],
+      sellerTaxToday: swordTrade.seller.taxtoday,
+      sellerItemToday: swordTrade.seller.itemtoday[40],
+      compiledItemLimit: 'explicit demonstration fixture 600; not DSL evaluation',
+    },
+  ],
   soldOutWithInjectedRng: {
     note: 'separate scenario; seller rank 500, fixed random draw 0.05',
     sellerRankBefore: soldOutSeller.rank,
