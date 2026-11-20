@@ -343,3 +343,13 @@ prove -v *.t
 ```
 
 **沒有**執行實際玩家認證、DSL 編譯器、全原版 CGI、正式 `RequireFile`、真實世界／日誌／鎖／提交，並**不表示**目前已可實際遊玩。
+
+## 第三十二階段：原版商品使用兩次連鎖與 World State 快照
+
+B-30 的 [`OriginalFullUseLostbookHarness.pm`](OriginalFullUseLostbookHarness.pm) 加入**人工測資覆寫**（`stocks`、`otherShopStock`、`wholesale`、`money`、`paytoday`、`storedTimeSeconds`、`exp` 與 `nowSeconds`），但**沒有**改固定 `use.cgi/calc.cgi/whole.cgi/inc-item.cgi` 的任何原版函式本文；每筆依然直接執行原版完整 `UseItem` 與標準街已審閱 `lostbook`。新增：
+
+- [`original-world-use-sequence-probe.pl`](original-world-use-sequence-probe.pl)：三組兩筆交易，**六次真正原版 Perl**，將上一筆庫存／金錢／時間／技能／批發直接回填下一次受控來源函式，再輸出原版結果 JSON。
+- [`original-world-use-sequence.t`](original-world-use-sequence.t)：**40項 Perl 直接來源斷言**。觀察人工商店初始金錢70、時間950、熟練度200、商品 `[8,4,3]`；第一次交易 `money=50,time=968,exp=230,stock=[9,6,5]`；第二次 `money=30,time=986,exp=260,stock=[9,6,5]`。兩次 `CheckWholeStore` **各只一次且都在 `lostbook` 之前**，符合來源。第3格批發原始來源在兩次合成交易後仍是 `-3`，不可誤推測成 `-1`。
+- [`../reviewed-use-fixture-street.test.mjs`](../reviewed-use-fixture-street.test.mjs)：**23項 Node 檢查**，包括原版 Perl 六次輸出與純記憶體 `WorldState` 每步主要欄位比較；`source-fixture-use` 是**獨立人工街道**，不能當成已移植真實標準街 ITEM #1～3。
+
+完整來源限制與狀態結構見 [`../../docs/reviewed-world-use-sequence.md`](../../docs/reviewed-world-use-sequence.md)。沒有真實 CGI、`RequireFile`、DSL 編譯、持久化、玩家權限、所有隨機場景或正式標準街使用功能；原版18份固定 Core source blob SHA 未改，所有原有 Perl 斷言繼續執行。
