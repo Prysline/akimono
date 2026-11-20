@@ -813,3 +813,24 @@ prove -v original-virtual-item-require.t
 ```
 
 本階段**不是**真的執行 `_config.cgi`、`inc-item.cgi`、`item-s.cgi`，也沒有進入正式 `UseItem`、玩家認證、真實 `WriteLog`、世界資料讀寫、鎖或提交。原先14份固定 Core Blob 未改動，新的四份亦有獨立 SHA；任務02仍進行中、Draft PR 保留未合併。
+
+## 第二十九階段：原版 Core 商品消耗／取得助手與 `lostbook` 真正記憶體連鎖
+
+接續 B-28 的商品載入來源核對，本階段直接從**已用 Git Blob SHA 固定、未修改**的 `modern/tests/original-perl/core-inc-item.cgi` 擷取 **`item::UseItem`／`UseItemSub`／`AddItem`／`AddItemSub` 四段完整原始 Perl 函式本文**，再與原樣標準街 `custom/inc-item-data.cgi` 的 `sub lostbook` 接合。**真正執行的只有這五段經審閱的原版函式本文與記憶體測試資料**；不 require 整個 CGI、不編譯整個 DSL、不寫真實商品或日誌、沒有世界鎖或儲存。
+
+- [完整 B-29 原版來源、邊界與案例](docs/original-item-helpers.md)：`UseItemSub` 依 `stock<count` 調整實際使用量並減庫存；`AddItemSub` 依 `limit<stock+count` 把實際新增量改為 `limit-stock` 再加庫存。注意庫存陣列採 `DT.item[itemno-1]`，上限表卻採 `main::ITEM[itemno]`，不可擅自統一索引。兩個最外層 `UseItem`／`AddItem` 都是**先呼叫 Sub、再向 `USE.result.useitem/usemsg` 或 `additem/addmsg` 追加實際數量與原訊息、最後回傳0**，不會自動清除原先 result 記錄。
+- [Node 原版純數值模型](src/original-item-helper-model.mjs)：`projectOriginalItemHelper` 以具名四種原始 helper 算式和明確合成安全整數輸入計算；`projectOriginalLostbookWithCoreItemHelper` **將 B-26 的 `lostbook` 隨機分支接到真正 Core `UseItem→UseItemSub` 的數量計算與結果陣列**，不再只記錄「可能呼叫 UseItem」的意圖。它只對合成庫存操作，不表示真正外層使用交易全程完成。
+- [Perl 來源安全隔離器](tests/original-perl/OriginalItemHelperHarness.pm) **從固定 Core／標準街原始文字擷取五段函式並原文執行**，以合成 `$item::DT`、`$item::USE`、`@item::ITEM`、`@main::ITEM` 保持數據隔離，不讀寫真正世界資料。
+- [82項真正 Perl 隔離斷言](tests/original-perl/original-item-helpers.t)、[27組原版 Perl JSON 測資](tests/original-perl/original-item-helper-probe.pl) 與 [34項 Node.js 來源／跨語言比較測試](tests/original-item-helper-model.test.mjs) 已加入既有完整 `prove -v *.t`／`npm test` CI。
+- [獨立原版異常 CORE-18／CORE-19](docs/original-behavior-issues.md)：在**特定人工不一致或負數測資**下，原版 `UseItemSub` 可把負請求當成扣除負數而增加庫存；`AddItemSub` 在既有超上限時可把 `count=0` 改成負的實際取得量，並減少庫存。**只記錄原本算式，不額外補負數 clamp，也不宣稱正常 CGI 前置資格一定會允許此類測資。**
+- [合成示範](scripts/demo-original-item-helper.mjs)：`npm run demo:item-helpers` 已加入 CI，包括 `lostbook` 觸發後庫存零仍記 `[itemno,0]` 和原訊息。
+
+```sh
+cd modern
+npm test
+npm run demo:item-helpers
+cd tests/original-perl
+prove -v original-item-helpers.t
+```
+
+**未涵蓋：** 完整 `plug/use.cgi::UseItem` 的材料消耗／時間金錢／市場檢查／熟練度前後串接、正式 `RequireFile`、原版商品整體 DSL 編譯或未知回呼、實際角色／世界資料、權限驗證、持久化與 CGI HTTP。所有 Node 整數限制只是明確合成測資範圍，不是增加的原版遊戲規則。Task 02 仍進行中，Draft PR #1 不合併、`main` 不改。
