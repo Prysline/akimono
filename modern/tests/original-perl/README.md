@@ -33,7 +33,7 @@ CI 會以 `git hash-object` 核對以上十四個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **14 個 Perl 測試檔，391/391 個斷言**：
+目前已由 GitHub Actions 成功執行 **15 個 Perl 測試檔，416/416 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -51,9 +51,10 @@ prove -v *.t
 | `period-experience.t` | **擷取固定原版**每日歷史交接／熟練度自然衰退與 `UseItem` 熟練度尾段，在無副作用 Perl 替身中直接執行 | 33 |
 | `period-stock-use.t` | **擷取固定原版**每日庫存修正／`UseItem` 使用次數檢查／`CheckUseItem` 材料檢查，並原樣執行 `MakeAmount` | 36 |
 | `original-use-outcomes.t` | 從固定 `use.cgi` 擷取原始 `MakeAmount` 及 `UseItem` 生產溢出片段，直接呼叫未修改的 `whole.cgi::CheckWholeStore`，比對大額亂數、負新增量、批發庫存上限 | 27 |
-| **合計** | | **391** |
+| `original-multi-item-use.t` | 原版 `UseItem` 多材料消耗 → 多產出 → 一次 `CheckWholeStore` 的原樣片段，驗證多店、多商品、重複產出、先後亂數與零新增紀錄 | 25 |
+| **合計** | | **416** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第二十一階段累計 **391／391 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第二十二階段累計 **416／416 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -225,3 +226,15 @@ Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保�
 - `inc-period.cgi` 中負庫存的 `int()` 語意由原版既有測試直接證明，B-21 的 Node 相容模型現在**保留帶符號庫存**。原版源檔沒有修改。
 
 本階段新增 **27項 Perl**（總計 **391／391**）與 **19項 Node**（總計 **380／380**），沿用14份 Core 原版 SHA 核對。沒有執行真實 CGI、事件、店家物品回呼或正式存檔。
+
+## 第二十二階段：多商品／多商店的原版來源順序
+
+新增 `original-multi-item-use.t` **25項隔離 Perl 斷言**。只從 **Git Blob SHA 固定、完全未修改** 的 `use.cgi` 精確擷取 `#アイテム消費` 至 `#アイテム別関数存在チェック` 之間的**原版材料消耗／產出／全市場檢查片段**，搭配未修改的 `MakeAmount` 函式，並直接執行固定 `whole.cgi` 中的 `CheckWholeStore`。
+
+**原版實際輸出（雙店、三種商品、重複產出）：** 商店初值 `[[8,4,3],[3,4,2]]`、批發市場 `[4,0,-5]`，依序消耗商品1的4件、商品2機率0而未消耗，再以使用次數2依序產出商品1的10件、商品2的8件、商品1的4件、無 `code` 商品3的4件。**全部材料先消耗、再依序產出，最後只呼叫一次 `CheckWholeStore`**。最終商店 `[[10,6,5],[3,4,2]]`；退回溢量後市場暫值 `[12,6,-3]`，總量修正後 `[3,0,-3]`。**原版 `additem` 實際紀錄為 `[[1,6],[2,2],[1,0],[3,2]]`**，顯示商品1第二次產出雖被上限吃掉、仍記錄新增0件。商品3沒有 `code`，負市場庫存保持 `-3`。
+
+另以原版 Perl 固定 `srand` 證實：有機率的**材料消耗先抽完**，才開始有機率的產出；第19個使用次數不是閾值，**抽樣單位數**小於20才使用逐個抽樣，達20單位則使用原版大額兩亂數公式；不可以把每筆生產計算獨立重置 RNG。未產出商品時，原版仍會呼叫市場上限檢查；隔離來源片段也示範材料消耗後不會在本片段中重跑完整 `CheckUseItem` 以清除負值，**這不等於原版完整登入／使用資格一定能允許此狀態**。
+
+Node `original-multi-item-use-model.mjs` 只處理**合成數值**，接受多商店、多商品、依序的材料與產出、明確提供的同一亂數序列，最後一次計算各個有 `code` 商品的全球市場上限。原版的重複記錄、零 `additem`、負市場與超額退貨均不另加修正。未執行完整 `UseItem` 交易、回呼、帳號、實際存檔、RNG 種子相容或 CGI HTTP；JavaScript 參數必須是有限可安全表示的數值，屬模型表示界線而非原版規則。
+
+本階段新增 **25項 Perl 斷言、22項 Node 測試**，總計 **416／416 Perl 與402／402 Node**。來源仍為同一14份未修改 Core Git Blob SHA；原版異常另記於 `modern/docs/original-behavior-issues.md`，不擅自修正遊戲規則。
