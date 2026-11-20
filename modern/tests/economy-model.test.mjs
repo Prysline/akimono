@@ -8,6 +8,9 @@ import {
   projectWholeStore, checkWholeStockCaps, extractWholeStock,
   quoteUnguildedPurchase, segmentAccountingPeriods, rollShopLedgerSubset,
 } from '../src/economy-model.mjs';
+import {
+  listReviewedFractionalWholesaleItems, compiledFractionalWholesaleById,
+} from '../src/fractional-wholesale-model.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const [itemDsl, rebelDsl, cfg] = await Promise.all([
@@ -270,4 +273,91 @@ test('B-11 unknown compiled stock cap and unsupported guild side effects are ref
   assert.throws(() => roll(shop, { itemLimitsById: {} }), /compiled stock limit/);
   shop.guild = 'guild-1';
   assert.throws(() => roll(shop), /Guild/);
+});
+
+
+test('B-04 seven decimal wholesale inputs are exactly source-guarded, not trade-allowed', () => {
+  const list=listReviewedFractionalWholesaleItems(model);
+  assert.deepEqual(list.map(x=>[x.id,x.code,x.limit,x.wslimit]),[
+    [20,'book-ken',20,0.5],
+    [21,'book-tate',20,0.5],
+    [22,'book-yoroi',20,0.5],
+    [23,'book-tue',20,0.5],
+    [25,'mino',20,1.5],
+    [64,'defence-manbiki',1,0.5],
+    [66,'book-sousyoku',20,0.5],
+  ]);
+  assert.ok(Object.isFrozen(list));
+  for(const item of list) {
+    assert.ok(Object.isFrozen(item));
+    assert.equal(item.source,'custom/inc-item-data.cgi');
+    assert.match(item.limitRaw,/^[0-9]+\/[0-9]+\.[0-9]+$/);
+  }
+  assert.match(model.items.find(x=>x.id===64).flagRaw,/noshowcase/);
+});
+
+test('B-04 source fixtures retain floating wslimit without guessing wholesale price/sort', () => {
+  const fixtures=compiledFractionalWholesaleById(model);
+  assert.equal(Object.getPrototypeOf(fixtures),null);
+  assert.deepEqual(Object.keys(fixtures).map(Number).sort((a,b)=>a-b),[20,21,22,23,25,64,66]);
+  assert.equal(fixtures[20].wslimit,0.5);
+  assert.equal(fixtures[25].wslimit,1.5);
+  assert.equal(fixtures[64].wslimit,0.5);
+  assert.ok(Object.isFrozen(fixtures));
+  assert.ok(Object.isFrozen(fixtures[20]));
+  assert.deepEqual(Object.keys(fixtures[20]),['wslimit']);
+});
+
+test('B-04 original formula int(wslimit*shopcount+0.99) matches 0.5 and 1.5', () => {
+  const fixtures=compiledFractionalWholesaleById(model);
+  for(const [shopCount,halfExpected,oneHalfExpected] of [
+    [0,1,2],[1,1,2],[2,1,3],[3,2,5],[4,2,6],[5,3,8],
+  ]) {
+    const world=stock();world[19]=10;world[24]=10;
+    const shops=Array.from({length:shopCount},()=>({item:stock()}));
+    const out=checkWholeStockCaps(model,world,shops,fixtures);
+    assert.equal(out[19],halfExpected,'#20, shop count '+shopCount);
+    assert.equal(out[24],oneHalfExpected,'#25, shop count '+shopCount);
+    assert.equal(world[19],10);
+    assert.equal(world[24],10);
+  }
+});
+
+test('B-04 existing store holdings reduce fractional global wholesale cap', () => {
+  const fixtures=compiledFractionalWholesaleById(model);
+  const world=stock();world[19]=10;world[24]=10;
+  const shops=Array.from({length:3},()=>({item:stock()}));
+  shops[0].item[19]=1;
+  shops[0].item[24]=2;
+  const before=structuredClone({world,shops});
+  const after=checkWholeStockCaps(model,world,shops,fixtures);
+  assert.equal(after[19],1); // global cap2 minus held1
+  assert.equal(after[24],3); // global cap5 minus held2
+  assert.deepEqual({world,shops},before);
+});
+
+test('B-04 already-over-cap stocks force market stock to zero, not negative/fractional', () => {
+  const fixtures=compiledFractionalWholesaleById(model);
+  const world=stock();world[19]=10;world[24]=10;
+  const shops=Array.from({length:3},()=>({item:stock()}));
+  shops[0].item[19]=4;shops[0].item[24]=8;
+  const out=checkWholeStockCaps(model,world,shops,fixtures);
+  assert.equal(out[19],0);
+  assert.equal(out[24],0);
+  assert.ok(Number.isInteger(out[19]));
+  assert.ok(Number.isInteger(out[24]));
+});
+
+test('B-04 review rejects changed source metadata or newly fractional unapproved IDs', () => {
+  const id20=model.items.find(x=>x.id===20);
+  for(const change of [
+    {limitRaw:'20/0.6'},{code:'other'},{name:'錯誤名稱'},
+    {priceRaw:'100'},{line:id20.line+1},{source:'custom/other.cgi'},
+  ]) {
+    const items=model.items.map(item=>item.id===20?{...item,...change}:item);
+    assert.throws(()=>listReviewedFractionalWholesaleItems({...model,items}),
+      /source review required|metadata mismatch/);
+  }
+  const items=model.items.map(item=>item.id===40?{...item,limitRaw:'600/0.5'}:item);
+  assert.throws(()=>listReviewedFractionalWholesaleItems({...model,items}),/source review required/);
 });
