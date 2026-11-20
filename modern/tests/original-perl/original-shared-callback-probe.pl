@@ -21,7 +21,7 @@ sub source {
   local $/;my $s=<$f>;close $f;return $s;
 }
 my $source=source();
-my ($section)=$source=~/(^@@FUNCITEM\b[\s\S]*?)(?=^@@FUNCUPDATE\b)/m;
+my ($section)=$source=~/(^\@\@FUNCITEM\b[\s\S]*?)(?=^\@\@FUNCUPDATE\b)/m;
 die 'Missing fixed FUNCITEM' unless defined $section;
 my ($lostbook)=$section=~/(^sub lostbook\s*\n\{[\s\S]*?^\}\n)/m;
 my ($popup)=$section=~/(^sub popup\s*\n\{[\s\S]*?^\}\n)/m;
