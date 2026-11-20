@@ -369,3 +369,37 @@ npm run demo:commit
 ```
 
 **後續仍須完成：** 真正的跨程序鎖、備份及標記持久性、失敗中的原子性設計、其他檔案和世界資料完整解析、批發與玩家交易的真正持久化、商品回呼、公會與 CGI HTTP 端到端。原版 Perl 的復原機制已經**驗證行為**，但不應直接當作新版安全儲存引擎部署。
+
+## 第十二批：原版鎖檔與開檔／更名重試的安全契約（第十四階段）
+
+本批直接比對固定 [Core `plug/lock.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/lock.cgi)（Git Blob `84382170f1b7f70348c4e2a91bf30b1d1043b964`）與現行標準街 `_config.cgi`。**正式來源配置是 `LOCK_FILE='lockfile'`、`AUTO_UNLOCK_TIME=60` 秒**；本階段所有新模型與 Perl 隔離測資均依此一致。新增未修改的 `modern/tests/original-perl/lock.cgi` 為**第12份** Core 原版來源快照，CI 新增 `git hash-object` 檢查。
+
+### 原版鎖與 I/O 的具體行為
+
+| 核對函式 | 原版來源行為 | 安全提醒 |
+| --- | --- | --- |
+| `Lock()` | 已持有時只增加 `LOCKED_LEVEL`；首次使用 `LockSub()`，成功後呼叫 `DataCommitOrAbort(1)` | 取得檔案鎖還須完成**待提交復原**才能視為可開始新寫入 |
+| `LockSub()` | 嘗試將 `DATA_DIR/lockfile` 重新命名為帶時間、PID、REMOTE_ADDR 的擁有者檔名，最多五次，每次失敗等待0.2秒；之後掃描可能超過 `AUTO_UNLOCK_TIME` 的舊鎖並嘗試搶回 | 重命名及時間戳判定並非完整跨程序公平性或無競態保證 |
+| `UnLock()` | 巢狀鎖先減少層數；到最外層時將擁有者檔名更名回 `lockfile` | **更名失敗只記錄錯誤，`LOCKED` 可能仍非空而層數已為0**，不能當作成功解鎖 |
+| `RenameAndCheck()` | 最多5次 `rename`，失敗等0.2秒；成功後還要看到來源消失且目的地存在，否則繼續重試 | 最終失敗記錄日誌並 `OutError`，沒有證明跨多檔原子性 |
+| `OpenAndCheck()` | `open(OUT, '>:encoding(UTF-8)', path)` 失敗時以 `count=5` 後置遞減重試；**連續第6次失敗才 `OutError`** | 成功以 `>` 模式開檔會截斷原檔；不代表 fsync、權限安全或交易提交 |
+
+`LockSub` 的來源舊鎖篩選式 `/^$LOCK_FILE(\d+)/` 也可能匹配不完整的後綴；是否超時透過 `NOW_TIME - timestamp < AUTO_UNLOCK_TIME` 決定。新版受限模型僅允許來源形狀吻合的 `lockfile<timestamp>_<pid>_<remote-addr>`，拒絕含路徑、過大數值、不完整或模糊命名的候選鎖；**這是刻意採取更嚴格的安全界線，並非原版所有檔名語法的完整相容移植**。
+
+### 新增可重現驗證
+
+- [`modern/tests/original-perl/lock-safety.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/lock-safety.t) 新增 **36項原版 Perl 隔離斷言**：真正 `require` 未修改 `lock.cgi`，以 `File::Temp` 測試用資料目錄取得／釋放 `lockfile`；驗證巢狀深度、取得鎖後回呼 `DataCommitOrAbort(1)`、60秒舊鎖與近期鎖、原版更名成功／失敗、開檔覆寫／失敗、以及 `UnLock` 更名失敗後的狀態。只有錯誤日誌、CGI 錯誤與待提交復原由替身攔截；**不碰正式世界資料或真正多進程操作**。
+- 新增 [`src/world-lock-contract.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/world-lock-contract.mjs)：`CORE_LOCK_RETRY`、`reviewStaleWorldLocks`、`projectWorldLockTransition`、`projectCheckedRenameAttempts`、`projectCheckedOpenAttempts`。這些函式只根據**明確提供的觀察結果**輸出不可變決策／測試紀錄，沒有真正開檔、等待、rename、刪除、取得 OS 鎖或呼叫 Perl。對失敗的 `UnLock` 回報 `release-failed`、保留擁有者路徑的危險狀態，避免誤認鎖已正常釋放。
+- [`tests/world-lock-contract.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/world-lock-contract.test.mjs) 新增 **28項 Node.js 測試**，核對原始程式及 `_config.cgi` 配置、首層／巢狀鎖、解鎖失敗、舊鎖門檻、檔名限制、五次 `rename` 與最多六次 `open` 的探測和拒絕不安全資料。
+- 新增 [`scripts/demo-world-lock.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-world-lock.mjs) 與 `npm run demo:lock`，將正確的 `lockfile` 與超時門檻、嵌套鎖、解鎖失敗及重試數列輸出成**完全無 I/O 的可重播示範**；納入 GitHub Actions。
+
+本階段相較第十三階段增加**28項 Node + 36項原版 Perl 斷言**，合計 **198／198 Node 與 170／170 Perl** 通過（以當次完整 CI 為準）。CI 會核對12份固定 Core 原始快照、DSL audit 和原有示範。
+
+在 `modern/`：
+
+```sh
+npm test
+npm run demo:lock
+```
+
+**不可將此視為可部署的持久化引擎。** 尚未驗證實際跨進程鎖互斥性、檔案系統的斷電／fsync 行為、正式目錄的備份／崩潰復原、原版真實世界的所有檔案與 CGI HTTP 端到端。原版 `LockSub` 掃描舊鎖與寫入提交的競態風險仍存在；正式實作應另外設計可檢查擁有權、異常中止與復原的鎖保護機制，而非直接複製錯誤處理。
