@@ -606,3 +606,41 @@ npm run demo:period-stock-use
 ```
 
 **尚未完成：** 真正 `CheckUseItem` 的動態職業／`functionbefore`、所有 `UseItem` 的交易副作用、`MakeAmount(cnt>=20)` 隨機公式跨語言統計／邊界驗證、商品回呼、完整每日期末庫存上限與真實商品編譯結果之整合、正式世界檔／安全備份與鎖／原子提交、CGI HTTP。此次的模型和成功測試都只限於**安全可重播的合成片段**；不能當作可部署的商品使用引擎。任務02「進行中」，PR #1 保持 Draft，不修改或合併 `main`。
+
+## 第十九批：原版行為優先、問題另列（第二十一階段）
+
+**本階段確立的開發原則：** 移植《商人物語》標準街以**實際固定 Core 原版輸出**為準；即使公式不尋常、資料出現負值或結果超乎一般遊戲直覺，也**先按原版實作及驗證**，不擅自改成更合理的公式或修復缺陷。缺陷、可疑處及安全風險**獨立保存在 [`modern/docs/original-behavior-issues.md`](docs/original-behavior-issues.md)**，與相容性移植程式分開，不代表要主動修復。未驗證的 CGI、事件、AutoVar、帳號和正式存檔 I/O 仍不得任意啟動；這是部署／隔離邊界，**不是修改原版遊戲規則**。
+
+這一批直接取材自 SHA 固定、**未修改**的 [Core `plug/use.cgi::MakeAmount`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L208-L224)、[`UseItem` 生產／超量／批發市場處理](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L128-L150)、[`plug/whole.cgi::CheckWholeStore`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/whole.cgi#L50-L74) 及 [`inc-period.cgi` 庫存修正](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-period.cgi#L77-L82)。這些原始來源已包含在CI核對的**14份固定 Core Git Blob**內，沒有改寫快照。
+
+### 忠實算式與來源處理順序
+
+| 項目 | 照原版輸出的新模型（不擅自修正） | 額外記載的風險 |
+| --- | --- | --- |
+| `MakeAmount(cnt<20)` | 每個單位用 `rand(1000)<p` 判定，恰抽 `cnt` 次 | 與大額分支分布不同，照原版保留 |
+| `MakeAmount(cnt>=20)` | `p=p/1000`，`ave=cnt*p`，`sigma=ave*(1-p)`，`t=(-2*sigma*rand())*sin(2*3.1415926535*rand())`，回傳 `int(sqrt(abs(t))+ave+0.5)`；**恰取兩個亂數，不加額外下限／上限修正** | `sqrt(abs(t))` 只會把結果往平均值以上推；與常見機率統計不同，詳見 CORE-01 |
+| 每日商品庫存 | 超過上限則先截到上限，再 `int()`；例如 `-1.9→-1` | 原版可能保留負庫存，見 CORE-02 |
+| `UseItem` 產出溢量 | 先把**超出的數量**加入 `DTwholestore`，再將商店新增量設為 `limit-oldStock`；即使此值為**負數**也照來源記錄 | 原本就超庫存時可能出現負新增量，見 CORE-03 |
+| `CheckWholeStore` | **在商品生產／退回後**以全部商店總量與 `wslimit` 修正批發庫存；固定負上限取絕對、正值使用 `int(wslimit*shopCount+0.99)`；沒有 `code` 的商品直接跳過 | 市場收到的超量**可能再被裁掉**，或無 `code` 時不檢查，見 CORE-04 |
+
+**來源例子：** 商店原有8、生產5、上限10，商店最後10、超出的3先回市場；如果批發原本4，市場先變7，總量上限15時最後市場只剩5。更特殊的是：商店原本12、上限10、生產2，原版計算會產生 `discarded=4`、`additem=-2`，商店回到10。**兩種都直接保留原版計算結果，不先「合理化」。**
+
+### 實際提交
+
+- [`modern/src/original-use-outcomes-model.mjs`](src/original-use-outcomes-model.mjs)：新增 `projectOriginalMakeAmount` 與 `projectOriginalCreateThenWholesale`。第一個保留原版大額兩次抽樣、`sin`、`sqrt(abs(t))`、零／滿機率的分支先後。第二個保留**單一合成商品**的生產 → 超量回市場 → 原版市場上限順序，包含原本庫存超限時的負新增量、`wslimit` 負值固定上限／正值 `int` 與商品無 `code` 時跳過檢查。兩者純函式且不寫檔。此處只模擬商品數字片段，並非完整市場所有商品、真實 `UseItem` 或帳號交易。
+- [`modern/src/period-stock-use-model.mjs`](src/period-stock-use-model.mjs)：將上一階段 `projectReviewedPeriodStock` 原本對負庫存的拒絕改為保留原版帶符號值、照來源執行 `limit` 修正與 `int`；不合法的 JavaScript 數字型別與無法安全表達的數字仍拒絕，屬模型輸入表示限制而非宣稱原版拒絕。原 B-20 `sampleReviewedSmallMakeAmount` 依舊是一個**只涵蓋小額的舊入口**；新增 B-21 `projectOriginalMakeAmount` 才包含兩個機率分支，沒有暗中替換舊 API 的定義。
+- [`modern/tests/original-perl/original-use-outcomes.t`](tests/original-perl/original-use-outcomes.t)：新增**27項原版 Perl 隔離斷言**，從 SHA 固定 `use.cgi` 擷取未修改的 `MakeAmount` 與商品產出／溢出程式片段，直接 `require` 固定 `whole.cgi` 的原版 `CheckWholeStore`。固定 `srand` 對照原版大額公式的兩次抽樣以及19次小額抽樣，驗證一／兩店、超額／市場再截斷、`wslimit`、無 `code`、負新增量和負原有庫存的來源輸出。只使用記憶體合成資料，不執行真正商品回呼、CGI 或正式世界存檔。
+- [`modern/tests/original-use-outcomes-model.test.mjs`](tests/original-use-outcomes-model.test.mjs)：新增**19項 Node.js 測試**，核對固定 Core 原文、來源大小額分支、正負 `t` 與精確亂數消耗數量、負庫存、負新增量、超量退回再受市場限額以及不可變的合成結果。
+- [`modern/scripts/demo-original-outcomes.mjs`](scripts/demo-original-outcomes.mjs)：新增 `npm run demo:original-outcomes`，展示原版小額／大額抽樣、負值與市場修正；同步更新舊 `demo:period-stock-use` 對負值的歷史錯誤預期，兩個示範均已列入 CI。
+- [`modern/docs/original-behavior-issues.md`](docs/original-behavior-issues.md) 單獨列出已知原版異常與尚未覆蓋的技術限制；不混入原版 Core 檔案或自動修改遊戲規則。
+
+**測試數量：** Node `361+19=380` 項，原版 Perl `364+27=391` 項；原始 DSL audit、所有合成示範與**14份固定原版 Core Git Blob** 一併由 GitHub Actions 檢查。詳見當次 PR／CI 的最終 HEAD 結果。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:original-outcomes
+```
+
+**仍未完成：** 真正 `UseItem` 的動態回呼、資格／材料實際修改、所有商店／所有商品完整交易和市場同步、Perl RNG 與 JS RNG 的位元級一致性、正式世界存檔、鎖／備份／fsync／原子提交、CGI HTTP。**原版相容優先，不等於在未隔離的正式資料上冒險執行有副作用的原版程式。** 任務02維持「進行中」，PR 保持 Draft，不合併。
