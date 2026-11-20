@@ -16,8 +16,9 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `whole.cgi` | `plug/whole.cgi` | `778badaf157326bcfd1f8fa1e310d94f94995eb3` |
 | `buy-s.cgi` | `buy-s.cgi` | `6ba8df9a733ed16c490389414cd94934fe1185ca` |
 | `inc-makeitem.cgi` | `inc-makeitem.cgi` | `1da8cce1e76ad6159325a37faec68efaa82c7f69` |
+| `inc-turn.cgi` | `inc-turn.cgi` | `b8a4980275f475a952846a8d6072fad45f8dff50` |
 
-CI 會以 `git hash-object` 核對以上八個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上九個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -62,7 +63,7 @@ npm run audit
 
 使用者已確認目前沒有可用的 CGI 執行環境。**不要要求啟動原版 CGI 伺服器，也不要把這一需求設成 Node.js 現代化開發的前置依賴。**
 
-- 本目錄的 `*.t` 是 **GitHub Actions 上使用 Perl + Test::More，搭配檔案讀寫、畫面輸出與登入等替身** 執行的局部／主要流程測試；**未使用 CGI HTTP 伺服器**。既有 88/88 PASS 在此限定範圍下仍有效。
+- 本目錄的 `*.t` 是 **GitHub Actions 上使用 Perl + Test::More，搭配檔案讀寫、畫面輸出與登入等替身** 執行的局部／主要流程測試；**未使用 CGI HTTP 伺服器**。第十階段新增8項斷言後，最新數量為96／96；更早的88／88屬於歷史紀錄。
 - 接下來的主開發路徑為 `modern/` 的 Node.js DSL 來源稽核、固定測資、可重現規則模型（含開店初始商品、陳列、市場、跨期與決算）；保留原始程式碼 SHA、商品 ID、來源行號與原版覆寫規則。Node 模型通過測試不等於原版 CGI 實機相容。
 - `@@FUNCNEW`、`_local_` 與任意 Perl 回呼在既有 Node DSL parser 中目前僅保留原始片段；除非有可執行、已驗證的精確規則，不將它們當成可直接執行的 JS 或推定已編譯。
 - 完整 CGI HTTP、原版 `inc-makeitem.cgi` 在 CGI 管理入口的執行結果、真實世界存讀檔及完整跨期遊戲端到端測試均標記 **受環境限制、未驗證**。不因此停止目前不依賴 CGI 的開發。
@@ -75,3 +76,9 @@ npm run audit
 ## 第十階段：小數批發係數的原版 Perl 驗證
 
 原始 `plug/whole.cgi::CheckWholeStore` 仍直接以 `require './whole.cgi'` 引入，由 `whole-store.t` 使用手動固定的已編譯 `wslimit` 數值執行；新增 8 項斷言覆蓋 `0.5`、`1.5` 在 1／2／3 家商店及商店既有存量抵扣之後的市場整數庫存。這些數值來自固定標準街 DSL，但此處**沒有執行管理用商品編譯器，也沒有真正補貨或批發交易**。最新 CI 驗證為 96／96 項 Perl 斷言通過，與新 Node 小數解析模型獨立核對。
+
+## 第十一階段：批發庫存 PLUS 流程的固定來源
+
+新增原版 Core `inc-turn.cgi` 完整**未修改**快照（Git Blob `b8a4980275f475a952846a8d6072fad45f8dff50`）作為第九份 SHA 固定來源。`modern/tests/wholesale-turn-model.test.mjs` 靜態核對原版 PLUS 計算行、亂數處理、`CheckWholeStore()` 與略過零長度時間片段的原文，並以純 Node 單商品固定測資重建可重現的時序子集。
+
+這項新增**不等於 Perl `inc-turn.cgi` 已在隔離測試裡完整執行**：其前半部仍有自然售賣、商品回呼、市場需求與公會等相依處理；現有直接執行的原版 Perl 斷言仍是 96 項，不因此增加。世界檔 `@DTwholestore` 的讀取與寫回來源也已在 `inc-func.cgi::DataRead` 與 `plug/write.cgi::DataWrite/DataCommitOrAbort` 核對，但尚無實際檔案往返驗收。此模型不會寫入正式世界存檔。
