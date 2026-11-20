@@ -33,7 +33,7 @@ CI 會以 `git hash-object` 核對以上十四個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **12 個 Perl 測試檔，328/328 個斷言**：
+目前已由 GitHub Actions 成功執行 **13 個 Perl 測試檔，364/364 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -49,9 +49,10 @@ prove -v *.t
 | `world-one-shop.t` | 使用固定 `@DTindexnamelist` 與原版 `DataRead` 函式本體，驗證空城鎮、一／兩店、重複 ID、缺少商店第二行的原版行為 | 34 |
 | `world-shop-history.t` | 固定 Core `DataRead` 與**原版 `AutoVar` 套件**的商店歷史雜湊、使用者延遲解碼、奇數／重複鍵及 Tab 分隔符測試 | 43 |
 | `period-experience.t` | **擷取固定原版**每日歷史交接／熟練度自然衰退與 `UseItem` 熟練度尾段，在無副作用 Perl 替身中直接執行 | 33 |
-| **合計** | | **328** |
+| `period-stock-use.t` | **擷取固定原版**每日庫存修正／`UseItem` 使用次數檢查／`CheckUseItem` 材料檢查，並原樣執行 `MakeAmount` | 36 |
+| **合計** | | **364** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十九階段累計 **328／328 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第二十階段累計 **364／364 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -193,3 +194,18 @@ Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保�
 - 本階段只確定熟練度尾段數值，不宣稱已複製 `UseItem` 成功資格、材料消耗、隨機量、事件回呼、時間／資金扣款或原版每日其他結算效果。
 
 本批 Perl 隔離斷言由 **295增至328項**；Node 增加30項至 **323項**，兩份來源快照固定 SHA 總數為14份。僅測定受限片段；Node 模型詳見 `modern/README.md`。
+
+## 第二十階段：每日庫存上限／UseItem 前置數量與 MakeAmount 原版隔離
+
+新增 `period-stock-use.t` **36項原版 Perl 斷言**。直接從已固定原樣、由 CI 檢查 SHA 的 `period.cgi`（Core `inc-period.cgi`）擷取**每日庫存上限檢查與 `int()` 修正的原始迴圈**；從 `use.cgi`（Core `plug/use.cgi`）擷取**完整 `UseItem` 使用次數前置檢查片段**、`CheckUseItem` 的**材料迴圈**，以及**完整未修改的 `MakeAmount` 函式**。測試只將這些固定來源文字在明確的合成 Perl 環境編譯、執行，沒有 `inc-period.cgi` 頂層執行、公會／備份／session 副作用，也沒有整個 `UseItem` 的商品消耗、時間金錢變動或動態商品／職業回呼。原版 Core 固定快照仍是 **14份**，沒有更改任何一份。
+
+**直接測得：**
+
+- 每日庫存對 `1..MAX_ITEM` 逐項，若原始庫存超過 `ITEM[cnt].limit` 才截至上限，然後用 Perl `int()` 轉整數。合成庫存 `[10.9,7.8,2.9]`、上限 `[10,20,2]` → `[10,7,2]`。**原版不會在這段迴圈將負庫存歸零**：`-1.9` 會變為 `-1`，屬危險原版容忍度。
+- `UseItem` 依熟練度、職業、分數、人氣、必要事件逐一判斷不符合時將次數設0；接續依可用金錢、可用時間和材料庫存（按原版條件）重新計算 count，最後在真正商品異動前先記到 `USE.result.count`。材料設定 `proba==0` 時，前置數量檢查使用**單次材料需求**（即使真正 `MakeAmount` 的機率0會回傳0），與正機率使用 `count × 每次需求` 不同。
+- 真正執行原版 `MakeAmount` 驗證：`p<=0` 直接0，`p>=1000` 直接回傳要求量；`0<p<1000` 時若 `cnt<20`，每個單位以 `rand(1000)<p` 試一次；`cnt>=20` 轉為另一個以兩個隨機數參與的近似運算。後兩種以相同 `srand` 種子確認可重播，並未聲稱分布已完全驗證。
+- 原版 `CheckUseItem` 還包含職業函式與 `functionbefore` 動態回呼，測試**只擷取材料檢查迴圈**，沒有把完整 `CheckUseItem` 宣稱為純函式。
+
+另新增 Node 的 `period-stock-use-model.mjs`，是刻意更嚴格的**合成、無 I/O、未授權執行的來源片段模型**：庫存只允許79格非負有限且安全範圍內的數值與明確整數上限，拒絕原版可保留的負值；使用前置檢查由呼叫端明確聲明已排除動態回呼，僅推算 count；材料 ID／機率／資金時間計算拒絕不安全整數、重複材料或 overflow；小額 `MakeAmount` 才使用顯式提供的 `random()`，並刻意**拒絕 cnt>=20** 的未審查公式。沒有驗證外部宣告的回呼不存在與鎖持有權、沒有商品異動、沒有交易，也沒有正式資料。
+
+**累計：** Perl 從328增加36至 **364／364項**；Node 從323增加38至 **361／361項**；固定 Core 14份完整性核對不變。
