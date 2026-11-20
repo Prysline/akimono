@@ -96,10 +96,11 @@ function reviewedPeerItem(model, itemId) {
 export function listReviewedPeerItems(model) {
   return Object.freeze(REVIEWED_PEER_ITEMS.map(entry => {
     const item = reviewedPeerItem(model, entry.id);
+    const compiled = compileLiteralItemLimit(item.limitRaw);
     return Object.freeze({
       id: item.id, code: item.code, name: item.name,
       price: item.price, limitRaw: item.limitRaw,
-      ...compileLiteralItemLimit(item.limitRaw),
+      limit: compiled.limit, wslimit: compiled.wslimit,
       source: item.source, line: item.line,
     });
   }));
