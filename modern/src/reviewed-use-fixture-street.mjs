@@ -91,8 +91,10 @@ export function createFixtureState({
     events:null,
   });
 }
-/** The randomDraw is a source-Perl observed or explicitly synthetic number;
- * never derived from JS seed. No real user command may provide arbitrary RNG.
+/** Perl rand(1000) returns fractional numbers while B-31 WorldState
+ * commands intentionally accept safe JSON integers. For reviewed integer
+ * param1, floor(Perl rand(1000)) < param1 is EXACTLY equivalent to the
+ * original strict comparison. Bucket is observed or synthetic, not JS RNG.
  */
 export function createReviewedUseFixtureStreetModule(){
   return Object.freeze({
@@ -102,13 +104,13 @@ export function createReviewedUseFixtureStreetModule(){
       artificialProducts:true,
       originalStreetPlayable:false,
       source:'pinned Core plug/use.cgi, calc.cgi, whole.cgi, inc-item.cgi and reviewed original lostbook',
-      random:'explicit external observed or synthetic Perl rand(1000) sample; no JS seed equivalence',
+      random:'explicit floor(observed Perl rand(1000)) or synthetic integer bucket, equivalent for integer param1 only; no JS seed equivalence',
     }),
     apply({world,command}){
       const w=checkWorld(world);
       fieldsOnly(command,[
         'kind','expectedRevision','shopId','requestedCount',
-        'param1','originalPerlDraw','callback',
+        'param1','perlRandBucket','callback',
       ]);
       if(command.kind!=='source-fixture-use')bad('unreviewed action');
       if(command.shopId!==42)bad('only reviewed synthetic acting shop 42');
@@ -117,10 +119,8 @@ export function createReviewedUseFixtureStreetModule(){
       if(command.callback!==undefined&&
          command.callback!==''&&command.callback!=='lostbook')
         bad('unreviewed callback');
-      if(typeof command.originalPerlDraw!=='number'||
-         !Number.isFinite(command.originalPerlDraw)||
-         command.originalPerlDraw<0||command.originalPerlDraw>=1000)
-        bad('observed or fixed Perl random sample');
+      safe(command.perlRandBucket,'Perl rand bucket',0);
+      if(command.perlRandBucket>=1000)bad('Perl rand bucket');
       const a=w.shops[0],b=w.shops[1];
       const projected=projectOriginalIntegratedUseLostbook({
         stocks:a.item,otherShopStock:b.item,
@@ -130,7 +130,7 @@ export function createReviewedUseFixtureStreetModule(){
         exp:a.exp,status:a.status,
         requestedCount:command.requestedCount,
         param1:command.param1,callback:command.callback??'lostbook',
-        originalPerlDraw:command.originalPerlDraw,
+        originalPerlDraw:command.perlRandBucket,
       });
       // Unlike the Perl source, the command layer MUST not commit a world
       // revision for an original zero-count return with no changes.
@@ -151,7 +151,7 @@ export function createReviewedUseFixtureStreetModule(){
           wholesaleCheckCount:projected.wholeStoreChecks,
           expAtCallback:projected.expAtCallback,
           stockAtCallback:projected.stockAtCallback,
-          originalPerlDraw:projected.originalPerlDraw,
+          perlRandBucket:command.perlRandBucket,
           sourceScope:'B-30 exact reviewed original Core synthetic A/B/C fixture only',
         },
       };
