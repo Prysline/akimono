@@ -166,6 +166,10 @@ test('B-33 one REAL gift exchange consumes two gift and creates three map items'
   assert.equal(x.details.spentGift,2);
   assert.deepEqual(x.details.gainedMaps,[[12,1],[9,1],[14,1]]);
   assert.deepEqual(x.details.discarded,[]);
+  assert.deepEqual(x.details.originalUseMsg,[null]);
+  assert.deepEqual(x.details.originalAddMsg,[null,null,null]);
+  assert.equal(x.details.originalFunctionReturn,null);
+  assert.equal(x.details.originalResultOk,'感謝您的使用');
 });
 test('B-33 actual compiler scaled source time 1800 seconds is consumed',()=>{
   const {repo}=prepared();
