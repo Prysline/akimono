@@ -332,3 +332,40 @@ npm run demo:world
 ```
 
 **尚未完成：** 真正完整的原版 `DataRead` 執行及店舖／城鎮／事件資訊解析、資料目錄與提交標記的原子性保證、跨進程鎖、備份復原、CGI HTTP、多商品週期及真正世界存檔的提交回滾。此批只構成批發庫存的隔離序列化契約，不可作為正式存檔服務。
+
+## 第十一批：原版提交標記、取消與復原的隔離驗證（第十三階段）
+
+本階段直接核對固定 [Core `plug/write.cgi::DataCommitOrAbort`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi#L4-L35) 及標準街 `_config.cgi`：`$FILE_EXT='.cgi'`、`$COMMIT_FILE='commit'`、暫存目錄 `$TEMP_DIR` 與資料目錄 `$DATA_DIR`。這些資料是來源事實，**不是**在現在的 Node.js 模型中完成真實檔案交易。
+
+### 原版實際分支
+
+| 暫存目錄符合篩選的檔案 | `abort` | 原先有提交標記 | 原版行為 |
+| --- | --- | --- | --- |
+| 有 | 0 | 任意 | 建立／覆寫標記，逐檔 `RenameAndCheck` 到資料目錄，成功後清除標記 |
+| 有 | 1 | 無 | 逐檔 `unlink` 暫存檔，**不**更動正式資料，沒有新標記 |
+| 有 | 1 | 有 | **復原未完成提交**：仍逐檔 `RenameAndCheck`，成功後清除標記 |
+| 無 | 任意 | 有 | 只清除殘留標記 |
+| 無 | 任意 | 無 | 不進行文件更名／刪除 |
+
+原版 `DataCommitOrAbort` 的提交不是單一資料庫的原子操作。它對每個選出的檔案各自更名，若第二次更名中途失敗，**第一個檔案可能已覆蓋正式資料、另一個仍留在暫存目錄**，而提交標記仍存在；下次 `abort=1` 且標記存在時會嘗試把剩餘檔案完成提交。此復原機制不是回復到交易前狀態，也沒有證明跨程序互斥、崩潰後檔案確實落盤或磁碟交易的 all-or-nothing 保證。
+
+**原版檔名篩選的危險差異：** `grep(/.$FILE_EXT$/,readdir(DIR))` 的規則並未跳脫 `$FILE_EXT='.cgi'` 內的句點，原版 Perl 的實際匹配近似 `/..cgi$/`，因此可能把 `strangexcgi` 等非真正 `.cgi` 後綴檔案錯誤當成待提交。隔離原版 Perl 測試確認它真的會匹配。這是必須記錄的來源風險，**新版決策模型刻意拒絕此類檔名**，不宣稱與原版的錯誤匹配完全相同。
+
+### 新增程式與安全界線
+
+- `src/world-commit-plan.mjs` 的 `planWorldCommit({abort, markerExists, stagedFilenames})` 是**純決策規劃**：只輸出 `commit / discard / recover / no-staged-files`、選中的檔名集合、應更名或應刪除的檔名、標記動作及是否可能存在多檔部分提交。原版 `readdir()` 排序未保證，因此列表僅以排序呈現集合，不能當作真實 OS 更名順序。
+- 只接受已檢查的單層安全檔名及明確的布林值狀態，對惡意路徑、重複名稱、原版 regex 的異常匹配採取**拒絕**。沒有任何檔案讀寫、交易鎖、檔案更名、備份、正式提交、失敗復原執行或 CGI HTTP 行為。
+- `tests/world-commit-plan.test.mjs` 新增 **15項 Node.js 測試**，核對固定 Core 原文／設定、四類分支、標記處理、未知檔名拒絕、排序不確定性及只讀回傳。
+- `modern/tests/original-perl/world-commit.t` 新增 **27項真正執行原版 Perl `DataCommitOrAbort()` 的隔離斷言**：使用 `File::Temp` 的 stage／live／marker 路徑與受限 `GetPath`／`OpenAndCheck`／`RenameAndCheck` 替身，涵蓋正常提交、取消、帶標記復原、無檔清標記、第2次更名失敗的部分提交／後續恢復，以及原版檔名 regex 過寬問題。所有 I/O 都只觸碰測試暫存目錄，無正式世界檔。
+- 新增 `scripts/demo-world-commit.mjs` 與 `npm run demo:commit`，在 JSON 明確展示上述四類*純決策*案例與原版匹配風險；已加入 GitHub Actions，原有11份 Core SHA 固定快照及 DSL audit 不變。
+
+本階段驗收目標：**170／170 Node.js 測試**（原155項+15項）、**134／134 原版 Perl 隔離斷言**（原107項+27項），最終以與最新分支 commit 相同 SHA 的 CI 成功紀錄為準。
+
+在 `modern/` 目錄執行：
+
+```sh
+npm test
+npm run demo:commit
+```
+
+**後續仍須完成：** 真正的跨程序鎖、備份及標記持久性、失敗中的原子性設計、其他檔案和世界資料完整解析、批發與玩家交易的真正持久化、商品回呼、公會與 CGI HTTP 端到端。原版 Perl 的復原機制已經**驗證行為**，但不應直接當作新版安全儲存引擎部署。
