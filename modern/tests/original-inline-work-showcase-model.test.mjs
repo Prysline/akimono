@@ -39,7 +39,7 @@ test('B-27 local function source is exactly the original work money/log sequence
     'WriteLog(3,0,$DT->{shopname}."がバイトしたようです");',
     'return $ret;', '_local_'];
   let prior=-1;
-  for(const s of order){const p=chunk.indexOf(s);assert.ok(p>prior,s);prior=p;}
+  for(const s of order){const p=chunk.indexOf(s,prior+1);assert.ok(p>prior,s);prior=p;}
 });
 test('B-27 source showcase body sets count, expands or splices, logs, returns',()=>{
   const start=dsl.indexOf('code\tedit-showcase');
