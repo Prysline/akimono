@@ -115,7 +115,8 @@ export function compileOrderedItemLimit({ price, priceLine, limitRaw = null, lim
   const limit = Math.trunc(defaultLimit * level / 5);
   const wslimit = override === null ? limit : override;
   if (!Number.isSafeInteger(limit) || limit < 0 ||
-      !Number.isSafeInteger(wslimit) || wslimit < 0) {
+      !Number.isFinite(wslimit) || wslimit < 0 ||
+      !Number.isSafeInteger(Math.trunc(wslimit))) {
     throw new RangeError('Unsafe level-derived LIMIT');
   }
   return Object.freeze({
