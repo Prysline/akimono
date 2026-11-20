@@ -33,6 +33,7 @@
     "demo:item-loading": "node scripts/demo-original-item-loading.mjs",
     "demo:item-helpers": "node scripts/demo-original-item-helper.mjs",
     "demo:integrated-use": "node scripts/demo-original-integrated-use-lostbook.mjs",
-    "demo:game-core": "node scripts/demo-game-core-contract.mjs"
+    "demo:game-core": "node scripts/demo-game-core-contract.mjs",
+    "demo:world-use": "node scripts/demo-world-use-sequence.mjs"
   }
 }
