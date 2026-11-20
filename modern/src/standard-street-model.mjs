@@ -93,6 +93,9 @@ export function loadStandardStreetModel(itemDsl, rebelDsl) {
         // A missing ITEM-level funcb is distinct from USE-level callbacks.
         funcbRaw: first(block, 'funcb') ?? null,
         limitRaw: first(block, 'limit') ?? null,
+        // Preserve PLUS turnover directives as opaque source text. They are
+        // NOT automatically executed or applied to all 79 items.
+        plusRaw: first(block, 'plus') ?? null,
         // Preserve field source order for Core PRICE defaults and LIMIT lvN.
         // They are metadata only: no compiler or callback is executed here.
         priceSourceLine: block.fields.price?.[0]?.line ?? null,
