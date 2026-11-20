@@ -26,7 +26,8 @@ const before=(name,returnValue=0,effects=[])=>({
 });
 
 test('B-25 original source dispatch order and return statuses are pinned',()=>{
-  const s=source.slice(source.indexOf('sub CheckUseItem'),source.indexOf('sub GetUseItem'));
+  const start=source.indexOf('sub CheckUseItem');
+  const s=source.slice(start,source.indexOf('sub GetUseItem',start));
   const p=['my $jobfunc','if (defined &$jobfunc)','item::_job_use_0_',
     'my $funcbefore','return 2 if $ret==2','return 0 if $ret==1','foreach my $item'];
   let last=-1;
