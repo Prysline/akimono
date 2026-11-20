@@ -60,7 +60,7 @@ export function projectOriginalIntegratedUseLostbook(input){
     if(!Array.isArray(row)||row.length!==3)fail(field+' three stock slots');
     return row.map((x,i)=>safe(x,field+'['+i+']'));
   }
-  const stocks=threeSlots(o.stocks,'stocks',[o.initialStock,4,3]);
+  const startingStocks=threeSlots(o.stocks,'stocks',[o.initialStock,4,3]);
   const otherShopStock=threeSlots(o.otherShopStock,'otherShopStock',[3,4,2]);
   const wholesale=threeSlots(o.wholesale,'wholesale',[4,0,-5]);
   const draw=o.originalPerlDraw;
@@ -88,7 +88,7 @@ export function projectOriginalIntegratedUseLostbook(input){
   const shopExp=o.exp;
   const expold=o.experienceOld===undefined?'':o.experienceOld;
   const transaction=projectOriginalUseTransaction({
-    shops:[stocks,otherShopStock],actingShopIndex:0,
+    shops:[startingStocks,otherShopStock],actingShopIndex:0,
     items:[
       {code:true,limit:10,wslimit:8},
       {code:true,limit:6,wslimit:-10},
