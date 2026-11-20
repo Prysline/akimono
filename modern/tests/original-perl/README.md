@@ -33,7 +33,7 @@ CI 會以 `git hash-object` 核對以上十四個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **13 個 Perl 測試檔，364/364 個斷言**：
+目前已由 GitHub Actions 成功執行 **14 個 Perl 測試檔，391/391 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -50,9 +50,10 @@ prove -v *.t
 | `world-shop-history.t` | 固定 Core `DataRead` 與**原版 `AutoVar` 套件**的商店歷史雜湊、使用者延遲解碼、奇數／重複鍵及 Tab 分隔符測試 | 43 |
 | `period-experience.t` | **擷取固定原版**每日歷史交接／熟練度自然衰退與 `UseItem` 熟練度尾段，在無副作用 Perl 替身中直接執行 | 33 |
 | `period-stock-use.t` | **擷取固定原版**每日庫存修正／`UseItem` 使用次數檢查／`CheckUseItem` 材料檢查，並原樣執行 `MakeAmount` | 36 |
-| **合計** | | **364** |
+| `original-use-outcomes.t` | 從固定 `use.cgi` 擷取原始 `MakeAmount` 及 `UseItem` 生產溢出片段，直接呼叫未修改的 `whole.cgi::CheckWholeStore`，比對大額亂數、負新增量、批發庫存上限 | 27 |
+| **合計** | | **391** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第二十階段累計 **364／364 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第二十一階段累計 **391／391 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -209,3 +210,18 @@ Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保�
 另新增 Node 的 `period-stock-use-model.mjs`，是刻意更嚴格的**合成、無 I/O、未授權執行的來源片段模型**：庫存只允許79格非負有限且安全範圍內的數值與明確整數上限，拒絕原版可保留的負值；使用前置檢查由呼叫端明確聲明已排除動態回呼，僅推算 count；材料 ID／機率／資金時間計算拒絕不安全整數、重複材料或 overflow；小額 `MakeAmount` 才使用顯式提供的 `random()`，並刻意**拒絕 cnt>=20** 的未審查公式。沒有驗證外部宣告的回呼不存在與鎖持有權、沒有商品異動、沒有交易，也沒有正式資料。
 
 **累計：** Perl 從328增加36至 **364／364項**；Node 從323增加38至 **361／361項**；固定 Core 14份完整性核對不變。
+
+## 第二十一階段：以原版為準、不擅自修正問題數值
+
+本階段調整了先前「遇到負數就拒絕」的模型策略，與原版行為保持一致；**異常與風險一律另外列入 [原版問題／風險清單](../../docs/original-behavior-issues.md)**，不能在相容移植中偷偷改變計算結果。
+
+新增 `original-use-outcomes.t` **27項 Perl 斷言**。從既有 Git Blob SHA 固定的**未修改** `use.cgi` 精確擷取完整 `MakeAmount` 函式，以及 `UseItem` 的商品產出／超量片段；並直接 `require` 同樣固定 SHA、只有安全函式宣告的原版 `whole.cgi`，在合成單商品、單／雙商店記憶體狀態上執行**原版 `CheckWholeStore`**。
+
+已證實：
+- 大額 `MakeAmount` 以 `cnt>=20` 進入 `sqrt(abs(t)) + ave + 0.5`，小額 `cnt<20` 逐一抽 `rand(1000)`。以相同 `srand` 檢查原版分支的函式輸出和後續亂數狀態，確認**大額恰消耗2次、19單位恰消耗19次**。並非改用一般機率分布。
+- 原版商店庫存8、生產5、上限10：商店增加2、市場先加3。若市場原本4、總量上限15，市場先加到7再由 `CheckWholeStore` 修正成5。
+- 原版商店**原先已有12**、上限10、生產2：**負新增量 -2** 被記錄，市場取得4，商店降到10。這種看似不合理的原版計算照樣重現，**不自動修正**。
+- 原版商品無 `code` 時，`CheckWholeStore` 對該項直接跳過，因此可能留有負市場庫存；`wslimit<0` 的絕對固定上限、正值 `int(wslimit*店數+0.99)`、無產出仍執行庫存檢查，均以原版數值驗證。
+- `inc-period.cgi` 中負庫存的 `int()` 語意由原版既有測試直接證明，B-21 的 Node 相容模型現在**保留帶符號庫存**。原版源檔沒有修改。
+
+本階段新增 **27項 Perl**（總計 **391／391**）與 **19項 Node**（總計 **380／380**），沿用14份 Core 原版 SHA 核對。沒有執行真實 CGI、事件、店家物品回呼或正式存檔。
