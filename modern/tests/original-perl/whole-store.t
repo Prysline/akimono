@@ -44,10 +44,10 @@ is($DTwholestore[4],3,'B-04-L: SetWholeStore 回存 ID5 索引4');
 is($DTwholestore[10],0,'B-04-M: SetWholeStore 清除其他商品存量');
 
 
-// Fractional wslimit fixtures mirror the pinned Standard Street numeric DSL:
-// ITEM #20 (book-ken) LIMIT 20/0.5; ITEM #25 (mino) LIMIT 20/1.5.
-// Original plug/whole.cgi is executed with manually supplied compiled scalar
-// values. No real inc-makeitem.cgi administrative compiler or CGI server runs.
+# Fractional wslimit fixtures mirror the pinned Standard Street numeric DSL:
+# ITEM #20 (book-ken) LIMIT 20/0.5; ITEM #25 (mino) LIMIT 20/1.5.
+# Original plug/whole.cgi is executed with manually supplied compiled scalar
+# values. No real inc-makeitem.cgi administrative compiler or CGI server runs.
 $ITEM[20]={code=>'book-ken',wslimit=>0.5};
 $ITEM[25]={code=>'mino',wslimit=>1.5};
 @DT=({item=>[(0)x$MAX_ITEM]});
