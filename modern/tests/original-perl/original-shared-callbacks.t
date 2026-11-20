@@ -116,14 +116,14 @@ $ret=item::popup();
 is($item::DT->{rank},10000,
   'B-26-P31 original popup rank cap cuts 10059 down to10000');
 is($ret,'高額派對：人氣提升了0%',
-  'B-26-P32 result displays raw up=60 (0%) even though cap suppresses most');
+  'B-26-P32 result displays original int(up/100)=0% despite the cap');
 
 fixture(rank=>12000,param1=>1000);
 $ret=item::popup();
 is($item::DT->{rank},10000,
   'B-26-P33 source can decrease above-cap prior rank to10000');
-is($ret,'開了派對：人氣提升了-4%',
-  'B-26-P34 source negative rank increase still says popularity increased');
+is($ret,'開了派對：人氣提升了-3%',
+  'B-26-P34 source float truncation displays negative 3% while saying increased');
 
 fixture(rank=>3000,param1=>-1000);
 $ret=item::popup();
