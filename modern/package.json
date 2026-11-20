@@ -13,6 +13,7 @@
     "demo:peer": "node scripts/demo-peer-trade.mjs",
     "demo:limits": "node scripts/demo-item-limits.mjs",
     "demo:wholesale": "node scripts/demo-fractional-wholesale.mjs",
-    "demo:turn-wholesale": "node scripts/demo-wholesale-turn.mjs"
+    "demo:turn-wholesale": "node scripts/demo-wholesale-turn.mjs",
+    "demo:world": "node scripts/demo-world-wholesale.mjs"
   }
 }
