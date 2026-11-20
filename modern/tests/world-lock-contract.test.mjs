@@ -173,7 +173,9 @@ test('B-14 stale review refuses unreviewed lock basename and unsafe inputs',()=>
 
 test('B-14 stale review rejects invalid now and timeout inputs',()=>{
   for(const bad of [-1,NaN,1.5,undefined]){
-    assert.throws(()=>stale([],bad,60),/nowSeconds/);
+    assert.throws(()=>reviewStaleWorldLocks({
+      entries:[],nowSeconds:bad,autoUnlockSeconds:60,
+    }),/nowSeconds/);
   }
   for(const bad of [0,-1,NaN,1.5]){
     assert.throws(()=>stale([],1000,bad),/autoUnlockSeconds/);
