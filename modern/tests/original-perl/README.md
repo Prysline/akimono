@@ -17,8 +17,10 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `buy-s.cgi` | `buy-s.cgi` | `6ba8df9a733ed16c490389414cd94934fe1185ca` |
 | `inc-makeitem.cgi` | `inc-makeitem.cgi` | `1da8cce1e76ad6159325a37faec68efaa82c7f69` |
 | `inc-turn.cgi` | `inc-turn.cgi` | `b8a4980275f475a952846a8d6072fad45f8dff50` |
+| `inc-func.cgi` | `inc-func.cgi` | `e7a8add7b0291901e71fe797783b664dff1568a0` |
+| `write.cgi` | `plug/write.cgi` | `203f33b37511e838800a45b84183af98fcf46e4c` |
 
-CI 會以 `git hash-object` 核對以上九個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上十一個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -28,7 +30,7 @@ CI 會以 `git hash-object` 核對以上九個固定快照。快照檔案未改�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **4 個 Perl 測試檔，96/96 個斷言**：
+目前已由 GitHub Actions 成功執行 **5 個 Perl 測試檔，107/107 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -36,9 +38,10 @@ prove -v *.t
 | `new-store.t` | 真正執行 `new.cgi` 的 Core 預設開店初始化 | 18 |
 | `showcase-market.t` | `sc-s.cgi` 陳列操作、`GetMarketStatus` 市場統計 | 26 |
 | `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore`（含 0.5、1.5 的批發供貨係數） | 21 |
-| **合計** | | **96** |
+| `world-data.t` | 真正執行原版 `DataWrite()` 至隔離暫存世界檔（不用 CGI 或正式 commit） | 11 |
+| **合計** | | **107** |
 
-CI：[Actions run 44585838281](https://github.com/Prysline/akimono/actions/runs/44585838281)，`Result: PASS`。
+CI：[Actions run 44667944363](https://github.com/Prysline/akimono/actions/runs/44667944363)，`Result: PASS`，第十二階段總計 107 項 Perl 斷言。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -82,3 +85,11 @@ npm run audit
 新增原版 Core `inc-turn.cgi` 完整**未修改**快照（Git Blob `b8a4980275f475a952846a8d6072fad45f8dff50`）作為第九份 SHA 固定來源。`modern/tests/wholesale-turn-model.test.mjs` 靜態核對原版 PLUS 計算行、亂數處理、`CheckWholeStore()` 與略過零長度時間片段的原文，並以純 Node 單商品固定測資重建可重現的時序子集。
 
 這項新增**不等於 Perl `inc-turn.cgi` 已在隔離測試裡完整執行**：其前半部仍有自然售賣、商品回呼、市場需求與公會等相依處理；現有直接執行的原版 Perl 斷言仍是 96 項，不因此增加。世界檔 `@DTwholestore` 的讀取與寫回來源也已在 `inc-func.cgi::DataRead` 與 `plug/write.cgi::DataWrite/DataCommitOrAbort` 核對，但尚無實際檔案往返驗收。此模型不會寫入正式世界存檔。
+
+## 第十二階段：原版世界資料第三行的隔離 I/O
+
+新增兩份完整原版 Core 快照：`inc-func.cgi`（SHA `e7a8add7b0291901e71fe797783b664dff1568a0`）與 `plug/write.cgi`（在本測試目錄存為 `write.cgi`，SHA `203f33b37511e838800a45b84183af98fcf46e4c`）。因此 CI 現有**十一份**固定來源檔，繼續以原樣 Git Blob 核對。
+
+Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` 的前3行、`DataWrite` 的欄位次序及提交碼；但這不代表執行了完整的原版 `DataRead`（它還會載入城鎮、事件、商店、AutoVar 等）。為取得實際格式證據，本階段新增 `world-data.t`，**直接 require 原版未修改的 `write.cgi` 並執行 `DataWrite()`**；以 `File::Temp` 的測試用暫存目錄、明確初始化的世界變數，以及鎖定／備份／輸出替身，核對生成資料第1行時間、第2行世界資訊、第3行79格庫存、第4行事件、第5行城鎮與 `//` 分隔符，並確認重寫庫存只更動對應值。
+
+這是**局部原版 Perl 寫檔函式的隔離執行**，不是 CGI HTTP、正式遊戲世界檔、原版 `DataCommitOrAbort`、真正寫入交易鎖或全部世界資料的往返。既有 96 項 Perl 斷言增加11項後為 **107／107**；Node 從136項增加19項後為 **155／155**。
