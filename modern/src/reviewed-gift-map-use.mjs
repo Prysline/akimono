@@ -196,6 +196,15 @@ export function projectReviewedGiftMapUse({
       spentGift:original.multiItem.consumed.find(x=>x.itemId===79)?.amount??0,
       gainedMaps:original.multiItem.added.map(x=>[x.itemId,x.amount]),
       discarded:original.multiItem.discarded.map(x=>[x.itemId,x.amount]),
+      // Original UseItem pushes undefined source "message" once per
+      // nonzero MakeAmount row, even though this gift USE defines no
+      // per-item message. Preserve JSON null slots rather than omit them.
+      originalUseItem:original.multiItem.consumed.map(x=>[x.itemId,x.amount]),
+      originalAddItem:original.multiItem.added.map(x=>[x.itemId,x.amount]),
+      originalUseMsg:original.multiItem.consumed.map(()=>null),
+      originalAddMsg:original.multiItem.added.map(()=>null),
+      originalFunctionReturn:null,
+      originalResultOk:compiled.resultOk,
       originalWholeStoreChecks:original.wholeStoreChecks,
       sourceScope:'real Standard Street gift USE #0, source deterministic, explicitly seeded synthetic wholesale; no real CGI/persistence',
     },
