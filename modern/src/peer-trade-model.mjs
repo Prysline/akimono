@@ -9,10 +9,15 @@
  * Deliberate reviewed scope:
  * - Peer store only (seller ID > 0), never wholesale (the original @@FUNCBUY
  *   market callback grants a gift for wholesale purchases >= 500000).
- * - Item #79 (gift voucher) only; its source @@ITEM has no funcb callback.
+ * - Reviewed items #1 藥草, #40 木刀, #79 禮物卷 only; none has
+ *   an ITEM-level funcb; the global FUNCBUY is wholesale-only in pinned DSL.
+ *   The review is an exact identity/DSL metadata allowlist, not a claim that
+ *   every item without funcb is safe or compiled.
  * - No guilds. Sold-out rank penalty is projected with the original formula;
  *   a caller-supplied random() is REQUIRED only when the penalty is fractional.
  *   No implicit Math.random() or silent omission of sold-out side effects.
+ * - A compiled itemLimit, baseTaxRate, and sendItemTime MUST be explicitly
+ *   supplied for every sale (a DSL limit expression is not automatically compiled).
  * - No compiler, persistence, I/O, authentication, locks, logs or CGI.
  * - This returns NEW state values; "settled" means only the modeled memory
  *   projection and must not be mistaken for a persisted game transaction.
@@ -53,6 +58,49 @@ function safeSum(left, right, label) {
  * The last 3 values MUST be supplied from a separately reviewed compiled
  * fixture and shop tax settings. They are not read from guessed DSL fields.
  */
+/**
+ * Source-reviewed, deliberately tiny B-06 item allowlist. Source lines refer
+ * to the pinned custom/inc-item-data.cgi Git blob 7a18185e98b32aee82ca1ce30d6f3c395157dbcb.
+ * No item-use (USE) callbacks are ever run by this purchase projection.
+ */
+const REVIEWED_PEER_ITEMS = Object.freeze([
+  Object.freeze({ id: 1, code: 'yakusou', name: '藥草', price: 50,
+    limitRaw: '4000/1000', line: 1672 }),
+  Object.freeze({ id: 40, code: 'ken-ki', name: '木刀', price: 1200,
+    limitRaw: '600', line: 1265 }),
+  Object.freeze({ id: 79, code: 'gift', name: '禮物卷', price: 10000,
+    limitRaw: '10/0', line: 2717 }),
+]);
+
+function reviewedPeerItem(model, itemId) {
+  const reviewed = REVIEWED_PEER_ITEMS.find(item => item.id === itemId);
+  if (!reviewed) {
+    fail('Only reviewed callback-free peer items #1, #40 and #79 are supported');
+  }
+  const item = model.items?.find(entry => entry.id === itemId);
+  if (!item ||
+      item.code !== reviewed.code || item.name !== reviewed.name ||
+      item.price !== reviewed.price || item.priceRaw !== String(reviewed.price) ||
+      item.limitRaw !== reviewed.limitRaw || item.flagRaw !== '' ||
+      item.funcbRaw !== null || item.source !== 'custom/inc-item-data.cgi' ||
+      item.line !== reviewed.line) {
+    fail('Reviewed peer item source metadata mismatch: ' + itemId);
+  }
+  return item;
+}
+
+/** Report only allowlisted items whose source identity matches frozen review. */
+export function listReviewedPeerItems(model) {
+  return Object.freeze(REVIEWED_PEER_ITEMS.map(entry => {
+    const item = reviewedPeerItem(model, entry.id);
+    return Object.freeze({
+      id: item.id, code: item.code, name: item.name,
+      price: item.price, limitRaw: item.limitRaw,
+      source: item.source, line: item.line,
+    });
+  }));
+}
+
 export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   if (!model || !buyer || !seller || !request) fail('Missing transaction data');
   const now = whole(request.now, 'now');
@@ -64,11 +112,7 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
     fail('Guild-linked trade requires an unimplemented guild ledger');
   }
 
-  const reviewedItem = model.items?.find(item => item.id === 79);
-  if (request.itemId !== 79 || reviewedItem?.code !== 'gift' ||
-      reviewedItem.name !== '禮物卷') {
-    fail('Only reviewed callback-free peer item #79 is supported');
-  }
+  const reviewedItem = reviewedPeerItem(model, request.itemId);
   if (!Array.isArray(buyer.item) || !Array.isArray(seller.item) ||
       buyer.item.length !== model.maxItem || seller.item.length !== model.maxItem) {
     fail('Incorrect shop inventory shape');
@@ -82,8 +126,9 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   // buy-s.cgi handles stock caps and affordability first, then UseTime,
   // GetSaleTax, inventory, balances and accounting counters.
   const quote = quoteUnguildedPurchase(model, buyer, seller, request);
-  const index = 78;
-  const sellerStock = whole(seller.item[index], 'seller item #79');
+  const itemId = reviewedItem.id;
+  const index = itemId - 1;
+  const sellerStock = whole(seller.item[index], 'seller item #' + itemId);
   const soldOut = sellerStock === quote.count;
   // Core buy-s.cgi: sold-out rankdown = (seller.rank / 100)^3 / 1000.
   // When 0 < rankdown < 1, the original uses rand(1 / rankdown) < 1 to
@@ -108,7 +153,7 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
       rankDown = Math.trunc(rawRankDown);
     }
   }
-  const buyerStock = whole(buyer.item[index], 'buyer item #79');
+  const buyerStock = whole(buyer.item[index], 'buyer item #' + itemId);
   const payable = whole(quote.buyerDebit, 'buyer debit');
   if (payable > buyer.money) fail('Insufficient buyer cash');
 
@@ -126,8 +171,8 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
     quote.tax, 'seller taxtoday');
   const sellerTrush = safeSum(whole(seller.trush ?? 0, 'seller trush'),
     quote.sellerTrashIncrease, 'seller trush');
-  const priorItemToday = whole((seller.itemtoday ?? {})[79] ?? 0,
-    'seller itemtoday #79');
+  const priorItemToday = whole((seller.itemtoday ?? {})[itemId] ?? 0,
+    'seller itemtoday #' + itemId);
   const nextItemToday = safeSum(priorItemToday, quote.count, 'seller itemtoday');
 
   const nextBuyerItem = [...buyer.item];
@@ -156,12 +201,12 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
     saletoday: sellerSaletoday, taxtoday: sellerTaxtoday,
     ...(soldOut ? { rank: rankAfter } : {}),
     item: nextSellerItem,
-    itemtoday: { ...(seller.itemtoday ?? {}), 79: nextItemToday },
+    itemtoday: { ...(seller.itemtoday ?? {}), [itemId]: nextItemToday },
   };
   return {
     buyer: nextBuyer, seller: nextSeller,
     receipt: Object.freeze({
-      ...quote, buyerId, sellerId, itemId: 79,
+      ...quote, buyerId, sellerId, itemId,
       soldOut, rankDown, rankBefore, rankAfter,
       scope: 'in-memory unguilded peer transfer with sold-out rank projection; no persistence',
     }),
