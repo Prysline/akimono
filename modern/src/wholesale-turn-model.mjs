@@ -103,7 +103,9 @@ export function projectReviewedWholesaleTurnItem(model, worldStock, shops, {
   itemId, timespanSeconds, population, maxUsers, random,
 }) {
   const item = reviewedItem(model, itemId);
-  natural(timespanSeconds, 'timespanSeconds');
+  // inc-turn.cgi skips this entire loop when timespan <= 0, including caps.
+  // This per-item projection is only defined for positive processed spans.
+  natural(timespanSeconds, 'timespanSeconds', 1);
   natural(population, 'population');
   natural(maxUsers, 'maxUsers', 1);
   if (!Array.isArray(worldStock) || worldStock.length !== model.maxItem) {
