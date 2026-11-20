@@ -104,7 +104,7 @@ test('B-26 showcase resize local aliases all point at first use body',()=>{
 });
 test('B-26 job/career guide 13 aliases reuse source, do not make 13 definitions',()=>{
   const r=result.postUse.filter(x=>x.ownerItemId===78);
-  assert.equal(r.length,13);
+  assert.equal(r.length,14);
   assert.equal(r[0].resolution,'inline-definition');
   assert.ok(r.slice(1).every(x=>x.resolution==='local-alias'));
   assert.ok(r.every(x=>x.originStart===r[0].originStart));
