@@ -72,9 +72,9 @@ sub parse_dsl {
   # Above collects only sections before USE header. That is enough to read
   # all ITEM header fields, which must occur before their first USE.
   my $full=original_dsl();
-  my($giftSection)=$full=~/(^@@ITEM[^\n]*\n[ \t]*no[ \t]+79\b[\s\S]*?)(?=^@@(?:ITEM|EVENT|event|END)\b|\z)/mi;
+  my($giftSection)=$full=~/(^\@\@ITEM[^\n]*\n[ \t]*no[ \t]+79\b[\s\S]*?)(?=^\@\@(?:ITEM|EVENT|event|END)\b|\z)/mi;
   die 'B-33 exact source ITEM #79 section missing' unless $giftSection;
-  my @parts=split(/^\s*@@USE[^\n]*(?:\n|\z)/mi,$giftSection);
+  my @parts=split(/^\s*\@\@USE[^\n]*(?:\n|\z)/mi,$giftSection);
   die 'B-33 original gift USE blocks changed' unless @parts==6;
   return (\@items,\@parts);
 }
