@@ -31,7 +31,7 @@ CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **10 個 Perl 測試檔，252/252 個斷言**：
+目前已由 GitHub Actions 成功執行 **11 個 Perl 測試檔，295/295 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -45,9 +45,10 @@ prove -v *.t
 | `backup-safety.t` | 原版 `CheckLockStatus`／`DataFilesBackup`／`DataWrite` 鎖與備份錯誤路徑（隔離暫存目錄） | 24 |
 | `world-read-safety.t` | 擷取**未修改**的固定 Core `DataRead` 函式，在隔離世界檔驗證缺失、損壞與缺少 `//` 的有界中止 | 24 |
 | `world-one-shop.t` | 使用固定 `@DTindexnamelist` 與原版 `DataRead` 函式本體，驗證空城鎮、一／兩店、重複 ID、缺少商店第二行的原版行為 | 34 |
-| **合計** | | **252** |
+| `world-shop-history.t` | 固定 Core `DataRead` 與**原版 `AutoVar` 套件**的商店歷史雜湊、使用者延遲解碼、奇數／重複鍵及 Tab 分隔符測試 | 43 |
+| **合計** | | **295** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十七階段累計 **252／252 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十八階段累計 **295／295 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -160,3 +161,17 @@ Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` �
 Node 新增 `src/world-one-shop-parser.mjs` 採更嚴格的**獨立唯讀單店**模型，對動態事件／非空城鎮／第二間商店、缺失的商店第二行、32欄之外或尚未審查的欄位、非整數展示／價格／庫存、商品 user 與 yesterday／today／exp 區段均拒絕。不輸出第5欄 `pass` 原文。**第十六階段五行純世界預檢未放寬**，不能把單店示範當作真實商店、認證、交易或存檔支援。
 
 本階段 Perl 從218增加34至 **252／252**；Node 從240增加25至 **265／265**。原版 Core 快照仍是12份，且既有 CGI／正式世界資料均未修改。
+
+## 第十八階段：商店歷史雜湊與原版 AutoVar 延遲解碼
+
+新增 `world-shop-history.t` **43項原版 Perl 隔離斷言**；比第十七階段更進一步，除了擷取**既有 SHA 固定、未修改**的 `inc-func.cgi::DataRead` 函式本體外，這次還精確擷取並直接執行**同一原版檔案**第440行起的 `package AutoVar`，包括 `Get`、`TIESCALAR`、`FETCH`、`STORE`。原版整份 `inc-func.cgi` 的頂層仍未 require，避免觸發原始 CGI、遊戲初始化、任意商品／事件 require。所有檔案 I/O 僅限 `File::Temp` 測試世界；`GetPath`、`GetDTPoint`、`OutError` 等外部依賴是最小替身。
+
+來源精確行為：
+- 商店第二行經原版 `split(/:/,$DATA[$idx],7)` 後，`@list[3,4,5]` 分別對應 `itemyesterday`（昨日紀錄）、`itemtoday`（今日紀錄）、`exp`（熟練度），原版以 `map{{split(/,/,$_)}}` **立即建立 Perl HASH 參照**。
+- `@list[6]` 若非空，原版 `tie $DT{user},'AutoVar',[...,'HASH','[\t,]']`；`AutoVar::Get` 在尚未取值時會**直接傳回原始字串**，只有第一次 `FETCH` 才以逗號或 Tab 切分出使用者 HASH、並嘗試 untie。空白 `user` 區段則直接建立未綁定的空 HASH。
+- 原版對奇數個鍵值元素可建立**值為 undef 的最後一個鍵**；遇到重複鍵，後面的值覆蓋前面的值；這些原版行為已由真正執行的 Perl 測試確認。不可把 `DataRead()` 成功理解為所有 user／歷史資料格式有效。
+- `AutoVar::Get(`雜湊參照`)` 會使用 Perl HASH 的順序輸出配對，**沒有固定的序列化順序保證**；Node 子集採排序陣列呈現，僅供穩定測試展示，不能聲稱原文逐位元組往返。
+
+Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保守子集**：先將新增加的四段資料以受限規則檢查，再將其原始區段從**副本**置空交給 B-17 安全解析器完成世界／32欄商店前置檢查；不放寬 B-16 或 B-17 任何既有入口。歷史三雜湊僅接受至多79個、鍵為標準街已核對商品 ID 1～79 的成對非負安全整數；用戶資料只接受不超過8組 ASCII 合成鍵及非負安全整數，允許逗號／Tab 分隔，**但回傳內容只包含人數，不輸出任何使用者名稱、資料值、`pass` 或其他認證秘密**。奇數配對、重複鍵、不安全字元、超出數量、未審查狀態均拒絕。這是比原版嚴格的測試模型，**不應拿來解析、驗證或還原真實使用者資料**。無事件執行、AutoVar 回呼、真實登入、存檔提交或 CGI HTTP。
+
+本階段新增 **43 項 Perl 斷言、28 項 Node 測試**，使 CI 累計 **295／295 Perl、293／293 Node**；原版 Core 快照依舊12份，完整 Git Blob SHA 驗證不變。
