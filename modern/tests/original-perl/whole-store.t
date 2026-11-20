@@ -43,4 +43,41 @@ is($DTwholestore[9],7,'B-04-K: SetWholeStore 回存 ID10 索引9');
 is($DTwholestore[4],3,'B-04-L: SetWholeStore 回存 ID5 索引4');
 is($DTwholestore[10],0,'B-04-M: SetWholeStore 清除其他商品存量');
 
+
+// Fractional wslimit fixtures mirror the pinned Standard Street numeric DSL:
+// ITEM #20 (book-ken) LIMIT 20/0.5; ITEM #25 (mino) LIMIT 20/1.5.
+// Original plug/whole.cgi is executed with manually supplied compiled scalar
+// values. No real inc-makeitem.cgi administrative compiler or CGI server runs.
+$ITEM[20]={code=>'book-ken',wslimit=>0.5};
+$ITEM[25]={code=>'mino',wslimit=>1.5};
+@DT=({item=>[(0)x$MAX_ITEM]});
+@DTwholestore=(0)x$MAX_ITEM;
+$DTwholestore[19]=10;
+$DTwholestore[24]=10;
+CheckWholeStore();
+is($DTwholestore[19],1,'B-04-N: 小數0.5 × 1店 +0.99 截斷為1');
+is($DTwholestore[24],2,'B-04-O: 小數1.5 × 1店 +0.99 截斷為2');
+
+@DT=({item=>[(0)x$MAX_ITEM]},{item=>[(0)x$MAX_ITEM]});
+$DTwholestore[19]=10;
+$DTwholestore[24]=10;
+CheckWholeStore();
+is($DTwholestore[19],1,'B-04-P: 0.5 × 2店的市場總量上限為1');
+is($DTwholestore[24],3,'B-04-Q: 1.5 × 2店的市場總量上限為3');
+
+@DT=map {{item=>[(0)x$MAX_ITEM]}} 1..3;
+$DTwholestore[19]=10;
+$DTwholestore[24]=10;
+CheckWholeStore();
+is($DTwholestore[19],2,'B-04-R: 0.5 × 3店的市場總量上限為2');
+is($DTwholestore[24],5,'B-04-S: 1.5 × 3店的市場總量上限為5');
+
+$DT[0]{item}[19]=1;
+$DT[0]{item}[24]=2;
+$DTwholestore[19]=10;
+$DTwholestore[24]=10;
+CheckWholeStore();
+is($DTwholestore[19],1,'B-04-T: 總上限2扣店內持有1，批發餘額1');
+is($DTwholestore[24],3,'B-04-U: 總上限5扣店內持有2，批發餘額3');
+
 done_testing();
