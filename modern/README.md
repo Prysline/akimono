@@ -542,3 +542,36 @@ npm run demo:shop-history
 ```
 
 **尚未完成：** 原版真實 AutoVar 多數據／特殊使用者資料格式、安全登入與權限、複數商店、事件與城鎮、熟練度跨期衰退、使用商品完整回呼、正式世界資料 I/O／持久化／原子提交，以及 CGI HTTP 端到端。此次的 parser 僅是**狹窄、無 I/O、無權限的合成資料研究模型**，不可直接部署為帳號資料或世界存檔載入器。任務02維持「進行中」、PR #1 保持 Draft，不合併 `main`。
+
+## 第十七批：原版每日歷史與熟練度增減的隔離契約（第十九階段）
+
+本階段直接核對固定 Core [`inc-period.cgi` 第65～75、109～115行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-period.cgi#L65-L115)、[`plug/use.cgi::UseItem` 第171～205行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L171-L205)，及標準街 `_config.cgi` 中的**熟練度設定**：`EXP_DOWN_RATE=60`、`EXP_DOWN_POINT=5`、`LIMIT_EXP=3600`。兩份新增未修改原版快照位於 `modern/tests/original-perl/period.cgi`（Git Blob `6183e88e9dd69a16606a1064c8084e9a1411dbd5`）與 `use.cgi`（Git Blob `1bf4537cc41e344c144d840d43175c4c232765bb`），CI 追加原樣 `git hash-object` 核對；總計已固定**14份 Core Git Blob 快照**。原始 Core commit 仍是 `738d71a2985fd088f2ca90f25145706392ee2365`。
+
+### 原版來源規則（已實測隔離片段）
+
+| 機制 | 固定 Core 原式／效果 | 此批支援邊界 |
+| --- | --- | --- |
+| 每日歷史切換 | `itemyesterday=itemtoday; itemtoday={}`，昨日舊內容被昨日的**新當期紀錄**取代 | 僅商店商品歷史雜湊交接，不執行完整週期 |
+| 熟練度自然衰退 | 每項先減 `int(exp*60/1000)`，再減 **5**；結果小於或等於0即刪除 | 原版比例／固定值以實際 `_config.cgi` 為準 |
+| 使用商品增加熟練度 | 成功使用次數 `count` × `USE.exp`，選定商品單項上限為 **1000** | 未重演材料、機率、金錢、時間、事件／商品回呼 |
+| 熟練度總和超過3600 | 原版 `sort` 以熟練度由低至高排列鍵，略過選定商品；其餘項目依**當下剩餘超額與剩餘數量逐次重新計算**減少量，必要時刪除降至0的記錄 | 若多個**非選定商品**的 exp 相同、需進入超額分攤分支，安全模型拒絕，避免假定 Perl HASH 的相等排序可預測 |
+
+原版有一個很容易誤抄的細節：假設五件商品一開始的熟練度依序為 `{1:900,2:700,3:800,4:850,5:900}`，對 #1 增加100後，原版總和為4250、超過3600的額度為650。其他四件不是都扣 `650/4`；而是**依序使用 `int(650/4)=162`、`int(488/3)=162`、`int(326/2)=163`、`int(163/1)=163`**，最終為 `{1:1000,2:538,3:638,4:687,5:737}`，總和恰為3600。此結果由**原版 Perl 固定來源的實際片段執行**與 Node 狀態模型測試交叉核對；並非自行假設平均分攤。若多個其他商品熟練度相同，原版排序的同值順序沒有明確業務規則，受限 Node 模型拒絕該情況，而不是憑空決定 tie-break。
+
+### 這一階段新增的程式與測試
+
+- [`modern/tests/original-perl/period-experience.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/period-experience.t)：**33項原版 Perl 隔離斷言**。由於原版 `inc-period.cgi` 是一整段**會立即執行**公會結算、備份、session 清理、隨機、商店關閉等操作的程式，而 `plug/use.cgi::UseItem` 前半段會操作商品、金錢、時間與動態回呼，因此不能安全地在隔離情境執行**整份原始入口**。測試只從已固定 SHA 的**未修改原版文字中精確擷取**「歷史兩句」、「熟練度衰退迴圈」與「UseItem 熟練度尾段」，插入明確的最小合成 `$DT`、`$USE` 狀態和標準街參數後直接編譯執行這些**原樣原式**。沒有任意使用者 Perl 程式碼、真實世界檔案、事件與正式 CGI 操作。
+- 新增 [`modern/src/period-experience-model.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/period-experience-model.mjs)：`REVIEWED_EXP_CONFIG`、`projectReviewedPeriodHistory`、`projectReviewedUseExperience`。接受既有 B-18 格式的商品編號／安全整數配對，回傳不可變且排序後的合成狀態。每日歷史欄位只做交接與經驗衰退；使用商品只計算已知 `USE.exp × count`、1000單項上限和必要的3600總量扣減。輸入超界、重複商品鍵、經驗異常或需對其他商品同值排序時**明確拒絕**。
+- 新增 [`modern/tests/period-experience-model.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/period-experience-model.test.mjs)：**30項 Node.js 測試**，來源原文字句／設定核對、歷史移交、`exp100→89`／`6→1`／`5→刪除` 等衰退案例、`exp80×3`、上限1000、超過3600時逐次扣減、同值排序拒絕、錯誤資料、不變性與從 B-18 單店解析器取得合成資料後的模型整合。
+- 新增 [`modern/scripts/demo-period-experience.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-period-experience.mjs) 與 `npm run demo:period-experience`，以固定合成資料呈現歷史交接、熟練度衰退、單項1000上限、3600總和逐次扣減與同值排序拒絕；已加入 GitHub Actions。
+
+本階段使全部 Node 測試由 **293增至323項**；原版 Perl 隔離斷言由 **295增至328項**。CI 維持 DSL audit、歷次合成示範以及現有**14份**固定 Core Git Blob 的完整性核對。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:period-experience
+```
+
+**仍未完成：** 完整 `inc-period.cgi` 真實每日結算（商店關閉、經濟與公會、事件、備份、隨機）、完整 `UseItem`（資格、材料／機率、時間金錢、動態商品回呼）、真實多商店世界存檔讀寫、跨程序安全鎖、原子提交／fsync、CGI HTTP 端到端。本次純模型結果只能供隔離推算／來源審查，絕不代表已有部署權限、資料持久化或真實商品使用。任務02維持「進行中」，Draft PR #1 未合併，不改 `main`。
