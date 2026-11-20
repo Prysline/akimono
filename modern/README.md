@@ -724,3 +724,28 @@ prove -v original-use-experience-transaction.t
 ```
 
 **本階段經確認：460／460 Node、505／505 Perl 隔離斷言通過**。未完成真正商品／職業／functionbefore 回呼、完成版熟練度與其他動態 side effects 的交互驗證、正式世界存檔／鎖／備份／原子提交、CGI HTTP 或 Perl／JS RNG 種子位元級等價。原版優先、異常獨立記錄、不修改遊戲規則；Draft PR 保持不合併、任務02仍進行中。
+
+## 第二十三批：原版 CheckUseItem／職業函式／functionbefore 隔離驗證（第二十五階段）
+
+本階段依固定 Core `katelynn620/akimono-core@738d71a2985fd088f2ca90f25145706392ee2365` 未修改 `plug/use.cgi` 的 `CheckUseItem`、`GetUseItem`、`GetUseItemListSub` 實際來源及固定 `inc-makeitem.cgi` 的欄位生成片段，繼續保持**原版優先、問題獨立記錄、不擅自修正原版遊戲規則**。原版14份 Core Git Blob SHA 快照不變。
+
+**原版動態順序（已直接執行 Perl 隔離測試）：** 先尋找 `item::_job_use_<use.no>_<shop.job>_` 專屬職業函式，有定義就呼叫；**只有專屬不存在時**才尋找 `item::_job_use_0_<shop.job>_` 共用函式。職業函式可能更改 `USE` 等資料，之後才讀取當前的 `USE.functionbefore` 並呼叫 `item::<functionbefore>(USE)`。其回傳值為2時立即給予「僅顯示」的狀態，回傳1時立即拒絕，其他受測數值才會繼續按照 `USE.use` 原順序逐項做材料檢查。這些函式返回值及材料狀態是 **`CheckUseItem` 的選單／前置檢查結果，不代表已執行真正 `UseItem`**。
+
+**原版旗標陷阱：** `GetUseItem` 與 `GetUseItemListSub` 僅在返回2時設 `dispok=1`，或在返回1時設 `useok=1`。**不會因後來返回0／2而把舊的 `useok`／`dispok` 清除**。此現象獨立記於 [CORE-13](docs/original-behavior-issues.md)；若 `functionbefore` 指向不存在的函式，固定 Perl 片段會發生 `Undefined subroutine` 錯誤，見 CORE-14。兩者均不在移植時自動「合理化」修復。
+
+**新增實作：**
+- [`projectOriginalUseEligibility` 合成純函式模型](src/original-use-eligibility-model.mjs)：以具名、限量的合成資料描述回呼效果（例如更改材料需求、庫存、函式名稱／旗標），並保留原版的專屬／共用尋找順序、前置函式回傳狀態、短路檢查及舊旗標。**不能直接執行未知 JavaScript 函式、Perl DSL 或外部回呼**；未解析的 `functionbefore` 明確拒絕測試資料，不擅自當成允許。
+- [原版 `CheckUseItem`／`GetUseItem` 原樣 Perl 隔離測試](tests/original-perl/original-use-eligibility.t)：由固定 SHA 的原始來源精確擷取四個原版函式，搭配**僅在測試內定義的 `package item` 函式**，驗證專屬職業優先、fallback、前置回傳2／1／其他、回呼改變材料／店家、旗標不清除、找不到函式與 material 短路。
+- [商品回呼靜態契約檢查](tests/original-perl/original-item-callback-contract.t)：只核對 `CheckWholeStore` → `RequireFile('inc-item.cgi')` → `result.function` 符號是否存在 → 向商品回呼暴露 `@item::DT`／`item::DTS`／`item::count`／`item::USE`／`item::DT`／`@item::ITEM` → `function_return` → 熟練度尾段的原版程式文字，**沒有執行真正商品回呼、動態 require 或 DSL 編譯**。
+- [Node.js 對照測試](tests/original-use-eligibility-model.test.mjs) 與 [13 組原版 Perl JSON Probe](tests/original-perl/original-use-eligibility-probe.pl)：`npm test` 會直接執行未修改來源片段，在人工宣告的安全回呼下核對結構化回傳、呼叫順序、材料／庫存副作用和 flag；不是以靜態推論替代 Perl 驗證。
+- [合成示範](scripts/demo-original-use-eligibility.mjs)：`npm run demo:eligibility`，已加入既有 CI；只顯示選單資格，不授權真實交易。
+
+```sh
+cd modern
+npm test
+npm run demo:eligibility
+cd tests/original-perl
+prove -v original-use-eligibility.t original-item-callback-contract.t
+```
+
+**未完成／不可誤稱：** 真正 `inc-item.cgi` 的安全載入與實際商品／事件回呼、任何未知職業函式的完整效果、正式 DSL 編譯與所有 116 USE 規則整合、回呼修改狀態後的真正 `UseItem`／熟練度尾段、存檔／鎖／CGI HTTP。固定 `inc-makeitem.cgi` 檔案在此只做欄位來源核對，沒有啟動其頂層編譯程式。CI 通過僅支持來源明確的純記憶體片段，任務02保持進行中、PR #1 維持 Draft 並不合併。
