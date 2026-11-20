@@ -47,8 +47,8 @@ function checkWorld(world){
   if(w.streetId!==SOURCE_USE_FIXTURE_STREET_ID||
      w.worldId!=='b32-synthetic-source-transactions'||w.shops.length!==2)
     bad('not reviewed synthetic WorldState');
-  if(!w.shops.every(s=>Object.keys(s).sort().join('|')===
-      EXACT_SHOP_KEYS.slice().sort().join('|')))bad('fixture shop shape');
+  if(Object.keys(w.shops[0]).sort().join('|')!==
+      EXACT_SHOP_KEYS.slice().sort().join('|'))bad('fixture acting shop shape');
   checkShop(w.shops[0]);
   if(w.shops[0].id!==42)bad('acting shop must be synthetic #42');
   const second=w.shops[1];
