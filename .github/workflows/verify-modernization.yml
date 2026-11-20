@@ -53,6 +53,7 @@ jobs:
           npm run demo:item-loading
           npm run demo:item-helpers
           npm run demo:integrated-use
+          npm run demo:game-core
       - name: Verify pinned original Core source blobs
         run: |
           test "$(git hash-object modern/tests/original-perl/calc.cgi)" = "586354a9a300e26d0e12a4efa512fa25760e3197"
