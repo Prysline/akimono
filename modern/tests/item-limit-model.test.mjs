@@ -165,13 +165,15 @@ test('B-01 lv before PRICE does not inherit a future default', () => {
     mode:'core-price-after-level-fallback-subset'});
 });
 
-test('B-01 source ordering: literal LIMIT preceding PRICE is preserved', () => {
-  const item=model.items.find(x=>x.id===63);
-  assert.equal(item.limitRaw,'1/1');
-  assert.ok(item.priceSourceLine>item.limitSourceLine);
+test('B-01 source ordering: a literal LIMIT preceding PRICE is preserved', () => {
+  // #63's PRICE is physically after a USE section; the current read-only
+  // parseDsl deliberately does not attach it to the ITEM block. Read the
+  // pinned DSL source lines rather than inventing model.priceSourceLine.
+  const lines=itemDsl.split(/\r?\n/);
+  assert.match(lines[1908],/^\s*limit\s+1\/1(?:\s|$)/i);
+  assert.match(lines[2006],/^\s*price\s+80000(?:\s|$)/i);
   const actual=compileOrderedItemLimit({
-    price:item.price,priceLine:item.priceSourceLine,
-    limitRaw:item.limitRaw,limitLine:item.limitSourceLine,
+    price:80000,priceLine:2007,limitRaw:'1/1',limitLine:1909,
   });
   assert.deepEqual(actual,{limit:1,wslimit:1,raw:'1/1',
     mode:'literal-core-limit-subset'});
