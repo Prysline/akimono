@@ -676,3 +676,25 @@ npm run demo:multi-item
 ```
 
 **範圍未擴大的部分：** 仍未完成真實 `UseItem` 的使用資格、費用／時間、商品與事件動態回呼、玩家認證、持久化世界檔與 OS 鎖／備份／原子提交，以及原版 Perl PRNG 種子與 JS PRNG 的跨平台逐位元組一致性。此階段只驗證**原版數值／來源順序**，沒有啟動任何正式存檔或完整 CGI，PR #1 繼續 Draft，任務02仍「進行中」。
+
+## 第二十一批：原版 UseItem 資格／帳務／多商品數值串接（第二十三階段）
+
+本批只串接先前已驗證的原版**數值計算片段**，仍遵守「**原版怎麼算就怎麼移植，異常獨立記錄，不在移植時擅自修正**」。來源固定為 Core `738d71a2985fd088f2ca90f25145706392ee2365` 的未修改 `plug/use.cgi::UseItem`（資格到市場檢查）、`plug/calc.cgi::GetItemUseTime / UseTime`、`plug/whole.cgi::CheckWholeStore`，14份快照 SHA 檢查不變。
+
+原版順序：**按熟練度→職業→點數→人氣→必要事件→金錢→時間→逐筆材料**修正有效次數，立即記入 `USE.result.count`；為0時直接返回，**不扣款、不動庫存、也不呼叫市場檢查**。若非0則先 `UseTime(usetime*count)`、扣現金並增加 `paytoday`，才按來源次序消耗全部材料、逐筆產出、最後一次 `CheckWholeStore`。時間先以原有 `DT.time` 決定有效次數，**真正 `UseTime` 才處理 `MAX_STOCK_TIME` 上限**，不能提前把儲存時間修正後再算次數。
+
+新增 `src/original-use-transaction-model.mjs` 的 `projectOriginalUseTransaction`：保留來源的逐筆材料前置檢查（**重複材料不先合併**）、`proba==0` 的一份需求、熟練度對 `GetItemUseTime` 的 `expold` 覆蓋、`status=0` 不修改使用時間的來源分支，以及 B-22 的多商品、重複新增0與市場順序。合成例子：要求4次，費用20／次，現金70，現在時間1000、商店記錄950、有效單次時間18 → **執行2次**；現金70→30、`paytoday` 5→45、時間950→986，原兩店三商品庫存最後 `[[10,6,5],[3,4,2]]`、批發 `[3,0,-3]`，`additem` 保留 `[[1,6],[2,2],[1,0],[3,2]]`。尚未驗證的數值型別和超出 JavaScript 安全表示範圍會拒絕，這是合成測試限制**不是原版遊戲拒絕規則**。
+
+- `tests/original-perl/original-use-transaction.t`：直接執行 SHA 固定原版 `UseItem` 中從資格至 `CheckWholeStore` 的原始片段、原樣 `MakeAmount` 與 `calc.cgi`／`whole.cgi` 函式；隔離合成店家、時間及亂數，不觸發完整 CGI 或動態回呼。
+- `tests/original-use-transaction-model.test.mjs`：對等 Node.js 原版順序、原版帳務數值、重複材料、零次返回、時間上限、共用 RNG、不可變結果等測試。
+- `scripts/demo-original-use-transaction.mjs`：用 `npm run demo:transaction` 展示合成計算；已加入既有 GitHub Actions。
+- `docs/original-behavior-issues.md`：CORE-09／CORE-10 的原版重複材料及時間延後修正注意事項，**只記錄、不修復**。
+
+```sh
+cd modern
+npm test
+npm run demo:transaction
+cd tests/original-perl && prove -v original-use-transaction.t
+```
+
+**未涵蓋：** `CheckUseItem` 動態職業／`functionbefore` 及真正的選單授權、`RequireFile('inc-item.cgi')` 和商品 `function` 回呼、完整使用後熟練度重新分配、正式世界檔案寫入、CGI HTTP、跨程式鎖與持久化回滾、Perl／JS RNG 種子位元級等價。未授權正式遊戲商品使用與部署。PR #1 仍 Draft，不合併 `main`，Notion 任務02仍「進行中」。
