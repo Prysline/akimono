@@ -22,6 +22,11 @@ function nonnegative(value,label,{integer=true,max=Number.MAX_SAFE_INTEGER}={}){
   }
   return value;
 }
+function safeProduct(a,b,label){
+  const result=a*b;
+  if(!Number.isSafeInteger(result))fail(label+' exceeds safe integer arithmetic');
+  return result;
+}
 function slots(raw,label,{integer=false}={}){
   if(!Array.isArray(raw)||raw.length!==REVIEWED_USE_LIMITS.itemSlots){
     fail(label+' must contain exactly 79 positions');
@@ -108,14 +113,15 @@ export function projectReviewedUsePreflight({
     count=0;blocked.push('popularity');
   }
   if(needsEvent&&!eventSatisfied){count=0;blocked.push('event');}
-  if(costPerUse>0&&money<costPerUse*count){
+  if(costPerUse>0&&money<safeProduct(costPerUse,count,'money use cost')){
     count=Math.trunc(money/costPerUse);
   }
-  if(shopTimeSeconds+useTimeSeconds*count>nowSeconds){
+  if(shopTimeSeconds+safeProduct(useTimeSeconds,count,'time use cost')>nowSeconds){
     count=Math.trunc((nowSeconds-shopTimeSeconds)/useTimeSeconds);
   }
   for(const {itemId,requiredPerUse,probabilityPermille}of inputMaterials){
-    const checkedRequired=requiredPerUse*(probabilityPermille===0?1:count);
+    const checkedRequired=safeProduct(requiredPerUse,
+      probabilityPermille===0?1:count,'material use cost');
     if(current[itemId-1]<checkedRequired){
       count=Math.trunc(current[itemId-1]/requiredPerUse);
     }
@@ -138,7 +144,7 @@ export function sampleReviewedSmallMakeAmount({
 }){
   nonnegative(units,'units',{max:19});
   nonnegative(probabilityPermille,'probabilityPermille',{max:1000});
-  if(probabilityPermille===0)return Object.freeze({amount:0,draws:0});
+  if(units===0||probabilityPermille===0)return Object.freeze({amount:0,draws:0});
   if(probabilityPermille===1000)return Object.freeze({amount:units,draws:0});
   if(typeof random!=='function')fail('Explicit random callback required');
   let amount=0;
