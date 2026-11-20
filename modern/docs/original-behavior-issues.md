@@ -24,6 +24,8 @@
 | CORE-06 | [`plug/write.cgi` 的 `DataFilesBackup`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi) | 原版備份開檔及複製未逐項檢查結果；來源缺失可能把先前備份截斷為空，函式仍返回。 | 有資料遺失風險。 | 來源缺陷保留隔離證據；**絕不為了相容而對正式檔案執行危險備份** |
 | CORE-07 | [`inc-func.cgi` 的 `DataRead`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi#L233-L299) | 尋找 `//` 的迴圈沒有 EOF 上限；截斷或特定換行可能卡住。 | 原版讀檔可卡死。 | 隔離 Perl 測試必須有 timeout；正式讀取流程尚未啟用 |
 
+| CORE-08 | [`plug/use.cgi` 115–150](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L115-L150) | 同一商品可出現在多筆 `create` 中，原版依序處理每一筆；若 `MakeAmount` 算得非零，但前筆已使商店達上限，後筆仍可能 `push(additem,[itemId,0])`，並產生一筆丟棄紀錄。**全部 `create` 結束後才呼叫一次 `CheckWholeStore`**。 | 若誤將連續產出合併、略過零新增紀錄，或改成每產出一筆就修正市場，會失去原版紀錄與可能的市場計算順序。 | B-22 多商品、多商店原版 Perl 隔離測試與 Node 忠實數值模型；照原版保留零新增紀錄，不主動修復 |
+
 ## 不屬於改規則的技術限制
 
 - 浮點運算的語意以來源 Perl 表達式為準；JS `Math.sin`、`Math.sqrt`、原版 `rand` 與 JS 隨機種子的**位元級一致性尚未獲得全面證明**。B-21 先驗證相同兩次隨機輸入對公式的結果。
