@@ -29,6 +29,7 @@
     "demo:use-experience": "node scripts/demo-original-use-experience.mjs",
     "demo:eligibility": "node scripts/demo-original-use-eligibility.mjs",
     "demo:callbacks": "node scripts/demo-original-callback-inventory.mjs",
-    "demo:inline-callbacks": "node scripts/demo-original-inline-work-showcase.mjs"
+    "demo:inline-callbacks": "node scripts/demo-original-inline-work-showcase.mjs",
+    "demo:item-loading": "node scripts/demo-original-item-loading.mjs"
   }
 }
