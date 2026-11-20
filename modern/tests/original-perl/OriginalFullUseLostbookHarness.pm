@@ -91,7 +91,7 @@ sub run {
   my(%o)=@_;
   bootstrap();
   @TRACE=();
-  $main::NOW_TIME=1000;
+  $main::NOW_TIME=exists($o{nowSeconds})?$o{nowSeconds}:1000;
   $main::MAX_STOCK_TIME=259200;
   $main::LIMIT_EXP=3600;
   $main::USER='synthetic';
@@ -111,13 +111,22 @@ sub run {
     {code=>'B',limit=>6,wslimit=>-10,name=>'B',scale=>'item'},
     {code=>'',limit=>5,wslimit=>1,name=>'C',scale=>'item'},
   );
+  my $stocks=exists($o{stocks})?$o{stocks}:[$initialStock,4,3];
+  my $other=exists($o{otherShopStock})?$o{otherShopStock}:[3,4,2];
+  my $wholesale=exists($o{wholesale})?$o{wholesale}:[4,0,-5];
+  die 'B-32 expects three synthetic stocks each' unless
+    ref($stocks) eq 'ARRAY' && @$stocks==3 &&
+    ref($other) eq 'ARRAY' && @$other==3 &&
+    ref($wholesale) eq 'ARRAY' && @$wholesale==3;
   $main::DT={
-    item=>[$initialStock,4,3],exp=>{1=>$oldExp},
-    job=>'worker',point=>10,rank=>20,money=>$money,paytoday=>5,
-    time=>950,status=>$status,id=>42,shopname=>'原版店',
+    item=>[@$stocks],exp=>{1=>$oldExp},
+    job=>'worker',point=>10,rank=>20,money=>$money,
+    paytoday=>exists($o{paytoday})?$o{paytoday}:5,
+    time=>exists($o{storedTimeSeconds})?$o{storedTimeSeconds}:950,
+    status=>$status,id=>42,shopname=>'原版店',
   };
-  @main::DT=($main::DT,{item=>[3,4,2]});
-  @main::DTwholestore=(4,0,-5);
+  @main::DT=($main::DT,{item=>[@$other]});
+  @main::DTwholestore=@$wholesale;
   $main::B30_EXP_AT_CALLBACK=undef;
   $main::B30_STOCK_AT_CALLBACK=undef;
   @main::B30_WHOLE_AT_CALLBACK=();
