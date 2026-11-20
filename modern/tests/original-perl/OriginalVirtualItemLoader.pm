@@ -4,6 +4,7 @@ use warnings;
 use utf8;
 use FindBin;
 use JSON::PP ();
+use Encode qw(encode_utf8);
 use lib $FindBin::Bin;
 use OriginalInlineCallbackHarness;
 
@@ -78,7 +79,11 @@ sub scenario {
     die "Unknown in-memory loading request $requested"
       unless exists $virtual{$requested};
     push @HOOK_REQUESTS,$requested;
-    open(my $fh,'<',\$virtual{$requested}) or die "Cannot open virtual scalar";
+    # PerlIO scalar filehandles cannot directly open wide-character strings.
+    # Encode the reviewed UTF-8 source as bytes, exactly as require reads
+    # generated files; the virtual file's first line is use utf8.
+    my $bytes=encode_utf8($virtual{$requested});
+    open(my $fh,'<',\$bytes) or die "Cannot open virtual UTF-8 bytes: $!";
     return $fh;
   };
   local @INC=($hook);
