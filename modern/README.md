@@ -834,3 +834,25 @@ prove -v original-item-helpers.t
 ```
 
 **未涵蓋：** 完整 `plug/use.cgi::UseItem` 的材料消耗／時間金錢／市場檢查／熟練度前後串接、正式 `RequireFile`、原版商品整體 DSL 編譯或未知回呼、實際角色／世界資料、權限驗證、持久化與 CGI HTTP。所有 Node 整數限制只是明確合成測資範圍，不是增加的原版遊戲規則。Task 02 仍進行中，Draft PR #1 不合併、`main` 不改。
+
+## 第三十階段：原版完整商品使用主函式＋`lostbook`＋熟練度的記憶體整合
+
+此前已分別驗證 B-23 `plug/use.cgi::UseItem` 前半交易、B-24 熟練度尾段、B-26／B-29 標準街 `lostbook` 真正商品助手。B-30 **第一次在同一隔離 Perl 執行環境中真正執行原版完整 `UseItem` 主函式**，並以原版 `calc.cgi` 的 `UseTime/GetItemUseTime`、原版 `whole.cgi::CheckWholeStore`、原版 `inc-item.cgi::UseItem/UseItemSub`、原樣 `lostbook` 本文串接，而不是只把幾個數值模型組合後宣稱完成來源驗證。**唯獨 `RequireFile('inc-item.cgi')` 必須使用只記錄呼叫的替身**；禁止真正 CGI、動態商品編譯／檔案、玩家存檔或對外日誌。
+
+- [詳細來源、13組原始 Perl 情境、完整順序與尚未驗證邊界](docs/original-integrated-use-lostbook.md)：`UseItem` 先做資格／金錢／時間／材料、主交易、**一次 `CheckWholeStore`**，然後使用後回呼 `lostbook` 若觸發則以原版 `item::UseItem` 追加第二段商品消耗，最後才處理熟練度。
+- [`OriginalFullUseLostbookHarness.pm`](tests/original-perl/OriginalFullUseLostbookHarness.pm) 僅抽取固定 Core `UseItem/MakeAmount/UseTime/GetItemUseTime/CheckWholeStore` 與已審閱的 `lostbook`／商品助手，全部操作**合成店家記憶體資料**；[`original-full-use-lostbook.t`](tests/original-perl/original-full-use-lostbook.t) 包含**75項**原版 Perl 隔離斷言；[`original-full-use-lostbook-probe.pl`](tests/original-perl/original-full-use-lostbook-probe.pl) 提供**13組**實際原版 Perl JSON 對照。
+- [Node 同順序模型](src/original-integrated-use-lostbook-model.mjs) 及 [25項來源／跨語言測試](tests/original-integrated-use-lostbook-model.test.mjs)，繼承 B-23／B-29 已核對行為，**只支援明確列出的 `lostbook` 或無回呼、機率0／1000材料、單一熟練度且無總熟練度溢位的限定測資**。對未審閱的回呼／隨機／世界效果明確拒絕，不宣稱完整 Perl CGI／DSL 等價。
+- [CORE-20](docs/original-behavior-issues.md)：在原版記憶體測資中，市場修正看到 `[10,6,5]`，之後 `lostbook` 將庫存變成 `[9,6,5]`，**原版不再執行第二次 `CheckWholeStore`**；熟練度只在回呼後 `200→260`。這是**原版順序**，不擅自補修正。
+- `npm run demo:integrated-use` 已納入 CI，展示成功、未觸發、零庫存、重複材料及數量0等**純合成**測資。
+
+**整體進度與下一步不再只看測試量：** [12項 Notion 任務狀態、可玩閉環驗收路線](docs/migration-progress-and-next-milestones.md)。當前正式狀態為 **01 已完成、02 進行中、03～12 待辦**，但最小 Core 相關子模型已有提前建立；不能把這些單獨模型／綠燈誤算成瀏覽器可玩、完整存檔或多人世界完成。**建議下階段優先將 `GameCore／StreetModule／WorldState` 的介面先訂出，再串起第一條可重現的標準街單機經營流程。**
+
+```sh
+cd modern
+npm test
+npm run demo:integrated-use
+cd tests/original-perl
+prove -v original-full-use-lostbook.t
+```
+
+原版兩份 DSL、18份固定 Core Blob、`main`、`migration/standard-street-s1` 均未改動；只更新獨立測試分支及 Draft PR #1，不合併。
