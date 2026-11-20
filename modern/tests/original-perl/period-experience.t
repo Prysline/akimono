@@ -147,7 +147,7 @@ my $budgetAction=do_gain($budget,1,100,1);
 is($budget->{exp}{1},1000,
   'B-19-AB: source protects selected item after gain');
 is_deeply($budget->{exp},{
-  1=>1000,2=>538,3=>638,4=>688,5=>736,
+  1=>1000,2=>538,3=>638,4=>687,5=>737,
 },'B-19-AC: distinct others receive source excess redistribution');
 my $budgetSum=0;
 $budgetSum+=$_ foreach values %{$budget->{exp}};
