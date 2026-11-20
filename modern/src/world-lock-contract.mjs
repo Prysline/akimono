@@ -59,12 +59,16 @@ export function reviewStaleWorldLocks({
     if (!Number.isSafeInteger(timestampSeconds)) {
       throw new RangeError('Unsafe stale lock timestamp');
     }
+    const processId = Number(owner[2]);
+    if (!Number.isSafeInteger(processId) || processId < 1) {
+      throw new RangeError('Unsafe stale lock process ID');
+    }
     const ageSeconds = nowSeconds - timestampSeconds;
     // The original ignores future and not-yet-stale locks.
     if (ageSeconds < autoUnlockSeconds) continue;
     reviewed.push(Object.freeze({
       name, timestampSeconds, ageSeconds,
-      processId: Number(owner[2]),
+      processId,
     }));
   }
   return Object.freeze(reviewed.sort((a,b)=>a.name.localeCompare(b.name)));
@@ -92,6 +96,7 @@ export function projectWorldLockTransition({
     });
   if (operation === 'acquire' && heldDepth > 0) {
     if (observedRename !== undefined) fail('Nested acquisition does not rename');
+    safeInteger(heldDepth + 1, 'nested heldDepth', 1);
     return record('nested-acquire', heldDepth + 1, true, false, true, null);
   }
   if (operation === 'release' && heldDepth === 0) {
