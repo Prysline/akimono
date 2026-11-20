@@ -52,8 +52,10 @@ test('B-12 frozen Core inc-turn source contains positive/negative PLUS and RNG e
 
 test('B-12 PLUS 20m with two shops, 100000 population, 600sec and draw zero adds two', () => {
   const actual=run(10,3);
-  assert.equal(actual.receipt.base,5.5);
-  assert.equal(actual.receipt.sampled,2.75);
+  // Preserve Core's floating-operation order: binary rounding can yield
+  // 5.500000000000001 instead of 5.5 without changing int(add).
+  assert.ok(Math.abs(actual.receipt.base - 5.5) < 1e-10);
+  assert.ok(Math.abs(actual.receipt.sampled - 2.75) < 1e-10);
   assert.equal(actual.receipt.units,2);
   assert.equal(actual.receipt.drawsUsed,1);
   assert.equal(actual.receipt.signedDelta,2);
