@@ -503,3 +503,42 @@ npm run demo:one-shop
 ```
 
 任務02繼續「進行中」；PR #1 保持 Draft，不合併或修改 `main`。
+
+## 第十六批：原版 AutoVar 商店歷史與使用者延遲資料（第十八階段）
+
+依固定 Core [`inc-func.cgi::DataRead` 第289～294行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi#L287-L294)、[同檔 `package AutoVar` 第440～470行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi#L440-L470) 以及 [`plug/write.cgi::DataWrite`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi#L77-L86) 核對。這些已包含於原版12份固定來源快照（`inc-func.cgi` Blob `e7a8add7b0291901e71fe797783b664dff1568a0`、`write.cgi` Blob `203f33b37511e838800a45b84183af98fcf46e4c`），CI 的 SHA 不變。
+
+### 原版來源與隔離實測
+
+**原版商店第二行固定分成七段，不能將全部欄位視為普通 CSV：**
+
+| 段落（1起始） | DataRead 原式 | 實際取得值 |
+| --- | --- | --- |
+| 1～3 | `@list[0,1,2]` | 展示、價格、商品庫存（第3段為 AutoVar `ARRAY`） |
+| **4** | `map{{split(/,/,$_)}}@list[3]` | `itemyesterday`，即刻成為 Perl HASH |
+| **5** | `map{{split(/,/,$_)}}@list[4]` | `itemtoday`，即刻成為 Perl HASH |
+| **6** | `map{{split(/,/,$_)}}@list[5]` | `exp`，即刻成為 Perl HASH（熟練度） |
+| **7** | `$list[6] ? tie(...,'AutoVar',...,'HASH','[\t,]') : {...}` | 非空 user **先保留為綁定原文**，第一次 FETCH 才拆解；空白 user 直接為空 HASH |
+
+這次同時核對固定 [Core `stock.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/stock.cgi) 的 `itemtoday->{$cnt}`／`itemyesterday->{$cnt}`／`exp->{$cnt}`，以及 [`plug/use.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi) 的 `exp->{$USE->{itemno}}`：在此已核對商品編號範圍 1～79 的合成測試中，三種雜湊的鍵代表商品編號。這兩個檔案本批只作**固定 commit 的原版閱讀證據**，未新增 Core 快照，也不宣稱已移植熟練度衰退或使用商品的實際邏輯。
+
+**危險而必須保留在測試中的原版容忍度：** 對不成對的歷史／user 鍵值，原版 HASH 可能留下值為 `undef` 的鍵；重複的鍵會覆蓋較早的值；`DataRead` 成功時，`user` 的 AutoVar 可能**尚未 FETCH、尚未驗證任何原文**。原版 `AutoVar::Get` 對未解開的綁定資料回傳原文；一旦轉為 Perl HASH，雜湊順序不保證，不能宣稱逐字輸出有固定排序。逗號與 Tab 都可能用於原版 user 的鍵值拆解。以上是實測的**來源行為**，不是新版允許不完整帳號／認證資料的理由。
+
+### 實作與安全界線
+
+- [`modern/tests/original-perl/world-shop-history.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/world-shop-history.t) **新增43項原版 Perl 隔離斷言**。從原樣保存、SHA 固定的 `inc-func.cgi` 精確擷取 `DataRead` 函式本體與**原版未修改** `package AutoVar` 直接執行；使用 `File::Temp` 合成一間商店的世界文字、限制執行時間及必要外部最小替身。實際驗證昨日／今日／經驗 HASH、使用者資料在 FETCH 前的綁定原文與 FETCH 後 HASH、空白使用者、奇數鍵值、重複鍵及 Tab／逗號語法。**沒有 require 原版頂層 CGI 或真正世界資料**，也不認證、讀取或更動真實帳戶。
+- 新增 [`modern/src/world-shop-history-model.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/world-shop-history-model.mjs) 的 `parseReviewedShopHistoryWorld(text)`：為**獨立的單店唯讀合成資料**新增歷史雜湊受限解析。先驗證第4～7段，再以**不改原始字串的副本**將四段置空，交給**第十七階段** `parseReviewedOneShopWorld` 完成世界、原本展示／價格／庫存、32欄頭與 `//` 等來源檢查；**沒有修改或放寬第十六、十七階段既有 parser 的條件**。
+- Node 歷史三雜湊只接受最少零組、最多79組的**成對非負安全整數**，鍵必須為商品編號1～79，重複／缺失鍵值會被拒絕，輸出以商品編號排序供測試決定性使用；這不代表原版 HASH 寫檔有相同排序。user 只接受至多8組**ASCII 合成測試名稱＋安全非負整數**，與原版一樣辨認逗號及 Tab，但結果**只回傳 `syntheticUserEntryCount`，不輸出 user 原文、使用者名稱／數值或商店 `pass`**。這絕非完整 AutoVar 用戶資料、登入、認證或可供正式存檔的 user 解析。
+- 新增 [`modern/tests/world-shop-history-model.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/world-shop-history-model.test.mjs) **28項 Node.js 測試**，覆蓋精確來源字句、歷史／user 受限正反案例、奇數鍵值與重複鍵拒絕、認證資料不外露、舊 B-17 入口維持拒絕新欄位、不可變輸出及不提供任何實際 IO 權限。
+- 新增 [`modern/scripts/demo-shop-history.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-shop-history.mjs) 和 `npm run demo:shop-history`，用合成世界文字對比正確配對／不同順序、重複／不成對鍵值與 user 安全拒絕，CI 也會執行。**示範無任何真實磁碟／遊戲存檔／事件或 AutoVar 執行**。
+
+此次累計從 **265增加28至293／293 Node**，從 **252增加43至295／295 原版 Perl 隔離斷言**；固定 Core 快照仍12份，DSL audit 與所有示範照常由 CI 核對。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:shop-history
+```
+
+**尚未完成：** 原版真實 AutoVar 多數據／特殊使用者資料格式、安全登入與權限、複數商店、事件與城鎮、熟練度跨期衰退、使用商品完整回呼、正式世界資料 I/O／持久化／原子提交，以及 CGI HTTP 端到端。此次的 parser 僅是**狹窄、無 I/O、無權限的合成資料研究模型**，不可直接部署為帳號資料或世界存檔載入器。任務02維持「進行中」、PR #1 保持 Draft，不合併 `main`。
