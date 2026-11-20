@@ -35,15 +35,15 @@ function safeInteger(value, label, min = 0) {
  *
  * The source's broad match also accepts malformed suffixes. This model
  * FAILS CLOSED on such names; only precise original-shaped owner basenames
- * (lock + digits + _pid + _remoteaddr) can be proposed for review.
+ * (lockfile + digits + _pid + _remoteaddr) can be proposed for review.
  * Ordering is canonical, NOT the order returned by readdir or renamed by Core.
  */
 export function reviewStaleWorldLocks({
-  entries, nowSeconds, autoUnlockSeconds, lockFile = 'lock',
+  entries, nowSeconds, autoUnlockSeconds, lockFile = 'lockfile',
 }) {
   safeInteger(nowSeconds, 'nowSeconds');
   safeInteger(autoUnlockSeconds, 'autoUnlockSeconds', 1);
-  if (lockFile !== 'lock') fail('Unexpected lock basename: source review required');
+  if (lockFile !== 'lockfile') fail('Unexpected lock basename: source review required');
   if (!Array.isArray(entries)) fail('entries must be an array of lock basenames');
   const seen = new Set();
   const reviewed = [];
@@ -52,8 +52,8 @@ export function reviewStaleWorldLocks({
         name.includes('..')) fail('Unsafe lock basename');
     if (seen.has(name)) fail('Duplicate lock basename');
     seen.add(name);
-    if (name === lockFile || !/^lock\d/.test(name)) continue;
-    const owner = /^lock([0-9]+)_([1-9][0-9]*)_([A-Za-z0-9][A-Za-z0-9.:%-]*)$/.exec(name);
+    if (name === lockFile || !/^lockfile\d/.test(name)) continue;
+    const owner = /^lockfile([0-9]+)_([1-9][0-9]*)_([A-Za-z0-9][A-Za-z0-9.:%-]*)$/.exec(name);
     if (!owner) fail('Ambiguous original stale lock filename: ' + name);
     const timestampSeconds = Number(owner[1]);
     if (!Number.isSafeInteger(timestampSeconds)) {
