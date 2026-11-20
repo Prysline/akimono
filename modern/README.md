@@ -792,3 +792,24 @@ prove -v original-inline-work-showcase.t
 ```
 
 **明確界線**：未執行完整 `UseItem`、所有動態商品／職業／事件回呼、原版編譯器全程、實際 `WriteLog`／`GetMoneyString` 的正式跨套件依賴、真實使用者與世界檔案。工作 callback 自身加錢與展示架 callback 自身改陣列，不等於完整交易的權限、成本或時間均已相容。Task 02 仍進行中，Draft PR 不合併，遊戲規則不擅自修正。
+
+## 第二十八階段：真正原版商品載入鏈、Perl require 路徑快取與同名函式隔離
+
+依 [原版載入路徑完整說明](docs/original-item-loading.md) 重新讀取未改動固定 Core `item.cgi`、`item-m.cgi`、`item-s.cgi`、`inc-item.cgi`、既有 `inc-makeitem.cgi`、`plug/use.cgi` 及本倉庫現有 `_config.cgi::RequireFile`。**釐清兩種不同的載入**：原版 `RequireFile('inc-item.cgi')` 會先找 `custom` 覆蓋檔、再找內建來源；但原版商品入口另外用 `GetPath($ITEM_DIR,"use",$ITEM[$itemno]->{code})` 決定商品使用檔，並直接 `require $itemcode`。此 repo 的 `custom/` 目前**沒有** `inc-item.cgi` 覆蓋檔，Node 新測試也直接檢查此事實。`inc-item.cgi` 是 `package item` 的共用 `UseItem`／`WriteLog` 等函式，依 `DEFINE_FUNCITEM` 可引入 `funcitem.cgi`；它**不是**逐商品選擇 `use/<商品>.cgi` 的地方。
+
+- **新增四份固定 Core 純文字快照**：`modern/tests/original-perl/core-inc-item.cgi`、`core-item-detail.cgi`、`core-item-form.cgi`、`core-item-submit.cgi`。它們逐字拷貝不可變 Core commit `738d71a...` 的對應原檔，與既有**14份原版快照分開**以 Git Blob SHA 固定於 CI。四份原始 CGI **完全不執行**。
+- [原版 Perl 記憶體虛擬商品載入器](tests/original-perl/OriginalVirtualItemLoader.pm)：只取 B-27 已審閱的商品13工作與商品63展示架兩份**原始本地 Perl 函式本文**，配合原版編譯器 `package item; sub _local_1 {eval(<<'_eval_code_')}` 同形包裝，產生**純記憶體合成**模組。實際執行 Perl `require $itemcode` 和 `%INC` 快取，但透過 `@INC` scalar hook 提供檔案內容，沒有建立／讀寫任何真正編譯輸出或世界資料。`@item::USE` 記錄是依原版索引賦值結構製作的**簡化合成物件**，不是宣稱真正執行完整 `inc-makeitem.cgi`。
+- [50項原版 Perl 來源與動態符號隔離斷言](tests/original-perl/original-virtual-item-require.t)、[9組每次獨立啟動 Perl 程序的 JSON probe](tests/original-perl/original-virtual-item-require-probe.pl)、[Node 同語意模型](src/original-item-dynamic-loading-model.mjs) 和 [29項 Node 測試](tests/original-item-dynamic-loading-model.test.mjs)（含9組真 Perl 直接對照）已建立。
+- **觀察（僅在刻意單一 Perl 程序跨商品混載的測試中）**：各產品使用檔路徑雖不同，但都編入**同一 `item::` 命名空間**；不同檔案若生成 `item::_local_1`，後載入的同名定義生效；`%INC` 使曾 require 的舊檔再次 require 不重載，**不會恢復先前函式**。若先載入8個展示架動作、再載入2個工作動作，合成 `@item::USE` 前兩格被工作覆寫，3–8格仍是展示架；原版生成器在其檔案模板裡並沒有清空整個 `@USE`。
+- [CORE-17 獨立來源／相容性注意事項](docs/original-behavior-issues.md)：**不可將上述刻意混載的單程序實測誤寫成正常 CGI 必然有此 bug**。固定入口來源通常一次選單一商品路徑，實際 CGI 程序生命週期、正式磁碟 require 及所有動態回呼仍未完成端到端驗證。此項只記錄 Node 長駐程序移植時需區分 Perl namespace 與檔案快取的證據，不修改原版。
+- [合成示範](scripts/demo-original-item-loading.mjs)：`npm run demo:item-loading` 加入既有 CI，分開展示單商品入口與刻意混載結果；不執行正式商品編譯器或 CGI。
+
+```sh
+cd modern
+npm test
+npm run demo:item-loading
+cd tests/original-perl
+prove -v original-virtual-item-require.t
+```
+
+本階段**不是**真的執行 `_config.cgi`、`inc-item.cgi`、`item-s.cgi`，也沒有進入正式 `UseItem`、玩家認證、真實 `WriteLog`、世界資料讀寫、鎖或提交。原先14份固定 Core Blob 未改動，新的四份亦有獨立 SHA；任務02仍進行中、Draft PR 保留未合併。
