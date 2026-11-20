@@ -70,10 +70,12 @@ test('B-20 inventory at cap or below unchanged, empty slots stay zero',()=>{
   assert.equal(x.stock.length,79);
   assert.equal(x.stock[78],0);
 });
-test('B-20 unsafe negative stock refused even though Core would preserve it',()=>{
-  assert.throws(()=>projectReviewedPeriodStock({
+test('B-21 preserve original negative stock (risk documented, not silently repaired)',()=>{
+  const x=projectReviewedPeriodStock({
     stock:stock([-1.9]),limits:stock([10],100),
-  }),/stock\[0\]/);
+  });
+  assert.equal(x.stock[0],-1);
+  assert.deepEqual(x.changed,[{itemId:1,from:-1.9,to:-1}]);
 });
 test('B-20 invalid stock decimals, NaN and overflow refused as needed',()=>{
   for(const x of [NaN,Infinity,-Infinity,Number.MAX_SAFE_INTEGER+1]){
@@ -82,8 +84,12 @@ test('B-20 invalid stock decimals, NaN and overflow refused as needed',()=>{
     }),/stock\[0\]/);
   }
 });
-test('B-20 limits must be nonnegative safe integers in this synthetic subset',()=>{
-  for(const x of [NaN,-1,1.5,Number.MAX_SAFE_INTEGER+1]){
+test('B-21 preserve original signed caps but reject noninteger/unsafe cap fixtures',()=>{
+  const out=projectReviewedPeriodStock({
+    stock:stock([5]),limits:stock([-1],100),
+  });
+  assert.equal(out.stock[0],-1);
+  for(const x of [NaN,1.5,Number.MAX_SAFE_INTEGER+1]){
     assert.throws(()=>projectReviewedPeriodStock({
       stock:stock([5]),limits:stock([x],100),
     }),/limits\[0\]/);
