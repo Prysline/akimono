@@ -28,11 +28,13 @@ const keys=new Set([
   'initialStock','money','status','exp','param1','callback','seed',
   'expPerUse','needExp','experienceOld','requestedCount','emptyActions',
   'duplicateMaterials','originalPerlDraw',
+  'stocks','otherShopStock','wholesale','storedTimeSeconds','paytoday','nowSeconds',
 ]);
 const allowedDefaults=Object.freeze({
   initialStock:8,money:70,status:1,exp:200,param1:1000,
   callback:'lostbook',seed:12,expPerUse:30,needExp:100,
   requestedCount:4,emptyActions:false,duplicateMaterials:false,
+  storedTimeSeconds:950,paytoday:5,nowSeconds:1000,
 });
 /** A fixed fixture based on source-executed B-23/B-24 scenarios.
  * "originalPerlDraw" must come from an observed Perl rand(1000), or a
@@ -45,6 +47,7 @@ export function projectOriginalIntegratedUseLostbook(input){
   for(const key of [
     'initialStock','money','status','exp','param1','seed',
     'expPerUse','needExp','requestedCount',
+    'storedTimeSeconds','paytoday','nowSeconds',
   ])safe(o[key],key);
   if(o.status!==0&&o.status!==1)fail('status fixture');
   if(o.callback!=='lostbook'&&o.callback!=='')fail('unreviewed callback');
@@ -52,6 +55,14 @@ export function projectOriginalIntegratedUseLostbook(input){
     (o.emptyActions&&o.duplicateMaterials))fail('action choice');
   if(o.experienceOld!==undefined&&o.experienceOld!=='')
     safe(o.experienceOld,'experienceOld');
+  function threeSlots(value,field,defaults){
+    const row=value===undefined?defaults:value;
+    if(!Array.isArray(row)||row.length!==3)fail(field+' three stock slots');
+    return row.map((x,i)=>safe(x,field+'['+i+']'));
+  }
+  const stocks=threeSlots(o.stocks,'stocks',[o.initialStock,4,3]);
+  const otherShopStock=threeSlots(o.otherShopStock,'otherShopStock',[3,4,2]);
+  const wholesale=threeSlots(o.wholesale,'wholesale',[4,0,-5]);
   const draw=o.originalPerlDraw;
   if(typeof draw!=='number'||!Number.isFinite(draw)||draw<0||draw>=1000)
     fail('observed original Perl draw');
@@ -77,20 +88,20 @@ export function projectOriginalIntegratedUseLostbook(input){
   const shopExp=o.exp;
   const expold=o.experienceOld===undefined?'':o.experienceOld;
   const transaction=projectOriginalUseTransaction({
-    shops:[[o.initialStock,4,3],[3,4,2]],actingShopIndex:0,
+    shops:[stocks,otherShopStock],actingShopIndex:0,
     items:[
       {code:true,limit:10,wslimit:8},
       {code:true,limit:6,wslimit:-10},
       {code:false,limit:5,wslimit:1},
     ],
-    wholesale:[4,0,-5],uses,creates,
+    wholesale,uses,creates,
     requestedCount:o.requestedCount,
     experience:shopExp,needExperience:o.needExp,
     experienceOld:expold===''?null:expold,
     job:'worker',needJob:'worker',point:10,needPoint:10,
     rank:20,needPopularity:10,needsEvent:true,eventActive:true,
-    money:o.money,costPerUse:20,paytoday:5,nowSeconds:1000,
-    storedTimeSeconds:950,baseUseTimeSeconds:20,
+    money:o.money,costPerUse:20,paytoday:o.paytoday,nowSeconds:o.nowSeconds,
+    storedTimeSeconds:o.storedTimeSeconds,baseUseTimeSeconds:20,
     trainedUseTimeSeconds:10,maxStockTimeSeconds:259200,
     shopStatus:!!o.status,
   });
