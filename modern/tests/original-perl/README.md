@@ -311,3 +311,19 @@ prove -v *.t
 ```
 
 本階段不涉及原版正式磁碟 require、使用者驗證、`UseItem` 正式交易、日誌寫檔、世界資料持久化或原版數值規則更改。
+
+## 第二十九階段：四個真正 Core `inc-item.cgi` 商品助手與標準街 `lostbook` 連鎖
+
+`OriginalItemHelperHarness.pm` 會直接讀取先前 B-28 以 Git Blob SHA 固定的**未修改** `core-inc-item.cgi`，逐段精確擷取 `UseItem`、`UseItemSub`、`AddItem`、`AddItemSub` 四個完整 Perl 子函式；再直接讀取原始 `../../../custom/inc-item-data.cgi` 中 `@@FUNCITEM` 的 `sub lostbook` 本文。**僅五段已審閱的原樣 Perl 函式，在受控記憶體的 `package item` 裡實際編譯與執行**；不執行完整 `inc-item.cgi`、正式商品／管理員 CGI、實際日誌、玩家／世界存檔或鎖。
+
+- `original-item-helpers.t`：**82項 Perl 斷言**，核對真正 `UseItemSub`／`AddItemSub` 返回的正／零／負實際數量，以及外層 `UseItem`／`AddItem` 固定回傳0、追加 `USE.result.useitem/usemsg`／`additem/addmsg` 而非覆寫；`lostbook` 真正接到上述 Core helper，直接修改合成庫存、寫入合成 result 陣列。
+- `original-item-helper-probe.pl`：**27組**從未修改 Perl 原文執行產出的 JSON，供 `../original-item-helper-model.test.mjs` 裡的 **34項 Node 測試**逐案對照。`lostbook` 的亂數只採用真 Perl `srand`／`rand(1000)` 觀察到的抽樣值，未宣稱 JS 隨機種子等價。
+- `src/original-item-helper-model.mjs`（相對 `modern/`）：嚴格限於這四種原版 helper 和這條已審核的 `lostbook` 呼叫鏈；人工安全整數、索引上限是**測試表示限制**，不是原版遊戲規則。仍未串接外層完整 `UseItem`。
+- [來源與限制](../../docs/original-item-helpers.md)、[獨立問題 CORE-18／CORE-19](../../docs/original-behavior-issues.md)：人工負數使用量、既有超上限庫存可能產生**負的實際扣除／取得數量**；來源只記錄不修正，不宣稱正常 CGI 一定會遇到。
+
+```sh
+prove -v original-item-helpers.t
+prove -v *.t
+```
+
+固定 Core Git Blob SHA 不改動，Perl 原始回呼的測試操作只有合成資料、沒有真實副作用；`lostbook` 真正呼叫的是本次從 Core 擷取的 `item::UseItem`，不同於 B-26 只記錄參數的替身試驗。
