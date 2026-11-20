@@ -181,10 +181,13 @@ test('B-06 rejects inactive stores and negative time before any transition', () 
   assert.throws(() => trade({ ...buyer, time: request.now + 1 }, seller), /time/);
 });
 
-test('B-06 refuses unspecified compiled limits/tax/duration rather than inventing them', () => {
+test('B-06 derives reviewed literal stock limit but still requires tax and duration', () => {
   const { buyer, seller } = pair();
-  const { itemLimit, ...missingLimit } = request;
-  assert.throws(() => settleUnguildedPeerPurchase(model, buyer, seller, missingLimit), /itemLimit/);
+  const { itemLimit, ...withoutLimit } = request;
+  const done = settleUnguildedPeerPurchase(model, buyer, seller, withoutLimit);
+  assert.equal(done.receipt.compiledItemLimit, 10);
+  assert.equal(done.receipt.compiledWholesaleLimit, 0);
+  assert.equal(done.receipt.count, 4);
   const { baseTaxRate, ...missingTax } = request;
   assert.throws(() => settleUnguildedPeerPurchase(model, buyer, seller, missingTax), /baseTaxRate/);
   const { sendItemTime, ...missingTime } = request;
@@ -329,11 +332,11 @@ test('B-06 source-reviewed allowlist preserves three exact DSL identities and lo
   const rows = listReviewedPeerItems(model);
   assert.deepEqual(rows, [
     { id: 1, code: 'yakusou', name: '藥草', price: 50, limitRaw: '4000/1000',
-      source: 'custom/inc-item-data.cgi', line: 1672 },
+      limit: 4000, wslimit: 1000, source: 'custom/inc-item-data.cgi', line: 1672 },
     { id: 40, code: 'ken-ki', name: '木刀', price: 1200, limitRaw: '600',
-      source: 'custom/inc-item-data.cgi', line: 1265 },
+      limit: 600, wslimit: 600, source: 'custom/inc-item-data.cgi', line: 1265 },
     { id: 79, code: 'gift', name: '禮物卷', price: 10000, limitRaw: '10/0',
-      source: 'custom/inc-item-data.cgi', line: 2717 },
+      limit: 10, wslimit: 0, source: 'custom/inc-item-data.cgi', line: 2717 },
   ]);
   assert.ok(Object.isFrozen(rows));
   for (const id of [1, 40, 79]) {
@@ -470,14 +473,25 @@ test('B-06 reviewed identity guard rejects changed original metadata before muta
   }
 });
 
-test('B-06 source-defined inventory limits are never silently compiled from slash expressions', () => {
+test('B-06 compiled literal inventory limit cannot be replaced by a caller fixture', () => {
   const {buyer,seller} = pairForItem(1, 50, 10);
   const {itemLimit, ...without} = {...request, itemId:1, offeredPrice:50};
-  assert.throws(() => settleUnguildedPeerPurchase(model,buyer,seller,without), /itemLimit/);
-  const result = trade(buyer,seller,{itemId:1,offeredPrice:50,itemLimit:6,requestedCount:9});
-  assert.equal(result.receipt.count,6); // fixture, not inferred from 4000/1000
-  assert.equal(result.buyer.item[0],6);
-  assert.equal(result.seller.item[0],4);
+  buyer.item[0] = 3998;
+  const before = structuredClone({buyer,seller});
+  const result = settleUnguildedPeerPurchase(model,buyer,seller,{
+    ...without,requestedCount:9,
+  });
+  assert.equal(result.receipt.count,2); // compiled stock cap 4000 minus 3998
+  assert.equal(result.receipt.compiledItemLimit,4000);
+  assert.equal(result.receipt.compiledWholesaleLimit,1000);
+  assert.equal(result.buyer.item[0],4000);
+  assert.equal(result.seller.item[0],8);
+  for(const wrong of [6,9999,1000,-1,NaN]){
+    assert.throws(() => trade(buyer,seller,{
+      itemId:1,offeredPrice:50,itemLimit:wrong,requestedCount:9,
+    }),/itemLimit disagrees/);
+  }
+  assert.deepEqual({buyer,seller},before);
 });
 
 test('B-06 stale price remains rejected for new allowlisted items', () => {
