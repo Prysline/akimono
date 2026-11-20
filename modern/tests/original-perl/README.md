@@ -238,3 +238,11 @@ Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保�
 Node `original-multi-item-use-model.mjs` 只處理**合成數值**，接受多商店、多商品、依序的材料與產出、明確提供的同一亂數序列，最後一次計算各個有 `code` 商品的全球市場上限。原版的重複記錄、零 `additem`、負市場與超額退貨均不另加修正。未執行完整 `UseItem` 交易、回呼、帳號、實際存檔、RNG 種子相容或 CGI HTTP；JavaScript 參數必須是有限可安全表示的數值，屬模型表示界線而非原版規則。
 
 本階段新增 **25項 Perl 斷言、22項 Node 測試**，總計 **416／416 Perl 與402／402 Node**。來源仍為同一14份未修改 Core Git Blob SHA；原版異常另記於 `modern/docs/original-behavior-issues.md`，不擅自修正遊戲規則。
+
+## 第二十三階段：原版 UseItem 資格／時間／金錢與多商品數值流程
+
+新增 `original-use-transaction.t`：從14份 SHA 固定 Core 快照之一的未修改 `use.cgi`，精確擷取**熟練度、職業、點數、人氣、事件、金錢、時間、材料的使用次數前置檢查**起，直到**材料消耗、逐筆產出、一次 `CheckWholeStore`** 為止的真正原版 Perl 文字並直接執行；同時使用未修改 `calc.cgi::GetItemUseTime / UseTime`、`whole.cgi::CheckWholeStore` 與完整原版 `MakeAmount`。只在合成雙店三商品、固定時鐘、`srand` 亂數及記憶體帳務中執行，不 require 真正 CGI、商品 DSL 或可能有副作用的動態回呼。
+
+驗證點包含：次數4先被現金限制到3、再被時間限制到2；原版先扣時間／金錢，之後多種材料與重複產出，市場最後一次修正；次數0直接返回不修正市場；`proba=0` 的材料雖然實際不消耗，前置仍檢查一份需求；重複材料**逐筆對原始庫存檢查**可能導致負庫存；過期記錄時間直到 `UseTime` 才依上限調整；`status=0` 的來源分支不推進時間；`expold` 覆蓋使用時間；固定 Perl `srand` 證明材料先抽樣、產出後抽樣。異常另外記於 `../../docs/original-behavior-issues.md`，**不修改來源**。
+
+Node 同範圍合成模型為 `../src/original-use-transaction-model.mjs`，測試為 `../tests/original-use-transaction-model.test.mjs`，示範 `npm run demo:transaction`。這次仍**不包含**完整 `CheckUseItem` 的動態職業與前置函式、產出後商品回呼、熟練度尾段、真實存檔、CGI、帳號與安全鎖；不能視為完整 `UseItem` 系統。
