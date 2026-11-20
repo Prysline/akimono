@@ -895,3 +895,25 @@ prove -v original-world-use-sequence.t
 ```
 
 **Notion 正式任務05已因可執行代碼開始實作改為「進行中」**，而非已完成。任務02／04也仍進行中，合計**1已完成／3進行中／8待辦**；不能因為「人工3格來源測資」通過，便聲稱真實標準街79商品、完整市場銷售、週期結算、UI、磁碟存讀檔或多人世界已可使用。下一階段優先把**真正 DSL ITEM+USE 的單一已審閱商品動作**接入 `standard-street` 的79格 WorldState，再逐步組裝完整經營閉環。
+
+## 第三十三階段：第一筆**真正標準街**商品使用與原版編譯器直接 Perl 對照
+
+B-32 的人工 A／B／C 商品不能冒充真實標準街 ITEM；本階段改選原版 [`custom/inc-item-data.cgi`](../custom/inc-item-data.cgi) 的 **ITEM #79「禮物卷」／第一筆 USE「交換地圖集」**：原版材料為2張禮物卷，產出 ITEM #12（山區地圖）、#9（礦山地圖）、#14（劍市地圖）各1份。沒有自訂 callback，也沒有隨機產出機率。
+
+- [**`reviewed-gift-map-use.mjs`**](src/reviewed-gift-map-use.mjs)：嚴格審核這**單一真實 USE**，由兩份原版 DSL 名稱解析79格 ITEM，讀取完整79項原版 `PRICE/LIMIT`（包括零價格 ITEM #13／#63），套用已驗證的原始編譯器規則。原版 `ItemUseTimeRate=0.5` 將宣告 `time 1h` 轉成**實際使用時間1800秒、`exptime` 也為1800秒**。未提供自訂回呼或經驗／金錢欄位不私自補值；其他115筆 USE 不支援。
+- [**`standard-street-module.mjs`**](src/standard-street-module.mjs)：在既有 `open-shop`、`edit-showcase` 之外，**只新增** `gift-exchange-maps`。它透過同一 `GameCore/WorldState` 可完成「開店→交換地圖集→再交換」，持續更新真實79格商品庫存、時間與世界 `revision`。
+- **市場尚未完成：** 開店後的 `WorldState.market=null` **不會**被默默當作0。由於原版完整 `UseItem` 必須呼叫 `CheckWholeStore`，這筆商品使用只允許測試明確提供 `market:{source:'explicit-b33-test-fixture',wholesale:Array(79).fill(0)}` 時執行。**此批發全零資料是人工來源測試輸入，不是已確認的真實世界市場初始化**；沒有它便拒絕，不能當成完整可玩商品系統或真實玩家交易入口。
+- [**`OriginalGiftMapUseHarness.pm`**](tests/original-perl/OriginalGiftMapUseHarness.pm)：**確實擷取並執行**固定原版 `inc-makeitem.cgi` 的 `GetBuffer/ClearBuffer/GetNumber/GetItemNumber/GetTime/GetString` 子函式，加上固定原版 `plug/use.cgi::UseItem`、`MakeAmount`、`calc.cgi`、`whole.cgi`。**不執行原版整份編譯器頂層或 CGI**（它們會操作實際目錄及世界檔案）；原版 `RequireFile` 仍只記錄，無任何寫檔。
+- [**六種場景／八次受控原版 Perl 執行**](tests/original-perl/original-gift-map-use-probe.pl)、[**53項 Perl 斷言**](tests/original-perl/original-gift-map-use.t) 和 [**27項 Node 對照測試**](tests/reviewed-gift-map-use.test.mjs) 將79商品上限、真實來源 USE 記錄、兩筆連續交換／第三筆材料不足、時間、金錢與人工批發逐欄核對。代表性結果：真新店禮物卷 `5→3→1`，三種地圖各 `0→1→2`，時間戳 `956800→958600→960400`，資金仍100000。
+- **原版訊息異常 [CORE-21](docs/original-behavior-issues.md)：** `use/get` 無個別 `message` 時，原版 `UseItem` 仍 push `undef` 進 `usemsg/addmsg`，例如 `usemsg=[undef]`、`addmsg=[undef,undef,undef]`；Node JSON 需保留對應 `null` 空槽，不能刪除陣列或自創文字。
+- [**完整固定來源、技術界線與下一步**](docs/reviewed-real-gift-use.md)；`npm run demo:real-gift-use` 顯示受控市場已明示注入後，兩次真實禮物卷交換和過期／缺材料拒絕，並納入 GitHub Actions。
+
+```sh
+cd modern
+npm test
+npm run demo:real-gift-use
+cd tests/original-perl
+prove -v original-gift-map-use.t
+```
+
+**不宣稱完成**：其餘115筆 USE、完整 `GetUseItem/CheckUseItem` 與商品選單、原版其他 callback、事件、市場初始化與銷售、週期結算、真實存讀檔、Web UI、主帳號及多人世界。正式任務02／04／05均維持「進行中」，12任務總數仍**1已完成／3進行中／8待辦**；各自原定的正式驗收仍未完成。原版 DSL、18份固定 Core SHA、`main`、`migration/standard-street-s1` 均未修改，PR #1 繼續 Draft 不合併。
