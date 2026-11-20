@@ -294,3 +294,20 @@ prove -v *.t
 ```
 
 展示架合成狀態不一致的原版保留行為只記於 [CORE-16](../../docs/original-behavior-issues.md)，沒有替原版增加欄位正規化。其他 9 份本地使用後函式與真正前置／商品層級回呼尚未實際執行，完整端到端交易仍未完成。
+
+## 第二十八階段：原版商品入口檔與 in-memory Perl require 符號／路徑快取
+
+從固定 Core `katelynn620/akimono-core@738d71a2985fd088f2ca90f25145706392ee2365` **新加四份純文字來源快照**：`core-inc-item.cgi`（原 `inc-item.cgi`）、`core-item-detail.cgi`（原 `item.cgi`）、`core-item-form.cgi`（原 `item-m.cgi`）、`core-item-submit.cgi`（原 `item-s.cgi`）。原先14份固定 Core CGI 不修改；四份新增原文由 CI **另外**以 Git Blob SHA 比對，**絕不直接 require 或執行這些完整 CGI 檔案**。
+
+`original-virtual-item-require.t`（**50項 Perl 原始來源／虛擬 require 斷言**）先以靜態文字證實原版 `_config.cgi::RequireFile` 優先查 `custom`、再查內建檔；確認 `inc-item.cgi` 的 `package item`／共用 `UseItem`／`WriteLog`／`funcitem.cgi`，以及 `item.cgi`／`item-m.cgi`／`item-s.cgi` 先 `RequireFile('inc-item.cgi')`、再依商品代碼直接 `require $itemcode`，然後才取得使用清單／使用資格。另確認 `inc-makeitem.cgi` 會把商品分別生成到 `use/<代碼>.cgi`，但同名本地函式仍宣告在 `package item`，`@USE` 採按索引賦值。
+
+`OriginalVirtualItemLoader.pm` 在**不寫入任何實體 CGI 檔案**的前提下，針對 B-27 審查過的商品13工作與商品63展示架原始 Perl 本文產生最小**合成**編譯產物；以 `@INC` hook 回傳 UTF-8 位元組的**記憶體虛擬檔案**，令 Perl 真正執行 `require $itemcode`，觀察 `%INC` 快取與 `item::_local_1` 覆寫。共用 `WriteLog` 仍為記錄參數的測試替身，金額格式沿用原樣 Core `GetMoneyString`。並不執行正式 `inc-makeitem.cgi` 的動態 eval／檔案生成，也不執行 CGI。
+
+`original-virtual-item-require-probe.pl` 對9組不同順序提供**各自新程序的原版 Perl 觀察結果**，供 `../original-item-dynamic-loading-model.test.mjs` 中的 Node 測試逐步比對。對一個**刻意多商品載入的單 Perl 執行環境**，不同虛擬檔案的 `_local_1` 後者覆蓋前者，重新 require 已快取的檔案不會重設函式；而較短的商品人工 `@USE` 索引賦值不清除舊的高序號。**本測試不等於正常單商品 CGI 請求會發生這些碰撞**；請參閱 `../../docs/original-item-loading.md` 及獨立記錄 CORE-17。
+
+```sh
+prove -v original-virtual-item-require.t
+prove -v *.t
+```
+
+本階段不涉及原版正式磁碟 require、使用者驗證、`UseItem` 正式交易、日誌寫檔、世界資料持久化或原版數值規則更改。
