@@ -644,3 +644,35 @@ npm run demo:original-outcomes
 ```
 
 **仍未完成：** 真正 `UseItem` 的動態回呼、資格／材料實際修改、所有商店／所有商品完整交易和市場同步、Perl RNG 與 JS RNG 的位元級一致性、正式世界存檔、鎖／備份／fsync／原子提交、CGI HTTP。**原版相容優先，不等於在未隔離的正式資料上冒險執行有副作用的原版程式。** 任務02維持「進行中」，PR 保持 Draft，不合併。
+
+## 第二十批：多商品與多商店的原版 UseItem 執行順序（第二十二階段）
+
+本階段保持使用者已確認的「**照原版實作、問題另外記錄**」原則。依照固定 Core [`plug/use.cgi` 第115～150行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/use.cgi#L115-L150) 與 [`plug/whole.cgi::CheckWholeStore` 第50～74行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/whole.cgi#L50-L74) 真正隔離執行**多個材料、依序多個產出、全部店家的批發市場檢查**。原版固定 Core 快照的 Git Blob SHA 沒有改動，仍為14份。
+
+### 固定原版的順序與數值
+
+`UseItem` 不是每產出一筆就呼叫 `CheckWholeStore`：
+
+1. 先按照 `USE.use` 陣列的**原始順序**，逐項以 `MakeAmount(item.count * count, item.proba)` 計算並減少材料庫存；結果為0則不記錄消耗訊息。
+2. 再按 `USE.result.create` 陣列的**原始順序**，逐項使用**同一連續亂數序列**計算產出、在商店中立即更新該項庫存，將超出商店上限的部分加入 `DTwholestore`；若已超過庫存上限，保留原版可能出現的**負新增量**。
+3. 最後，**只呼叫一次** `CheckWholeStore`，遍歷所有有 `code` 的商品，逐個合計**全部商店**該項庫存，再按其 `wslimit` 上限修正批發市場數量；沒有 `code` 的商品直接跳過。
+
+**直接執行的原版 Perl 例子：** 兩家商店原有庫存 `[[8,4,3],[3,4,2]]`、批發市場 `[4,0,-5]`，第一家消耗商品1的4件，之後依序產出商品1、商品2、商品1、商品3（最後商品無 `code`）。兩店修正後庫存為 `[[10,6,5],[3,4,2]]`，市場從退回溢量後暫值 `[12,6,-3]` 變成 `[3,0,-3]`。最特別的是：原版完整的 `additem` 紀錄為 `[[1,6],[2,2],[1,0],[3,2]]`，表示**第二次產出商品1時，即使實際新增0件也仍會留下來源紀錄**。這是原版的實際行為，不在移植時修掉；詳見獨立問題文件的 **CORE-08**。
+
+### 新增程式與測試
+
+- [`modern/tests/original-perl/original-multi-item-use.t`](tests/original-perl/original-multi-item-use.t)：**25項新增 Perl 斷言**。從 SHA 固定的原始 `use.cgi` 精確擷取含**材料消耗、產出、一次市場檢查**的來源片段及完整 `MakeAmount`，並直接 `require` 固定 `whole.cgi` 的原版 `CheckWholeStore`；用完全合成的雙商店／三商品狀態直接運算。測試重複商品、機率0材料、產出紀錄0件、無商品產出仍修正市場、無 `code` 不修正市場、負值及**材料先抽樣、產出後抽樣**的原版亂數消耗順序。未啟動任何使用商品回呼或正式 CGI。
+- [`modern/src/original-multi-item-use-model.mjs`](src/original-multi-item-use-model.mjs)：新增 `projectOriginalMultiItemUse`。**按原版順序**對明確輸入的數值陣列進行多種商品／多商店的純函式運算；使用第二十一階段完整 `projectOriginalMakeAmount` 算式及**共用的 `random()`**，保留負庫存、重複產出、`additem=0`、商品無 `code` 與各商品分別按所有店家 `wslimit` 重新計算的效果。輸出結果為凍結的合成資料及抽樣／交易片段的數值紀錄，**不是真正商品使用／授權／寫檔**。
+- [`modern/tests/original-multi-item-use-model.test.mjs`](tests/original-multi-item-use-model.test.mjs)：**22項新增 Node.js 測試**，檢查原版固定來源文字與區段順序、跨商品消耗與產出、重複商品與零新增紀錄、兩店總量、無 `code`、`wslimit` 負值與小數、負庫存、跨材料與產出的連續隨機數、未產出也執行市場檢查、不合法輸入、唯讀與無實際權限。
+- [`modern/scripts/demo-original-multi-item.mjs`](scripts/demo-original-multi-item.mjs)：新增 `npm run demo:multi-item`，用合成雙商店資料演示正確順序、重複產出紀錄、材料與大額產出連續 RNG、市場依全部店家最終庫存修正、無產出仍修正市場；**所有示範都不碰正式遊戲存檔**，已加入 CI。
+- [`modern/docs/original-behavior-issues.md`](docs/original-behavior-issues.md) 獨立新增 **CORE-08**，記錄重複產出、零件數紀錄與只在最後執行市場檢查的移植陷阱。問題文件與原版來源分離；任何遊戲規則都沒有擅自修改。
+
+本階段新增 **22項 Node 測試、25項 Perl 隔離斷言**，合計 **402／402 Node、416／416 Perl**，並持續以14份固定 Core 快照 Git Blob SHA、原始 DSL audit 和歷次示範核對。執行方式：
+
+```sh
+cd modern
+npm test
+npm run demo:multi-item
+```
+
+**範圍未擴大的部分：** 仍未完成真實 `UseItem` 的使用資格、費用／時間、商品與事件動態回呼、玩家認證、持久化世界檔與 OS 鎖／備份／原子提交，以及原版 Perl PRNG 種子與 JS PRNG 的跨平台逐位元組一致性。此階段只驗證**原版數值／來源順序**，沒有啟動任何正式存檔或完整 CGI，PR #1 繼續 Draft，任務02仍「進行中」。
