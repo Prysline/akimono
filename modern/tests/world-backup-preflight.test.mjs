@@ -155,7 +155,7 @@ test('B-15 reject duplicate, missing, extra and renamed backup list sources',()=
     [...all.slice(0,4),{...all[4],name:'wrong-file'}],
   ]){
     assert.throws(()=>reviewWorldWritePreconditions({...base(),backupEvidence:records}),
-      /five-entry|Unexpected or duplicate/);
+      /cover all five|Unexpected or duplicate/);
   }
 });
 
