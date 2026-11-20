@@ -246,4 +246,52 @@ npm test
 npm run demo:wholesale
 ```
 
-**剩餘限制：** 沒有實作市場的補貨來源、批發買入回呼、完整商品編譯、使用者認證、公會、競爭交易鎖、真實資料持久化、完整跨期週期與 CGI HTTP。仍保持僅三種經審查的無公會玩家交易商品，未擴大買賣白名單。
+**該階段的剩餘限制：** 當時尚未實作自然補貨來源（第十一階段已增加限定的單商品 `PLUS` 時間推進子集）、批發買入回呼、完整商品編譯、使用者認證、公會、競爭交易鎖、真實資料持久化、完整跨期週期與 CGI HTTP。仍保持僅三種經審查的無公會玩家交易商品，未擴大買賣白名單。
+
+## 第九批：批發市場世界庫存的來源與自然增減（第十一階段）
+
+**來源生命週期已確認：** 原版 Core `inc-func.cgi::DataRead` 會從 `$DATA_FILE` 世界資料的第3列讀入 `@DTwholestore`；`inc-turn.cgi` 在每個**正長度**時間片段的自然銷售、商品逐期回呼、排行與可能的 `inc-period.cgi` 結算等處理**之後**，進入 `#市場商品数のUP/DOWN処理`（約第258–280行），先依 `PLUS` 推進世界批發庫存，再呼叫 `CheckWholeStore()` 裁切總上限／零下限；`plug/write.cgi::DataWrite` 將 `@DTwholestore` 序列化到暫存世界資料檔，最後由 `DataCommitOrAbort` 走提交程序。
+
+**另一條路徑是批發購買：** Core `buy-s.cgi` 對 `id=0` 使用 `GetWholeStore()` 取得批發商店、執行交易及商品買入回呼，再以 `SetWholeStore($DTS)` 把庫存放回 `@DTwholestore`，之後才 `DataWrite`／`DataCommitOrAbort`。尚未支援這條完整交易與它的 `@@FUNCBUY` 贈券副作用，亦不假設世界檔首次建立時原始庫存必為0。
+
+以上所據為固定 [Core `inc-turn.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-turn.cgi)、[`inc-func.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi)、[`plug/write.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi)、[`buy-s.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/buy-s.cgi)。已新增未修改的 `modern/tests/original-perl/inc-turn.cgi` 固定快照，Git Blob `b8a4980275f475a952846a8d6072fad45f8dff50`；第十一階段起共**九份原版 Core 快照**在 GitHub Actions 進行 SHA 驗證。
+
+### 受限的 PLUS 單商品模型
+
+新增 `src/wholesale-turn-model.mjs`：`listReviewedWholesalePlusItems(model)` 與 `projectReviewedWholesaleTurnItem(model, worldStock, shops, options)`。只處理來源已審核的三個商品，而不是暗中計算全部79件的 `PLUS`：
+
+| 商品 ID | 來源 code | PLUS 原文 | 編譯間隔（秒） | 行為 |
+| ---: | --- | --- | ---: | --- |
+| 1 | `yakusou`（藥草） | `-20m` | -1200 | 依時間隨機減少世界批發庫存 |
+| 10 | `book-make`（書本寫作工具） | `20m` | 1200 | 依時間隨機增加世界批發庫存 |
+| 40 | `ken-ki`（木刀） | `-1h` | -3600 | 依時間隨機減少世界批發庫存 |
+
+`loadStandardStreetModel` 現保留每件商品來源 `plusRaw` 作為不可執行的唯讀資料。上述三件在使用前會重新核對原始商品 ID、代碼、價格原文、`LIMIT` 原文、`PLUS` 原文、檔名與來源行號；任何差異都要求重新審查。特別注意現有 `parseDsl` 對位於 `@@USE` 後的重複屬性有歸屬限制，**來源白名單核對的是已明確查證的 `PLUS` 首筆宣告，不會執行商品使用功能或推定其他回呼**。
+
+原版 [`inc-turn.cgi` 第260–280行](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-turn.cgi#L260-L280) 公式：
+
+```perl
+$add=$timespan/abs($ITEM->{plus})*$DTpeople/(100000/(($MAX_USER+$#DT-1)*0.2+1));
+if($add>0){$add=$add/2+rand($add/2);}else{$add=0;}
+if($add<1 && $add>0){if(rand(1/$add)<1){$add=1;}}
+$add=int($add);
+$DTwholestore[$cnt-1]+=$ITEM->{plus}>0 ? $add : -$add;
+CheckWholeStore();
+```
+
+Node 模型要求**明確傳入** `timespanSeconds`、`population`、`maxUsers`、`shops`（必須是前面的回呼／自然銷售／決算已處理過的快照）、`worldStock` 與 `random()`。`random()` 應回傳有限的 `[0,1)` 值；第1次對應 `rand($add/2)`，若調整後 `0 < add < 1`，則第2次對應 `rand(1/$add)` 的隨機進位。固定同一亂數值可重播相同結果，但**不等於重現 Perl 全域 RNG 的消耗順序**。計算會依原版順序先增減，再套用 `wslimit` 總上限（含店內持有量）及最低0庫存。
+
+**模型的安全限定：** 本階段只在一個選定商品上執行一次正長度時間片段。為避免原版 `CheckWholeStore()` 對其他商品還有未審查的上限副作用，輸入中**其他78項市場與商店庫存必須全為0**，否則拒絕；不自動展開所有商品。這代表它是驗證 PLUS 計算順序的**單商品局部投影**，不能直接當作整個世界的跨期更新函式。時間長度為0時，原版會略過整段迴圈與市場裁切，因此模型要求正時間長度，避免誤改庫存。未提供或輸出非法亂數、非安全人口／庫存等情況會拒絕，輸入原件不變。這不是實際檔案鎖、正式交易、存讀檔或 CGI。
+
+新增 `tests/wholesale-turn-model.test.mjs` **15項 Node 測試**，靜態核對原版 `inc-turn.cgi` 公式與 `inc-makeitem.cgi::GetTime`，驗證正向入庫、負向耗損、第二次低機率亂數、批發總上限、店家庫存抵扣、缺少／非法亂數、來源 metadata 篡改、無其他商品側效，以及未修改輸入的重播結果。合計本階段 **136／136 Node 測試**；原有 **96／96 原版 Perl 隔離斷言**不變。此批**沒有**宣稱執行完整原版 `inc-turn.cgi`（因仍有自然銷售、排行、決算、商品與事件回呼未建模）。
+
+新增 `npm run demo:turn-wholesale` 並納入 CI：以現行 `_config.cgi` 經審查的 `MAX_USER=50`、明確合成的人口100000、兩間商店、600秒片段、固定抽樣0，分別輸出 #10 入庫、#1 耗損、#40 耗損，及商店已持有17件 #10 時的市場剩餘額度。所有初始世界庫存都是標示清楚的**合成測資**，不是讀取或猜測真實遊戲存檔。
+
+在 `modern/`：
+
+```sh
+npm test
+npm run demo:turn-wholesale
+```
+
+**仍未完成：** 全部79件商品的 `PLUS` 編譯與同一時間片段跨商品 RNG 消耗順序、商品回呼與自然銷售／人氣、公會與跨期結算、事件、批發買入贈券、檔案鎖與實際 `DataWrite` 往返、真實原版 CGI HTTP 端到端。任務02維持進行中；PR Draft，不合併 `main`。
