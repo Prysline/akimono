@@ -10,6 +10,7 @@ binmode STDOUT,':encoding(UTF-8)';
 # Strict source-executed first gift USE (no callback) and real 79 ITEM limits.
 # Explicit 79-slot market zero is an ARTIFICIAL fixture, not a default world.
 my $initial=[(0)x78,5];
+$initial->[62]=1;
 my @rows;
 for my $case(
   ['one',1],
