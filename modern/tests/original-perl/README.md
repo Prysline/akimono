@@ -262,3 +262,18 @@ Node 同範圍合成模型為 `../src/original-use-transaction-model.mjs`，測�
 新增 `original-use-eligibility-probe.pl`，提供13組合成案例的 **直接原版 Perl** 觀察結果，以 JSON 交由 `../original-use-eligibility-model.test.mjs` 裡的 Node 測試逐案比對（材料／庫存改變、`useok/dispok` 旗標與受控回呼順序）。同時新增 `original-item-callback-contract.t`，用原版固定文字驗證商品產出後的市場調整、`RequireFile('inc-item.cgi')`、商品方法解析、欄位綁定、回傳值寫回以及熟練度尾段順序；**沒有執行這段真正動態回呼**。異常只記入 `../../docs/original-behavior-issues.md` 的 CORE-13／CORE-14，不改原版。
 
 實際測試可使用 `prove -v original-use-eligibility.t original-item-callback-contract.t` 或既有完整 `prove -v *.t`。以上仍不是正式 CGI、已編譯商品任意 Perl 程式或真實世界持久化測試。
+
+## 第二十六階段：標準街實際 `@@FUNCITEM` 兩個共用函式原樣 Perl 隔離
+
+本階段新增 `original-shared-callbacks.t`，僅從本倉庫**未修改**的 `../../../custom/inc-item-data.cgi` 中抓取 `@@FUNCITEM` 的 `sub lostbook` 和 `sub popup` 兩段**原樣子函式本文**（不執行整份 DSL 或具有 `eval`、檔案／鎖操作的 `inc-makeitem.cgi`）。在受控 Perl `package item` 中僅定義測試專用的 `UseItem` 與 `WriteLog` 參數記錄器，確保不會真的扣商品或寫任何記錄。
+
+原版 `lostbook`：每次實際執行 Perl `rand(1000)` 並以 `< USE.param1` 判斷是否**請求**呼叫 `UseItem(itemno,1,ITEM[itemno].name+原版訊息)`；函式返回空字串，不依本次使用次數扣件數。未嘗試推演被呼叫方真正的遊戲副作用。原版 `popup`：直接修改合成人氣，保留 `int(param1*(2-rank/5000))` 的小數截斷、超過10000才截斷與先後兩筆 `WriteLog` 參數；沒有直接修改合成庫存、金錢、時間或熟練度。
+
+`original-shared-callback-probe.pl` 提供12組由原版函式直接執行產生的 JSON，`../original-shared-use-callback-model.test.mjs` 跨語言核對結果。固定來源的完整宣告分類由 `../original-standard-callback-inventory.test.mjs` 測試，詳細見 `../../docs/original-callback-inventory.md`；`_local_1` 必須被當作引用先前定義的別名，不應以每個宣告當成新增函式本文。其他本地或真正動態回呼仍**不執行**。
+
+```sh
+prove -v original-shared-callbacks.t
+prove -v *.t
+```
+
+原版 `popup` 的負值／超額人氣與浮點截斷現象記於 `../../docs/original-behavior-issues.md` 的 CORE-15，只記錄不更動來源算式。沒有真實 CGI、原版商品編譯輸出、日誌檔案或世界資料。
