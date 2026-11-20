@@ -31,7 +31,7 @@ CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **8 個 Perl 測試檔，194/194 個斷言**：
+目前已由 GitHub Actions 成功執行 **9 個 Perl 測試檔，218/218 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -43,9 +43,10 @@ prove -v *.t
 | `world-commit.t` | 真正執行原版 `DataCommitOrAbort()`，驗證提交／取消／復原／中途失敗（只用隔離暫存目錄） | 27 |
 | `lock-safety.t` | 原版 `Lock`／`UnLock`／`LockSub`／`RenameAndCheck`／`OpenAndCheck` 的隔離檔案測試 | 36 |
 | `backup-safety.t` | 原版 `CheckLockStatus`／`DataFilesBackup`／`DataWrite` 鎖與備份錯誤路徑（隔離暫存目錄） | 24 |
-| **合計** | | **194** |
+| `world-read-safety.t` | 擷取**未修改**的固定 Core `DataRead` 函式，在隔離世界檔驗證缺失、損壞與缺少 `//` 的有界中止 | 24 |
+| **合計** | | **218** |
 
-CI：[Actions run 44674544005](https://github.com/Prysline/akimono/actions/runs/44674544005)，`Result: PASS`，第十四階段新增36項後累計170項 Perl 斷言。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十六階段累計 **218／218 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -131,3 +132,17 @@ Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` �
 新增的 Node `world-backup-preflight.mjs` 是**純、非 I/O 的保守寫入前審查**，拒絕未經明確確認的擁有權、解鎖異常／持有層數0、待提交復原未完成，以及備份到期時五份檔案任一份讀寫或內容核對未成功。這是刻意比原版安全、但不代表真的做了備份或存檔。與新 Node 測試和示範詳見 `modern/README.md` 第十五階段。
 
 原版 Perl 斷言總計 **194／194**（原170增加24）；原版 Core SHA 快照仍為12份，本階段沒有改動原始碼，也不涉及 CGI HTTP 或正式世界存檔。
+
+## 第十六階段：原版 DataRead 的資料缺失、損壞與分隔符風險
+
+新增 `world-read-safety.t` **24項 Perl Test::More 隔離斷言**。與 `write.cgi`、`lock.cgi` 不同，完整 `inc-func.cgi` 的頂層程式會**立即載入設定、世界、商品、皮膚、CGI 與交易恢復**，故不能直接 `require` 全檔。此測試從**已固定 SHA 的未修改 `inc-func.cgi` 快照中**精確擷取 `sub DataRead` 至下一個 `sub GetDTPoint` 前的原文字句，在隔離的 Perl 執行環境編譯、執行**原版函式本體**。只有 `GetPath`／`OutError`／`GetDTPoint`／空 AutoVar tie 等外部依賴由安全替身提供；所有讀取只限 `File::Temp` 內的測試世界檔。不啟動原版頂層初始化、CGI HTTP、事件 require、商店同步或正式世界檔。原版快照仍是 **12份**，沒有改動任何一份。
+
+**來源／實測差異：**
+- 原版 `DataRead()` 用未檢查回傳值的 `open(IN,'<:encoding(UTF-8)')` 與 `read(IN,my $buf,-s $datafile)` 讀檔；空檔與不存在的檔案在本隔離案例會觸發 `OutError('no data')`。
+- 原版 `@DTwholestore=split(/,/,$DATA[$idx++],$MAX_ITEM)` **沒有數值驗證**：例如 `garbage` 商品庫存可以直接保留成 Perl 字串；人口為 `NOT_A_NUMBER` 也可直接寫入記憶體。
+- 原版 `while($DATA[$idx++] ne '//'){}` **沒有檔案結尾上限**；隔離測試只在外層加 `alarm(1)` 保護，才能確定缺少 `//` 或只有 `//\r` 的情況可能持續迴圈，而不讓 CI 卡住。**原版函式內容未修補**。這不是聲稱每一種 CRLF 世界資料都會走同一故障分支；事件鍵或 AutoVar 的處理順序仍可能先觸發其他副作用／錯誤。
+- 原版可接受空白庫存列、稀疏 `@DTwholestore`；不因此保證異常數字、缺行或動態區段的安全。
+
+為避免把原版的不安全容忍度視為現代化讀取契約，新增純 Node `world-read-preflight.mjs`，只檢查**五行、LF、無動態事件／城鎮／商店、商品庫存最多79格**的保守子集，且要求輸入文字位元組數與外部明示的檔案大小／讀取量一致。缺少分隔符、CRLF、資料欄位／數字損壞、事件 require、未知商店段、未讀完、超過1MiB 合成測試上限等情況拒絕。它不進行任何真實開檔、檔案鎖、原版 Perl 執行、資料修改或持久化提交。即使通過也只代表**可以進行隔離範圍內的檢查**，不是准許讀寫正式世界資料、完整相容原版世界檔或保證任何交易安全。
+
+此次 Perl 從194增至 **218／218項**；Node 新增22項，累計 **240／240項**。原版 Core 12份 blob SHA 驗證不變。
