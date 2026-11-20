@@ -16,7 +16,7 @@ const model = loadStandardStreetModel(itemDsl, rebelDsl);
 
 test('B-01 pinned unmodified Core compiler uses slash to split LIMIT and WSLIMIT', () => {
   assert.match(originalCompiler, /if\(\$line =~ s\/\\sLIMIT\\s\+\(\\S\+\)\\s/);
-  assert.match(originalCompiler, /my \@val=split\(\/\\\/,\$1\)/);
+  assert.ok(originalCompiler.includes('my @val=split(/\\//,$1);'));
   assert.match(originalCompiler, /\$g_item->\{limit\}=GetNumber\(\$val\[0\]\)/);
   assert.match(originalCompiler, /\$g_item->\{wslimit\}=\$g_item->\{limit\} if \$val\[1\]eq''/);
   assert.match(originalCompiler, /\$g_item->\{wslimit\}=GetNumber\(\$val\[1\]\) if \$val\[1\]ne''/);
