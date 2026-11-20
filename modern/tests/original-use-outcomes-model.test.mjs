@@ -98,7 +98,7 @@ test('B-21 zero random amount yields average+0.5, preserving source order',()=>{
   const x=projectOriginalMakeAmount({
     count:20,probabilityPermille:500,random:draws([0,0.3]),
   });
-  assert.equal(x.t,0);
+  assert.equal(Math.abs(x.t),0); // Perl/IEEE-754 intermediate can be signed zero
   assert.equal(x.amount,10);
 });
 test('B-21 numeric RNG validation prevents JS representation failures',()=>{
