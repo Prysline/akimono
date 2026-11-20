@@ -56,6 +56,8 @@ jobs:
           test "$(git hash-object modern/tests/original-perl/inc-func.cgi)" = "e7a8add7b0291901e71fe797783b664dff1568a0"
           test "$(git hash-object modern/tests/original-perl/write.cgi)" = "203f33b37511e838800a45b84183af98fcf46e4c"
           test "$(git hash-object modern/tests/original-perl/lock.cgi)" = "84382170f1b7f70348c4e2a91bf30b1d1043b964"
+          test "$(git hash-object modern/tests/original-perl/period.cgi)" = "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+          test "$(git hash-object modern/tests/original-perl/use.cgi)" = "1bf4537cc41e344c144d840d43175c4c232765bb"
       - name: Run isolated original Perl Core tests
         working-directory: modern/tests/original-perl
         run: prove -v *.t
