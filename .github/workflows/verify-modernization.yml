@@ -46,6 +46,7 @@ jobs:
           npm run demo:original-outcomes
           npm run demo:multi-item
           npm run demo:transaction
+          npm run demo:use-experience
       - name: Verify pinned original Core source blobs
         run: |
           test "$(git hash-object modern/tests/original-perl/calc.cgi)" = "586354a9a300e26d0e12a4efa512fa25760e3197"
