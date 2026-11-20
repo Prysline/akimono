@@ -89,6 +89,10 @@ export function loadStandardStreetModel(itemDsl, rebelDsl) {
       return Object.freeze({
         id, name, code, price, priceRaw,
         flagRaw: first(block, 'flag') ?? '',
+        // Keep buy-hook and limit declarations opaque until explicitly reviewed.
+        // A missing ITEM-level funcb is distinct from USE-level callbacks.
+        funcbRaw: first(block, 'funcb') ?? null,
+        limitRaw: first(block, 'limit') ?? null,
         source: block.file, line: block.startLine,
       });
     });
