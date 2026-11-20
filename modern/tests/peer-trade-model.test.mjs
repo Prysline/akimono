@@ -147,11 +147,20 @@ test('B-06 stale client price fails atomically; no hidden cached quote is truste
   assert.equal(seller.item[78], originalSeller.item[78]);
 });
 
-test('B-06 deliberately rejects sold-out rank side effect, with all inputs untouched', () => {
+test('B-06 sold-out #79 at initial rank uses deterministic Core floor, no RNG', () => {
   const { buyer, seller } = pair();
   seller.item[78] = 4;
   const snapshot = structuredClone({ buyer, seller });
-  assert.throws(() => trade(buyer, seller), /Sold-out rank side effect/);
+  const result = trade(buyer, seller);
+  assert.equal((5010 / 100) ** 3 / 1000 > 125, true);
+  assert.equal(result.receipt.soldOut, true);
+  assert.equal(result.receipt.rankDown, 125);
+  assert.equal(result.receipt.rankBefore, 5010);
+  assert.equal(result.receipt.rankAfter, 4885);
+  assert.equal(result.seller.rank, 4885);
+  assert.equal(result.seller.item[78], 0);
+  assert.equal(result.buyer.item[78], 9);
+  assert.equal(result.receipt.tax, 4000);
   assert.deepEqual({ buyer, seller }, snapshot);
 });
 
@@ -187,4 +196,123 @@ test('B-06 invalid numeric state cannot corrupt monetary accounting', () => {
   assert.throws(() => trade({ ...buyer, money: Number.MAX_SAFE_INTEGER + 1 }, seller), RangeError);
   assert.throws(() => trade(buyer, { ...seller, money: Number.MAX_SAFE_INTEGER }), /safe integer range/);
   assert.throws(() => trade({ ...buyer, item: [5] }, seller), /shape/);
+});
+
+test('B-06 non-sold-out trade never draws randomness', () => {
+  const { buyer, seller } = pair();
+  const result = trade(buyer, seller, { random: () => { throw Error('unexpected RNG'); } });
+  assert.equal(result.receipt.soldOut, false);
+  assert.equal(result.receipt.rankDown, 0);
+  assert.equal(result.receipt.rankBefore, null);
+  assert.equal(result.receipt.rankAfter, null);
+  assert.equal(result.seller.rank, seller.rank);
+});
+
+test('B-06 original fractional rankdown uses injected rand(1/penalty) < 1', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 500; // (500/100)^3 / 1000 = 0.125
+  let used = 0;
+  const lower = trade(buyer, seller, { random: () => { used++; return 0.124999; } });
+  const upper = trade(buyer, seller, { random: () => { used++; return 0.125; } });
+  assert.equal(used, 2);
+  assert.equal(lower.receipt.rankDown, 1);
+  assert.equal(lower.seller.rank, 499);
+  assert.equal(upper.receipt.rankDown, 0);
+  assert.equal(upper.seller.rank, 500);
+});
+
+test('B-06 identical injected random values replay to identical entire state', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 500;
+  const a = trade(buyer, seller, { random: () => 0.05 });
+  const b = trade(buyer, seller, { random: () => 0.05 });
+  assert.deepEqual(a, b);
+  assert.equal(a.receipt.rankDown, 1);
+});
+
+test('B-06 rank 1000 uses deterministic whole penalty 1 and does not draw RNG', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 1000;
+  const result = trade(buyer, seller, { random: () => { throw Error('unexpected RNG'); } });
+  assert.equal(result.receipt.rankDown, 1);
+  assert.equal(result.seller.rank, 999);
+});
+
+test('B-06 rank 0 incurs no penalty and never consumes RNG', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 0;
+  const result = trade(buyer, seller, { random: () => { throw Error('unexpected RNG'); } });
+  assert.equal(result.receipt.rankDown, 0);
+  assert.equal(result.seller.rank, 0);
+});
+
+test('B-06 rank 2500 fractional remainder is truncated in original Core', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 2500;
+  const result = trade(buyer, seller, { random: () => { throw Error('unexpected RNG'); } });
+  assert.equal(result.receipt.rankDown, 15); // (25^3)/1000 => 15.625
+  assert.equal(result.seller.rank, 2485);
+});
+
+test('B-06 fractional sold-out penalty requires an explicit RNG source', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 500;
+  const original = structuredClone({buyer,seller});
+  assert.throws(() => trade(buyer, seller), /requires injected random/);
+  assert.deepEqual({buyer,seller}, original);
+});
+
+test('B-06 invalid injected random results reject without any partial store mutations', () => {
+  for (const value of [-0.001, 1, NaN, Infinity, '0.1', null]) {
+    const { buyer, seller } = pair();
+    seller.item[78] = 4;
+    seller.rank = 500;
+    const before = structuredClone({buyer,seller});
+    assert.throws(() => trade(buyer, seller, { random: () => value }), /\[0, 1\)/);
+    assert.deepEqual({buyer,seller}, before);
+  }
+});
+
+test('B-06 random callback failure cannot return half-updated shops', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  seller.rank = 500;
+  const before = structuredClone({ buyer, seller });
+  assert.throws(() => trade(buyer, seller, { random: () => { throw Error('seed exhausted'); } }), /seed exhausted/);
+  assert.deepEqual({buyer,seller}, before);
+});
+
+test('B-06 sold-out behavior also applies when quantity is capped by seller stock', () => {
+  const { buyer, seller } = pair();
+  seller.item[78] = 4;
+  const result = trade(buyer, seller, { requestedCount: 10 });
+  assert.equal(result.receipt.count, 4); // buyer capacity is 5
+  assert.equal(result.receipt.soldOut, true);
+  assert.equal(result.seller.item[78], 0);
+  assert.equal(result.seller.rank, 4885);
+});
+
+test('B-06 formula clamps the rank to zero when penalty is larger than rank', () => {
+  const {buyer, seller} = pair();
+  seller.item[78] = 4;
+  seller.rank = 100000; // 1000^3 / 1000 = 1,000,000
+  const result = trade(buyer, seller);
+  assert.equal(result.receipt.rankDown, 1000000);
+  assert.equal(result.receipt.rankAfter, 0);
+  assert.equal(result.seller.rank, 0);
+});
+
+test('B-06 invalid seller rank rejects sold-out, but the normal non-sold-out path remains unchanged', () => {
+  const { buyer, seller } = pair();
+  seller.rank = -1;
+  const normal = trade(buyer, seller);
+  assert.equal(normal.seller.rank, -1);
+  seller.item[78] = 4;
+  assert.throws(() => trade(buyer, seller), /seller rank/);
 });
