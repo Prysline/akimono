@@ -66,6 +66,12 @@ jobs:
           test "$(git hash-object modern/tests/original-perl/lock.cgi)" = "84382170f1b7f70348c4e2a91bf30b1d1043b964"
           test "$(git hash-object modern/tests/original-perl/period.cgi)" = "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
           test "$(git hash-object modern/tests/original-perl/use.cgi)" = "1bf4537cc41e344c144d840d43175c4c232765bb"
+      - name: Verify four additional SHA-pinned original Core item-loader source blobs
+        run: |
+          test "$(git hash-object modern/tests/original-perl/core-inc-item.cgi)" = "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+          test "$(git hash-object modern/tests/original-perl/core-item-detail.cgi)" = "9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8"
+          test "$(git hash-object modern/tests/original-perl/core-item-form.cgi)" = "7ec2c01829c20e78feec53a1ed410ad7254b21c7"
+          test "$(git hash-object modern/tests/original-perl/core-item-submit.cgi)" = "bf895cb9c4672fe984cc9be352d52a856d3ac4e3"
       - name: Run isolated original Perl Core tests
         working-directory: modern/tests/original-perl
         run: prove -v *.t
