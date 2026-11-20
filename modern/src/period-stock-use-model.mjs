@@ -15,9 +15,9 @@ export const REVIEWED_USE_LIMITS=Object.freeze({
 });
 
 function fail(m){throw new Error(m)}
-function nonnegative(value,label,{integer=true,max=Number.MAX_SAFE_INTEGER}={}){
+function nonnegative(value,label,{integer=true,max=Number.MAX_SAFE_INTEGER,allowNegative=false}={}){
   if(typeof value!=='number'||!Number.isFinite(value)||
-     value<0||value>max||(integer&&!Number.isSafeInteger(value))){
+     (!allowNegative&&value<0)||Math.abs(value)>max||(integer&&!Number.isSafeInteger(value))){
     throw new RangeError(label+' must be a reviewed nonnegative '+(integer?'safe integer':'finite value'));
   }
   return value;
@@ -27,11 +27,11 @@ function safeProduct(a,b,label){
   if(!Number.isSafeInteger(result))fail(label+' exceeds safe integer arithmetic');
   return result;
 }
-function slots(raw,label,{integer=false}={}){
+function slots(raw,label,{integer=false,allowNegative=false}={}){
   if(!Array.isArray(raw)||raw.length!==REVIEWED_USE_LIMITS.itemSlots){
     fail(label+' must contain exactly 79 positions');
   }
-  return raw.map((v,i)=>nonnegative(v,label+'['+i+']',{integer}));
+  return raw.map((v,i)=>nonnegative(v,label+'['+i+']',{integer,allowNegative}));
 }
 function reviewedMaterials(materials){
   if(!Array.isArray(materials)||materials.length>79)fail('materials must be a bounded array');
@@ -51,13 +51,14 @@ function reviewedMaterials(materials){
 }
 
 /** Original caps stock ABOVE limit, then performs Perl int() on each cell.
- * Our safety subset rejects negative and unsafe quantities rather than
- * mirroring Core's potentially negative/invalid stock handling.
+ * Preserve original signed numbers including negative stock, even though
+ * it may be hazardous; see docs/original-behavior-issues.md. Numeric
+ * non-finite/unsafe JS fixture representations remain unsupported.
  * No world, shop, or input array is modified.
  */
 export function projectReviewedPeriodStock({stock,limits}){
-  const current=slots(stock,'stock');
-  const caps=slots(limits,'limits',{integer:true});
+  const current=slots(stock,'stock',{allowNegative:true});
+  const caps=slots(limits,'limits',{integer:true,allowNegative:true});
   const capped=Object.freeze(current.map((v,i)=>Math.trunc(Math.min(v,caps[i]))));
   const altered=Object.freeze(current.flatMap((v,i)=>
     capped[i]===v?[]:[Object.freeze({itemId:i+1,from:v,to:capped[i]})]));
