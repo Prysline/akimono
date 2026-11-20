@@ -11,6 +11,7 @@
     "demo:state": "node scripts/demo-state.mjs",
     "demo:economy": "node scripts/demo-economy.mjs",
     "demo:peer": "node scripts/demo-peer-trade.mjs",
-    "demo:limits": "node scripts/demo-item-limits.mjs"
+    "demo:limits": "node scripts/demo-item-limits.mjs",
+    "demo:wholesale": "node scripts/demo-fractional-wholesale.mjs"
   }
 }
