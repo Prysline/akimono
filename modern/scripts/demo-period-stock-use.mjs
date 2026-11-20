@@ -48,16 +48,10 @@ try{
   if(error.message.startsWith('Unexpectedly accepted'))throw error;
   largeRandomRefused=error.message;
 }
-let negativeSourceRiskRefused;
-try{
-  projectReviewedPeriodStock({
-    stock:slots([-1.9]),limits:slots([10],100),
-  });
-  throw new Error('Unexpectedly accepted negative source stock');
-}catch(error){
-  if(error.message.startsWith('Unexpectedly accepted'))throw error;
-  negativeSourceRiskRefused=error.message;
-}
+const negativeSourceStockPreserved=projectReviewedPeriodStock({
+  stock:slots([-1.9]),limits:slots([10],100),
+}).stock[0];
+if(negativeSourceStockPreserved!==-1)throw Error('Core period signed stock arithmetic changed');
 console.log(JSON.stringify({
   mode:'source-reviewed B-20, synthetic decisions only; no world writes',
   source:'fixed Core inc-period.cgi and plug/use.cgi',
@@ -68,11 +62,12 @@ console.log(JSON.stringify({
     reasons:x.result.blockReasons,
   })),
   smallStochastic:{draws:values,output:random},
-  excluded:{largeRandomRefused,negativeSourceRiskRefused},
+  sourceNotes:{largeRandomRemainsOutsideB20Subset:largeRandomRefused,
+    negativeSourceStockPreserved},
   limitsOfScope:[
     'preflight is not CheckUseItem with dynamic callbacks',
-    'MakeAmount count>=20 is deliberately not reproduced',
-    'original Core permits negative stock in period code; safe subset refuses',
+    'B-20 small-only sampling gate is unchanged; see demo:original-outcomes for >=20 Core formula',
+    'original Core permits negative stock in period code; this projection now preserves it',
     'no item consumption, resource changes, storage, CGI or commit',
   ],
 },null,2));
