@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -31,6 +32,9 @@ test('B-28 pinned root _config.cgi prefers custom RequireFile over built-in incl
   const builtin=x.indexOf('my $fname="$INCLUDE_DIR/$_[0]";');
   const builtinRequire=x.indexOf('require $fname;');
   assert.ok(custom>=0&&custom<customRequire&&customRequire<builtin&&builtin<builtinRequire);
+});
+test('B-28 current source checkout has no custom/inc-item.cgi override',()=>{
+  assert.equal(existsSync(path.join(root,'custom/inc-item.cgi')),false);
 });
 test('B-28 shared Core inc-item belongs to package item and has item helpers',()=>{
   assert.match(common,/^package item; #変更不可/m);
