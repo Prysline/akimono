@@ -236,7 +236,7 @@ test('B-20 duplicate, oversized or malformed material data is rejected',()=>{
     {itemId:1,requiredPerUse:1,probabilityPermille:1001},
   ])assert.throws(()=>projectReviewedUsePreflight({
     ...args(),materials:[material],
-  }),/item ID|requiredPerUse|probabilityPermille/);
+  }),/item ID|material ID|requiredPerUse|probabilityPermille/);
 });
 test('B-20 malformed job, event or stock observations rejected',()=>{
   assert.throws(()=>projectReviewedUsePreflight({
