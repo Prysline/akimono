@@ -26,9 +26,9 @@ sub bootstrap {
     $BODY{$name}=$sub;
   }
   die 'B-29 helper order changed' unless
-    index($inc,'sub UseItem\n')<index($inc,'sub UseItemSub\n') &&
-    index($inc,'sub UseItemSub\n')<index($inc,'sub AddItem\n') &&
-    index($inc,'sub AddItem\n')<index($inc,'sub AddItemSub\n');
+    index($inc,"sub UseItem\n")<index($inc,"sub UseItemSub\n") &&
+    index($inc,'sub UseItemSub\n')<index($inc,"sub AddItem\n") &&
+    index($inc,'sub AddItem\n')<index($inc,"sub AddItemSub\n");
   my $dsl=read_text(File::Spec->catfile($FindBin::Bin,'..','..','..',
     'custom','inc-item-data.cgi'));
   my ($section)=$dsl=~/(^\@\@FUNCITEM\b[\s\S]*?)(?=^\@\@FUNCUPDATE\b)/m;
