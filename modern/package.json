@@ -15,6 +15,7 @@
     "demo:wholesale": "node scripts/demo-fractional-wholesale.mjs",
     "demo:turn-wholesale": "node scripts/demo-wholesale-turn.mjs",
     "demo:world": "node scripts/demo-world-wholesale.mjs",
-    "demo:commit": "node scripts/demo-world-commit.mjs"
+    "demo:commit": "node scripts/demo-world-commit.mjs",
+    "demo:lock": "node scripts/demo-world-lock.mjs"
   }
 }
