@@ -7,6 +7,7 @@
  * No market lifecycle, sales, Perl callbacks, DSL evaluation, auth, money
  * transfer, persistence, default prices for opaque DSL fields, or CGI.
  */
+import {parseDsl} from './parse-dsl.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -33,11 +34,47 @@ function name(v,key){
   if(typeof v!=='string'||!v.trim()||v.length>200)bad(key);
   return v;
 }
+
+/**
+ * Structured SOURCE METADATA only. Item/USE/EVENT fields are raw original
+ * DSL entries, NOT compiled/evaluated behaviors or executable actions.
+ */
+function structuralCatalog(itemDsl,rebelDsl,model){
+  const blocks=[
+    parseDsl(itemDsl,'custom/inc-item-data.cgi'),
+    parseDsl(rebelDsl,'custom/inc-rebel-data.cgi'),
+  ].flatMap(p=>p.blocks);
+  const records=kind=>Object.freeze(blocks.filter(x=>x.kind===kind).map(x=>
+    Object.freeze({
+      kind,sourceFile:x.file,sourceLine:x.startLine,
+      ownerItemLine:x.ownerItemLine,
+      sourceFields:Object.freeze(Object.fromEntries(
+        Object.entries(x.fields).map(([name,rows])=>[
+          name,Object.freeze(rows.map(row=>Object.freeze({
+            raw:row.value,line:row.line,
+          }))),
+        ]))),
+      runtimeSupported:false,
+      sourceMode:'raw-nonexecuting-dsl',
+    })));
+  return Object.freeze({
+    items:Object.freeze(model.items.map(x=>Object.freeze({
+      id:x.id,name:x.name,code:x.code,
+      priceRaw:x.priceRaw,limitRaw:x.limitRaw,flagRaw:x.flagRaw,
+      source:x.source,line:x.line,
+      runtimeSupported:false,
+    }))),
+    uses:records('USE'),
+    events:records('EVENT'),
+  });
+}
+
 /** Only trusted locally supplied original DSL strings; no web fetch. */
 export function createStandardStreetModule({itemDsl,rebelDsl}){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
+  const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -51,6 +88,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
     id:STANDARD_STREET_ID,
     capabilities:actions,
     metadata,
+    catalog,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -58,6 +96,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
         integer(command.shopId,'shopId',1);
         name(command.ownerName,'ownerName');
         name(command.shopName,'shopName');
+        if(command.icon!==undefined)integer(command.icon,'icon');
         if(world.shops.some(s=>s.id===command.shopId))bad('duplicate shop id');
         const created=createStandardStreetShop(model,{
           now:world.nowSeconds,id:command.shopId,name:command.ownerName,
