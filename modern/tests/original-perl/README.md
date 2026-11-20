@@ -30,7 +30,7 @@ CI 會以 `git hash-object` 核對以上十一個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **5 個 Perl 測試檔，107/107 個斷言**：
+目前已由 GitHub Actions 成功執行 **6 個 Perl 測試檔，134/134 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -39,9 +39,10 @@ prove -v *.t
 | `showcase-market.t` | `sc-s.cgi` 陳列操作、`GetMarketStatus` 市場統計 | 26 |
 | `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore`（含 0.5、1.5 的批發供貨係數） | 21 |
 | `world-data.t` | 真正執行原版 `DataWrite()` 至隔離暫存世界檔（不用 CGI 或正式 commit） | 11 |
-| **合計** | | **107** |
+| `world-commit.t` | 真正執行原版 `DataCommitOrAbort()`，驗證提交／取消／復原／中途失敗（只用隔離暫存目錄） | 27 |
+| **合計** | | **134** |
 
-CI：[Actions run 44667944363](https://github.com/Prysline/akimono/actions/runs/44667944363)，`Result: PASS`，第十二階段總計 107 項 Perl 斷言。
+CI：[Actions run 44670403391](https://github.com/Prysline/akimono/actions/runs/44670403391)，`Result: PASS`，第十三階段初次驗證累計 134 項 Perl 斷言。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -93,3 +94,13 @@ npm run audit
 Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` 的前3行、`DataWrite` 的欄位次序及提交碼；但這不代表執行了完整的原版 `DataRead`（它還會載入城鎮、事件、商店、AutoVar 等）。為取得實際格式證據，本階段新增 `world-data.t`，**直接 require 原版未修改的 `write.cgi` 並執行 `DataWrite()`**；以 `File::Temp` 的測試用暫存目錄、明確初始化的世界變數，以及鎖定／備份／輸出替身，核對生成資料第1行時間、第2行世界資訊、第3行79格庫存、第4行事件、第5行城鎮與 `//` 分隔符，並確認重寫庫存只更動對應值。
 
 這是**局部原版 Perl 寫檔函式的隔離執行**，不是 CGI HTTP、正式遊戲世界檔、原版 `DataCommitOrAbort`、真正寫入交易鎖或全部世界資料的往返。既有 96 項 Perl 斷言增加11項後為 **107／107**；Node 從136項增加19項後為 **155／155**。
+
+## 第十三階段：原版 DataCommitOrAbort 的隔離提交流程
+
+新增 `world-commit.t`，**真正載入既有未修改的原版 `write.cgi`（原 Core `plug/write.cgi`）並執行 `DataCommitOrAbort()`**。使用 `File::Temp` 建立獨立的 `stage/`、`live/` 及提交標記，`GetPath`、`OpenAndCheck`、`RenameAndCheck` 為限制在測試根目錄內的可觀察替身。只對測試自建的暫存檔更名／刪除，沒有任何正式世界存檔、CGI HTTP、跨程序鎖或備份變動。
+
+新增 **27項 Perl 斷言**：正常提交創建並清除 marker；無 marker 時 abort 刪除 stage、保持 live；有 marker 時即使 `abort=1` 仍恢復提交；無 stage 時清除殘留 marker；第2個檔案更名注入錯誤導致第1個已移動、marker 尚存，之後 `abort=1` 恢復剩餘檔案；原始正規表示式 `grep(/.$FILE_EXT$/, ...)` 對 `FILE_EXT='.cgi'` 有**未跳脫的兩個點**，可能選中類似 `strangexcgi` 的名稱（此項僅為相容性風險的來源行為驗證）。
+
+本階段同時新增純 Node `world-commit-plan.mjs` 與測試，僅產生**建議處理的動作清單**，不對實體檔案執行任何操作；**刻意拒絕**原版寬鬆 regex 會錯誤選中的檔名，這一點是安全範圍與原版的明確差異。原版提交是逐檔更名，故**不是原子交易**，意外失敗可能有部分 live 資料已被取代；即使依 marker 恢復，也不等於已驗證真正的跨程序鎖、斷電安全、目錄持久性或可完整回滾。相關真正部署風險尚未解決。
+
+原版固定 Core 快照繼續維持**11份**，本批沒有改寫任何原始快照；原版 Perl 斷言新增27項後總計 **134項**。
