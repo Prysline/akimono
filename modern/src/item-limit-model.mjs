@@ -6,23 +6,45 @@
  *
  * LIMIT A/B assigns item.limit = GetNumber(A) and item.wslimit =
  * GetNumber(B). Without /B, wslimit equals limit. The slash is NOT division.
+ * B may be a nonnegative decimal literal such as 0.5 or 1.5, as actually
+ * present in the pinned Standard Street DSL. Market stock remains integral:
+ * plug/whole.cgi applies int(wslimit * shopcount + 0.99).
  *
  * Scope deliberately excludes GetNumber's arbitrary Perl eval, symbolic
- * values, lvN multipliers, empty left-hand sides, negative/noninteger limits,
+ * values, empty left-hand sides, negative/decimal shop holding limits,
  * and implicit price-based defaults. Those require separate source review.
  */
+function decimalWholesale(raw) {
+  if (!/^[0-9]+(?:\.[0-9]+)?$/.test(raw)) {
+    throw new Error('Unsupported nonliteral wholesale LIMIT: ' + raw);
+  }
+  // Check the integer part as text before converting to a JS double so an
+  // unsafe huge decimal cannot silently round into an apparently safe number.
+  const [integerPart, fractionalPart] = raw.split('.');
+  const max = BigInt(Number.MAX_SAFE_INTEGER);
+  const integral = BigInt(integerPart);
+  if (integral > max || (integral === max && fractionalPart && /[1-9]/.test(fractionalPart))) {
+    throw new RangeError('Unsupported or unsafe wholesale LIMIT: ' + raw);
+  }
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 ||
+      !Number.isSafeInteger(Math.trunc(value))) {
+    throw new RangeError('Unsupported or unsafe wholesale LIMIT: ' + raw);
+  }
+  return value;
+}
+
 export function compileLiteralItemLimit(raw) {
   if (typeof raw !== 'string') {
     throw new TypeError('Item LIMIT must be a source string');
   }
-  const match = /^([0-9]+)(?:\/([0-9]+))?$/.exec(raw);
+  const match = /^([0-9]+)(?:\/([0-9]+(?:\.[0-9]+)?))?$/.exec(raw);
   if (!match) {
     throw new Error('Unsupported nonliteral item LIMIT: ' + raw);
   }
   const limit = Number(match[1]);
-  const wslimit = match[2] === undefined ? limit : Number(match[2]);
-  if (!Number.isSafeInteger(limit) || limit < 1 ||
-      !Number.isSafeInteger(wslimit) || wslimit < 0) {
+  const wslimit = match[2] === undefined ? limit : decimalWholesale(match[2]);
+  if (!Number.isSafeInteger(limit) || limit < 1) {
     throw new RangeError('Unsupported or unsafe literal item LIMIT: ' + raw);
   }
   return Object.freeze({ limit, wslimit, raw, mode: 'literal-core-limit-subset' });
@@ -69,15 +91,14 @@ export function compileOrderedItemLimit({ price, priceLine, limitRaw = null, lim
   if (typeof limitRaw !== 'string') {
     throw new TypeError('Item LIMIT must be source text or null');
   }
-  const levelMatch = /^lv([0-9]+(?:\.[0-9]+)?)(?:\/([0-9]+))?$/i.exec(limitRaw);
+  const levelMatch = /^lv([0-9]+(?:\.[0-9]+)?)(?:\/([0-9]+(?:\.[0-9]+)?))?$/i.exec(limitRaw);
   if (!levelMatch) {
     // Legacy literal-only helper is unchanged, including rejecting zero limits.
     return compileLiteralItemLimit(limitRaw);
   }
   const level = Number(levelMatch[1]);
-  const override = levelMatch[2] === undefined ? null : Number(levelMatch[2]);
-  if (!Number.isFinite(level) || level < 0 ||
-      (override !== null && !Number.isSafeInteger(override))) {
+  const override = levelMatch[2] === undefined ? null : decimalWholesale(levelMatch[2]);
+  if (!Number.isFinite(level) || level < 0) {
     throw new RangeError('Invalid or unsafe level LIMIT');
   }
 
