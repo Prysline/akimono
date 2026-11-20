@@ -24,6 +24,7 @@
     "demo:period-experience": "node scripts/demo-period-experience.mjs",
     "demo:period-stock-use": "node scripts/demo-period-stock-use.mjs",
     "demo:original-outcomes": "node scripts/demo-original-outcomes.mjs",
-    "demo:multi-item": "node scripts/demo-original-multi-item.mjs"
+    "demo:multi-item": "node scripts/demo-original-multi-item.mjs",
+    "demo:transaction": "node scripts/demo-original-use-transaction.mjs"
   }
 }
