@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compileLiteralItemLimit } from '../src/item-limit-model.mjs';
+import { compileLiteralItemLimit, compileOrderedItemLimit } from '../src/item-limit-model.mjs';
 import { loadStandardStreetModel } from '../src/standard-street-model.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -104,4 +104,129 @@ test('B-01 retains explicit limits with large values; no guessed price-based fal
   assert.equal(value.limit, 4000);
   assert.equal(value.wslimit, 4000);
   assert.equal(compileLiteralItemLimit('00040/0003').wslimit, 3);
+});
+
+
+test('B-01 pinned PRICE compiler derives limit only when no current limit exists', () => {
+  assert.match(originalCompiler, /if \(!\$g_item->\{limit\}\)/);
+  assert.match(originalCompiler, /\$g_item->\{limit\}=int\(1000000 \/ \$g_item->\{price\}\)/);
+  assert.match(originalCompiler, /\$g_item->\{limit\}=1 if \$g_item->\{limit\} < 1/);
+  assert.match(originalCompiler, /\$g_item->\{limit\}=2000 if \$g_item->\{limit\} > 2000/);
+  assert.match(originalCompiler, /\$g_item->\{limit\}=int\(\$g_item->\{limit\} \/ 10 \+ 0\.5\)\*10 if \$g_item->\{limit\}>100/);
+});
+
+test('B-01 pinned lvN multiplies existing limit by N/5 and truncates', () => {
+  assert.match(originalCompiler, /\$val\[0\] =~ \/\^lv\(\[\\d\\\.\]\+\)\$\/i/);
+  assert.match(originalCompiler, /\$g_item->\{limit\}=int\(\$g_item->\{limit\}\* \$1 \/ 5\)/);
+  assert.match(originalCompiler, /\$g_item->\{wslimit\}=\$g_item->\{limit\} if \$val\[1\]eq''/);
+});
+
+test('B-01 price-default 1,000,000/price clamps 1..2000', () => {
+  for (const [price,expected] of [
+    [1,2000], [100,2000], [500,2000], [10000,100],
+    [1000000,1], [2000000,1],
+  ]) {
+    const result=compileOrderedItemLimit({price,priceLine:30});
+    assert.deepEqual(result,{limit:expected,wslimit:expected,raw:null,mode:'core-price-default-subset'});
+  }
+});
+
+test('B-01 price-default rounds to nearest ten only for limit > 100', () => {
+  assert.equal(compileOrderedItemLimit({price:749,priceLine:20}).limit,1340);
+  assert.equal(compileOrderedItemLimit({price:1200,priceLine:20}).limit,830);
+  assert.equal(compileOrderedItemLimit({price:7500,priceLine:20}).limit,130);
+  assert.equal(compileOrderedItemLimit({price:9901,priceLine:20}).limit,100);
+  assert.equal(compileOrderedItemLimit({price:10000,priceLine:20}).limit,100);
+});
+
+test('B-01 lv5 retains default limit, lv2.5 halves, lv7 multiplies', () => {
+  const input={price:10000,priceLine:20,limitLine:21};
+  for(const [raw,expected] of [['lv5',100],['lv2.5',50],['lv7',140],['lv0',0]]) {
+    const actual=compileOrderedItemLimit({...input,limitRaw:raw});
+    assert.equal(actual.limit,expected);
+    assert.equal(actual.wslimit,expected);
+    assert.equal(actual.mode,'core-level-limit-subset');
+  }
+});
+
+test('B-01 lvN/B sets separate wholesale limit and allows zero wholesale stock', () => {
+  const input={price:10000,priceLine:20,limitLine:30};
+  const pair=compileOrderedItemLimit({...input,limitRaw:'LV2.5/8'});
+  assert.equal(pair.limit,50);
+  assert.equal(pair.wslimit,8);
+  const noWholesale=compileOrderedItemLimit({...input,limitRaw:'lv2.5/0'});
+  assert.equal(noWholesale.limit,50);
+  assert.equal(noWholesale.wslimit,0);
+});
+
+test('B-01 lv before PRICE does not inherit a future default', () => {
+  const actual=compileOrderedItemLimit({price:10000,priceLine:30,limitRaw:'lv2.5/8',limitLine:20});
+  assert.deepEqual(actual,{limit:100,wslimit:100,raw:'lv2.5/8',
+    mode:'core-price-after-level-fallback-subset'});
+});
+
+test('B-01 source ordering: literal LIMIT preceding PRICE is preserved', () => {
+  const item=model.items.find(x=>x.id===63);
+  assert.equal(item.limitRaw,'1/1');
+  assert.ok(item.priceSourceLine>item.limitSourceLine);
+  const actual=compileOrderedItemLimit({
+    price:item.price,priceLine:item.priceSourceLine,
+    limitRaw:item.limitRaw,limitLine:item.limitSourceLine,
+  });
+  assert.deepEqual(actual,{limit:1,wslimit:1,raw:'1/1',
+    mode:'literal-core-limit-subset'});
+});
+
+test('B-01 source ordering: reviewed original item #1 has PRICE preceding LIMIT', () => {
+  const item=model.items.find(x=>x.id===1);
+  assert.ok(item.priceSourceLine<item.limitSourceLine);
+  const actual=compileOrderedItemLimit({
+    price:item.price,priceLine:item.priceSourceLine,
+    limitRaw:item.limitRaw,limitLine:item.limitSourceLine,
+  });
+  assert.equal(actual.limit,4000);
+  assert.equal(actual.wslimit,1000);
+});
+
+test('B-01 all 79 pinned Standard Street items declare explicit LIMIT, none uses lvN', () => {
+  assert.equal(model.items.length,79);
+  assert.equal(model.items.filter(x=>x.limitRaw===null).length,0);
+  assert.equal(model.items.filter(x=>/^lv/i.test(x.limitRaw)).length,0);
+  for(const item of model.items) {
+    assert.ok(Number.isSafeInteger(item.limitSourceLine));
+  }
+});
+
+test('B-01 ordered compiler refuses missing source line metadata', () => {
+  assert.throws(()=>compileOrderedItemLimit({price:10000}), /PRICE source line/);
+  assert.throws(()=>compileOrderedItemLimit({price:10000,priceLine:20,limitRaw:'lv5'}), /LIMIT source line/);
+  assert.throws(()=>compileOrderedItemLimit({price:10000,priceLine:20,limitLine:22}), /without LIMIT/);
+});
+
+test('B-01 ordered compiler refuses zero/negative/noninteger/unsafe prices', () => {
+  for(const price of [0,-1,1.5,Infinity,Number.MAX_SAFE_INTEGER+1,'100']) {
+    assert.throws(()=>compileOrderedItemLimit({price,priceLine:20}), RangeError);
+  }
+});
+
+test('B-01 ordered compiler forbids dynamic Perl, malicious expressions and multiple slash segments', () => {
+  for(const raw of ['lv2+3','lv5/3/2','lv5/1.5','lv5;die','lvA','lv.5','lv1.','lv-1',
+    'lv2/3;system(1)','lvNaN','1/0;exit']) {
+    assert.throws(()=>compileOrderedItemLimit({price:10000,priceLine:10,limitRaw:raw,limitLine:20}),
+      /Unsupported/);
+  }
+});
+
+test('B-01 ordered compiler rejects large lvN output and unsafe wholesale overrides', () => {
+  for(const raw of ['lv9007199254740991','lv5/9007199254740992']) {
+    assert.throws(()=>compileOrderedItemLimit({
+      price:10000,priceLine:10,limitRaw:raw,limitLine:20,
+    }),/Unsafe|unsafe|Invalid/);
+  }
+});
+
+test('B-01 ordered compiler always returns immutable object', () => {
+  const x=compileOrderedItemLimit({price:10000,priceLine:10,limitRaw:'lv5',limitLine:20});
+  assert.ok(Object.isFrozen(x));
+  assert.throws(()=>{x.limit=999;},TypeError);
 });
