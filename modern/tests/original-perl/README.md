@@ -277,3 +277,20 @@ prove -v *.t
 ```
 
 原版 `popup` 的負值／超額人氣與浮點截斷現象記於 `../../docs/original-behavior-issues.md` 的 CORE-15，只記錄不更動來源算式。沒有真實 CGI、原版商品編譯輸出、日誌檔案或世界資料。
+
+## 第二十七階段：兩份真正標準街本地 `_local_` Perl 本文隔離
+
+新增 `OriginalInlineCallbackHarness.pm`：從未修改 `../../../custom/inc-item-data.cgi` 審閱過的商品13／63 區塊，逐字擷取各自的 `func _local_` 到原版 `_local_` 結束標記；先比對固定 `inc-makeitem.cgi::GetLocalFunction`／`eval(<<'_eval_code_')` 包裝契約，再只將**這兩段**在記憶體 Perl `package item` 編譯與執行。兩個商品最後都使用 `_local_1` 名稱，因此隔離器每次只選定一個來源的函式**重新載入**；不涉及真實 `RequireFile`，也不宣稱原版運行時檔案載入或名稱衝突已驗證。
+
+`OriginalInlineCallbackHarness.pm` 另直接從固定 Core `inc-func.cgi` 擷取原樣 `sub GetMoneyString` 於人工貨幣前後綴下執行；`WriteLog` 僅測試記錄器，不會寫原版的日誌。原始管理員編譯器整份檔案、玩家 CGI、世界檔案及其他回呼均未執行。
+
+- `original-inline-work-showcase.t`：**52項**直接 Perl 斷言，驗證工作 `money+=USE.param1*count`、原版金額格式、兩筆 `WriteLog`，以及展示架的舊數量／新數量比較、`splice`、未補齊洞、未截掉多餘尾端、來源訊息與日誌。
+- `original-inline-work-showcase-probe.pl`：**13組**真正原版 Perl 本文執行的 JSON 實測資料，供 `../original-inline-work-showcase-model.test.mjs` 裡的 Node 直接逐案核對。
+- 前一批 [B-26 原版共用 `lostbook`／`popup` 隔離](../../docs/original-callback-inventory.md) 測試不變，完整 `prove -v *.t` 仍涵蓋兩批。
+
+```sh
+prove -v original-inline-work-showcase.t
+prove -v *.t
+```
+
+展示架合成狀態不一致的原版保留行為只記於 [CORE-16](../../docs/original-behavior-issues.md)，沒有替原版增加欄位正規化。其他 9 份本地使用後函式與真正前置／商品層級回呼尚未實際執行，完整端到端交易仍未完成。
