@@ -749,3 +749,25 @@ prove -v original-use-eligibility.t original-item-callback-contract.t
 ```
 
 **未完成／不可誤稱：** 真正 `inc-item.cgi` 的安全載入與實際商品／事件回呼、任何未知職業函式的完整效果、正式 DSL 編譯與所有 116 USE 規則整合、回呼修改狀態後的真正 `UseItem`／熟練度尾段、存檔／鎖／CGI HTTP。固定 `inc-makeitem.cgi` 檔案在此只做欄位來源核對，沒有啟動其頂層編譯程式。CI 通過僅支持來源明確的純記憶體片段，任務02保持進行中、PR #1 維持 Draft 並不合併。
+
+## 第二十六階段：原版標準街回呼盤點與兩個共用函式的隔離比對
+
+本階段**只對原版 DSL 做不執行的全量回呼宣告盤點**，再以 Perl 原版函式本文+記錄型替身驗證兩個確定的共用函式，不執行原版編譯器、真正 `inc-item.cgi`、商品庫存扣減、日誌寫入、帳號或 CGI。來源仍是原本標準街 `custom/inc-item-data.cgi`／`custom/inc-rebel-data.cgi` 與固定 SHA Core `inc-makeitem.cgi`；原版14份檔案完全不動。
+
+- [詳細盤點與分類](docs/original-callback-inventory.md)：116個 `@@USE` 中有56筆使用後 `func`，另60筆沒有。**22個 `lostbook`、1個 `popup`、11筆本地 `_local_` 定義、22筆 `_local_1` 沿用**。另有1筆真正的 `@@USE funcb`、1筆 `@@ITEM funct` 與42筆職業 `job` 欄位；它們不混成使用後回呼。
+- [靜態回呼來源索引](src/original-standard-callback-inventory.mjs) 與 [固定來源測試](tests/original-standard-callback-inventory.test.mjs)：依原版 `GetLocalFunction($name,$g_use->{no}+1)` 還原同商品 `_local_1` 別名指向的實際第一段函式。輸出逐筆來源行號及對庫存、金錢、時間、熟練度、人氣、陳列架、亂數／日誌的**字面引用**，不推定一定發生副作用，也不執行 Perl。
+- [兩個原版共用函式的受控 Node 數值模型](src/original-shared-use-callback-model.mjs)：`lostbook` 使用來源 `rand(1000)<param1` 決定是否**請求**外部 `UseItem(itemno,1,訊息)`；只記錄意圖、不執行扣庫存。`popup` 依原版 `int(param1*(2-rank/5000))` 修改**合成人氣**、只從上方限制為10000，並記錄兩筆 `WriteLog` 參數，完全不真正寫日誌。
+- [原始 Perl 函式本文的隔離斷言](tests/original-perl/original-shared-callbacks.t)／[12組原版 Perl JSON Probe](tests/original-perl/original-shared-callback-probe.pl)／[Node 直接對照](tests/original-shared-use-callback-model.test.mjs)：真的擷取 `@@FUNCITEM` 中的兩個 `sub` **原樣**函式執行，但用測試自建的 `package item` 外部函式記錄器攔截 `UseItem`／`WriteLog`。不執行來源整份檔案、真正遊戲交易或持久化。
+- [獨立原版問題紀錄](docs/original-behavior-issues.md) 新增 **CORE-15**：`popup` 接近邊界的實際 Perl `int` 浮點結果可能是59或-399，而非60／-400；即使人氣上限已截斷，原版訊息仍用原始 `up` 計算，可顯示「人氣提升了-3%」。**原版怎麼算就怎麼移植，不主動修正。**
+- [合成回呼示範](scripts/demo-original-callback-inventory.mjs) 可由 `npm run demo:callbacks` 執行，已加入 CI。它列出來源盤點與記錄型效果，不表示真正商品回呼或日誌完成。
+
+```sh
+cd modern
+npm test
+npm run audit
+npm run demo:callbacks
+cd tests/original-perl
+prove -v original-shared-callbacks.t
+```
+
+**未涵蓋：** 其餘33個本地使用後函式、真正前置與商品層級回呼、事件回呼、原版商品完整 DSL 編譯和動態載入、外部 `UseItem`／`WriteLog` 的真正副作用、帳號、真正存檔／鎖／原子提交或 CGI。每個宣告的靜態引用不等於已實作對應規則。Task 02 持續進行，Draft PR #1 不合併。
