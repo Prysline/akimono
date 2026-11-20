@@ -353,3 +353,19 @@ B-30 的 [`OriginalFullUseLostbookHarness.pm`](OriginalFullUseLostbookHarness.pm
 - [`../reviewed-use-fixture-street.test.mjs`](../reviewed-use-fixture-street.test.mjs)：**23項 Node 檢查**，包括原版 Perl 六次輸出與純記憶體 `WorldState` 每步主要欄位比較；`source-fixture-use` 是**獨立人工街道**，不能當成已移植真實標準街 ITEM #1～3。
 
 完整來源限制與狀態結構見 [`../../docs/reviewed-world-use-sequence.md`](../../docs/reviewed-world-use-sequence.md)。沒有真實 CGI、`RequireFile`、DSL 編譯、持久化、玩家權限、所有隨機場景或正式標準街使用功能；原版18份固定 Core source blob SHA 未改，所有原有 Perl 斷言繼續執行。
+
+## 第三十三階段：真實原版禮物卷 #79 第一筆 USE 與編譯器原文
+
+[`OriginalGiftMapUseHarness.pm`](OriginalGiftMapUseHarness.pm) **原樣擷取執行**固定來源 `inc-makeitem.cgi` 的 `GetBuffer/ClearBuffer/GetTime/GetNumber/GetString/GetItemNumber`（原版**編譯器子函式**，不是帶有刪目錄／建鎖／寫檔的完整頂層），只餵入79項原版 `ITEM PRICE/LIMIT` 與原始禮物卷第一筆 USE 「交換地圖集」資料。接著以同一來源的 `plug/use.cgi::UseItem`／`MakeAmount`、`calc.cgi::UseTime/GetItemUseTime`、`whole.cgi::CheckWholeStore` 在<b>人工79格批發全0測資</b>中**真正執行商品消耗與取得**，對照 Node 首次加入真實標準街的 `gift-exchange-maps` 單一命令。`RequireFile` 仍為只記錄型替身，不啟動完整 CGI 或世界檔案。
+
+- [`original-gift-map-use-probe.pl`](original-gift-map-use-probe.pl)：6種來源情境，含連續三筆的第三筆材料不足，總計8次原版 Perl UseItem 執行，回傳79項來源編譯上限、有效操作次數、庫存、批發、金錢、時間、原始 useitem/additem/usemsg/addmsg 結果。
+- [`original-gift-map-use.t`](original-gift-map-use.t)：**53項 Perl 直接來源斷言**，涵蓋原版 2張禮物卷→三張地圖、`ItemUseTimeRate 0.5`→1800秒、原版限額、兩次連續使用、第三次材料不足、三種地圖已滿時仍消耗禮物卷且 `additem` 追加三筆0。
+- [`../reviewed-gift-map-use.test.mjs`](../reviewed-gift-map-use.test.mjs)：**27項 Node 測試**，對原版子函式真正編譯的全部79個 ITEM 上限與六組真 Perl 輸出做逐欄核對。原始 USE 沒有個別訊息，Perl 仍保留 `usemsg=[undef]`、`addmsg=[undef,undef,undef]`，Node JSON 以 `null` 保留：已列獨立 [CORE-21](../../docs/original-behavior-issues.md)。
+- [詳細來源與嚴格限制](../../docs/reviewed-real-gift-use.md)：批發數量全0是**明示人工市場**，原版完整 compiler 頂層、真正 `RequireFile`、正式玩家資料讀寫／日誌／鎖及其餘115筆 USE 都沒有執行；不能把通過本測試宣稱成全部真實商品已完成。
+
+```sh
+prove -v original-gift-map-use.t
+prove -v *.t
+```
+
+全部固定原始 Core 快照及街道 DSL 均未修改；CI 同時檢查前32階段基準。
