@@ -19,8 +19,9 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `inc-turn.cgi` | `inc-turn.cgi` | `b8a4980275f475a952846a8d6072fad45f8dff50` |
 | `inc-func.cgi` | `inc-func.cgi` | `e7a8add7b0291901e71fe797783b664dff1568a0` |
 | `write.cgi` | `plug/write.cgi` | `203f33b37511e838800a45b84183af98fcf46e4c` |
+| `lock.cgi` | `plug/lock.cgi` | `84382170f1b7f70348c4e2a91bf30b1d1043b964` |
 
-CI 會以 `git hash-object` 核對以上十一個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -30,7 +31,7 @@ CI 會以 `git hash-object` 核對以上十一個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **6 個 Perl 測試檔，134/134 個斷言**：
+目前已由 GitHub Actions 成功執行 **7 個 Perl 測試檔，170/170 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -40,9 +41,10 @@ prove -v *.t
 | `whole-store.t` | `GetWholeStore`／`CheckWholeStore`／`SetWholeStore`（含 0.5、1.5 的批發供貨係數） | 21 |
 | `world-data.t` | 真正執行原版 `DataWrite()` 至隔離暫存世界檔（不用 CGI 或正式 commit） | 11 |
 | `world-commit.t` | 真正執行原版 `DataCommitOrAbort()`，驗證提交／取消／復原／中途失敗（只用隔離暫存目錄） | 27 |
-| **合計** | | **134** |
+| `lock-safety.t` | 原版 `Lock`／`UnLock`／`LockSub`／`RenameAndCheck`／`OpenAndCheck` 的隔離檔案測試 | 36 |
+| **合計** | | **170** |
 
-CI：[Actions run 44670403391](https://github.com/Prysline/akimono/actions/runs/44670403391)，`Result: PASS`，第十三階段初次驗證累計 134 項 Perl 斷言。
+CI：[Actions run 44674544005](https://github.com/Prysline/akimono/actions/runs/44674544005)，`Result: PASS`，第十四階段新增36項後累計170項 Perl 斷言。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -104,3 +106,13 @@ Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` �
 本階段同時新增純 Node `world-commit-plan.mjs` 與測試，僅產生**建議處理的動作清單**，不對實體檔案執行任何操作；**刻意拒絕**原版寬鬆 regex 會錯誤選中的檔名，這一點是安全範圍與原版的明確差異。原版提交是逐檔更名，故**不是原子交易**，意外失敗可能有部分 live 資料已被取代；即使依 marker 恢復，也不等於已驗證真正的跨程序鎖、斷電安全、目錄持久性或可完整回滾。相關真正部署風險尚未解決。
 
 原版固定 Core 快照繼續維持**11份**，本批沒有改寫任何原始快照；原版 Perl 斷言新增27項後總計 **134項**。
+
+## 第十四階段：原版鎖、重試、檔案錯誤的隔離契約
+
+新封存**第12份原版未修改快照** `lock.cgi`（來源 `plug/lock.cgi`，Git Blob `84382170f1b7f70348c4e2a91bf30b1d1043b964`），CI 已追加 `git hash-object` 驗證。實際設定依標準街 `_config.cgi`：`LOCK_FILE='lockfile'`，`AUTO_UNLOCK_TIME=60`，**不是**前幾階段合成範例的 `lock`。
+
+新增 `lock-safety.t` **36項 Perl 斷言**，透過 `File::Temp` 建立並銷毀獨立測試資料目錄，真正載入並執行原版 `Lock`／`UnLock`／`LockSub`／`RenameAndCheck`／`OpenAndCheck`。僅將 `DataCommitOrAbort(1)`、`OutError`、`WriteErrorLog`、語系文字以最小替身記錄：取得首層鎖會呼叫恢復；巢狀鎖只增加層數；外層解鎖才將擁有者檔案更名回 `lockfile`；當超時舊鎖超過60秒時可嘗試搶回，仍很新的舊鎖會回報 busy；錯誤更名／開檔耗盡重試後會記錄並呼叫原始錯誤出口。另直接驗證原版 `UnLock` 更名失敗後，深度已遞減至0，但 `LOCKED` 路徑仍非空；**不應把此情況當成釋放成功**。
+
+原版重試次數需精確區分：`LockSub` 的基礎更名最多5次；`RenameAndCheck` 最多5次，成功後檢查來源消失與目標存在；`OpenAndCheck` 的 `count=5` 搭配後置遞減，**在連續失敗情形，第6次開檔失敗才觸發錯誤**，此前5次各等待0.2秒。`OpenAndCheck` 採 `>:encoding(UTF-8)` 開檔模式，成功開啟可能截斷舊內容，並沒有額外證實 fsync／原子替換。
+
+此原版 Perl 測試有真正檔案更名／開檔，**但僅在 GitHub Actions 測試暫存目錄**，沒有動正式世界資料，也沒有測跨程序競爭、鎖與檔案同步時的競態、斷電、實際 CGI HTTP。另見 Node `modern/tests/world-lock-contract.test.mjs` 的無 I/O 純狀態結果。現已累計 **170／170 原版 Perl 隔離斷言**；前幾階段的88、96、107、134為歷史值，不表示現在只執行那些數量。
