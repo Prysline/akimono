@@ -31,7 +31,7 @@ CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **7 個 Perl 測試檔，170/170 個斷言**：
+目前已由 GitHub Actions 成功執行 **8 個 Perl 測試檔，194/194 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -42,7 +42,8 @@ prove -v *.t
 | `world-data.t` | 真正執行原版 `DataWrite()` 至隔離暫存世界檔（不用 CGI 或正式 commit） | 11 |
 | `world-commit.t` | 真正執行原版 `DataCommitOrAbort()`，驗證提交／取消／復原／中途失敗（只用隔離暫存目錄） | 27 |
 | `lock-safety.t` | 原版 `Lock`／`UnLock`／`LockSub`／`RenameAndCheck`／`OpenAndCheck` 的隔離檔案測試 | 36 |
-| **合計** | | **170** |
+| `backup-safety.t` | 原版 `CheckLockStatus`／`DataFilesBackup`／`DataWrite` 鎖與備份錯誤路徑（隔離暫存目錄） | 24 |
+| **合計** | | **194** |
 
 CI：[Actions run 44674544005](https://github.com/Prysline/akimono/actions/runs/44674544005)，`Result: PASS`，第十四階段新增36項後累計170項 Perl 斷言。
 
@@ -116,3 +117,17 @@ Node `modern/tests/world-wholesale-codec.test.mjs` 已直接核對 `DataRead` �
 原版重試次數需精確區分：`LockSub` 的基礎更名最多5次；`RenameAndCheck` 最多5次，成功後檢查來源消失與目標存在；`OpenAndCheck` 的 `count=5` 搭配後置遞減，**在連續失敗情形，第6次開檔失敗才觸發錯誤**，此前5次各等待0.2秒。`OpenAndCheck` 採 `>:encoding(UTF-8)` 開檔模式，成功開啟可能截斷舊內容，並沒有額外證實 fsync／原子替換。
 
 此原版 Perl 測試有真正檔案更名／開檔，**但僅在 GitHub Actions 測試暫存目錄**，沒有動正式世界資料，也沒有測跨程序競爭、鎖與檔案同步時的競態、斷電、實際 CGI HTTP。另見 Node `modern/tests/world-lock-contract.test.mjs` 的無 I/O 純狀態結果。現已累計 **170／170 原版 Perl 隔離斷言**；前幾階段的88、96、107、134為歷史值，不表示現在只執行那些數量。
+
+## 第十五階段：原版寫入前鎖檢查與備份的錯誤分支
+
+新增 `backup-safety.t` **24項 Test::More 隔離斷言**，直接 require 前述未改動的原版 `write.cgi` 並執行 `CheckLockStatus()`、`DataFilesBackup()`、`DataWrite()` 的相關路徑。所有資料檔／暫存檔／備份只建於自動清理的 `File::Temp` 資料夾；`GetPath()` 按固定 Core `inc-func.cgi` 原式為檔案加上 `.cgi`；正式專案的 `_config.cgi` 備份五個基底名稱為 `log0`、`log1`、`log2`、`guildbal`、`play`，檢查間隔為3600秒。
+
+直接確認的**原版缺陷／風險**：
+- `CheckLockStatus()` 的 `return if $LOCKED eq '' || -e $LOCKED`，所以 `LOCKED` 空字串**也會通過**；若非空但鎖檔已遺失，則先記錄錯誤，再呼叫 `OutError`。
+- `DataFilesBackup()` 的 `open(IN)`、`open(OUT)`、`while(<IN>) { print OUT }`、`close` **不檢查成功與否**。當來源缺失時，原版可將既有正確備份**截斷為空檔**而正常返回；當目的地不存在或無法開啟時，原版也可能直接返回而沒有實際備份。
+- `DataWrite()` 首先檢查鎖，再讀取備份的 mtime；當備份過期／不存在時會呼叫上述備份流程。原版可能在 **`LOCKED` 空字串**情況下仍輸出暫存世界檔；缺少備份 mtime 會觸發複製，但**呼叫過不表示成功備份**。
+- 原版程式並沒有證明跨進程鎖擁有者、資料同步／fsync、安全備份或原子提交。
+
+新增的 Node `world-backup-preflight.mjs` 是**純、非 I/O 的保守寫入前審查**，拒絕未經明確確認的擁有權、解鎖異常／持有層數0、待提交復原未完成，以及備份到期時五份檔案任一份讀寫或內容核對未成功。這是刻意比原版安全、但不代表真的做了備份或存檔。與新 Node 測試和示範詳見 `modern/README.md` 第十五階段。
+
+原版 Perl 斷言總計 **194／194**（原170增加24）；原版 Core SHA 快照仍為12份，本階段沒有改動原始碼，也不涉及 CGI HTTP 或正式世界存檔。
