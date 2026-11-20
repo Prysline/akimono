@@ -20,8 +20,10 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `inc-func.cgi` | `inc-func.cgi` | `e7a8add7b0291901e71fe797783b664dff1568a0` |
 | `write.cgi` | `plug/write.cgi` | `203f33b37511e838800a45b84183af98fcf46e4c` |
 | `lock.cgi` | `plug/lock.cgi` | `84382170f1b7f70348c4e2a91bf30b1d1043b964` |
+| `period.cgi` | `inc-period.cgi` | `6183e88e9dd69a16606a1064c8084e9a1411dbd5` |
+| `use.cgi` | `plug/use.cgi` | `1bf4537cc41e344c144d840d43175c4c232765bb` |
 
-CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上十四個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -31,7 +33,7 @@ CI 會以 `git hash-object` 核對以上十二個固定快照。快照檔案未�
 prove -v *.t
 ```
 
-目前已由 GitHub Actions 成功執行 **11 個 Perl 測試檔，295/295 個斷言**：
+目前已由 GitHub Actions 成功執行 **12 個 Perl 測試檔，328/328 個斷言**：
 
 | 檔案 | 原版函式／流程 | 斷言 |
 | --- | --- | ---: |
@@ -46,9 +48,10 @@ prove -v *.t
 | `world-read-safety.t` | 擷取**未修改**的固定 Core `DataRead` 函式，在隔離世界檔驗證缺失、損壞與缺少 `//` 的有界中止 | 24 |
 | `world-one-shop.t` | 使用固定 `@DTindexnamelist` 與原版 `DataRead` 函式本體，驗證空城鎮、一／兩店、重複 ID、缺少商店第二行的原版行為 | 34 |
 | `world-shop-history.t` | 固定 Core `DataRead` 與**原版 `AutoVar` 套件**的商店歷史雜湊、使用者延遲解碼、奇數／重複鍵及 Tab 分隔符測試 | 43 |
-| **合計** | | **295** |
+| `period-experience.t` | **擷取固定原版**每日歷史交接／熟練度自然衰退與 `UseItem` 熟練度尾段，在無副作用 Perl 替身中直接執行 | 33 |
+| **合計** | | **328** |
 
-CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十八階段累計 **295／295 項 Perl 隔離斷言**。
+CI：[GitHub Actions](https://github.com/Prysline/akimono/actions) 以目前分支 SHA 為準；第十九階段累計 **328／328 項 Perl 隔離斷言**。
 
 原既有 Node 測試與來源稽核繼續由下列指令驗證：
 
@@ -175,3 +178,18 @@ Node 新增 `src/world-one-shop-parser.mjs` 採更嚴格的**獨立唯讀單店*
 Node `world-shop-history-model.mjs` 為另一個**獨立單店、無 I/O 的保守子集**：先將新增加的四段資料以受限規則檢查，再將其原始區段從**副本**置空交給 B-17 安全解析器完成世界／32欄商店前置檢查；不放寬 B-16 或 B-17 任何既有入口。歷史三雜湊僅接受至多79個、鍵為標準街已核對商品 ID 1～79 的成對非負安全整數；用戶資料只接受不超過8組 ASCII 合成鍵及非負安全整數，允許逗號／Tab 分隔，**但回傳內容只包含人數，不輸出任何使用者名稱、資料值、`pass` 或其他認證秘密**。奇數配對、重複鍵、不安全字元、超出數量、未審查狀態均拒絕。這是比原版嚴格的測試模型，**不應拿來解析、驗證或還原真實使用者資料**。無事件執行、AutoVar 回呼、真實登入、存檔提交或 CGI HTTP。
 
 本階段新增 **43 項 Perl 斷言、28 項 Node 測試**，使 CI 累計 **295／295 Perl、293／293 Node**；原版 Core 快照依舊12份，完整 Git Blob SHA 驗證不變。
+
+## 第十九階段：原版每日歷史轉移、熟練度衰退與使用商品增加經驗
+
+新增兩份**完全未修改的固定 Core 快照**：`period.cgi`（原始 `inc-period.cgi`，Blob `6183e88e9dd69a16606a1064c8084e9a1411dbd5`）、`use.cgi`（原始 `plug/use.cgi`，Blob `1bf4537cc41e344c144d840d43175c4c232765bb`），CI 已新增 `git hash-object` 驗證。由原 12 份增加為 **14份**，來源仍是 `katelynn620/akimono-core@738d71a2985fd088f2ca90f25145706392ee2365`。
+
+新增 `period-experience.t` **33項 Perl 斷言**：`inc-period.cgi` 的**檔案頂層會直接執行**公會結算、商店關閉、隨機事件、檔案備份、session 清理等，`plug/use.cgi::UseItem` 前段也可能更動商品、資金、時間和執行動態回呼，因此**不可 require 或執行整份檔案**。本測試從剛封存的 SHA 固定快照**原文字句**精確擷取歷史交接兩句、熟練度自然衰退迴圈與 `UseItem` 熟練度尾段，只以隔離、明確的合成 `$DT`／`$USE` 與設定值編譯並直接執行這些**未改動來源片段**。沒有真實檔案、事件、商品消耗、交易、隨機、正式世界結算或 CGI HTTP。
+
+標準街 `_config.cgi` 實際 `EXP_DOWN_RATE=60`、`EXP_DOWN_POINT=5`、`LIMIT_EXP=3600`。已用原版片段確認：
+- 每期 `itemyesterday=itemtoday`，`itemtoday={}`；昨日舊雜湊被當日舊值取代。
+- 每個 `exp`：先減去 `int(exp*60/1000)` 再減5，值小於或等於0時刪掉。測試 `exp100→89`、`6→1`、`5→刪除`、`1000→935`。
+- `UseItem` 熟練度尾段以 `USE.exp*result.count` 計算增加，單項最多1000。總熟練度高於3600時，原版依熟練度由低至高排列**其他商品**並逐一以 `int(剩餘超額/剩餘商品數)` 分攤扣減；每次減少後重新計算，故不能以平均扣除處理。已以五項不同經驗的案例實測 `{1:900,2:700,3:800,4:850,5:900}` 對商品1增加100後得 `{1:1000,2:538,3:638,4:687,5:737}`，總和3600。
+- 多個其他商品有**相同熟練度**時，Perl `sort` 對比較相等的項目未提供業務定義的固定 tie-break，Node 純模型將在需分攤時拒絕該情況；不聲稱所有原版 HASH 迭代順序可重播。
+- 本階段只確定熟練度尾段數值，不宣稱已複製 `UseItem` 成功資格、材料消耗、隨機量、事件回呼、時間／資金扣款或原版每日其他結算效果。
+
+本批 Perl 隔離斷言由 **295增至328項**；Node 增加30項至 **323項**，兩份來源快照固定 SHA 總數為14份。僅測定受限片段；Node 模型詳見 `modern/README.md`。
