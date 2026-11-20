@@ -171,4 +171,30 @@ Core 的 `LIMIT` 宣告不是算術除法：`A/B` 將 `A` 解析為店鋪上限 
 
 新增 `tests/item-limit-model.test.mjs` **12項 Node 測試**，並將既有交易測試改為驗證來源限額、不允許呼叫端使用不一致的值。示範 `npm run demo:peer` 改由模型自動編譯三件商品的上限，不再把固定買家限額標成合成測資。最後的驗證結果依 GitHub Actions 當次執行紀錄為準；原有 **88 項 Perl 隔離斷言**數量不變。
 
-**未涵蓋：** 原版完整 `GetNumber` 與 `lv` 依賴、商品無 `LIMIT` 時的價格推定、批發市場全流程、全部 79 件商品、帳號／公會／回呼／CGI 實機與持久化。
+**該階段未涵蓋：** 原版完整 `GetNumber`、`lv` 依賴、商品缺省 `LIMIT` 時的價格推定、批發市場全流程、全部 79 件商品、帳號／公會／回呼／CGI 實機與持久化。後續第九階段已額外建立受限的 `lvN` 與價格預設值模型（詳見下方），但仍不是原版完整編譯器。
+
+## 第七批：PRICE 預設上限與 LIMIT lvN（第九階段）
+
+固定來源：Core [`inc-makeitem.cgi`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-makeitem.cgi) 的 `ClearBuffer`（初始商品值）、`PRICE`（第330–348行）、`LIMIT`（第412–425行）。**本次只擴充可重現的非執行性解析子集，沒有執行 Perl 的 `eval` 或完整 CGI 商品編譯**。
+
+新增 `compileOrderedItemLimit({price,priceLine,limitRaw,limitLine})`，以**單次、已核對的正整數商品定價**與原始欄位行號計算限定的來源行為：
+
+- `PRICE>0` 且之前沒有非零 `limit` 時，原版預設值為 `int(1000000/price)`，先限制於 `1..2000`；若值大於100，再用 `int(limit/10+0.5)*10` 取最接近的十位數。例如定價749→預設1340、定價10000→預設100、定價2000000→預設1。預設 `wslimit=limit`。
+- `LIMIT lvN` 在已有價格預設值之後出現時，以 **`int(當前limit * N/5)`** 產生持有量上限；不含右側 `/B` 時 `wslimit=limit`，若有 `/B` 則獨立指定批發上限。使用正整數定價10000的合成例子，`lv2.5` → 店鋪50／批發50，`lv2.5/0` → 店鋪50／批發0。
+- **欄位順序不可互換：** 若 `LIMIT lvN` 出現在 `PRICE` 之前，在原版尚未有預設 `limit` 時，初始乘法取得0；隨後的 `PRICE` 才以價格公式填入預設值，覆蓋當時的批發值。定價10000、先 `lv2.5/8` 再 `PRICE` 的合成例子結果是店鋪100／批發100，不是50／8。
+- 明確的純數字 `LIMIT A/B` 繼續由前階段的 `compileLiteralItemLimit` 處理，與其現有交易模型行為一致。
+- 只接受正整數價格、安全行號、單次 `PRICE` 與可選的一次 `LIMIT`；`lvN` 的 `N` 限非負十進位數字，右側 `/B` 限非負整數。拒絕符號、任意 Perl 指令、超出安全整數範圍及未審查語法。某些合法 Perl 語法也會被此受限模型拒絕，不宣稱其完整相容。
+
+**目前標準街來源實際情況：** 對固定 `custom/inc-item-data.cgi` 的79件 `@@ITEM` 逐項檢查後，**79件都有明確 `LIMIT`，0件使用 `LIMIT lvN`**。因此第九階段新增的 `lvN` 與缺省上限測試使用的是**合成商品編譯測資**，不是聲稱現有商品已啟用這兩種情形。Node 讀取器現在保留 `priceSourceLine`、`limitSourceLine` 來源資訊供日後審查；但若某商品的 `PRICE` 寫在 `@@USE` 區塊之後，現有 `parseDsl` 不一定把該欄位歸入 `@@ITEM`，需要直接查原始 DSL 行號而不是填入猜測值。原始商品 #63 的順序測試即直接核對固定原檔行1909與2007，不推定模型有解析該價格欄位。
+
+本階段在 `tests/item-limit-model.test.mjs` **增加15項 Node測試**，涵蓋預設上限、數值截斷、十位四捨五入、`lvN` 倍率與右側批發限額、先後順序、資料來源行號、拒絕不安全輸入、全部79件商品現況。既有三件商品 #1／#40／#79 的玩家交易白名單**未擴大**，交易上限繼續沿用已審查的純數字 `LIMIT`；不會在交易時套用未審核的 `lvN` 或價格預設推導。
+
+可在 `modern/` 使用：
+
+```sh
+npm test
+npm run demo:limits
+npm run demo:peer
+```
+
+`npm run demo:limits` 同時列出已確認的真實標準街 #1 商品限額，以及**分開標記**的合成預設與 `lvN` 範例；新增命令已加入 GitHub Actions。這仍是單機規則稽核，不是啟動 CGI、Perl 編譯器或持久化世界資料。
