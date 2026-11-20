@@ -114,6 +114,7 @@ test('B-14 invalid lock actions, depths, or missing rename result fail closed',(
   assert.throws(()=>transition('release',2,true),/does not rename/);
   assert.throws(()=>transition('acquire',2,false),/does not rename/);
   assert.throws(()=>transition('release',0,false),/does not rename/);
+  assert.throws(()=>transition('acquire',Number.MAX_SAFE_INTEGER),/nested heldDepth/);
 });
 
 test('B-14 stale age threshold is inclusive at exactly 60 seconds',()=>{
@@ -155,6 +156,7 @@ test('B-14 source regex might steal malformed stale suffixes; projection rejects
 
 test('B-14 stale review rejects huge timestamp and duplicate filenames',()=>{
   assert.throws(()=>stale(['lockfile9007199254740992_9_remote']),/Unsafe stale/);
+  assert.throws(()=>stale(['lockfile900_9007199254740992_remote']),/Unsafe stale lock process ID/);
   assert.throws(()=>stale(['lockfile900_9_remote','lockfile900_9_remote']),/Duplicate/);
 });
 
