@@ -33,6 +33,8 @@
 
 | CORE-15 | [原版標準街 `custom/inc-item-data.cgi` 的 `@@FUNCITEM::popup`](https://github.com/Prysline/akimono/blob/7301b0c2b1e27226d1770e153fa3c68cfeae6d48/custom/inc-item-data.cgi#L3183-L3200) | `popup` 先按 `int(param1*(2-rank/5000))` 求人氣增加量、再僅對大於10000的結果設上限，最後仍用**未扣除上限截斷的增加量**生成「人氣提升了 int(up/100)%」文字。隔離 Perl 源碼實測：`rank=9999,param1=300000` 時浮點數截斷取得 **up=59** 而不是理想化60、最後人氣10000但訊息為0%；`rank=12000,param1=1000` 時 **up=-399**，最終人氣10000、訊息卻是「人氣提升了-3%」。 | 不能自行變換原式以取得數學上整數結果、對負人氣或百分比另行加規則，或讓顯示訊息改按 cap 後的實際變化計算。 | B-26 原樣 Perl `sub popup` 以記錄型 `WriteLog` 替身隔離執行，Node 按原式及輸出逐案比對；只記錄不修復 |
 
+| CORE-16 | [標準街 `custom/inc-item-data.cgi` 1925–1950（商品63 本地展示架函式）](https://github.com/Prysline/akimono/blob/7301b0c2b1e27226d1770e153fa3c68cfeae6d48/custom/inc-item-data.cgi#L1925-L1950) | 展示架回呼先把 `showcasecount` 設為新的 `param1`，再依**舊數量 vs 新數量**決定：擴充僅逐格寫入 `oldCount .. newCount-1` 的 `showcase`／`price` 為0；縮減才 `splice`；舊新相等時**完全不整理陣列**。若合成輸入原本的展示欄位與數量不一致，例如舊數量1、陣列 `[2,4,6,8,10]`，改成3後仍為 `[2,0,0,8,10]`，尾端2格保留。舊數量2、陣列僅有1格而改成4時，原版還可能留下中間的 `undef` 空格。 | 不可在忠實模型中先補齊／截短陣列、統一「修正」成 `newCount` 個欄位，或把來源沒有的資料正規化當成原版運算。這是**受控不一致測資**的來源結果，不宣稱正式讀取世界一定出現此狀態。 | B-27 直接擷取原始本地 Perl 函式、以記憶體店家與記錄型日誌替身測試；Node 同案例對照，**只記錄，不自動修復** |
+
 ## 不屬於改規則的技術限制
 
 - 浮點運算的語意以來源 Perl 表達式為準；JS `Math.sin`、`Math.sqrt`、原版 `rand` 與 JS 隨機種子的**位元級一致性尚未獲得全面證明**。B-21 先驗證相同兩次隨機輸入對公式的結果。
