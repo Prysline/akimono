@@ -469,3 +469,37 @@ npm run demo:read-preflight
 ```
 
 **剩餘限制：** 這只是原版讀取函式的局部危險行為證明與狹窄預檢，尚無涵蓋真實多商店／事件的安全完整世界 parser、實際文件大小與 race-free file descriptor 驗證、備份復原、跨進程鎖／fsync／原子多檔交易、原版正式 CGI HTTP 端到端，也不能直接部署為正式讀檔服務。第十五階段的保守寫入前備份檢查與本階段的讀取前檢查仍是**彼此獨立的純模型**，未整合成已驗證可部署的存檔引擎。任務02仍為進行中；PR Draft，不合併 `main`。
+
+## 第十五批：原版世界事件／城鎮／商店位置與嚴格單店讀取（第十七階段）
+
+本階段依據固定 Core [`inc-func.cgi::DataRead`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi#L233-L299) 與 [`plug/write.cgi::DataWrite`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/plug/write.cgi#L45-L89)，核對世界文字中商店資料的行結構，但**不啟動事件 require、城鎮 AutoVar、真正商店回呼或正式世界資料存讀檔**。原版12份固定 Core Git Blob SHA 仍不修改、繼續由 CI 稽核。
+
+### 核對後的原版行序
+
+| 區段 | 原版 DataRead 所見 | 限定範圍 |
+| --- | --- | --- |
+| 第1～4行 | `DTlasttime`、人口／世界 metadata、`@DTwholestore`、`%DTevent` | 既有 B-16 安全前置核對 |
+| 可能的第5行 | 若尚未到達 `//`，以 `AutoVar` `tie` 儲存城鎮原文 | **非空城鎮內容仍不執行解析**；合成空字串可接受 |
+| 精確 `//` | 事件／城鎮後的商店開始標記 | 原版缺失會無界限搜尋，維持拒絕 |
+| 商店表頭（每店第1行） | 依 `@DTindexnamelist=qw(...)` 的來源順序切出**32個 CSV 欄位** | 新版只允許8個經審查欄位可非空 |
+| 商店狀態（每店第2行） | `split(/:/,$DATA[$idx],7)`，前兩段為 `showcase`、`price`、第3段為 `item` 的 AutoVar，後四段涉及昨日／今日／經驗與使用者資料 | 新版只允許**前三段**的安全整數清單，其餘四段必須空白 |
+
+原版實際可接受多間商店、非空城鎮與其他動態資料，**但沒有替這些內容完成一致性與安全驗證**。本批新增 `tests/original-perl/world-one-shop.t`，從固定 Core `inc-func.cgi` 只擷取未修改的 `DataRead` 函式本體，亦擷取未修改的32欄來源列表，使用隔離 `File::Temp`、最小 `AutoVar::TIESCALAR`／`GetDTPoint` 替身直接執行。新增 **34項原版 Perl 斷言**，實際確認原版一店、兩店、沒有城鎮行、空白／非空城鎮交給 AutoVar、前3個商品狀態區段、`id2idx` 映射。此外直接確認**重複商店 ID 會覆寫原版索引，缺少商店狀態第二行仍可能被原版計為商店**。這是舊版危險容錯行為，而不是現代化應接受的輸入。
+
+### 新增嚴格唯讀單店子集
+
+- 新增 [`src/world-one-shop-parser.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/world-one-shop-parser.mjs) 的 `parseReviewedOneShopWorld(text)`，與原本第十六階段 `parseIsolatedWorldReadEnvelope` **分開**，沒有放寬五行世界前置檢查。單店模型使用相同 B-16 純函式核對前四行世界內容，接著只支援**一間**合成商店、可選**空白**城鎮行、精確 `//` 分隔符、32欄表頭與7段的商店狀態。只允許來源位置 id、lastlogin、name、shopname、pass、money、time、rank 填入受限合成值；其他24欄必須空白。只允許 `showcase`／`price`／`item` 為相同長度、最多79格的非負安全整數列表，剩餘四段必須空白。
+- 任何事件鍵、非空城鎮、第二間商店、不完整的商店兩行、其他未審查表頭欄位、使用者資料、自訂 status／商品回呼、錯誤分隔符、逗號／冒號槽數、格式或數字均**直接拒絕**。模型只回傳 id、顯示名稱、已核對的庫存欄位等**非認證資訊**，不回傳合成測資的 `pass` 原文，也不嘗試授權使用者。
+- 新增 [`tests/world-one-shop-parser.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/world-one-shop-parser.test.mjs) **25項 Node 測試**：來源32欄精確對照、B-16 舊五行解析器仍拒絕商店、單店成功與空城鎮、無最終 LF、錯誤／缺少第二行、第二間商店、非空城鎮／事件、密碼欄不外露、所有不安全欄位與數值、不可修改回傳及沒有實際 I/O 權限。
+- 新增 [`scripts/demo-world-one-shop.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-world-one-shop.mjs) 與 `npm run demo:one-shop`；以**完全合成的世界和商店文字**展示 B-16 仍拒絕商店、B-17 單店安全預檢，以及事件、非空城鎮、第二間店、截斷狀態與未審查使用者資料被拒絕；已納入 GitHub Actions，**沒有正式世界資料**。
+
+本階段測試增加 **25項 Node、34項 Perl 斷言**，合計 **265／265 Node、252／252 原版 Perl 隔離斷言**。現階段的單店內容是**極小的來源驗證子集**，而非已支援一般《商人物語》世界與商店檔案；來源實際含有動態事件、AutoVar、玩家驗證、所有32欄商店資料及跨期經濟／交易狀態。實際 CGI HTTP、正式存讀檔、跨程序鎖與安全提交皆仍未完成。
+
+在 `modern/`：
+
+```sh
+npm test
+npm run demo:one-shop
+```
+
+任務02繼續「進行中」；PR #1 保持 Draft，不合併或修改 `main`。
