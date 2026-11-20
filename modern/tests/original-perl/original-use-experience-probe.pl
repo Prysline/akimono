@@ -75,7 +75,7 @@ sub scenario {
   if($opts->{observed_tie}){
     my $saved=$DT->{exp}{1};
     $DT->{exp}{1}=1000;
-    $observed=[sort{ $DT->{exp}{$a} <=> $DT->{exp}{$b} }keys(%{$DT->{exp}})];
+    $observed=[map {0+$_} sort{ $DT->{exp}{$a} <=> $DT->{exp}{$b} }keys(%{$DT->{exp}})];
     $DT->{exp}{1}=$saved;
   }
   my %originalExp=%exp;
