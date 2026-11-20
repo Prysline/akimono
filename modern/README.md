@@ -433,3 +433,39 @@ npm run demo:backup
 ```
 
 **待實作：** 使用實際 OS 鎖與持有者驗證、檔案 I/O 可靠錯誤處理與內容核對、fsync／原子替換、備份保留及斷電復原、全世界多檔資料與 CGI HTTP 端到端。任務 02 維持「進行中」；PR #1 維持 Draft，不合併、不修改 `main`。
+
+## 第十四批：原版 DataRead 資料缺失與世界完整性安全預檢（第十六階段）
+
+**固定來源：** Core [`inc-func.cgi::DataRead`](https://github.com/katelynn620/akimono-core/blob/738d71a2985fd088f2ca90f25145706392ee2365/inc-func.cgi#L233-L299)（Git Blob `e7a8add7b0291901e71fe797783b664dff1568a0`）是第十六階段核對依據；CI 仍維持**12份原始 Core 快照完整性驗證**，沒有改動原版檔案。並引用第十二階段既有 `world-wholesale-codec.mjs` 的批發庫存 `LIMIT` 79 格受限解碼規則。
+
+### 原版 DataRead 的行為與發現的高風險邊界
+
+`DataRead()` 首先透過 `GetPath($DATA_FILE)` 找到世界資料路徑，使用 `open(IN, '<:encoding(UTF-8)')` 與 `read(IN,my $buf,-s $datafile)`，**不檢查 open/read 的成功回傳值**；將資料以 `split(/\n/,$buf)` 分割。若讀不到任何有效行，原版會 `OutError('no data')`。
+
+其後依第1行最後時間、第2行人口／ID／稅率／狀態、第3行批發庫存、第4行事件讀取，再依事件鍵執行 `require(GetPath($ITEM_DIR,'event',...))`、可能進入 `AutoVar` 的城鎮資料 `tie`，最後以：
+
+```perl
+while($DATA[$idx++] ne '//'){}
+```
+
+繼續尋找精確的 `//` 分隔行。**此迴圈沒有在資料陣列耗盡時停止的條件**；遇到缺少分隔行的截斷檔，或只有 `//\r` 而非 `//` 的特定換行情境，可能持續迴圈。完整 CRLF 輸入也可能先在事件 `require` 等其他段落出錯，所以此處不宣稱所有 CRLF 的故障完全相同。
+
+`DataRead` 對庫存使用 `@DTwholestore=split(/,/,$DATA[$idx++],$MAX_ITEM)`，對人口等 metadata 直接以字串切割、**沒有安全整數欄位驗證**；因此內容 `4,garbage,3` 的無效商品庫存、非數值人口皆可能成功進入記憶體。後續程序若無額外驗證就寫回，可能讓錯誤世界狀態持續擴散。這是原版程式的行為，不應當作新版可接受的存檔格式。
+
+### 已交付程式與隔離驗證
+
+- 新增 [`modern/tests/original-perl/world-read-safety.t`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/original-perl/world-read-safety.t)：**24項直接執行原版 `DataRead()` 函式本體的隔離 Perl 斷言**。原版 `inc-func.cgi` 顶層會立即載入正式設定／商品／CGI 相依檔，故**不能直接 require 整份文件**；本測試從已經 SHA 固定的快照中擷取 `sub DataRead` 的**完整未修改函式內容**再在純 Perl 測試環境執行。只有 `GetPath`、`OutError`、`GetDTPoint`、空 `AutoVar` tie 等外部函式由隔離替身提供，並用 `alarm(1)` 限制缺少分隔符時的執行時間。所有實際 I/O 只限 `File::Temp` 測試檔，**沒有真實世界資料、無 CGI 或任意事件／商店回呼**。測試確認無檔／空檔的 `no data`、可讀的正常簡化資料、原版接受非數字庫存與人口、缺少精確 `//` 時需強制中止、稀疏／空白庫存的原版語意。
+- 新增 [`modern/src/world-read-preflight.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/src/world-read-preflight.mjs)：`parseIsolatedWorldReadEnvelope(text)` 與 `reviewIsolatedWorldRead({readSucceeded,sourceSizeBytes,observedBytesRead,worldText})`。**只檢查極小且已審查的5行世界檔子集**：正整數時間戳、恰五欄的安全 metadata、最多79格可安全解碼的非負整數庫存、空事件行、精確 `//` 分隔行，且**沒有動態城鎮或任何商店資料**；可選最後 LF。缺少分隔符／其他動態資料、異常數字或控制字元、CRLF、超過1MiB 限制、檔案位元組數與回報讀取量不符時**直接拒絕**。這是刻意比原版狹窄的安全子集，**無法直接解析一般含城鎮、事件或商店的真實世界存檔**。
+- 新增 [`modern/tests/world-read-preflight.test.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/tests/world-read-preflight.test.mjs)：**22項 Node.js 測試**，核對原版固定來源與 `//` 搜尋原文、5行資料與檔案大小觀察值、非法人口／庫存、跨行截斷、CRLF 分隔符、事件／城鎮／商店拒絕、位元組不符、資料大小上限及回傳不可變性。
+- 新增 [`modern/scripts/demo-world-read.mjs`](https://github.com/Prysline/akimono/blob/test/task02-baseline-on-s1/modern/scripts/demo-world-read.mjs) 與 `npm run demo:read-preflight`；所有案例均為**合成文字**，輸出完整簡化世界、缺少 `//`、庫存數字錯誤、人口錯誤、CRLF、動態事件／商店及部分讀取等狀況的允許／拒絕決策；純 JS 無 OS 檔案讀寫，已加入 GitHub Actions。
+
+本階段比前一階段增加 **22項 Node、24項 Perl**，總計 **240／240 Node 測試、218／218 原版 Perl 隔離斷言**。Core 固定來源12份的 SHA 校驗、既有 DSL audit 與全部示範仍由 CI 驗證。
+
+在 `modern/` 執行：
+
+```sh
+npm test
+npm run demo:read-preflight
+```
+
+**剩餘限制：** 這只是原版讀取函式的局部危險行為證明與狹窄預檢，尚無涵蓋真實多商店／事件的安全完整世界 parser、實際文件大小與 race-free file descriptor 驗證、備份復原、跨進程鎖／fsync／原子多檔交易、原版正式 CGI HTTP 端到端，也不能直接部署為正式讀檔服務。第十五階段的保守寫入前備份檢查與本階段的讀取前檢查仍是**彼此獨立的純模型**，未整合成已驗證可部署的存檔引擎。任務02仍為進行中；PR Draft，不合併 `main`。
