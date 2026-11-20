@@ -80,8 +80,8 @@ my ($missing,$missingError,$missingWarnings)=invoke(undef);
 ok(!$missing,'B-16-C: missing world input is not a successful read');
 like($missingError,qr/original DataRead OutError: no data/,
   'B-16-D: missing input reaches original no data error');
-ok(@$missingWarnings>0,
-  'B-16-E: unchecked open/read on missing input produced warning');
+ok(!-e GetPath($DATA_FILE),
+  'B-16-E: missing source has not been fabricated by original reader');
 
 my ($empty,$emptyError)=invoke('');
 ok(!$empty,'B-16-F: empty world input is refused');
@@ -118,12 +118,14 @@ is($DTpeople,'NOT_A_NUMBER',
 my ($truncated,$truncatedError)=invoke(
   "1700000000\n100000,2,0,10,7\n4,0,3\n\n",1);
 ok(!$truncated,'B-16-S: truncated world with no // does not complete');
+diag("B-16-S actual error: ".($truncatedError // "<undef>"));
 like($truncatedError,qr/guarded missing delimiter timeout/,
   'B-16-T: original unbounded separator search requires external guard');
 
 my ($crlf,$crlfError)=invoke(
   "1700000000\r\n100000,2,0,10,7\r\n4,0,3\r\n\r\n//\r\n",1);
 ok(!$crlf,'B-16-U: original LF-only split does not accept CRLF sentinel as //');
+diag("B-16-U actual error: ".($crlfError // "<undef>"));
 like($crlfError,qr/guarded missing delimiter timeout/,
   'B-16-V: CRLF sentinel is not exact // and can hang source loop');
 
