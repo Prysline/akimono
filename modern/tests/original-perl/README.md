@@ -327,3 +327,19 @@ prove -v *.t
 ```
 
 固定 Core Git Blob SHA 不改動，Perl 原始回呼的測試操作只有合成資料、沒有真實副作用；`lostbook` 真正呼叫的是本次從 Core 擷取的 `item::UseItem`，不同於 B-26 只記錄參數的替身試驗。
+
+## 第三十階段：固定 Core 完整 `UseItem` 與 `lostbook` 巢狀助手、熟練度
+
+[`OriginalFullUseLostbookHarness.pm`](OriginalFullUseLostbookHarness.pm) 直接抽取**固定原版** `use.cgi::UseItem`（**完整主函式**）、`MakeAmount`、`calc.cgi::UseTime`／`GetItemUseTime`、`whole.cgi::CheckWholeStore` 五段原始程式本文，結合 B-29 已審閱的原始 `inc-item.cgi::UseItem`／`UseItemSub` 與標準街 `sub lostbook`。使用人工記憶體中的店家、商品與市場，**僅 `RequireFile('inc-item.cgi')` 被限制為純記錄型替身，沒有真的載入原版 CGI 或寫實際商店檔案**。此外 `l()` 也是合成文字替身，未宣稱完整原版本地化。
+
+- [`original-full-use-lostbook.t`](original-full-use-lostbook.t)：**75項**原文執行測試，核對真實原版 `UseItem` 完整金錢／時間／商品處理、一次批發修正、真正 `lostbook` 巢狀扣除及熟練度尾段在回呼**之後**。
+- [`original-full-use-lostbook-probe.pl`](original-full-use-lostbook-probe.pl)：**13組** Perl 原始函式執行情境，輸出最終庫存、批發、金錢、時間、`USE.result`、熟練度，以及每步觀察順序。
+- [`../original-integrated-use-lostbook-model.test.mjs`](../original-integrated-use-lostbook-model.test.mjs)：**25項 Node 驗證**，將13組真正原版 Perl 的所有主要數值與交易結果欄位逐一對照。僅機率0／1000材料，避免在 callback 前造成未核對的 Perl／JS 亂數分歧；`lostbook` 依真正 Perl `rand(1000)` 觀察值提供測試資料。
+- [`../../docs/original-integrated-use-lostbook.md`](../../docs/original-integrated-use-lostbook.md) 記錄完整來源、原始 `RequireFile` 替身的嚴格範圍、回呼後**沒有第二次批發庫存修正**的 CORE-20 與其他尚未驗證的情境。
+
+```sh
+prove -v original-full-use-lostbook.t
+prove -v *.t
+```
+
+**沒有**執行實際玩家認證、DSL 編譯器、全原版 CGI、正式 `RequireFile`、真實世界／日誌／鎖／提交，並**不表示**目前已可實際遊玩。
