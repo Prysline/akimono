@@ -15,8 +15,9 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `market.cgi` | `plug/market.cgi` | `1aca77e9b373c25e53e445d64c101a7cc2246825` |
 | `whole.cgi` | `plug/whole.cgi` | `778badaf157326bcfd1f8fa1e310d94f94995eb3` |
 | `buy-s.cgi` | `buy-s.cgi` | `6ba8df9a733ed16c490389414cd94934fe1185ca` |
+| `inc-makeitem.cgi` | `inc-makeitem.cgi` | `1da8cce1e76ad6159325a37faec68efaa82c7f69` |
 
-CI 會以 `git hash-object` 核對以上七個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對以上八個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
 
 ## 執行方式
 
@@ -68,3 +69,5 @@ npm run audit
 - [任務 02 Notion](https://app.notion.com/p/41db4185273f818f97d4fce172db36f8) 維持「進行中」。
 
 - `buy-s.cgi` 是為了 Node.js B-06 玩家交易移植保留的**原版只讀來源快照**。它不是新增的 Perl 執行測試：現有 88 項 Perl 斷言數量不因此改變；新增的狀態轉移由 `modern/tests/peer-trade-model.test.mjs` 以 Node.js 驗證。
+
+- `inc-makeitem.cgi` 是新增的第八個**完全未修改** Core 原始碼快照，供 Node.js `item-limit-model.test.mjs` 核對 `LIMIT` 文字拆分、`limit` 與 `wslimit` 的來源語意；它**不是**額外一份 Perl 執行測試。既有的原版 Perl 隔離斷言仍維持 88 項。
