@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseDsl } from '../src/parse-dsl.mjs';
 import { loadStandardStreetModel, createStandardStreetShop } from '../src/standard-street-model.mjs';
-import { settleUnguildedPeerPurchase } from '../src/peer-trade-model.mjs';
+import { settleUnguildedPeerPurchase, listReviewedPeerItems } from '../src/peer-trade-model.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const [dsl, rebel] = await Promise.all([
@@ -315,4 +315,176 @@ test('B-06 invalid seller rank rejects sold-out, but the normal non-sold-out pat
   assert.equal(normal.seller.rank, -1);
   seller.item[78] = 4;
   assert.throws(() => trade(buyer, seller), /seller rank/);
+});
+
+function pairForItem(itemId, price, sellerCount) {
+  const shops = pair();
+  shops.seller.item[itemId - 1] = sellerCount;
+  shops.seller.showcase[0] = itemId;
+  shops.seller.price[0] = price;
+  return shops;
+}
+
+test('B-06 source-reviewed allowlist preserves three exact DSL identities and locations', () => {
+  const rows = listReviewedPeerItems(model);
+  assert.deepEqual(rows, [
+    { id: 1, code: 'yakusou', name: '藥草', price: 50, limitRaw: '4000/1000',
+      source: 'custom/inc-item-data.cgi', line: 1672 },
+    { id: 40, code: 'ken-ki', name: '木刀', price: 1200, limitRaw: '600',
+      source: 'custom/inc-item-data.cgi', line: 1265 },
+    { id: 79, code: 'gift', name: '禮物卷', price: 10000, limitRaw: '10/0',
+      source: 'custom/inc-item-data.cgi', line: 2717 },
+  ]);
+  assert.ok(Object.isFrozen(rows));
+  for (const id of [1, 40, 79]) {
+    const item = model.items.find(entry => entry.id === id);
+    assert.equal(item.funcbRaw, null);
+    assert.equal(item.flagRaw, '');
+    assert.ok(item.price > 0);
+  }
+});
+
+test('B-06 original @@FUNCBUY remains wholesale-only; USE callbacks do not imply safe peer approval', () => {
+  const parsed = parseDsl(dsl, 'custom/inc-item-data.cgi');
+  const hook = parsed.blocks.find(entry => entry.kind === 'FUNCBUY');
+  assert.ok(hook);
+  assert.match(hook.raw, /if\(\$BUY->\{whole\}\)/);
+  const item14 = parsed.blocks.find(entry =>
+    entry.kind === 'ITEM' && entry.fields.no?.[0]?.value === '14');
+  const useWithCallback = parsed.blocks.find(entry =>
+    entry.kind === 'USE' && entry.ownerItemLine === item14.startLine &&
+    entry.fields.funcb?.[0]?.value === '_local_');
+  assert.ok(useWithCallback, 'source item #14 USE callback must remain opaque');
+  const { buyer, seller } = pairForItem(14, 5000, 3);
+  assert.throws(() => trade(buyer, seller, { itemId: 14, offeredPrice: 5000 }),
+    /reviewed callback-free/);
+});
+
+test('B-06 peer purchase of reviewed #1 藥草 transfers source-priced stock and seller tax', () => {
+  const { buyer, seller } = pairForItem(1, 50, 10);
+  const before = structuredClone({ buyer, seller });
+  const receipt = trade(buyer, seller, {
+    itemId: 1, offeredPrice: 50, requestedCount: 3,
+    itemLimit: 4000,
+  });
+  assert.equal(receipt.receipt.itemId, 1);
+  assert.equal(receipt.receipt.count, 3);
+  assert.equal(receipt.receipt.buyerDebit, 150);
+  assert.equal(receipt.receipt.tax, 15);
+  assert.equal(receipt.receipt.sellerProceeds, 135);
+  assert.equal(receipt.receipt.soldOut, false);
+  assert.equal(receipt.buyer.item[0], 3);
+  assert.equal(receipt.seller.item[0], 7);
+  assert.equal(receipt.buyer.money, 99850);
+  assert.equal(receipt.seller.money, 100135);
+  assert.equal(receipt.seller.itemtoday[1], 3);
+  assert.equal(receipt.seller.trush, 75);
+  assert.equal(receipt.seller.saletoday, 150);
+  assert.equal(receipt.seller.taxtoday, 15);
+  assert.equal(receipt.buyer.item[0] + receipt.seller.item[0], 10);
+  assert.equal(receipt.buyer.money + receipt.seller.money + receipt.receipt.tax, 200000);
+  assert.deepEqual({ buyer, seller }, before);
+});
+
+test('B-06 peer purchase of reviewed #40 木刀 transfers its own inventory slot and counters', () => {
+  const { buyer, seller } = pairForItem(40, 1200, 10);
+  const result = trade(buyer, seller, {
+    itemId: 40, offeredPrice: 1200, requestedCount: 5,
+    itemLimit: 600,
+  });
+  assert.equal(result.receipt.itemId, 40);
+  assert.equal(result.receipt.tax, 600);
+  assert.equal(result.buyer.item[39], 5);
+  assert.equal(result.seller.item[39], 5);
+  assert.equal(result.buyer.money, 94000);
+  assert.equal(result.seller.money, 105400);
+  assert.equal(result.buyer.paytoday, 6000);
+  assert.equal(result.seller.itemtoday[40], 5);
+  assert.equal(result.seller.trush, 3000);
+  assert.equal(result.buyer.item[78], 5); // gift voucher grant unaffected
+});
+
+test('B-06 sequential trades of two allowlisted IDs do not overwrite itemtoday keys', () => {
+  const { buyer, seller } = pairForItem(1, 50, 10);
+  seller.item[39] = 8;
+  const first = trade(buyer, seller, {
+    itemId: 1, offeredPrice: 50, requestedCount: 2,
+    itemLimit: 4000,
+  });
+  const sellerNext = { ...first.seller, showcase: [40], price: [1200] };
+  const second = trade(first.buyer, sellerNext, {
+    itemId: 40, offeredPrice: 1200, requestedCount: 2,
+    itemLimit: 600,
+  });
+  assert.deepEqual(second.seller.itemtoday, { 1: 2, 40: 2 });
+  assert.equal(second.buyer.item[0], 2);
+  assert.equal(second.buyer.item[39], 2);
+  assert.equal(second.seller.item[0], 8);
+  assert.equal(second.seller.item[39], 6);
+  assert.equal(second.buyer.paytoday, 2500);
+  assert.equal(second.seller.saletoday, 2500);
+  assert.equal(second.seller.taxtoday, 250);
+});
+
+test('B-06 sold-out reviewed #1 藥草 honors fractional rank RNG injection', () => {
+  const { buyer, seller } = pairForItem(1, 50, 3);
+  seller.rank = 500;
+  const result = trade(buyer, seller, {
+    itemId: 1, offeredPrice: 50, requestedCount: 3,
+    itemLimit: 4000, random: () => 0.05,
+  });
+  assert.equal(result.seller.item[0], 0);
+  assert.equal(result.seller.rank, 499);
+  assert.equal(result.receipt.rankDown, 1);
+  assert.equal(result.receipt.soldOut, true);
+  assert.equal(result.seller.itemtoday[1], 3);
+});
+
+test('B-06 sold-out reviewed #40 木刀 uses fixed rankdown without random draw', () => {
+  const { buyer, seller } = pairForItem(40, 1200, 2);
+  const result = trade(buyer, seller, {
+    itemId: 40, offeredPrice: 1200, requestedCount: 2,
+    itemLimit: 600, random: () => { throw Error('unexpected RNG'); },
+  });
+  assert.equal(result.seller.item[39], 0);
+  assert.equal(result.seller.rank, 4885);
+  assert.equal(result.receipt.rankDown, 125);
+});
+
+test('B-06 reviewed identity guard rejects changed original metadata before mutation', () => {
+  const {buyer,seller} = pairForItem(1, 50, 10);
+  const base = model.items;
+  for (const corrupted of [
+    {code:'other'}, {name:'魔法草'}, {price:9999}, {limitRaw:'4001/1000'},
+    {funcbRaw:'_local_'}, {flagRaw:'noshowcase'}, {line:1673},
+    {source:'custom/unexpected-data.cgi'},
+  ]) {
+    const tampered = { ...model,
+      items: base.map(item => item.id === 1 ? { ...item, ...corrupted } : item),
+    };
+    const snapshot = structuredClone({buyer,seller});
+    assert.throws(() => settleUnguildedPeerPurchase(tampered,buyer,seller,{
+      ...request, itemId:1, offeredPrice:50, itemLimit:4000,
+    }), /source metadata mismatch/);
+    assert.deepEqual({buyer,seller},snapshot);
+  }
+});
+
+test('B-06 source-defined inventory limits are never silently compiled from slash expressions', () => {
+  const {buyer,seller} = pairForItem(1, 50, 10);
+  const {itemLimit, ...without} = {...request, itemId:1, offeredPrice:50};
+  assert.throws(() => settleUnguildedPeerPurchase(model,buyer,seller,without), /itemLimit/);
+  const result = trade(buyer,seller,{itemId:1,offeredPrice:50,itemLimit:6,requestedCount:9});
+  assert.equal(result.receipt.count,6); // fixture, not inferred from 4000/1000
+  assert.equal(result.buyer.item[0],6);
+  assert.equal(result.seller.item[0],4);
+});
+
+test('B-06 stale price remains rejected for new allowlisted items', () => {
+  const {buyer,seller}=pairForItem(40,1200,10);
+  const snapshot=structuredClone({buyer,seller});
+  assert.throws(() => trade(buyer,seller,{
+    itemId:40,offeredPrice:1250,itemLimit:600,
+  }), /changed/);
+  assert.deepEqual({buyer,seller},snapshot);
 });
