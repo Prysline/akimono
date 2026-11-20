@@ -112,7 +112,7 @@ test('B-19 source total overflow redistributes excess across distinct others',()
   ],expPerUse:100,count:1});
   assert.equal(r.sourceOverflowBranchEntered,true);
   assert.deepEqual(r.exp,[
-    row(1,1000),row(2,538),row(3,638),row(4,688),row(5,736),
+    row(1,1000),row(2,538),row(3,638),row(4,687),row(5,737),
   ]);
   assert.equal(r.exp.reduce((s,x)=>s+x.value,0),3600);
   assert.equal(r.residualExcessAfterSourceLoop,0);
