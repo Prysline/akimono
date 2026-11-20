@@ -31,6 +31,16 @@ const result = settleUnguildedPeerPurchase(model, buyer, seller, {
   requestedCount: 4, itemLimit: 10, baseTaxRate: 10, sendItemTime: 1200,
 });
 
+// Separate deterministic sold-out replay: seller's 5 vouchers are all bought.
+// Rank 500 yields raw rankdown = 0.125, so draw 0.05 causes penalty 1.
+const soldOutSeller = { ...seller, rank: 500 };
+const soldOut = settleUnguildedPeerPurchase(model, buyer, soldOutSeller, {
+  now, shelf: 0, itemId: 79, offeredPrice: 10000,
+  requestedCount: 5, itemLimit: 10, baseTaxRate: 10, sendItemTime: 1200,
+  random: () => 0.05, // injected fixed draw for replay; no Math.random()
+});
+
+
 console.log(JSON.stringify({
   mode: 'isolated in-memory peer transfer: no CGI, no persistence, no callbacks',
   before: {
@@ -45,6 +55,15 @@ console.log(JSON.stringify({
     sellerTaxToday: result.seller.taxtoday,
   },
   receipt: result.receipt,
+  soldOutWithInjectedRng: {
+    note: 'separate scenario; seller rank 500, fixed random draw 0.05',
+    sellerRankBefore: soldOutSeller.rank,
+    sellerRankAfter: soldOut.seller.rank,
+    sellerRemainingVouchers: soldOut.seller.item[78],
+    itemCount: soldOut.receipt.count,
+    penalty: soldOut.receipt.rankDown,
+    soldOut: soldOut.receipt.soldOut,
+  },
   invariants: {
     conservedGiftVouchers: result.buyer.item[78] + result.seller.item[78] === originalQuantity,
     originalCashEqualsNewCashPlusTax:
@@ -52,7 +71,7 @@ console.log(JSON.stringify({
     originalSellerUnchanged: seller.item[78] === 5 && seller.money === 100000,
   },
   unsupported: [
-    'sold-out rank effects', 'guild-linked trades', 'wholesale gift rewards',
+    'non-injected fractional randomness', 'guild-linked trades', 'wholesale gift rewards',
     'other item callbacks', 'persistent commits', 'CGI requests',
   ],
 }, null, 2));
