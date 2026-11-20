@@ -201,13 +201,13 @@ sub run {
   my $requested=exists($o{requestedCount})?$o{requestedCount}:1;
   main::UseItem($u,$requested);
   return {
-    giftRule:{
+    giftRule=>{
       itemno=>$u->{itemno},no=>$u->{no},name=>$u->{name},
       time=>$u->{time},exptime=>$u->{exptime},
       use=>[map {[$_->{no},$_->{count},$_->{proba}]}@{$u->{use}}],
       create=>[map {[$_->{no},$_->{count},$_->{proba}]}@{$u->{result}{create}}],
     },
-    result:{
+    result=>{
       count=>$u->{result}{count},
       useitem=>$u->{result}{useitem},
       additem=>$u->{result}{additem},
