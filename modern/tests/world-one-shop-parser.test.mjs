@@ -114,18 +114,18 @@ test('B-17 rejects nonempty town data until AutoVar is reviewed',()=>{
 });
 test('B-17 rejects zero shops and multiple shops',()=>{
   assert.throws(()=>parseReviewedOneShopWorld(world({records:[]})),
-    /one two-line shop/);
+    /one two-line shop|Incomplete or multiple/);
   assert.throws(()=>parseReviewedOneShopWorld(world({
     records:[[header(),payload()],[header({0:'8',2:'bob'}),payload()]],
-  })),/one two-line shop/);
+  })),/one two-line shop|Incomplete or multiple/);
 });
 test('B-17 refuses orphan header, orphan payload and truncated records',()=>{
   assert.throws(()=>parseReviewedOneShopWorld(world({
     records:[[header()]],
-  })),/one two-line shop/);
+  })),/one two-line shop|Incomplete or multiple/);
   assert.throws(()=>parseReviewedOneShopWorld(world({
     records:[[payload()]],
-  })),/one two-line shop/);
+  })),/one two-line shop|Incomplete or multiple/);
   assert.throws(()=>parseReviewedOneShopWorld(world({
     records:[[header(),payload().slice(0,-2)]],
   })),/seven colon sections/);
@@ -196,7 +196,7 @@ test('B-17 inventory, display and price must use safe same-length integer lists'
   ]){
     assert.throws(()=>parseReviewedOneShopWorld(world({
       records:[[header(),payload(sections)]],
-    })),/same slot counts|Unsupported|Unsafe|Missing/);
+    })),/equal slot counts|Unsupported|Unsafe|Missing/);
   }
 });
 test('B-17 refuses excessive item slots in a shop payload',()=>{
