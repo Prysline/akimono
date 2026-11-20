@@ -698,3 +698,29 @@ cd tests/original-perl && prove -v original-use-transaction.t
 ```
 
 **未涵蓋：** `CheckUseItem` 動態職業／`functionbefore` 及真正的選單授權、`RequireFile('inc-item.cgi')` 和商品 `function` 回呼、完整使用後熟練度重新分配、正式世界檔案寫入、CGI HTTP、跨程式鎖與持久化回滾、Perl／JS RNG 種子位元級等價。未授權正式遊戲商品使用與部署。PR #1 仍 Draft，不合併 `main`，Notion 任務02仍「進行中」。
+
+## 第二十二批：UseItem 原版熟練度尾段與合成交易串接（第二十四階段）
+
+本階段將 B-23「資格→扣時間／費用→所有材料→依序產出→一次 `CheckWholeStore`」與 B-19 曾隔離驗證過的 **`UseItem` 熟練度尾段**接為一條純合成數值流程。依據固定 Core `katelynn620/akimono-core@738d71a2985fd088f2ca90f25145706392ee2365` 未修改 `plug/use.cgi`；原版順序在市場修正之後，**先檢查／執行商品回呼，才進行熟練度增加與超額扣減**。本模型僅允許明確聲明商品回呼不存在的合成 fixture；沒有宣稱已編譯 DSL、驗證真實回呼不存在，或可對玩家執行 `UseItem`。
+
+新增 `src/original-use-experience-transaction-model.mjs` 的 `projectOriginalUseWithExperience`，不改寫 B-23 已驗證模型；只在完成該模型的有效交易後接續原版熟練度尾段。實際受控的案例為：熟練度200、每次增加30、有效使用2次 → `exp=260`、`result.expold=200`；同時保留原有帳務 `money=30`、`paytoday=45`、時間986、雙店／批發市場庫存 `[[10,6,5],[3,4,2]]`／`[3,0,-3]`、重複產出零件的原版紀錄。另一個熟練度超額案例：初始 `{1:900,2:700,3:800,4:850,5:900}`，商品1增加100後依原版將其他技能扣成 `{1:1000,2:538,3:638,4:687,5:737}`，不平均分配。
+
+**原版不會設定同值時的商品 ID 排序**：`sort { exp[a] <=> exp[b] } keys(%exp)`；若超額時存在同值，本模型要求提供該次 Perl 執行**實際觀察到的 sorted keys**，並驗證其符合原始比較式，不擅自加 ID tie-break。隔離 Perl 測試與動態 Probe 會記錄觀察順序。新增相容性問題紀錄 [CORE-11 舊熟練度大於1000導致負增加量、CORE-12 只有本次使用技能時總超額可能殘留](docs/original-behavior-issues.md)，並補充 CORE-05 同值排序的實例。以上是原版行為，不自動修正。
+
+- `tests/original-perl/original-use-experience-transaction.t`：**48項**原版 Perl 斷言，精確擷取並執行 `UseItem` 回呼前／後的**原文字句**、固定 `GetItemUseTime`／`UseTime` 與 `CheckWholeStore`，覆蓋獎勵、尾段順序、單項1000、總量3600、同值分配、負熟練度增加量、超額未消除、鍵刪除、已有 `result.expold`、0次／0獎勵等。刻意**不執行兩個片段中間的動態回呼**。
+- `tests/original-perl/original-use-experience-probe.pl`：固定9組合成案例，直接在隔離 Perl 執行環境輸出 JSON，保留該次原版 HASH sorted keys 供 Node 對照。
+- `tests/original-use-experience-transaction-model.test.mjs`：**32項 Node 測試**，其中一項會即時執行上述 Perl probe，逐案例比對有效次數、時間、金錢、各項商品庫存、批發市場、熟練度與逐筆產出／消耗紀錄。環境沒有 Perl 時可跳過動態子測試（原版 Perl 專用 CI 仍必須通過）。
+- `scripts/demo-original-use-experience.mjs`：新增 `npm run demo:use-experience`，納入 GitHub Actions。
+- 固定 Core 14份原始快照、DSL audit、既有全部測試與示範不變。來源比較只限可安全表示的合成數值；JavaScript 整數範圍限制不是原版交易規則。
+
+命令：
+
+```sh
+cd modern
+npm test
+npm run demo:use-experience
+cd tests/original-perl
+prove -v original-use-experience-transaction.t
+```
+
+**本階段經確認：460／460 Node、505／505 Perl 隔離斷言通過**。未完成真正商品／職業／functionbefore 回呼、完成版熟練度與其他動態 side effects 的交互驗證、正式世界存檔／鎖／備份／原子提交、CGI HTTP 或 Perl／JS RNG 種子位元級等價。原版優先、異常獨立記錄、不修改遊戲規則；Draft PR 保持不合併、任務02仍進行中。
