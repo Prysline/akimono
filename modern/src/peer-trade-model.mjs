@@ -16,13 +16,15 @@
  * - No guilds. Sold-out rank penalty is projected with the original formula;
  *   a caller-supplied random() is REQUIRED only when the penalty is fractional.
  *   No implicit Math.random() or silent omission of sold-out side effects.
- * - A compiled itemLimit, baseTaxRate, and sendItemTime MUST be explicitly
- *   supplied for every sale (a DSL limit expression is not automatically compiled).
+ * - An exact reviewed literal LIMIT is compiled locally; a supplied itemLimit
+ *   must agree, or the trade is rejected. Tax rate and duration still require
+ *   explicit reviewed settings. Arbitrary Perl expressions are never evaluated.
  * - No compiler, persistence, I/O, authentication, locks, logs or CGI.
  * - This returns NEW state values; "settled" means only the modeled memory
  *   projection and must not be mistaken for a persisted game transaction.
  */
 import { quoteUnguildedPurchase } from './economy-model.mjs';
+import { compileLiteralItemLimit } from './item-limit-model.mjs';
 
 function fail(message) {
   throw new Error(message);
@@ -53,10 +55,11 @@ function safeSum(left, right, label) {
  *
  * Request fields:
  *   now, shelf, itemId, offeredPrice, requestedCount,
- *   itemLimit, baseTaxRate, sendItemTime, random? (only for fractional sold-out rankdown)
+ *   itemLimit? (optional cross-check), baseTaxRate, sendItemTime,
+ *   random? (only for fractional sold-out rankdown)
  *
- * The last 3 values MUST be supplied from a separately reviewed compiled
- * fixture and shop tax settings. They are not read from guessed DSL fields.
+ * Item limits are compiled only from the reviewed literal original DSL
+ * grammar, while baseTaxRate and sendItemTime remain explicit fixtures.
  */
 /**
  * Source-reviewed, deliberately tiny B-06 item allowlist. Source lines refer
@@ -96,6 +99,7 @@ export function listReviewedPeerItems(model) {
     return Object.freeze({
       id: item.id, code: item.code, name: item.name,
       price: item.price, limitRaw: item.limitRaw,
+      ...compileLiteralItemLimit(item.limitRaw),
       source: item.source, line: item.line,
     });
   }));
@@ -123,9 +127,17 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
   whole(buyer.money, 'buyer money');
   whole(seller.money, 'seller money');
 
+  // Frozen inc-makeitem.cgi compiles literal LIMIT A/B to limit=A,
+  // wslimit=B, or wslimit=A if /B is omitted. Never treat slash as divide.
+  const compiledLimit = compileLiteralItemLimit(reviewedItem.limitRaw);
+  if (request.itemLimit !== undefined && request.itemLimit !== compiledLimit.limit) {
+    fail('Caller itemLimit disagrees with compiled source LIMIT');
+  }
   // buy-s.cgi handles stock caps and affordability first, then UseTime,
   // GetSaleTax, inventory, balances and accounting counters.
-  const quote = quoteUnguildedPurchase(model, buyer, seller, request);
+  const quote = quoteUnguildedPurchase(model, buyer, seller, {
+    ...request, itemLimit: compiledLimit.limit,
+  });
   const itemId = reviewedItem.id;
   const index = itemId - 1;
   const sellerStock = whole(seller.item[index], 'seller item #' + itemId);
@@ -207,6 +219,8 @@ export function settleUnguildedPeerPurchase(model, buyer, seller, request) {
     buyer: nextBuyer, seller: nextSeller,
     receipt: Object.freeze({
       ...quote, buyerId, sellerId, itemId,
+      compiledItemLimit: compiledLimit.limit,
+      compiledWholesaleLimit: compiledLimit.wslimit,
       soldOut, rankDown, rankBefore, rankAfter,
       scope: 'in-memory unguilded peer transfer with sold-out rank projection; no persistence',
     }),
