@@ -20,7 +20,7 @@ sub source {
   local $/;my $s=<$fh>;close $fh;return $s;
 }
 my $source=source();
-my ($funcitem)=$source=~/(^@@FUNCITEM\b[\s\S]*?)(?=^@@FUNCUPDATE\b)/m;
+my ($funcitem)=$source=~/(^\@\@FUNCITEM\b[\s\S]*?)(?=^\@\@FUNCUPDATE\b)/m;
 ok(defined $funcitem,'B-26-P01 pinned shared FUNCITEM section located');
 my ($lostbook)=defined($funcitem)
   ?$funcitem=~/(^sub lostbook\s*\n\{[\s\S]*?^\}\n)/m:();
