@@ -874,3 +874,24 @@ npm run demo:game-core
 此階段示範和全部原版來源稽核都納入既有 GitHub Actions。**正式 Notion 狀態為 01已完成／02及04進行中／03與05～12待辦**；不可將純記憶體第一版 API 算成可玩的標準街、具備權限的多人伺服器或實際磁碟存檔。
 
 接續優先：完成任務04剩下的商品命令／事件效果掛鉤與世界模型，再逐步讓已核對的商品使用、市場銷售與週期結算加入同一條可重現經營流程，不能用未經原版審閱的自創數值填空。正式 `main`／`migration/standard-street-s1`、兩份原始 DSL、所有18份固定 Core 原文及 CORE-01～CORE-20 紀錄都不改動。
+
+## 第三十二階段：商品使用記憶體世界連續交易（**人工來源測試街道**）
+
+這一階段接續 B-30 **原版完整 `plug/use.cgi::UseItem` → `lostbook` → 商品助手 → 熟練度** 的直接 Perl 來源驗證，以及 B-31 `Game Core／Street Module／World State` 版本命令介面。新增 [`reviewed-use-fixture-street.mjs`](src/reviewed-use-fixture-street.mjs)，讓**同一個合成記憶體世界**連續執行兩次**已由原版 Core 函式驗證的商品交易**，而非每次建立新測試快照。兩次操作會保存上一筆的商品庫存、別店商品、金錢、`paytoday`、時間、熟練度與批發存量，並由記憶體 `compareAndSwap` 分別提交 `revision 0→1→2`。
+
+**嚴格的來源歸屬：** B-30 的商品 A／B／C 是**人工3格 Core 測資**，不是標準街原始 ITEM #1／#2／#3（實際為藥草、野獸皮革、樹枝）。因此本次故意建立**獨立 `streetId='source-use-fixture-b32'`**，只支援明確的 `source-fixture-use` 命令。**真正 `standard-street` 模組仍只有 `open-shop`、`edit-showcase`，沒有偷偷加入通用商品使用或虛構的配方、限額、價格、金錢／經驗。** 未支援回呼、額外欄位、錯誤商品編號、過期版本或交易有效次數0會拒絕，且世界不修改；`perlRandBucket` 為**原版 Perl `rand(1000)` 的整數部分或受控合成抽樣**，不是 JS 宣稱等價的亂數種子。
+
+- [來源、兩次交易狀態、真實與人工商品分界](docs/reviewed-world-use-sequence.md) 完整說明原版來源和受測範圍。
+- [Perl 六筆連續交易 JSON 探針](tests/original-perl/original-world-use-sequence-probe.pl) 包含**三組兩步來源原文執行**；[40項獨立 Perl 斷言](tests/original-perl/original-world-use-sequence.t) 驗證真正原版函式跨次數量、資金、時間、技能與市場。
+- [23項 Node 測試](tests/reviewed-use-fixture-street.test.mjs) 逐次核對六筆真 Perl 輸出與 `WorldState` 狀態，另檢查世界版本、原版回呼與一次市場修正、序列化、未知行動不修改世界。
+- [`npm run demo:world-use`](scripts/demo-world-use-sequence.mjs) 展示同一個記憶體世界兩次來源已驗證交易、過期版本拒絕及未支援市場銷售拒絕；已加入 CI。
+
+```sh
+cd modern
+npm test
+npm run demo:world-use
+cd tests/original-perl
+prove -v original-world-use-sequence.t
+```
+
+**Notion 正式任務05已因可執行代碼開始實作改為「進行中」**，而非已完成。任務02／04也仍進行中，合計**1已完成／3進行中／8待辦**；不能因為「人工3格來源測資」通過，便聲稱真實標準街79商品、完整市場銷售、週期結算、UI、磁碟存讀檔或多人世界已可使用。下一階段優先把**真正 DSL ITEM+USE 的單一已審閱商品動作**接入 `standard-street` 的79格 WorldState，再逐步組裝完整經營閉環。
