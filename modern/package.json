@@ -31,6 +31,7 @@
     "demo:callbacks": "node scripts/demo-original-callback-inventory.mjs",
     "demo:inline-callbacks": "node scripts/demo-original-inline-work-showcase.mjs",
     "demo:item-loading": "node scripts/demo-original-item-loading.mjs",
-    "demo:item-helpers": "node scripts/demo-original-item-helper.mjs"
+    "demo:item-helpers": "node scripts/demo-original-item-helper.mjs",
+    "demo:integrated-use": "node scripts/demo-original-integrated-use-lostbook.mjs"
   }
 }
