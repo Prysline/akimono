@@ -19,11 +19,11 @@ my @cases=(
   ['experience-zero',{expPerUse=>0}],
   ['experience-cap',{exp=>990}],
   ['old-exp-override',{experienceOld=>1000}],
-  ['zero-stock-callback',{emptyActions=>1,initialStock=>0,requestedCount=>1}],
+  ['zero-stock-callback',{emptyActions=>JSON::PP::true,initialStock=>0,requestedCount=>1}],
   ['inactive-shop',{status=>0}],
   ['half-probability-low',{param1=>500,seed=>46}],
   ['half-probability-high',{param1=>500,seed=>73}],
-  ['duplicate-materials',{duplicateMaterials=>1,requestedCount=>1}],
+  ['duplicate-materials',{duplicateMaterials=>JSON::PP::true,requestedCount=>1}],
 );
 my @rows;
 for my $case(@cases){
