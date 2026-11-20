@@ -93,6 +93,10 @@ export function loadStandardStreetModel(itemDsl, rebelDsl) {
         // A missing ITEM-level funcb is distinct from USE-level callbacks.
         funcbRaw: first(block, 'funcb') ?? null,
         limitRaw: first(block, 'limit') ?? null,
+        // Preserve field source order for Core PRICE defaults and LIMIT lvN.
+        // They are metadata only: no compiler or callback is executed here.
+        priceSourceLine: block.fields.price?.[0]?.line ?? null,
+        limitSourceLine: block.fields.limit?.[0]?.line ?? null,
         source: block.file, line: block.startLine,
       });
     });
