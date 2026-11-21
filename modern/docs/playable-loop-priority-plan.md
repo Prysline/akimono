@@ -125,3 +125,9 @@ B-42 已能連續兩輪真買與真售、B-43 可重啟載入；**完整可玩�
 B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；本次直接從固定原版 `period.cgi` 擷取、執行**整個原版前綴（直到原版備份／session I/O）**，含真正 Standard Street `@@FUNCUPDATE` 前後兩個回呼與原版 `AddItem`；在同一 `$DT[0]`、`$STATE`、`$DTpeople` 真連續跑兩期，原版 Perl／Node 比對**全商店／城市欄位**，證明第一期獎品、維持費、人口、EXP 到第二期持續有效。這不是 B-43 玩家 WorldState 的跨期命令，仍**無法**在瀏覽器跨36小時。原版龍賽、公會、失蹤店鋪、完整 EVENT／ITEM 動態回呼、備份、session 尚未被完整實作；純投射明確設 `nonCommittable` 並拒絕未知分支。詳見 [B-50 真來源同世界兩期](b50-source-same-state-period-chain.md)。
 
 **接下來要直接接上玩家路徑，別再把擴充孤立測試當主要目標：** 以來源合法的 City/Period/Event 欄位擴充可持久化世界狀態，在真正的自然販售／EVENT 連續迴圈中確保每個期末全段恰好原子提交一次，再做真跨期 HTTP／磁碟重啟／再次營業的 E2E。使用者僅在完成該整個閉環後進行集中人工驗收。中間保留雙 CI 同 SHA／Core SHA／DSL 稽核，PR 不合併。
+
+## 2026-11-21｜B-51 來源城市與期別 v2：實際進玩家世界、瀏覽器顯示、可保存重啟
+
+在 B-50 真來源同一間商店／城市連續兩期整合驗證後，新增有來源語義閘的 `akimono.memory-world.v2` 第九欄 `period`：只有透過原版 Admin + Core STATE 真初始資料確認的城市／人口、原版36h期界 +3h、`settledCount:0`、`eventState:null` 才能由本機來源商店服務建立並雙世代落盤。新增世界真商品 #10 買入、展示架、自然販售及存檔／載入之後城市資料保留，畫面顯示初始人口500000、發展5001、治安5001、已結算0期；已存在的 v1 世界保持原 schema 不默默升級，舊存檔仍可讀寫。B-43 新的 HTTP 殺 Node → 重開載入 E2E 驗證 v2 的城市仍在；偽造 `settledCount`、修改城市、捏造 EVENT 會被 B-43 磁碟校驗拒絕。[B-51 城市／期別玩家流程和限制](b51-original-period-world-v2.md)。
+
+**核心距離完成還有一段：v2 存的是「初始化城市」，不是已結算的真城市！** `B-50` 同世界兩期仍 `nonCommittable`；EVENT 及 FUNCTURN/FUNCSALE、全期真轉場與原版檔案效果尚需完成，跨期拒絕維持。接下來優先把 B-50 的完整原版期末前綴與必要 EVENT、營業自然販售、59 PLUS 串為單一來源正確 WorldState CAS，再驗證36h跨界、磁碟落盤、重啟續買續售才准使用者一次集中手動確認。仍不更動 main／migration／固定 Core／DSL 或 Draft PR 狀態。

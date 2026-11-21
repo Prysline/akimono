@@ -108,6 +108,19 @@ test('B-51 real GameCore source market/init and open shop preserve city/period s
   assert.equal(world.shops[0].money,100000);
   const saved=store.save(world,{expectedGeneration:0});
   assert.equal(saved.generation,1);
+  for(const invalid of [
+    {...world.period,settledCount:1},
+    {...world.period,dtPeople:123456},
+    {...world.period,eventState:{}},
+    {...world.period,town:{...world.period.town,develop:9000}},
+  ]){
+    assert.throws(()=>store.save({...world,period:invalid},{
+      expectedGeneration:1,
+    }),/unreviewed or settled v2 city/,
+    'disk saver must not persist fabricated city/event/period settlement');
+    assert.equal(store.status().generation,1,
+      'rejected source period must leave both save generations unchanged');
+  }
   const restored=store.load();
   assert.equal(restored.generation,1);
   assert.equal(encodeMemorySnapshot(restored.world),encodeMemorySnapshot(world));
