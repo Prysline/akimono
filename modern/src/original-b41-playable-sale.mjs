@@ -12,6 +12,7 @@ import {ALL_PLUS_SOURCE,projectOriginalSparseAllPlus}
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
+import {B58_MARKET11_SOURCE} from './original-market-buy11.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
@@ -20,7 +21,8 @@ const safe=(x,label,min=0)=>{
   if(!Number.isSafeInteger(x)||x<min)bad(label);
   return x;
 };
-export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,configSource}){
+export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
+  configSource,reviewedMarket11=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -36,8 +38,14 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,confi
     reviewedBuy?.itemId!==10||reviewedBuy.unitPrice!==5000||
     reviewedBuy.stockLimit!==20||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('frozen B-38/B-40 source contracts must both be reviewed');
+  if(reviewedMarket11!==null&&(
+     reviewedMarket11.source!==B58_MARKET11_SOURCE||
+     reviewedMarket11.itemId!==11||reviewedMarket11.unitPrice!==2000||
+     reviewedMarket11.stockLimit!==50||reviewedMarket11.upkeepPerTicket!==10))
+    bad('B-58 ticket market source review changed');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    ticketSourceReviewed:reviewedMarket11!==null,
     maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
   });
 }
@@ -66,8 +74,11 @@ export function projectB41Sale({
     shop.showcase?.length!==1||shop.price?.length!==1||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
     shop.item[62]!==1||shop.item[78]!==5||
-    shop.item.some((n,i)=>![9,62,78].includes(i)&&n!==0)||
-    shop.paytoday<5000||shop.paytoday%5000!==0||
+    shop.item.some((n,i)=>!(reviewed.ticketSourceReviewed?
+      [9,10,62,78]:[9,62,78]).includes(i)&&n!==0)||
+    (reviewed.ticketSourceReviewed&&shop.item[10]>50)||
+    shop.paytoday<5000||
+    shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0||
     !Number.isSafeInteger(shop.money)||shop.money<0||
     !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000||
     !Number.isSafeInteger(shop.trush??0)|| (shop.trush??0)<0||
@@ -138,7 +149,10 @@ export function projectB41Sale({
   const rank=Math.max(0,Math.min(10000,shop.rank+
     Math.trunc(rankUp>rankDown?rankChange:-rankChange)));
   // Original Core accumulates fractional costtoday. This is not rounded.
-  const upkeep=50+(items[9]?(display?items[9]/10:items[9])*100:0);
+  // Exact original inc-turn.cgi upkeep loops through ALL owned ITEMs.
+  // SOURCE ITEM #11 has COST 10 per held ticket, even though noshowcase.
+  const upkeep=50+(items[9]?(display?items[9]/10:items[9])*100:0)+
+    (reviewed.ticketSourceReviewed?items[10]*10:0);
   const accrual=upkeep*span/86400;
   const costtoday=shop.costtoday+accrual;
   if(!Number.isFinite(costtoday)||costtoday<0||
