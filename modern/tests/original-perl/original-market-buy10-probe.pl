@@ -71,8 +71,10 @@ sub buy {
   %Q=(id=>0,it=>10,sc=>$o{shelf}//0,pr=>$o{price}//5000,
       num1=>$o{count}//1,num2=>0);
   $last_error='';
-  my $ok=eval {do './buy-s.cgi';1;};
-  my $message=$@;
+  # Perl do FILE already catches errors. Reading $@ immediately after do
+  # preserves both compile/runtime causes instead of clearing them with eval.
+  my $ok=do './buy-s.cgi';
+  my $message=$@||($! ? "PERL_DO_OS_ERROR:$!" : '');
   # Perl do FILE may return undef while leaving $@ empty. Capture our
   # original OutError hook independently, and fail closed when neither
   # CGI completion nor a recognized source refusal was observed.
