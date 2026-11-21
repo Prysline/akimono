@@ -79,6 +79,9 @@ jobs:
           test "$(git hash-object modern/tests/original-perl/core-item-detail.cgi)" = "9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8"
           test "$(git hash-object modern/tests/original-perl/core-item-form.cgi)" = "7ec2c01829c20e78feec53a1ed410ad7254b21c7"
           test "$(git hash-object modern/tests/original-perl/core-item-submit.cgi)" = "bf895cb9c4672fe984cc9be352d52a856d3ac4e3"
+      - name: Verify pinned untouched original Core admin initializer
+        run: |
+          test "$(git hash-object modern/tests/original-perl/core-inc-admin-func.cgi)" = "2164b7e5abfea7a466235a8deba1543c2cc41515"
       - name: Run isolated original Perl Core tests
         working-directory: modern/tests/original-perl
         run: prove -v *.t
