@@ -1,0 +1,34 @@
+use strict;
+use warnings;
+use utf8;
+use Test::More;
+use JSON::PP qw(decode_json);
+use FindBin;
+use File::Spec;
+my $file=File::Spec->catfile($FindBin::Bin,'original-b49-event-lifecycle-probe.pl');
+my $out=qx{perl "$file"};
+is($?,0,'B-49 real original expiry and start EVENT sections execute together');
+my $r=eval{decode_json($out)};
+ok(!$@&&ref($r)eq'HASH','original combined EVENT result decoded');
+if(ref($r)eq'HASH'){
+  is(scalar @{$r->{cases}},6,'six original lifecycle cases');
+  my($fresh,$alive,$equal,$expired,$timed,$miss)=map {$_->{output}} @{$r->{cases}};
+  ok($fresh->{entered},'first zero-probability event entered');
+  is($fresh->{randomDrawsUsed},1,'fresh event one trial rand');
+  ok(!$alive->{entered},'active event blocks repeated start');
+  is($alive->{randomDrawsUsed},0,'blocked lifecycle no random draws');
+  is($alive->{activeUntilSeconds},1001000,'active end unchanged');
+  ok(!$equal->{expired},'source event equal to segment end is not expired');
+  ok(!$equal->{entered},'equal end still blocks new event');
+  ok($expired->{expired},'old source event expires');
+  ok($expired->{entered},'old zero-probability event retriggers after expiring');
+  is($expired->{activeUntilSeconds},undef,'no-duration event stays ephemeral');
+  ok($timed->{expired},'timed old event ended');
+  ok($timed->{entered},'timed source event restarts');
+  is($timed->{activeUntilSeconds},1003720,'duration 3600 + rand120 half + rand600 tenth');
+  is($timed->{randomDrawsUsed},3,'duration consumes three original draws');
+  ok($miss->{expired},'past event expires even when next trial fails');
+  ok(!$miss->{entered},'miss does not retrigger');
+  is($miss->{randomDrawsUsed},1,'miss still consumes trial');
+}
+done_testing();
