@@ -40,24 +40,6 @@ sub bootstrap {
     die "B-38 source plugin load failed: $@" unless $loaded;
   }
   my $part=natural_source();
-  # Temporary read-only diagnostics: shadow values only, original arithmetic
-  # and assignment order are unchanged. Remove after source branch is mapped.
-  my $insert=sub {
-    my($needle,$expr)=@_;
-    my $pos=index($part,$needle);
-    die 'B-38 instrumentation source drift' unless $pos>=0;
-    substr($part,$pos,0,$expr);
-  };
-  $insert->('if($itemno>0 && $price>0 && $DT->{item}[$itemno-1])',
-    '$main::B38_SEEN_ITEMNO=$itemno; $main::B38_SEEN_PRICE=$price; $main::B38_SEEN_STOCK=$DT->{item}[$itemno-1]//0; ');
-  $insert->('if($itemno && $DT->{item}[$itemno-1])',
-    '$main::B38_SALE_ITEMNO=$itemno; $main::B38_SALE_STOCK=$DT->{item}[$itemno-1]//0; ');
-  $insert->('$ITEM[$itemno]->{buypeoplebase}+=',
-    '$main::B38_BEFORE_ADD_PRICE=$ITEM[$itemno]->{price}; ');
-  $insert->('GetMarketStatus();',
-    '$main::B38_PRE_BASE=$ITEM[10]->{buypeoplebase}//0; ');
-  $insert->('$sale=int($sale);',
-    '$main::B38_SALE_RAW=$sale; $main::B38_BUYERS=$buypeople; ');
   my $program="package main; no strict; no warnings; use utf8;\n".
     "sub B38SourceNaturalPlus { my (\$timespan)=\@_; \$TIMESPAN=\$timespan;\n".
     $part."\nB35SourceStep(\$timespan);\nreturn 1; }\n1;\n";
@@ -92,8 +74,8 @@ sub run {
     unless $book->{price}==5000&&$book->{popular}==1728000&&
       $book->{point}==200000&&$book->{cost}==100;
   die 'B-38 source #79 upkeep mismatch' unless $gift->{cost}==10;
-  @{$main::ITEM[10]}{qw(popular point cost type)}=(
-    $book->{popular},$book->{point},$book->{cost},10);
+  @{$main::ITEM[10]}{qw(price popular point cost type)}=(
+    $book->{price},$book->{popular},$book->{point},$book->{cost},10);
   $main::ITEM[79]{cost}=$gift->{cost};
   $main::ITEM[63]{cost}=0;
   $main::MAX_ITEM=79;$main::DTpeople=500000;$main::MAX_USER=50;
@@ -126,23 +108,6 @@ sub run {
   my $sales=$shop->{itemtoday}{10}//0;
   return {
     display=>$display,saleCount=>0+$sales,
-    debugOriginalBuyer=>{
-      buypeople=>0+($main::ITEM[10]{buypeople}//0),
-      buypeoplebase=>0+($main::ITEM[10]{buypeoplebase}//0),
-      todaystock=>0+($main::ITEM[10]{todaystock}//0),
-      uppoint=>0+($main::ITEM[10]{uppoint}//0),
-      marketprice=>0+($main::ITEM[10]{marketprice}//0),
-      showroom=>$shop->{showcase}[0],
-      originalPreBase=>0+($main::B38_PRE_BASE//0),
-      originalBuyers=>0+($main::B38_BUYERS//0),
-      originalRawSale=>0+($main::B38_SALE_RAW//0),
-      firstItemNo=>0+($main::B38_SEEN_ITEMNO//0),
-      firstPrice=>0+($main::B38_SEEN_PRICE//0),
-      firstStock=>0+($main::B38_SEEN_STOCK//0),
-      saleItemNo=>0+($main::B38_SALE_ITEMNO//0),
-      saleStock=>0+($main::B38_SALE_STOCK//0),
-      sourceStdPrice=>0+($main::B38_BEFORE_ADD_PRICE//0),
-    },
     money=>0+$shop->{money},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
     costtoday=>0+$shop->{costtoday},rank=>0+$shop->{rank},
