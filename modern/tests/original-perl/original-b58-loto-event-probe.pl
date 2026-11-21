@@ -41,6 +41,7 @@ $MAX_MONEY=999999999;
 
 my @sections=split(/^\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
 shift @sections;
+for(@sections){s/^\@\@(ITEM|DEFINE|END|FUNC[A-Z]+)\b[\s\S]*$//mi;}
 my @matches=grep(/^[ \t]*code[ \t]+loto(?:[ \t]|$)/m,@sections);
 die 'B-58 original loto EVENT not uniquely declared' unless @matches==1;
 my($head,$body)=$matches[0]=~/
