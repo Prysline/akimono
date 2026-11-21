@@ -1,3 +1,11 @@
+## 2026-11-22｜B-59 最新開發交接（優先於 B-58 與更早紀錄）
+
+本輪實際實作 [B-59 原版「發現新的鐵礦脈」持續事件、真批發市場補貨、到期與磁碟續玩](b59-source-iron-event-live-lifecycle.md)。`plusup-tetu` 的原版 DSL（start 10%→編譯概率100、base12h+隨機plus12h、PARAM「鐵塊 plus=720」、開始/結束公告）與固定 Perl 編譯器、DataRead、inc-turn 已逐一來源鎖定。原始鐵塊 ITEM #5 批發 `plus=-20m`；已開始的持續事件，會透過固定 DataRead EVENT file 在**下一次**回合改成 +720 秒正向補貨，仍以原版 59 項 PLUS + 79 項完整 CheckWholeStore + 相同 RNG 與來源稀疏 wire 計算；不回溯修改事件啟動片的批發市場。原版 EVENT 到期採嚴格 `expiry < segmentEnd`，等於時不過期、事件群組不消耗 gate；在過期片內 PLUS 仍受本片開頭 DataRead 的舊活動效果影響，**下片才恢復**原本負向補貨。到期後可以在同片重新啟動新期限，公告 end 先於 start。實際 B-56 受控 `advance-source-time-reviewed-events` 同一 CAS 提交市場+商店+時間+活動狀態；`period.eventState.plusup-tetu` 僅單一安全到期時間，B-43 雙世代真磁碟存檔及**由磁碟重新載入至新 adapter** 續玩已整合，且隔離 PLUS／舊 B-41 不可略過已知活動事件。legacy B-41 未審查事件狀態 `null` 仍保留原先「未知」語義，不宣稱為空表。
+
+**已新增真原版 Perl 直接執行探針＋測試**：擷取固定 `inc-turn.cgi` 完整 END/START 區段，經原始編譯器 `GetItemNumber/GetTime/GetNumber` 核對 `$ITEM[5]->{plus}=720;` 生成式，以固定原版 59 項 PLUS＋CheckWholeStore 真執行 compare baseline vs active；Node 逐項核對，真市場 #10 進貨/上架/自然售出後啟動 B59、存檔重啟續玩、11×1h持續、相等期限、跨片到期、市場補貨還原、非法世界拒絕。完成驗證統計：**應以最後 HEAD 的 Push/PR 同 SHA CI 核定**，不可引用中間 SHA 的運行結果。
+
+**仍未完成**：B-56 `eventHashOrderFixture` 是內部明示 17 code 順序，不是原版 Perl `keys(%EVENT)` 實際迭代與 PRNG；玩家 HTML/HTTP 無新的可用事件按鈕，其他原版持續型 EVENT 的價格／需求／PLUS、FUNCEVENT／END、原版持久化日誌、其他商品及36小時跨期結算均尚未實現。現在不能人工驗收完整商店閉環；任務02、04、05在 Notion 保持「進行中」。保留 `test/task02-baseline-on-s1` Draft PR #1 未合併，不動 main/migration 底分支及固定原版 Core/DSL。下一輪優先擴展真實原版持續事件市場修改與資料重載路徑，然後36h期末結算。
+
 ## 2026-11-22｜B-58 最新開發交接（優先於 B-57 與更早紀錄）
 
 **新增完整來源依據的真抽獎卷／開獎受控玩家世界流程**：[B-58 真市場購票與 Perl 真開獎](b58-source-loto-real-ticket-cas.md)。在 B-57 的真 B-40 買#10→上架→B-41來源自然販售及59項PLUS→B-56完整17個 EVENT gate→GameCore CAS 之上，新增真正原版 #11 抽獎卷市場購買（真 DSL 排序貨架、價格2000、持有上限50、批發上限20、進貨600秒），讓已買入的 #11 以原版 COST=10 正確累積自然時間維護費，抽獎事件 `loto` start 50% 編譯機率500，回呼開獎時一次扣除所有抽獎卷、每張各抽 `rand(6096454)`，依來源五層門檻 <1/<6/<216/<10000/<152411 發給 1e9 /1.5e8/5e6/1e5/1e4 金額、上限999999999，回傳0、不建立持續 EVENT、不算銷售。新增買#11原版真 Perl `buy-s.cgi` 探針與原封不動 `loto STARTFUNC` Perl 執行 15 條分支的 Node 嚴格對照，且已通過真世界單筆 CAS／B-43 存檔、續玩第二來源空票開獎、錯來源／漏抽樣／錯範圍／未支援事件回滾測試。
