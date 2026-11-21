@@ -124,7 +124,11 @@ export function projectOriginalSparseAllPlus({
   }
   if(used!==randomDraws.length)bad('unused source random samples');
   const defined=[...slots].sort((a,b)=>a-b),present=new Set(defined);
-  const csv=Array.from({length:(defined.at(-1)??-1)+1},
+  // Once original SetWholeStore has expanded the Perl wholesale array to
+  // MAX_ITEM, later PLUS steps retain its 79-cell wire length.
+  const wireLength=world.market.sourceWriteShape==='whole-store-79'?
+    79:(defined.at(-1)??-1)+1;
+  const csv=Array.from({length:wireLength},
     (_,i)=>present.has(i)?String(next[i]):'').join(',');
   const market={...world.market,wholesale:next,
     originalWholesaleCsv:csv,sparseWrittenSlots:defined};
