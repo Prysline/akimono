@@ -34,16 +34,20 @@
 4. [`OriginalNayutaFuncturnHarness.pm`](../tests/original-perl/OriginalNayutaFuncturnHarness.pm)、[`original-nayuta-functurn.t`](../tests/original-perl/original-nayuta-functurn.t)、[`original-nayuta-functurn.test.mjs`](../tests/original-nayuta-functurn.test.mjs)，以及 [`OriginalNaturalSalePlusHarness.pm`](../tests/original-perl/OriginalNaturalSalePlusHarness.pm)、[`original-natural-sale-plus.t`](../tests/original-perl/original-natural-sale-plus.t)、[`original-natural-sale-plus.test.mjs`](../tests/original-natural-sale-plus.test.mjs)，以及 [`OriginalSparseAllPlusHarness.pm`](../tests/original-perl/OriginalSparseAllPlusHarness.pm)、[`original-sparse-all-plus.t`](../tests/original-perl/original-sparse-all-plus.t)、[`original-sparse-all-plus.test.mjs`](../tests/original-sparse-all-plus.test.mjs)，以及 [`OriginalSparseMultiPlusHarness.pm`](../tests/original-perl/OriginalSparseMultiPlusHarness.pm)、[`original-sparse-multi-plus.t`](../tests/original-perl/original-sparse-multi-plus.t)、[`original-sparse-multi-plus.test.mjs`](../tests/original-sparse-multi-plus.test.mjs)；原有 [`OriginalSparseWholesalePlusHarness.pm`](../tests/original-perl/OriginalSparseWholesalePlusHarness.pm)、[`original-sparse-wholesale-plus.t`](../tests/original-perl/original-sparse-wholesale-plus.t)、[`original-sparse-wholesale-plus.test.mjs`](../tests/original-sparse-wholesale-plus.test.mjs)，以及 [`OriginalAdminBootstrapHarness.pm`](../tests/original-perl/OriginalAdminBootstrapHarness.pm)、[`original-admin-sparse-market-probe.pl`](../tests/original-perl/original-admin-sparse-market-probe.pl)、[`original-admin-sparse-market.t`](../tests/original-perl/original-admin-sparse-market.t)、[`original-admin-sparse-market.test.mjs`](../tests/original-admin-sparse-market.test.mjs)。
 5. GitHub Actions **同 SHA 的 push / PR 兩份 CI**、`modern/package.json`、`verify-modernization.yml`，確認既有測試與所有20個 Core source SHA、兩份 DSL audit 完全成功，再開始新的修改。
 
+## 現行工作順序：先完成可玩的經營閉環
+
+**以 [現行工作優先序與最小可玩閉環](playable-loop-priority-plan.md) 為後續開發優先依據。** 使用者已明確要求「紀錄應有的順序和工作規劃，不要老是追究小細節」。下一輪一律先檢查真正進貨是否已可行，再依序推進同世界上架／販售、必要回呼與結算、真存檔、基本繁體中文網頁、麵店擴充及多人。原版 Perl／Node 比對照舊，但僅擴張足以驗證當前功能的規則；不再只為了另一項函式或斷言數而開新階段。
+
 ## 下一段工作的精確目標（B-40 候選）
 
-B-39 已直接執行固定原版 ITEM #70 的唯一真 `FUNCTURN` 行內回呼及原版派送迴圈，在受控單店測資中依序接上原版自然銷售及全部59項 PLUS，人氣、亂數與來源稀疏 CSV 跨 Perl／Node 一致。**仍刻意略過**其它回呼／`FUNCSALE`、`SortDT`、期末決算、真正進貨、世界時間與人口／事件及硬碟 IO。**B-40** 優先精確核對原版 `FUNCSALE` 空/有值的觸發及回呼後清理、`SortDT` 的排序語義；另一個重要方向是以原版 `buy-s.cgi`／`whole.cgi` 真正購買商品 #10，替換 B-38 的人工取得商品 fixture。任何擴充必須來源 Perl 直接執行並與 Node 狀態對照，不能默認整體遊戲已可玩或自動開放另115項 USE。
+B-39 已有真正 ITEM #70 FUNCTURN 回呼的原文隔離驗證，不是玩家可以自行購買的完整遊戲。**B-40 第一優先是原版真市場進貨 ITEM #10**：以固定 `buy-s.cgi`／市場與批發來源實際完成付款、購買、庫存更新，接現有 `WorldState`，並驗證至少一筆成功與拒絕路徑。完成後直接把真庫存接展示架與自然販售。**只在目前真閉環必要時**才補 FUNCSALE、SortDT 或期末結算；其餘未相關回呼、事件／115 USE 暫不擴大。不更改原版來源／分支、維持双 CI；不能因測試固定秒數、人工庫存就聲稱可玩。
 
 **未完成且不得聲稱已完成：** 所有商品使用、完整週期／市價／自動販售、真正磁碟讀寫／鎖／備份／回滾、密碼認證、HTTP、繁體中文可玩前端、其他街道、多人世界。所有 B-39 `WorldState` 操作仍只在**記憶體**中，初始化命令並非真實玩家行為或安全的原版遊戲管理操作。
 
 ## 新視窗起手提示（直接複製）
 
 ```text
-繼續《商人物語》標準街 Node.js 移植。先用 GitHub 連接核對 Prysline/akimono 工作分支 test/task02-baseline-on-s1 的 modern/docs/next-window-handoff.md、Draft PR #1 的 HEAD／base／draft／未合併及同 SHA Push／PR CI。B-39 已來源直接執行真 ITEM #70 FUNCTURN 行內回呼並接原版自然銷售＋59項原版 PLUS；此受控單店世界仍跳過其他回呼、FUNCSALE、SortDT、期末決算、真進貨及持久化。接續 B-40：優先固定來源 FUNCSALE 清理與 SortDT，或真正批發購買 ITEM #10 以替換人工取得，必須逐段原版 Perl／Node 對照，不要自行發明規則。不可更動 main、migration/standard-street-s1、任何原版 Core／CGI／DSL，不可將 Draft PR 合併或 Ready；更新同 SHA CI 後再同步 PR、Notion 02／04／05 與里程碑。全程繁體中文，直接實作。
+繼續《商人物語》標準街 Node.js 移植，先用已連接的 GitHub 讀取 `Prysline/akimono` 工作分支 `test/task02-baseline-on-s1` 的 `modern/docs/playable-loop-priority-plan.md`（**最高執行優先序**）、`modern/docs/next-window-handoff.md`，核對 Draft PR #1 HEAD、保護分支及同 SHA Push/PR CI。使用者已要求不要老是追究小細節，開發必須優先推進「真進貨→上架→販售→結算→存讀檔→繁中網頁」最小可玩閉環，而非分散研究零星原版函式。下一輪 B-40 直接實作真正 ITEM #10 市場購買／入庫：審核原版固定 buy-s.cgi／市場限制，接現有 Game Core／WorldState，完成原版 Perl／Node 對照並驗證成功及失敗不偷改資產；完成後直接接原有展示架與銷售，只有阻擋當前流程的 FUNCSALE／SortDT／結算才展開。原版 Core/CGI/DSL、main、migration/standard-street-s1 不得修改，Draft PR 不得合併；通過同 SHA CI，更新 PR/Notion 和進度文件。全程繁體中文，不要為測試數量開新階段。
 ```
 
 **分窗建議**：在本輪 B-39 文檔與 CI 同 SHA 完成後，直接另開**同一個 ChatGPT 專案的新聊天視窗**，貼上上段提示。**舊窗保留只讀作歷史紀錄**；不要兩個視窗**同時**往相同分支推送修改，否則會產生覆寫／測試 HEAD 不一致的風險。
