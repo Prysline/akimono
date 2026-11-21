@@ -245,6 +245,18 @@ test('B-59 live market/shop CAS starts real iron EVENT, saves/reloads, applies n
   assert.deepEqual(first.details.eventLogEmissions,[
     {eventCode:ironCode,level:2,shopId:0,message:review.startMessage},
   ]);
+  // The stand-alone old PLUS command must not quietly ignore known
+  // source event data and overwrite the live market without the modifier.
+  const isolated=executeMemoryCommand({
+    repository:adapter,streetModule:street,
+    command:{kind:'reviewed-sparse-all-plus',
+      expectedRevision:adapter.read().revision,
+      timespanSeconds:60,randomDraws:marketOracle.draws},
+  });
+  assert.equal(isolated.ok,false);
+  assert.equal(isolated.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(adapter.read(),first.world);
+
   const disk=createLocalWorldSaveStore({directory});
   disk.save(adapter.read(),{expectedGeneration:0});
   assert.deepEqual(disk.load().world,first.world);
