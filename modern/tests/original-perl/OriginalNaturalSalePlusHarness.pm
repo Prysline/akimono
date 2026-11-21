@@ -40,6 +40,18 @@ sub bootstrap {
     die "B-38 source plugin load failed: $@" unless $loaded;
   }
   my $part=natural_source();
+  # Temporary read-only diagnostics: shadow values only, original arithmetic
+  # and assignment order are unchanged. Remove after source branch is mapped.
+  my $insert=sub {
+    my($needle,$expr)=@_;
+    my $pos=index($part,$needle);
+    die 'B-38 instrumentation source drift' unless $pos>=0;
+    substr($part,$pos,0,$expr);
+  };
+  $insert->('GetMarketStatus();',
+    '$main::B38_PRE_BASE=$ITEM[10]->{buypeoplebase}//0; ');
+  $insert->('$sale=int($sale);',
+    '$main::B38_SALE_RAW=$sale; $main::B38_BUYERS=$buypeople; ');
   my $program="package main; no strict; no warnings; use utf8;\n".
     "sub B38SourceNaturalPlus { my (\$timespan)=\@_; \$TIMESPAN=\$timespan;\n".
     $part."\nB35SourceStep(\$timespan);\nreturn 1; }\n1;\n";
@@ -115,6 +127,9 @@ sub run {
       uppoint=>0+($main::ITEM[10]{uppoint}//0),
       marketprice=>0+($main::ITEM[10]{marketprice}//0),
       showroom=>$shop->{showcase}[0],
+      originalPreBase=>0+($main::B38_PRE_BASE//0),
+      originalBuyers=>0+($main::B38_BUYERS//0),
+      originalRawSale=>0+($main::B38_SALE_RAW//0),
     },
     money=>0+$shop->{money},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
