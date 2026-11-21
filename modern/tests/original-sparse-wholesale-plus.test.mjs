@@ -58,7 +58,7 @@ test('B-35 only adds optional source-backed bounded PLUS capability',()=>{
 });
 test('B-35 original source pins must all match before enabling command',()=>{
   assert.throws(()=>createStandardStreetModule({
-    ...sources,originalConfigSource:config.replace('$MAX_USER = 50;', '$MAX_USER = 51;'),
+    ...sources,originalConfigSource:config.replace(/(\$MAX_USER\s*=\s*)50(\s*;)/,(_match,prefix,suffix)=>prefix+'51'+suffix),
   }),/MAX_USER/);
   assert.throws(()=>createStandardStreetModule({
     ...sources,originalTurnSource:turn.replace('if($add>0){$add=$add/2+rand($add/2);}else{$add=0;}',''),

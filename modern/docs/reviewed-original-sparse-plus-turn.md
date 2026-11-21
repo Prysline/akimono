@@ -1,18 +1,18 @@
 # B-35｜原版稀疏市場上的「單商品 PLUS → 全商品 CheckWholeStore」來源對照
 
-> 本階段**不是**完整原版 \`inc-turn.cgi\` 或遊戲市場週期。只在 B-34 確認的空白批發列上，執行**來源原文抽取**的 \`inc-turn.cgi\` 商品 PLUS 迴圈與**真正完整** \`plug/whole.cgi::CheckWholeStore\`；測試明示僅 ITEM #10 的 PLUS 有效，其他商品 PLUS 全部是人工 0。原版其餘商品在真正週期會變動，不能拿此輸出宣稱真實世界整體市場數據。
+> 本階段**不是**完整原版 `inc-turn.cgi` 或遊戲市場週期。只在 B-34 確認的空白批發列上，執行**來源原文抽取**的 `inc-turn.cgi` 商品 PLUS 迴圈與**真正完整** `plug/whole.cgi::CheckWholeStore`；測試明示僅 ITEM #10 的 PLUS 有效，其他商品 PLUS 全部是人工 0。原版其餘商品在真正週期會變動，不能拿此輸出宣稱真實世界整體市場數據。
 
 ## 固定來源與可重現環境
 
-- 原版 \`modern/tests/original-perl/inc-turn.cgi\` 固定 Git Blob \`b8a4980275f475a952846a8d6072fad45f8dff50\`，不執行其頂層 CGI、前段自然銷售、商品回呼、時間切段、事件、決算或寫入。
-- 原版 \`modern/tests/original-perl/whole.cgi\` 固定 Git Blob \`778badaf157326bcfd1f8fa1e310d94f94995eb3\`，直接執行完整 \`CheckWholeStore\`，對 79 項商品計算上限並保留 Perl 陣列定義性。
-- 原版 ITEM #10 \`book-make\` 的 \`PLUS 20m\` 經原版 \`GetTime\` 編為 1200 秒，\`LIMIT 20/10\` 給出批發上限 10；來源初始人口 \`DTpeople=500000\`、設定 \`MAX_USER=50\`。只安排**一間** B-34 新店（ITEM #63 1個、#79 5張）；世界記憶體版號保持 CAS。
-- \`randomDraws\` 以非負、未滿 1,000,000 的整數表示 \`rand()\` 單位分數百萬分之一；原始 Perl 迴圈完整保留 \`rand\` 呼叫，由測試層攔截供值。**不表示 Perl 與 JS 偽亂數種子序列等價**。
-- 只允許 1～3600 秒的**人工後銷售時間片**；B-35 沒有把 \`DTlasttime\`、真實人口變化、其他市場商品 PLUS、時間切段或自然銷售帶進記憶體世界。
+- 原版 `modern/tests/original-perl/inc-turn.cgi` 固定 Git Blob `b8a4980275f475a952846a8d6072fad45f8dff50`，不執行其頂層 CGI、前段自然銷售、商品回呼、時間切段、事件、決算或寫入。
+- 原版 `modern/tests/original-perl/whole.cgi` 固定 Git Blob `778badaf157326bcfd1f8fa1e310d94f94995eb3`，直接執行完整 `CheckWholeStore`，對 79 項商品計算上限並保留 Perl 陣列定義性。
+- 原版 ITEM #10 `book-make` 的 `PLUS 20m` 經原版 `GetTime` 編為 1200 秒，`LIMIT 20/10` 給出批發上限 10；來源初始人口 `DTpeople=500000`、設定 `MAX_USER=50`。只安排**一間** B-34 新店（ITEM #63 1個、#79 5張）；世界記憶體版號保持 CAS。
+- `randomDraws` 以非負、未滿 1,000,000 的整數表示 `rand()` 單位分數百萬分之一；原始 Perl 迴圈完整保留 `rand` 呼叫，由測試層攔截供值。**不表示 Perl 與 JS 偽亂數種子序列等價**。
+- 只允許 1～3600 秒的**人工後銷售時間片**；B-35 沒有把 `DTlasttime`、真實人口變化、其他市場商品 PLUS、時間切段或自然銷售帶進記憶體世界。
 
 ## 最小直接來源驗證
 
-從 B-34 原始 \`originalWholesaleCsv=''\`、零個有定義槽位開始，建立原版來源新店後，第一個 60 秒片段用明示亂數 0 計算：\`60/1200 × 500000 / (100000/10.8) = 2.7\`，抽樣後 \`int(1.35)=1\`。完整原版 \`CheckWholeStore\` 因新店持有 5 張、禮物卷批發上限 0，也寫入第 79 商品槽的 0。**結果只有索引 9（商品 #10）與索引 78（商品 #79）被寫入**，其餘原始空槽仍未定義。
+從 B-34 原始 `originalWholesaleCsv=''`、零個有定義槽位開始，建立原版來源新店後，第一個 60 秒片段用明示亂數 0 計算：`60/1200 × 500000 / (100000/10.8) = 2.7`，抽樣後 `int(1.35)=1`。完整原版 `CheckWholeStore` 因新店持有 5 張、禮物卷批發上限 0，也寫入第 79 商品槽的 0。**結果只有索引 9（商品 #10）與索引 78（商品 #79）被寫入**，其餘原始空槽仍未定義。
 
 | 記憶體世界狀態 | 世界版號 | 商品 #10 批發量 | 禮物卷 #79 批發量 | 有定義的 0-based 槽位 |
 | --- | ---: | ---: | ---: | --- |
@@ -21,10 +21,10 @@
 | 第二次 60秒、亂數0 | 4 | 2 | 0 | 9、78 |
 | 第三次 600秒、亂數0；上限修正 | 5 | 10 | 0 | 9、78 |
 
-Perl \`join(',', @DTwholestore)\` 產生 79 格的**稀疏** CSV：位置 9 為批發數量、位置 78 明寫 0，其餘空字串；與全 79 格明文數字 0 不同。實測與 Node 比對由 \`original-sparse-wholesale-plus.t\` 和 \`original-sparse-wholesale-plus-probe.pl\` 提供。
+Perl `join(',', @DTwholestore)` 產生 79 格的**稀疏** CSV：位置 9 為批發數量、位置 78 明寫 0，其餘空字串；與全 79 格明文數字 0 不同。實測與 Node 比對由 `original-sparse-wholesale-plus.t` 和 `original-sparse-wholesale-plus-probe.pl` 提供。
 
 ## 命令與拒絕界線
 
-在提供完整原版管理員初始化、讀寫、\`inc-turn.cgi\`、\`whole.cgi\`、\`_config.cgi\` 來源且核對成功時，標準街模組**才**多開放 \`reviewed-sparse-plus\` 命令。要求已初始化來源稀疏市場、**剛好一間店**、明示正時間片與每次亂數；結果只更新 \`market\`、\`revision\`，**不更動商店庫存、世界時鐘、事件或金錢**。其他情況不變更世界，回來源邊界拒絕。
+在提供完整原版管理員初始化、讀寫、`inc-turn.cgi`、`whole.cgi`、`_config.cgi` 來源且核對成功時，標準街模組**才**多開放 `reviewed-sparse-plus` 命令。要求已初始化來源稀疏市場、**剛好一間店**、明示正時間片與每次亂數；結果只更新 `market`、`revision`，**不更動商店庫存、世界時鐘、事件或金錢**。其他情況不變更世界，回來源邊界拒絕。
 
 這是一段**有意簡化的單商品 PLUS fixture**，不是替代市場、不是所有標準街商品的 PLUS 解析器，不代表原版執行完整供貨週期，也不是可對正式玩家開放的操作。其他商品原版 PLUS、事件回呼、市場售出與世界持久化仍需後續分階段來源驗證。
