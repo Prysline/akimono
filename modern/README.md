@@ -2,6 +2,17 @@
 
 此目錄位於移植分支 migration/standard-street-s1，從固定原版 Commit 7301b0c2b1e27226d1770e153fa3c68cfeae6d48 建立。原版 CGI 與 custom/ 保持不變。
 
+## B-40｜先實際開啟繁體中文「店內／市場／倉庫」本機測試版
+
+**目前真正可操作：** [來源世界初始化 → 開店 → 原版 PLUS 供貨子步驟 → 商品 #10 書本寫作工具市場進貨 → 現金與倉庫同步更新](docs/b40-local-browser-market-buy.md)，附成功與拒絕步驟、固定原版 Perl 買入對照、Node 真 HTTP E2E 驗證。此程式在 `test/task02-baseline-on-s1` 工作分支，Node 22+，原版 CGI 與 DSL 不修改。
+
+```sh
+cd modern
+npm run dev:local
+```
+
+開啟 **http://127.0.0.1:4173**。不使用原版素材或密碼，僅綁 127.0.0.1，停止程序就失去此世界。真存讀檔、完整自然販售與週期結算**尚未實作**。原版市場供貨按鈕只運行 B-37 已驗證 59 項 PLUS 子步驟，不能冒稱真實時鐘推進。下一步 B-41 在此介面把真正買到的商品上架並自然販售。務必依最新 HEAD 的 Push／PR 同 SHA CI 判斷驗收狀態。
+
 ## 本分支的第一步
 
 直接使用儲存庫既有的兩份 DSL：../custom/inc-item-data.cgi 與 ../custom/inc-rebel-data.cgi，**不需要下載原版 CGI 執行環境**。
