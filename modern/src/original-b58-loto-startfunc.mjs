@@ -42,7 +42,8 @@ const expectedBody=Object.freeze([
 ]);
 function sourceBody(itemDsl){
   if(typeof itemDsl!=='string')FAIL('missing fixed original DSL');
-  const blocks=itemDsl.split(/^@@EVENT[^\r\n]*\r?\n/gmi).slice(1);
+  const blocks=itemDsl.split(/^@@EVENT[^\r\n]*\r?\n/gmi).slice(1)
+    .map(part=>part.split(/^@@(?:ITEM|DEFINE|END|FUNC[A-Z]+)[^\r\n]*$/mi)[0]);
   const found=blocks.filter(b=>/^[ \t]*code[ \t]+loto(?:[ \t]|$)/m.test(b));
   if(found.length!==1)FAIL('source loto EVENT changed or duplicated');
   const m=found[0].match(
