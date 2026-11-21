@@ -137,3 +137,9 @@ B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；�
 固定 Admin 初始 `play.cgi` 的第四行是 EVENT 空白 CSV；固定 `DataRead` 真的以 `%DTevent=split(/,/,$DATA[$idx++]);` 解析，固定 `DataWrite` 以 `join(",",%DTevent)` 落盤，B-52 Perl 真執行了來源空表及測試單事件的讀寫往返（非虛構事件）。新 B-51 v2 世界 `period.eventState={}` 只代表**剛建立、沒有發生過任何時間片**的零活動事件；B-41 原版自然販售＋PLUS 雖可讓玩家在同一世界繼續經營，但因原版完整 EVENT 回呼尚未執行，時間推進後立即記 `eventState:null` 為「未知」，B-43 真存檔重啟載入與繁中 UI 同樣保持這個狀態。舊版 v2 `null` 存檔保留相容，偽造如 `{rebel:123456}` 等未經來源事件引擎批准的 state 仍拒絕。[原版 B-52 讀寫證據及下一步](b52-original-event-state-source.md)。
 
 玩家驗收門檻不變：**尚不能跨36小時期末**。必須完成真正 Standard Street 原版 EVENT 定義／機率／群組／到期／startfunc/endfunc/nowfunc、商品 FUNCTURN/FUNCSALE、原版完整期末＋B-50 同城兩期，將 v2 period/shop/market/events 在一筆合法 CAS 原子轉場並可 B-43 磁碟重啟續營；不能以空 EVENT 取代未知或利用重抽避開觸發。維持來源 Perl／Node／HTTP 同步測試、同 SHA Push/PR 雙 CI、Draft PR 不合併、main／migration／原始 Core CGI／DSL 不變，使用者完整閉環後一次集中人工驗收。
+
+## 2026-11-21｜B-53：真原版 EVENT 編譯清單可讀，後續優先實作真正多事件回呼
+
+從 Standard Street 真實 25個 EVENT 來源（ITEM 23、rebel 2），依固定 `inc-makeitem.cgi` 真 Perl `GetNumber/GetTime` 轉換逐項比對 Node：原版 `start 10%` 編入100、重複 `start 50%` 後再 `start -1` 會被排除，8個來源負一停用、15個正機率及 `rebel`／`guildbattle` 2個0機率總共17個會被編入。這份 `reviewedEventCatalog` 是**只讀原始編譯事件清單，`runtimeSupported=false`**，繁中 UI 能顯示25個宣告／17個入編譯，但事件動態回呼、Perl hash 順序、時間片 EVENT 修改仍未執行。不能用已整理清單假冒完整事件引擎，或把 B-52 當前 `eventState=null`（來源未知）假稱空事件。[B-53 原始編譯器及25個 EVENT 來源證據](b53-compiled-event-manifest.md)。
+
+真正跨36小時仍拒絕，下一步以**實際玩家時間片中的事件啟動／過期／商品回呼和來源市場、城鎮副作用**為主，保持事件亂數不可藉反覆失敗重抽逃避；完成再與 B-50 同店同城期末、B-43 可恢復存檔一體整合，通過真 HTTP跨期→重開→續營才給使用者集中驗收。Draft PR #1、main、migration、固定 Core/DSL 與正式 Notion 任務狀態均先不改。

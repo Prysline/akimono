@@ -1,9 +1,15 @@
-# 《商人物語》標準街 Node.js 移植｜新對話接力交接（B-52 原版事件初始與未知狀態，跨期仍未完成）
+# 《商人物語》標準街 Node.js 移植｜新對話接力交接（B-53 原版25事件編譯清單，跨期仍未完成）
 
 > **用途**：使用者換聊天視窗後，新的助手只需先讀這份精簡可核對的 GitHub 文件，再依目前遠端 HEAD 核對後續工作。**不要**從舊聊天記憶推論最新狀態，也不要把文件內的 CI 數字視為未來 HEAD 的保證。
 
 
 > **2026-11-21 使用者最新驗收節奏：** 不再每完成一個 B 階段就請使用者確認。直接以「在同一個繁體中文瀏覽器介面從零開店 → 真進貨 → 合法上架 → 自然販售／可連續經營 → 真跨36小時結算 → 真磁碟存檔 → 關閉服務重開載入 → 繼續營業」作為**一次完整的集中人工驗收**；開發中仍須每次提交維持來源 Perl／Node／HTTP E2E、固定 Core／DSL 稽核及最終同 SHA Push／PR CI，不能因延後人工確認而省略自動測試，也不能假稱目前已完整運作。
+
+## 2026-11-21｜B-53 原版事件定義編譯清單（25 宣告／17 編入／8 排除；事件引擎尚未完成）
+
+B-53 在已確認 B-52「新世界活動 EVENT 真正空表、時間片後未知」的基礎上，直接依**固定原版 Perl `inc-makeitem.cgi` 的 `GetNumber/GetTime` 原式執行**與 `@@EVENT` 來源編排，將 Standard Street ITEM DSL 的23個 EVENT、rebel DSL 的2個 EVENT 全數投射成 source-reviewed 的 `reviewedEventCatalog`：25宣告中8個 `start -1` 在原版編譯時被排除、15個正機率 EVENT 編入、`rebel`／`guildbattle` 兩個 `start 0` **也會編入並在原版 EVENT 起始處通過零機率分支**。原版 `10%` 對應 `startproba=100`，後續 `start -1` 覆蓋前面的 `start 50%`。Node 逐筆與原版 Perl GetNumber/GetTime 真執行的原始事件資料（code、group、start／重複值、持續秒數、回呼宣告）對照，來源漂移拒絕。每個 EVENT 的動態 startfunc/endfunc/func 仍不透明，不執行回呼；`runtimeSupported=false`，瀏覽器只讀顯示25／17與未接通，不建立假事件、也不承認完整跨期。原版 `keys(%EVENT)` 的 Perl hash 遍歷**不是 DSL 宣告順序**，未來不能把清單依宣告順序跑一次當作忠實事件迴圈。詳見 [B-53 原版可編譯 EVENT 清單與限制](b53-compiled-event-manifest.md)。
+
+**下一步不是再補零散活動清單，而是讓真 EVENT 與真商品回呼進入玩家時間片：** 原版 start/expiry/nowfunc 的亂數、群組、價格／人氣、抽獎、盜賊、叛亂／商會戰副作用必須可 source-verified 與可持久化，再與 B-50 的同城同店真原版期末及 B-43 磁碟重啟串成同一筆安全 CAS 跨36小時，禁止以未知事件為空或反覆重試重新抽獎。**跨期仍必須拒絕**，主分支／migration／原始 Core／DSL 不動，PR #1 Draft 不合併，使用者只有完整可玩閉環後一次人工驗收。
 
 ## 2026-11-21｜B-52 原版初始 EVENT 空白欄位的真讀寫 + 時間推進後未知狀態
 
