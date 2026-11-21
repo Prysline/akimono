@@ -56,6 +56,7 @@ export function reviewOriginalSparseAllPlus({
 
 export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
+  reviewedB39Span8640=false,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -63,7 +64,10 @@ export function projectOriginalSparseAllPlus({
     reviewed.plusSeconds?.length!==79)
     bad('reviewed source metadata');
   safe(timespanSeconds,'positive timespan',1);
-  if(timespanSeconds>3600)bad('post-sale timespan beyond reviewed bound');
+  // B-37's public command stays <=3600. Only a B-39 source-reviewed
+  // internal caller can request exactly 8640s; never surfaced as command input.
+  if(timespanSeconds>3600 && !(reviewedB39Span8640===true &&
+    timespanSeconds===8640))bad('post-sale timespan beyond reviewed bound');
   if(!Array.isArray(randomDraws)||randomDraws.length>118||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('explicit random millionths, maximum 118 samples');

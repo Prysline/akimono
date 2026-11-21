@@ -20,6 +20,8 @@ import {reviewOriginalSparseAllPlus,projectOriginalSparseAllPlus}
   from './original-sparse-all-plus.mjs';
 import {reviewOriginalNaturalSalePlus,projectOriginalNaturalSalePlus}
   from './original-natural-sale-plus.mjs';
+import {reviewOriginalNayutaFuncturn,projectOriginalNayutaFuncturn}
+  from './original-nayuta-functurn.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -138,6 +140,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       configSource:originalConfigSource,compilerSource:originalCompilerSource,
       itemDsl,reviewedAllPlus,
     });
+  const reviewedNayuta=reviewedNaturalPlus===null?null:
+    reviewOriginalNayutaFuncturn({
+      itemDsl,turnSource:originalTurnSource,compilerSource:originalCompilerSource,
+      reviewedNaturalPlus,reviewedAllPlus,
+    });
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -155,6 +162,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
       ...(reviewedAllPlus?['reviewed-sparse-all-plus']:[]),
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
+      ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
     ]),
     metadata,
     catalog,
@@ -164,6 +172,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedMultiPlus,
     reviewedAllPlus,
     reviewedNaturalPlus,
+    reviewedNayuta,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -226,6 +235,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         ownKeysExact(command,['randomDraws']);
         return projectOriginalNaturalSalePlus({
           world,reviewed:reviewedNaturalPlus,reviewedAllPlus,
+          compiled:giftMap,randomDraws:command.randomDraws,
+        });
+      }
+      if(command.kind==='reviewed-nayuta-functurn'&&reviewedNayuta){
+        ownKeysExact(command,['randomDraws']);
+        return projectOriginalNayutaFuncturn({
+          world,reviewed:reviewedNayuta,reviewedAllPlus,
           compiled:giftMap,randomDraws:command.randomDraws,
         });
       }

@@ -40,6 +40,7 @@
     "demo:original-multi-plus": "node scripts/demo-original-sparse-multi-plus.mjs",
     "demo:original-all-plus": "node scripts/demo-original-sparse-all-plus.mjs",
     "demo:original-natural-plus": "node scripts/demo-original-natural-sale-plus.mjs",
+    "demo:original-nayuta-functurn": "node scripts/demo-original-nayuta-functurn.mjs",
     "demo:original-market-init": "node scripts/demo-original-sparse-market.mjs"
   }
 }
