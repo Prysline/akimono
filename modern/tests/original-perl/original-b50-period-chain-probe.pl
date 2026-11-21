@@ -59,7 +59,7 @@ my($rebelRobin)=$period=~/(^sub RebelRobin\n\{[\s\S]*?^\}\n)(?=\nsub DragonBalan
 die 'B-50 fixed source shared helpers moved' unless
   $getPoint&&$sort&&$addItem&&$rebelRobin;
 my $fStart=index($itemDsl,'sub UpdateResetBefore');
-my $fEnd=index($itemDsl,"\n@@FUNCNEW",$fStart);
+my $fEnd=index($itemDsl,"\n\@\@FUNCNEW",$fStart);
 die 'Fixed Standard Street complete pre/post period FUNCUPDATE missing'
   unless $fStart>=0&&$fEnd>$fStart;
 my $originalUpdate=substr($itemDsl,$fStart,$fEnd-$fStart);
