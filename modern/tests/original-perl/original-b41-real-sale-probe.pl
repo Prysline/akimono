@@ -55,6 +55,9 @@ sub call_source {
 }
 sub run {
   my($minutes)=@_;
+  # Original buy-s.cgi halves the process-global TIME_SEND_ITEM in-place.
+  # Each measured run is an independent fresh source world: restore config.
+  $TIME_SEND_ITEM=1200;
   # The literal buy-s.cgi halves this global for marketplace purchases.
   # Each independent 30m/60m probe must restore the original configured base.
   $TIME_SEND_ITEM=1200;
