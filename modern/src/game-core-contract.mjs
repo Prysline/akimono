@@ -21,11 +21,13 @@ function plain(x){
 }
 function copyJson(value,label='JSON fixture'){
   const seen=new Set();
-  function walk(x,depth){
+  function walk(x,depth,path=''){
     if(depth>32)reject(label+' depth');
     if(x===null||typeof x==='string'||typeof x==='boolean')return x;
     if(typeof x==='number'){
-      if(!Number.isSafeInteger(x))reject(label+' non-safe JSON number');
+      if(!Number.isFinite(x)||(!Number.isSafeInteger(x)&&
+        !(label==='WorldState'&&/^shops\[\d+\]\.costtoday$/.test(path))))
+        reject(label+' non-safe JSON number');
       return x;
     }
     if(typeof x!=='object')reject(label+' non-JSON value');
@@ -34,7 +36,7 @@ function copyJson(value,label='JSON fixture'){
     let out;
     if(Array.isArray(x)){
       if(x.length>10000)reject(label+' oversize array');
-      out=x.map(row=>walk(row,depth+1));
+      out=x.map((row,i)=>walk(row,depth+1,path+'['+i+']'));
     }else if(plain(x)){
       const keys=Object.keys(x);
       if(keys.length>1000)reject(label+' oversize record');
@@ -42,7 +44,7 @@ function copyJson(value,label='JSON fixture'){
       for(const key of keys){
         if(key==='__proto__'||key==='constructor'||key==='prototype')
           reject(label+' unsafe key');
-        out[key]=walk(x[key],depth+1);
+        out[key]=walk(x[key],depth+1,path?path+'.'+key:key);
       }
     }else reject(label+' non-plain object');
     seen.delete(x);
@@ -130,6 +132,7 @@ export function applyGameCommand({world,command,streetModule}){
     ...original,shops:applied.shops,
     market:applied.market===undefined?original.market:applied.market,
     events:applied.events===undefined?original.events:applied.events,
+    nowSeconds:applied.nowSeconds===undefined?original.nowSeconds:applied.nowSeconds,
     revision:original.revision+1,
   });
   return answer(true,'APPLIED',after,freeze(copyJson(applied.receipt,'receipt')));

@@ -127,3 +127,12 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
   .status-table td{width:30%}
   .setup-content,.inline-form{gap:7px}
 }
+
+/* B-41 source-backed shelf and time controls, same original Standard Skin */
+.time-control{margin-top:10px;border-top:1px dotted #ddd;padding-top:8px}
+.quick-time{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 8px}
+.quick-time button{min-height:30px}
+.shelf-form{margin-top:10px}
+.shelf-form fieldset{border:1px dotted #c4c4cc;display:flex;flex-wrap:wrap;align-items:end;gap:10px;padding:10px}
+.shelf-form legend{color:#777;font-size:12px}
+.shelf-form label,.time-control label{display:flex;flex-direction:column;gap:4px;font-size:12px}

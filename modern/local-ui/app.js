@@ -71,7 +71,10 @@ function showState(s){
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
-  $('buy').disabled=!shop; // Deliberately permit empty-market click: show true Core refusal.
+  $('buy').disabled=!shop; // Deliberately permit empty-market click.
+  $('set-showcase').disabled=!shop;
+  for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
+  $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
   const entries=shop?[
     {id:10,name:'書本寫作工具',count:shop.item[9],origin:'原版市場進貨'},
     {id:63,name:'展示架擴建拆卸工具',count:shop.item[62],origin:'原版開店贈品'},
@@ -135,6 +138,25 @@ $('supply').addEventListener('click',()=>call('/api/supply',{
   expectedRevision:snapshot?.world?.revision,
   timespanSeconds:Number($('supply-seconds').value),
 },'原版 PLUS 供貨子步驟'));
+$('showcase-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const itemId=Number($('shelf-item').value);
+  await call('/api/showcase',{
+    expectedRevision:snapshot?.world?.revision,
+    itemId,priceOverride:itemId===10?5000:0,
+  },itemId===10?'原版展示架上架 #10':'清空展示架');
+});
+async function advance(minutes){
+  await call('/api/advance-time',{
+    expectedRevision:snapshot?.world?.revision,minutes,
+  },'原版自然販售／快轉 '+minutes+' 分鐘');
+}
+document.querySelectorAll('[data-minutes]').forEach(button=>
+  button.addEventListener('click',()=>advance(Number(button.dataset.minutes))));
+$('advance-time-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  await advance(Number($('advance-minutes').value));
+});
 $('buy').addEventListener('click',()=>call('/api/buy',{
   expectedRevision:snapshot?.world?.revision,
   requestedCount:Number($('quantity').value),

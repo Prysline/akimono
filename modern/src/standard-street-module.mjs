@@ -24,6 +24,7 @@ import {reviewOriginalNayutaFuncturn,projectOriginalNayutaFuncturn}
   from './original-nayuta-functurn.mjs';
 import {reviewOriginalMarketBuy10,quoteOriginalMarket10,projectOriginalMarketBuy10}
   from './original-market-buy10.mjs';
+import {reviewB41Sale,projectB41Sale} from './original-b41-playable-sale.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -160,6 +161,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       itemSource:originalBuyItemSource,calcSource:originalBuyCalcSource,
       compilerSource:originalCompilerSource,model,compiled:giftMap,
     });
+  const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
+    reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
+      reviewedBuy:reviewedMarketBuy10,reviewedAllPlus}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -179,6 +183,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
+      ...(reviewedB41?['advance-source-time']:[]),
     ]),
     metadata,
     catalog,
@@ -190,6 +195,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedNaturalPlus,
     reviewedNayuta,
     reviewedMarketBuy10,
+    reviewedB41,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
@@ -272,6 +278,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           shopId:command.shopId,requestedCount:command.requestedCount,
           marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
         });
+      }
+      if(command.kind==='advance-source-time'&&reviewedB41){
+        ownKeysExact(command,['shopId','minutes','randomDraws']);
+        return projectB41Sale({world,reviewed:reviewedB41,
+          reviewedAllPlus,compiled:giftMap,shopId:command.shopId,
+          minutes:command.minutes,randomDraws:command.randomDraws});
       }
       if(command.kind==='gift-exchange-maps'){
         ownKeysExact(command,['shopId','requestedCount']);
