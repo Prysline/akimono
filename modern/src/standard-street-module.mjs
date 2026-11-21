@@ -10,6 +10,8 @@
 import {parseDsl} from './parse-dsl.mjs';
 import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
+import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket}
+  from './original-admin-world-bootstrap.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -72,12 +74,24 @@ function structuralCatalog(itemDsl,rebelDsl,model){
 }
 
 /** Only trusted locally supplied original DSL strings; no web fetch. */
-export function createStandardStreetModule({itemDsl,rebelDsl}){
+export function createStandardStreetModule({itemDsl,rebelDsl,
+  originalAdminInitSource=null,originalDataReadSource=null,
+  originalDataWriteSource=null,
+}){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
+  const sources=[originalAdminInitSource,originalDataReadSource,originalDataWriteSource];
+  if(sources.some(x=>x!==null)&&sources.some(x=>x===null))
+    bad('incomplete frozen original bootstrap sources');
+  const reviewedBootstrap=originalAdminInitSource===null?null:
+    reviewOriginalSparseWorldBootstrap({
+      adminSource:originalAdminInitSource,
+      readSource:originalDataReadSource,
+      writeSource:originalDataWriteSource,
+    });
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -89,10 +103,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
   });
   return Object.freeze({
     id:STANDARD_STREET_ID,
-    capabilities:actions,
+    capabilities:reviewedBootstrap?
+      Object.freeze([...actions,'initialize-source-market']):actions,
     metadata,
     catalog,
     reviewedGiftMapUse:giftMap,
+    reviewedBootstrap,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -112,6 +128,21 @@ export function createStandardStreetModule({itemDsl,rebelDsl}){
             action:'open-shop',shopId:created.id,
             money:created.money,remainingTimeSeconds:world.nowSeconds-created.time,
             source:'fixed Core new.cgi + reviewed Standard Street FUNCNEW subset',
+          },
+        };
+      }
+      if(command.kind==='initialize-source-market'&&reviewedBootstrap){
+        ownKeysExact(command,[]);
+        if(world.revision!==0||world.shops.length!==0||
+           world.market!==null||world.events!==null)
+          bad('original first-world bootstrap requires fresh empty revision-zero world');
+        return {
+          shops:world.shops,
+          market:createOriginalSparseMarket(reviewedBootstrap),
+          receipt:{
+            action:'initialize-source-market',source:reviewedBootstrap.source,
+            originalWholesaleCsv:'',originalSuppliedSlots:0,
+            scope:'source-verified first-time admin init in memory; not CGI, not actual install or live world import',
           },
         };
       }
