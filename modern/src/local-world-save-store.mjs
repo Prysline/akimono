@@ -165,8 +165,13 @@ export function createLocalWorldSaveStore({directory}){
       fs.closeSync(fd);fd=undefined;
       // Atomic on the same local filesystem; previous generation remains.
       fs.renameSync(temp,dest);
-      const folderFd=fs.openSync(dir,c.O_RDONLY);
-      try{fs.fsyncSync(folderFd);}finally{fs.closeSync(folderFd);}
+      // Windows does not support fsync on directory handles. The save
+      // file itself was fsync'd before atomic rename; directory durability
+      // is best-effort on Windows rather than falsely reporting a failure.
+      if(process.platform!=='win32'){
+        const folderFd=fs.openSync(dir,c.O_RDONLY);
+        try{fs.fsyncSync(folderFd);}finally{fs.closeSync(folderFd);}
+      }
     }finally{
       if(fd!==undefined)fs.closeSync(fd);
       try{fs.unlinkSync(temp);}catch(error){if(error.code!=='ENOENT')throw error;}
