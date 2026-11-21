@@ -113,3 +113,9 @@ B-42 已能連續兩輪真買與真售、B-43 可重啟載入；**完整可玩�
 ## 2026-11-21｜B-47 原版單店排序／期末前事件來源警示
 
 以真原版 `SortDT`／`GetDTPoint` 的 Perl 隔離執行及 Node 對照，補上單店排行榜分數計算和順位索引，與前面 B-44～B-46 商店帳務、獎品、領地三階段互相對接的必要條件。固定 `inc-turn.cgi` 事件迴圈含 `startproba==0` 的無條件路徑，固定 `inc-makeitem.cgi` 僅排除 -1 事件；標準街 `rebel`／`guildbattle` 使用 `start 0`。下一步不可把事件當成不存在，必須處理來源 EVENT/END/FUNC 變更後才可與原版完整期末操作原子串接。[B-44～B-47 真來源階段與剩餘缺口](b44-b46-source-period-stages.md)。跨期仍保持拒絕，不混淆已經有的 B-43 真磁碟存讀檔，使用者仍僅在完整遊戲閉環後集中驗收。
+
+## 2026-11-21｜B-48／B-49 EVENT 期末控制流來源比對（未解鎖跨期）
+
+新增固定原版 Perl EVENT 啟動、期限結束後才重新啟動的相鄰來源區段真執行，Node 在單一**無自訂回呼的合成事件**比對 `startproba==0` 仍抽樣、原版 `startproba=-1` 編譯排除、嚴格 `到期 < 片尾`、同群組阻擋及必要的時間抽樣；不以事件是0機率為由跳過叛亂／商會戰等動態行為。[B-48～B-49 來源證據及限制](b48-b49-original-event-gates.md)。
+
+玩家的最終可玩閉環門檻維持不變：必須在同一繁中 UI 的真來源 WorldState 順序整合 EVENT／FUNCTURN／FUNCSALE／SortDT／B-44～B-47 完整期末／59 PLUS，原版 Perl／Node／HTTP 真跨36小時＋B-43 磁碟落盤重啟後可接續經營才開放集中驗收。現在仍拒絕跨期，**不拿純模型測試替代真世界行為**。最終提交同 SHA Push／PR CI 並回寫 GitHub／Notion，Draft PR 不合併。
