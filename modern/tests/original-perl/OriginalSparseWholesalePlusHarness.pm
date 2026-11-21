@@ -11,7 +11,7 @@ use OriginalGiftMapUseHarness;
 # compiled by eval. Each draw is an explicitly injected integer millionth.
 BEGIN {
   no warnings 'redefine';
-  *CORE::GLOBAL::rand = sub ($) {
+  *CORE::GLOBAL::rand = sub (;$) {
     die 'B-35 missing explicit source random draw' unless @main::B35_DRAWS;
     $main::B35_USED++;
     my $fraction=shift @main::B35_DRAWS;
