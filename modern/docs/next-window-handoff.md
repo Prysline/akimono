@@ -2,6 +2,12 @@
 
 > **用途**：使用者換聊天視窗後，新的助手只需先讀這份精簡可核對的 GitHub 文件，再依目前遠端 HEAD 核對後續工作。**不要**從舊聊天記憶推論最新狀態，也不要把文件內的 CI 數字視為未來 HEAD 的保證。
 
+## B-40 使用者 UI 回饋與已提交的視覺修正（2026-11-21）
+
+使用者在 Windows 實測時指出 B-40 灰綠 dashboard 卡片配色與實際原版《商人物語》印象差異過大，並要求直接 commit 以便預覽。已直接在 `test/task02-baseline-on-s1` 重排 `modern/local-ui/index.html`／`style.css`／`app.js`：以固定 `sindex.html`、`smain.html`、`custom/inc-menu.cgi` 為依據，恢復「自店／取引／情報／施設／交流」主選單及次選單、白底淡紫白表格、淺綠標題、淺黃選取提示、緊湊店舖資訊；世界 ID/revision/收據改成可展開的測試區。僅店內、倉庫、真市場進貨 #10 開放操作，其他分類與功能停用且如實顯示；未複製任何原始圖片或音樂。原版 Perl/DSL／GameCore／市場來源與交易 API 均未修改。HTTP E2E 已調整檢查選單、CSS 與真交易，詳細參考 [原版介面與 B-40 視覺修正](original-ui-reference-for-local-test.md)。
+
+**下一步：** 先讓使用者在本機 `cd modern && npm run dev:local` 實際預覽，確認色彩與資訊配置；若有他的歷史伺服器截圖以截圖優先作局部修正，再依原計畫 B-41 在相同原版風格 UI 開發真正上架／自然販售。仍保留 Draft PR #1，不合併、不可修改 main/migration；只採用最新 HEAD 雙 CI 作回歸證據。Windows CRLF 讀取修正亦保留。
+
 ## B-40 後續修正｜Windows 原版來源 CRLF 啟動相容
 
 Windows Git 的 `core.autocrlf` 可能使固定原版 CGI/DSL 在工作目錄成為 CRLF，B-34 仍以 `sub init\\n` 原版 LF 字串逐字核對，導致 `npm run dev:local` 啟動時在 `reviewOriginalSparseWorldBootstrap` 報 `fixed admin init source drift`。已在 `modern/src/local-source-text.mjs` 建立僅針對本機讀取結果的 CRLF→LF 正規化，`modern/scripts/dev-local.mjs` 對12份 CGI／DSL 來源輸入套用；禁止孤立 CR，原始檔、SHA、規則、審閱守門及分支沒有更改。新增 `modern/tests/local-source-text.test.mjs` 模擬 Windows 12份來源，實際核對可初始化真 StreetModule／GameCore 與開店；竄改原版內容仍然拒絕。
