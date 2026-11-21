@@ -17,11 +17,11 @@ button:disabled{cursor:not-allowed;color:#aaa!important;opacity:.85}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
   outline:2px solid #687bb1;outline-offset:2px
 }
-.shell{max-width:850px;margin:16px auto 35px;padding:0 15px}
-.site-heading{text-align:center;border-bottom:1px solid #999;padding-bottom:10px}
+.shell{max-width:850px;margin:8px auto 25px;padding:0 15px}
+.site-heading{text-align:center;border-bottom:1px solid #999;padding-bottom:4px}
 .heading-top{display:flex;justify-content:space-between;gap:8px;
   font-size:11px;color:#999;padding:4px 0;border-bottom:1px dotted #e2e2e6}
-.site-heading h1{font-size:26px;font-weight:700;color:#777;margin:11px 0 7px;line-height:1.25}
+.site-heading h1{font-size:26px;font-weight:700;color:#777;margin:6px 0 4px;line-height:1.25}
 .town-name{font-size:16px;background:var(--highlight);color:#606060;
   padding:2px 8px;vertical-align:middle;font-weight:400}
 .menu-main{display:flex;justify-content:center;flex-wrap:wrap;gap:2px 6px}
@@ -34,18 +34,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 }
 .menu-main button.selected{color:#595f7a;background:var(--highlight)}
 .menu-sub{display:flex;align-items:flex-start;justify-content:center;
-  flex-wrap:wrap;gap:3px;margin-top:8px;font-size:13px;min-height:27px}
+  flex-wrap:wrap;gap:1px;margin-top:2px;font-size:13px;min-height:0}
 .menu-sub .sub-caption{color:#888;padding:3px 0}
 .subgroup{display:flex;flex-wrap:wrap;justify-content:center;gap:0}
 .menu-sub button{font-weight:400;white-space:nowrap}
 .menu-sub button.selected{background:var(--note);color:#606060;font-weight:700}
 .location-line{display:flex;justify-content:space-between;flex-wrap:wrap;
-  gap:8px;margin:8px 0 0;color:#888;font-size:12px;text-align:left}
-.notice{margin:14px 0 10px;padding:7px 10px;background:#fffde9;
+  gap:8px;margin:3px 0 0;color:#888;font-size:12px;text-align:left}
+.notice{margin:4px 0 5px;padding:4px 8px;background:#fffde9;
   border:1px solid #e8e2b4;font-size:12px}
 .notice strong{color:#6f6b43}
-.section{border:1px solid var(--line);background:#fff;margin:12px 0;padding:12px}
-.section-title{margin:-12px -12px 10px;padding:5px 10px;
+.section{border:1px solid var(--line);background:#fff;margin:7px 0;padding:9px}
+.section-title{margin:-9px -9px 7px;padding:4px 8px;
   font-size:15px;font-weight:400;color:#505050;background:var(--highlight);
   border-bottom:1px solid #c5df9b}
 .section-title::before{content:"■ ";font-size:10px;vertical-align:1px;color:#859467}
@@ -53,9 +53,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .help-text{color:#777}
 .setup{padding:0}
 .setup summary{list-style:revert;cursor:pointer;font-size:13px;font-weight:bold;
-  padding:7px 10px;color:#606060;background:#f2f2f6}
-.setup-content{display:flex;align-items:end;flex-wrap:wrap;gap:12px;
-  padding:10px}
+  padding:5px 8px;color:#606060;background:#f2f2f6}
+.setup-content{display:flex;align-items:end;flex-wrap:wrap;gap:8px;
+  padding:8px}
 .inline-form{display:flex;align-items:end;flex-wrap:wrap;gap:10px}
 .inline-form label,.supply label,.disabled-feature label{
   display:flex;flex-direction:column;gap:4px;font-size:12px
@@ -71,7 +71,7 @@ button.primary,button.secondary,.disabled-feature button{
 button.primary:hover:not(:disabled),button.secondary:hover:not(:disabled){
   background:#fffbd8
 }
-.status-section{margin:10px 0 15px}
+.status-section{margin:3px 0 5px}
 table{width:100%;border-collapse:separate;border-spacing:1px;
   background:#ccc;font-size:13px;text-align:left}
 td,th{background:var(--row);padding:7px 9px;vertical-align:middle;overflow-wrap:anywhere}
@@ -80,7 +80,7 @@ thead th{background:#e8e8ef;text-align:center;font-weight:normal}
 .status-table th{width:18%;background:#e8e8ef}
 .status-table td{width:32%}
 .status-table strong{color:#424242}
-.game-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.game-columns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .sub-title{margin:1px 0 7px;font-size:14px;font-weight:normal}
 .sub-title::before{content:"◆ ";color:#9090a9;font-size:10px}
 .game-columns th{background:#e8e8ef;font-weight:normal;width:45%}
