@@ -31,7 +31,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,revi
   ];
   let before=-1;
   for(const needle of ordered){
-    const index=turnSource?.indexOf(needle)??-1;
+    const index=turnSource?.indexOf(needle,before+1)??-1;
     if(index<=before)fail('original source stage/order changed '+needle);
     before=index;
   }
