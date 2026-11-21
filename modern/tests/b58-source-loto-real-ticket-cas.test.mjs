@@ -122,6 +122,26 @@ function setupWorld({tickets=2}={}){
   return {adapter,act,offer11,purchase};
 }
 
+function exactNaturalSaleDraws(world,minutes=30){
+  // Inventory #11 affects world/cap state. Require an exact B-41 runtime
+  // prefix rather than reusing unexamined randomness from the #10-only oracle.
+  const candidates=[saleDraws,sourceCommandDraws({
+    world,kind:'advance-source-time',args:{shopId:1,minutes},count:121,
+  })];
+  for(const samples of candidates){
+    for(let n=1;n<=samples.length;n++){
+      const prefix=samples.slice(0,n);
+      const trial=applyGameCommand({
+        world,streetModule:street,
+        command:{kind:'advance-source-time',expectedRevision:world.revision,
+          shopId:1,minutes,randomDraws:prefix},
+      });
+      if(trial.ok)return prefix;
+    }
+  }
+  throw new Error('no exact source B-41 natural-sale / PLUS prefix for the real ticket shop');
+}
+
 test('B-58 real Perl original loto STARTFUNC agrees with Node for all five tiers, boundaries, losses, cap, logs and tickets',()=>{
   assert.equal(street.reviewedLoto.source,B58_LOTO_SOURCE);
   assert.equal(street.reviewedB56.loto,B58_LOTO_SOURCE);
@@ -214,7 +234,9 @@ test('B-58 true Core ITEM #11 purchase follows original Perl buy-s source quanti
   assert.equal(buyOracle.success.time,957400);
   assert.equal(buyOracle.price,2000);
   const {adapter,purchase,offer11}=setupWorld();
-  assert.equal(offer11.shelf,buyOracle.shelf);
+  // B-58 shop buys #10 first; #10's single wholesale unit then disappears
+  // from the positive-only original market shelf sequence.
+  assert.equal(offer11.shelf,buyOracle.shelf-1);
   assert.equal(purchase.details.unitPrice,buyOracle.price);
   assert.equal(purchase.details.purchasedCount,2);
   assert.equal(purchase.details.totalPaid,4000);
@@ -233,10 +255,11 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
   t.after(()=>rm(directory,{recursive:true,force:true}));
   const {adapter,act}=setupWorld();
   const before=adapter.read();
+  const chosenSaleDraws=exactNaturalSaleDraws(before);
   const normalSale=applyGameCommand({
     world:before,streetModule:street,
     command:{kind:'advance-source-time',expectedRevision:before.revision,
-      shopId:1,minutes:30,randomDraws:saleDraws},
+      shopId:1,minutes:30,randomDraws:chosenSaleDraws},
   });
   assert.ok(normalSale.ok,JSON.stringify(normalSale.details));
   const beforeAward=normalSale.world.shops[0];
@@ -248,7 +271,7 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
   });
   assert.equal(expected.shop.money,beforeAward.money+110000);
   const result=act('advance-source-time-reviewed-events',{
-    shopId:1,minutes:30,saleDraws,
+    shopId:1,minutes:30,saleDraws:chosenSaleDraws,
     eventHashOrderFixture:order,
     eventDraws:eventDraws({triggerLoto:true,lottery:lotteryDraws}),
   });
@@ -310,8 +333,9 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
 test('B-58 lotto missing, malformed, swapped, excess RNG or other source EVENT cannot partially commit ticket burn',()=>{
   const {adapter,act}=setupWorld();
   const before=adapter.read();
+  const chosenSaleDraws=exactNaturalSaleDraws(before);
   const correct=eventDraws({triggerLoto:true,lottery:[152410,9999]});
-  const args={shopId:1,minutes:30,saleDraws,
+  const args={shopId:1,minutes:30,saleDraws:chosenSaleDraws,
     eventHashOrderFixture:order,eventDraws:correct};
   const ticketIndex=correct.findIndex(x=>typeof x==='object');
   assert.ok(ticketIndex>=0);
