@@ -142,9 +142,30 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   ]);
   const html=await (await fetch(url)).text();
   assert.match(html,/lang="zh-Hant"/);
-  assert.match(html,/店內/);assert.match(html,/市場／進貨/);
+  assert.match(html,/店內/);assert.match(html,/市場/);
   assert.match(html,/倉庫/);
   assert.match(html,/disabled/);
+  // Standard Skin is two-tier: original group names plus active submenus.
+  for(const group of ['自店','取引','情報','施設','交流']){
+    assert.ok(html.includes('【'+group+'】'),group);
+  }
+  for(const sub of ['［店內］','［倉庫］','［市場］']){
+    assert.ok(html.includes(sub),sub);
+  }
+  for(const id of ['initialize','open-shop','store-name','money','rank',
+    'time','showcase','paid','sales','market-price','market-count','owned',
+    'quantity','buy','supply','inventory','feedback','receipt']){
+    assert.ok(html.includes('id="'+id+'"'),'missing live state DOM id '+id);
+  }
+  assert.match(html,/receipt-details/);
+  assert.match(html,/data-subgroup="trade"/);
+  const css=await (await fetch(url+'/style.css')).text();
+  assert.match(css,/#fcfbff/i);
+  assert.match(css,/#d9ff99/i);
+  assert.match(css,/#fff789/i);
+  assert.match(css,/\[hidden\]/);
+  assert.doesNotMatch(css,/#477558/i); // no B-40 dashboard green theme
+  assert.doesNotMatch(html,/bg\.gif|logo\.gif|mark\.png/);
   const post=async(path,body={})=>{
     const res=await fetch(url+path,{method:'POST',
       headers:{'content-type':'application/json'},body:JSON.stringify(body)});
