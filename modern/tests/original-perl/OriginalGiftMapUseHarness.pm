@@ -200,7 +200,9 @@ sub run {
     rank=>5010,exp=>{},
   };
   @main::DT=($main::DT);
-  @main::DTwholestore=@$whole;
+  die 'B-34 sparse original bootstrap cannot also supply wholesale array'
+    if $o{sourceBlankWholesale} && exists($o{wholesale});
+  @main::DTwholestore=$o{sourceBlankWholesale}?():@$whole;
   $u->{result}{expold}='';
   my $requested=exists($o{requestedCount})?$o{requestedCount}:1;
   main::UseItem($u,$requested);
@@ -221,6 +223,11 @@ sub run {
     },
     stock=>[@{$main::DT->{item}}],
     wholesale=>[@main::DTwholestore],
+    wholesaleCsv=>join(',',@main::DTwholestore),
+    wholesaleSlots=>scalar(@main::DTwholestore),
+    wholesaleDefinedSlots=>[grep {defined $main::DTwholestore[$_]} 0..78],
+    wholesaleNumeric79=>[map {defined $main::DTwholestore[$_]?
+      0+$main::DTwholestore[$_]:0} 0..78],
     money=>$main::DT->{money},
     paytoday=>$main::DT->{paytoday},
     time=>$main::DT->{time},
