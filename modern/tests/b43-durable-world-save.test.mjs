@@ -150,12 +150,12 @@ test('B-43 source-backed saved world rejects arbitrary stock and integrity misma
   assert.equal(store.status().unreadable,true);
   assert.throws(()=>store.load(),/存檔損毀/);
 });
-async function boot(directory){
+async function boot(directory,{legacyFixtureRandom=true}={}){
   const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
     cwd:join(root,'modern'),
     env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:'1000000',
-      AKIMONO_E2E_DETERMINISTIC_RNG:'1'},
+      AKIMONO_E2E_DETERMINISTIC_RNG:legacyFixtureRandom?'1':'0'},
     stdio:['ignore','pipe','pipe'],
   });
   const url=await Promise.race([
@@ -303,4 +303,82 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   });
   assert.ok(overwriteBad.ok);
   assert.equal(overwriteBad.state.save.generation,3);
+});
+
+test('B-54 real HTTP source-time replay of same saved revision after Node SIGTERM uses the SAME random stream',async t=>{
+  const directory=await inDir(t);
+  const servers=[];
+  t.after(async()=>{for(const srv of servers)await srv.stop()});
+  let srv=await boot(directory,{legacyFixtureRandom:false});
+  servers.push(srv);
+  const init=await srv.post('/api/initialize');
+  assert.ok(init.ok,JSON.stringify(init));
+  assert.ok((await srv.post('/api/open-shop',{
+    expectedRevision:1,ownerName:'可重播測試店主',shopName:'來源抽樣重試商店',
+  })).ok);
+  const supplied=await srv.post('/api/supply',{
+    expectedRevision:2,timespanSeconds:3600,
+  });
+  assert.ok(supplied.ok,JSON.stringify(supplied));
+  const stateAfterSupply=await srv.state();
+  assert.ok(stateAfterSupply.item10.marketStock>=1,
+    'source 60-minute PLUS must really supply at least one #10 for purchase');
+  const bought=await srv.post('/api/buy',{
+    expectedRevision:3,requestedCount:1,
+    marketShelf:stateAfterSupply.item10.shelf,
+    expectedPrice:stateAfterSupply.item10.price,
+  });
+  assert.ok(bought.ok,JSON.stringify(bought));
+  assert.ok((await srv.post('/api/showcase',{
+    expectedRevision:4,itemId:10,priceOverride:5000,
+  })).ok);
+  const before=await srv.state();
+  assert.equal(before.world.revision,5);
+  const save=await srv.post('/api/save',{
+    expectedRevision:5,expectedGeneration:0,
+  });
+  assert.ok(save.ok,JSON.stringify(save));
+  const once=await srv.post('/api/advance-time',{
+    expectedRevision:5,minutes:30,
+    randomDraws:[999999], // client noise must not alter server-owned samples
+  });
+  assert.ok(once.ok,JSON.stringify(once));
+  assert.equal(once.state.world.revision,6);
+  assert.equal(once.state.world.period.eventState,null,
+    'unreviewed original EVENT callbacks still explicitly unknown');
+  const worldAfterOne=once.state.world;
+  await srv.stop();
+
+  srv=await boot(directory,{legacyFixtureRandom:false});
+  servers.push(srv);
+  const recovered=await srv.post('/api/load');
+  assert.ok(recovered.ok,JSON.stringify(recovered));
+  assert.equal(recovered.state.world.revision,5);
+  assert.deepEqual(recovered.state.world,before.world,
+    'restart reopens the precise prior saved world snapshot');
+
+  const conflict=await srv.post('/api/advance-time',{
+    expectedRevision:4,minutes:30,
+  });
+  assert.equal(conflict.status,409);
+  assert.equal(conflict.state.world.revision,5,
+    'a stale retry does not commit or move the draw revision');
+  const twice=await srv.post('/api/advance-time',{
+    expectedRevision:5,minutes:30,
+  });
+  assert.ok(twice.ok,JSON.stringify(twice));
+  assert.deepEqual(twice.state.world,worldAfterOne,
+    'identical source market, real shop, city, clock and revision must replay exactly');
+
+  const saved=await srv.post('/api/save',{
+    expectedRevision:6,expectedGeneration:1,
+  });
+  assert.ok(saved.ok,JSON.stringify(saved));
+  await srv.stop();
+  srv=await boot(directory,{legacyFixtureRandom:false});
+  servers.push(srv);
+  const final=await srv.post('/api/load');
+  assert.ok(final.ok);
+  assert.deepEqual(final.state.world,worldAfterOne,
+    'B-43 durable generation persists the identical replay, including unknown EVENT state');
 });

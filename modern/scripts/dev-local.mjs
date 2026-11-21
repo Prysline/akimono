@@ -7,7 +7,9 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {randomInt,randomUUID} from 'node:crypto';
+import {randomUUID} from 'node:crypto';
+import {sourceCommandDraws}
+  from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
@@ -140,7 +142,10 @@ function sampleOriginalPlus(world,timespanSeconds){
   // Reviewed B-37 accepts integer-millionth external rand draws only.
   // Each of 59 PLUS directives takes 1 or 2 random draws in source order.
   // Determine the exact consumed prefix with a NON-COMMITTING GameCore probe.
-  const pool=Array.from({length:118},()=>randomInt(1000000));
+  const pool=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
+    ?Array(118).fill(0)
+    :sourceCommandDraws({world,kind:'reviewed-sparse-all-plus',
+      args:{timespanSeconds},count:118});
   for(let n=59;n<=118;n++){
     const command={kind:'reviewed-sparse-all-plus',
       expectedRevision:world.revision,timespanSeconds,
@@ -158,7 +163,8 @@ function sampleSourceTime(world,minutes){
   // One shared source draw stream: natural sales followed by 59 original PLUS.
   const pool=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
     ?[500000,...Array(120).fill(0)]
-    :Array.from({length:121},()=>randomInt(1000000));
+    :sourceCommandDraws({world,kind:'advance-source-time',
+      args:{shopId:1,minutes},count:121});
   for(let n=59;n<=121;n++){
     const command={kind:'advance-source-time',expectedRevision:world.revision,
       shopId:1,minutes,randomDraws:pool.slice(0,n)};
@@ -314,6 +320,6 @@ const server=http.createServer(async (req,res)=>{
   }
 });
 server.listen(port,'127.0.0.1',()=>{
-  console.log(`商人物語 B-51 本機介面：http://127.0.0.1:${server.address().port}`);
+  console.log(`商人物語 B-54 本機介面：http://127.0.0.1:${server.address().port}`);
   console.log('本機獨立存檔；未按「儲存」的變更仍只在記憶體。Ctrl+C 停止。');
 });
