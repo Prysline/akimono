@@ -64,6 +64,12 @@ sub run {
     $main::ITEM[$entry->{no}]={%$entry,sort=>$i};
   }
   for my $i(1..79){$main::ITEM[$i]{plus}=$plus->[$i-1];}
+  # B-33 compiler bootstrap can reset our local harness clocks. Restore the
+  # original DSL TimeEditShowcase 10m through real original GetTime.
+  die 'B-41 DSL showroom edit time drift' unless
+    OriginalGiftMapUseHarness::source('../../../custom/inc-item-data.cgi')=~/TimeEditShowcase\s+10m/;
+  $TIME_EDIT_SHOWCASE=main::GetTime('10m');
+  die 'B-41 original showroom duration mismatch' unless $TIME_EDIT_SHOWCASE==600;
   my $book=OriginalNaturalSalePlusHarness::compiled_item(10);
   my $gift=OriginalNaturalSalePlusHarness::compiled_item(79);
   die 'B-41 original source #10 compiler drift'

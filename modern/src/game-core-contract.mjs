@@ -145,14 +145,16 @@ export function createMemoryWorldAdapter(initialWorld){
   let current=snapshot(initialWorld);
   return Object.freeze({
     read(){return snapshot(current);},
-    compareAndSwap({expectedRevision,nextWorld}){
+    compareAndSwap({expectedRevision,nextWorld,advanceSeconds=0}){
       integer(expectedRevision,'adapter revision');
+      integer(advanceSeconds,'source-authorized time advance');
       if(current.revision!==expectedRevision)
         return answer(false,'REVISION_CONFLICT',snapshot(current));
       const proposed=snapshot(nextWorld);
       if(proposed.worldId!==current.worldId||
          proposed.streetId!==current.streetId||
-         proposed.nowSeconds!==current.nowSeconds||
+         !Number.isSafeInteger(current.nowSeconds+advanceSeconds)||
+         proposed.nowSeconds!==current.nowSeconds+advanceSeconds||
          proposed.revision!==current.revision+1)
         return answer(false,'INVALID_TRANSITION',snapshot(current));
       current=proposed;
@@ -168,6 +170,8 @@ export function executeMemoryCommand({repository,streetModule,command}){
   if(!proposed.ok)return proposed;
   const committed=repository.compareAndSwap({
     expectedRevision:command.expectedRevision,nextWorld:proposed.world,
+    advanceSeconds:command.kind==='advance-source-time'?
+      command.minutes*60:0,
   });
   if(!committed.ok)return committed;
   return answer(true,'COMMITTED',committed.world,proposed.details);

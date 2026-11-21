@@ -78,3 +78,11 @@ B-39 最終驗證 HEAD `0564a2fbdeb2f26b065adafbc765a0467b59fcf1`，Push／PR �
 - **已有可操作**：由 `cd modern && npm run dev:local` 開啟 `http://127.0.0.1:4173`，店內／市場／倉庫同步顯示來源世界、金錢、行動時間、展示架／真正庫存，按供貨、按買入 #10；無貨按鈕也能實際叫後端拒絕。Node 的 HTTP 實測操作串接真 `Game Core -> StandardStreetModule -> WorldState` 及版本 CAS，不是 JSON demo。原版 B-34 首次市場空白，B-37 59 項 PLUS 與上限檢查提供真正市場貨源，B-40 以原版 `buy-s.cgi` 市場邏輯提交付款與庫存更新。
 - **原版來源特別注意**：`SetWholeStore` 會對全部79格賦值，包含尾端未定義格，Perl `join(',',@DTwholestore)` 仍保留尾端逗號；與首次 B-34 精簡稀疏批發 CSV 不同。Node 以 `sourceWriteShape: whole-store-79` 區分兩種由不同原版流程產生的真實 wire 形狀，後續 PLUS 仍保留該來源長度，避免破壞存檔相容性。
 - **尚未實作**：可在 UI 上架／自然販售、週期時鐘、完整決算、真磁碟存讀、多人。來源供貨時間片不等於經過真實遊戲時間。下一 B-41 優先完成真正買到商品後的上架／售出，留在同一前端驗收。**此段不更動正式 12 項 Notion 任務的完成狀態。**
+
+## B-41｜真正進貨所得商品的原版上架、來源自然販售與可操作時間快轉（2026-11-21）
+
+- B-41 直接擴充 B-40 原版繁中本機 UI：真市場購買 #10 入庫後，在「自店 > 倉庫」用固定原版 `sc-s.cgi` 對應的 `edit-showcase` 合法上架；「自店 > 店內」快轉 1／10／30／60 分鐘或自填 1～60 分鐘。全部送入原本 `GameCore → StandardStreetModule → WorldState CAS`，介面不自行改動金錢、庫存或人氣。
+- 真正時間片使用原版 `inc-turn.cgi` 的自然銷售原文為依據，包含 `GetMarketStatus`、`GetSaleTax`、持有量與人氣／維持費演算，接59項原版 PLUS 與 `CheckWholeStore`，同時計入新的世界時間。Perl 探針直接執行真 `buy-s.cgi → sc-s.cgi → 原版自然販售片段 → 原版 PLUS`，Node/HTTP E2E 需對照現金、日帳、庫存、人氣、79格市場和小數維持費。
+- **仍不表示表格第2/3/4項的通用驗收完成：** 目前只開放單店原價 #10 和單次最多60分鐘；尚不能跨結算線或執行任意商品回呼，沒有支援「連續兩輪＋原版期末結算」與磁碟存讀檔。把時間快轉視為受控來源測試，不將單獨的 B-37 市場供貨子步驟混成完整週期。
+- [可直接手動測試的 B-41 逐步驗收文件](b41-real-market-showcase-natural-sale.md)。此文件只記進度，正式 Notion 02／04／05 不提前標示完成。
+
