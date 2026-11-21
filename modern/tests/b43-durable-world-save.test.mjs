@@ -204,6 +204,10 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   const initialized=await server.post('/api/initialize');
   assert.ok(initialized.ok);
   assert.equal(initialized.state.world.schema,'akimono.memory-world.v2');
+  assert.deepEqual(initialized.state.eventDefinitionStatus,{
+    declared:25,compilerIncluded:17,sourceDisabled:8,
+    runtimeSupported:false,
+  });
   assert.equal(initialized.state.world.period.town.develop,5001);
   assert.equal(initialized.state.world.period.dtPeople,500000);
   assert.deepEqual(initialized.state.world.period.eventState,{},

@@ -1,0 +1,32 @@
+use strict;
+use warnings;
+use utf8;
+use Test::More;
+use FindBin;
+use File::Spec;
+use JSON::PP qw(decode_json);
+my $fn=File::Spec->catfile($FindBin::Bin,'original-b53-event-catalog-probe.pl');
+my $text=qx{perl "$fn"};
+is($?,0,'frozen original compiler GetNumber/GetTime executes on 25 EVENT DSL headers');
+my $data=eval{decode_json($text)};
+ok(!$@&&ref($data)eq'HASH','source event compiler JSON proof readable');
+if(ref($data)eq'HASH'){
+  is($data->{declaredCount},25,'Standard Street original 25 EVENT declarations');
+  is($data->{compiledCount},17,'compiler start -1 excludes eight');
+  is($data->{disabledCount},8,'eight disabled by original compiler');
+  is($data->{zeroStartCount},2,'rebel + guildbattle zero start remain compiled');
+  is($data->{positiveStartCount},15,'fifteen positive-start compiled EVENT definitions');
+  is(scalar(@{$data->{declared}}),25,'source event manifest total');
+  my($happy)=grep{$_->{code}eq'happy'}@{$data->{declared}};
+  is($happy->{startProba},100,'original 10% compiles into 100 permille');
+  is($happy->{baseTimeSeconds},18000,'original 5h duration compiles into seconds');
+  is($happy->{plusTimeSeconds},18000,'original 5h random duration compiles into seconds');
+  my($disabled)=grep{$_->{code}eq'priceup-yakusou'}@{$data->{declared}};
+  is($disabled->{startProba},-1,'last original START -1 overrides earlier 50%');
+  my($rebel)=grep{$_->{code}eq'rebel'}@{$data->{declared}};
+  is($rebel->{startProba},0,'rebel start 0 compiled, not disabled');
+  is($rebel->{callbacks}{now},'_local_','real source rebellion nowfunc remains opaque');
+  my($guild)=grep{$_->{code}eq'guildbattle'}@{$data->{declared}};
+  is($guild->{callbacks}{end},'_local_','real guildbattle endfunc remains opaque');
+}
+done_testing();

@@ -73,10 +73,15 @@ function showState(s){
     (w?'舊版世界（無期別城市資料）':'—'));
   text('period-count',periodState?
     periodState.settledCount+' 期（跨期尚未開放）':'—');
-  text('event-state',!periodState?'舊版世界／尚未取得事件資料':
+  const evDefs=s.eventDefinitionStatus;
+  const eventDefinitionLabel=evDefs?
+    '原版 '+evDefs.declared+' 個事件宣告，'+
+      evDefs.compilerIncluded+' 個由編譯器納入；效果尚未移植。':'';
+  text('event-state',(!periodState?'舊版世界／尚未取得事件資料':
     periodState.eventState===null?
       '未知：時間推進後尚未實作原版 EVENT 回呼':
-      '來源新建世界：目前事件清單為空（尚未開始事件時間片）');
+      '來源新建世界：目前事件清單為空（尚未開始事件時間片）')+
+    (eventDefinitionLabel?' '+eventDefinitionLabel:''));
   text('store-name',shop?.shopname??'未開店');
   text('money',money(shop?.money));text('rank',shop?.rank??'—');
   text('time',shop?Math.max(0,w.nowSeconds-shop.time).toLocaleString('zh-TW')+' 秒':'—');

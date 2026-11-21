@@ -25,6 +25,8 @@ import {reviewOriginalNayutaFuncturn,projectOriginalNayutaFuncturn}
 import {reviewOriginalMarketBuy10,quoteOriginalMarket10,projectOriginalMarketBuy10}
   from './original-market-buy10.mjs';
 import {reviewB41Sale,projectB41Sale} from './original-b41-playable-sale.mjs';
+import {reviewOriginalCompiledEventCatalog}
+  from './original-event-compiled-catalog.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -161,6 +163,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       itemSource:originalBuyItemSource,calcSource:originalBuyCalcSource,
       compilerSource:originalCompilerSource,model,compiled:giftMap,
     });
+  const reviewedEventCatalog=originalCompilerSource&&originalTurnSource?
+    reviewOriginalCompiledEventCatalog({
+      itemDsl,rebelDsl,compilerSource:originalCompilerSource,
+      turnSource:originalTurnSource,
+    }):null;
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
@@ -197,6 +204,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedNayuta,
     reviewedMarketBuy10,
     reviewedB41,
+    reviewedEventCatalog,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },

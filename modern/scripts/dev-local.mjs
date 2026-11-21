@@ -56,6 +56,10 @@ if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
   'buy-market-item-10','edit-showcase','advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('B-40 runtime source-review capabilities missing');
+if(streetModule.reviewedEventCatalog?.declaredCount!==25||
+   streetModule.reviewedEventCatalog.compiledCount!==17||
+   streetModule.reviewedEventCatalog.runtimeSupported!==false)
+  throw Error('B-53 compiled EVENT metadata source review is missing');
 const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
   periodSource:originalPeriodSource,
   adminSource:originalAdminInitSource,
@@ -100,6 +104,12 @@ function state(){
       settledCount:world.period.settledCount,
       activeEventsKnownEmpty:world.period.eventState!==null,
     }:null,
+    eventDefinitionStatus:{
+      declared:streetModule.reviewedEventCatalog.declaredCount,
+      compilerIncluded:streetModule.reviewedEventCatalog.compiledCount,
+      sourceDisabled:streetModule.reviewedEventCatalog.manuallyDisabledCount,
+      runtimeSupported:streetModule.reviewedEventCatalog.runtimeSupported,
+    },
   };
 }
 function commit(command){
