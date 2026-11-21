@@ -60,6 +60,7 @@ const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
   periodSource:originalPeriodSource,
   adminSource:originalAdminInitSource,
   readSource:originalDataReadSource,
+  writeSource:originalDataWriteSource,
   reviewedB41:streetModule.reviewedB41,
 });
 
@@ -97,6 +98,7 @@ function state(){
     sourcePeriodMetadata:world?.period?{
       state:world.period.state,dtPeople:world.period.dtPeople,
       settledCount:world.period.settledCount,
+      activeEventsKnownEmpty:world.period.eventState!==null,
     }:null,
   };
 }

@@ -206,7 +206,8 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   assert.equal(initialized.state.world.schema,'akimono.memory-world.v2');
   assert.equal(initialized.state.world.period.town.develop,5001);
   assert.equal(initialized.state.world.period.dtPeople,500000);
-  assert.equal(initialized.state.world.period.eventState,null);
+  assert.deepEqual(initialized.state.world.period.eventState,{},
+    'original first-world empty active EVENT table is reviewed');
   assert.ok((await server.post('/api/open-shop',{
     expectedRevision:1,ownerName:'實際店主',shopName:'可復原測試商店',
   })).ok);
@@ -261,7 +262,8 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   assert.equal(loaded.state.world.period.town.develop,5001);
   assert.equal(loaded.state.world.period.dtPeople,500000);
   assert.equal(loaded.state.world.period.settledCount,0);
-  assert.equal(loaded.state.world.period.eventState,null);
+  assert.equal(loaded.state.world.period.eventState,null,
+    'source EVENT callbacks not yet executed: active event state unknown');
   assert.equal(loaded.state.shop.item[9],1);
   assert.equal(loaded.state.shop.money,95000);
   assert.equal(loaded.state.shop.paytoday,10000);

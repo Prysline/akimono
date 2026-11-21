@@ -11,6 +11,8 @@ import {ALL_PLUS_SOURCE,projectOriginalSparseAllPlus}
   from './original-sparse-all-plus.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
+import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
+import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
 const bad=x=>{throw new RangeError('B-41 original sale boundary: '+x);};
@@ -56,6 +58,9 @@ export function projectB41Sale({
     world.market.sourceWriteShape!=='whole-store-79'||
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
+  if(world.schema===PERIOD_WORLD_SCHEMA &&
+     !validateOriginalPeriodSeed(world.period))
+    bad('source-initialized city and EVENT state required');
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
     shop.showcase?.length!==1||shop.price?.length!==1||
@@ -152,6 +157,12 @@ export function projectB41Sale({
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
+    // B-41 deliberately omits original EVENT callbacks. From the first
+    // elapsed turn onward, the active event instances are UNKNOWN, even
+    // though the source admin created an empty map at world inception.
+    ...(world.schema===PERIOD_WORLD_SCHEMA?{
+      period:{...world.period,eventState:null},
+    }:{}),
     receipt:{
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,

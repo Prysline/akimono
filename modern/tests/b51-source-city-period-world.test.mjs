@@ -48,6 +48,7 @@ const reviewed=reviewOriginalPeriodBootstrap({
   periodSource:source.originalPeriodSource,
   adminSource:source.originalAdminInitSource,
   readSource:source.originalDataReadSource,
+  writeSource:source.originalDataWriteSource,
   reviewedB41:street.reviewedB41,
 });
 function freshV2(){
@@ -66,7 +67,7 @@ test('B-51 reviewed original B-34/B-46 city init and B-42 36h+3h clock seed exac
   assert.equal(world.period.clockShiftSeconds,10800);
   assert.equal(world.period.settledCount,0);
   assert.equal(world.period.lastSettledBoundarySeconds,null);
-  assert.equal(world.period.eventState,null);
+  assert.deepEqual(world.period.eventState,{});
   assert.equal(world.events,null);
   assert.deepEqual(world.period.town,{
     leader:0,money:0,in:0,out:0,develop:5001,devem:0,
@@ -84,6 +85,7 @@ test('B-51 reviewed original B-34/B-46 city init and B-42 36h+3h clock seed exac
     adminSource:source.originalAdminInitSource.replace(
       '500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0','tampered'),
     readSource:source.originalDataReadSource,
+    writeSource:source.originalDataWriteSource,
     reviewedB41:street.reviewedB41,
   }),/original|town|changed|B-46/);
 });
@@ -111,7 +113,7 @@ test('B-51 real GameCore source market/init and open shop preserve city/period s
   for(const invalid of [
     {...world.period,settledCount:1},
     {...world.period,dtPeople:123456},
-    {...world.period,eventState:{}},
+    {...world.period,eventState:{rebel:123456}},
     {...world.period,town:{...world.period.town,develop:9000}},
   ]){
     assert.throws(()=>store.save({...world,period:invalid},{
@@ -127,7 +129,7 @@ test('B-51 real GameCore source market/init and open shop preserve city/period s
   const resumed=createMemoryWorldAdapter(restored.world);
   assert.equal(resumed.read().period.town.develop,5001);
   assert.equal(resumed.read().period.dtPeople,500000);
-  assert.equal(resumed.read().period.eventState,null);
+  assert.deepEqual(resumed.read().period.eventState,{});
   assert.equal(resumed.read().shops[0].shopname,'保留城市的單店');
 });
 test('B-51 strict period source seed rejects fake settlements and protects old version1 worlds',()=>{
@@ -138,11 +140,14 @@ test('B-51 strict period source seed rejects fake settlements and protects old v
   assert.equal(old.schema,MEMORY_WORLD_SCHEMA);
   assert.equal(Object.hasOwn(old,'period'),false);
   const period=v2.period;
+  assert.deepEqual(period.eventState,{},'fresh source world starts with an empty EVENT CSV');
+  assert.ok(validateOriginalPeriodSeed({...period,eventState:null}),
+    'B-51 v2 saves with unknown events remain readable');
   for(const changes of [
     {dtPeople:600000},{settledCount:1},
     {lastSettledBoundarySeconds:1026000},
     {town:{...period.town,develop:9000}},
-    {eventState:{}},{state:'settled'}, {periodSeconds:86400},
+    {eventState:{rebel:123456}},{state:'settled'}, {periodSeconds:86400},
   ]){
     const changed={...period,...changes};
     assert.equal(validateOriginalPeriodSeed(changed),false);

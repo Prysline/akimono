@@ -7,6 +7,9 @@
  */
 import {reviewOriginalPeriodTerritory}
   from './original-period-territory.mjs';
+import {reviewOriginalEmptyEventBootstrap,createOriginalEmptyEventState,
+  validateOriginalEventBootstrapState,B52_EVENT_BOOTSTRAP}
+  from './original-event-world-bootstrap.mjs';
 export const SOURCE_PERIOD_SEED='standard-street-original-period-bootstrap.v1';
 const fail=s=>{throw new RangeError('B-51 original period bootstrap: '+s);};
 const SOURCE_BOOTSTRAP_META='500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0';
@@ -22,7 +25,7 @@ function plain(v){
       Object.getPrototypeOf(v)===null);
 }
 export function reviewOriginalPeriodBootstrap({
-  periodSource,adminSource,readSource,reviewedB41,
+  periodSource,adminSource,readSource,writeSource,reviewedB41,
 }){
   if(reviewedB41?.periodSeconds!==129600||
      reviewedB41?.clockShiftSeconds!==10800)
@@ -35,12 +38,16 @@ export function reviewOriginalPeriodBootstrap({
      Object.keys(INIT_TOWN).some(k=>territory.initialTown[k]!==INIT_TOWN[k])||
      Object.keys(territory.initialTown).length!==11)
     fail('original city bootstrap changed');
+  const eventBootstrap=reviewOriginalEmptyEventBootstrap({
+    adminSource,readSource,writeSource,
+  });
   return Object.freeze({
     source:SOURCE_PERIOD_SEED,
     periodSeconds:reviewedB41.periodSeconds,
     clockShiftSeconds:reviewedB41.clockShiftSeconds,
     dtPeople:territory.initialDtPeople,
     town:territory.initialTown,
+    eventBootstrap,
     scope:'initial original city/period metadata only, event and complete settlement unsupported',
   });
 }
@@ -48,7 +55,8 @@ export function createOriginalPeriodSeed(reviewed){
   if(reviewed?.source!==SOURCE_PERIOD_SEED||
      reviewed.dtPeople!==500000||
      reviewed.periodSeconds!==129600||
-     reviewed.clockShiftSeconds!==10800)
+     reviewed.clockShiftSeconds!==10800||
+     reviewed.eventBootstrap?.source!==B52_EVENT_BOOTSTRAP)
     fail('reviewed source seed required');
   const record={
     source:SOURCE_PERIOD_SEED,
@@ -58,7 +66,7 @@ export function createOriginalPeriodSeed(reviewed){
     lastSettledBoundarySeconds:null,
     dtPeople:500000,
     town:{...reviewed.town},
-    eventState:null,
+    eventState:createOriginalEmptyEventState(reviewed.eventBootstrap),
   };
   if(!validateOriginalPeriodSeed(record))
     fail('reviewed initial source city must match original');
@@ -80,7 +88,7 @@ export function validateOriginalPeriodSeed(value){
      value.settledCount!==0||
      value.lastSettledBoundarySeconds!==null||
      value.dtPeople!==500000||
-     value.eventState!==null||
+     !validateOriginalEventBootstrapState(value.eventState)||
      !plain(value.town)||Object.keys(value.town).length!==11||
      Object.keys(INIT_TOWN).some(k=>value.town[k]!==INIT_TOWN[k]))
     return false;
