@@ -11,6 +11,7 @@ import {createMemoryWorldAdapter,createPeriodMemoryWorld,
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {sourceCommandDraws} from '../src/local-source-command-draws.mjs';
 import {reviewOriginalLotoStartfunc,projectOriginalLotoStartfunc,
   LOTO_RANGE,B58_LOTO_SOURCE} from '../src/original-b58-loto-startfunc.mjs';
 import {reviewOriginalMarketBuy11,B58_MARKET11_SOURCE}
@@ -275,12 +276,30 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
   const save=createLocalWorldSaveStore({directory});
   save.save(adapter.read(),{expectedGeneration:0});
   assert.deepEqual(save.load().world,result.world);
-  const noLoto=act('advance-source-time-reviewed-events',{
-    shopId:1,minutes:30,saleDraws,
-    eventHashOrderFixture:order,
-    eventDraws:eventDraws({triggerLoto:true,lottery:[]}),
+  // Source sale draws change when the previous slice sold out #10;
+  // discover only the exact valid prefix, like B-56's durable re-entry test.
+  const second=adapter.read();
+  const sourceDrawCandidates=sourceCommandDraws({
+    world:second,kind:'advance-source-time',
+    args:{shopId:1,minutes:10},count:121,
   });
-  assert.ok(noLoto.ok,JSON.stringify(noLoto.details));
+  let noLoto=null;
+  for(let n=1;n<=121;n++){
+    const fields={shopId:1,minutes:10,
+      saleDraws:sourceDrawCandidates.slice(0,n),
+      eventHashOrderFixture:order,
+      eventDraws:eventDraws({triggerLoto:true,lottery:[]})};
+    const trial=applyGameCommand({
+      world:second,streetModule:street,
+      command:{kind:'advance-source-time-reviewed-events',
+        expectedRevision:second.revision,...fields},
+    });
+    if(trial.ok){
+      noLoto=act('advance-source-time-reviewed-events',fields);
+      break;
+    }
+  }
+  assert.ok(noLoto?.ok,'valid next source slice can open empty lottery after restart');
   assert.equal(noLoto.details.lotteryTicketsConsumed,0);
   assert.deepEqual(noLoto.details.eventLogEmissions.map(x=>x.message),
     ['抽獎卷的開獎開始了']);
@@ -307,7 +326,7 @@ test('B-58 lotto missing, malformed, swapped, excess RNG or other source EVENT c
     {eventDraws:correct.map((x,i)=>i===0?
       {range:LOTO_RANGE,result:0}:x)},
     {eventDraws:eventDraws({
-      triggerLoto:true,lottery:[152410,9999],others:['loto','priceup']})},
+      triggerLoto:true,lottery:[152410,9999],others:['happy']})},
     {eventHashOrderFixture:order.slice(1)},
   ]){
     const got=act('advance-source-time-reviewed-events',{...args,...override});
