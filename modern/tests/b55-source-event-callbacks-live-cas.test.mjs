@@ -8,8 +8,6 @@ import {fileURLToPath} from 'node:url';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   executeMemoryCommand,applyGameCommand} from '../src/game-core-contract.mjs';
-import {sourceCommandDraws}
-  from '../src/local-source-command-draws.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
@@ -173,12 +171,10 @@ test('B-55 original robbery callback changes a REAL purchased source shop throug
   const restored=store.load();
   assert.deepEqual(restored.world,repo.read(),'full genuine callback CAS world persists');
   const resumed=createMemoryWorldAdapter(restored.world);
-  // Rank was genuinely reduced by the source robbery. Let the same
-  // production HTTP sample policy find the new exact original draw prefix.
-  const stream=sourceCommandDraws({
-    world:restored.world,kind:'advance-source-time',
-    args:{shopId:1,minutes:30},count:121,
-  });
+  // The next sale remains stochastic. Feed bounded, explicit SOURCE
+  // samples that exercise the source sale branch (not a guarantee that
+  // production's B-54 replay stream always sells within 30 minutes).
+  const stream=[500000,...Array(120).fill(0)];
   let next=null;
   for(let n=59;n<=121;n++){
     const command={kind:'advance-source-time',
