@@ -7,12 +7,15 @@ import {B41_SOURCE,projectB41Sale} from './original-b41-playable-sale.mjs';
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
 import {B55_SOURCE,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
+import {B57_SUPPORT_SOURCE,projectOriginalSupportEventCallback}
+  from './original-b57-support-event-callbacks.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 export const B56_EVENT_SLICE_SOURCE='b56-reviewed-sale-plus-full-17-event-gate-fixture';
 const fail=s=>{throw new RangeError('B-56 original EVENT slice: '+s);};
 const validDraw=x=>Number.isSafeInteger(x)&&x>=0&&x<1000000;
 
-export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,reviewedCallbacks}){
+export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
+  reviewedCallbacks,reviewedSupportCallbacks=null}){
   if(reviewedB41?.source!==B41_SOURCE||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
@@ -44,6 +47,11 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,revi
     'if ($E->{basetime}+$E->{plustime});',
   ])if(!turnSource.includes(needle))
     fail('original event semantics changed '+needle);
+  if(reviewedSupportCallbacks!==null&&(
+     reviewedSupportCallbacks?.source!==B57_SUPPORT_SOURCE||
+     reviewedSupportCallbacks.gateIncluded!==false||
+     reviewedSupportCallbacks.maxMoney!==999999999))
+    fail('reviewed B-57 source callback contract changed');
   const zero=reviewedCatalog.compiled.filter(e=>e.startProba===0);
   if(zero.length!==2||zero.some(e=>e.callbacks.start!==null||
      e.baseTimeSeconds!==0||e.plusTimeSeconds!==0))
@@ -58,18 +66,23 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,revi
     source:B56_EVENT_SLICE_SOURCE,
     eventCodes:Object.freeze(reviewedCatalog.compiled.map(e=>e.code)),
     b41:reviewedB41.source,callbacks:reviewedCallbacks.source,
+    support:reviewedSupportCallbacks?.source??null,
     orderMode:'explicit-17-key-permutation-not-Perl-hash-order',
     publicGameplay:false,
   });
 }
 export function projectB56EventSlice({
   world,reviewed,reviewedB41,reviewedAllPlus,compiled,
-  reviewedCatalog,reviewedCallbacks,shopId,minutes,
+  reviewedCatalog,reviewedCallbacks,reviewedSupportCallbacks=null,
+  shopId,minutes,
   saleDraws,eventDraws,eventHashOrderFixture,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
      reviewed.b41!==reviewedB41?.source||
      reviewed.callbacks!==reviewedCallbacks?.source||
+     reviewed.support!==(reviewedSupportCallbacks?.source??null)||
+     (reviewedSupportCallbacks!==null&&
+       reviewedSupportCallbacks.source!==B57_SUPPORT_SOURCE)||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
      reviewed.orderMode!=='explicit-17-key-permutation-not-Perl-hash-order')
@@ -126,6 +139,19 @@ export function projectB56EventSlice({
       if(effect.message!==null)
         messages.push({eventCode:code,message:effect.message});
       // ret=0: not in group, not in active DTevent, no startmsg.
+      continue;
+    }
+    if((code==='getmoney'||code==='getpop')&&reviewedSupportCallbacks){
+      const effect=projectOriginalSupportEventCallback({
+        reviewed:reviewedSupportCallbacks,shop,eventCode:code,
+        randomDraws:[take()],
+      });
+      if(effect.returnCode!==0||effect.eventPersisted!==false)
+        fail('support STARTFUNC must never persist as active EVENT');
+      shop=effect.shop;callbackCount++;
+      if(effect.message!==null)
+        messages.push({eventCode:code,message:effect.message});
+      // Source ret=0: no group, startmsg or active event.
       continue;
     }
     if(event.startProba!==0||event.callbacks.start!==null||
