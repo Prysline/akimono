@@ -131,3 +131,9 @@ B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；�
 在 B-50 真來源同一間商店／城市連續兩期整合驗證後，新增有來源語義閘的 `akimono.memory-world.v2` 第九欄 `period`：只有透過原版 Admin + Core STATE 真初始資料確認的城市／人口、原版36h期界 +3h、`settledCount:0`、`eventState:null` 才能由本機來源商店服務建立並雙世代落盤。新增世界真商品 #10 買入、展示架、自然販售及存檔／載入之後城市資料保留，畫面顯示初始人口500000、發展5001、治安5001、已結算0期；已存在的 v1 世界保持原 schema 不默默升級，舊存檔仍可讀寫。B-43 新的 HTTP 殺 Node → 重開載入 E2E 驗證 v2 的城市仍在；偽造 `settledCount`、修改城市、捏造 EVENT 會被 B-43 磁碟校驗拒絕。[B-51 城市／期別玩家流程和限制](b51-original-period-world-v2.md)。
 
 **核心距離完成還有一段：v2 存的是「初始化城市」，不是已結算的真城市！** `B-50` 同世界兩期仍 `nonCommittable`；EVENT 及 FUNCTURN/FUNCSALE、全期真轉場與原版檔案效果尚需完成，跨期拒絕維持。接下來優先把 B-50 的完整原版期末前綴與必要 EVENT、營業自然販售、59 PLUS 串為單一來源正確 WorldState CAS，再驗證36h跨界、磁碟落盤、重啟續買續售才准使用者一次集中手動確認。仍不更動 main／migration／固定 Core／DSL 或 Draft PR 狀態。
+
+## 2026-11-21｜B-52 真原版事件初始 CSV／未知狀態保持，仍需完整 EVENT 生命週期
+
+固定 Admin 初始 `play.cgi` 的第四行是 EVENT 空白 CSV；固定 `DataRead` 真的以 `%DTevent=split(/,/,$DATA[$idx++]);` 解析，固定 `DataWrite` 以 `join(",",%DTevent)` 落盤，B-52 Perl 真執行了來源空表及測試單事件的讀寫往返（非虛構事件）。新 B-51 v2 世界 `period.eventState={}` 只代表**剛建立、沒有發生過任何時間片**的零活動事件；B-41 原版自然販售＋PLUS 雖可讓玩家在同一世界繼續經營，但因原版完整 EVENT 回呼尚未執行，時間推進後立即記 `eventState:null` 為「未知」，B-43 真存檔重啟載入與繁中 UI 同樣保持這個狀態。舊版 v2 `null` 存檔保留相容，偽造如 `{rebel:123456}` 等未經來源事件引擎批准的 state 仍拒絕。[原版 B-52 讀寫證據及下一步](b52-original-event-state-source.md)。
+
+玩家驗收門檻不變：**尚不能跨36小時期末**。必須完成真正 Standard Street 原版 EVENT 定義／機率／群組／到期／startfunc/endfunc/nowfunc、商品 FUNCTURN/FUNCSALE、原版完整期末＋B-50 同城兩期，將 v2 period/shop/market/events 在一筆合法 CAS 原子轉場並可 B-43 磁碟重啟續營；不能以空 EVENT 取代未知或利用重抽避開觸發。維持來源 Perl／Node／HTTP 同步測試、同 SHA Push/PR 雙 CI、Draft PR 不合併、main／migration／原始 Core CGI／DSL 不變，使用者完整閉環後一次集中人工驗收。
