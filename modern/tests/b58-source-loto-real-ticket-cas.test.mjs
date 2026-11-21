@@ -301,7 +301,8 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
   assert.deepEqual(save.load().world,result.world);
   // Source sale draws change when the previous slice sold out #10;
   // discover only the exact valid prefix, like B-56's durable re-entry test.
-  const second=adapter.read();
+  const reloadedAdapter=createMemoryWorldAdapter(save.load().world);
+  const second=reloadedAdapter.read();
   const sourceDrawCandidates=sourceCommandDraws({
     world:second,kind:'advance-source-time',
     args:{shopId:1,minutes:10},count:121,
@@ -318,7 +319,10 @@ test('B-58 real bought tickets: source natural sale/59 PLUS -> original lotto ti
         expectedRevision:second.revision,...fields},
     });
     if(trial.ok){
-      noLoto=act('advance-source-time-reviewed-events',fields);
+      noLoto=executeMemoryCommand({repository:reloadedAdapter,
+        streetModule:street,
+        command:{kind:'advance-source-time-reviewed-events',
+          expectedRevision:second.revision,...fields}});
       break;
     }
   }
