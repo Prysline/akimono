@@ -60,6 +60,7 @@ jobs:
           npm run demo:original-plus
           npm run demo:original-multi-plus
           npm run demo:original-all-plus
+          npm run demo:original-natural-plus
       - name: Verify pinned original Core source blobs
         run: |
           test "$(git hash-object modern/tests/original-perl/calc.cgi)" = "586354a9a300e26d0e12a4efa512fa25760e3197"
@@ -85,6 +86,9 @@ jobs:
       - name: Verify pinned untouched original Core admin initializer
         run: |
           test "$(git hash-object modern/tests/original-perl/core-inc-admin-func.cgi)" = "2164b7e5abfea7a466235a8deba1543c2cc41515"
+      - name: Verify B-38 untouched original Core detail tax source blob
+        run: |
+          test "$(git hash-object modern/tests/original-perl/core-detail.cgi)" = "9a83d26fb29edee4032958f1e6de837a250f3384"
       - name: Run isolated original Perl Core tests
         working-directory: modern/tests/original-perl
         run: prove -v *.t
