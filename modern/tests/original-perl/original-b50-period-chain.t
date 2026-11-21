@@ -35,11 +35,11 @@ if(ref($proof)eq'HASH'){
      'second period uses first new city population');
   is($one->{drawsUsed},3,'first period exactly prize and two town source draws');
   is($two->{drawsUsed},3,'second period source dice do not restart hidden state');
-  is($two->{input}{shop}{item}[78],$one->{shop}{item}[78],
+  is($rows[1]->{input}{shop}{item}[78],$one->{shop}{item}[78],
      'source second round sees first-round real awarded stock');
-  is($two->{input}{shop}{paytoday},$one->{shop}{paytoday},
+  is($rows[1]->{input}{shop}{paytoday},$one->{shop}{paytoday},
      'source second round sees first-round maintenance as current purchase');
-  is($two->{input}{town}{develop},$one->{town}{develop},
+  is($rows[1]->{input}{town}{develop},$one->{town}{develop},
      'source second round sees first-round city development');
 }
 done_testing();
