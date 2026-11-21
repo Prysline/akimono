@@ -14,6 +14,8 @@ import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparsePlusTurn,projectOriginalSparsePlusTurn}
   from './original-sparse-wholesale-plus.mjs';
+import {reviewOriginalSparseMultiPlus,projectOriginalSparseMultiPlus}
+  from './original-sparse-multi-plus.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -105,6 +107,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       turnSource:originalTurnSource,wholeSource:originalWholeSource,
       configSource:originalConfigSource,model,compiled:giftMap,
     });
+  const reviewedMultiPlus=reviewedSparsePlus?
+    reviewOriginalSparseMultiPlus({
+      turnSource:originalTurnSource,wholeSource:originalWholeSource,
+      configSource:originalConfigSource,model,compiled:giftMap,
+    }):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -119,12 +126,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     capabilities:Object.freeze([...actions,
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
+      ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
     ]),
     metadata,
     catalog,
     reviewedGiftMapUse:giftMap,
     reviewedBootstrap,
     reviewedSparsePlus,
+    reviewedMultiPlus,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -166,6 +175,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         ownKeysExact(command,['timespanSeconds','randomDraws']);
         return projectOriginalSparsePlusTurn({
           world,reviewed:reviewedSparsePlus,compiled:giftMap,
+          timespanSeconds:command.timespanSeconds,randomDraws:command.randomDraws,
+        });
+      }
+      if(command.kind==='reviewed-sparse-multi-plus'&&reviewedMultiPlus){
+        ownKeysExact(command,['timespanSeconds','randomDraws']);
+        return projectOriginalSparseMultiPlus({
+          world,reviewed:reviewedMultiPlus,compiled:giftMap,
           timespanSeconds:command.timespanSeconds,randomDraws:command.randomDraws,
         });
       }

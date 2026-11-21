@@ -37,6 +37,7 @@
     "demo:world-use": "node scripts/demo-world-use-sequence.mjs",
     "demo:real-gift-use": "node scripts/demo-real-gift-maps.mjs",
     "demo:original-plus": "node scripts/demo-original-sparse-plus.mjs",
+    "demo:original-multi-plus": "node scripts/demo-original-sparse-multi-plus.mjs",
     "demo:original-market-init": "node scripts/demo-original-sparse-market.mjs"
   }
 }
