@@ -16,6 +16,8 @@ import {reviewOriginalSparsePlusTurn,projectOriginalSparsePlusTurn}
   from './original-sparse-wholesale-plus.mjs';
 import {reviewOriginalSparseMultiPlus,projectOriginalSparseMultiPlus}
   from './original-sparse-multi-plus.mjs';
+import {reviewOriginalSparseAllPlus,projectOriginalSparseAllPlus}
+  from './original-sparse-all-plus.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -82,6 +84,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalAdminInitSource=null,originalDataReadSource=null,
   originalDataWriteSource=null,
   originalTurnSource=null,originalWholeSource=null,originalConfigSource=null,
+  originalCompilerSource=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
@@ -112,6 +115,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       turnSource:originalTurnSource,wholeSource:originalWholeSource,
       configSource:originalConfigSource,model,compiled:giftMap,
     }):null;
+  if(originalCompilerSource!==null&&!reviewedMultiPlus)
+    bad('B-37 compiler source requires full reviewed bootstrap and turn sources');
+  const reviewedAllPlus=originalCompilerSource===null?null:
+    reviewOriginalSparseAllPlus({
+      turnSource:originalTurnSource,wholeSource:originalWholeSource,
+      configSource:originalConfigSource,compilerSource:originalCompilerSource,
+      model,compiled:giftMap,
+    });
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -127,6 +138,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
+      ...(reviewedAllPlus?['reviewed-sparse-all-plus']:[]),
     ]),
     metadata,
     catalog,
@@ -134,6 +146,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedBootstrap,
     reviewedSparsePlus,
     reviewedMultiPlus,
+    reviewedAllPlus,
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -182,6 +195,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         ownKeysExact(command,['timespanSeconds','randomDraws']);
         return projectOriginalSparseMultiPlus({
           world,reviewed:reviewedMultiPlus,compiled:giftMap,
+          timespanSeconds:command.timespanSeconds,randomDraws:command.randomDraws,
+        });
+      }
+      if(command.kind==='reviewed-sparse-all-plus'&&reviewedAllPlus){
+        ownKeysExact(command,['timespanSeconds','randomDraws']);
+        return projectOriginalSparseAllPlus({
+          world,reviewed:reviewedAllPlus,compiled:giftMap,
           timespanSeconds:command.timespanSeconds,randomDraws:command.randomDraws,
         });
       }
