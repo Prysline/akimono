@@ -13,6 +13,10 @@ import {parseDsl} from './parse-dsl.mjs';
 import {compileOrderedItemLimit,compileLiteralItemLimit}
   from './item-limit-model.mjs';
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
+import {
+  ORIGINAL_SPARSE_MARKET_SOURCE,traceOriginalSparseGiftWholesale,
+  validateSourceSparseMarket,
+} from './original-admin-world-bootstrap.mjs';
 
 const fail=s=>{throw new RangeError('B-33 reviewed gift map: '+s);};
 const integer=(v,n,min=0)=>{
@@ -147,9 +151,15 @@ export function projectReviewedGiftMapUse({
   if(!compiled||compiled.itemId!==79||compiled.useNo!==0)
     fail('unreviewed compiled rule');
   if(!world||world.streetId!=='standard-street')fail('street ID');
-  if(!world.market||world.market.source!=='explicit-b33-test-fixture'||
+  const isOriginalSparse=world.market?.source===ORIGINAL_SPARSE_MARKET_SOURCE;
+  if(!world.market||
+      (world.market.source!=='explicit-b33-test-fixture'&&
+       !isOriginalSparse)||
       !Array.isArray(world.market.wholesale)||
-      world.market.wholesale.length!==79)fail('missing explicit 79-slot test wholesale');
+      world.market.wholesale.length!==79)
+    fail('missing reviewed source bootstrap or explicit 79-slot test wholesale');
+  if(isOriginalSparse&&!validateSourceSparseMarket(world.market))
+    fail('invalid original sparse bootstrap provenance/wire data');
   world.market.wholesale.forEach((n,i)=>integer(n,'wholesale '+i));
   if(!Array.isArray(world.shops)||!world.shops.length||
      world.shops.length>12)fail('shop list');
@@ -182,13 +192,16 @@ export function projectReviewedGiftMapUse({
   });
   if(original.count===0)fail('source use count zero: no operation');
   if(original.count<0)fail('unreviewed negative use count');
+  const market=isOriginalSparse
+    ?traceOriginalSparseGiftWholesale({world,compiled,original})
+    :{...world.market,wholesale:[...original.wholesale]};
   return freeze({
     shops:world.shops.map((entry,i)=>i===acting?{
       ...entry,
       item:[...original.shops[i]],money:original.money,
       paytoday:original.paytoday,time:original.storedTimeSeconds,
     }:{...entry,item:[...original.shops[i]]}),
-    market:{...world.market,wholesale:[...original.wholesale]},
+    market,
     receipt:{
       action:'gift-exchange-maps',shopId,originalItemId:79,useNo:0,
       sourceFile:compiled.sourceFile,sourceLine:compiled.sourceLine,
@@ -206,7 +219,9 @@ export function projectReviewedGiftMapUse({
       originalFunctionReturn:null,
       originalResultOk:compiled.resultOk,
       originalWholeStoreChecks:original.wholeStoreChecks,
-      sourceScope:'real Standard Street gift USE #0, source deterministic, explicitly seeded synthetic wholesale; no real CGI/persistence',
+      sourceScope:isOriginalSparse
+        ?'real #79 gift USE on pinned Core sparse admin-init projection; memory numeric arithmetic and separately traced original wholesale wire; NO CGI/persistence'
+        :'real Standard Street gift USE #0, source deterministic, explicitly seeded synthetic wholesale; no real CGI/persistence',
     },
   });
 }
