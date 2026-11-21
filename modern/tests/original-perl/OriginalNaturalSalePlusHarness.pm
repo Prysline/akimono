@@ -48,6 +48,10 @@ sub bootstrap {
     die 'B-38 instrumentation source drift' unless $pos>=0;
     substr($part,$pos,0,$expr);
   };
+  $insert->('if($itemno>0 && $price>0 && $DT->{item}[$itemno-1])',
+    '$main::B38_SEEN_ITEMNO=$itemno; $main::B38_SEEN_PRICE=$price; $main::B38_SEEN_STOCK=$DT->{item}[$itemno-1]//0; ');
+  $insert->('if($itemno && $DT->{item}[$itemno-1])',
+    '$main::B38_SALE_ITEMNO=$itemno; $main::B38_SALE_STOCK=$DT->{item}[$itemno-1]//0; ');
   $insert->('GetMarketStatus();',
     '$main::B38_PRE_BASE=$ITEM[10]->{buypeoplebase}//0; ');
   $insert->('$sale=int($sale);',
@@ -130,6 +134,11 @@ sub run {
       originalPreBase=>0+($main::B38_PRE_BASE//0),
       originalBuyers=>0+($main::B38_BUYERS//0),
       originalRawSale=>0+($main::B38_SALE_RAW//0),
+      firstItemNo=>0+($main::B38_SEEN_ITEMNO//0),
+      firstPrice=>0+($main::B38_SEEN_PRICE//0),
+      firstStock=>0+($main::B38_SEEN_STOCK//0),
+      saleItemNo=>0+($main::B38_SALE_ITEMNO//0),
+      saleStock=>0+($main::B38_SALE_STOCK//0),
     },
     money=>0+$shop->{money},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
