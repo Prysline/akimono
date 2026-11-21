@@ -163,7 +163,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
-      reviewedBuy:reviewedMarketBuy10,reviewedAllPlus}):null;
+      reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
+      configSource:originalConfigSource}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',

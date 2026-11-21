@@ -62,8 +62,14 @@ const send=(res,status,obj)=>{
 };
 function state(){
   const world=repo?.read()??null;
+  const period=streetModule.reviewedB41.periodSeconds;
+  const shift=streetModule.reviewedB41.clockShiftSeconds;
+  const nextSettlementAtSeconds=world?
+    (Math.floor((world.nowSeconds+shift)/period)+1)*period-shift:null;
   return {
     world,
+    nextSettlementAtSeconds,
+    secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
     item10:world?.market?streetModule.quoteMarketItem10(world):null,
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',

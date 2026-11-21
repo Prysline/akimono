@@ -54,6 +54,11 @@ function showState(s){
   text('world-id',w?.worldId??'尚未建立');
   text('revision',w?.revision??'—');
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
+  const left=s.secondsUntilSettlement;
+  text('settlement-status',w&&Number.isSafeInteger(left)?
+    '距下次決算 '+Math.floor(left/3600)+' 小時 '+
+      Math.floor((left%3600)/60)+' 分 '+left%60+' 秒（跨期尚未開放）':
+    '下次決算：未開放');
   text('store-name',shop?.shopname??'未開店');
   text('money',money(shop?.money));text('rank',shop?.rank??'—');
   text('time',shop?Math.max(0,w.nowSeconds-shop.time).toLocaleString('zh-TW')+' 秒':'—');

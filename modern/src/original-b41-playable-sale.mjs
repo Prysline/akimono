@@ -18,7 +18,13 @@ const safe=(x,label,min=0)=>{
   if(!Number.isSafeInteger(x)||x<min)bad(label);
   return x;
 };
-export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus}){
+export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,configSource}){
+  // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
+  if(typeof configSource!=='string'||
+     !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
+     !/\$DATE_REVISE_TIME\s*=\s*3600\*6\s*;/.test(configSource)||
+     !/\$TZ_JST\s*=\s*60\*60\*9\s*;/.test(configSource))
+    bad('fixed original 36-hour period and JST/revision offsets changed');
   if(reviewedNatural?.source!==NATURAL_PLUS_SOURCE||
     reviewedNatural.saleItemId!==10||reviewedNatural.salePrice!==5000||
     reviewedNatural.popularSeconds!==1728000||reviewedNatural.point!==200000||
@@ -30,7 +36,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus}){
     bad('frozen B-38/B-40 source contracts must both be reviewed');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
-    maxMinutes:60,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
+    maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
   });
 }
 
@@ -73,8 +79,13 @@ export function projectB41Sale({
   // 36-hour settlement boundary is rejected, not silently skipped.
   safe(world.nowSeconds,'world clock');
   const nextTime=safe(world.nowSeconds+span,'advanced world clock');
-  // Source 36-hour settlement is based on the JST 9-hour offset.
-  const period=36*3600,shift=9*3600;
+  // Original inc-turn: NOW_TIME + TZ_JST - DATE_REVISE_TIME,
+  // Standard Street 36h period, JST +9h, date revision 6h => +3h.
+  const period=reviewed.periodSeconds,shift=reviewed.clockShiftSeconds;
+  if(period!==129600||shift!==10800||
+     !Number.isSafeInteger(world.nowSeconds+shift)||
+     !Number.isSafeInteger(nextTime+shift))
+    bad('unreviewed or unsafe source period clock');
   if(Math.floor((world.nowSeconds+shift)/period)!==
      Math.floor((nextTime+shift)/period))
     bad('this interval crosses original period settlement; not yet supported');

@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {execFileSync,spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand}
+import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand,applyGameCommand}
   from '../src/game-core-contract.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 
@@ -129,6 +129,24 @@ test('B-42 actual two market acquisitions and two natural sales share a single W
   assert.equal(stale.code,'REVISION_CONFLICT');
   assert.equal(JSON.stringify(repository.read()),before);
 });
+test('B-42 original +3h clock shift gates the real 36-hour settlement boundary',()=>{
+  const {repository}=setup();
+  const world=repository.read();
+  const period=36*3600,shift=9*3600-6*3600;
+  assert.equal(street.reviewedB41.periodSeconds,period);
+  assert.equal(street.reviewedB41.clockShiftSeconds,shift);
+  const next=(Math.floor((world.nowSeconds+shift)/period)+1)*period-shift;
+  assert.equal(next,1026000);
+  const near={...world,nowSeconds:next-300};
+  const before=JSON.stringify(repository.read());
+  const result=applyGameCommand({world:near,streetModule:street,
+    command:{kind:'advance-source-time',expectedRevision:near.revision,
+      shopId:1,minutes:10,randomDraws:[]}});
+  assert.equal(result.ok,false);
+  assert.match(result.details.reason,/crosses original period settlement/);
+  assert.equal(JSON.stringify(repository.read()),before);
+});
+
 test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf without fake stock',async t=>{
   const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
     cwd:path.join(root,'modern'),
@@ -157,7 +175,12 @@ test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf
     });
     return {status:response.status,...await response.json()};
   };
-  assert.ok((await post('/api/initialize')).ok);
+  const initialized=await post('/api/initialize');
+  assert.ok(initialized.ok);
+  assert.equal(initialized.state.nextSettlementAtSeconds,1026000);
+  assert.equal(initialized.state.secondsUntilSettlement,26000);
+  const page=await (await fetch(url)).text();
+  assert.match(page,/id="settlement-status"/);
   assert.ok((await post('/api/open-shop',{
     expectedRevision:1,ownerName:'測試店主',shopName:'第二輪商店',
   })).ok);
@@ -191,6 +214,7 @@ test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf
   const idle=await post('/api/advance-time',{expectedRevision:8,minutes:10});
   assert.ok(idle.ok,JSON.stringify(idle));
   assert.equal(idle.state.world.revision,9);
+  assert.equal(idle.state.secondsUntilSettlement,21800);
   assert.equal(idle.details.naturalSaleCount,0);
   assert.equal(idle.state.shop.temprank,second.state.shop.rank+1000);
   assert.equal(idle.state.shop.money,100000);
