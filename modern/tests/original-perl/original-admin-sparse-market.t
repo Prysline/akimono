@@ -42,7 +42,7 @@ is($one->{wholesaleSlots},79,
   'B-34 original CheckWholeStore assignment to slot79 extends initially empty array');
 is_deeply($one->{wholesaleDefinedSlots},[78],
   'B-34 only slot #79 is assigned; 78 prior positions remain undef');
-is($one->{wholesaleCsv},','x78.'0',
+is($one->{wholesaleCsv},(',' x 78).'0',
   'B-34 actual original writer join semantics 78 commas then one zero');
 is(scalar(split(/,/,$one->{wholesaleCsv},-1)),79,
   'B-34 sparse after source transaction writes 79 delimitable columns');
