@@ -16,7 +16,7 @@ require './calc.cgi';
 require './item.cgi';
 require './whole.cgi';
 sub l {return $_[0];}
-sub OutError {die "GAME_ERROR:".$_[0]."\n";}
+sub OutError {$last_error=$_[0];die "GAME_ERROR:".$_[0]."\n";}
 sub Lock {1}
 sub UnLock {1}
 sub DataRead {1}
@@ -73,6 +73,11 @@ sub buy {
   $last_error='';
   my $ok=eval {do './buy-s.cgi';1;};
   my $message=$@;
+  # Perl do FILE may return undef while leaving $@ empty. Capture our
+  # original OutError hook independently, and fail closed when neither
+  # CGI completion nor a recognized source refusal was observed.
+  $message="GAME_ERROR:$last_error" if $last_error && !$message;
+  $message='PERL_SOURCE_DID_NOT_COMPLETE' if !$message && !$rendered;
   return {
     passed=>$rendered>0,reason=>$message,
     money=>$DT->{money},paid=>$DT->{paytoday},
