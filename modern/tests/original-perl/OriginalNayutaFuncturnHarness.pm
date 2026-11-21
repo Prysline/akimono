@@ -67,7 +67,7 @@ sub bootstrap {
   # Original frozen compiler emits:
   # package item; sub _local_ { eval(<<'_eval_code_'); ... _eval_code_ }
   # The inline code is copied, not rewritten or precomputed.
-  my $program="package item; use utf8;\n".
+  my $program="package item; no strict; no warnings; use utf8;\n".
     "sub _local_ { eval(<<'_eval_code_');\n".$body.
     "\n_eval_code_\n}\n1;\n";
   my $ok=eval $program;
