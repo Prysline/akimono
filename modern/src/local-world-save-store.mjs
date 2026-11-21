@@ -7,8 +7,10 @@
 import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
-import {validateMemoryWorld,encodeMemorySnapshot,decodeMemorySnapshot}
-  from './game-core-contract.mjs';
+import {validateMemoryWorld,encodeMemorySnapshot,decodeMemorySnapshot,
+  PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
+import {validateOriginalPeriodSeed}
+  from './original-period-world-seed.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 
@@ -22,6 +24,8 @@ function safeInt(value,label,min=0){
 }
 function reviewedPlayableWorld(raw){
   const w=validateMemoryWorld(raw);
+  if(w.schema===PERIOD_WORLD_SCHEMA&&!validateOriginalPeriodSeed(w.period))
+    fail('unreviewed or settled v2 city/period source state');
   if(w.streetId!=='standard-street'||w.events!==null||w.shops.length>1||
      !validateSourceSparseMarket(w.market))
     fail('only source-initialized single-shop Standard Street world is loadable');

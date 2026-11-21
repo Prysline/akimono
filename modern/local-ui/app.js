@@ -66,6 +66,13 @@ function showState(s){
     '距下次決算 '+Math.floor(left/3600)+' 小時 '+
       Math.floor((left%3600)/60)+' 分 '+left%60+' 秒（跨期尚未開放）':
     '下次決算：未開放');
+  const periodState=w?.period??null;
+  text('city-seed',periodState?
+    '初始人口 '+periodState.dtPeople.toLocaleString('zh-TW')+
+    '（發展 '+periodState.town.develop+'／治安 '+periodState.town.safety+'）':
+    (w?'舊版世界（無期別城市資料）':'—'));
+  text('period-count',periodState?
+    periodState.settledCount+' 期（跨期尚未開放）':'—');
   text('store-name',shop?.shopname??'未開店');
   text('money',money(shop?.money));text('rank',shop?.rank??'—');
   text('time',shop?Math.max(0,w.nowSeconds-shop.time).toLocaleString('zh-TW')+' 秒':'—');

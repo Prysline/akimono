@@ -10,8 +10,10 @@ import path from 'node:path';
 import {randomInt,randomUUID} from 'node:crypto';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
+  from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
-import {createMemoryWorld,createMemoryWorldAdapter,
+import {createPeriodMemoryWorld,createMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -25,6 +27,7 @@ const [
   originalConfigSource,originalCompilerSource,originalBuySource,
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
+  originalPeriodSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -39,6 +42,7 @@ const [
   'modern/tests/original-perl/market.cgi',
   'modern/tests/original-perl/item.cgi',
   'modern/tests/original-perl/core-detail.cgi',
+  'modern/tests/original-perl/period.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -52,6 +56,12 @@ if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
   'buy-market-item-10','edit-showcase','advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('B-40 runtime source-review capabilities missing');
+const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
+  periodSource:originalPeriodSource,
+  adminSource:originalAdminInitSource,
+  readSource:originalDataReadSource,
+  reviewedB41:streetModule.reviewedB41,
+});
 
 let repo=null;
 const saveStore=createLocalWorldSaveStore({
@@ -83,6 +93,11 @@ function state(){
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
+    sourceCityState:world?.period?.town??null,
+    sourcePeriodMetadata:world?.period?{
+      state:world.period.state,dtPeople:world.period.dtPeople,
+      settledCount:world.period.settledCount,
+    }:null,
   };
 }
 function commit(command){
@@ -189,8 +204,9 @@ async function api(req,res,url){
       const nowSeconds=process.env.AKIMONO_E2E_FIXED_NOW===undefined?
          Math.floor(Date.now()/1000):commandNumber(
            Number(process.env.AKIMONO_E2E_FIXED_NOW),'AKIMONO_E2E_FIXED_NOW',1);
-      const w=createMemoryWorld({worldId:randomUUID(),
-        streetId:streetModule.id,nowSeconds});
+      const w=createPeriodMemoryWorld({worldId:randomUUID(),
+        streetId:streetModule.id,nowSeconds,
+        period:createOriginalPeriodSeed(reviewedPeriodSeed)});
       const staged=createMemoryWorldAdapter(w);
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
@@ -286,6 +302,6 @@ const server=http.createServer(async (req,res)=>{
   }
 });
 server.listen(port,'127.0.0.1',()=>{
-  console.log(`商人物語 B-43 本機介面：http://127.0.0.1:${server.address().port}`);
+  console.log(`商人物語 B-51 本機介面：http://127.0.0.1:${server.address().port}`);
   console.log('本機獨立存檔；未按「儲存」的變更仍只在記憶體。Ctrl+C 停止。');
 });

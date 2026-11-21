@@ -9,6 +9,7 @@
  * GameCore never knows specific items, prices, DSL, or rules.
  */
 export const MEMORY_WORLD_SCHEMA='akimono.memory-world.v1';
+export const PERIOD_WORLD_SCHEMA='akimono.memory-world.v2';
 function reject(msg){throw new RangeError('B-31 contract: '+msg);}
 function integer(v,name,min=0){
   if(!Number.isSafeInteger(v)||v<min)reject(name);
@@ -61,10 +62,16 @@ function freeze(v){
 }
 function snapshot(world){
   const w=copyJson(world,'WorldState');
-  if(!plain(w)||Object.keys(w).length!==8||
-    !['schema','worldId','streetId','revision','nowSeconds','shops','market','events']
-      .every(k=>Object.hasOwn(w,k)))reject('unexpected world fields');
-  if(w.schema!==MEMORY_WORLD_SCHEMA)reject('schema mismatch');
+  if(!plain(w))reject('world record');
+  const periodWorld=w.schema===PERIOD_WORLD_SCHEMA;
+  if(!periodWorld&&w.schema!==MEMORY_WORLD_SCHEMA)
+    reject('schema mismatch');
+  const required=['schema','worldId','streetId','revision',
+    'nowSeconds','shops','market','events',
+    ...(periodWorld?['period']:[])];
+  if(Object.keys(w).length!==required.length||
+     required.some(k=>!Object.hasOwn(w,k)))
+    reject('unexpected world fields');
   if(typeof w.worldId!=='string'||!w.worldId||w.worldId.length>100)
     reject('worldId');
   if(typeof w.streetId!=='string'||!w.streetId||w.streetId.length>100)
@@ -81,12 +88,22 @@ function snapshot(world){
   }
   if(w.market!==null&&!plain(w.market))reject('market');
   if(w.events!==null&&!plain(w.events))reject('events');
+  // GameCore only owns the opaque JSON period envelope. The trusted
+  // StreetModule/local store MUST validate source-specific city semantics.
+  if(periodWorld&&!plain(w.period))reject('period record');
   return freeze(w);
 }
 export function createMemoryWorld({worldId,streetId,nowSeconds}){
   return snapshot({
     schema:MEMORY_WORLD_SCHEMA,worldId,streetId,revision:0,
     nowSeconds,shops:[],market:null,events:null,
+  });
+}
+/** Opt-in source-reviewed period envelope; existing v1 games remain intact. */
+export function createPeriodMemoryWorld({worldId,streetId,nowSeconds,period}){
+  return snapshot({
+    schema:PERIOD_WORLD_SCHEMA,worldId,streetId,
+    revision:0,nowSeconds,shops:[],market:null,events:null,period,
   });
 }
 export function validateMemoryWorld(world){return snapshot(world);}
@@ -128,10 +145,15 @@ export function applyGameCommand({world,command,streetModule}){
   }
   if(!plain(applied)||!Array.isArray(applied.shops)||
      !plain(applied.receipt))reject('street result shape');
+  if(original.schema===MEMORY_WORLD_SCHEMA&&Object.hasOwn(applied,'period'))
+    reject('legacy world cannot silently acquire unvalidated period state');
   const after=snapshot({
     ...original,shops:applied.shops,
     market:applied.market===undefined?original.market:applied.market,
     events:applied.events===undefined?original.events:applied.events,
+    ...(original.schema===PERIOD_WORLD_SCHEMA?{
+      period:applied.period===undefined?original.period:applied.period,
+    }:{}),
     nowSeconds:applied.nowSeconds===undefined?original.nowSeconds:applied.nowSeconds,
     revision:original.revision+1,
   });
@@ -153,6 +175,7 @@ export function createMemoryWorldAdapter(initialWorld){
       const proposed=snapshot(nextWorld);
       if(proposed.worldId!==current.worldId||
          proposed.streetId!==current.streetId||
+         proposed.schema!==current.schema||
          !Number.isSafeInteger(current.nowSeconds+advanceSeconds)||
          proposed.nowSeconds!==current.nowSeconds+advanceSeconds||
          proposed.revision!==current.revision+1)

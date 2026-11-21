@@ -201,7 +201,12 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   const html=await (await fetch(server.url)).text();
   assert.match(html,/id="save-world"/);
   assert.match(html,/id="load-world"/);
-  assert.ok((await server.post('/api/initialize')).ok);
+  const initialized=await server.post('/api/initialize');
+  assert.ok(initialized.ok);
+  assert.equal(initialized.state.world.schema,'akimono.memory-world.v2');
+  assert.equal(initialized.state.world.period.town.develop,5001);
+  assert.equal(initialized.state.world.period.dtPeople,500000);
+  assert.equal(initialized.state.world.period.eventState,null);
   assert.ok((await server.post('/api/open-shop',{
     expectedRevision:1,ownerName:'實際店主',shopName:'可復原測試商店',
   })).ok);
@@ -252,6 +257,11 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   assert.ok(loaded.ok,JSON.stringify(loaded));
   assert.equal(loaded.state.world.worldId,oldId);
   assert.equal(loaded.state.world.revision,7);
+  assert.equal(loaded.state.world.schema,'akimono.memory-world.v2');
+  assert.equal(loaded.state.world.period.town.develop,5001);
+  assert.equal(loaded.state.world.period.dtPeople,500000);
+  assert.equal(loaded.state.world.period.settledCount,0);
+  assert.equal(loaded.state.world.period.eventState,null);
   assert.equal(loaded.state.shop.item[9],1);
   assert.equal(loaded.state.shop.money,95000);
   assert.equal(loaded.state.shop.paytoday,10000);
