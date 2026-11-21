@@ -52,6 +52,8 @@ sub bootstrap {
     '$main::B38_SEEN_ITEMNO=$itemno; $main::B38_SEEN_PRICE=$price; $main::B38_SEEN_STOCK=$DT->{item}[$itemno-1]//0; ');
   $insert->('if($itemno && $DT->{item}[$itemno-1])',
     '$main::B38_SALE_ITEMNO=$itemno; $main::B38_SALE_STOCK=$DT->{item}[$itemno-1]//0; ');
+  $insert->('$ITEM[$itemno]->{buypeoplebase}+=',
+    '$main::B38_BEFORE_ADD_PRICE=$ITEM[$itemno]->{price}; ');
   $insert->('GetMarketStatus();',
     '$main::B38_PRE_BASE=$ITEM[10]->{buypeoplebase}//0; ');
   $insert->('$sale=int($sale);',
@@ -139,6 +141,7 @@ sub run {
       firstStock=>0+($main::B38_SEEN_STOCK//0),
       saleItemNo=>0+($main::B38_SALE_ITEMNO//0),
       saleStock=>0+($main::B38_SALE_STOCK//0),
+      sourceStdPrice=>0+($main::B38_BEFORE_ADD_PRICE//0),
     },
     money=>0+$shop->{money},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
