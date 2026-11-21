@@ -83,8 +83,11 @@ export function projectB41Sale({
        nowSeconds:world.nowSeconds,
      }))
     bad('source-initialized city and known EVENT state required');
+  // Legacy B-41 intentionally marks all unknown prior EVENT instances
+  // NULL. Do not claim an iron modifier is active in that case, but do
+  // preserve B-41's existing best-effort no-event non-equivalence behavior.
   const ironEventActive=world.schema===PERIOD_WORLD_SCHEMA&&
-    reviewedB59Iron!==null?
+    reviewedB59Iron!==null&&world.period?.eventState!==null?
     isB59IronActive({period:world.period,
       reviewed:reviewedB59Iron,nowSeconds:world.nowSeconds}):false;
   if(ironEventActive&&reviewedB59Iron===null)
