@@ -27,6 +27,10 @@ import {reviewOriginalMarketBuy10,quoteOriginalMarket10,projectOriginalMarketBuy
 import {reviewB41Sale,projectB41Sale} from './original-b41-playable-sale.mjs';
 import {reviewOriginalCompiledEventCatalog}
   from './original-event-compiled-catalog.mjs';
+import {reviewOriginalInstantEventCallbacks,projectOriginalInstantEventCallback}
+  from './original-instant-event-callbacks.mjs';
+import {PERIOD_WORLD_SCHEMA}
+  from './game-core-contract.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -168,6 +172,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       itemDsl,rebelDsl,compilerSource:originalCompilerSource,
       turnSource:originalTurnSource,
     }):null;
+  const reviewedInstantEventCallbacks=reviewedEventCatalog?
+    reviewOriginalInstantEventCallbacks({
+      itemDsl,turnSource:originalTurnSource,
+      compilerSource:originalCompilerSource,
+      compiledCatalog:reviewedEventCatalog,
+    }):null;
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
@@ -192,6 +202,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
       ...(reviewedB41?['advance-source-time']:[]),
+      ...(reviewedInstantEventCallbacks?[
+        'reviewed-instant-event-callback-fixture']:[]),
     ]),
     metadata,
     catalog,
@@ -205,6 +217,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedMarketBuy10,
     reviewedB41,
     reviewedEventCatalog,
+    reviewedInstantEventCallbacks,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
@@ -293,6 +306,31 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectB41Sale({world,reviewed:reviewedB41,
           reviewedAllPlus,compiled:giftMap,shopId:command.shopId,
           minutes:command.minutes,randomDraws:command.randomDraws});
+      }
+      if(command.kind==='reviewed-instant-event-callback-fixture'&&
+         reviewedInstantEventCallbacks){
+        ownKeysExact(command,['eventCode','randomDraws']);
+        // INTERNAL development/proof action only. Never expose as HTTP
+        // gameplay: full source EVENT selection/hash/callback order is absent.
+        if(world.schema!==PERIOD_WORLD_SCHEMA||
+           world.period?.eventState!==null||
+           world.events!==null||world.shops.length!==1)
+          bad('event callback fixture requires a v2 source shop after unreviewed EVENT time');
+        const effect=projectOriginalInstantEventCallback({
+          reviewed:reviewedInstantEventCallbacks,shop:world.shops[0],
+          eventCode:command.eventCode,randomDraws:command.randomDraws,
+        });
+        return {
+          shops:[effect.shop],
+          receipt:{
+            action:'reviewed-instant-event-callback-fixture',
+            source:effect.source,eventCode:effect.eventCode,
+            returnCode:effect.returnCode,message:effect.message,
+            changed:effect.changed,randomDrawsUsed:effect.randomDrawsUsed,
+            naturalEventTriggered:false,
+            scope:effect.scope,
+          },
+        };
       }
       if(command.kind==='gift-exchange-maps'){
         ownKeysExact(command,['shopId','requestedCount']);
