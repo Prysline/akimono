@@ -7,6 +7,7 @@
 import {ORIGINAL_SPARSE_MARKET_SOURCE,validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparseMultiPlus} from './original-sparse-multi-plus.mjs';
+import {B59_IRON_SOURCE} from './original-b59-iron-event-lifecycle.mjs';
 
 export const ALL_PLUS_SOURCE='core-b37-all-59-plus-original-sequence';
 export const ORIGINAL_PLUS_PIN="-20m|-20m|-20m|-20m|-20m|-20m|-20m|6h|1h|20m|10m|1h|10h|1h|20h|20h|20h|-|-|20h|20h|20h|20h|-|1d|-|-|-|-|2h|-1h|5h|-1h|-1h|-|-|1d|-|5h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|5d|1d|30m|1d|20h|-|-1h|-1h|-|-|-|-|-|-|-|-|1h|-";
@@ -57,6 +58,7 @@ export function reviewOriginalSparseAllPlus({
 export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
   reviewedB39Span8640=false,
+  reviewedB59Iron=null,ironEventActive=false,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -78,6 +80,14 @@ export function projectOriginalSparseAllPlus({
     bad('requires original sparse market and exactly one shop');
   if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     bad('79 source caps required');
+  if(typeof ironEventActive!=='boolean'||
+     (ironEventActive&&(
+       reviewedB59Iron?.source!==B59_IRON_SOURCE||
+       reviewedB59Iron.itemId!==5||
+       reviewedB59Iron.plusSeconds!==720||
+       reviewedB59Iron.basePlusSeconds!==-1200||
+       reviewed.plusSeconds[4]!==-1200)))
+    bad('unsupported original active EVENT item PLUS modifier');
   const shop=world.shops[0];
   if(!Array.isArray(shop?.item)||shop.item.length!==79||
     shop.item.some(v=>!Number.isSafeInteger(v)||v<0))
@@ -91,7 +101,10 @@ export function projectOriginalSparseAllPlus({
   }
   const coeff=(reviewed.maxUsers+world.shops.length-2)*0.2+1;
   for(let i=0;i<79;i++){
-    const plus=reviewed.plusSeconds[i];
+    // Original DataRead loads the active plusup-tetu EVENT file before
+    // inc-turn. Its generated ITEM #5 plus=720 overrides the compiled
+    // -20m for this entire timespan, even if the EVENT expires later.
+    const plus=ironEventActive&&i===4?720:reviewed.plusSeconds[i];
     if(plus===0)continue;
     const start=used;
     let add=timespanSeconds/Math.abs(plus)*reviewed.population/
@@ -139,6 +152,9 @@ export function projectOriginalSparseAllPlus({
     activeItemIds:changes.map(c=>c.itemId),
     signedChanges:changes,
     sparseWrittenSlots:defined,originalWholesaleCsv:csv,
-    scope:'all 59 original PLUS declarations + one full 79 item cap, with explicit sampled rand; no natural sales/events/real time/CGI/persistence',
+    scope:ironEventActive?
+      '59 original PLUS with active original ITEM #5 plus=720 loaded at DataRead; cap and RNG source reviewed; no general EVENT engine':
+      'all 59 original PLUS declarations + one full 79 item cap, with explicit sampled rand; no natural sales/events/real time/CGI/persistence',
+    ironVeinModifierApplied:ironEventActive,
   }};
 }
