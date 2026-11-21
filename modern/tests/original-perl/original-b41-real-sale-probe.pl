@@ -55,6 +55,9 @@ sub call_source {
 }
 sub run {
   my($minutes)=@_;
+  # The literal buy-s.cgi halves this global for marketplace purchases.
+  # Each independent 30m/60m probe must restore the original configured base.
+  $TIME_SEND_ITEM=1200;
   my @zeros=(0)x118;
   my $supply=OriginalSparseAllPlusHarness::run(
     timespanSeconds=>60,randomDraws=>\@zeros);
