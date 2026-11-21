@@ -23,6 +23,25 @@ npm run dev:local
 
 **重要：** 世界只保存在該 Node 程序的記憶體裡。重啟服務後所有本機操作資料消失；不是世界檔案儲存器。沒有公開登入、舊 CGI Cookie 或多人權限。網站僅在本機 `127.0.0.1` 服務，請勿反向代理到公網。
 
+## Windows Git checkout：B-40 本機啟動錯誤修正
+
+若 Windows 版 Git 設定 `core.autocrlf=true`，固定 Perl CGI／DSL 可能在本機工作目錄被 checkout 為 CRLF (`\\r\\n`)；B-34 的來源審閱明文 `sub init\\n` 使用 Git 原始 LF，比對會產生 `B-34 original world bootstrap: fixed admin init source drift`，導致 `npm run dev:local` 在啟動階段失敗。**這是啟動器處理工作目錄換行格式的問題，不是要改原版原始程式、關閉來源檢查或降級 Node.js 24。**
+
+已在 `modern/scripts/dev-local.mjs` 對載入的固定來源內容於記憶體呼叫 `normalizeLocalSourceText`（`modern/src/local-source-text.mjs`），只將 CRLF 正規化為 LF，禁止孤立 `\\r`，其餘字元與原版審閱標記完全不變。原 CGI/DSL 檔案本身及 Git blob SHA 不修改。新增 `modern/tests/local-source-text.test.mjs` 逐一將12份實際原版輸入變為模擬 Windows CRLF，核對整個 StreetModule／GameCore 初始化與開店仍能成功，並保留故意竄改來源時的拒絕行為。
+
+既有 Windows 工作樹更新方式（在 repo 根目錄；有未提交修改先自行備份／確認，不要執行強制重設）：
+
+```powershell
+cd D:\\Boochu\\Program\\git\\git\\akimono
+git status --short
+git switch test/task02-baseline-on-s1
+git pull --ff-only origin test/task02-baseline-on-s1
+cd modern
+npm run dev:local
+```
+
+預期顯示 `商人物語 B-40 本機介面：http://127.0.0.1:4173`。登入／圖像原素材與存檔仍非已完成功能。若工作樹有自行修改，先決定保留方式，不建議 `reset --hard` 或修改原版 CGI 以繞過檢查。
+
 ## 玩家手動驗收：成功與拒絕
 
 1. 開頁後點「**① 初始化原版來源世界**」：世界從無到有，revision 為 **1**、市場 #10 為 **0**；此時按「② 開店」，輸入店主與店名。revision 變 **2**，資金 **100,000**、人氣 **5010**、#63 展示架工具 **1**、#79 禮物卷 **5**、#10 **0**。
