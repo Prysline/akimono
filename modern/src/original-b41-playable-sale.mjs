@@ -90,8 +90,8 @@ export function projectB41Sale({
     reviewedB59Iron!==null&&world.period?.eventState!==null?
     isB59IronActive({period:world.period,
       reviewed:reviewedB59Iron,nowSeconds:world.nowSeconds}):false;
-  if(ironEventActive&&reviewedB59Iron===null)
-    bad('unknown active event modifier');
+  if(ironEventActive&&reviewedEventTimeSlice!==true)
+    bad('known active EVENT requires fully reviewed lifecycle before advancing time');
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
     shop.showcase?.length!==1||shop.price?.length!==1||
