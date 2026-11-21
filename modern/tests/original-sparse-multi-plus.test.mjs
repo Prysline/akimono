@@ -56,7 +56,7 @@ test('B-36 exact original source and three DSL PLUS directives must not drift',(
       'foreach my $cnt (40..1)'),
   }),/source drift/);
   assert.throws(()=>createStandardStreetModule({...inputs,
-    itemDsl:itemDsl.replace(/PLUS[ \t]+-20m/,'PLUS 1m'),
+    itemDsl:itemDsl.replace(/\bplus\s+-20m\b/i,'plus 1m'),
   }),/source metadata changed|PLUS source|source drift/);
 });
 test('B-36 source #1,#10,#40 one initial sparse update equals Perl original',()=>{
@@ -116,13 +116,17 @@ test('B-36 invalid timespans, random consumption and CAS revision reject atomica
   for(const inputCase of [
     [0,[0,0,0,0]],[3601,[0,0,0]],
     [60,[]],[60,[0,0,0]],[60,[0,0,0,0,0]],
-    [60,[-1,0,0,0]],[60,[0,0,0,1000000]],[60,[0,0,0,0.5]],
+    [60,[-1,0,0,0]],[60,[0,0,0,1000000]],
   ]){
     assert.equal(run('reviewed-sparse-multi-plus',2,{
       timespanSeconds:inputCase[0],randomDraws:inputCase[1],
     }).code,'SOURCE_BOUNDARY_REJECTED');
     assert.equal(JSON.stringify(repo.read()),before);
   }
+  assert.throws(()=>run('reviewed-sparse-multi-plus',2,{
+    timespanSeconds:60,randomDraws:[0,0,0,0.5],
+  }),/command non-safe JSON number/);
+  assert.equal(JSON.stringify(repo.read()),before);
   assert.equal(run('reviewed-sparse-multi-plus',1,{
     timespanSeconds:60,randomDraws:[0,0,0,0],
   }).code,'REVISION_CONFLICT');
