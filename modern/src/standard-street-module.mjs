@@ -22,6 +22,8 @@ import {reviewOriginalNaturalSalePlus,projectOriginalNaturalSalePlus}
   from './original-natural-sale-plus.mjs';
 import {reviewOriginalNayutaFuncturn,projectOriginalNayutaFuncturn}
   from './original-nayuta-functurn.mjs';
+import {reviewOriginalMarketBuy10,quoteOriginalMarket10,projectOriginalMarketBuy10}
+  from './original-market-buy10.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -90,6 +92,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalTurnSource=null,originalWholeSource=null,originalConfigSource=null,
   originalCompilerSource=null,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
+  originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
@@ -145,6 +148,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       itemDsl,turnSource:originalTurnSource,compilerSource:originalCompilerSource,
       reviewedNaturalPlus,reviewedAllPlus,
     });
+  const buySources=[originalBuySource,originalBuyItemSource,originalBuyCalcSource];
+  if(buySources.some(x=>x!==null)&&buySources.some(x=>x===null))
+    bad('incomplete frozen original B-40 buy sources');
+  if(originalBuySource!==null&&(!reviewedAllPlus||!originalWholeSource||
+      !originalCompilerSource))
+    bad('B-40 buy requires source-verified sparse market and full PLUS inputs');
+  const reviewedMarketBuy10=originalBuySource===null?null:
+    reviewOriginalMarketBuy10({
+      buySource:originalBuySource,wholeSource:originalWholeSource,
+      itemSource:originalBuyItemSource,calcSource:originalBuyCalcSource,
+      compilerSource:originalCompilerSource,model,compiled:giftMap,
+    });
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -163,6 +178,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedAllPlus?['reviewed-sparse-all-plus']:[]),
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
+      ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
     ]),
     metadata,
     catalog,
@@ -173,6 +189,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedAllPlus,
     reviewedNaturalPlus,
     reviewedNayuta,
+    reviewedMarketBuy10,
+    quoteMarketItem10(world){
+      return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
+    },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
       if(command.kind==='open-shop'){
@@ -243,6 +263,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectOriginalNayutaFuncturn({
           world,reviewed:reviewedNayuta,reviewedAllPlus,
           compiled:giftMap,randomDraws:command.randomDraws,
+        });
+      }
+      if(command.kind==='buy-market-item-10'&&reviewedMarketBuy10){
+        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
+        return projectOriginalMarketBuy10({
+          world,model,reviewed:reviewedMarketBuy10,
+          shopId:command.shopId,requestedCount:command.requestedCount,
+          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
         });
       }
       if(command.kind==='gift-exchange-maps'){
