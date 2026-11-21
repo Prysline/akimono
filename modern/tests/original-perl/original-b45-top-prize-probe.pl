@@ -25,7 +25,7 @@ my $dsl=source('../../../custom/inc-item-data.cgi');
 my $core=source('period.cgi');
 my $use=source('use.cgi');
 my %name2id;my %limits;
-for my $block (split /^@@ITEM[ \t]*\r?\n/m,$dsl) {
+for my $block (split /^\@\@ITEM[ \t]*\r?\n/m,$dsl) {
   my($id)=$block=~/^\s*no\s+(\d+)\s*$/m;
   my($name)=$block=~/^\s*name\s+([^\r\n#]+?)(?:\s*#.*)?$/m;
   my($limit)=$block=~/^\s*limit\s+(\d+)(?:\/[\d.]+)?\s*(?:#.*)?$/m;
