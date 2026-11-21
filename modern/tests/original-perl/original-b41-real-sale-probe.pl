@@ -15,6 +15,9 @@ require './calc.cgi';
 # OriginalNaturalSalePlusHarness loads the real original whole/market/item/detail
 # helpers, extracts real inc-turn source regions and compiles them in main.
 OriginalNaturalSalePlusHarness::bootstrap();
+# The original whole.cgi was required in a Perl harness package; buy-s.cgi
+# expects the same frozen source GetWholeStore in main.
+{ no warnings 'redefine'; require './whole.cgi'; }
 sub l {return $_[0];}
 sub OutError {$last_error=$_[0];die "GAME_ERROR:".$_[0]."\n";}
 sub Lock {1}
