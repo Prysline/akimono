@@ -1,3 +1,13 @@
+## 2026-11-22｜B-58 最新開發交接（優先於 B-57 與更早紀錄）
+
+**新增完整來源依據的真抽獎卷／開獎受控玩家世界流程**：[B-58 真市場購票與 Perl 真開獎](b58-source-loto-real-ticket-cas.md)。在 B-57 的真 B-40 買#10→上架→B-41來源自然販售及59項PLUS→B-56完整17個 EVENT gate→GameCore CAS 之上，新增真正原版 #11 抽獎卷市場購買（真 DSL 排序貨架、價格2000、持有上限50、批發上限20、進貨600秒），讓已買入的 #11 以原版 COST=10 正確累積自然時間維護費，抽獎事件 `loto` start 50% 編譯機率500，回呼開獎時一次扣除所有抽獎卷、每張各抽 `rand(6096454)`，依來源五層門檻 <1/<6/<216/<10000/<152411 發給 1e9 /1.5e8/5e6/1e5/1e4 金額、上限999999999，回傳0、不建立持續 EVENT、不算銷售。新增買#11原版真 Perl `buy-s.cgi` 探針與原封不動 `loto STARTFUNC` Perl 執行 15 條分支的 Node 嚴格對照，且已通過真世界單筆 CAS／B-43 存檔、續玩第二來源空票開獎、錯來源／漏抽樣／錯範圍／未支援事件回滾測試。
+
+**真 Perl 文字陷阱**：原版 `"抽中了$hit等獎，"` 將 `$hit等獎` 解析成整個 Unicode 變數名稱，Perl 實測輸出「抽中了，10000！」而不是「抽中了5等獎，10000！」；Node 跟隨真實來源，不修正成作者可能意圖的字面。回合 `WriteLog` 目前只回傳 `eventLogEmissions` 於 CAS receipt，尚未寫入原版持久化日誌。
+
+**已驗證**：B-58 程式／測試初步 Push CI Node **871/871**、Perl **1570/1570**，均為0失敗；正式最終 HEAD 若包含本交接文件提交，仍必須重新看**最終 HEAD 的 Push＋PR 兩條同 SHA CI**，不可拿中途 SHA 充數。
+
+**剩餘限制**：依然只有內部 `advance-source-time-reviewed-events` 與 `buy-market-item-11`，沒有玩家 HTTP/UI；`eventHashOrderFixture` 是使用者顯式傳入17個事件 code 的排列，並非 Perl 實際 `keys(%EVENT)` 順序，外部受控抽樣也不是重現原版 PRNG。已移植 manbiki、goutou、getmoney、getpop、loto 五種 STARTFUNC；其餘實際持續事件通過門檻一律整筆拒絕；活動期間／期末回呼、持續 EVENT、世界日誌、36小時跨期結算均未完成。原版 Core/DSL、main、migration 底分支不改；`test/task02-baseline-on-s1`、Draft PR #1 保持未合併，任務02/04/05維持進行中。下一步優先補真正持續事件生命週期及其原版市場影響，然後解鎖36h跨期與玩家完整經營閉環。
+
 ## 2026-11-22｜B-57 最新開發交接（優先於 B-56 與更早紀錄）
 
 **本輪已寫入實際程式、Perl/Node 測試和文件**：[B-57 原版資金援助／人氣提升回呼](b57-source-support-events-live-cas.md)。在 B-56 已有的真商店自然販售→59項PLUS→17鍵顯式 EVENT gate，同一個受控 `advance-source-time-reviewed-events` CAS 裡，新增兩個直接影響玩家的原版 `startfunc`：`getmoney` 的30%入口、每店 `rand(1000)<=300` 命中加100000元，受原版 `MaxMoney 999999999` 上限限制；`getpop` 同樣30%入口、單店命中加1000人氣、上限10000。兩者回傳0，不生成活動事件，不把資金援助當自然銷售收入。真 Perl 直接擷取固定 DSL 的兩段完整 `startfunc` 執行，Node 逐案例核對11分支＋連續兩回呼；整合同一真 B-40 進貨／B-41自然販售、GameCore revision CAS、B-43 磁碟存檔重載、錯誤來源／亂數／事件 gate 全部拒絕且不寫入世界。
