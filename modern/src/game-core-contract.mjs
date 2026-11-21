@@ -193,7 +193,8 @@ export function executeMemoryCommand({repository,streetModule,command}){
   if(!proposed.ok)return proposed;
   const committed=repository.compareAndSwap({
     expectedRevision:command.expectedRevision,nextWorld:proposed.world,
-    advanceSeconds:command.kind==='advance-source-time'?
+    advanceSeconds:['advance-source-time',
+      'advance-source-time-reviewed-events'].includes(command.kind)?
       command.minutes*60:0,
   });
   if(!committed.ok)return committed;
