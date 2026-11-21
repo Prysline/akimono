@@ -129,7 +129,8 @@ export function projectOriginalMarketBuy10({
   const csv=Array.from({length:79},(_,i)=>
     present.has(i)?String(nextWholesale[i]):'').join(',');
   const market={...world.market,wholesale:nextWholesale,
-    sparseWrittenSlots:defined,originalWholesaleCsv:csv};
+    sparseWrittenSlots:defined,originalWholesaleCsv:csv,
+    sourceWriteShape:'whole-store-79'};
   if(!validateSourceSparseMarket(market))fail('post-buy source wire consistency');
   return {
     shops:[nextShop],market,
