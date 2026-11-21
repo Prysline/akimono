@@ -108,6 +108,14 @@ sub run {
   my $sales=$shop->{itemtoday}{10}//0;
   return {
     display=>$display,saleCount=>0+$sales,
+    debugOriginalBuyer=>{
+      buypeople=>0+($main::ITEM[10]{buypeople}//0),
+      buypeoplebase=>0+($main::ITEM[10]{buypeoplebase}//0),
+      todaystock=>0+($main::ITEM[10]{todaystock}//0),
+      uppoint=>0+($main::ITEM[10]{uppoint}//0),
+      marketprice=>0+($main::ITEM[10]{marketprice}//0),
+      showroom=>$shop->{showcase}[0],
+    },
     money=>0+$shop->{money},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
     costtoday=>0+$shop->{costtoday},rank=>0+$shop->{rank},

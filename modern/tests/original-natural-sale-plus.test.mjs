@@ -128,6 +128,9 @@ test('B-38 explicit artificial #10 stock: original sale, tax, rank, global RNG b
     sampleCount:source.consumedSamples.length,
     samplePrefix:source.consumedSamples.slice(0,14),
     sourceSaleCount:source.saleCount,sourceRank:source.rank,
+    originalBuyer:source.debugOriginalBuyer,
+    sourceItem10:source.item10,sourceCost:source.costtoday,
+    sourceTemprank:source.temprank,
   }));
   assert.equal(res.world.revision,3);
   assert.equal(res.world.nowSeconds,1000000);
