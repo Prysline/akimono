@@ -917,3 +917,25 @@ prove -v original-gift-map-use.t
 ```
 
 **不宣稱完成**：其餘115筆 USE、完整 `GetUseItem/CheckUseItem` 與商品選單、原版其他 callback、事件、市場初始化與銷售、週期結算、真實存讀檔、Web UI、主帳號及多人世界。正式任務02／04／05均維持「進行中」，12任務總數仍**1已完成／3進行中／8待辦**；各自原定的正式驗收仍未完成。原版 DSL、18份固定 Core SHA、`main`、`migration/standard-street-s1` 均未修改，PR #1 繼續 Draft 不合併。
+
+## 第三十四階段：真正原版世界初始化的**空白批發列**與稀疏陣列記錄
+
+B-33 真實標準街 `ITEM #79 禮物卷`「交換地圖集」已能在明示人工79格全0批發資料上運行。本階段深入核對固定原版 Core 的 `inc-admin-func.cgi::init`：**第一次**建立世界檔案時，`print DATA time()."...\n\n\n//\n"` 的**第三行批發庫存是空字串**，而不是明示的79格0。固定 `DataRead` 用 `split(/,/,$DATA[$idx++],$MAX_ITEM)` 讀取後，Perl 的 `@DTwholestore` 是**長度為0的稀疏陣列**。數值模型可在用到未定義位置時以0參與算術，但來源序列化**不能**將空白位置全部改寫成字面0。
+
+- [**B-34 完整原始來源與受控實測**](docs/reviewed-original-sparse-market-init.md)：新增**原樣第19份 Core 快照** [`core-inc-admin-func.cgi`](tests/original-perl/core-inc-admin-func.cgi)（原版 Git Blob SHA `2164b7e5abfea7a466235a8deba1543c2cc41515`）；[來源 Perl 記憶體初始化器](tests/original-perl/OriginalAdminBootstrapHarness.pm) **真的執行固定原版 `print DATA time()...` 陳述式**，但僅用記憶體 `scalar` 檔案把手，**沒有**啟動整份 admin init、真實 CGI、目錄、世界寫入、備份或鎖。
+- [**原版稀疏市場模型**](src/original-admin-world-bootstrap.mjs)：只有明示提供原版 `admin-init`／`DataRead`／`DataWrite` 三份完整來源文字並核對相應原文後，才會開放單一 `initialize-source-market` 命令；**只適用**空商店、`market=null`、`revision=0` 的純記憶體世界。市場記錄分別存放**原始 `originalWholesaleCsv=''`、原版實際賦值索引 `sparseWrittenSlots=[]`** 和79格純數值 `wholesale` 視圖。
+- [**真實標準街模組**](src/standard-street-module.mjs)：完成 `initialize-source-market（revision 0→1）→ open-shop（1→2）→ gift-exchange-maps（2→3→4）`。真實禮物卷原有5張，兩次操作後5→3→1；三種來源地圖各0→1→2。第一次真來源市場 `CheckWholeStore` 寫入**只有索引78** 的批發0，因此原版 `DataWrite join` 是**78個逗號＋0**，不是79個 `0`；地圖已達倉庫上限時另寫入索引8、11、13，Node 結果保持來源稀疏 CSV 形狀。
+- [**27項 Node 測試**](tests/original-admin-sparse-market.test.mjs) 與 [**44項原版 Perl 直接斷言**](tests/original-perl/original-admin-sparse-market.t)；[原版 Perl 連續探針](tests/original-perl/original-admin-sparse-market-probe.pl) 直接核對來源 `print DATA`、`UseItem`、`CheckWholeStore`、`join` 的真正原文行為。所有來源異常紀錄獨立存於 [CORE-22](docs/original-behavior-issues.md)。
+- `npm run demo:original-market-init` 展示來源新世界初始化、真商品連續使用、原始 CSV 的寫入位置及第三次材料不足拒絕；已納入 GitHub Actions。B-33 原有人工 `explicit-b33-test-fixture` 模式仍不變，**未**偷改舊測試的含意。
+
+```sh
+cd modern
+npm test
+npm run demo:original-market-init
+cd tests/original-perl
+prove -v original-admin-sparse-market.t
+```
+
+**這不是正式可玩或真正存讀檔。** 原始 `init` 的檔案操作、真正 `DataRead/DataWrite` 世界提交、批發 `inc-turn.cgi` 週期補貨、其他115筆 USE、UI／玩家授權／多人同步**均未完成**。截至此階段 CI 基準**771 Node／1013 原版 Perl，27個 Perl `*.t`；19份固定 Core Blob SHA**。正式 Notion 12項仍**1已完成／3進行中／8待辦**，任務02／04／05均未完全驗收。
+
+**建議分窗：** 已建立 [`new-window handoff：``next-window-handoff.md`](docs/next-window-handoff.md)，包含固定 SHA、Repo／Draft PR、現況、下一步 B-35 與新聊天起手提示。**在同一 ChatGPT 專案開新聊天即可繼續**；舊窗可作歷史備查，不要兩個窗同時推送到同一工作分支。
