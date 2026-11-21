@@ -33,6 +33,10 @@ import {reviewB56EventSlice,projectB56EventSlice}
   from './original-b56-event-time-slice.mjs';
 import {reviewOriginalSupportEventCallbacks}
   from './original-b57-support-event-callbacks.mjs';
+import {reviewOriginalMarketBuy11,quoteOriginalMarket11,projectOriginalMarketBuy11}
+  from './original-market-buy11.mjs';
+import {reviewOriginalLotoStartfunc}
+  from './original-b58-loto-startfunc.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {
@@ -182,21 +186,35 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       compiledCatalog:reviewedEventCatalog,
     }):null;
+  const reviewedMarketBuy11=reviewedMarketBuy10?
+    reviewOriginalMarketBuy11({
+      reviewedBuy10:reviewedMarketBuy10,model,compiled:giftMap,itemDsl,
+    }):null;
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
-      configSource:originalConfigSource}):null;
+      configSource:originalConfigSource,
+      reviewedMarket11:reviewedMarketBuy11}):null;
   const reviewedSupportEventCallbacks=reviewedEventCatalog?
     reviewOriginalSupportEventCallbacks({
       itemDsl,turnSource:originalTurnSource,
       compilerSource:originalCompilerSource,
       compiledCatalog:reviewedEventCatalog,
     }):null;
+  const reviewedLoto=reviewedEventCatalog&&reviewedMarketBuy11&&
+    reviewedSupportEventCallbacks?
+    reviewOriginalLotoStartfunc({
+      itemDsl,turnSource:originalTurnSource,
+      compiledCatalog:reviewedEventCatalog,
+      reviewedMarket11:reviewedMarketBuy11,
+      reviewedSupportCallbacks:reviewedSupportEventCallbacks,
+    }):null;
   const reviewedB56=reviewedB41&&reviewedInstantEventCallbacks?
     reviewB56EventSlice({turnSource:originalTurnSource,
       reviewedB41,reviewedCatalog:reviewedEventCatalog,
       reviewedCallbacks:reviewedInstantEventCallbacks,
-      reviewedSupportCallbacks:reviewedSupportEventCallbacks}):null;
+      reviewedSupportCallbacks:reviewedSupportEventCallbacks,
+      reviewedLoto}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -216,6 +234,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
+      ...(reviewedMarketBuy11?['buy-market-item-11']:[]),
       ...(reviewedB41?['advance-source-time']:[]),
       ...(reviewedB56?['advance-source-time-reviewed-events']:[]),
       ...(reviewedInstantEventCallbacks?[
@@ -231,13 +250,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedNaturalPlus,
     reviewedNayuta,
     reviewedMarketBuy10,
+    reviewedMarketBuy11,
     reviewedB41,
     reviewedEventCatalog,
     reviewedInstantEventCallbacks,
     reviewedSupportEventCallbacks,
+    reviewedLoto,
     reviewedB56,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
+    },
+    quoteMarketItem11(world){
+      return quoteOriginalMarket11({world,model,reviewed:reviewedMarketBuy11});
     },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
@@ -319,6 +343,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
         });
       }
+      if(command.kind==='buy-market-item-11'&&reviewedMarketBuy11){
+        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
+        // SOURCE-REVIEWED INTERNAL acquisition of ITEM #11, not HTTP/UI.
+        return projectOriginalMarketBuy11({
+          world,model,reviewed:reviewedMarketBuy11,
+          shopId:command.shopId,requestedCount:command.requestedCount,
+          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
+        });
+      }
       if(command.kind==='advance-source-time'&&reviewedB41){
         ownKeysExact(command,['shopId','minutes','randomDraws']);
         return projectB41Sale({world,reviewed:reviewedB41,
@@ -334,6 +367,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           compiled:giftMap,reviewedCatalog:reviewedEventCatalog,
           reviewedCallbacks:reviewedInstantEventCallbacks,
           reviewedSupportCallbacks:reviewedSupportEventCallbacks,
+          reviewedLoto,
           shopId:command.shopId,minutes:command.minutes,
           saleDraws:command.saleDraws,eventDraws:command.eventDraws,
           eventHashOrderFixture:command.eventHashOrderFixture,
