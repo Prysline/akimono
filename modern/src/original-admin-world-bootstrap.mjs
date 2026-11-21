@@ -114,7 +114,13 @@ export function validateSourceSparseMarket(market){
      (i>0&&v<=positions[i-1])))return false;
   if(market.wholesale.some(v=>!Number.isSafeInteger(v)||v<0))
     return false;
-  const present=new Set(positions),last=positions.length?positions.at(-1):-1;
+  // GetWholeStore/SetWholeStore writes the entire 79-position array,
+  // including undef fields at the end: Perl join retains trailing commas.
+  // Distinguish this from the B-34/B-37 compact sparse initializer shape.
+  const wireMode=market.sourceWriteShape;
+  if(wireMode!==undefined&&wireMode!=='whole-store-79')return false;
+  const present=new Set(positions),last=wireMode==='whole-store-79'?
+    78:positions.length?positions.at(-1):-1;
   const expected=Array.from({length:last+1},(_,i)=>
     present.has(i)?String(market.wholesale[i]):'').join(',');
   return market.originalWholesaleCsv===expected &&
