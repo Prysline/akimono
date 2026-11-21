@@ -22,8 +22,9 @@ Core commit：[738d71a2985fd088f2ca90f25145706392ee2365](https://github.com/kate
 | `lock.cgi` | `plug/lock.cgi` | `84382170f1b7f70348c4e2a91bf30b1d1043b964` |
 | `period.cgi` | `inc-period.cgi` | `6183e88e9dd69a16606a1064c8084e9a1411dbd5` |
 | `use.cgi` | `plug/use.cgi` | `1bf4537cc41e344c144d840d43175c4c232765bb` |
+| `core-inc-admin-func.cgi` | `inc-admin-func.cgi` | `2164b7e5abfea7a466235a8deba1543c2cc41515` |
 
-CI 會以 `git hash-object` 核對以上十四個固定快照。快照檔案未改寫；所有測試替身只出現在 `*.t` 內。
+CI 會以 `git hash-object` 核對上述原有14份、後續新增4份商品載入器來源，以及 B-34 的管理員初始化快照，合計**19份固定原版 Core Blob SHA**。快照均未改寫；測試替身僅出現在獨立 Perl harness／`*.t` 中，不會改原版函式本文。
 
 ## 執行方式
 
@@ -369,3 +370,19 @@ prove -v *.t
 ```
 
 全部固定原始 Core 快照及街道 DSL 均未修改；CI 同時檢查前32階段基準。
+
+## 第三十四階段：原版首次管理員初始化空白市場與 Perl 稀疏 CSV
+
+新增**第19份未修改原版 Core** 快照 [`core-inc-admin-func.cgi`](core-inc-admin-func.cgi)，來源 Git Blob SHA `2164b7e5abfea7a466235a8deba1543c2cc41515`，已加入 GitHub Actions `git hash-object` 審核。真正原版 `sub init` 建立首次新世界檔案時第三行批發庫存為**空行**；`DataRead` 的 `split` 回傳**長度0的 `@DTwholestore`**，不是79個明文 `0`。
+
+- [`OriginalAdminBootstrapHarness.pm`](OriginalAdminBootstrapHarness.pm) **從固定 `inc-admin-func.cgi` 擷取原樣 `print DATA time()...` 陳述式並真正在 Perl scalar 記憶體把手執行**，不呼叫整份 `init`（否則會做檔案 I/O、mkdir、unlink 等）、沒有碰任何真實世界存檔。
+- [`original-admin-sparse-market-probe.pl`](original-admin-sparse-market-probe.pl) 使用原版 `OriginalGiftMapUseHarness.pm` 完整 `UseItem/MakeAmount/CheckWholeStore`，第一次將 `@DTwholestore` **設成真空陣列**，第二次真實回填首次交易 Perl 觀察到的批發陣列，第三次材料不足；另測試地圖已滿時原版實際寫入哪些批發位置。真正原版 `join(",",@DTwholestore)` 的稀疏 CSV 與79格數字視圖可逐欄比較。
+- [`original-admin-sparse-market.t`](original-admin-sparse-market.t)：**44項 Perl 來源斷言**，包括首次空白世界 `CSV=''`、商品 #79 第一次使用後僅批發索引78被寫成0，來源字串是78個逗號＋`0`，其他78格 `undef`；超限地圖再寫入索引8、11、13的來源真行為。所有原版 CGI 內文未改、不能因此當作完整原始管理員安裝或可用的世界存檔。
+- [`../original-admin-sparse-market.test.mjs`](../original-admin-sparse-market.test.mjs)：**27項 Node 命令／真 Perl JSON probe 對照**；[詳細文件](../../docs/reviewed-original-sparse-market-init.md) 與 [新聊天交接](../../docs/next-window-handoff.md)。
+
+```sh
+prove -v original-admin-sparse-market.t
+prove -v *.t
+```
+
+本階段最新測試總計**771／771 Node，1013／1013 Perl，27個 `*.t`**；全部原版 Core 19份固定 Blob SHA、兩份標準街 DSL audit 成功，沒有修改原始程式或 DSL。這些是隔離行為測試，不是正式可玩遊戲或世界讀寫授權。
