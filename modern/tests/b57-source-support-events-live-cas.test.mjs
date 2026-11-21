@@ -234,7 +234,7 @@ test('B-57 unmet source callback draw, unrelated true event and revision conflic
   for(const fields of [
     {eventDraws:args.eventDraws.slice(0,-1)},
     {eventDraws:[...args.eventDraws,999999]},
-    {eventDraws:eventDraws(['getmoney','getpop','loto'])},
+    {eventDraws:eventDraws(['getmoney','getpop','happy'])},
     {eventHashOrderFixture:order.slice(0,-1)},
   ]){
     const result=act('advance-source-time-reviewed-events',{...args,...fields});
