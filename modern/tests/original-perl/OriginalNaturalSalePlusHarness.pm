@@ -36,7 +36,8 @@ sub bootstrap {
   OriginalSparseWholesalePlusHarness::bootstrap();
   for my $filename ('market.cgi','item.cgi','core-detail.cgi'){
     my $path=File::Spec->catfile($FindBin::Bin,$filename);
-    require $path; # pinned original subroutines; no top-level CGI.
+    my $loaded=eval "package main; require q{$path}; 1;";
+    die "B-38 source plugin load failed: $@" unless $loaded;
   }
   my $part=natural_source();
   my $program="package main; no strict; no warnings; use utf8;\n".
