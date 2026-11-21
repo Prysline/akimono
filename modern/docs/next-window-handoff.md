@@ -1,3 +1,11 @@
+## 2026-11-22｜B-57 最新開發交接（優先於 B-56 與更早紀錄）
+
+**本輪已寫入實際程式、Perl/Node 測試和文件**：[B-57 原版資金援助／人氣提升回呼](b57-source-support-events-live-cas.md)。在 B-56 已有的真商店自然販售→59項PLUS→17鍵顯式 EVENT gate，同一個受控 `advance-source-time-reviewed-events` CAS 裡，新增兩個直接影響玩家的原版 `startfunc`：`getmoney` 的30%入口、每店 `rand(1000)<=300` 命中加100000元，受原版 `MaxMoney 999999999` 上限限制；`getpop` 同樣30%入口、單店命中加1000人氣、上限10000。兩者回傳0，不生成活動事件，不把資金援助當自然銷售收入。真 Perl 直接擷取固定 DSL 的兩段完整 `startfunc` 執行，Node 逐案例核對11分支＋連續兩回呼；整合同一真 B-40 進貨／B-41自然販售、GameCore revision CAS、B-43 磁碟存檔重載、錯誤來源／亂數／事件 gate 全部拒絕且不寫入世界。
+
+**完成檢驗**：新來源程式＋測試的 Push／PR 同 SHA CI 已核對 Node **866/866**、原版 Perl **1487/1487** 通過。新文件／交接最後提交仍需以**最後 HEAD 的最新 Push＋PR 同 SHA CI** 確認，不可引用中間 SHA 替代。
+
+**功能邊界不變**：B-56 的 EVENT 排列是由內部來源測試傳入全部17 code 的顯式序列，不等同 Perl `keys(%EVENT)` 的實際 hash 迭代；新回呼也未對外新增 HTTP 或 UI。除 `manbiki`、`goutou`、`getmoney`、`getpop` 與兩個 `startproba=0` 無期限事件外，其餘任何未支援事件若通過 gate，仍整筆拒絕。未知或已有活動事件不能被默認為空；36h跨期仍拒絕；完整原版期末／每期事件尚未完成。工作仍只在 `test/task02-baseline-on-s1`；Draft PR #1 保留，不修改 `main`、遷移底分支及任何固定 Core/DSL。下一階段優先移植會影響實際玩家世界的其餘事件（如 `loto` 的真正抽獎券扣除與獎金），再把完整事件生命週期和原版時間片接入玩家操作閉環。
+
 ## 2026-11-22｜B-56 最新交接（優先於本文件的 B-55 與更早紀錄）
 
 在工作分支新增內部來源受控命令 **advance-source-time-reviewed-events**，以真 B-40 商店 #10 原價展示架，在**同一 GameCore 原子 CAS** 執行 B-41 自然販售 → 59項原版 PLUS → 所有17個原版 EVENT start gate → B-55 已用真 Perl 對照的偷竊／強盜即時回呼。所有未移植的其他事件若進入啟動分支，一律整筆拒絕；已知空活動事件表保留空狀態；未知先前活動事件不接受此新命令。**不得把原版 Perl keys(%EVENT) 當 DSL 宣告序列**，故目前必須由測試呼叫者提供完整17鍵的顯式順序與接續亂數樣本；這是內部來源 fixture，**不是**公開自然事件、完整原版 RNG、完整 EVENT 生命週期。B-41 原有玩家命令與 UI 不修改，仍會標記未知 EVENT，36小時跨期仍拒絕。詳見 [B-56 程式、測試與界線](b56-source-event-time-slice.md)。
