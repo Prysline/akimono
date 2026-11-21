@@ -94,8 +94,13 @@ is_deeply($full->{wholesaleDefinedSlots},[8,11,13,78],
   'B-34 actual source assigns overflow map slots plus zero-limit gift slot');
 is_deeply([@{$full->{wholesaleNumeric79}}[8,11,13,78]],[0,0,0,0],
   'B-34 original CheckWholeStore recaps all overflow/zero-limit stocks');
-is($full->{wholesaleCsv},$one->{wholesaleCsv},
-  'B-34 after whole-store numeric values zero produce same CSV while definedness differs');
+isnt($full->{wholesaleCsv},$one->{wholesaleCsv},
+  'B-34 original sparse CSV distinguishes written zero map slots from undefined ones');
+my @cappedCsv=split(/,/,$full->{wholesaleCsv},-1);
+is_deeply([@cappedCsv[8,11,13,78]],['0','0','0','0'],
+  'B-34 actual source records literal zero for four assigned wholesale slots');
+is($cappedCsv[0],'',
+  'B-34 actual source still leaves unrelated first wholesale cell undefined');
 ok(index($full->{scope},'no full compiler')>=0,
   'B-34 original source execution remains bounded and does not run full compiler');
 done_testing();
