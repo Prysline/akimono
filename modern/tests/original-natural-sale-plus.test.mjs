@@ -123,7 +123,12 @@ test('B-38 explicit artificial #10 stock: original sale, tax, rank, global RNG b
   const {repo,response:res}=resultFrom(
     artificial(repository.read()),perl.sourceSale.consumedSamples);
   const source=perl.sourceSale;
-  assert.equal(res.code,'COMMITTED',JSON.stringify(res.details));
+  assert.equal(res.code,'COMMITTED',JSON.stringify({
+    reason:res.details,sourceDraws:source.randomDrawsUsed,
+    sampleCount:source.consumedSamples.length,
+    samplePrefix:source.consumedSamples.slice(0,14),
+    sourceSaleCount:source.saleCount,sourceRank:source.rank,
+  }));
   assert.equal(res.world.revision,3);
   assert.equal(res.world.nowSeconds,1000000);
   assert.equal(res.details.natural.saleScope,undefined);

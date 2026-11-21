@@ -59,6 +59,11 @@ export function reviewOriginalNaturalSalePlus({
     [compilerSource,'$g_item->{point}=int($g_item->{popular} * 100 / 24 / 36);'],
   ];
   for(const [text,want] of fragments)marker(text,want);
+  for(const [text,name] of [[marketSource,'GetMarketStatus'],
+    [itemSource,'GetSaleTax'],[detailSource,'GetUserTaxRate']]){
+    if(!new RegExp('\\bsub\\s+'+name+'\\s*\\{').test(text))
+      bad('exact original function source drift: '+name);
+  }
   if(!/\$SALE_SPEED\s*=\s*12\s*;/.test(configSource)||
      !/\$POP_DOWN_RATE\s*=\s*5\s*;/.test(configSource))
     bad('fixed original sale speed and rank-down rate changed');
