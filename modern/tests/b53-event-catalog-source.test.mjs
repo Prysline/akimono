@@ -48,7 +48,9 @@ test('B-53 original compiled Standard Street EVENT list exactly matches executab
 test('B-53 fail closed if percent, disabled overrides, event population or source callbacks drift',()=>{
   for(const changed of [
     {compilerSource:compilerSource.replace("if($2 eq '%'){$num*=10;}","if($2 eq '%'){$num*=1;}")},
-    {compilerSource:compilerSource.replace('print EOUT ', 'print EFAIL ')},
+    {compilerSource:compilerSource.replace(
+      ' if $event->{startproba}!=-1;',
+      ' if $event->{startproba}==100;')},
     {itemDsl:itemDsl.replace('start\t\t-1\t\t#発動しない','start\t\t10%\t\t#発動しない')},
     {rebelDsl:rebelDsl.replace('code\t\trebel','code\t\tchanged')},
   ])assert.throws(()=>reviewOriginalCompiledEventCatalog({
