@@ -11,6 +11,9 @@ import {B57_SUPPORT_SOURCE,projectOriginalSupportEventCallback}
   from './original-b57-support-event-callbacks.mjs';
 import {B58_LOTO_SOURCE,LOTO_RANGE,projectOriginalLotoStartfunc}
   from './original-b58-loto-startfunc.mjs';
+import {B59_IRON_SOURCE,B59_IRON_CODE,
+  isReviewedB59EventPeriod,projectOriginalIronStart,projectOriginalIronExpiry}
+  from './original-b59-iron-event-lifecycle.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 export const B56_EVENT_SLICE_SOURCE='b56-reviewed-sale-plus-full-17-event-gate-fixture';
 const fail=s=>{throw new RangeError('B-56 original EVENT slice: '+s);};
@@ -24,7 +27,7 @@ const validTicketDraw=x=>x!==null&&typeof x==='object'&&
 
 export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
   reviewedCallbacks,reviewedSupportCallbacks=null,
-  reviewedLoto=null}){
+  reviewedLoto=null,reviewedB59Iron=null}){
   if(reviewedB41?.source!==B41_SOURCE||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
@@ -67,6 +70,12 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
      reviewedLoto.maxMoney!==999999999||
      reviewedLoto.gateIncluded!==false))
     fail('reviewed B-58 source lotto contract changed');
+  if(reviewedB59Iron!==null&&(
+     reviewedB59Iron.source!==B59_IRON_SOURCE||
+     reviewedB59Iron.startProba!==100||
+     reviewedB59Iron.itemId!==5||
+     reviewedB59Iron.plusSeconds!==720))
+    fail('source-reviewed durable iron EVENT contract missing');
   const zero=reviewedCatalog.compiled.filter(e=>e.startProba===0);
   if(zero.length!==2||zero.some(e=>e.callbacks.start!==null||
      e.baseTimeSeconds!==0||e.plusTimeSeconds!==0))
@@ -83,6 +92,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
     b41:reviewedB41.source,callbacks:reviewedCallbacks.source,
     support:reviewedSupportCallbacks?.source??null,
     loto:reviewedLoto?.source??null,
+    iron:reviewedB59Iron?.source??null,
     orderMode:'explicit-17-key-permutation-not-Perl-hash-order',
     publicGameplay:false,
   });
@@ -90,7 +100,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
 export function projectB56EventSlice({
   world,reviewed,reviewedB41,reviewedAllPlus,compiled,
   reviewedCatalog,reviewedCallbacks,reviewedSupportCallbacks=null,
-  reviewedLoto=null,shopId,minutes,
+  reviewedLoto=null,reviewedB59Iron=null,shopId,minutes,
   saleDraws,eventDraws,eventHashOrderFixture,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
@@ -98,6 +108,8 @@ export function projectB56EventSlice({
      reviewed.callbacks!==reviewedCallbacks?.source||
      reviewed.support!==(reviewedSupportCallbacks?.source??null)||
      reviewed.loto!==(reviewedLoto?.source??null)||
+     reviewed.iron!==(reviewedB59Iron?.source??null)||
+     (reviewedB59Iron!==null&&reviewedB59Iron.source!==B59_IRON_SOURCE)||
      (reviewedLoto!==null&&reviewedLoto.source!==B58_LOTO_SOURCE)||
      (reviewedSupportCallbacks!==null&&
        reviewedSupportCallbacks.source!==B57_SUPPORT_SOURCE)||
@@ -106,12 +118,11 @@ export function projectB56EventSlice({
      reviewed.orderMode!=='explicit-17-key-permutation-not-Perl-hash-order')
     fail('reviewed source contracts missing');
   if(world?.schema!==PERIOD_WORLD_SCHEMA||world.events!==null||
-     world.period?.eventState===null||
-     !world.period?.eventState||
-     typeof world.period.eventState!=='object'||
-     Array.isArray(world.period.eventState)||
-     Object.keys(world.period.eventState).length!==0)
-    fail('only verified empty source-active events allowed, never unknown or active');
+     !isReviewedB59EventPeriod({
+       period:world.period,reviewed:reviewedB59Iron,
+       nowSeconds:world.nowSeconds,
+     }))
+    fail('only known empty or B-59 single-source iron active EVENT allowed');
   if(!Array.isArray(eventHashOrderFixture)||eventHashOrderFixture.length!==17||
      new Set(eventHashOrderFixture).size!==17||
      eventHashOrderFixture.some(code=>typeof code!=='string'||
@@ -124,6 +135,7 @@ export function projectB56EventSlice({
   const sale=projectB41Sale({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
+    reviewedB59Iron,
   });
   let shop=sale.shops[0],used=0;
   const take=()=>{
@@ -144,6 +156,19 @@ export function projectB56EventSlice({
   };
   const groups=new Set(),messages=[],started=[],eventLogEmissions=[];
   const lotteryWins=[];
+  const expiry=projectOriginalIronExpiry({
+    reviewed:reviewedB59Iron,
+    eventState:world.period.eventState,
+    startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+  });
+  const activeEventState={...expiry.remainingEventState};
+  if(expiry.occupied){
+    const active=reviewedCatalog.compiled.find(e=>e.code===B59_IRON_CODE);
+    groups.add(active.group);
+  }
+  if(expiry.endMessage!==null)
+    eventLogEmissions.push({eventCode:B59_IRON_CODE,
+      level:2,shopId:0,message:expiry.endMessage});
   let lotteryTicketsConsumed=0;
   let callbackCount=0;
   for(const code of eventHashOrderFixture){
@@ -203,6 +228,18 @@ export function projectB56EventSlice({
       // Original return 0: every ticket is gone, but no active event.
       continue;
     }
+    if(code===B59_IRON_CODE&&reviewedB59Iron){
+      const start=projectOriginalIronStart({
+        reviewed:reviewedB59Iron,
+        startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+        randomDraws:[takeUnit(),takeUnit()],
+      });
+      activeEventState[B59_IRON_CODE]=start.expiresAtSeconds;
+      groups.add(event.group);
+      eventLogEmissions.push({eventCode:code,
+        level:2,shopId:0,message:start.startMessage});
+      continue;
+    }
     if(event.startProba!==0||event.callbacks.start!==null||
        event.baseTimeSeconds!==0||event.plusTimeSeconds!==0)
       fail('unreviewed original EVENT started; whole CAS rejected: '+code);
@@ -212,7 +249,7 @@ export function projectB56EventSlice({
   if(used!==eventDraws.length)fail('unused source EVENT random draws');
   return {
     shops:[shop],market:sale.market,nowSeconds:sale.nowSeconds,
-    period:{...world.period,eventState:{}},
+    period:{...world.period,eventState:activeEventState},
     receipt:{
       ...sale.receipt,action:'advance-source-time-reviewed-events',
       source:B56_EVENT_SLICE_SOURCE,
@@ -221,8 +258,11 @@ export function projectB56EventSlice({
       eventStarts:started,instantCallbacksRun:callbackCount,
       eventMessages:messages,eventDrawsUsed:used,
       lotteryTicketsConsumed,lotteryWins,eventLogEmissions,
+      ironEventWasActiveAtDataRead:expiry.wasActive,
+      ironEventExpired:expiry.expired,
+      ironEventExpiresAtSeconds:activeEventState[B59_IRON_CODE]??null,
       totalDraws:sale.receipt.totalDraws+used,
-      eventStateConfirmedEmpty:true,
+      eventStateConfirmedEmpty:Object.keys(activeEventState).length===0,
       sourceScope:'B-41 sale/59 PLUS plus all 17 event gates in caller-provided order; unsupported starts reject; internal only, not exact Perl hash order.',
     },
   };
