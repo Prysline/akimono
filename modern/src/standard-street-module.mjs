@@ -31,6 +31,8 @@ import {reviewOriginalInstantEventCallbacks,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
 import {reviewB56EventSlice,projectB56EventSlice}
   from './original-b56-event-time-slice.mjs';
+import {reviewOriginalSupportEventCallbacks}
+  from './original-b57-support-event-callbacks.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {
@@ -184,10 +186,17 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
       configSource:originalConfigSource}):null;
+  const reviewedSupportEventCallbacks=reviewedEventCatalog?
+    reviewOriginalSupportEventCallbacks({
+      itemDsl,turnSource:originalTurnSource,
+      compilerSource:originalCompilerSource,
+      compiledCatalog:reviewedEventCatalog,
+    }):null;
   const reviewedB56=reviewedB41&&reviewedInstantEventCallbacks?
     reviewB56EventSlice({turnSource:originalTurnSource,
       reviewedB41,reviewedCatalog:reviewedEventCatalog,
-      reviewedCallbacks:reviewedInstantEventCallbacks}):null;
+      reviewedCallbacks:reviewedInstantEventCallbacks,
+      reviewedSupportCallbacks:reviewedSupportEventCallbacks}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -225,6 +234,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB41,
     reviewedEventCatalog,
     reviewedInstantEventCallbacks,
+    reviewedSupportEventCallbacks,
     reviewedB56,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
@@ -323,6 +333,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           world,reviewed:reviewedB56,reviewedB41,reviewedAllPlus,
           compiled:giftMap,reviewedCatalog:reviewedEventCatalog,
           reviewedCallbacks:reviewedInstantEventCallbacks,
+          reviewedSupportCallbacks:reviewedSupportEventCallbacks,
           shopId:command.shopId,minutes:command.minutes,
           saleDraws:command.saleDraws,eventDraws:command.eventDraws,
           eventHashOrderFixture:command.eventHashOrderFixture,
