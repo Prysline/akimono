@@ -143,3 +143,9 @@ B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；�
 從 Standard Street 真實 25個 EVENT 來源（ITEM 23、rebel 2），依固定 `inc-makeitem.cgi` 真 Perl `GetNumber/GetTime` 轉換逐項比對 Node：原版 `start 10%` 編入100、重複 `start 50%` 後再 `start -1` 會被排除，8個來源負一停用、15個正機率及 `rebel`／`guildbattle` 2個0機率總共17個會被編入。這份 `reviewedEventCatalog` 是**只讀原始編譯事件清單，`runtimeSupported=false`**，繁中 UI 能顯示25個宣告／17個入編譯，但事件動態回呼、Perl hash 順序、時間片 EVENT 修改仍未執行。不能用已整理清單假冒完整事件引擎，或把 B-52 當前 `eventState=null`（來源未知）假稱空事件。[B-53 原始編譯器及25個 EVENT 來源證據](b53-compiled-event-manifest.md)。
 
 真正跨36小時仍拒絕，下一步以**實際玩家時間片中的事件啟動／過期／商品回呼和來源市場、城鎮副作用**為主，保持事件亂數不可藉反覆失敗重抽逃避；完成再與 B-50 同店同城期末、B-43 可恢復存檔一體整合，通過真 HTTP跨期→重開→續營才給使用者集中驗收。Draft PR #1、main、migration、固定 Core/DSL 與正式 Notion 任務狀態均先不改。
+
+## 2026-11-21｜B-54 真本機來源抽樣不再因 Node 重啟重抽
+
+B-54 修正真正玩家使用的 B-37供貨與B-41自然販售抽樣：先前真 HTTP 使用 `crypto.randomInt()`，在同一個已存入 B-43 的 WorldState revision 重試會得到不同結果。現改用 `worldId/revision/nowSeconds/來源指令及參數` 派生 SHA256 48-bit 無偏抽樣的百萬分位串流，因此同一世界同一操作**重啟可重播同一結果**，不同revision/指令/參數分離。這是**遷移本機重播策略，不宣稱原版 Perl RAND 種子相同或多人工具防作弊**。真 HTTP E2E 不使用 fixture 隨機，確實做到市場真供貨→真買 #10→上架→存盤→真快轉→關 Node→讀原存檔→同版再快轉完全一致→再存盤重啟仍相同，包含城市和EVENT未知標記。失敗 stale CAS 不提交、前端亂數雜訊不能注入。[B-54 文件與來源差異](b54-restart-stable-source-draws.md)。
+
+**仍然不得開放真正36h跨期**。必須補上17個 EVENT 定義的真開始/過期/回呼/群組/原版亂數遍歷與商品 FUNCTURN/FUNCSALE，然後與 B-50 的真原版單商店／城市期末、來源檔案副作用及 B-43 原子持久化整合，真HTTP跨期後 Node 重啟續營。此版本只是消除同版本重抽問題，不能假裝已完成事件或結算。維持雙 CI 同 SHA、main/原版 Core/DSL 凍結、Draft PR #1未合併；使用者只在完整可玩閉環後一次集中人工驗收。
