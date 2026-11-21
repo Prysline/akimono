@@ -33,7 +33,7 @@ function showState(s){
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
-  $('buy').disabled=!shop||!item?.canBuy;
+  $('buy').disabled=!shop; // Deliberately permit empty-market click: show true Core refusal.
   const entries=shop?[
     {id:10,name:'書本寫作工具',count:shop.item[9],origin:'原版市場進貨'},
     {id:63,name:'展示架擴建拆卸工具',count:shop.item[62],origin:'原版開店贈品'},
@@ -99,7 +99,7 @@ $('supply').addEventListener('click',()=>call('/api/supply',{
 $('buy').addEventListener('click',()=>call('/api/buy',{
   expectedRevision:snapshot?.world?.revision,
   requestedCount:Number($('quantity').value),
-  marketShelf:snapshot?.item10?.shelf,
+  marketShelf:snapshot?.item10?.shelf??0,
   expectedPrice:snapshot?.item10?.price,
 },'市場進貨 #10'));
 async function refresh(){
