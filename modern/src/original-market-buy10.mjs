@@ -123,7 +123,10 @@ export function projectOriginalMarketBuy10({
   // has a defined 0 slot after being sold out.
   const defined=nextWholesale.map((n,i)=>n>0||i===9?i:-1).filter(i=>i>=0);
   const present=new Set(defined);
-  const csv=Array.from({length:(defined.at(-1)??-1)+1},(_,i)=>
+  // Source SetWholeStore writes all MAX_ITEM=79 positions, even when the
+  // last values are undef. Perl join preserves trailing empty CSV fields.
+  // Trimming to last defined item loses source wire identity.
+  const csv=Array.from({length:79},(_,i)=>
     present.has(i)?String(nextWholesale[i]):'').join(',');
   const market={...world.market,wholesale:nextWholesale,
     sparseWrittenSlots:defined,originalWholesaleCsv:csv};
