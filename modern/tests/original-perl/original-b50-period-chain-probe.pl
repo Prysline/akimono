@@ -130,7 +130,7 @@ $stock[62]=1;$stock[78]=5;
 my $originalShop={
   id=>1,status=>1,name=>'來源店主',shopname=>'同一商店',
   foundation=>1000000,lastlogin=>1000000,
-  time=>956800,rank=>5000,rankingcount=>0,
+  time=>956800,rank=>5000,money=>100000,rankingcount=>0,
   profitstock=>0,point=>0,
   item=>\@stock,showcasecount=>1,showcase=>[10],price=>[5000],
   guild=>'',dragon=>0,drmoney=>0,dignity=>0,
