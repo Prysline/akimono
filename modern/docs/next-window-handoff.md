@@ -1,6 +1,18 @@
-# 《商人物語》標準街 Node.js 移植｜**新對話接力交接**（B-39）
+# 《商人物語》標準街 Node.js 移植｜**新對話接力交接**（B-40）
 
 > **用途**：使用者換聊天視窗後，新的助手只需先讀這份精簡可核對的 GitHub 文件，再依目前遠端 HEAD 核對後續工作。**不要**從舊聊天記憶推論最新狀態，也不要把文件內的 CI 數字視為未來 HEAD 的保證。
+
+## 2026-11-21｜B-40 最新開發交接（以下取代本檔 B-39 的「下一個 B-40」舊描述）
+
+**新增加的真正玩家動作：** 在 Node 本機伺服器開啟 [可操作繁中介面](../local-ui/index.html)，經「初始化原版空白來源世界 → 開店 → 原版59項 PLUS 供貨子步驟 → 市場購買商品 #10 書本寫作工具 → 查看同一世界現金、倉庫與批發更新」。店內、市場、倉庫三頁籤由 [dev-local.mjs](../scripts/dev-local.mjs) HTTP API 接至 [GameCore／StreetModule／WorldState](../src/standard-street-module.mjs)，不是獨立 JSON demo，未實作功能停用。詳細 [B-40 執行／成功與拒絕操作、來源 Perl／Node 檢驗](b40-local-browser-market-buy.md)。
+
+- 本機：`cd modern && npm run dev:local`，`http://127.0.0.1:4173`（僅 127.0.0.1）。Node 22+，關閉 Node 服務即失去世界；目前沒有正式存讀檔。
+- 新來源審閱交易模組 [original-market-buy10.mjs](../src/original-market-buy10.mjs) 唯一開放 `buy-market-item-10`：商品 #10 原版 DSL 價格5000、持有上限20／每店批發上限10、單次市場交易時間600秒、原版可成交量縮減，以及商品／金錢／支出／行動時間／批發 sparse CSV 的單次 CAS 變更。別店、其他物品和 callback 尚未開放。
+- 原版供貨不是人工插入：保留 B-34 初始市場空 CSV，經 B-37 真 `PLUS` + `CheckWholeStore` 抽樣運算，提供 60、600、3600 秒的**獨立來源子步驟**。**不**推進 WorldState 時鐘、不做自然販售／完整決算。隨機抽樣不是聲稱可重現 Perl 的 RNG 序列。
+- [原版 Perl 的 buy-s.cgi 執行探針](../tests/original-perl/original-market-buy10-probe.pl)、[Node 回歸及實際本機 HTTP E2E](../tests/original-market-buy10.test.mjs) 核對無貨拒絕、有貨成交、扣款、庫存、批發、CAS 及可從 HTML 操作的 API。每次仍**必須依最新 HEAD 的 push/PR 同 SHA CI 結果**判斷是否完成驗收；不要用較早 B-39 CI 或中間紅燈／綠燈代表最終狀態。
+- 正式任務 02／04／05 仍在進行中；此階段未完成商品完整 USE／自然販售／真正原版週期、CGI、認證、磁碟持久化、多人。原版20份 Core source SHA 和 DSL、main、migration 底分支保持不修改；Draft PR #1 保持開啟且不得合併。
+
+**下一個玩家操作優先 B-41：** 使用本機介面內真購得的 #10，依來源現有 `edit-showcase` 及 B-38 reviewed natural-sale 投射路徑，在相同 WorldState 連接「庫存真上架 → 自然販售 → 現金與庫存變更」；只補阻擋這條鏈的原版必要回呼與時鐘處理。接著依順序接「完整週期結算 → 可重啟讀取的單機存檔」。不要回去做 B-40 以外零散原版細節。
 
 ## 最新工作界線
 
@@ -42,16 +54,16 @@
 
 **以 [現行工作優先序與最小可玩閉環](playable-loop-priority-plan.md) 為後續開發優先依據。** 使用者已明確要求「紀錄應有的順序和工作規劃，不要老是追究小細節」。**下一輪 B-40 必須同步建立實際可啟動的繁體中文本機瀏覽器測試介面與真正進貨，讓使用者可以點選操作、觀察扣款／庫存／市場、查看失敗原因**；後續在同一 UI 逐步加上上架／販售、必要回呼與結算、真存檔，最後整理正式繁中網頁，再做麵店和多人。原版 Perl／Node 比對照舊，但僅擴張足以驗證當前功能的規則；不再只為了另一項函式或斷言數而開新階段。
 
-## 下一段工作的精確目標（B-40 候選）
+## 歷史紀錄：B-40 開始前的精確目標（已進入程式階段，最新狀態見本檔開頭）
 
 B-39 已有真正 ITEM #70 FUNCTURN 回呼的原文隔離驗證，不是玩家可以自行購買的完整遊戲。**B-40 第一優先是可啟動的本機測試 UI＋原版真市場進貨 ITEM #10**：以固定 `buy-s.cgi`／市場與批發來源實際完成付款、購買、庫存更新，接現有 `WorldState`，並驗證至少一筆成功與拒絕路徑。完成後直接把真庫存接展示架與自然販售。**本輪必須有實際可執行的啟動指令（規劃 `npm run dev:local`）、瀏覽器網址與手動成功／拒絕測試步驟，並把畫面資料接真 Game Core／WorldState；不能只有 JSON demo 或測試輸出。** 原版市場初始若沒有 #10 貨源，必須先經合法供貨來源才能購買，不得灌入人工貨源。**只在目前真閉環必要時**才補 FUNCSALE、SortDT 或期末結算；其餘未相關回呼、事件／115 USE 暫不擴大。不更改原版來源／分支、維持双 CI；不能因測試固定秒數、人工庫存就聲稱可玩。
 
 **未完成且不得聲稱已完成：** 所有商品使用、完整週期／市價／自動販售、真正磁碟讀寫／鎖／備份／回滾、密碼認證、HTTP、繁體中文可玩前端、其他街道、多人世界。所有 B-39 `WorldState` 操作仍只在**記憶體**中，初始化命令並非真實玩家行為或安全的原版遊戲管理操作。
 
-## 新視窗起手提示（直接複製）
+## 新視窗起手提示（B-41 起直接複製）
 
 ```text
-繼續《商人物語》標準街 Node.js 移植。先讀工作分支 test/task02-baseline-on-s1 的 modern/docs/playable-loop-priority-plan.md（最高執行優先序）和 modern/docs/next-window-handoff.md，核對 Draft PR #1 HEAD 與同 SHA CI。使用者要求參考原始介面，先讀 modern/docs/original-ui-reference-for-local-test.md，並沿用原版店內／市場／倉庫導覽和資金、人氣、商品表格；不要照搬原版未獲授權圖像或 CGI 密碼。使用者已補充：沒有可實際執行的介面就無法手動測試，所以 **B-40 要同步實作真正市場進貨 ITEM #10 與可在本機瀏覽器啟動操作的繁中測試 UI**，並提供真正可用的 npm run dev:local、網址、操作步驟與狀態前後檢查。UI 必須送真 Game Core／WorldState 命令，不可用假購買、人工供貨或只輸出 CLI JSON 冒充；初始無貨必須真拒絕，需先真供貨才可購買。每步可顯示金錢、庫存、價格、市場、版號與錯誤，未實作行為明確停用，記憶體狀態不冒充真存檔。依序擴充上架／販售、結算、真存讀檔，最後完善正式繁中 UI、麵店與多人；不要因原版無關細節延後可操作功能。原版 Core／DSL 與 main／migration 底分支不可改、PR 不得合併；真原版 Perl／Node 對照與 Push／PR 雙 CI 繼續驗證，更新進度及 Notion。
+繼續《商人物語》標準街 Node.js 現代化。先連接 GitHub 的 Prysline/akimono，讀取 test/task02-baseline-on-s1 最新 HEAD、Draft PR #1 的 Push／PR 同 SHA CI，優先閱讀 modern/docs/playable-loop-priority-plan.md、modern/docs/original-ui-reference-for-local-test.md、modern/docs/next-window-handoff.md 及 modern/docs/b40-local-browser-market-buy.md。B-40 已在同一 GameCore／StreetModule／WorldState 加入真正商品 #10 市場進貨和可執行繁中本機 UI：cd modern && npm run dev:local，瀏覽器 http://127.0.0.1:4173；若 CI 紅燈先修正，不把失敗當成功。B-41 起直接擴充同一個 UI 的真上架→自然販售，使用上一步真正買到的商品庫存。再完成週期結算與可重啟的單機存讀檔。不要以獨立 JSON demo、人工貨源或拆散的測試取代操作閉環；尚未完成的功能必須明確停用。B-37 真 PLUS 目前只是抽樣供貨子步驟，不得假稱有真時鐘或完整週期。只在目前玩家路徑需要時補原版回呼、SortDT 等細節，原版 Perl／Node 比對與 Push／PR 雙 CI 繼續跑。main、migration/standard-street-s1、固定 Core/CGI/DSL 不修改，Draft PR 不合併；更新 GitHub 文件與 Notion，提供可實際操作的繁中成功／拒絕步驟。
 ```
 
-**分窗建議**：在本輪 B-39 文檔與 CI 同 SHA 完成後，直接另開**同一個 ChatGPT 專案的新聊天視窗**，貼上上段提示。**舊窗保留只讀作歷史紀錄**；不要兩個視窗**同時**往相同分支推送修改，否則會產生覆寫／測試 HEAD 不一致的風險。
+**本檔先前 B-39 數值、CI、B-40 開發要求為保留的歷史紀錄；以最新遠端 HEAD 和本檔開頭的 B-40 交接為準。**
