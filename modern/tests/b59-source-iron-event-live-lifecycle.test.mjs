@@ -347,9 +347,15 @@ test('B-59 rejects unknown/multiple/corrupt active EVENT, invalid duration, unre
     assert.equal(isReviewedB59EventPeriod({
       period:world.period,reviewed:review,nowSeconds:world.nowSeconds,
     }),false);
-    const result=make(world);
-    assert.equal(result.ok,false,JSON.stringify(state));
-    assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+    // GameCore rejects non-safe snapshots even before StreetModule can
+    // return a source refusal; both paths must leave the live CAS unchanged.
+    try{
+      const result=make(world);
+      assert.equal(result.ok,false,JSON.stringify(state));
+      assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+    }catch(error){
+      assert.match(error.message,/B-31 contract: WorldState/);
+    }
     assert.deepEqual(adapter.read(),base);
   }
   for(const changed of [
