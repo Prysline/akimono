@@ -80,6 +80,13 @@ export function projectOriginalSparseAllPlus({
     bad('requires original sparse market and exactly one shop');
   if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     bad('79 source caps required');
+  // An isolated PLUS command must not silently bypass an already-known
+  // persistent source EVENT: only B-56/B-59 can authorize its market effect.
+  if(world?.period?.eventState&&
+     typeof world.period.eventState==='object'&&
+     Object.hasOwn(world.period.eventState,'plusup-tetu')&&
+     ironEventActive!==true)
+    bad('known source iron EVENT requires reviewed active PLUS overlay');
   if(typeof ironEventActive!=='boolean'||
      (ironEventActive&&(
        reviewedB59Iron?.source!==B59_IRON_SOURCE||
