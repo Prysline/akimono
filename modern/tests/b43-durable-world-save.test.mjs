@@ -180,10 +180,17 @@ async function boot(directory){
     return {status:res.status,...await res.json()};
   };
   const state=async()=>await (await fetch(url+'/api/state')).json();
-  const stop=async()=>{if(child.exitCode===null){
-    const done=new Promise(resolve=>child.once('exit',resolve));
-    child.kill();await done;
-  }};
+  // SIGTERM-terminated children keep exitCode=null, but signalCode is set.
+  // A repeated cleanup must never await an already emitted 'exit' event.
+  let stopping=null;
+  const stop=()=>stopping??=(
+    child.exitCode!==null||child.signalCode!==null
+      ?Promise.resolve()
+      :new Promise(resolve=>{
+        child.once('exit',resolve);
+        child.kill();
+      })
+  );
   return {child,url,post,state,stop};
 }
 test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and two-slot corruption recovery',async t=>{
