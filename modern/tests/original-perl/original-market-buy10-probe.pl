@@ -31,6 +31,7 @@ sub CheckShowCaseNumber {
   1;
 }
 sub GetMoneyString {$_[0]}
+sub GetTime2HMS {$_[0].'s'} # Output formatting only, not transaction logic
 sub GetTagImgJob {''}
 sub GetMenuTag {''}
 sub PushLog {1}
