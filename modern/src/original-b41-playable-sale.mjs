@@ -59,7 +59,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
-  reviewedB59Iron=null,
+  reviewedB59Iron=null,reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
