@@ -54,12 +54,9 @@ sub call_source {
     unless $rendered && $error=~/__OUT_SKIN_CAPTURED__/ && !$last_error;
 }
 sub run {
-  my($minutes)=@_;
+  my($minutes,$twoRounds)=@_;
   # Original buy-s.cgi halves the process-global TIME_SEND_ITEM in-place.
   # Each measured run is an independent fresh source world: restore config.
-  $TIME_SEND_ITEM=1200;
-  # The literal buy-s.cgi halves this global for marketplace purchases.
-  # Each independent 30m/60m probe must restore the original configured base.
   $TIME_SEND_ITEM=1200;
   my @zeros=(0)x118;
   my $supply=OriginalSparseAllPlusHarness::run(
@@ -126,7 +123,7 @@ sub run {
   my @defined=grep {defined($DTwholestore[$_])} 0..$#DTwholestore;
   no warnings 'uninitialized';
   my $csv=join(',',@DTwholestore);
-  return {
+  my $first={
     minutes=>$minutes,afterBuy=>$afterBuy,
     saleCount=>0+($DT->{itemtoday}{10}//0),
     money=>0+$DT->{money},stock=>0+$DT->{item}[9],
@@ -141,10 +138,81 @@ sub run {
     consumedSamples=>[@draws[0..$used-1]],
     buyAndShowcaseCommits=>$commits,
   };
+  return $first unless $twoRounds;
+  # A new source CGI request begins with fresh transitory ITEM buypeoplebase
+  # fields and the standard TIME_SEND_ITEM=1200, not the previous buy's
+  # process-global halved value. Shop and wholesale state remain unchanged.
+  $NOW_TIME+=$minutes*60;
+  $TIME_SEND_ITEM=1200;
+  my $offerAgain=GetWholeStore();
+  my($shelfAgain)=grep {$offerAgain->{showcase}[$_]==10}
+    0..$offerAgain->{showcasecount}-1;
+  die 'B-42 source market did not replenish real #10' unless defined $shelfAgain;
+  %Q=(id=>0,it=>10,sc=>$shelfAgain,pr=>5000,num1=>1,num2=>0);
+  call_source('./buy-s.cgi');
+  die 'B-42 second market buy not sourced and committed'
+    unless $DT->{item}[9]==1&&$commits==3;
+  my $rebought={
+    money=>0+$DT->{money},stock=>0+$DT->{item}[9],
+    paytoday=>0+$DT->{paytoday},time=>0+$DT->{time},
+    market10=>0+($DTwholestore[9]//0),commits=>$commits,
+  };
+  for my $item (@ITEM) {
+    next if ref($item) ne 'HASH';
+    delete $item->{buypeoplebase};
+  }
+  @draws=(500000,0,0,((0)x118));
+  @main::B35_DRAWS=@draws;$main::B35_USED=0;
+  main::B38SourceNaturalPlus($minutes*60);
+  my $usedAgain=$main::B35_USED;
+  my @numericAgain=map {0+($_//0)} @DTwholestore[0..78];
+  my @definedAgain=grep {defined($DTwholestore[$_])} 0..$#DTwholestore;
+  no warnings 'uninitialized';
+  my $csvAgain=join(',',@DTwholestore);
+  my $second={
+    money=>0+$DT->{money},stock=>0+$DT->{item}[9],
+    rank=>0+$DT->{rank},saletoday=>0+$DT->{saletoday},
+    paytoday=>0+$DT->{paytoday},taxtoday=>0+$DT->{taxtoday},
+    trush=>0+$DT->{trush},costtoday=>0+$DT->{costtoday},
+    temprank=>0+$DT->{temprank},time=>0+$DT->{time},
+    itemtoday10=>0+($DT->{itemtoday}{10}//0),
+    saleRecordCount=>0+($DT->{_sale_count_}{10}{count}//0),
+    definedIndices=>\@definedAgain,originalWholesaleCsv=>$csvAgain,
+    wholesale=>\@numericAgain,randomDrawsUsed=>$usedAgain,
+    consumedSamples=>[@draws[0..$usedAgain-1]],
+  };
+  # The old displayed shelf remains #10 even after the second sale empties it.
+  # Verify the actual source's specialist group bonus without fabricating stock.
+  $NOW_TIME+=$minutes*60;
+  for my $item (@ITEM) {
+    next if ref($item) ne 'HASH';
+    delete $item->{buypeoplebase};
+  }
+  @draws=((0)x121);
+  @main::B35_DRAWS=@draws;$main::B35_USED=0;
+  main::B38SourceNaturalPlus(600);
+  my $idleUsed=$main::B35_USED;
+  my @idleNumeric=map {0+($_//0)} @DTwholestore[0..78];
+  my @idleDefined=grep {defined($DTwholestore[$_])} 0..$#DTwholestore;
+  no warnings 'uninitialized';
+  my $idleCsv=join(',',@DTwholestore);
+  my $empty={
+    money=>0+$DT->{money},stock=>0+$DT->{item}[9],
+    rank=>0+$DT->{rank},temprank=>0+$DT->{temprank},
+    trush=>0+$DT->{trush},costtoday=>0+$DT->{costtoday},
+    saletoday=>0+$DT->{saletoday},paytoday=>0+$DT->{paytoday},
+    itemtoday10=>0+($DT->{itemtoday}{10}//0),
+    saleRecordCount=>0+($DT->{_sale_count_}{10}{count}//0),
+    wholesale=>\@idleNumeric,definedIndices=>\@idleDefined,
+    originalWholesaleCsv=>$idleCsv,
+    randomDrawsUsed=>$idleUsed,consumedSamples=>[@draws[0..$idleUsed-1]],
+  };
+  return {first=>$first,secondPurchase=>$rebought,second=>$second,empty=>$empty};
 }
 my $sale30=run(30);
 my $sale60=run(60);
+my $two30=run(30,1);
 print JSON::PP->new->canonical->encode({
-  sale30=>$sale30,sale60=>$sale60,
+  sale30=>$sale30,sale60=>$sale60,two30=>$two30,
   scope=>'real fixed buy-s.cgi -> sc-s.cgi -> original inc-turn natural region -> original 59 PLUS + CheckWholeStore, same single source state; file/HTTP authentication and full period callbacks excluded',
 });

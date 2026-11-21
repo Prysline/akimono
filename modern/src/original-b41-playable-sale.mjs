@@ -88,7 +88,8 @@ export function projectB41Sale({
   const itemtoday={...shop.itemtoday};
   let sold=0,rankUp=0,rankDown=0;
   let money=shop.money,trush=shop.trush??0,saleToday=shop.saletoday;
-  const tempRank=shop.rank+(display?1000:0);
+  // Core's specialty group uses displayed ITEM type even when stock is zero.
+  const tempRank=shop.rank+(shop.showcase[0]===10?1000:0);
   if(display){
     // Exact single-store original buypeoplebase = (5000/5000)^4 = 1.
     // The sole shop has dtranksum=tempRank, so rank quotient is 1.
