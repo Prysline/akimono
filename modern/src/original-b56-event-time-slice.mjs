@@ -135,7 +135,7 @@ export function projectB56EventSlice({
   const sale=projectB41Sale({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
-    reviewedB59Iron,
+    reviewedB59Iron,reviewedEventTimeSlice:true,
   });
   let shop=sale.shops[0],used=0;
   const take=()=>{
