@@ -83,7 +83,8 @@ export function projectOriginalTopPrize({shop,reviewed,drawMillionths}){
   if(drawMillionths>=1000000)fail('rand must be below 1');
   if(!shop||shop.id!==1||shop.status!==1||
      !Array.isArray(shop.item)||shop.item.length!==79||
-     shop.showcasecount!==1)fail('source one-shop top rank state');
+     (shop.showcasecount!==undefined&&shop.showcasecount!==1))
+    fail('source one-shop top rank state');
   if(shop.item.some((n,i)=>!Number.isSafeInteger(n)||n<0))
     fail('unreviewed stock');
   const beforeCount=safe(shop.rankingcount??0,'rankingcount');
