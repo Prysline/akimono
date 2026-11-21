@@ -4,7 +4,7 @@
 
 ## 原始來源與經過 Perl 執行驗證的語義
 
-- **商品取得**：固定 `custom/inc-item-data.cgi` 中 `@@ITEM no 11`，`code loto`，名稱「抽獎卷」，市場牌價 2,000，`limit 50/20`，維護費 `cost 10`，批發補貨 `plus 10m`，`noshowcase|norequest`。B-58 新增單品 `buy-market-item-11` 審查，沿用 B-40 已鎖定的真原版 `buy-s.cgi`／`whole.cgi`／`item.cgi`／`calc.cgi` 採購語義、10分鐘耗時、真實市場貨架依 DSL 順序計算、已持有數與市場供應共同限制買量、單一 CAS 原子更新店內存貨、現金、`paytoday`、虛擬市場及時鐘。透過原版 Perl `buy-s.cgi` 交易探針確認。**原始 #11 並非 DSL 第二個商品**；不可把商品編號當貨架順位。
+- **商品取得**：固定 `custom/inc-item-data.cgi` 中 `@@ITEM no 11`，`code loto`，名稱「抽獎卷」，市場牌價 2,000，`limit 50/20`，維護費 `cost 10`，批發補貨 `plus 10m`，`noshowcase|norequest`。B-58 新增單品 `buy-market-item-11` 審查，沿用 B-40 已鎖定的真原版 `buy-s.cgi`／`whole.cgi`／`item.cgi`／`calc.cgi` 採購語義、10分鐘耗時、真實市場貨架依 DSL 順序計算、已持有數與市場供應共同限制買量、單一 CAS 原子更新店內存貨、現金、`paytoday`、虛擬市場及商店行動時間（不推進世界時鐘）。透過原版 Perl `buy-s.cgi` 交易探針確認。**原始 #11 並非 DSL 第二個商品**；不可把商品編號當貨架順位。
 - **自然時間**：B-41 限制仍只販售已上架的 #10 書本寫作工具；B-58 允許同店另外持有真正購入的 #11 抽獎卷（不上架／不自然販售），並將每張在回合經過時的原版 `cost 10` 納入 `costtoday` 與對應垃圾累積。原版 `inc-turn.cgi` 是遍歷所有持有物的成本，而非只看展示架。
 - **事件開獎**：原始事件 `start 50%` 經編譯器變為 `startProba=500`，`basetime=0h`、`plustime=0h`；進入已審查完整 17 鍵 EVENT gate 後，`STARTFUNC _local_` 先呼叫 `WriteLog(2,0,"抽獎卷的開獎開始了")`，**清空所有自有的 #11 數量**，對原本每一張各抽一次 `rand(6096454)`。沒票也有一則開獎公告、不消耗開獎亂數。
 - **獎等（依原版連續覆寫 if 判定）**：`rnd<1` 一等 1,000,000,000；`rnd<6` 二等 150,000,000；`rnd<216` 三等 5,000,000；`rnd<10000` 四等 100,000；`rnd<152411` 五等 10,000；其餘無獎。每筆中獎即加現金，累計最高 `MaxMoney=999999999`。回傳0，不形成持續活動 EVENT，且獎金不算作店鋪商品銷售。
