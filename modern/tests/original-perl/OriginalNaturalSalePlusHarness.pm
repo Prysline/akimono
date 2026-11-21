@@ -18,7 +18,7 @@ our $READY;
 sub natural_source {
   my $turn=OriginalGiftMapUseHarness::source('inc-turn.cgi');
   my $start=index($turn,"\t\t#店舗・商品別来客数計算処理");
-  my $end=index($turn,"\t\t#@@item 処理準備",$start);
+  my $end=index($turn,"\t\t#\@\@item 処理準備",$start);
   die 'B-38 exact original sale region not found' unless $start>=0&&$end>$start;
   my $part=substr($turn,$start,$end-$start);
   for my $marker (
