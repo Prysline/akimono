@@ -64,6 +64,8 @@ test('B-40 actual Perl PLUS + buy-s.cgi: no stock rejected and successful purcha
     marketShelf:quote.shelf,expectedPrice:quote.price});
   assert.ok(success.ok,JSON.stringify(success.details));
   assert.equal(success.world.revision,4);
+  assert.equal(perl.success.passed,true,JSON.stringify(perl.success));
+  assert.equal(perl.success.commits,1,JSON.stringify(perl.success));
   assert.equal(success.world.shops[0].money,perl.success.money);
   assert.equal(success.world.shops[0].paytoday,perl.success.paid);
   assert.equal(success.world.shops[0].item[9],perl.success.stock);
