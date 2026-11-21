@@ -37,3 +37,5 @@ inc/
 /.vscode/
 
 /data/
+# B-43 local-only two-generation world saves; never commit private test worlds
+/modern/.local-data/
