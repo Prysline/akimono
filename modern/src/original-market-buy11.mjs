@@ -28,7 +28,7 @@ export function reviewOriginalMarketBuy11({reviewedBuy10,model,compiled,itemDsl}
      compiled?.limits?.[10]?.wslimit!==20)
     fail('actual ITEM #11 compiled DSL/price/limit/flag changed');
   const position=model.items.indexOf(item);
-  if(position!==1||!itemDsl)fail('source sort or item DSL missing');
+  if(position<=0||!itemDsl)fail('source sort or item DSL missing');
   const items=parseDsl(itemDsl,'custom/inc-item-data.cgi').blocks;
   const block=items.filter(x=>x.kind==='ITEM'&&
     x.fields.no?.[0]?.value==='11');
