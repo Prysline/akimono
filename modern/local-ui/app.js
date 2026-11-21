@@ -2,18 +2,51 @@ const $=id=>document.getElementById(id);
 const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
 let currentTab='shop';
+let currentGroup='self';
 const tabs=[...document.querySelectorAll('[data-tab]')];
-function selectTab(name){
-  currentTab=name;
+const groups=[...document.querySelectorAll('[data-group]')];
+const groupNames={self:'自店',trade:'取引',info:'情報',facility:'施設',social:'交流'};
+const tabNames={shop:'店內',stock:'倉庫',market:'市場'};
+function updateNavigation(){
+  for(const group of groups){
+    const selected=group.dataset.group===currentGroup;
+    group.classList.toggle('selected',selected);
+    group.setAttribute('aria-pressed',String(selected));
+  }
+  for(const submenu of document.querySelectorAll('[data-subgroup]')){
+    submenu.hidden=submenu.dataset.subgroup!==currentGroup;
+  }
   for(const tab of tabs){
-    const selected=tab.dataset.tab===name;
+    const selected=tab.dataset.tab===currentTab;
     tab.classList.toggle('selected',selected);
     if(selected)tab.setAttribute('aria-current','page');
     else tab.removeAttribute('aria-current');
     $('tab-'+tab.dataset.tab).hidden=!selected;
   }
+  $('tab-pending').hidden=currentTab!==null;
+  if(currentTab===null){
+    text('pending-title',groupNames[currentGroup]+'（尚未實作）');
+  }
+  text('menu-location',groupNames[currentGroup]+
+    (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
+}
+function selectTab(name){
+  if(!Object.hasOwn(tabNames,name))return;
+  currentTab=name;
+  currentGroup=name==='market'?'trade':'self';
+  updateNavigation();
+}
+function selectGroup(name){
+  if(!Object.hasOwn(groupNames,name))return;
+  if(name==='self')return selectTab('shop');
+  if(name==='trade')return selectTab('market');
+  currentGroup=name;
+  currentTab=null;
+  updateNavigation();
 }
 tabs.forEach(tab=>tab.addEventListener('click',()=>selectTab(tab.dataset.tab)));
+groups.forEach(group=>group.addEventListener('click',
+  ()=>selectGroup(group.dataset.group)));
 function text(id,value){$(id).textContent=String(value);}
 function showState(s){
   snapshot=s;
@@ -30,6 +63,11 @@ function showState(s){
   text('market-source',w?.market?.source??'尚未初始化');
   text('market-price',money(item?.price));text('market-count',item?.marketStock??'—');
   text('owned',item?item.owned+'／'+item.limit:'—');
+  // Collapse setup once after a shop exists, but let the user reopen it.
+  if(shop && !$('setup').dataset.autoClosed){
+    $('setup').open=false;
+    $('setup').dataset.autoClosed='yes';
+  }
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
@@ -55,6 +93,7 @@ function feedback(message,receipt=null,failed=false){
   text('feedback',message);
   const panel=document.querySelector('.feedback');panel.classList.toggle('error',failed);
   const pre=$('receipt');
+  $('receipt-details').hidden=!receipt;
   pre.hidden=!receipt;
   pre.textContent=receipt?JSON.stringify(receipt,null,2):'';
 }
