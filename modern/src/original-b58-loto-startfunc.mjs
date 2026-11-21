@@ -120,7 +120,10 @@ export function projectOriginalLotoStartfunc({reviewed,shop,randomDraws}){
     wins.push({rank,prize,randomValue:n});
     logs.push({
       level:rank<=3?1:2,shopId:0,
-      message:shop.shopname+'抽中了'+rank+'等獎，'+prize+'！',
+      // Original Perl interpolates "$hit等獎" as ONE Unicode variable name,
+      // rather than "$hit" + literal "等獎". The actual Perl emitted log
+      // therefore omits the tier wording. Preserve source, not intent.
+      message:shop.shopname+'抽中了，'+prize+'！',
     });
   }
   const items=[...shop.item];
