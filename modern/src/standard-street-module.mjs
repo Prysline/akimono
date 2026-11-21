@@ -29,6 +29,8 @@ import {reviewOriginalCompiledEventCatalog}
   from './original-event-compiled-catalog.mjs';
 import {reviewOriginalInstantEventCallbacks,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
+import {reviewB56EventSlice,projectB56EventSlice}
+  from './original-b56-event-time-slice.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {
@@ -182,6 +184,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
       configSource:originalConfigSource}):null;
+  const reviewedB56=reviewedB41&&reviewedInstantEventCallbacks?
+    reviewB56EventSlice({turnSource:originalTurnSource,
+      reviewedB41,reviewedCatalog:reviewedEventCatalog,
+      reviewedCallbacks:reviewedInstantEventCallbacks}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -202,6 +208,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
       ...(reviewedB41?['advance-source-time']:[]),
+      ...(reviewedB56?['advance-source-time-reviewed-events']:[]),
       ...(reviewedInstantEventCallbacks?[
         'reviewed-instant-event-callback-fixture']:[]),
     ]),
@@ -218,6 +225,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB41,
     reviewedEventCatalog,
     reviewedInstantEventCallbacks,
+    reviewedB56,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
@@ -306,6 +314,19 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectB41Sale({world,reviewed:reviewedB41,
           reviewedAllPlus,compiled:giftMap,shopId:command.shopId,
           minutes:command.minutes,randomDraws:command.randomDraws});
+      }
+      if(command.kind==='advance-source-time-reviewed-events'&&reviewedB56){
+        ownKeysExact(command,['shopId','minutes','saleDraws',
+          'eventDraws','eventHashOrderFixture']);
+        // Internal only; caller's order is not certified Perl hash iteration.
+        return projectB56EventSlice({
+          world,reviewed:reviewedB56,reviewedB41,reviewedAllPlus,
+          compiled:giftMap,reviewedCatalog:reviewedEventCatalog,
+          reviewedCallbacks:reviewedInstantEventCallbacks,
+          shopId:command.shopId,minutes:command.minutes,
+          saleDraws:command.saleDraws,eventDraws:command.eventDraws,
+          eventHashOrderFixture:command.eventHashOrderFixture,
+        });
       }
       if(command.kind==='reviewed-instant-event-callback-fixture'&&
          reviewedInstantEventCallbacks){
