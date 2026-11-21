@@ -5,7 +5,7 @@ let currentTab='shop';
 let currentGroup='self';
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
-const groupNames={self:'自店',trade:'取引',info:'情報',facility:'施設',social:'交流'};
+const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場'};
 function updateNavigation(){
   for(const group of groups){
