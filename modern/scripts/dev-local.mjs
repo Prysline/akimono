@@ -1,5 +1,5 @@
 /**
- * B-40 local-only browser adapter. NO public server, credentials or disk save.
+ * B-43 local-only browser adapter. No public server or authentication.
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomInt,randomUUID} from 'node:crypto';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createMemoryWorld,createMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
@@ -53,6 +54,9 @@ if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
   throw Error('B-40 runtime source-review capabilities missing');
 
 let repo=null;
+const saveStore=createLocalWorldSaveStore({
+  directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
+});
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
 const send=(res,status,obj)=>{
@@ -62,20 +66,23 @@ const send=(res,status,obj)=>{
 };
 function state(){
   const world=repo?.read()??null;
+  const save=saveStore.status();
   const period=streetModule.reviewedB41.periodSeconds;
   const shift=streetModule.reviewedB41.clockShiftSeconds;
   const nextSettlementAtSeconds=world?
     (Math.floor((world.nowSeconds+shift)/period)+1)*period-shift:null;
   return {
     world,
+    save,
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
     item10:world?.market?streetModule.quoteMarketItem10(world):null,
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '市場 #10 進貨','原版展示架 #10 上架','來源自然販售／時間快轉'],
-    disabled:['跨期決算','完整原版所有商品回呼','存檔／載入','多人'],
-    memoryOnly:true,
+    disabled:['跨期決算','完整原版所有商品回呼','多人'],
+    memoryOnly:!save.available,
+    diskSaveAvailable:true,
   };
 }
 function commit(command){
@@ -147,8 +154,38 @@ async function api(req,res,url){
   const body=await jsonBody(req);
   let result;
   switch(url.pathname){
+    case '/api/load': {
+      if(repo)return send(res,409,{ok:false,
+        error:'目前世界已啟用；不能將磁碟世界覆蓋正在營業的記憶體世界',state:state()});
+      const saved=saveStore.load();
+      repo=createMemoryWorldAdapter(saved.world);
+      return send(res,200,{ok:true,code:'LOADED',
+        details:{action:'load-world',generation:saved.generation,
+          recoveredPreviousGeneration:saved.recovered,
+          revision:saved.world.revision},
+        state:state()});
+    }
+    case '/api/save': {
+      if(!repo)return send(res,409,{ok:false,
+        error:'請先初始化／載入世界才可存檔',state:state()});
+      const world=repo.read();
+      if(world.revision!==ensureRevision(body))
+        return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
+      const expectedGeneration=commandNumber(body.expectedGeneration,
+        'expectedGeneration');
+      const saved=saveStore.save(world,{expectedGeneration});
+      return send(res,200,{ok:true,code:'SAVED',
+        details:{action:'save-world',generation:saved.generation,
+          revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
+        state:state()});
+    }
     case '/api/initialize': {
-      if(repo)return send(res,409,{ok:false,error:'世界已存在；請重啟本機服務建立新世界',state:state()});
+      if(repo)return send(res,409,{ok:false,error:'世界已存在；請使用當前世界',state:state()});
+      const existing=saveStore.status();
+      if(existing.available||existing.unreadable)
+        return send(res,409,{ok:false,
+          error:'已有存檔（或損毀的存檔）；請先載入或修復，不可覆寫既有世界',
+          state:state()});
       const nowSeconds=process.env.AKIMONO_E2E_FIXED_NOW===undefined?
          Math.floor(Date.now()/1000):commandNumber(
            Number(process.env.AKIMONO_E2E_FIXED_NOW),'AKIMONO_E2E_FIXED_NOW',1);
@@ -249,6 +286,6 @@ const server=http.createServer(async (req,res)=>{
   }
 });
 server.listen(port,'127.0.0.1',()=>{
-  console.log(`商人物語 B-41 本機介面：http://127.0.0.1:${server.address().port}`);
-  console.log('本機記憶體，關閉服務資料即遺失；Ctrl+C 停止。');
+  console.log(`商人物語 B-43 本機介面：http://127.0.0.1:${server.address().port}`);
+  console.log('本機獨立存檔；未按「儲存」的變更仍只在記憶體。Ctrl+C 停止。');
 });

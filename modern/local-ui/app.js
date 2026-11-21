@@ -53,6 +53,13 @@ function showState(s){
   const w=s.world,shop=s.shop,item=s.item10;
   text('world-id',w?.worldId??'尚未建立');
   text('revision',w?.revision??'—');
+  const save=s.save??{available:false,generation:0,recoveryWarning:false};
+  text('save-status',save.available?
+    '已有第 '+save.generation+' 代存檔'+
+      (save.recoveryWarning?'（備援世代可用；有一份存檔損毀）':''):
+    (save.unreadable?'存檔損毀，無可載入備援':'尚未儲存'));
+  $('save-world').disabled=!w;
+  $('load-world').disabled=Boolean(w)||!save.available;
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
   const left=s.secondsUntilSettlement;
   text('settlement-status',w&&Number.isSafeInteger(left)?
@@ -132,6 +139,11 @@ async function call(path,payload={},label='操作'){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+$('save-world').addEventListener('click',()=>call('/api/save',{
+  expectedRevision:snapshot?.world?.revision,
+  expectedGeneration:snapshot?.save?.generation,
+},'儲存本機世界'));
+$('load-world').addEventListener('click',()=>call('/api/load',{},'載入本機磁碟世界'));
 $('initialize').addEventListener('click',()=>call('/api/initialize',{},'初始化來源世界'));
 $('open-shop').addEventListener('submit',async e=>{
   e.preventDefault();await call('/api/open-shop',{
