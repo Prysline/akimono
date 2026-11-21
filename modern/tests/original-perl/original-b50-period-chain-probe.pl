@@ -70,7 +70,7 @@ die 'Standard Street post-period after callback missing' unless
 my %nameToNumber;
 my %limits;
 my %scale;
-for my $block (split /^\@\@ITEM\s*\r?\n/mi,$itemDsl){
+for my $block (split /^\@\@ITEM[ \t]*(?:\#.*)?\r?\n/mi,$itemDsl){
   my($id)=$block=~/^\s*no\s+(\d+)\s*$/m;
   my($name)=$block=~/^\s*name\s+([^\r\n#]+?)(?:\s*#.*)?$/m;
   my($limit)=$block=~/^\s*limit\s+(\d+)(?:\/[\d.]+)?\s*(?:#.*)?$/m;
