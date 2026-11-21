@@ -157,7 +157,7 @@ export function projectReviewedGiftMapUse({
        !isOriginalSparse)||
       !Array.isArray(world.market.wholesale)||
       world.market.wholesale.length!==79)
-    fail('missing reviewed source bootstrap or explicit 79-slot test wholesale');
+    fail('missing explicit 79-slot test wholesale or source-reviewed original admin bootstrap');
   if(isOriginalSparse&&!validateSourceSparseMarket(world.market))
     fail('invalid original sparse bootstrap provenance/wire data');
   world.market.wholesale.forEach((n,i)=>integer(n,'wholesale '+i));
