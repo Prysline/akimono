@@ -35,6 +35,7 @@
     "demo:integrated-use": "node scripts/demo-original-integrated-use-lostbook.mjs",
     "demo:game-core": "node scripts/demo-game-core-contract.mjs",
     "demo:world-use": "node scripts/demo-world-use-sequence.mjs",
-    "demo:real-gift-use": "node scripts/demo-real-gift-maps.mjs"
+    "demo:real-gift-use": "node scripts/demo-real-gift-maps.mjs",
+    "demo:original-market-init": "node scripts/demo-original-sparse-market.mjs"
   }
 }
