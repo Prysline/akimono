@@ -45,13 +45,13 @@ function prepared(){
     ownerName:'標準街來源店主',shopName:'全PLUS來源實測店'}).code,'COMMITTED');
   return {repository,call};
 }
-test('B-37 complete pinned 57 PLUS and 22 absent compile into 79 deterministic seconds',()=>{
+test('B-37 complete pinned 59 PLUS and 20 absent compile into 79 deterministic seconds',()=>{
   assert.ok(street.capabilities.includes('reviewed-sparse-all-plus'));
   assert.equal(street.reviewedAllPlus.source,ALL_PLUS_SOURCE);
   const seconds=street.reviewedAllPlus.plusSeconds;
   assert.equal(seconds.length,79);
-  assert.equal(seconds.filter(Boolean).length,57);
-  assert.equal(seconds.filter(x=>!x).length,22);
+  assert.equal(seconds.filter(Boolean).length,59);
+  assert.equal(seconds.filter(x=>!x).length,20);
   assert.deepEqual(seconds,actual.first.plusSeconds);
   assert.deepEqual(seconds,actual.second.plusSeconds);
   assert.equal(seconds[0],-1200);
@@ -74,7 +74,7 @@ test('B-37 source gate needs compiler original source and exact DSL PLUS invento
     ...sources,itemDsl:itemDsl.replace(/\bplus\s+-20m\b/i,'plus -21m'),
   }),/source drift|PLUS/);
 });
-test('B-37 first 57-source PLUS execution matches original Perl all 79 slots',()=>{
+test('B-37 first 59-source PLUS execution matches original Perl all 79 slots',()=>{
   const {repository,call}=prepared();
   const response=call('reviewed-sparse-all-plus',2,{
     timespanSeconds:60,randomDraws:actual.first.consumedSamples,
@@ -83,8 +83,8 @@ test('B-37 first 57-source PLUS execution matches original Perl all 79 slots',()
   assert.equal(response.world.revision,3);
   assert.equal(response.world.nowSeconds,1000000);
   assert.equal(response.details.drawsUsed,actual.first.drawsUsed);
-  assert.equal(response.details.signedChanges.length,57);
-  assert.equal(response.details.activeItemIds.length,57);
+  assert.equal(response.details.signedChanges.length,59);
+  assert.equal(response.details.activeItemIds.length,59);
   assert.deepEqual(response.details.activeItemIds,
     response.details.activeItemIds.toSorted((a,b)=>a-b));
   assert.deepEqual(response.world.market.wholesale,actual.first.numericWholesale);
@@ -95,7 +95,7 @@ test('B-37 first 57-source PLUS execution matches original Perl all 79 slots',()
   assert.equal(response.world.shops[0].item[78],5);
   assert.equal(repository.read().revision,3);
 });
-test('B-37 consecutive source all-57 market transitions match original Perl and caps',()=>{
+test('B-37 consecutive source all-59 market transitions match original Perl and caps',()=>{
   const {call}=prepared();
   for(const [revision,seconds,want] of [
     [2,60,actual.first],[3,600,actual.second],[4,3600,actual.third],
@@ -117,7 +117,7 @@ test('B-37 empty and extraneous random draws reject without mutating CAS world',
   const sourceDraws=actual.first.consumedSamples;
   for(const samples of [
     [],sourceDraws.slice(0,-1),[...sourceDraws,0],[-1,...sourceDraws.slice(1)],
-    [1000000,...sourceDraws.slice(1)],Array(115).fill(0),
+    [1000000,...sourceDraws.slice(1)],Array(119).fill(0),
   ]){
     assert.equal(call('reviewed-sparse-all-plus',2,{
       timespanSeconds:60,randomDraws:samples,

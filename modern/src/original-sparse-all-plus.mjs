@@ -1,5 +1,5 @@
 /**
- * B-37 reviewed original 57/79 PLUS directives from fixed Standard Street DSL.
+ * B-37 reviewed original 59/79 PLUS directives from fixed Standard Street DSL.
  * Runs ORIGINAL inc-turn PLUS ordering and one CheckWholeStore numeric projection
  * after assumed preceding natural sales. Does NOT execute a whole CGI/turn.
  * Perl source-executed probe validates every compiled PLUS and sparse wire.
@@ -8,8 +8,8 @@ import {ORIGINAL_SPARSE_MARKET_SOURCE,validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparseMultiPlus} from './original-sparse-multi-plus.mjs';
 
-export const ALL_PLUS_SOURCE='core-b37-all-57-plus-original-sequence';
-export const ORIGINAL_PLUS_PIN="-20m|-20m|-20m|-20m|-20m|-20m|-20m|6h|1h|20m|10m|1h|10h|1h|20h|-|-|-|-|20h|20h|20h|20h|-|1d|-|-|-|-|2h|-1h|5h|-1h|-1h|-|-|1d|-|5h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|5d|1d|30m|1d|20h|-|-1h|-1h|-|-|-|-|-|-|-|-|1h|-";
+export const ALL_PLUS_SOURCE='core-b37-all-59-plus-original-sequence';
+export const ORIGINAL_PLUS_PIN="-20m|-20m|-20m|-20m|-20m|-20m|-20m|6h|1h|20m|10m|1h|10h|1h|20h|20h|20h|-|-|20h|20h|20h|20h|-|1d|-|-|-|-|2h|-1h|5h|-1h|-1h|-|-|1d|-|5h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|5d|1d|30m|1d|20h|-|-1h|-1h|-|-|-|-|-|-|-|-|1h|-";
 const bad=x=>{throw new RangeError('B-37 all original PLUS: '+x);};
 const safe=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)bad(key);return n;};
 const marker=(s,fragment)=>{if(typeof s!=='string'||!s.includes(fragment))
@@ -44,13 +44,13 @@ export function reviewOriginalSparseAllPlus({
     if(!Number.isSafeInteger(num)||num===0)bad('unsafe PLUS seconds');
     return m[1]?-num:num;
   });
-  if(seconds.filter(Boolean).length!==57||
+  if(seconds.filter(Boolean).length!==59||
     seconds[0]!==-1200||seconds[9]!==1200||seconds[39]!==-3600)
-    bad('original 57 item compiled evidence drift');
+    bad('original 59 item compiled evidence drift');
   return Object.freeze({
     source:ALL_PLUS_SOURCE,population:prior.population,maxUsers:prior.maxUsers,
-    plusSeconds:Object.freeze(seconds),activeCount:57,absentCount:22,
-    scope:'all actual 57 fixed PLUS item declarations; post-sale source loop & full 79 caps; not full inc-turn',
+    plusSeconds:Object.freeze(seconds),activeCount:59,absentCount:20,
+    scope:'all actual 59 fixed PLUS item declarations; post-sale source loop & full 79 caps; not full inc-turn',
   });
 }
 
@@ -59,14 +59,14 @@ export function projectOriginalSparseAllPlus({
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
-    reviewed.activeCount!==57||reviewed.absentCount!==22||
+    reviewed.activeCount!==59||reviewed.absentCount!==20||
     reviewed.plusSeconds?.length!==79)
     bad('reviewed source metadata');
   safe(timespanSeconds,'positive timespan',1);
   if(timespanSeconds>3600)bad('post-sale timespan beyond reviewed bound');
-  if(!Array.isArray(randomDraws)||randomDraws.length>114||
+  if(!Array.isArray(randomDraws)||randomDraws.length>118||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
-    bad('explicit random millionths, maximum 114 samples');
+    bad('explicit random millionths, maximum 118 samples');
   if(world?.market?.source!==ORIGINAL_SPARSE_MARKET_SOURCE||
     !validateSourceSparseMarket(world.market)||
     world.events!==null||!Array.isArray(world.shops)||
@@ -131,6 +131,6 @@ export function projectOriginalSparseAllPlus({
     activeItemIds:changes.map(c=>c.itemId),
     signedChanges:changes,
     sparseWrittenSlots:defined,originalWholesaleCsv:csv,
-    scope:'all 57 original PLUS declarations + one full 79 item cap, with explicit sampled rand; no natural sales/events/real time/CGI/persistence',
+    scope:'all 59 original PLUS declarations + one full 79 item cap, with explicit sampled rand; no natural sales/events/real time/CGI/persistence',
   }};
 }

@@ -52,7 +52,7 @@ const state=repo.read();
 if(state.market.originalWholesaleCsv!==perl.third.wireCsv)
   throw new Error('B-37 final source Perl sparse wire mismatch');
 console.log(JSON.stringify({
-  scope:'B-37 57 real source PLUS in original order, post-sale source fragment only; no full CGI, clock, sales or persistence',
+  scope:'B-37 59 real source PLUS in original order, post-sale source fragment only; no full CGI, clock, sales or persistence',
   itemWithPlus:module.reviewedAllPlus.activeCount,
   itemWithoutPlus:module.reviewedAllPlus.absentCount,
   revision:state.revision,

@@ -35,7 +35,7 @@ sub reviewed_seconds {
     $active++;
   }
   die 'B-37 item id set not 1..79' unless keys(%seen)==79;
-  die 'B-37 pinned 57 actual PLUS directives drift' unless $active==57;
+  die 'B-37 pinned 59 actual PLUS directives drift' unless $active==59;
   die 'B-37 actual #1/#10/#40 PLUS changed'
     unless $seconds[0]==-1200&&$seconds[9]==1200&&$seconds[39]==-3600;
   return \@seconds;
@@ -53,7 +53,7 @@ sub run {
   die 'B-37 bounded synthetic post-sale timespan'
     unless $span>=1&&$span<=3600;
   my @input=exists($o{randomDraws})?@{$o{randomDraws}}:((0)x114);
-  die 'B-37 too many random samples' if @input>114;
+  die 'B-37 too many random samples' if @input>118;
   for(@input){die 'B-37 invalid millionth draw' unless /^\d+$/&&$_<1000000;}
   @main::B35_DRAWS=@input;
   $main::B35_USED=0;
@@ -65,11 +65,11 @@ sub run {
   no warnings 'uninitialized';
   my $csv=join(',',@main::DTwholestore);
   return {
-    plusSeconds=>$seconds,activeCount=>57,absentCount=>22,
+    plusSeconds=>$seconds,activeCount=>59,absentCount=>20,
     wholesale=>\@whole,numericWholesale=>\@numbers,
     definedIndices=>\@defined,wireCsv=>$csv,
     drawsUsed=>$used,consumedSamples=>[ @input[0..$used-1] ],
-    sourceScope=>'57 actual DSL PLUS compiled by source GetTime; original inc-turn PLUS and original full CheckWholeStore; no full CGI, clock, sales, callbacks, persistence',
+    sourceScope=>'59 actual DSL PLUS compiled by source GetTime; original inc-turn PLUS and original full CheckWholeStore; no full CGI, clock, sales, callbacks, persistence',
   };
 }
 1;
