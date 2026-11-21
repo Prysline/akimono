@@ -146,7 +146,7 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.match(html,/倉庫/);
   assert.match(html,/disabled/);
   // Standard Skin is two-tier: original group names plus active submenus.
-  for(const group of ['自店','取引','情報','施設','交流']){
+  for(const group of ['自店','交易','情報','施設','交流']){
     assert.ok(html.includes('【'+group+'】'),group);
   }
   for(const sub of ['［店內］','［倉庫］','［市場］']){
@@ -159,11 +159,18 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   }
   assert.match(html,/receipt-details/);
   assert.match(html,/data-subgroup="trade"/);
+  assert.doesNotMatch(html,/【取引】/);
+  assert.ok(html.indexOf('class="status-section"')>html.indexOf('</header>'));
+  assert.ok(html.indexOf('class="status-section"')<html.indexOf('class="notice"'),
+    'shop status table must sit directly under original-style navigation');
   const css=await (await fetch(url+'/style.css')).text();
   assert.match(css,/#fcfbff/i);
   assert.match(css,/#d9ff99/i);
   assert.match(css,/#fff789/i);
   assert.match(css,/\[hidden\]/);
+  assert.match(css,/\.status-section\{margin:3px 0 5px\}/);
+  assert.match(css,/\.site-heading\{[^\n]*padding-bottom:4px\}/);
+  assert.match(css,/margin-top:2px;font-size:13px;min-height:0/);
   assert.doesNotMatch(css,/#477558/i); // no B-40 dashboard green theme
   assert.doesNotMatch(html,/bg\.gif|logo\.gif|mark\.png/);
   const post=async(path,body={})=>{
@@ -204,4 +211,6 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.equal(replay.state.world.revision,4);
   const js=await (await fetch(url+'/app.js')).text();
   assert.match(js,/\/api\/buy/);
+  assert.match(js,/trade:'交易'/);
+  assert.doesNotMatch(js,/trade:'取引'/);
 });
