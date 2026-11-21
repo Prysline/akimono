@@ -11,6 +11,8 @@ import {validateMemoryWorld,encodeMemorySnapshot,decodeMemorySnapshot,
   PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {validateOriginalPeriodSeed}
   from './original-period-world-seed.mjs';
+import {B59_IRON_SOURCE,isReviewedB59EventPeriod}
+  from './original-b59-iron-event-lifecycle.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 
@@ -24,7 +26,15 @@ function safeInt(value,label,min=0){
 }
 function reviewedPlayableWorld(raw){
   const w=validateMemoryWorld(raw);
-  if(w.schema===PERIOD_WORLD_SCHEMA&&!validateOriginalPeriodSeed(w.period))
+  // Local save is a structural checkpoint, not an EVENT compiler. Only
+  // the source-reviewed single active iron EVENT may extend the original
+  // seed envelope; all unknown/multiple/invalid instances still fail.
+  if(w.schema===PERIOD_WORLD_SCHEMA&&
+     !validateOriginalPeriodSeed(w.period)&&
+     !isReviewedB59EventPeriod({
+       period:w.period,nowSeconds:w.nowSeconds,
+       reviewed:{source:B59_IRON_SOURCE},
+     }))
     fail('unreviewed or settled v2 city/period source state');
   if(w.streetId!=='standard-street'||w.events!==null||w.shops.length>1||
      !validateSourceSparseMarket(w.market))
@@ -35,7 +45,8 @@ function reviewedPlayableWorld(raw){
        !Array.isArray(shop.item)||shop.item.length!==79||
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
        shop.item[62]!==1||shop.item[78]!==5||
-       shop.item.some((n,i)=>![9,62,78].includes(i)&&n!==0)||
+       shop.item.some((n,i)=>![9,10,62,78].includes(i)&&n!==0)||
+       shop.item[10]>50||
        ![0,10].includes(shop.showcase?.[0])||
        shop.showcase?.length!==1||shop.price?.length!==1||
        (shop.showcase[0]===10&&shop.price[0]!==5000)||
