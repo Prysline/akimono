@@ -119,3 +119,9 @@ B-42 已能連續兩輪真買與真售、B-43 可重啟載入；**完整可玩�
 新增固定原版 Perl EVENT 啟動、期限結束後才重新啟動的相鄰來源區段真執行，Node 在單一**無自訂回呼的合成事件**比對 `startproba==0` 仍抽樣、原版 `startproba=-1` 編譯排除、嚴格 `到期 < 片尾`、同群組阻擋及必要的時間抽樣；不以事件是0機率為由跳過叛亂／商會戰等動態行為。[B-48～B-49 來源證據及限制](b48-b49-original-event-gates.md)。
 
 玩家的最終可玩閉環門檻維持不變：必須在同一繁中 UI 的真來源 WorldState 順序整合 EVENT／FUNCTURN／FUNCSALE／SortDT／B-44～B-47 完整期末／59 PLUS，原版 Perl／Node／HTTP 真跨36小時＋B-43 磁碟落盤重啟後可接續經營才開放集中驗收。現在仍拒絕跨期，**不拿純模型測試替代真世界行為**。最終提交同 SHA Push／PR CI 並回寫 GitHub／Notion，Draft PR 不合併。
+
+## 2026-11-21｜B-50 同一商店／城市連續兩期原版結算前綴，仍須接真 WorldState
+
+B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；本次直接從固定原版 `period.cgi` 擷取、執行**整個原版前綴（直到原版備份／session I/O）**，含真正 Standard Street `@@FUNCUPDATE` 前後兩個回呼與原版 `AddItem`；在同一 `$DT[0]`、`$STATE`、`$DTpeople` 真連續跑兩期，原版 Perl／Node 比對**全商店／城市欄位**，證明第一期獎品、維持費、人口、EXP 到第二期持續有效。這不是 B-43 玩家 WorldState 的跨期命令，仍**無法**在瀏覽器跨36小時。原版龍賽、公會、失蹤店鋪、完整 EVENT／ITEM 動態回呼、備份、session 尚未被完整實作；純投射明確設 `nonCommittable` 並拒絕未知分支。詳見 [B-50 真來源同世界兩期](b50-source-same-state-period-chain.md)。
+
+**接下來要直接接上玩家路徑，別再把擴充孤立測試當主要目標：** 以來源合法的 City/Period/Event 欄位擴充可持久化世界狀態，在真正的自然販售／EVENT 連續迴圈中確保每個期末全段恰好原子提交一次，再做真跨期 HTTP／磁碟重啟／再次營業的 E2E。使用者僅在完成該整個閉環後進行集中人工驗收。中間保留雙 CI 同 SHA／Core SHA／DSL 稽核，PR 不合併。
