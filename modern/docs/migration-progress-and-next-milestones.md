@@ -164,3 +164,15 @@ B-39 在程式 SHA `0265bd0a632b6567ebbfbfd33e9ff6c27f15fcd3` 的 [Push CI](http
 **安全與版權界線**：原本素材授權尚須單獨確認，發佈前不能將未知授權的圖片／音樂一起公開；原版程式的歷史異常只列錄，不擅自改其計算順序。
 
 > 專案狀態：B-39 已在受控單店原版來源測資中執行 **自然販售 → 真 ITEM #70 FUNCTURN 回呼 → 原版59項 PLUS／CheckWholeStore**，並逐筆對照Perl與Node數值、人氣、亂數及稀疏批發；**其它商品／FUNCSALE 回呼、SortDT、完整決算、真購買／進貨、持久化／HTTP/UI／多人未完成**。請以下一份[交接文件](next-window-handoff.md)及最新同 SHA CI 為準，不得誤稱原版完整營業週期已完成。
+
+## B-40｜真正繁中本機玩家介面＋商品 #10 原版市場進貨（2026-11-21）
+
+**第一個從玩家手動點擊出發、連接真正標準街來源世界的經營操作已加入程式碼。** [B-40 直接開啟／操作／失敗步驟及來源驗收](b40-local-browser-market-buy.md)，本機 `cd modern && npm run dev:local`、`http://127.0.0.1:4173`，自店／市場／倉庫三頁籤可以依同一個 `WorldState` 重新渲染，沒有把 JSON/人工店內商品模擬當成成交。初始空批發是 B-34 原版；使用 B-37 的真 59 項原始 PLUS 計算供貨，並且清楚標示只是**供貨子步驟而非完整世界時間推進**。
+
+[來源審閱市場購買命令](../src/original-market-buy10.mjs) 經 [標準街模組](../src/standard-street-module.mjs) 與 GameCore CAS 單次更動真店現金／#10庫存／paytoday／行動時間／批發；原價 5000、持有上限20、來源市場買入時間600秒，沒有改原版商品貨源、規則或價格。來源真批發供貨後可在瀏覽器買到 #10；無貨仍可按購買以觀察真正 Core 拒絕，失敗 revision 與店鋪資產不變；展示上架、自然販售、週期決算、存讀檔仍停用。
+
+新增 [原版 Perl buy-s.cgi／GetWholeStore／SetWholeStore 交易探針](../tests/original-perl/original-market-buy10-probe.pl)、[Perl 驗證](../tests/original-perl/original-market-buy10.t)、[Node 來源數字／稀疏批發與本機 HTTP 操作 E2E](../tests/original-market-buy10.test.mjs)。原版買入的 `SetWholeStore` 會寫滿79個格位，包含尾部 `undef`，序列化尾端保留逗號；因此以 `sourceWriteShape=whole-store-79` 標記原版不同來源路徑，前一次 B-34 初始／B-37 精簡稀疏 CSV 行為均保留，B-37 在買入之後也延續完整 CSV 長度。
+
+**程式級驗證**於 `85ad1a869be2c60b813e7e2516b6160dc8bb89a2` 的 [Push CI](https://github.com/Prysline/akimono/actions/runs/44891582798) 與 [PR CI](https://github.com/Prysline/akimono/actions/runs/44891585929) 同 SHA success。後續文件提交的最新 HEAD 仍需另行確認兩個 CI，不能引用較早 SHA 宣稱新文檔也通過。**正式 Notion 12 項任務狀態未因這個功能子切片直接變成「已完成」**。
+
+**下一玩家優先 B-41**：同一網頁使用真正購得的 #10，接真展示架上架→自然販售（現金／庫存／人氣變化），而不是 B-38 的人工上架資料；然後接真週期結算與存檔／重啟載入。不能退回只追加不相干的原版函式測試；按 [正式優先計畫](playable-loop-priority-plan.md) 前進。
