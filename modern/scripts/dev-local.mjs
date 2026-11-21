@@ -9,11 +9,15 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomInt,randomUUID} from 'node:crypto';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createMemoryWorld,createMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
+// Windows Git checkouts can use CRLF while the frozen source review markers
+// refer to the original LF Git blobs. Normalize only source inputs in memory.
+const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
 const [
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -30,7 +34,7 @@ const [
   'modern/tests/original-perl/buy-s.cgi',
   'modern/tests/original-perl/item.cgi',
   'modern/tests/original-perl/calc.cgi',
-].map(read));
+].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
