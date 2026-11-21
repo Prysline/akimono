@@ -106,8 +106,8 @@ export function projectOriginalInstantEventCallback({
   if(!shop||shop.id!==1||shop.status!==1||
      !Array.isArray(shop.item)||shop.item.length!==79||
      shop.item.some(v=>!Number.isSafeInteger(v)||v<0)||
-     shop.item[9]>20||shop.item[63]>1||
-     shop.item.some((v,i)=>![9,62,63,78].includes(i)&&v!==0)||
+     shop.item[9]>20||shop.item[10]>50||shop.item[63]>1||
+     shop.item.some((v,i)=>![9,10,62,63,78].includes(i)&&v!==0)||
      shop.showcasecount!==1||!Array.isArray(shop.showcase)||
      shop.showcase.length!==1||![0,10].includes(shop.showcase[0])||
      !Array.isArray(shop.price)||shop.price.length!==1||
