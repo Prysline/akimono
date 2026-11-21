@@ -149,3 +149,9 @@ B-44～B-47 先前單獨驗證帳務、冠軍獎品、城市領地與 SortDT；�
 B-54 修正真正玩家使用的 B-37供貨與B-41自然販售抽樣：先前真 HTTP 使用 `crypto.randomInt()`，在同一個已存入 B-43 的 WorldState revision 重試會得到不同結果。現改用 `worldId/revision/nowSeconds/來源指令及參數` 派生 SHA256 48-bit 無偏抽樣的百萬分位串流，因此同一世界同一操作**重啟可重播同一結果**，不同revision/指令/參數分離。這是**遷移本機重播策略，不宣稱原版 Perl RAND 種子相同或多人工具防作弊**。真 HTTP E2E 不使用 fixture 隨機，確實做到市場真供貨→真買 #10→上架→存盤→真快轉→關 Node→讀原存檔→同版再快轉完全一致→再存盤重啟仍相同，包含城市和EVENT未知標記。失敗 stale CAS 不提交、前端亂數雜訊不能注入。[B-54 文件與來源差異](b54-restart-stable-source-draws.md)。
 
 **仍然不得開放真正36h跨期**。必須補上17個 EVENT 定義的真開始/過期/回呼/群組/原版亂數遍歷與商品 FUNCTURN/FUNCSALE，然後與 B-50 的真原版單商店／城市期末、來源檔案副作用及 B-43 原子持久化整合，真HTTP跨期後 Node 重啟續營。此版本只是消除同版本重抽問題，不能假裝已完成事件或結算。維持雙 CI 同 SHA、main/原版 Core/DSL 凍結、Draft PR #1未合併；使用者只在完整可玩閉環後一次集中人工驗收。
+
+## 2026-11-22｜B-55 真原版即時 EVENT 回呼已經過 GameCore CAS、磁碟存檔與續營
+
+本輪直接真執行固定原版 Standard Street DSL 中 `manbiki`（偷竊）與 `goutou`（強盜）的完整 Perl STARTFUNC，Node 逐項同源比較原版機器人#64防禦／損毀、展示架原版 `int(stock/10)`／`int(stock/4)` 商品損失、強盜人氣 `rank-int(rank/5)`、訊息、返回0和精確亂數。新增受限定的 **內部回呼開發指令** `reviewed-instant-event-callback-fixture`，由真 Standard Street Module 透過 GameCore expectedRevision CAS 修改真正原版開店／批發#10真購買／合法展示架／自然販售後的玩家商店；B-43 雙世代磁碟儲存讀回與繼續真自然售出均已驗證。錯誤來源或多餘亂數拒絕，不動世界。**不開本機玩家 HTTP 事件按鈕**，因為這是兩種 callback 效果，不是完整原版 EVENT自然觸發與多EVENT hash亂數／到期／群組引擎；不能宣稱已修復全時間片。原版 `startfunc` 返回0不應寫出假的活動事件。詳見 [B-55 真來源偷竊強盜效果／CAS測試](b55-source-event-instant-callbacks.md)。
+
+**玩家完整閉環尚未完成，原版36h跨期仍需拒絕**：優先把 B-53 的17個編譯 EVENT 真實起訖及所有 start/now/end 回呼、其他商品 FUNCTURN/FUNCSALE 正確組成單一來源時間片與 WorldState CAS，再把 B-50同源期末、原版各類副作用及 B-43耐久落盤合併，通過真HTTP「開店→進貨→上架→自然售出→36h真跨期→保存重啟→下一期續賣」才請使用者一次集中驗收。main、migration、原始Core／DSL凍結且 Draft PR 未合併。
