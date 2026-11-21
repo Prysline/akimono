@@ -13,6 +13,8 @@ import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {B58_MARKET11_SOURCE} from './original-market-buy11.mjs';
+import {B59_IRON_SOURCE,isReviewedB59EventPeriod,isB59IronActive}
+  from './original-b59-iron-event-lifecycle.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
@@ -22,7 +24,7 @@ const safe=(x,label,min=0)=>{
   return x;
 };
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
-  configSource,reviewedMarket11=null}){
+  configSource,reviewedMarket11=null,reviewedB59Iron=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -43,8 +45,13 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedMarket11.itemId!==11||reviewedMarket11.unitPrice!==2000||
      reviewedMarket11.stockLimit!==50||reviewedMarket11.upkeepPerTicket!==10))
     bad('B-58 ticket market source review changed');
+  if(reviewedB59Iron!==null&&(
+     reviewedB59Iron?.source!==B59_IRON_SOURCE||
+     reviewedB59Iron.itemId!==5||reviewedB59Iron.plusSeconds!==720))
+    bad('source reviewed B-59 iron event changed');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    ironEventSource:reviewedB59Iron?.source??null,
     ticketSourceReviewed:reviewedMarket11!==null,
     maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
   });
@@ -52,6 +59,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
+  reviewedB59Iron=null,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -66,9 +74,21 @@ export function projectB41Sale({
     world.market.sourceWriteShape!=='whole-store-79'||
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
-  if(world.schema===PERIOD_WORLD_SCHEMA &&
-     !validateOriginalPeriodSeed(world.period))
-    bad('source-initialized city and EVENT state required');
+  if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null))
+    bad('source iron event contract mismatch');
+  if(world.schema===PERIOD_WORLD_SCHEMA&&
+     !validateOriginalPeriodSeed(world.period)&&
+     !isReviewedB59EventPeriod({
+       period:world.period,reviewed:reviewedB59Iron,
+       nowSeconds:world.nowSeconds,
+     }))
+    bad('source-initialized city and known EVENT state required');
+  const ironEventActive=world.schema===PERIOD_WORLD_SCHEMA&&
+    reviewedB59Iron!==null?
+    isB59IronActive({period:world.period,
+      reviewed:reviewedB59Iron,nowSeconds:world.nowSeconds}):false;
+  if(ironEventActive&&reviewedB59Iron===null)
+    bad('unknown active event modifier');
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
     shop.showcase?.length!==1||shop.price?.length!==1||
@@ -168,6 +188,7 @@ export function projectB41Sale({
   const plus=projectOriginalSparseAllPlus({
     world:{...world,shops:[nextShop]},reviewed:reviewedAllPlus,
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
+    reviewedB59Iron,ironEventActive,
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
@@ -181,6 +202,7 @@ export function projectB41Sale({
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,stockBefore:beforeStock,stockAfter:items[9],
+      ironVeinModifierApplied:ironEventActive,
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
       rankBefore:shop.rank,rankAfter:rank,
