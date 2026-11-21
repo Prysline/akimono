@@ -15,7 +15,7 @@
       <h1>商人物語 <span class="town-name">標準街</span></h1>
       <nav class="menu-main" aria-label="原版主選單">
         <button type="button" data-group="self" class="selected" aria-pressed="true">【自店】</button>
-        <button type="button" data-group="trade" aria-pressed="false">【取引】</button>
+        <button type="button" data-group="trade" aria-pressed="false">【交易】</button>
         <button type="button" data-group="info" aria-pressed="false">【情報】</button>
         <button type="button" data-group="facility" aria-pressed="false">【施設】</button>
         <button type="button" data-group="social" aria-pressed="false">【交流】</button>
@@ -57,6 +57,21 @@
       <div class="location-line"><span id="menu-location">自店 &gt; 店內</span><span>下次決算：尚未實作</span></div>
     </header>
 
+    <section class="status-section" aria-label="自店營業資料">
+      <table class="status-table">
+        <tbody>
+          <tr>
+            <th scope="row">店舖</th><td id="store-name">未開店</td>
+            <th scope="row">資金</th><td><strong id="money">—</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">人氣</th><td id="rank">—</td>
+            <th scope="row">可用行動時間</th><td id="time">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <div class="notice" role="note">
       <strong>單機測試：</strong>重啟服務會遺失資料，目前尚無存檔。
       市場供貨是原版來源子步驟，並非完整時間推進。
@@ -74,20 +89,6 @@
       </div>
     </details>
 
-    <section class="status-section" aria-label="自店營業資料">
-      <table class="status-table">
-        <tbody>
-          <tr>
-            <th scope="row">店舖</th><td id="store-name">未開店</td>
-            <th scope="row">資金</th><td><strong id="money">—</strong></td>
-          </tr>
-          <tr>
-            <th scope="row">人氣</th><td id="rank">—</td>
-            <th scope="row">可用行動時間</th><td id="time">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
 
     <section id="tab-shop" class="section pane">
       <h2 class="section-title">店內</h2>
