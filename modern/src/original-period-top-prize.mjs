@@ -40,7 +40,11 @@ export function reviewOriginalTopPrize({itemDsl,model,originalAddItemSource,peri
     const row=topRows[i];
     const pattern=/^\['([^']+)',\s*\[\[@@ITEMNO\s*"([^"]+)",\s*(\d+)\]/;
     const match=pattern.exec(row);
-    if(!match||match[1]!==name||match[2]!==name||Number(match[3])!==amount)
+    // The original prize display categories differ from the actual item
+    // names: rank-1 position 6 says 機器人, 7..9 say 慶祝用品.
+    const sourceLabel=i<5?'禮物卷':i===5?'機器人':'慶祝用品';
+    if(!match||match[1]!==sourceLabel||match[2]!==name||
+       Number(match[3])!==amount)
       fail('source top prize index '+i+' changed');
     const item=model?.items?.find(it=>it.name===name);
     if(!item||item.id<1||item.id>79)fail('unknown source award item '+name);

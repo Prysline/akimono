@@ -1,0 +1,31 @@
+use strict;
+use warnings;
+use utf8;
+use Test::More;
+use JSON::PP qw(decode_json);
+use File::Spec;
+use FindBin;
+my $probe=File::Spec->catfile($FindBin::Bin,'original-b46-territory-probe.pl');
+my $output=qx{perl "$probe"};
+is($?,0,'B-46 original period territory/rebel guard executes');
+my $data=eval{decode_json($output)};
+ok(!$@&&ref($data)eq'HASH','original territory evidence parsed');
+if(ref($data)eq'HASH'){
+  my @cases=@{$data->{cases}};
+  is(scalar @cases,3,'initial, subsequent and insolvency source cases');
+  my($one,$two,$three)=map {$_->{output}} @cases;
+  is($one->{town}{people},500000,'source carries previous period population');
+  is($one->{dtPeople},374050,'source computes new population from one shop');
+  is($one->{town}{develop},4451,'source first rand(200) affects develop');
+  is($one->{town}{safety},3951,'source second rand and under-guard penalty');
+  is($one->{town}{robina},2000,'unled town volunteers remain volunteers');
+  is($one->{town}{army},0,'unled town regular army reset');
+  is($two->{town}{people},374050,'next period previous population moves into STATE');
+  is($two->{dtPeople},336550,'source recalculates following-period population');
+  is($two->{town}{develop},3906,'second-period development source');
+  is($two->{town}{safety},3056,'second-period safety source');
+  is($three->{town}{money},0,'source insolvent town money clamped to zero');
+  is($three->{town}{robina},2666,'source 8000 troops divided by three');
+  is($three->{town}{army},0,'source soldiers transferred into robina');
+}
+done_testing();
