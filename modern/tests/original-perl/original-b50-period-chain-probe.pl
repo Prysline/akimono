@@ -71,7 +71,7 @@ my %nameToNumber;
 my %limits;
 my %scale;
 for my $block (split /^\@\@ITEM[ \t]*(?:\#.*)?\r?\n/mi,$itemDsl){
-  my($id)=$block=~/^\s*no\s+(\d+)\s*$/m;
+  my($id)=$block=~/^\s*no\s+(\d+)\s*(?:#.*)?$/m;
   my($name)=$block=~/^\s*name\s+([^\r\n#]+?)(?:\s*#.*)?$/m;
   my($limit)=$block=~/^\s*limit\s+(\d+)(?:\/[\d.]+)?\s*(?:#.*)?$/m;
   next unless defined($id)&&defined($name);
