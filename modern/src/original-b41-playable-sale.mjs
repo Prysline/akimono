@@ -273,7 +273,8 @@ export function projectB41Sale({
     shop,rule,upkeepCosts:reviewed.upkeepCosts,
     spanSeconds:span,randomDraws,popularOverride,
   });
-  const newShop=natural.shop,sold=natural.sold;
+  const nextShop=natural.shop,sold=natural.sold;
+  const newShop=nextShop;
   const naturalDraws=natural.drawsUsed,used=naturalDraws;
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;
