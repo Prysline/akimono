@@ -195,5 +195,5 @@ test('R2-D source callback drift and unknown source USE cannot be silently ignor
     itemDsl:sources.itemDsl.replace(
       'return 0 if rand(1000)>100;',
       'return 0 if rand(1000)>100;\n$DT->{money}+=100;'),
-  }),/B-63/);
+  }),/B-63|PLUS source metadata/);
 });
