@@ -8,6 +8,8 @@
 
 **必須修復的例外：** ITEM #14 原版 `BASE 50/150`（`custom/inc-item-data.cgi:1156`）會產生庫存依賴成交價及 `GetTimeDeal` 耗時；舊 R2-A Perl 商品編譯／Oracle 漏讀 BASE，原來 #14 固定 10000G/600秒僅為歷史相容。Registry 特別註記 `legacy-r2a-price-incomplete`，當前仍保留該受控行為，**尚未對真正原版市場價完成驗收，R2-B 不可標記完成**。R2-C 要統一 UI／HTTP、移除三套舊交易演算法，但本次完全未進行該遷移；保留舊命令不代表去重。測試和來源列表見 [R2 現況](shared-market-buy-r0-r2.md)；無記憶接手先讀 [交接](next-window-handoff.md)。
 
+**B-43 API 更新：** `createLocalWorldSaveStore({directory,marketBuyRegistry})` 可顯式接來源 Registry，並對新增普通商品只接受已編譯 `getRule`、來源正確索引及庫存上限內的存檔資料；不傳 Registry 時完全保留舊 B-43 嚴格存檔限制。相同 Registry 必須在重啟讀取時重新提供；沒有來源證據就拒絕載入，不能偷開廣義79商品信任。新增真正原版 Perl `GetBuffer(BASE)`＋`GetWholeStore`＋`GetTimeDeal` 探針證明 #14 動態價／時間落差；這是 R2-B 不能結案的直接測試證據。
+
 ---
 
 
