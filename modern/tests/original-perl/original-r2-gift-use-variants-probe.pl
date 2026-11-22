@@ -63,7 +63,7 @@ $main::LIMIT_EXP=3600;
 $main::MAX_ITEM=79;
 $main::USER='r2-source-gift-variants';
 $main::DT={id=>1,status=>1,job=>'',rank=>5010,money=>100000,
-  paytoday=>0,time=>956800,item=>$stock,exp=>{},shopname=>'原版禮卷'});
+  paytoday=>0,time=>956800,item=>$stock,exp=>{},shopname=>'原版禮卷'};
 @main::DT=($main::DT);
 @main::DTwholestore=(0)x79;
 my $requested=$input->{requestedCount}//1;
