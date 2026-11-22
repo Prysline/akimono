@@ -13,6 +13,7 @@ import {projectR3PreEventTurn}
   from '../src/original-b41-playable-sale.mjs';
 import {reviewR4SortedPreEvent,projectR4SortedPreEventTurn,
   R4_SORTED_PRE_EVENT_SOURCE} from '../src/original-r4-sorted-pre-event.mjs';
+import {projectB56EventSlice} from '../src/original-b56-event-time-slice.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=relative=>readFile(path.join(root,relative),'utf8');
@@ -155,4 +156,41 @@ test('R4 sorted phase rejects forged source or unknown prior EVENT without mutat
     world:{...world,period:{...world.period,eventState:null}},
   }));
   assert.equal(JSON.stringify(world),snapshot);
+});
+
+
+test('R4 actual SortDT composes with internal B-56 EVENT fixture without claiming Perl hash order',()=>{
+  const world=buildPurchasedWorld(),original=JSON.stringify(world);
+  const base=args(world);
+  const eventHashOrderFixture=street.reviewedEventCatalog.compiled
+    .map(e=>e.code).toReversed();
+  const result=projectB56EventSlice({
+    world,reviewed:street.reviewedB56,
+    reviewedB41:street.reviewedB41,
+    reviewedAllPlus:street.reviewedAllPlus,
+    compiled:street.reviewedGiftMapUse,
+    reviewedCatalog:street.reviewedEventCatalog,
+    reviewedCallbacks:street.reviewedInstantEventCallbacks,
+    reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,
+    reviewedLoto:street.reviewedLoto,
+    reviewedB59Iron:street.reviewedB59Iron,
+    reviewedB60Happy:street.reviewedB60Happy,
+    reviewedB61Sword:street.reviewedB61Sword,
+    reviewedB62Map:street.reviewedB62Map,
+    reviewedB63Map:street.reviewedB63Map,
+    shopId:1,minutes:30,
+    saleDraws:base.randomDraws,
+    eventDraws:eventHashOrderFixture.map(()=>999999),
+    eventHashOrderFixture,
+    r4SortReview:reviewed,
+  });
+  const sorted=projectR4SortedPreEventTurn({
+    ...base,reviewedR4:reviewed,
+  });
+  assert.deepEqual(result.shops,sorted.shops);
+  assert.deepEqual(result.market,sorted.market);
+  assert.equal(result.receipt.originalSortApplied,true);
+  assert.equal(result.receipt.eventHashOrderSupplied,true);
+  assert.deepEqual(result.period.eventState,{});
+  assert.equal(JSON.stringify(world),original);
 });
