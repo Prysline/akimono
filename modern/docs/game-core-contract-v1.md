@@ -1,3 +1,46 @@
+# GameCore／StreetModule／WorldState｜現行責任契約修正（2026-11-22）
+
+> **重要：下方 B-31 內容是第一個可執行契約的「歷史實作記錄」，不是正式最終架構。** B-31 已驗證版本／CAS／分派等最低層介面；但後續演進已顯示僅靠 streetModule.apply() 去承擔原版所有商業邏輯，會把各個來源審閱模型與商品／事件專用命令堆到 Standard Street。當前實作依然如此，這一節是目標合約及重構驗收，不代表程式已完成更改。權威工作序列見 [現行可玩閉環與共用核心計畫](playable-loop-priority-plan.md)。
+
+## 為何 B-31 最初責任切分不能直接延用
+
+B-31 文件第「三個模組及責任界線」表明 GameCore 不涉及商品 ID、原版 DSL、商品價格、回呼、交易收費和商業邏輯。這在最初僅做記憶體 CAS 的階段是合理的**受限實作宣告**，但不能把它升格為正式架構原則：原始 Core 的 inc-turn.cgi、plug/use.cgi、plug/whole.cgi、buy-s.cgi、inc-period.cgi 本來就是三條街道共享的運作規則；現在的 standard-street-module.mjs 則隨 B-40～B-63 擴充出多個依 ITEM #10／#11／#14、指定地圖及指定事件分流的 reviewed/project 命令。
+
+代價不是「原版驗證太多」，而是**同一套來源已證明的算法沒有成為一次驗證、各街共用的正式執行能力**。每個微小功能因而重複遭遇來源 pinning、特殊抽樣、Perl fixture、Node 模型、CAS、存檔和 HTTP 整合的前置成本。沒有工時計時證據，不應量化為實測「10 倍」；這是由現有程式與階段紀錄可支持的結構性成本解釋。
+
+## 正式責任（目標；尚待實作）
+
+| 層次 | 規則責任 | 邊界與證據 |
+| --- | --- | --- |
+| **GameCore：共同規則引擎** | 共用命令校驗及調度，並真正執行原版共用的 UseTime、UseItem/MakeAmount、庫存、批發供需、玩家買賣、自然售出／人氣／稅、世界時間分段、商品及事件回呼序列、SortDT、36h 週期決算 | 據 Core inc-func.cgi、inc-turn.cgi、plug/use.cgi、buy-s.cgi、inc-period.cgi、inc-makeitem.cgi；共用公式只實作一次，必須可被多個 StreetModule 呼叫 |
+| **StreetModule：街道差異與掛鉤** | 版本化設定、ITEM／USE／EVENT 編譯成果、職業／初始化參數、回呼行為、必需的特殊命令及特殊世界狀態；按原版時序提供 sale/use/turn/period 等擴充點 | 不重新實作一份市場、自然銷售或決算；URon 髒碗販售副作用、WAtlas 期末海域更新為跨街驗證 |
+| **RulesCompiler／Registry** | 把已核對 DSL 語義、公式／預設、宏、USE／NEED／GET 與函式參考，編譯為安全、可檢查的資料及有限回呼；保留 source file／line／blob 與 unsupported 語義 | **不在正式玩家命令中任意 eval 原版 Perl**；未知語義明確拒絕並給出來源位置，但不可只因未知 itemId 就重寫 command |
+| **WorldState／Persistence** | 街道及共用世界狀態、原版數值語義、版本、原子交易、失敗無副作用、可恢復落盤；未來可替換資料儲存 | GameCore 是規則權威，Repository 是持久化／CAS 權威，兩者不可互相猜測資金或庫存 |
+| **UI／API** | 送一般命令、呈現權威資料與錯誤 | 不依 ITEM ID 自行算錢或直接做世界變更 |
+
+**操作介面（示意，尚未實作）：** market-buy(shopId,itemId,count)、use-item(shopId,itemId,useId,count)、edit-showcase、advance-world-time。不同商品的合法行為經同一命令＋不同編譯資料與回呼表達；**絕不可因新增 ITEM #41／#42 而再新增一個 buy-market-item-41／42 Command**。
+
+### 原版順序不得因抽象化被改掉
+
+- 使用前回呼 → 驗證與扣資源／時間 → 各材料及 GET 的 MakeAmount → 原版 CheckWholeStore 位置 → 使用後回呼 → EXP 尾段，並保留對不同行為的原版例外。
+- 世界時間片：自然販售 → 商品 FUNCTURN → FUNCSALE → SortDT → 達期界時 inc-period.cgi → 市場 PLUS／上限 → EVENT 結束／開始／持續效果。
+- 週期回呼：街道 UpdateResetBefore／UpdateResetAfter 對應原版固定相對位置。URon 原版覆寫整份 inc-turn.cgi，須先比對所有差異再選適當擴充點，不能只保留髒碗一行而假定其他完全相同。
+- 所有原版 Perl 亂數、hash 順序、整數截斷、稀疏陣列與副作用風險維持可測；尚無等價方案者不能假稱已精確重現。
+
+## 任務04真正完成的驗收條件
+
+1. 至少一種共用市場交易、一種共用自然販售、兩種具有不同 USE／回呼的商品，在不同 ID 下使用**同一**通用命令及 Core 執行路徑；新增合法同類商品不需新增命令型別或獨立販售核心。
+2. WorldState／CAS／雙世代存檔及現有 B-01～B-63 已通過的 Perl、Node、HTTP 回歸仍通過，差異須逐項有來源證據與相容性決策。
+3. 同一個真玩家世界能從操作走到 36h 來源一致的期末結算，並保存／重啟後續營，不靠測試 fixture 代替真世界；未審閱行為明確拒絕而不偷跳過。
+4. 至少用 URon 售出麵食產生髒碗及 WAtlas 期末海域更新，驗證 Core 公式可重用；此項可作後續任務08／12 的跨街完成關卡，**不能以人工第二街道假模組視為正式通過**。
+5. 每次正式推送仍通過固定來源稽核與**同一 HEAD** Push／Draft PR CI；不因此降低來源忠實性或現有資料安全標準。
+
+**狀態：未達成以上完整條件。** B-31 的記憶體命令契約與後續 B-43 存檔等成果繼續保留，但不能據此把任務04或共用遊戲引擎標記為完成。
+
+---
+
+## B-31 第一版介面與來源驗證（歷史紀錄）
+
 # 第三十一階段｜Game Core／Street Module／World State 的第一個可執行介面
 
 ## 定位：開始正式任務04，但尚未完成所有正式驗收
