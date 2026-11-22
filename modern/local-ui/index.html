@@ -188,7 +188,7 @@
 
     <section id="tab-item" class="section pane" hidden>
       <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
-      <h2 class="section-title">● 商品明細</h2>
+      <h2 class="section-title">商品明細</h2>
       <h3 id="item-detail-name" class="sub-title">請從倉庫選擇商品</h3>
       <table class="item-detail-table"><tbody>
         <tr><th scope="row">持有數量</th><td id="item-detail-owned">—</td></tr>
@@ -205,7 +205,7 @@
           <label>商品
             <select id="shelf-item"><option value="0">清空展示架</option></select>
           </label>
-          <label>定價比例 <input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required> %</label>
+          <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
           <button id="set-showcase" class="primary" type="submit">設定展示架</button>
         </fieldset>
       </form>
