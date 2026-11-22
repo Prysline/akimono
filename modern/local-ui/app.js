@@ -3,10 +3,16 @@ const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
 let currentTab='shop';
 let currentGroup='self';
+let selectedItemId=null;
+const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
+const timeText=seconds=>{
+  const t=Math.max(0,Math.floor(seconds));
+  return Math.floor(t/3600)+' 小時 '+Math.floor(t%3600/60)+' 分鐘';
+};
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場'};
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',balance:'收支',item:'商品明細'};
 function updateNavigation(){
   for(const group of groups){
     const selected=group.dataset.group===currentGroup;
@@ -17,16 +23,19 @@ function updateNavigation(){
     submenu.hidden=submenu.dataset.subgroup!==currentGroup;
   }
   for(const tab of tabs){
-    const selected=tab.dataset.tab===currentTab;
+    const selected=tab.dataset.tab===currentTab||
+      (currentTab==='item'&&tab.dataset.tab==='stock');
     tab.classList.toggle('selected',selected);
     if(selected)tab.setAttribute('aria-current','page');
     else tab.removeAttribute('aria-current');
     $('tab-'+tab.dataset.tab).hidden=!selected;
   }
+  $('tab-item').hidden=currentTab!=='item';
   $('tab-pending').hidden=currentTab!==null;
   if(currentTab===null){
     text('pending-title',groupNames[currentGroup]+'（尚未實作）');
   }
+  if(currentTab==='item'&&snapshot)renderItemInfo(snapshot);
   text('menu-location',groupNames[currentGroup]+
     (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
 }
@@ -48,6 +57,98 @@ tabs.forEach(tab=>tab.addEventListener('click',()=>selectTab(tab.dataset.tab)));
 groups.forEach(group=>group.addEventListener('click',
   ()=>selectGroup(group.dataset.group)));
 function text(id,value){$(id).textContent=String(value);}
+const toggle=$('dev-toggle');
+toggle.addEventListener('click',()=>{
+  const enabled=document.body.classList.toggle('dev-mode');
+  toggle.setAttribute('aria-pressed',String(enabled));
+  toggle.textContent='開發工具：'+(enabled?'開':'關');
+});
+document.querySelectorAll('[data-go-tab]').forEach(button=>
+  button.addEventListener('click',()=>selectTab(button.dataset.goTab)));
+$('back-to-stock').addEventListener('click',()=>selectTab('stock'));
+const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
+function openItem(itemId){
+  if(!Number.isSafeInteger(itemId)||itemId<1)return;
+  selectedItemId=itemId;
+  selectTab('item');
+}
+function renderItemInfo(s){
+  const item=catalogItem(s,selectedItemId);
+  const shop=s.shop;
+  text('item-detail-name',item?.name??'請從倉庫選擇商品');
+  text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
+  text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
+  text('item-detail-limit',item?number(item.stockLimit):'—');
+  const shelf=shop?.showcase?.[0]===item?.itemId&&item?
+    '第 1 架（售價 '+money(shop.price[0])+'）':'未陳列';
+  text('item-detail-shelf',item?shelf:'—');
+  const sourceShelves=s.showcaseOffers??[];
+  const shelfSelect=$('shelf-item');
+  const previous=Number(shelfSelect.value);
+  shelfSelect.replaceChildren();
+  const empty=document.createElement('option');
+  empty.value='0';empty.textContent='清空展示架';
+  shelfSelect.append(empty);
+  const offer=sourceShelves.find(x=>x.itemId===selectedItemId);
+  if(offer){
+    const option=document.createElement('option');
+    option.value=String(offer.itemId);
+    option.textContent=offer.name+'（原價 '+money(offer.unitPrice)+'）';
+    option.disabled=!offer.canShow;
+    shelfSelect.append(option);
+  }
+  shelfSelect.value=offer?.canShow?
+    (previous===0?'0':String(offer.itemId)):'0';
+  const canEdit=Boolean(item&&shop&&(offer||shop.showcase?.[0]===selectedItemId));
+  $('showcase-form').hidden=!canEdit;
+  $('set-showcase').disabled=!shop||!canEdit;
+  const useBody=$('use-offers');
+  useBody.replaceChildren();
+  const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
+  if(!useOffers.length){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=5;td.textContent='此商品目前沒有可執行的使用或製作方式';
+    tr.append(td);useBody.append(tr);
+    return;
+  }
+  for(const row of useOffers){
+    const tr=document.createElement('tr');
+    tr.dataset.useItemId=String(row.itemId);
+    const cell=value=>{const td=document.createElement('td');
+      td.textContent=String(value);tr.append(td);return td;};
+    cell(row.useName+(row.firstUseOnly?'（限首次）':''));
+    cell('持有 '+row.owned+'；材料 '+
+      (row.materials??[]).map(x=>
+        (catalogItem(s,x.itemId)?.name??'#'+x.itemId)+' × '+x.count).join('、'));
+    cell(money(row.moneyPerUse)+'／'+timeText(row.timePerUseSeconds));
+    const tdInput=document.createElement('td');
+    const count=document.createElement('input');
+    count.type='number';count.min='1';count.step='1';count.value='1';
+    if(row.firstUseOnly)count.max='1';
+    count.disabled=!row.canUse;
+    count.dataset.useCount=String(row.itemId);
+    count.setAttribute('aria-label',row.itemName+' 使用次數');
+    tdInput.append(count);tr.append(tdInput);
+    const tdButton=document.createElement('td');
+    const button=document.createElement('button');
+    button.type='button';button.className='primary';
+    button.dataset.useItem=String(row.itemId);
+    button.dataset.useId=String(row.useId);
+    button.textContent=row.canUse?'使用／製作':'不可使用';
+    button.disabled=!row.canUse;
+    button.title=row.reason??'來源已審閱的商品操作';
+    tdButton.append(button);tr.append(tdButton);
+    useBody.append(tr);
+  }
+}
+$('inventory').addEventListener('click',event=>{
+  const button=event.target.closest('[data-open-item]');
+  if(button)openItem(Number(button.dataset.openItem));
+});
+$('storage-inventory').addEventListener('click',event=>{
+  const button=event.target.closest('[data-open-item]');
+  if(button)openItem(Number(button.dataset.openItem));
+});
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
