@@ -1,11 +1,15 @@
 /**
- * B-31 Standard Street MODULE, not shared GameCore rules.
- * Recognized, source-backed subset only:
- * - original Core new.cgi plus reviewed Standard Street FUNCNEW declarations
- * - original Core sc-s.cgi editShowcase behavior from B-01..B-30 models
- *
- * No market lifecycle, sales, Perl callbacks, DSL evaluation, auth, money
- * transfer, persistence, default prices for opaque DSL fields, or CGI.
+ * Standard Street source-reviewed module (B-31 baseline through R2-A).
+ * Supplies DSL/source-backed item rules, market ordering/wire format, shop
+ * creation and showcase constraints to the shared GameCore.
+ * R2-A: common market-buy accounting runs in market-buy-core.mjs, NOT here.
+ * Standard Street @@FUNCBUY voucher threshold is source-reviewed; buyers
+ * above the threshold fail closed until its actual effect is implemented.
+ * R2-B: item registry still has a #10/#11/#14 whitelist.
+ * R2-C: legacy buy-market-item-* actions below STILL run separate engines.
+ * Original Perl is never evaluated by live Node game commands.
+ * Full generic USE, natural sales, period settlement, auth, and CGI are NOT
+ * established by R2-A; B-xx reviewed portions remain source-bounded.
  */
 import {parseDsl} from './parse-dsl.mjs';
 import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
