@@ -14,8 +14,9 @@ my %expected=(
   doubled=>[[8,7,3,1,1],1,12,1,0],
   'doubled-loss'=>[[8,7,3,1,1],0,12,1,1],
   'zero-loss'=>[[0,0,0,0,0],0,52,0,1],
+  boundary=>[[8,7,3,1,1],1,12,1,0],
 );
-for my $scenario(qw(mixed mixed-loss doubled doubled-loss zero-loss)){
+for my $scenario(qw(mixed mixed-loss doubled doubled-loss zero-loss boundary)){
   my $raw=qx{perl "$probe" "$scenario" 2>&1};
   my $status=$?;
   is($status,0,"B-63 actual fixed Perl GetBuffer/funcb/UseItem/MakeAmount/lostbook $scenario");
