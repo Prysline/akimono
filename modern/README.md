@@ -1,11 +1,28 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
-## 2026-11-22｜R2 共用市場進貨執行第一階段
+## 目前實作與未完成項目（2026-11-22，開啟工作區請先讀）
 
-新的 `market-buy` 命令已由 **GameCore** 執行真正共用的買入數量、金錢／庫存、600 秒搬運時間、原版 72 小時時間上限與 WorldState/CAS 提交流程；**Standard Street** 只提供已來源審閱的 #10、#11、#14 商品規格、來源商品排序、批發市場 `SetWholeStore` 格式和回呼邊界。完整契約、原版依據與測試替代對照見 [R0–R2 共用市場進貨](docs/shared-market-buy-r0-r2.md)。
+> **R2「共用市場／交易／商品使用」尚未完成。R2-A 買入核心僅部分完成，R2-B～E 均未完成；先前「R2 第一階段完成」不應再使用。** 正式開發優先序：[R0–R7 計畫](docs/playable-loop-priority-plan.md)；無對話記憶仍可獨立使用的 [R2-A～E 現況／完成門檻／程式與測試證據](docs/shared-market-buy-r0-r2.md)；[最新交接](docs/next-window-handoff.md)。下方大量 B-xx 段落是當時的歷史增量紀錄，**不可拿過時的「目前／尚未／下一步／HEAD」當現在的能力與 CI**。
 
-新命令欄位為 `{kind:'market-buy',expectedRevision,shopId,itemId,requestedCount,marketShelf,expectedPrice}`。成功會更新真實世界狀態與現有持久化相容結構；失敗或版本衝突不改動原世界。**現有本機 UI 與 #10／#11／#14 舊命令暫不修改**，作為相容與原版差分測試。未審閱的商品、動態定價、全域／商品買入回呼、公會及多店市場不得默默略過或自行推測；本階段不是全商品、全街道或真正 CGI 等價的宣告。
+**已有：** `src/market-buy-core.mjs` 由 GameCore 的 `market-buy` 命令共用執行 #10／#11／#14 的來源受限買入數量裁切、付款、批發／店鋪庫存、操作時間（受審閱資料為600秒）、72小時累積時間上限、一次 CAS／可保存世界形狀。已通過舊模型對照、來源 Perl 代表性證據、拒絕、版本衝突及雙世代存檔相關自動化測試；不代表所有合法商品都已接入。
 
+**尚缺：** `standard-street-module.mjs` 仍以 `sharedBuyRules` 硬列三個商品，其他商品由目前白名單拒絕（**不是已確認原版不合法**）；`buy-market-item-10/11/14` 仍分別調用三套 `projectOriginalMarketBuy*` **獨立交易演算法**（不是相容 alias）；UI／HTTP 未全面改用 `market-buy`；共用 `use-item`／製作尚未完成；市場特殊價格、回呼、多店、公會等需按實際來源語義辨識，不得假裝已支援或全都沒有特殊效果。
+
+| R2 工作包 | 判定 | 下一步 |
+| --- | --- | --- |
+| **A 共用買入核心** | **部分完成，不可結案** | 補齊原版 Perl Oracle／邊界及已審閱回呼時序的驗收 |
+| **B 資料驅動 ITEM 規則** | **未完成** | 經審閱 DSL/Registry 讓合法普通商品以資料接入，移除三商品硬編碼白名單 |
+| **C 交易路徑統一** | **未完成** | UI／HTTP 改用 `market-buy`，移除三條舊正式買入演算法，保留必要差分證據 |
+| **D 共用 USE／製作** | **未完成** | 共用 `use-item` 承接已審閱 #79／#14 USE |
+| **E 整合驗收** | **未完成** | 原版 Perl、Node、HTTP、CAS、雙世代存檔／重啟及舊測試遷移驗收 |
+
+**先完成 R2-A 未結項與 R2-B／C，再完成 R2-D／E；R2 結案後 R3 才專注共用自然販售／時間，R4 做 EVENT／36 小時決算，R5 做繁中單機跨期閉環。** R0 目前只有市場進貨重點舊測試映射，R1 只有 `market-buy` 子契約，不能宣稱 R0／R1 全量結案。新增原版合法普通商品不應再新增 `buy-market-item-XX` 或整套重複交易測試。
+
+**工作分支：** `test/task02-baseline-on-s1`／[Draft PR #1](https://github.com/Prysline/akimono/pull/1)，基底 `migration/standard-street-s1`；**請以當下 PR head_sha 與同 HEAD CI** 核對最新狀態，不修改 `main`、基底、凍結 Perl／DSL、Notion，也不合併 PR。
+
+---
+
+## 以下為逐階段歷史紀錄（保留當時情境，非 2026-11-22 最新狀態）
 此目錄位於移植分支 migration/standard-street-s1，從固定原版 Commit 7301b0c2b1e27226d1770e153fa3c68cfeae6d48 建立。原版 CGI 與 custom/ 保持不變。
 
 ## B-40｜先實際開啟繁體中文「店內／市場／倉庫」本機測試版
