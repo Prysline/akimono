@@ -1,14 +1,12 @@
 # 《商人物語》現行開發計畫｜共用規則引擎優先、標準街完整經營閉環
 
-## 2026-11-22｜權威里程碑：R2-A、R2-B 已完成自身退出驗收
+## 2026-11-22｜權威階段：R2-A／B／C 已完成，R2-D 為下一工作包
 
-**R2-A 已完成；R2-B 已完成；R2-C／D／E 未完成，R2 整體未完成。R0／R1 全量未結案。** R2-B 實際以來源編譯 Registry 取代三商品 `sharedBuyRules`，固定兩份 DSL 79 ITEM 宣告順序、LIMIT／價格／商品來源、原版 `GetWholeStore BASE/pricehalf` 與 `GetTimeDeal` 接入**同一個** `market-buy` Core；#10/#11/#14 從通用來源規則取得參數，新增真合法 #39 `book-kaitai` 使用同一交易／CAS／存檔。#12/#14 動態定價經原版真 Perl `buy-s.cgi` 16 組直接差分、#1/#14 多批發存量真 Perl 報價，保留 R2-A 36 組舊 Oracle 於隔離的歷史測試介面，沒有篡改原檔。
+**R2-A 共用市場買入核心、R2-B 商品 DSL 資料驅動、R2-C 正式買入路徑與測試遷移，已分別通過自身退出條件；R2-D／E 未完成，R2 整體未完成；R0／R1 全量仍未結案。** 最新可執行架構僅有 `kind:'market-buy'` → `projectSharedMarketBuy`；StreetModule 的 `buy-market-item-10/11/14`、各自 `projectOriginalMarketBuy10/11/14` 和 `quoteOriginalMarket10/11/14` 已完全移除，而非留下三個別名或偷偷雙引擎。繁中市場頁依 Registry 顯示 79 件真實原版商品、動態價格、來源不支援原因，`POST /api/buy` 嚴格只接受共用五欄並執行 GameCore/CAS；實際 B-43 服務也已注入 Registry，讓新 #39 等原版普通商品可落盤、重啟、載入再買。
 
-**回呼與安全：** 全域 `@@FUNCBUY` 滿 500000G 送 #79 並非永遠零效果：真原版 #64 可觸發。未審閱的贈券、ITEM 回呼、活動／公會特例必須具體來源分類、在提交前拒絕；不以多接商品換取靜默忽略。B-43 只在提供來源 Registry 時接受新增合法庫存，保留雙世代與預設拒絕。完整退出條件、證據、未支援商品與測試見 [R2 現況](shared-market-buy-r0-r2.md)。
+**退出證據：** 新真實 HTTP `r2c-unified-market-http.test.mjs` 核對 #10/#11/#14/#39 同一路徑，含 #14 `BASE 50/150` 動態價格、交易帳務、存貨、稀疏79欄 CSV、過期價格／revision/舊請求拒絕、兩代存檔與重啟；B-40～B-43、B-55～B-63、R2-A 36組與 R2-B 16組原版 Perl 比較與原始來源 SHA 保留並遷移到單一正式買入入口。B-41 原固定價 `paytoday` 推斷不能阻止經來源驗證的 #14 地圖進貨→USE→銷售；原版事件狀態 `eventState:null` 仍會阻止未知效果下的進貨，不能宣稱事件／完整自由營業已完成。詳見 [正式 R2 證據與安全範圍](shared-market-buy-r0-r2.md)。
 
-**現在可進 R2-C：** 驗證後全面將繁中 UI／HTTP／內部市場買入改走 `market-buy`、在實際存檔入口注入同一 Registry、再去除三套舊 `projectOriginalMarketBuy*` 與專用命令／冗餘測試。R2-D 共用 USE／製作、R2-E 真世界驗收尚未開始結案。任何「R2-C／R2 整體已完成」均不成立；最新 HEAD 的 CI 應即時查 GitHub PR，不能用歷史成功紀錄。
-
-> 以下較早「R2-B 部分完成、#14 BASE 僅 legacy、一般動態價格拒絕」的文字是本輪完成前歷史規劃，不是現況。
+**下一步 R2-D：** 針對 #79 禮物卷地圖交換及 #14 地圖首次使用，設計來源審閱支持的通用 `use-item`／製作流程，維持原 Perl callback 順序與 fail-closed；之後 R2-E 才能整合 UI → CAS → USE → 雙代磁碟完整世界。PR #1 保持 Draft／Open／未合併；只改 `modern/`，不改原版 Perl/DSL、Core SHA、其他分支或 Notion 狀態；**最新 HEAD 的 Push/PR Actions 必須各自 completed/success**。下面任何仍稱「R2-C 未完成」均為歷史，不是現況。
 
 
 ---
