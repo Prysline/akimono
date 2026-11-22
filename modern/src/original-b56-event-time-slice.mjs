@@ -18,6 +18,10 @@ import {B60_HAPPY_SOURCE,B60_HAPPY_CODE,
   isReviewedB60HappyPeriod,projectOriginalHappyStart,
   projectOriginalHappyExpiry,projectOriginalHappyNow}
   from './original-b60-happy-event-nowfunc.mjs';
+import {B61_SWORD_SOURCE,B61_SWORD_CODE,
+  isReviewedB61SwordPeriod,projectOriginalSwordStart,
+  projectOriginalSwordExpiry}
+  from './original-b61-sword-demand-event.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 export const B56_EVENT_SLICE_SOURCE='b56-reviewed-sale-plus-full-17-event-gate-fixture';
 const fail=s=>{throw new RangeError('B-56 original EVENT slice: '+s);};
@@ -32,7 +36,7 @@ const validTicketDraw=x=>x!==null&&typeof x==='object'&&
 export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
   reviewedCallbacks,reviewedSupportCallbacks=null,
   reviewedLoto=null,reviewedB59Iron=null,
-  reviewedB60Happy=null}){
+  reviewedB60Happy=null,reviewedB61Sword=null}){
   if(reviewedB41?.source!==B41_SOURCE||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
@@ -88,6 +92,13 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
      reviewedB60Happy.plusTimeSeconds!==18000||
      reviewedB60Happy.rankCap!==10000))
     fail('source-reviewed durable festival EVENT contract missing');
+  if(reviewedB61Sword!==null&&(
+     reviewedB61Sword.source!==B61_SWORD_SOURCE||
+     reviewedB61Sword.startProba!==100||
+     reviewedB61Sword.baseTimeSeconds!==21600||
+     reviewedB61Sword.plusTimeSeconds!==86400||
+     reviewedB61Sword.swordItems?.length!==5))
+    fail('source-reviewed durable sword demand EVENT contract missing');
   const zero=reviewedCatalog.compiled.filter(e=>e.startProba===0);
   if(zero.length!==2||zero.some(e=>e.callbacks.start!==null||
      e.baseTimeSeconds!==0||e.plusTimeSeconds!==0))
@@ -106,6 +117,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
     loto:reviewedLoto?.source??null,
     iron:reviewedB59Iron?.source??null,
     happy:reviewedB60Happy?.source??null,
+    sword:reviewedB61Sword?.source??null,
     orderMode:'explicit-17-key-permutation-not-Perl-hash-order',
     publicGameplay:false,
   });
@@ -114,7 +126,7 @@ export function projectB56EventSlice({
   world,reviewed,reviewedB41,reviewedAllPlus,compiled,
   reviewedCatalog,reviewedCallbacks,reviewedSupportCallbacks=null,
   reviewedLoto=null,reviewedB59Iron=null,
-  reviewedB60Happy=null,shopId,minutes,
+  reviewedB60Happy=null,reviewedB61Sword=null,shopId,minutes,
   saleDraws,eventDraws,eventHashOrderFixture,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
@@ -124,6 +136,8 @@ export function projectB56EventSlice({
      reviewed.loto!==(reviewedLoto?.source??null)||
      reviewed.iron!==(reviewedB59Iron?.source??null)||
      reviewed.happy!==(reviewedB60Happy?.source??null)||
+     reviewed.sword!==(reviewedB61Sword?.source??null)||
+     (reviewedB61Sword!==null&&reviewedB61Sword.source!==B61_SWORD_SOURCE)||
      (reviewedB60Happy!==null&&reviewedB60Happy.source!==B60_HAPPY_SOURCE)||
      (reviewedB59Iron!==null&&reviewedB59Iron.source!==B59_IRON_SOURCE)||
      (reviewedLoto!==null&&reviewedLoto.source!==B58_LOTO_SOURCE)||
@@ -141,8 +155,12 @@ export function projectB56EventSlice({
      !isReviewedB60HappyPeriod({
        period:world.period,reviewed:reviewedB60Happy,
        nowSeconds:world.nowSeconds,
+     })&&
+     !isReviewedB61SwordPeriod({
+       period:world.period,reviewed:reviewedB61Sword,
+       nowSeconds:world.nowSeconds,
      })))
-    fail('only known empty or one source-reviewed iron/happy EVENT allowed');
+    fail('only known empty or one source-reviewed iron/happy/sword EVENT allowed');
   if(!Array.isArray(eventHashOrderFixture)||eventHashOrderFixture.length!==17||
      new Set(eventHashOrderFixture).size!==17||
      eventHashOrderFixture.some(code=>typeof code!=='string'||
@@ -155,7 +173,8 @@ export function projectB56EventSlice({
   const sale=projectB41Sale({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
-    reviewedB59Iron,reviewedB60Happy,reviewedEventTimeSlice:true,
+    reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
+    reviewedEventTimeSlice:true,
   });
   let shop=sale.shops[0],used=0;
   const take=()=>{
@@ -190,8 +209,14 @@ export function projectB56EventSlice({
     eventState:Object.hasOwn(previousState,B60_HAPPY_CODE)?previousState:{},
     startSeconds:world.nowSeconds,spanSeconds:minutes*60,
   });
+  const swordExpiry=projectOriginalSwordExpiry({
+    reviewed:reviewedB61Sword,
+    eventState:Object.hasOwn(previousState,B61_SWORD_CODE)?previousState:{},
+    startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+  });
   const activeEventState={...expiry.remainingEventState,
-    ...festivalExpiry.remainingEventState};
+    ...festivalExpiry.remainingEventState,
+    ...swordExpiry.remainingEventState};
   if(expiry.occupied){
     const active=reviewedCatalog.compiled.find(e=>e.code===B59_IRON_CODE);
     groups.add(active.group);
@@ -200,12 +225,19 @@ export function projectB56EventSlice({
     const active=reviewedCatalog.compiled.find(e=>e.code===B60_HAPPY_CODE);
     groups.add(active.group);
   }
+  if(swordExpiry.occupied){
+    const active=reviewedCatalog.compiled.find(e=>e.code===B61_SWORD_CODE);
+    groups.add(active.group);
+  }
   if(expiry.endMessage!==null)
     eventLogEmissions.push({eventCode:B59_IRON_CODE,
       level:2,shopId:0,message:expiry.endMessage});
   if(festivalExpiry.endMessage!==null)
     eventLogEmissions.push({eventCode:B60_HAPPY_CODE,
       level:2,shopId:0,message:festivalExpiry.endMessage});
+  if(swordExpiry.endMessage!==null)
+    eventLogEmissions.push({eventCode:B61_SWORD_CODE,
+      level:2,shopId:0,message:swordExpiry.endMessage});
   let lotteryTicketsConsumed=0;
   let callbackCount=0;
   for(const code of eventHashOrderFixture){
@@ -263,6 +295,18 @@ export function projectB56EventSlice({
       eventLogEmissions.push(...effect.logs.map(log=>({eventCode:code,...log})));
       lotteryWins.push(...effect.wins.map(win=>({eventCode:code,...win})));
       // Original return 0: every ticket is gone, but no active event.
+      continue;
+    }
+    if(code===B61_SWORD_CODE&&reviewedB61Sword){
+      const start=projectOriginalSwordStart({
+        reviewed:reviewedB61Sword,
+        startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+        randomDraws:[takeUnit(),takeUnit()],
+      });
+      activeEventState[B61_SWORD_CODE]=start.expiresAtSeconds;
+      groups.add(event.group);
+      eventLogEmissions.push({eventCode:code,
+        level:2,shopId:0,message:start.startMessage});
       continue;
     }
     if(code===B60_HAPPY_CODE&&reviewedB60Happy){
@@ -326,6 +370,9 @@ export function projectB56EventSlice({
       festivalEventExpired:festivalExpiry.expired,
       festivalExpiresAtSeconds:activeEventState[B60_HAPPY_CODE]??null,
       festivalNowRun:festivalNow!==null,
+      swordDemandWasActiveAtDataRead:swordExpiry.wasActive,
+      swordDemandExpired:swordExpiry.expired,
+      swordDemandExpiresAtSeconds:activeEventState[B61_SWORD_CODE]??null,
       festivalRankGain:festivalNow?.rankGain??0,
       festivalRandomMax:festivalNow?.randMax??null,
       totalDraws:sale.receipt.totalDraws+used,
