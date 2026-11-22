@@ -337,7 +337,7 @@ test('B-61 fail closed: unknown / parallel active EVENT, unsupported starts, sou
   }
   const drift=[
     {itemDsl:src.itemDsl.replace(
-      'param\t木刀\t\t\t\tpop/2','param\t木刀\t\t\t\tpop/3')},
+      /(param\s+木刀\s+)pop\/2/,'$1pop/3')},
     {turnSource:src.originalTurnSource.replace(
       '#イベント終了処理','#イベント終了修改')},
     {compilerSource:src.originalCompilerSource.replace(
