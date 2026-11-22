@@ -155,6 +155,8 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/shop\.showcase\[index\]/);
   assert.match(script,/shop\.price\[index\]/);
   assert.match(script,/shop\.showcasecount/);
+  assert.match(html,/id="source-shelf-sale-boundary"/);
+  assert.match(script,/const sourceSaleSupported=Boolean\(shop&&shop\.showcasecount===1\)/);
   assert.match(html,/id="showcase-shelf"/);
   assert.match(shop,/<table class="shop-turnover-table"/);
   assert.match(shop,/id="showcase-shelves"/);

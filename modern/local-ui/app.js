@@ -468,8 +468,14 @@ function showState(s){
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
   // Available actions are rendered in the selected original-style item page.
-  for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
-  $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
+  const sourceSaleSupported=Boolean(shop&&shop.showcasecount===1);
+  for(const control of document.querySelectorAll('.quick-time button'))
+    control.disabled=!sourceSaleSupported;
+  $('advance-time-form').querySelector('button[type=submit]').disabled=
+    !sourceSaleSupported;
+  text('source-shelf-sale-boundary',shop&&shop.showcasecount>1?
+    '目前有 '+number(shop.showcasecount)+
+    ' 架展示架：多架自然販售尚未通過原版來源驗證，故暫停時間快轉。上架、下架及存讀檔仍可使用。':'');
   const entries=shop?catalog.filter(item=>shop.item[item.itemId-1]>0)
     .map(item=>({...item,count:shop.item[item.itemId-1]})):[];
   const storageBody=$('storage-inventory'),sellingBody=$('inventory');
