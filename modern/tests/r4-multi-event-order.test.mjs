@@ -88,7 +88,7 @@ test('R4 multi EVENT rejects unknown keys, malformed source ordering, callbacks,
     reviewed,...first,activeUntilSeconds:{rebel:12345},
   }),/unreviewed active/);
   assert.throws(()=>projectOriginalR4MultiEventFixture({
-    reviewed,...first,randomDraws:first.randomDraws.slice(1),
+    reviewed,...first,randomDraws:[],
   }),/exhausted/);
   assert.throws(()=>projectOriginalR4MultiEventFixture({
     reviewed,...first,randomDraws:[...first.randomDraws,999999],

@@ -14,8 +14,9 @@ BEGIN {
     my $sample=shift @main::R4_MULTI_DRAWS;
     die 'unsafe original RNG fixture' unless
       defined($sample)&&$sample=~/^\d+$/&&$sample<1000000;
-    push @main::R4_MULTI_RANGES,($_[0]//1);
-    return $sample*($_[0]//1)/1000000;
+    my $range=0+($_[0]//1);
+    push @main::R4_MULTI_RANGES,$range;
+    return $sample*$range/1000000;
   };
 }
 binmode STDOUT,':raw';
