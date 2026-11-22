@@ -33,6 +33,8 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(html,/id="item-detail-owned"/);
   assert.match(html,/id="showcase-form"/);
   assert.match(html,/id="use-offers"/);
+  assert.match(html,/id="tab-use"/);
+  assert.match(html,/id="tab-use-result"/);
   assert.match(script,/catalog\.filter\(item=>shop\.item\[item\.itemId-1\]>0\)/);
   assert.match(script,/item\.flagRaw\.includes\('s'\)/);
   assert.match(script,/link\.dataset\.openItem=String\(item\.itemId\)/);
@@ -154,4 +156,41 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
   assert.match(script,/text\('shop-shelf-price',hasShelf\?money\(shop\.price\[0\]\)/);
   assert.match(script,/text\('shop-shelf-today',hasShelf\?number\(shop\.itemtoday\?\.\[shelfId\]\?\?0\)/);
+});
+
+
+test('original-style USE flow has a compact list, detail form and result page',()=>{
+  const product=html.slice(html.indexOf('id="tab-item"'),html.indexOf('id="tab-use"'));
+  assert.match(product,/<ul id="use-offers" class="use-action-list">/);
+  assert.doesNotMatch(product,/<table class="market-table">/,
+    'avoid wide material, cost and execution grid in item details');
+  assert.match(html,/<section id="tab-use" class="section pane" hidden>/);
+  assert.match(html,/id="back-to-item"/);
+  for(const id of ['use-detail-name','use-detail-item','use-detail-owned',
+    'use-detail-materials','use-detail-money','use-detail-time',
+    'use-detail-limit','use-action-form','use-count','perform-use',
+    'use-result-count','use-result-money','use-result-time',
+    'use-result-consumed','use-result-acquired'])
+    assert.ok(html.includes('id="'+id+'"'),'original USE route element '+id);
+  assert.match(script,/selectedUseId=useId/);
+  assert.match(script,/button\.dataset\.openUse=String\(row\.useId\)/);
+  assert.match(script,/selectTab\('use'\)/);
+  assert.match(script,/call\('\/api\/use'/);
+  assert.match(script,/renderUseResult\(data\.details,offer,before\.itemCatalog/);
+  assert.match(script,/selectTab\('use-result'\)/);
+  assert.match(script,/expectedRevision:before\.world\.revision,itemId,useId,requestedCount/);
+  assert.match(css,/\.use-action-list\{/);
+  assert.match(css,/\.use-detail-table\{/);
+});
+test('showcase edit shows verified original source time, not a guessed number',()=>{
+  assert.match(html,/id="showcase-time-cost"/);
+  assert.match(html,/調整或清空展示架均消耗/);
+  assert.match(adapter,/showcaseEditTimeSeconds:streetModule\.showcaseEditTimeSeconds/);
+  assert.match(script,/Number\.isSafeInteger\(s\.showcaseEditTimeSeconds\)/);
+  assert.match(script,/timeText\(s\.showcaseEditTimeSeconds\)/);
+  assert.match(css,/#tab-item \.shelf-form\{[\s\S]*?flex-direction:column/);
+});
+test('unreviewed disposal is not wired as a misleading browser-only mutation',()=>{
+  assert.doesNotMatch(adapter,/case '\/api\/(?:throw|discard)'/);
+  assert.doesNotMatch(script,/fetch\('\/api\/(?:throw|discard)'/);
 });
