@@ -376,7 +376,7 @@ function showState(s){
   }
   // Only the selected item's verified USE actions appear in item details.
   // No action is simulated in the browser.
-  text('use-boundary','僅支援來源已審閱 #79 禮物卷交換及 #14 劍市地圖首次使用；未審閱回呼、二次使用及未知事件會拒絕。');
+  text('use-boundary','已接入來源審閱的禮物卷交換、劍市地圖重複使用與部分製作配方；尚未審閱的回呼、材料取得及存檔來源可能限制其他製作。');
   text('market-boundary',
     '只顯示原版市場當下實際有貨的商品，依來源宣告順序及即時市價排列；未審閱效果仍拒絕交易。');
   $('setup').hidden=Boolean(shop);
