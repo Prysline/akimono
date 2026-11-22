@@ -213,9 +213,11 @@ test('showcase edit shows verified original source time, not a guessed number',(
   assert.match(script,/conciseTimeText\(s\.showcaseEditTimeSeconds\)/);
   assert.match(css,/#tab-item \.shelf-form\{[\s\S]*?flex-direction:column/);
 });
-test('unreviewed disposal is not wired as a misleading browser-only mutation',()=>{
-  assert.doesNotMatch(adapter,/case '\/api\/(?:throw|discard)'/);
-  assert.doesNotMatch(script,/fetch\('\/api\/(?:throw|discard)'/);
+test('discard is a CAS StreetModule command and never a browser-only stock mutation',()=>{
+  assert.match(adapter,/case '\/api\/discard'/);
+  assert.match(adapter,/kind:'discard-item'/);
+  assert.match(script,/call\('\/api\/discard'/);
+  assert.match(html,/id="discard-form"/);
 });
 
 

@@ -216,7 +216,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
          if(!Number.isSafeInteger(id)||id<0||id>79)return true;
          if(id===0)return shop.price[shelf]!==0;
          if(!Number.isSafeInteger(shop.price[shelf])||shop.price[shelf]<0||
-           !Number.isSafeInteger(shop.item[id-1])||shop.item[id-1]<=0)
+           !Number.isSafeInteger(shop.item[id-1])||shop.item[id-1]<0)
            return true;
          const reviewed={10:5000,40:1200,41:1500,42:3200,
            43:8000,44:12000};
