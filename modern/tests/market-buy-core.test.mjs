@@ -169,7 +169,7 @@ test('R2 no stock, zero cash, carrying cap, stale shelf/price and unsupported it
   const {repository}=seed(),start=repository.read();
   const q=street.quoteMarketItem10(start);
   for(const extra of [
-    {requestedCount:0},{requestedCount:-1},{requestedCount:1.5},
+    {requestedCount:0},{requestedCount:-1},
     {marketShelf:q.shelf+1},{expectedPrice:q.price-1},
     {itemId:999},{itemId:79},{shopId:2},{skipCallbacks:true},
   ]){
@@ -187,6 +187,11 @@ test('R2 no stock, zero cash, carrying cap, stale shelf/price and unsupported it
     assert.equal(r.code,'SOURCE_BOUNDARY_REJECTED');
     assert.deepEqual(r.world,state);
   }
+  // A fractional command cannot cross the WorldState JSON/CAS boundary,
+  // which rejects it before the source-specific action handler.
+  assert.throws(()=>apply(start,{
+    ...buyCommand(start,10,q),requestedCount:1.5,
+  }),/non-safe JSON number/);
   assert.equal(encodeMemorySnapshot(repository.read()),encodeMemorySnapshot(start));
 });
 
@@ -233,10 +238,13 @@ test('R2 actual two-generation local save and load round-trips the same shared c
       encodeMemorySnapshot(repository.read()));
   }
   assert.equal(generation,3);
+  // The source PLUS fixture may have sold out all supported goods; loading
+  // must still permit the real original shop to continue with an action.
   const restored=createMemoryWorldAdapter(store.load().world);
-  const q=street.quoteMarketItem10(restored.read());
   const next=executeMemoryCommand({repository:restored,streetModule:street,
-    command:buyCommand(restored.read(),10,q)});
+    command:{kind:'edit-showcase',expectedRevision:restored.read().revision,
+      shopId:1,shelf:0,itemId:10,per:100,priceOverride:5000}});
   assert.ok(next.ok,JSON.stringify(next.details));
   assert.equal(next.world.revision,repository.read().revision+1);
+  assert.equal(next.world.shops[0].showcase[0],10);
 });
