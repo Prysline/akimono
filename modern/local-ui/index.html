@@ -146,13 +146,6 @@
     <section id="tab-market" class="section pane" hidden>
       <h2 class="section-title">● 市場</h2>
       <p class="page-intro">市場目前有貨的商品如下。購買後，可在「倉庫」查看實際持有數量。</p>
-      <div class="table-scroll">
-        <table class="market-table">
-          <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
-          <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
-        </table>
-      </div>
-      <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
       <details class="supply-details dev-panel" data-dev-panel>
         <summary>開發測試：原版市場供貨子步驟</summary>
         <div class="supply">
@@ -167,6 +160,14 @@
           <button id="supply" class="secondary" type="button">執行供貨</button>
         </div>
       </details>
+      <div class="table-scroll">
+        <table class="market-table">
+          <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
+          <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
+        </table>
+      </div>
+      <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
+
     </section>
 
     <section id="tab-stock" class="section pane" hidden>
