@@ -46,7 +46,7 @@ test('B-40 Windows CRLF checkout still boots the actual reviewed StreetModule',a
     sourceKeys.map((key,index)=>[key,loaded[index]])));
   assert.ok([
     'initialize-source-market','open-shop','reviewed-sparse-all-plus',
-    'buy-market-item-10',
+    'market-buy',
   ].every(cap=>street.capabilities.includes(cap)));
   const repository=createMemoryWorldAdapter(createMemoryWorld({
     worldId:'b40-windows-crlf-checkout',streetId:street.id,nowSeconds:1000000,
