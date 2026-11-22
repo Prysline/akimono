@@ -213,7 +213,8 @@ body.dev-mode .local-note{display:block}
   width:fit-content;max-width:100%;margin:10px auto 8px;text-align:center
 }
 #tab-item .shelf-form{
-  display:flex;justify-content:center;max-width:100%;margin:14px auto 0
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;max-width:100%;margin:14px auto 0
 }
 #tab-item .shelf-form fieldset{
   flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:flex-end;
@@ -230,7 +231,7 @@ body.dev-mode .local-note{display:block}
   width:fit-content;max-width:100%;margin:16px auto 0
 }
 #tab-item .source-use-section>.sub-title{text-align:center}
-#tab-item .source-use-section>.table-scroll{max-width:100%;overflow-x:auto}
+#tab-item .source-use-section>.use-action-list{max-width:100%}
 .balance-table{margin-top:9px}
 .balance-table td{min-width:70px}
 .balance-table th{white-space:nowrap}
@@ -247,7 +248,26 @@ details.dev-panel[open]{background:#fbfbfd}
 .feedback.error{border-left-color:#bb817d}
 .source-use-section{margin-top:12px}
 .source-use-section .sub-title{margin-bottom:6px}
-.source-use-section:has(#use-offers tr:only-child td[colspan="5"]){margin-bottom:3px}
+.use-action-list{
+  list-style:none;width:fit-content;max-width:100%;margin:6px auto 4px;
+  padding:0;text-align:left;font-size:13px
+}
+.use-action-list li{margin:4px 0;overflow-wrap:anywhere}
+.use-action-list li::before{content:"◆";font-size:10px;color:#9090a9;margin-right:4px}
+.use-action-link{white-space:normal;text-align:left}
+.use-unavailable{color:#888}
+.use-detail-table{width:max-content;max-width:100%;margin:9px auto 12px}
+.use-detail-table th{background:#e8e8ef;font-weight:normal;white-space:nowrap}
+.use-detail-table td{max-width:375px;white-space:normal;overflow-wrap:anywhere}
+#tab-use .sub-title,#tab-use-result .sub-title{
+  width:fit-content;max-width:100%;margin:9px auto;text-align:center
+}
+.use-action-form{display:flex;justify-content:center;align-items:center;
+  flex-wrap:wrap;gap:8px;margin:10px auto;max-width:100%}
+.use-action-form input{width:65px}
+.use-eligibility,.use-result-message{text-align:center;margin:9px auto}
+.shelf-time-note{font-size:12px!important;color:#888;
+  text-align:center;margin:0 auto 2px!important}
 footer{margin-top:12px;font-size:10px}
 @media(max-width:640px){
   .status-table td{min-width:0}
