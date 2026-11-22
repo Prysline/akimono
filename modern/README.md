@@ -1,5 +1,16 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
+## 2026-11-22｜R2-B 實作後最新狀態（優先於以下舊三商品白名單紀錄）
+
+**R2-A 已完成其獨立退出驗收；R2-B 部分完成，未達退出門檻；R2-C、R2-D、R2-E 均未完成，R2 整體未完成。** 本分支已增加 `src/standard-street-market-buy-registry.mjs`，改由原版79 ITEM DSL、來源順序、已編譯 LIMIT／批發上限及原版買入／計價函式建立商品 MarketBuyRule，不再在 `standard-street-module.mjs` 手寫 `sharedBuyRules` 三商品白名單。新原版 ITEM #39「拆解/打包工具」（`book-kaitai`；`custom/inc-item-data.cgi:266`；500G、`LIMIT 10/3`、`PLUS 5h`）直接走 `market-buy`，沒有新專用交易演算法或商品買入指令；有真固定 Perl `buy-s.cgi` 差分、CAS／72h／雙世代存檔測試。既有 #10/#11/#14 的 R2-A 相容路徑與 Oracle 未刪。
+
+**R2-B 暫不能結案：** #14 的原版 `BASE 50/150` 會依市場庫存計價並改變操作時間；舊 R2-A 差分 Oracle 的商品編譯子集沒有編 BASE，故 #14 固定 10000G 只是一份受控歷史相容資料，不能聲稱真動態價格相容。Registry 對其標出 `legacy-r2a-price-incomplete`，對其他 `BASE` 來源項目（如 #1）依來源行號分類並拒絕，不能忽略未知效果。全域 `@@FUNCBUY` 滿500000G送 #79 仍有 fail-closed；#79 原版批發上限0不可假定可買。R2-C 才處理 UI／HTTP 改送共用 `market-buy`、移除三條舊獨立交易演算法；尚未完成。
+
+正式證據與缺口見 [R2-A～E 現況](docs/shared-market-buy-r0-r2.md)、[無記憶交接](docs/next-window-handoff.md)。測試在 `modern/` 執行 `npm test`／`npm run audit`；**最新成功數與 Workflow URL 只以最後 HEAD 的實際 CI 為準，不可使用 R2-A 歷史 903 Node／1867 Perl 替代。** 以下「只有三筆硬編碼 `sharedBuyRules`」的文字為本次之前歷史紀錄，不是當前執行路徑。
+
+---
+
+
 ## 目前實作與未完成項目（2026-11-22，開啟工作區請先讀）
 
 > **R2-A「共用市場買入核心」已完成原版直接差分與回呼邊界驗收；但 R2「共用市場／交易／商品使用」整體仍未完成，R2-B～E 都未完成。** 先前「R2 第一階段完成」只描述了三商品初版，不能拿來當 R2 完工證據。 正式開發優先序：[R0–R7 計畫](docs/playable-loop-priority-plan.md)；無對話記憶仍可獨立使用的 [R2-A～E 現況／完成門檻／程式與測試證據](docs/shared-market-buy-r0-r2.md)；[最新交接](docs/next-window-handoff.md)。下方大量 B-xx 段落是當時的歷史增量紀錄，**不可拿過時的「目前／尚未／下一步／HEAD」當現在的能力與 CI**。
