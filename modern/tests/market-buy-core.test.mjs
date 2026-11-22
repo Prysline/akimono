@@ -220,6 +220,52 @@ test('R2 money/limit clamp is source-equivalent and an unreviewed FUNCBUY is not
   assert.deepEqual(refused.world,original);
 });
 
+test('R1 trusted callback hook occurs after account transfer and before SetWholeStore; missing hook rejects',()=>{
+  const world=seed().repository.read(),quote=street.quoteMarketItem10(world);
+  const stages=[];
+  const adapter={...street.marketBuy,
+    getRule(id){
+      const original=street.marketBuy.getRule(id);
+      return original&&{...original,buyCallback:'synthetic-reviewed-test-hook'};
+    },
+    runBuyCallback({key,shop,wholesale,receipt}){
+      assert.equal(key,'synthetic-reviewed-test-hook');
+      assert.equal(shop.money,world.shops[0].money-5000);
+      assert.equal(shop.item[9],world.shops[0].item[9]+1);
+      assert.equal(wholesale[9],world.market.wholesale[9]-1);
+      assert.equal(receipt.totalPaid,5000);
+      stages.push('after-accounting');
+      return {shop:{...shop,rank:shop.rank+1},wholesale};
+    },
+    writeMarket(input){
+      stages.push('before-wholesale-write');
+      return street.marketBuy.writeMarket(input);
+    },
+  };
+  const result=apply(world,buyCommand(world,10,quote),
+    {...street,marketBuy:adapter});
+  assert.ok(result.ok,JSON.stringify(result.details));
+  assert.deepEqual(stages,['after-accounting','before-wholesale-write']);
+  assert.equal(result.world.shops[0].rank,world.shops[0].rank+1);
+  assert.equal(world.shops[0].rank+1,result.world.shops[0].rank);
+});
+
+test('R2 original 72-hour stored-time cap and future shop clock reject without committing',()=>{
+  const world=seed().repository.read(),quote=street.quoteMarketItem10(world);
+  const overCap={...world,shops:[{
+    ...world.shops[0],time:world.nowSeconds-259201,
+  }]};
+  const result=apply(overCap,buyCommand(overCap,10,quote));
+  assert.ok(result.ok,JSON.stringify(result.details));
+  assert.equal(result.world.shops[0].time,world.nowSeconds-259200+600);
+  const future={...world,shops:[{
+    ...world.shops[0],time:world.nowSeconds+1,
+  }]};
+  const rejected=apply(future,buyCommand(future,10,quote));
+  assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(rejected.world,future);
+});
+
 test('R2 actual two-generation local save and load round-trips the same shared commands',async t=>{
   const directory=await mkdtemp(join(tmpdir(),'akimono-r2-market-'));
   t.after(()=>rm(directory,{recursive:true,force:true}));
