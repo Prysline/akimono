@@ -41,19 +41,26 @@ for my $id (1,14){
     $compiled->{pricehalf}==$halfAmount;
   @ITEM=();@DTwholestore=();
   $ITEM[$id]={%$compiled,sort=>0,no=>$id};
-  $DTwholestore[$id-1]=1;
-  my $market=GetWholeStore();
-  die "original whole.cgi did not quote $id" unless
-    $market->{showcasecount}==1 && $market->{showcase}[0]==$id;
-  my $actualPrice=$market->{price}[0];
-  my $actualTime=GetTimeDeal($actualPrice,$id,1);
-  die "original BASE did not change dynamic price" if $actualPrice==$price;
+  my @quotes;
+  for my $stock (1,2,3){
+    $DTwholestore[$id-1]=$stock;
+    my $market=GetWholeStore();
+    die "original whole.cgi did not quote $id" unless
+      $market->{showcasecount}==1 && $market->{showcase}[0]==$id;
+    my $actualPrice=$market->{price}[0];
+    my $actualTime=GetTimeDeal($actualPrice,$id,1);
+    die "original BASE did not change dynamic price" if $actualPrice==$price;
+    push @quotes,{stock=>$stock,price=>0+$actualPrice,
+      timeSeconds=>0+$actualTime};
+  }
+  my $actualPrice=$quotes[0]{price};
+  my $actualTime=$quotes[0]{timeSeconds};
   push @rows,{
     itemId=>$id,sourceBaseRaw=>$base,basePrice=>0+$price,
     compiledPricebase=>0+$compiled->{pricebase},
     compiledPricehalf=>0+$compiled->{pricehalf},
     stocked=>1,sourcePrice=>0+$actualPrice,
-    sourceTimeSeconds=>0+$actualTime,
+    sourceTimeSeconds=>0+$actualTime,quotes=>\@quotes,
   };
 }
 print JSON::PP->new->canonical->encode({
