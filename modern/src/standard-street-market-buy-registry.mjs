@@ -61,11 +61,17 @@ function sourceMarker(text,fragment){
 }
 export function compileStandardStreetMarketBuyRegistry({
   itemDsl,rebelDsl,model,compiled,compilerSource,buySource,
-  wholeSource,itemSource,
+  wholeSource,itemSource,globalBuyCallback=null,
 }){
   if(!Array.isArray(model?.items)||model.items.length!==79||
      !Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     fail('79 audited items and compiled stock limits required');
+  if(!globalBuyCallback||
+     globalBuyCallback.key!=='standard-street-global-wholesale-voucher'||
+     !Number.isSafeInteger(globalBuyCallback.minTotal)||
+     globalBuyCallback.minTotal!==500000||
+     !/custom\\/inc-item-data.cgi:\\d+/.test(globalBuyCallback.source))
+    fail('source-reviewed global FUNCBUY metadata required');
   for(const [s,fragment] of [
     [compilerSource,'$g_item->{pricebase}=0;'],
     [compilerSource,'$g_item->{pricehalf}=0;'],
@@ -154,7 +160,7 @@ export function compileStandardStreetMarketBuyRegistry({
       stockLimit:limit.limit,wholesaleLimit:limit.wslimit,
       marketTimeSeconds,
       callbackSource:callback?block.file+':'+callback.line:null,
-      classification,reason,
+      globalBuyCallback,classification,reason,
     };
     byId.set(itemId,entry);
     return Object.freeze(entry);
@@ -185,6 +191,7 @@ export function compileStandardStreetMarketBuyRegistry({
           'R2-B source-compiled static wholesale rule, no item FUNCB':
           'R2-B source-compiled original BASE pricehalf wholesale rule, no item FUNCB',
         buyCallback:null,
+        globalBuyCallback:e.globalBuyCallback,
       });
     },
   });
