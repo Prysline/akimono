@@ -107,12 +107,19 @@ function structuralCatalog(itemDsl,rebelDsl,model){
       sourceMode:'raw-nonexecuting-dsl',
     })));
   return Object.freeze({
-    items:Object.freeze(model.items.map(x=>Object.freeze({
-      id:x.id,name:x.name,code:x.code,
-      priceRaw:x.priceRaw,limitRaw:x.limitRaw,flagRaw:x.flagRaw,
-      source:x.source,line:x.line,
-      runtimeSupported:false,
-    }))),
+    items:Object.freeze(model.items.map(x=>{
+      const block=blocks.find(b=>b.kind==='ITEM'&&
+        b.file===x.source&&b.startLine===x.line);
+      const raw=key=>block?.fields?.[key]?.[0]?.value??null;
+      return Object.freeze({
+        id:x.id,name:x.name,code:x.code,
+        priceRaw:x.priceRaw,limitRaw:x.limitRaw,flagRaw:x.flagRaw,
+        typeRaw:raw('type'),costRaw:raw('cost'),
+        infoRaw:raw('info'),scaleRaw:raw('scale'),
+        source:x.source,line:x.line,
+        runtimeSupported:false,
+      });
+    })),
     uses:records('USE'),
     events:records('EVENT'),
   });
