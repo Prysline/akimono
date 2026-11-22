@@ -45,3 +45,10 @@
 
 **尚未完成：** EVENT 原版 17-key hash 與已存在 EVENT 的實際起訖和同組互斥、所有回呼／RNG、依 DataRead 時點對當期的 ITEM overlay、生效持續及過期、R3 自然販售與 36h 期末合成後的可提交同世界差分。因此 `projectR4EventItemParams` 保留 `committable:false`，不授權外部正式時間命令、不把來源未證實的 EVENT 當空事件。R4-A 和 R4 整體都**不宣告退出**。
 
+## 2026-11-23｜R4 七種宣告式 EVENT 的單事件連續來源差分（受控，不可提交）
+
+新增 src/original-r4-declarative-event-cycle.mjs，直接由凍結 Standard Street DSL、B-53 真編譯後的 17 EVENT、前述九種 ITEM PARAM 來源運算子，審閱七種沒有自訂回呼的事件：boom-posyon、tate-sale、yoroi-sale、tue-sale、plusdown-yakusou、plusup-misuriru、plusup-oriharukon。一致實作：每個時間片開頭 DataRead 只讀取先前已存在的 EVENT；END 階段以嚴格小於判定到期，然後才評估下一次 START gate 與兩筆 duration RNG；當片新開始的事件不會倒灌影響當片的 ITEM 欄位。到期發生於時間片內時，該片開頭的 ITEM overlay 仍照原版適用。
+
+新增 tests/original-perl/original-r4-declarative-event-cycle-probe.pl 和 .t，直接在 Perl 記憶體中執行凍結 inc-makeitem.cgi::OutEventData 的 ITEM PARAM 生成片段與凍結 inc-turn.cgi 的完整 EVENT END/START 原文（單一 EVENT 鍵，故沒有假造 17-key hash 遍歷順序）。Node tests/r4-declarative-event-cycle.test.mjs 比較七類事件各四種到期情境、全部 79 ITEM 數值欄位、隨機數消耗、日誌，以及從開始跨多個連續 3600 秒時間片直到實際到期後的 DataRead 與再觸發 gate。
+
+仍保留嚴格界線：committable:false，一次只允許單一來源事件；不是同一個玩家 WorldState 的自然販售、PLUS、EVENT 17-key hash 與全局 RNG、36h 結算、HTTP/CAS、存檔或重啟。rebel、guildbattle 的 callback、已存在的其他 durable EVENT 同時作用及所有同組互斥均未授權。本驗證提升七種 EVENT 的局部可信度，不能宣告 R4 完成。同輪同步修復 tests/local-original-ui-layout.test.mjs 一個原先未跳脫左括號的無效 regex，使獨立 UI 佈局測試可被 Node 解析。

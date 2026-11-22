@@ -82,5 +82,5 @@ test('product details remain centered without a full-width shelf editor',()=>{
   assert.match(html,/class="shelf-percent"/);
   assert.match(css,/#tab-item \.shelf-percent\{display:inline-flex;align-items:center;gap:4px\}/);
   assert.doesNotMatch(html,/<h2 class="section-title">● 商品明細<\/h2>/);
-  assert.match(script,/\$('showcase-form'\)\.addEventListener\('submit'/);
+  assert.match(script,/\$\('showcase-form'\)\.addEventListener\('submit'/);
 });
