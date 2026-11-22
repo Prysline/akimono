@@ -1,5 +1,7 @@
 # R3 共用自然販售／時間來源契約（R0／R1 證據）
 
+**2026-11-23｜R3 受控來源退出驗收已完成（最新正式判定）。** 單店單架、原版六商品 #10／#40～#44 的來源定價／需求／GetSaleTax、自然販售、ITEM FUNCTURN／FUNCSALE、59 PLUS 與時間片已收斂共用核心；真 Perl 原版直接差分 24+24+24 案與 HTTP/CAS/雙世代存檔／重啟通過。正式 `projectR3PreEventTurn` 不覆寫 `period`、對未知 incoming EVENT fail-closed，供 R4 串接。**不能由 R3 完成推出玩家已能無限制連續販售**：正式 B-41 時間若未跑 EVENT，後繼事件仍是 `null`；EVENT 17-key Perl hash、SortDT、36h 期末屬 R4，R5 完整閉環及其他 USE 未完成。舊 R3「部分完成」記錄均為歷史；驗收與界線以 [R3 退出清冊](r3-exit-audit.md) 為準。
+
 **R3 → R4 程式邊界補強：** `src/original-b41-playable-sale.mjs::projectR3PreEventTurn` 現提供**不寫入 period** 的單店已審閱前 EVENT 純投影，且要求 incoming `eventState` 已知；當 EVENT 尚未處理時，不得將 `null` 假充 `{}`。既有 `projectB41Sale` 保留相容玩家測試時間命令、完成後明確標記 EVENT 未知；內部 `original-b56-event-time-slice.mjs` 則改呼叫 R3 前 EVENT 投影，再由事件測試 fixture 負責附上所審閱的事件後繼狀態。此項是**階段責任分離，不是 EVENT 完整實作**。
 
 **2026-11-23｜R3 六商品販售原版定價／稅額擴充：** 共用 `projectSharedNaturalSale` 從「固定原價」擴充到來源 `sc-s.cgi` 的 1～200% 定價；同一個來源支援的 #10、#40～#44 共用販售需求、價格懲罰、供需、售量、人氣與 `item.cgi::GetSaleTax` 超價附加稅，賣出總額與扣稅後入帳分開，`taxtoday` 更新。`shared-showcase-price.mjs`、來源審閱、`POST /api/showcase`、繁中 UI 與 B-43 兩代存檔接受合法來源百分比，拒絕任意造價和 201%／多餘欄位；原價 `priceOverride` 只保留測試相容。新增原版 Perl 6 商品 × 4 比例 24 組差分、原版直接「自然販售 → ITEM FUNCTURN/FUNCSALE → 59 PLUS」6×2×2 整合探針、標記稅額與需求原始碼 drift，以及真 HTTP 150% 稅額→保存→重啟。**完整 R3 退出仍須以最後同 SHA CI、EVENT 前置語義與合法連續經營驗收確認；EVENT 全生命週期與 36h 期末屬 R4，不可把未知事件當作無事件。**
