@@ -11,7 +11,6 @@
  * event / 36h / unknown item callback behavior is still fail-closed.
  */
 import {parseDsl} from './parse-dsl.mjs';
-import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 
 export const B62_MAP_SOURCE='b62-original-real-sword-map-market-and-bounded-use';
 const fail=s=>{throw new RangeError('B-62 actual sword map: '+s);};
@@ -113,74 +112,4 @@ export function reviewOriginalB62SwordMap({
     scope:'original map market purchase + strictly reviewed map-use branch yielding only #40, exp accounting and no callback side effects; not all source USE outcomes',
     publicGameplay:false,
   });
-}
-export function projectOriginalSwordMapUse({
-  world,reviewed,shopId,randomDraws,
-}){
-  safe(shopId,'shopId',1);
-  if(reviewed?.source!==B62_MAP_SOURCE||world.events!==null||
-     world.shops?.length!==1||!validateSourceSparseMarket(world?.market))
-    fail('reviewed original map source world');
-  if(!Array.isArray(randomDraws)||randomDraws.length!==52||
-     randomDraws.some(n=>!Number.isSafeInteger(n)||n<0||n>=1000000))
-    fail('exact original funcbefore + 50 MakeAmount + lostbook draws');
-  const shop=world.shops[0];
-  if(shop.id!==shopId||shop.status!==1||shop.item?.length!==79||
-     shop.item[13]<1||shop.item[13]>3||
-     shop.exp!==undefined&&(
-       shop.exp===null||typeof shop.exp!=='object'||
-       Object.keys(shop.exp).some(k=>k!=='14'||shop.exp[k]!==20)))
-    fail('legit purchased map and reviewed experience history required');
-  if(shop.exp?.['14']!==undefined)
-    fail('repeat map use with experience-reduced time not yet reviewed');
-  if(shop.time+reviewed.mapUseTimeSeconds>world.nowSeconds)
-    fail('original map use requires two hours of spendable time');
-  if(shop.money<reviewed.mapUsePrice)
-    fail('source map use requires 12000 funds');
-  // GetUseItem invokes functionbefore which may double all five output
-  // counts. The current branch MUST skip this side-effect. Unreviewed
-  // callback branches are rejected, never silently ignored.
-  if(randomDraws[0]<=100000)
-    fail('source sword-market pre-callback doubled rewards unreviewed');
-  const outputs=[];
-  let used=1;
-  for(let i=0;i<5;i++){
-    let count=0;
-    for(let j=0;j<10;j++){
-      const draw=randomDraws[used++];
-      if(draw<chance[i]*1000)count++;
-    }
-    outputs.push({itemId:mkItemIds[i],produced:count});
-  }
-  if(outputs.slice(1).some(x=>x.produced!==0))
-    fail('other four sword creations unreviewed; no CAS mutation');
-  // True Standard Street lostbook callback calls Core UseItem on 10%
-  // (rand(1000)<100). This initial milestone handles only its safe
-  // no-destruction branch; deliberately reject instead of faking it.
-  if(randomDraws[51]<100000)
-    fail('original lostbook map destruction callback unreviewed');
-  const acquired=outputs[0].produced;
-  const items=[...shop.item],old=safe(items[39],'existing wooden sword');
-  if(old+acquired>600)
-    fail('source #40 original inventory cap/overflow branch unreviewed');
-  items[39]=old+acquired;
-  const money=safe(shop.money-12000,'use money');
-  const paytoday=safe(shop.paytoday+12000,'use paytoday');
-  const time=safe(shop.time+7200,'use time');
-  return {
-    shops:[{...shop,item:items,money,paytoday,time,
-      exp:{14:20}}],
-    receipt:{
-      action:'use-original-sword-map-14',source:reviewed.source,
-      sourceUseItemId:14,useNo:0,
-      sourceMapWasOwned:shop.item[13],
-      sourceMapRetained:items[13],
-      swordsCreated:acquired,woodStockBefore:old,
-      woodStockAfter:items[39],moneySpent:12000,
-      timeSpentSeconds:7200,experienceGain:20,
-      callbackDoubleTriggered:false,callbackLostbookTriggered:false,
-      randomDrawsUsed:52,createdResults:outputs,
-      sourceScope:'real SOURCE #14 use: no-double/no-lostbook/only #40 success branch; all other RNG outcomes fail closed',
-    },
-  };
 }
