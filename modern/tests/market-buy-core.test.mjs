@@ -83,6 +83,29 @@ function apply(world,command,customStreet=street){
   return applyGameCommand({world,command,streetModule:customStreet});
 }
 
+// Historical R2-A Perl Oracle's bounded compiler did not load ITEM BASE.
+// Keep its 36 old assertions as a separate legacy fixture without allowing
+// that fixed-price policy to contaminate the production StreetModule.
+const legacyR2AFixture=Object.freeze({...street,marketBuy:{
+  ...street.marketBuy,
+  quote({rule,marketStock}){
+    if(rule.itemId===14)return {price:10000,timeSeconds:600};
+    return street.marketBuy.quote({rule,marketStock});
+  },
+}});
+function sourceMarketQuote(world,itemId){
+  const rule=street.marketBuy.getRule(itemId);
+  assert.ok(rule,'source market rule '+itemId);
+  const stock=world.market.wholesale[itemId-1];
+  assert.ok(stock>0,'original source wholesale stock '+itemId);
+  const pos=street.marketBuy.order.findIndex(row=>row.itemId===itemId);
+  assert.ok(pos>=0,'original item declaration sort '+itemId);
+  const shelf=street.marketBuy.order.slice(0,pos)
+    .filter(row=>world.market.wholesale[row.wholesaleIndex]>0).length;
+  const q=street.marketBuy.quote({rule,marketStock:stock});
+  return {shelf,price:q.price,timeSeconds:q.timeSeconds,marketStock:stock};
+}
+
 test('R1 original Core buy-s.cgi callback order and three reviewed DSL item rules are pinned',()=>{
   const source=src.originalBuySource;
   const accounting=source.indexOf('$DT->{paytoday}+=$num*$price;');
@@ -108,7 +131,7 @@ test('R2 one GameCore market-buy produces exact three legacy source-backed world
     const offer=quote(start);
     assert.ok(offer.marketStock>0,'original PLUS must stock item '+itemId);
     const command=buyCommand(start,itemId,offer,2);
-    const common=apply(start,command);
+    const common=apply(start,command,legacyR2AFixture);
     // Legacy commands do not accept itemId at all.
     const old=apply(start,{
       kind:legacyKind,expectedRevision:start.revision,shopId:1,
@@ -135,22 +158,23 @@ test('R2 one GameCore market-buy produces exact three legacy source-backed world
 test('R2 sequential common purchases use the same memory CAS adapter and preserve all three stocks',()=>{
   const {repository,act}=seed();
   const first=repository.read(),money=first.shops[0].money;
-  let spent=0;
+  let spent=0,timeSpent=0;
   for(const [id,,getQuote] of mappings){
-    const quote=getQuote(repository.read());
+    const quote=sourceMarketQuote(repository.read(),id);
     const result=act('market-buy',{
       shopId:1,itemId:id,requestedCount:1,
       marketShelf:quote.shelf,expectedPrice:quote.price,
     });
     assert.ok(result.ok,JSON.stringify(result.details));
     spent+=result.details.totalPaid;
+    timeSpent+=result.details.timeConsumedSeconds;
     assert.equal(result.world.shops[0].item[id-1],1);
   }
   const end=repository.read();
   assert.equal(end.revision,first.revision+3);
   assert.equal(end.shops[0].money,money-spent);
   assert.equal(end.shops[0].paytoday,spent);
-  assert.equal(end.shops[0].time,first.shops[0].time+1800);
+  assert.equal(end.shops[0].time,first.shops[0].time+timeSpent);
   assert.equal(end.market.sourceWriteShape,'whole-store-79');
   assert.equal(end.market.originalWholesaleCsv.split(',').length,79);
   const stale=apply(end,{...buyCommand(first,10,mappings[0][2](first)),
@@ -272,7 +296,7 @@ test('R2 actual two-generation local save and load round-trips the same shared c
   const {repository,act}=seed(),store=createLocalWorldSaveStore({directory});
   let generation=0;
   for(const [id,,getQuote] of mappings){
-    const q=getQuote(repository.read());
+    const q=sourceMarketQuote(repository.read(),id);
     const r=act('market-buy',{shopId:1,itemId:id,
       requestedCount:1,marketShelf:q.shelf,expectedPrice:q.price});
     assert.ok(r.ok,JSON.stringify(r.details));
@@ -325,7 +349,7 @@ test('R2-A original Perl buy-s.cgi direct oracle: three items x twelve cases, or
       kind:'market-buy',expectedRevision:world.revision,
       shopId:1,itemId:c.itemId,requestedCount:c.requestedCount,
       marketShelf:c.marketShelf,expectedPrice:c.expectedPrice,
-    });
+    },legacyR2AFixture);
     const label=c.itemId+'/'+c.case;
     assert.equal(result.ok,c.accepted,label+': direct Perl acceptance');
     assert.equal(encodeMemorySnapshot(world),before,label+': input immutability');
@@ -448,11 +472,11 @@ test('R2-B registry compiles ordinary ITEM #39 without a per-item buy program',(
   assert.equal(item39.basePrice,500);
   assert.equal(item39.stockLimit,10);
   assert.equal(item39.wholesaleLimit,3);
-  assert.equal(registry.describe(1).classification,'dynamic-price');
-  assert.match(registry.describe(1).reason,/BASE.*1682/);
-  assert.equal(street.marketBuy.getRule(1),null);
-  assert.equal(registry.describe(14).classification,'legacy-r2a-price-incomplete');
-  assert.match(registry.describe(14).reason,/BASE 50\/150/);
+  assert.equal(registry.describe(1).classification,'common-dynamic');
+  assert.equal(registry.describe(1).sourceBaseRaw,'200/1400');
+  assert.equal(street.marketBuy.getRule(1).pricePolicy.kind,'original-pricehalf');
+  assert.equal(registry.describe(14).classification,'common-dynamic');
+  assert.equal(registry.describe(14).sourceBaseRaw,'50/150');
   assert.equal(registry.describe(79).classification,'unsupported');
   assert.match(registry.describe(79).reason,/wholesale cap is zero/);
   assert.equal(street.marketBuy.getRule(79),null);
@@ -599,5 +623,8 @@ test('R2-B direct frozen Perl compiler proves actual ITEM BASE price/time differ
     'legacy #14 static Oracle did not compile actual BASE; R2-B remains partial');
   assert.notEqual(map.sourceTimeSeconds,600);
   assert.equal(street.marketBuyRegistry.describe(14).classification,
-    'legacy-r2a-price-incomplete');
+    'common-dynamic');
+  assert.deepEqual(street.marketBuy.quote({
+    rule:street.marketBuy.getRule(14),marketStock:map.stocked,
+  }),{price:map.sourcePrice,timeSeconds:map.sourceTimeSeconds});
 });
