@@ -87,8 +87,8 @@ function boughtWorld(){
     timespanSeconds:60,randomDraws:marketOracle.draws,
   });
   assert.ok(plus.ok,JSON.stringify(plus.details));
-  const item=street.quoteMarketItem10(adapter.read());
-  assert.ok(act('buy-market-item-10',{
+  const item=street.quoteMarketOffer(adapter.read(),10);
+  assert.ok(act('market-buy',{itemId:10,
     shopId:1,requestedCount:1,
     marketShelf:item.shelf,expectedPrice:item.price,
   }).ok);
