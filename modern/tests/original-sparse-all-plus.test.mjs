@@ -162,7 +162,7 @@ test('B-37 refuses source-missing market, wrong world and unsupported shop shape
 });
 test('B-37 source market also accepts one verified gift use before full PLUS',()=>{
   const {call}=prepared();
-  const gift=call('gift-exchange-maps',2,{shopId:42,requestedCount:1});
+  const gift=call('use-item',2,{shopId:42,itemId:79,useId:0,requestedCount:1});
   assert.equal(gift.code,'COMMITTED');
   assert.equal(gift.world.revision,3);
   const supply=call('reviewed-sparse-all-plus',3,{
