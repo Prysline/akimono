@@ -1,6 +1,6 @@
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
-> **最新執行判定（2026-11-22）：共用 `market-buy` 核心已通過 R2-A 的直接 Perl 差分與原版回呼時序驗收，**R2-A 已完成自身退出條件**；R2-B／C／D／E 均「未完成」，R2 整體「未完成」。** 此段優先於下方 B-63 及更早的交接與「下一步」；舊句「這次只有規劃、沒有修改程式」已失效。**不要依對話記憶、歷史 CI、過時階段名稱或本檔下方 B-xx 的下一步推斷目前完成度。** 權威計畫：[R0–R7](playable-loop-priority-plan.md)；可獨立閱讀的程式證據及階段退出條件：[R2-A～E 實作狀態](shared-market-buy-r0-r2.md)；正式任務進度：[移植進度](migration-progress-and-next-milestones.md)；責任合約：[GameCore 契約](game-core-contract-v1.md)。
+> **最新執行判定（2026-11-22）：共用 `market-buy` 核心已通過 R2-A 的直接 Perl 差分與原版回呼時序驗收；R2-A 已完成自身退出條件；R2-B／C／D／E 均未完成，R2 整體未完成。** 此段優先於下方 B-63 及更早的交接與「下一步」；舊句「這次只有規劃、沒有修改程式」已失效。**不要依對話記憶、歷史 CI、過時階段名稱或本檔下方 B-xx 的下一步推斷目前完成度。** 權威計畫：[R0–R7](playable-loop-priority-plan.md)；可獨立閱讀的程式證據及階段退出條件：[R2-A～E 實作狀態](shared-market-buy-r0-r2.md)；正式任務進度：[移植進度](migration-progress-and-next-milestones.md)；責任合約：[GameCore 契約](game-core-contract-v1.md)。
 
 ## 新工作窗零記憶交接：請按此判斷，不要跳階段
 
