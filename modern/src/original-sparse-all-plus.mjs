@@ -8,6 +8,7 @@ import {ORIGINAL_SPARSE_MARKET_SOURCE,validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparseMultiPlus} from './original-sparse-multi-plus.mjs';
 import {B59_IRON_SOURCE} from './original-b59-iron-event-lifecycle.mjs';
+import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 
 export const ALL_PLUS_SOURCE='core-b37-all-59-plus-original-sequence';
 export const ORIGINAL_PLUS_PIN="-20m|-20m|-20m|-20m|-20m|-20m|-20m|6h|1h|20m|10m|1h|10h|1h|20h|20h|20h|-|-|20h|20h|20h|20h|-|1d|-|-|-|-|2h|-1h|5h|-1h|-1h|-|-|1d|-|5h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|5d|1d|30m|1d|20h|-|-1h|-1h|-|-|-|-|-|-|-|-|1h|-";
@@ -25,6 +26,7 @@ export function reviewOriginalSparseAllPlus({
   marker(compilerSource,'$g_item->{plus}=GetTime($1);');
   marker(compilerSource,'sub GetTime');
   marker(turnSource,'foreach my $cnt (1..$MAX_ITEM)');
+  marker(turnSource,'$add=$timespan/abs($ITEM->{plus})*$DTpeople/');
   marker(turnSource,'$DTwholestore[$cnt-1]+=$ITEM->{plus}>0 ? $add : -$add;');
   marker(wholeSource,'sub CheckWholeStore');
   const rows=[...model.items].sort((a,b)=>a.id-b.id);
@@ -59,7 +61,7 @@ export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
   reviewedB39Span8640=false,
   reviewedB59Iron=null,ironEventActive=false,
-  reviewedEventTimeSlice=false,
+  reviewedEventTimeSlice=false,r4PeriodPopulation=false,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -106,6 +108,22 @@ export function projectOriginalSparseAllPlus({
        reviewedB59Iron.basePlusSeconds!==-1200||
        reviewed.plusSeconds[4]!==-1200)))
     bad('unsupported original active EVENT item PLUS modifier');
+  // In the actual frozen inc-turn, PLUS uses dynamic $DTpeople. R3's
+  // reviewed 500000 initial-city constant may not silently survive the
+  // 36h settlement where the original city population changes.
+  if(typeof r4PeriodPopulation!=='boolean')
+    bad('explicit reviewed population mode required');
+  if(world?.period!==undefined&&
+     world.period?.dtPeople!==reviewed.population&&
+     r4PeriodPopulation!==true)
+    bad('post-period population must use source-reviewed R4 PLUS mode');
+  if(r4PeriodPopulation===true&&(
+     world?.schema!==PERIOD_WORLD_SCHEMA||
+     !Number.isSafeInteger(world.period?.dtPeople)||
+     world.period.dtPeople<1||world.period.dtPeople>1000000000))
+    bad('R4 dynamic population requires source-period numeric state');
+  const sourcePopulation=r4PeriodPopulation?
+    world.period.dtPeople:reviewed.population;
   const shop=world.shops[0];
   if(!Array.isArray(shop?.item)||shop.item.length!==79||
     shop.item.some(v=>!Number.isSafeInteger(v)||v<0))
@@ -125,7 +143,7 @@ export function projectOriginalSparseAllPlus({
     const plus=ironEventActive&&i===4?720:reviewed.plusSeconds[i];
     if(plus===0)continue;
     const start=used;
-    let add=timespanSeconds/Math.abs(plus)*reviewed.population/
+    let add=timespanSeconds/Math.abs(plus)*sourcePopulation/
       (100000/coeff);
     if(!Number.isFinite(add)||add<0)bad('unsafe original PLUS arithmetic');
     if(add>0){

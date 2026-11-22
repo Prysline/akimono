@@ -45,7 +45,11 @@ sub run {
   OriginalSparseWholesalePlusHarness::bootstrap();
   my $seconds=reviewed_seconds();
   for my $id (1..79){$main::ITEM[$id]{plus}=$seconds->[$id-1];}
-  $main::MAX_ITEM=79;$main::MAX_USER=50;$main::DTpeople=500000;
+  $main::MAX_ITEM=79;$main::MAX_USER=50;
+  $main::DTpeople=exists($o{dtPeople})?$o{dtPeople}:500000;
+  die 'R4 original population must be positive source integer'
+    unless $main::DTpeople=~/^\d+$/ && $main::DTpeople>=1
+      && $main::DTpeople<=1000000000;
   @main::DT=({item=>[(0)x79]});
   $main::DT[0]{item}[62]=1; $main::DT[0]{item}[78]=5;
   @main::DTwholestore=exists($o{wholesale})?@{$o{wholesale}}:();
