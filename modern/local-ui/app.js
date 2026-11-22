@@ -204,6 +204,8 @@ function showState(s){
       '｜持有 '+number(shop.item[shelfId-1]));
   text('paid',money(shop?.paytoday));
   text('sales',money(shop?.saletoday));
+  text('shop-paid',money(shop?.paytoday));
+  text('shop-sales',money(shop?.saletoday));
   text('balance-name',shop?.shopname??'—');
   text('balance-owner',shop?.name??'—');
   text('balance-money',money(shop?.money));
