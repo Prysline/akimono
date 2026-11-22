@@ -4,6 +4,7 @@ let snapshot=null;
 let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
+let selectedUseId=null;
 let lastRenderedItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceUpkeep=raw=>{
@@ -18,7 +19,8 @@ const timeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',balance:'收支',item:'商品明細'};
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',
+  balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
   $('status-summary').hidden=!snapshot?.shop||
@@ -35,18 +37,22 @@ function updateNavigation(){
   }
   for(const tab of tabs){
     const selected=tab.dataset.tab===currentTab||
-      (currentTab==='item'&&tab.dataset.tab==='stock');
+      (['item','use','use-result'].includes(currentTab)&&
+        tab.dataset.tab==='stock');
     tab.classList.toggle('selected',selected);
     if(selected)tab.setAttribute('aria-current','page');
     else tab.removeAttribute('aria-current');
     $('tab-'+tab.dataset.tab).hidden=tab.dataset.tab!==currentTab;
   }
   $('tab-item').hidden=currentTab!=='item';
+  $('tab-use').hidden=currentTab!=='use';
+  $('tab-use-result').hidden=currentTab!=='use-result';
   $('tab-pending').hidden=currentTab!==null;
   if(currentTab===null){
     text('pending-title',groupNames[currentGroup]+'（尚未實作）');
   }
   if(currentTab==='item'&&snapshot)renderItemInfo(snapshot);
+  if(currentTab==='use'&&snapshot)renderUseDetail(snapshot);
   text('menu-location',groupNames[currentGroup]+
     (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
   syncStatusVisibility();
@@ -78,6 +84,8 @@ toggle.addEventListener('click',()=>{
 document.querySelectorAll('[data-go-tab]').forEach(button=>
   button.addEventListener('click',()=>selectTab(button.dataset.goTab)));
 $('back-to-stock').addEventListener('click',()=>selectTab('stock'));
+$('back-to-item').addEventListener('click',()=>selectTab('item'));
+$('result-back-to-item').addEventListener('click',()=>selectTab('item'));
 const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
 function openItem(itemId){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
@@ -120,44 +128,87 @@ function renderItemInfo(s){
   const canEdit=Boolean(item&&shop&&(offer||shop.showcase?.[0]===selectedItemId));
   $('showcase-form').hidden=!canEdit;
   $('set-showcase').disabled=!shop||!canEdit;
-  const useBody=$('use-offers');
-  useBody.replaceChildren();
+  const useList=$('use-offers');
+  useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
   if(!useOffers.length){
-    const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=5;td.textContent='此商品目前沒有可執行的使用或製作方式';
-    tr.append(td);useBody.append(tr);
+    const li=document.createElement('li');
+    li.textContent='此商品目前沒有可執行的使用或製作方式';
+    useList.append(li);
     return;
   }
   for(const row of useOffers){
-    const tr=document.createElement('tr');
-    tr.dataset.useItemId=String(row.itemId);
-    const cell=value=>{const td=document.createElement('td');
-      td.textContent=String(value);tr.append(td);return td;};
-    cell(row.useName+(row.firstUseOnly?'（限首次）':''));
-    cell('持有 '+row.owned+'；材料 '+
-      (row.materials??[]).map(x=>
-        (catalogItem(s,x.itemId)?.name??'#'+x.itemId)+' × '+x.count).join('、'));
-    cell(money(row.moneyPerUse)+'／'+timeText(row.timePerUseSeconds));
-    const tdInput=document.createElement('td');
-    const count=document.createElement('input');
-    count.type='number';count.min='1';count.step='1';count.value='1';
-    if(row.firstUseOnly)count.max='1';
-    count.disabled=!row.canUse;
-    count.dataset.useCount=String(row.itemId);
-    count.setAttribute('aria-label',row.itemName+' 使用次數');
-    tdInput.append(count);tr.append(tdInput);
-    const tdButton=document.createElement('td');
-    const button=document.createElement('button');
-    button.type='button';button.className='primary';
-    button.dataset.useItem=String(row.itemId);
-    button.dataset.useId=String(row.useId);
-    button.textContent=row.canUse?'使用／製作':'不可使用';
-    button.disabled=!row.canUse;
-    button.title=row.reason??'來源已審閱的商品操作';
-    tdButton.append(button);tr.append(tdButton);
-    useBody.append(tr);
+    const li=document.createElement('li');
+    if(row.canUse){
+      const button=document.createElement('button');
+      button.type='button';button.className='text-link use-action-link';
+      button.dataset.openUse=String(row.useId);
+      button.dataset.useItem=String(row.itemId);
+      button.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      li.append(button);
+    }else{
+      const label=document.createElement('span');
+      label.className='use-unavailable';
+      label.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      li.append(label);
+      const reason=document.createElement('small');
+      reason.className='muted';
+      reason.textContent='（'+(row.reason??'目前不可執行')+'）';
+      li.append(reason);
+    }
+    useList.append(li);
   }
+}
+$('use-offers').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-open-use]');
+  if(!button||button.disabled)return;
+  const itemId=Number(button.dataset.useItem);
+  const useId=Number(button.dataset.openUse);
+  const offer=snapshot?.useOffers?.find(row=>
+    row.itemId===itemId&&row.useId===useId);
+  if(!offer?.canUse||selectedItemId!==itemId)return;
+  selectedUseId=useId;
+  $('use-count').value='1';
+  selectTab('use');
+});
+function renderUseDetail(s){
+  const offer=(s.useOffers??[]).find(row=>
+    row.itemId===selectedItemId&&row.useId===selectedUseId);
+  const catalog=s.itemCatalog??[];
+  const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
+  text('use-detail-name',offer?.useName??'請返回商品明細選擇操作');
+  text('use-detail-item',offer?nameFor(offer.itemId):'—');
+  text('use-detail-owned',offer?number(offer.owned):'—');
+  text('use-detail-materials',offer?
+    (offer.materials?.length?offer.materials.map(row=>
+      nameFor(row.itemId)+' × '+number(row.count)+'（持有 '+
+      number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料'):'—');
+  text('use-detail-money',offer?money(offer.moneyPerUse):'—');
+  text('use-detail-time',offer?timeText(offer.timePerUseSeconds):'—');
+  text('use-detail-limit',offer?
+    (offer.firstUseOnly?'僅限首次使用':'可選擇執行次數'):'—');
+  const form=$('use-action-form');
+  form.hidden=!offer;
+  const count=$('use-count');
+  count.max=offer?.firstUseOnly?'1':'';
+  if(offer?.firstUseOnly)count.value='1';
+  $('perform-use').disabled=!offer?.canUse;
+  text('use-detail-note',!offer?'沒有可執行的操作':
+    offer.canUse?'執行前請確認材料、資金與可用行動時間。':
+      (offer.reason??'目前無法執行'));
+}
+function renderUseResult(data,offer,catalog){
+  const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
+  const tuples=rows=>(Array.isArray(rows)?rows:[])
+    .filter(row=>Array.isArray(row)&&row.length>=2&&row[1]>0)
+    .map(([id,count])=>nameFor(id)+' × '+number(count)).join('、')||'無';
+  text('use-result-name',offer.useName);
+  text('use-result-count',number(data.effectiveCount));
+  text('use-result-money',money(data.moneySpent));
+  text('use-result-time',timeText(data.timeSpentSeconds));
+  text('use-result-consumed',tuples(data.originalUseItem));
+  text('use-result-acquired',tuples(data.originalAddItem));
+  text('use-result-message',data.originalResultOk??'操作已完成。');
 }
 $('inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');
