@@ -8,6 +8,8 @@
 
 正式證據與缺口見 [R2-A～E 現況](docs/shared-market-buy-r0-r2.md)、[無記憶交接](docs/next-window-handoff.md)。測試在 `modern/` 執行 `npm test`／`npm run audit`；**最新成功數與 Workflow URL 只以最後 HEAD 的實際 CI 為準，不可使用 R2-A 歷史 903 Node／1867 Perl 替代。** 以下「只有三筆硬編碼 `sharedBuyRules`」的文字為本次之前歷史紀錄，不是當前執行路徑。
 
+**新增來源存檔邊界：** `createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry})` 經來源規則驗證可承載新普通商品 #39 的持有上限與展示價格及雙世代回載；不傳 Registry 時繼續拒絕超出原 B-43 範圍的商品。新原版探針 `tests/original-perl/original-r2b-pricehalf-probe.pl` 使用已審閱固定 Perl `GetBuffer(BASE)`、`GetWholeStore`、`GetTimeDeal` 直接確認 #14 動態價與時間並非固定10000G／600秒。
+
 ---
 
 
