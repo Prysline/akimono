@@ -142,7 +142,7 @@ test('R2-D source invalid USE, unknown callbacks, stale revision and malformed s
   const repo=ownsMap(),oracle=perl('original-b63-sword-map-all-outcomes-probe.pl','mixed');
   const good=oracle.originalSamples;
   for(const command of [
-    {itemId:999},{itemId:14,useId:1},{itemId:79,useId:4},
+    {itemId:999},{itemId:14,useId:1},{itemId:79,useId:99},
     {itemId:14,randomDraws:good.slice(0,-1)},
     {itemId:14,randomDraws:[...good,0]},
     {itemId:14,randomDraws:[1000000,...good.slice(1)]},
