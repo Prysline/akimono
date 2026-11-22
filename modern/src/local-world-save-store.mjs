@@ -19,6 +19,8 @@ import {B61_SWORD_SOURCE,isReviewedB61SwordPeriod}
   from './original-b61-sword-demand-event.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
+import {isSourceShowcasePercentPrice}
+  from './shared-showcase-price.mjs';
 
 export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v1';
 const MAX_BYTES=2200000;
@@ -111,12 +113,10 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
        (![0,10,40,41,42,43,44].includes(shop.showcase?.[0])&&
          !extraShowcaseValid())||
        shop.showcase?.length!==1||shop.price?.length!==1||
-       (shop.showcase[0]===10&&shop.price[0]!==5000)||
-       (shop.showcase[0]===40&&shop.price[0]!==1200)||
-        (shop.showcase[0]===41&&shop.price[0]!==1500)||
-        (shop.showcase[0]===42&&shop.price[0]!==3200)||
-        (shop.showcase[0]===43&&shop.price[0]!==8000)||
-        (shop.showcase[0]===44&&shop.price[0]!==12000)||
+       ([10,40,41,42,43,44].includes(shop.showcase[0])&&
+          !isSourceShowcasePercentPrice({
+            10:5000,40:1200,41:1500,42:3200,43:8000,44:12000,
+          }[shop.showcase[0]],shop.price[0]))||
        (shop.showcase[0]===0&&shop.price[0]!==0)||
        !Number.isSafeInteger(shop.money)||shop.money<0||
        !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||

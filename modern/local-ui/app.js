@@ -270,8 +270,7 @@ $('showcase-form').addEventListener('submit',async event=>{
   const itemId=Number($('shelf-item').value);
   await call('/api/showcase',{
     expectedRevision:snapshot?.world?.revision,
-    itemId,priceOverride:itemId===0?0:
-      snapshot?.showcaseOffers?.find(x=>x.itemId===itemId)?.unitPrice,
+    itemId,per:Number($('shelf-price-per').value),
   },itemId===0?'清空展示架':'原版來源共用展示架上架 #'+itemId);
 });
 async function advance(minutes){

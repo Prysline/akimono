@@ -9,6 +9,8 @@
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
+import {isSourceShowcasePercentPrice}
+  from './shared-showcase-price.mjs';
 import {reviewR3ItemCallbackStage,projectR3ItemCallbackStage}
   from './r3-reviewed-item-callback-stage.mjs';
 import {ALL_PLUS_SOURCE,projectOriginalSparseAllPlus}
@@ -246,7 +248,9 @@ export function projectB41Sale({
       [0,10,40]:[0,10]).includes(shop.showcase[0])||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
     (shop.showcase[0]!==0&&
-      shop.price[0]!==reviewed.saleRules?.[shop.showcase[0]]?.unitPrice)||
+      !isSourceShowcasePercentPrice(
+        reviewed.saleRules?.[shop.showcase[0]]?.unitPrice,
+        shop.price[0]))||
     ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
   // New R3 sword sales may not interpret B-41 unknown EVENT as empty.

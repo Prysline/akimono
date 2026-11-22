@@ -355,13 +355,21 @@ async function api(req,res,url){
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
       const sourceRule=streetModule.reviewedB41?.saleRules?.[itemId]??null;
-       if(itemId!==0&&!sourceRule)
-         throw Error('僅支援已審閱的自然販售 ITEM 或清空展示架');
-       if(body.priceOverride!==(sourceRule?.unitPrice??0))
-         throw Error('展示架只接受已審閱原版 ITEM 原價');
+      if(itemId!==0&&!sourceRule)
+        throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
+      const fields=Object.keys(body).sort().join(',');
+      if(fields!=='expectedRevision,itemId,per'&&
+         fields!=='expectedRevision,itemId,priceOverride')
+        throw Error('僅允許原版販售百分比或相容原價欄位');
+      const fromPercent=Object.hasOwn(body,'per');
+      const per=fromPercent?commandNumber(body.per,'per',1):100;
+      if(per>200)throw Error('原版展示架比例限制 1–200%');
+      const sourcePrice=sourceRule?.unitPrice??0;
+      if(!fromPercent&&body.priceOverride!==sourcePrice)
+        throw Error('相容 priceOverride 只接受來源原價');
       result=commit({kind:'edit-showcase',
         expectedRevision:ensureRevision(body),shopId:1,shelf:0,
-        itemId,per:100,priceOverride:body.priceOverride});
+        itemId,per,priceOverride:fromPercent?0:sourcePrice});
       break;
     }
     case '/api/advance-time': {
