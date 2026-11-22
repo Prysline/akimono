@@ -144,7 +144,10 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.match(html,/lang="zh-Hant"/);
   assert.match(html,/id="use-offers"/);
   assert.match(html,/id="market-offers"/);
-  assert.match(app,/data-use-item/);
+  assert.match(html,/<ul id="use-offers" class="use-action-list">/);
+  assert.match(html,/id="tab-use"/);
+  assert.match(html,/id="tab-use-result"/);
+  assert.match(app,/button\.dataset\.openUse=String\(row\.useId\)/);
   assert.match(app,/useOffers/);
   assert.match(app,/call\('\/api\/use'/);
   assert.doesNotMatch(app,/gift-exchange-maps|use-original-sword-map-14/);
