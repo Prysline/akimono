@@ -5,6 +5,12 @@
 
 > 2026-11-22 現況：R3 **受控部分完成，尚未達完整退出條件**。本文件記錄已執行的原版 Oracle、資料驅動共用核心及仍需拒絕的來源語義。R0、R1 全量未結案。原版 Perl／Core／DSL 不修改。
 
+## 2026-11-23｜R3 ITEM 回呼分派正式安全子區
+
+新增 `src/r3-reviewed-item-callback-stage.mjs`：從原版 `inc-turn.cgi`、標準街及 rebel DSL 審閱「自然販售 → ITEM FUNCTURN → ITEM FUNCSALE → 排序／期末 → PLUS」的順序與宣告。只有 #70「那由多的項鍊」具有 `funct _local_`，沒有商品 `funcs` 或全域 `FUNCTURN/FUNCSALE`。合法來源取得的 #10 與 #40～#44 玩家庫存不含 #70，因此原版會呼叫 #70 FUNCTURN，但沒有受影響店舖；目前正式時間命令會先執行此審閱階段，遇到未知回呼或 #70 真持有時 fail-closed。
+
+**關鍵 RNG 修正：** #70 的程式先計算 `$TIMESPAN/86.4`，當單次快轉 60 秒即使無持有者，仍需消耗一次 `rand(1)` 才對空店舖集合返回；這筆樣本現在置於自然販售與市場 59 PLUS 之間，避免市場進貨 RNG 位移。時間片 120 秒以上不需此抽樣。原版 Perl 的完整時間回呼、`_sale_count_` 暫存清除、排序／期末、EVENT 及 17 hash 順序尚未整合，不能宣告 R3 全面完成。
+
 ## 來源與責任分工
 
 原版凍結來源：modern/tests/original-perl/inc-turn.cgi（需求、店舖販售、FUNCTURN、FUNCSALE、排序／期末、PLUS、EVENT）；modern/tests/original-perl/market.cgi（GetMarketStatus）；modern/tests/original-perl/item.cgi（GetSaleTax）；modern/tests/original-perl/core-detail.cgi（GetUserTaxRate）；modern/tests/original-perl/whole.cgi（CheckWholeStore）；modern/tests/original-perl/inc-makeitem.cgi（ITEM 與 POP／POINT／COST 編譯）；custom/inc-item-data.cgi（ITEM／EVENT／PLUS）；原版源 SHA 仍由既有 CI 稽核。

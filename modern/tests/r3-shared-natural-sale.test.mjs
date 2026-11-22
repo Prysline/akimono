@@ -8,6 +8,8 @@ import {createStandardStreetModule}
   from '../src/standard-street-module.mjs';
 import {projectSharedNaturalSale}
   from '../src/shared-natural-sale-core.mjs';
+import {R3_ITEM_CALLBACK_STAGE,projectR3ItemCallbackStage}
+  from '../src/r3-reviewed-item-callback-stage.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const paths=[
@@ -107,4 +109,43 @@ test('R3 shared calculator fails closed on unknown price, missing draw, overflow
     assert.throws(()=>projectSharedNaturalSale({...arg,...change}));
     assert.equal(JSON.stringify(shop),before);
   }
+});
+
+test('R3 original #70 FUNCTURN has no eligible owners but still consumes 1-minute rand(1)',()=>{
+  const reviewed=street.reviewedB41.itemCallbacks;
+  assert.equal(reviewed.source,R3_ITEM_CALLBACK_STAGE);
+  assert.deepEqual(reviewed.turnIds,[70]);
+  assert.deepEqual(reviewed.saleIds,[]);
+  const item=Array(79).fill(0);item[62]=1;item[78]=5;item[40]=2;
+  const shop={item,showcase:[41],price:[1500],rank:5010};
+  const before=JSON.stringify(shop);
+  for(const [span,used] of [[60,1],[86,1],[87,0],[1800,0]]){
+    const result=projectR3ItemCallbackStage({
+      reviewed,shop,spanSeconds:span,randomDraws:[500000],
+    });
+    assert.deepEqual(result.itemTurnDispatched,[70]);
+    assert.equal(result.drawsUsed,used);
+    assert.equal(result.itemTurnAffectedShops,0);
+    assert.equal(result.itemSaleCallbackCount,0);
+    assert.equal(JSON.stringify(shop),before);
+  }
+  assert.throws(()=>projectR3ItemCallbackStage({
+    reviewed,shop,spanSeconds:60,randomDraws:[],
+  }),/rand\(1\)/);
+  const artificial=[...item];artificial[69]=1;
+  assert.throws(()=>projectR3ItemCallbackStage({
+    reviewed,shop:{...shop,item:artificial},spanSeconds:1800,randomDraws:[],
+  }),/stocked ITEM #70/);
+});
+test('R3 ITEM callback source declaration and inc-turn dispatch edits are refused',()=>{
+  assert.throws(()=>createStandardStreetModule({...source,
+    itemDsl:source.itemDsl.replace('funct\t_local_','funct\tother_'),
+  }),/FUNCT|callback|source/);
+  assert.throws(()=>createStandardStreetModule({...source,
+    itemDsl:source.itemDsl.replace('funct\t_local_','funcs\t_local_'),
+  }),/FUNCT|callback|source/);
+  assert.throws(()=>createStandardStreetModule({...source,
+    originalTurnSource:source.originalTurnSource.replace(
+      'foreach(@DT){delete $_->{_sale_count_}}','foreach(@DT){}'),
+  }),/drift|source/);
 });

@@ -215,7 +215,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   return draws.slice(0,draws[0]<=100000?12:52);
 }
 function sampleSourceTime(world,minutes){
-  // One shared source draw stream: natural sales followed by 59 original PLUS.
+  // One source stream: natural sales, ITEM FUNCTURN/FUNCSALE, then 59 PLUS.
+  // The no-stock #70 callback consumes rand(1) at a 1-minute interval.
   const pool=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
     ?[500000,...Array(120).fill(0)]
     :sourceCommandDraws({world,kind:'advance-source-time',

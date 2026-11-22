@@ -9,6 +9,8 @@
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
+import {reviewR3ItemCallbackStage,projectR3ItemCallbackStage}
+  from './r3-reviewed-item-callback-stage.mjs';
 import {ALL_PLUS_SOURCE,projectOriginalSparseAllPlus}
   from './original-sparse-all-plus.mjs';
 import {validateSourceSparseMarket}
@@ -82,7 +84,7 @@ function reviewR3SourceSaleItems(itemDsl){
   });
 }
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
-  itemDsl,configSource,reviewedMarket11=null,reviewedB59Iron=null,
+  itemDsl,rebelDsl,turnSource,configSource,reviewedMarket11=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null,
   reviewedB63Map=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
@@ -132,9 +134,10 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB63Map.cost?.join(',')!=='120,150,320,800,1200'))
     bad('B-63 original all-sword inventory source review drift');
   const r3=reviewR3SourceSaleItems(itemDsl);
+  const itemCallbacks=reviewR3ItemCallbackStage({itemDsl,rebelDsl,turnSource});
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
-    saleRules:r3.rules,upkeepCosts:r3.costs,
+    saleRules:r3.rules,upkeepCosts:r3.costs,itemCallbacks,
     swordOutcomesSource:reviewedB63Map?.source??null,
     swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
@@ -281,8 +284,15 @@ export function projectB41Sale({
     spanSeconds:span,randomDraws,popularOverride,
   });
   const nextShop=natural.shop,sold=natural.sold;
+  const naturalDraws=natural.drawsUsed;
+  // Exact original inc-turn callback placement precedes the 59 ITEM PLUS.
+  const itemCallbackStage=projectR3ItemCallbackStage({
+    reviewed:reviewed.itemCallbacks,shop:nextShop,spanSeconds:span,
+    randomDraws:randomDraws.slice(naturalDraws),
+  });
+  const callbackDraws=itemCallbackStage.drawsUsed;
+  const used=naturalDraws+callbackDraws;
   const newShop=nextShop;
-  const naturalDraws=natural.drawsUsed,used=naturalDraws;
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;
   const plus=projectOriginalSparseAllPlus({
@@ -312,7 +322,8 @@ export function projectB41Sale({
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
       rankBefore:shop.rank,rankAfter:rank,
-      naturalDraws,plusDraws:plus.receipt.drawsUsed,
+      naturalDraws,callbackDraws,itemCallbackStage,
+      plusDraws:plus.receipt.drawsUsed,
       totalDraws:used+plus.receipt.drawsUsed,
       sourceScope:reviewed.sourceScope,
     },

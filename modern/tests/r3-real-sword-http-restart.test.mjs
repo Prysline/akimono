@@ -111,6 +111,10 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  });
  assert.equal(sold.code,'COMMITTED',JSON.stringify(sold));
  assert.equal(sold.details.soldItemId,41);
+ assert.deepEqual(sold.details.itemCallbackStage.itemTurnDispatched,[70]);
+ assert.equal(sold.details.itemCallbackStage.itemTurnAffectedShops,0);
+ assert.equal(sold.details.itemCallbackStage.itemSaleCallbackCount,0);
+ assert.equal(sold.details.callbackDraws,0,'30-minute callback has no rand');
  assertActualMarketShelf(sold.state); // Natural sale + original 59 PLUS.
  assert.equal(sold.state.shop.showcase[0],41);
  assert.ok(sold.state.shop.item[40]<2);
