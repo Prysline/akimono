@@ -51,7 +51,7 @@ for my $i (0..$#main::out_item){
 # ITEM #39 is plain PRICE+LIMIT without BASE or item-level FUNCB.
 die 'fixed original ITEM #39 review drift' unless
   $ITEM[39]{code} eq 'book-kaitai' &&
-  $ITEM[39]{name} eq '解體工具' &&
+  $ITEM[39]{name} eq '拆解/打包工具' &&
   $ITEM[39]{price}==500 && $ITEM[39]{limit}==10 &&
   $ITEM[39]{wslimit}==3 && !$ITEM[39]{pricehalf} &&
   !$ITEM[39]{funcbuy} && $supply->{numericWholesale}[38]>0;
