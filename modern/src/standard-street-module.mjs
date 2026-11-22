@@ -284,6 +284,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
       itemSource:originalBuyItemSource,
+      globalBuyCallback:reviewedGlobalBuyCallback,
     }):null;
   const marketBuy=Object.freeze({
     globalBuyCallback:reviewedGlobalBuyCallback,
