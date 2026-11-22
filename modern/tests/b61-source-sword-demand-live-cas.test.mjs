@@ -173,9 +173,9 @@ test('B-61 true original Perl compiler PARAM output, GetMarketStatus and origina
     const active=projectOriginalSwordDemand({
       reviewed,timespanSeconds:60,activeAtDataRead:true,
     }).rows[i];
-    close(base.potentialBuyers,x.potentialBuyers,'source baseline #'+id);
-    close(active.potentialBuyers,y.potentialBuyers,'source active #'+id);
-    close(active.potentialBuyers,base.potentialBuyers*2,
+    close(Number(base.potentialBuyersApprox),x.potentialBuyers,'source baseline #'+id);
+    close(Number(active.potentialBuyersApprox),y.potentialBuyers,'source active #'+id);
+    close(Number(active.potentialBuyersApprox),Number(base.potentialBuyersApprox)*2,
       'source 2x sword potential #'+id);
     assert.equal(base.nominalPriceChanged,false);
     assert.equal(active.realSwordSalesSupported,false);
@@ -269,7 +269,7 @@ test('B-61 real #10 shop persists active sword-demand EVENT across disk/reload; 
     const a=second.details.sourceSwordDemandPreview.rows[i];
     assert.equal(a.effectivePopularSeconds,
       Math.trunc(b.effectivePopularSeconds/2));
-    close(a.potentialBuyers,b.potentialBuyers*2,
+    close(Number(a.potentialBuyersApprox),Number(b.potentialBuyersApprox)*2,
       'actual world 2x sword source potential '+(40+i));
     assert.equal(second.world.shops[0].item[39+i],0,
       'no fabricated sword stock added to real book shop');
@@ -303,8 +303,8 @@ test('B-61 real #10 shop persists active sword-demand EVENT across disk/reload; 
   assert.ok(restored.ok,JSON.stringify(restored.details));
   assert.equal(restored.details.swordDemandWasActiveAtDataRead,false);
   assert.equal(restored.details.sourceSwordDemandPreview.activeAtDataRead,false);
-  close(restored.details.sourceSwordDemandPreview.rows[0].potentialBuyers,
-    first.details.sourceSwordDemandPreview.rows[0].potentialBuyers,
+  close(Number(restored.details.sourceSwordDemandPreview.rows[0].potentialBuyersApprox),
+    Number(first.details.sourceSwordDemandPreview.rows[0].potentialBuyersApprox),
     'original baseline returns after next DataRead');
   store.save(resumed.read(),{expectedGeneration:1});
   assert.deepEqual(store.load().world,restored.world);
