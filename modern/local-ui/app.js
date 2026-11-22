@@ -127,6 +127,46 @@ function showState(s){
     tdButton.append(button);tr.append(tdButton);
     marketBody.append(tr);
   }
+  // R2-E: use offers are read-only projections of StreetModule.useItem.
+  // The browser never rolls its own MakeAmount, costs, EXP or random draws.
+  const useBody=$('use-offers');
+  useBody.replaceChildren();
+  const useOffers=s.useOffers??[];
+  if(!useOffers.length){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=5;td.textContent='尚無已審閱可使用配方';
+    tr.append(td);useBody.append(tr);
+  }else for(const offer of useOffers){
+    const tr=document.createElement('tr');
+    tr.dataset.useItemId=String(offer.itemId);
+    const cell=value=>{
+      const td=document.createElement('td');
+      td.textContent=String(value);tr.append(td);return td;
+    };
+    cell('#'+offer.itemId+' '+offer.itemName+'｜'+offer.useName+
+      (offer.firstUseOnly?'（限首次）':''));
+    cell('持有 '+offer.owned+'；材料 '+
+      offer.materials.map(x=>'#'+x.itemId+' × '+x.count).join('、'));
+    cell(money(offer.moneyPerUse)+'／'+offer.timePerUseSeconds+' 秒');
+    const tdInput=document.createElement('td');
+    const count=document.createElement('input');
+    count.type='number';count.min='1';count.step='1';count.value='1';
+    if(offer.firstUseOnly)count.max='1';
+    count.disabled=!offer.canUse;
+    count.dataset.useCount=String(offer.itemId);
+    count.setAttribute('aria-label','#'+offer.itemId+' 使用次數');
+    tdInput.append(count);tr.append(tdInput);
+    const tdButton=document.createElement('td');
+    const button=document.createElement('button');
+    button.type='button';button.className='primary';
+    button.dataset.useItem=String(offer.itemId);
+    button.dataset.useId=String(offer.useId);
+    button.textContent=offer.canUse?'使用／製作':'不可使用';
+    button.disabled=!offer.canUse;
+    button.title=offer.reason??'已審閱來源 USE';
+    tdButton.append(button);tr.append(tdButton);useBody.append(tr);
+  }
+  text('use-boundary','僅支援來源已審閱 #79 禮物卷交換及 #14 劍市地圖首次使用；未審閱回呼、二次使用及未知事件會拒絕。');
   text('market-boundary',
     '原版商品依來源宣告順序與實際市場價列出；未審閱的回呼／活動／公會、批發上限0等情況明確拒絕。');
   // Collapse setup once after a shop exists, but let the user reopen it.
@@ -234,6 +274,20 @@ $('market-offers').addEventListener('click',event=>{
     requestedCount:Number(input?.value),
     marketShelf:offer.shelf,expectedPrice:offer.price,
   },'來源市場進貨 #'+itemId+' '+offer.name);
+});
+$('use-offers').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-use-item]');
+  if(!button||button.disabled)return;
+  const itemId=Number(button.dataset.useItem);
+  const useId=Number(button.dataset.useId);
+  const offer=snapshot?.useOffers?.find(row=>
+    row.itemId===itemId&&row.useId===useId);
+  if(!offer||!offer.canUse)return;
+  const input=button.closest('tr')?.querySelector('input[data-use-count]');
+  call('/api/use',{
+    expectedRevision:snapshot.world.revision,itemId,useId,
+    requestedCount:Number(input?.value),
+  },'原版共用 USE #'+itemId+' '+offer.useName);
 });
 async function refresh(){
   try{const res=await fetch('/api/state',{cache:'no-store'});
