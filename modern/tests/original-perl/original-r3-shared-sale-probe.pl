@@ -66,7 +66,7 @@ for my $id (@ids){
     );
     @main::B35_DRAWS=@draws;$main::B35_USED=0;
     main::B38SourceNaturalPlus($span);
-    my $shop=$main::DT[0],$used=$main::B35_USED;
+    my ($shop,$used)=($main::DT[0],$main::B35_USED);
     push @rows,{
       itemId=>$id,originalPrice=>0+$s->{price},
       originalPopular=>0+$s->{popular},
