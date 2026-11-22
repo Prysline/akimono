@@ -85,7 +85,7 @@ close $fh or die $!;
 # ORIGINAL source expiry -> start -> NOWFUNC, including actual -e check,
 # real generated event-n file require, undefined callback and BEGIN-rand.
 my $from=index($turn,"\t\t#イベント終了処理\n");
-my $to=index($turn,"\n\t\t$temptimenow+=$timespan;",$from);
+my $to=index($turn,"\n\t\t\$temptimenow+=\$timespan;",$from);
 die 'B-60 original combined EVENT region moved' unless $from>=0&&$to>$from;
 my $literal=substr($turn,$from,$to-$from);
 for my $marker (
