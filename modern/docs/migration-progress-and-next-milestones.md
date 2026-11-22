@@ -1,5 +1,7 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
+**2026-11-23｜R4 SortDT 已在受控純投影中接入：** 原版 `GetDTPoint/SortDT` 的 B-47 審閱器放在 ITEM 回呼之後、59 PLUS 之前，真 Perl Oracle 與合法買入→販售同世界 Node 差分新增；保留既有 R3／B-56 舊路徑。此階段**尚未**結合 36h 期末或完整 EVENT，也不提供正式可提交 R4 回合，仍拒絕未知 EVENT／跨期。詳見 [R4 來源契約](r4-source-time-slices-contract.md)、[測試映射](r4-r0-affected-tests-mapping.md)。
+
 **2026-11-23｜R4-A 受限原版 hash 探針：** 已新增直接執行凍結編譯器輸出的 17 EVENT Perl hash 初始化、實際 `keys(%EVENT)` 與明示人工三鍵 `keys(%DTevent)` Oracle，並加 Perl／Node 差分。**這不等於 EVENT 真生命週期或 RNG 來源完全等價**，不硬編任何排列，也不將 B-56 的明示 fixture 假稱原版 runtime。R4 仍未退出；跨期正式世界繼續 fail-closed。詳見 [R4 來源契約](r4-source-time-slices-contract.md)、[R0 受影響測試](r4-r0-affected-tests-mapping.md)。
 
 

@@ -21,3 +21,11 @@
 | `tests/original-perl/original-r4-event-hash-order-probe.pl` | `inc-makeitem.cgi::OutEventData` 建立 `%EVENT`；若誤使用 DSL 排序會錯誤消耗 RNG | 從凍結編譯器來源擷取初始化 Perl 原文並執行，觀察真 `keys(%EVENT)`，不硬編排列 |
 | `tests/original-perl/original-r4-event-hash-order.t` | `inc-turn.cgi` EVENT／DTevent hash 迴圈；忽略 disabled EVENT 或遺失活動鍵 | 保證真正 17 鍵、同 Perl 行程重複次序與三鍵明示 `%DTevent` fixture 的精確集合 |
 | `tests/r4-original-event-hash-order.test.mjs` | 若把單次 Perl seed 的觀察當永遠不變的來源順序會產生假等價 | 多個獨立 Perl 行程的執行結果比對鍵集合，不要求不同行程排列相等或不等 |
+
+## R4-B 真原版 SortDT 受影響測試
+
+| 來源／路徑 | 風險 | 驗證／處置 |
+|---|---|---|
+| `src/original-b41-playable-sale.mjs` + 新 `src/original-r4-sorted-pre-event.mjs` | R3 回呼後若跳過 `SortDT`，後繼 PLUS／EVENT 看到錯誤 shop.point | R4 純投影在回呼後、PLUS 前接 B-47 原版已審閱算法，仍不宣告完整期末或 EVENT |
+| `tests/original-perl/original-r4-sorted-pre-event-probe.pl` + `.t` | 以手寫 point 取代 Core 原算式或錯置排序位置 | 擷取凍結 Core `GetDTPoint` 和 `SortDT` 原文真 Perl 執行，確認原版順序 |
+| `tests/r4-sorted-pre-event.test.mjs` | 獨立固定 shop 測試未涵蓋合法買入與自然販售 | 真市場買 #10 → 上架 → R3 共用販售+回呼 → R4 排序 → 59 PLUS，逐欄和 Perl 原版排序比較、拒絕零變動 |
