@@ -1,12 +1,15 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
-## 2026-11-22｜最新 R2-B 程式進度（優先於以下歷史狀態）
+## 2026-11-22｜R2-B 已完成自身退出條件（最新權威進度）
 
-**R2-A 已完成自身退出驗收；R2-B 部分完成（未結案）；R2-C、R2-D、R2-E 未完成；R2 整體未完成。** R0 與 R1 仍只有買入局部成果。已在唯一允許工作分支的 `modern/` 新建 `standard-street-market-buy-registry.mjs` 並將 StreetModule 的 `sharedBuyRules` 三商品白名單替換為 79 ITEM DSL／原版 LIMIT 與排序編譯流程；`market-buy` Core 演算法未複製商品 ID。新增真實來源 ITEM #39「拆解/打包工具」按原價500、上限10/3透過通用市場命令買入，直接原版 Perl `buy-s.cgi` 與 Node 結果差分、回呼先後、79欄稀疏 CSV、CAS／保存追加驗證。來源未支援商品保留具體分類及行號。
+**R2-A、R2-B 已完成；R2-C、R2-D、R2-E 未完成；R2 整體未完成。R0、R1 全量尚未結案。** `src/standard-street-market-buy-registry.mjs` 從固定兩份原版 DSL 的79 ITEM、來源行號、真實排列、編譯 LIMIT／批發上限、`BASE/pricehalf` 與原版 `GetTimeDeal` 建立資料驅動規則。StreetModule 已去除 `sharedBuyRules`，共用 `market-buy` 使用來源報價和真實秒數，仍由 GameCore/WorldState/CAS 唯一提交；#10/#11/#14 通用接入，新增 #39「拆解/打包工具」（500、LIMIT 10/3）由真原版市場正常買入，#1/#12 等動態價無須專用 Node 演算法。
 
-**未完成、阻止 R2-B 結案：** 原版 ITEM #14 `BASE 50/150` 動態市場價格未納入歷史 R2-A 原版商品編譯測資，#14 目前只能視作歷史相容狀態，需新的真正原版 `BASE`＋`GetWholeStore` 差分及遷移確認；一般 BASE 商品安全拒絕，不得以固定價假冒。全域 `@@FUNCBUY` 超過500,000G 的送禮實際處理器未落地，未知效果拒絕。R2-C 舊三條 `buy-market-item-10/11/14` 與 UI／HTTP 還未去重，R2-D USE 與 R2-E 整合未完成。**本次不改 Notion 正式任務狀態**。最新 HEAD 的 CI 數據需以實際 GitHub Actions 核對，不得沿用先前903／1867。
+**新原版證據：** 動態 #12/#14 真原版 `buy-s.cgi` 16 組直接 Perl/Node 差分、#39 三組直接原版 Perl 買入、#1/#14 多種實際批發庫存的 `GetBuffer(BASE)`／`GetWholeStore`／`GetTimeDeal` 原版計價，保留原 R2-A 36 組歷史 Oracle（其 BASE 遺漏只在舊測試 adapter 中重現）、CAS 拒絕、72h、雙世代存檔、完整79欄 CSV／DSL SHA／舊 UI/HTTP 回歸。原版全域 `@@FUNCBUY` 500000G 贈 #79 **確會被 #64 觸發**；未審閱非零回呼、EVENT overlay、公會與來源未支援商品一律拒絕而不忽略。B-43 可選用注入 Registry 保存新商品，但尚未接實際 UI。
 
-詳見 [R2 工作包、來源與退出條件](shared-market-buy-r0-r2.md)、[新無記憶交接](next-window-handoff.md)。以下把 `sharedBuyRules` 描述為「仍存在」的舊段落是本次前歷史快照。
+**下一正式工作包為 R2-C（尚未完成）：** UI／HTTP／內部買入與實際存檔讀取統一使用已審閱 Registry，驗證後移除／改為相容轉接現存 `buy-market-item-10/11/14` 和三個獨立 `projectOriginalMarketBuy*`；禁止把 R2-B 完成說成去重完成。R2-D 共用 USE、R2-E 真世界及全量 R0/R1 仍未結案。本次**沒有修改 Notion 正式任務狀態**，PR #1 仍必須 Draft、Open、未合併。請每次查最新 HEAD 的 Push／PR GitHub Actions，別拿歷史成功數代替。最完整原版證據與下一工作窗交接見 [R2 正式狀態](shared-market-buy-r0-r2.md)、[next-window-handoff.md](next-window-handoff.md)。
+
+> 下方「R2-B 未完成／BASE 未支援」是之前的歷史快照，非當前結案判定。
+
 
 ---
 
