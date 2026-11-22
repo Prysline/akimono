@@ -543,6 +543,46 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           const materials=rule.uses.length?
             rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
             (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
+          // Read-only source-backed acquisition hints; never synthesize
+          // inventory, wholesale stock, or a new player transaction.
+          // A positive PLUS is a replenishment possibility, not a promise
+          // of an in-stock purchase or sufficient funds.
+          const materialRoutes=Object.freeze(materials.map(row=>{
+            const sourceItem=model.items.find(item=>item.id===row.itemId);
+            const ownedCount=shop?.item?.[row.itemId-1]??0;
+            const missingCount=Math.max(0,row.count-ownedCount);
+            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
+            const buyRule=buyRegistry?.getRule(row.itemId)??null;
+            const plus=sourceItem?.plusRaw??'';
+            const replenishes=Boolean(buyRule&&
+              /^[1-9][0-9]*(?:\\.[0-9]+)?[mhd]$/.test(plus));
+            const providers=[giftUseRule,...giftUseVariants,
+              swordUseRule,...declarativeUses].filter(provider=>
+                provider?.creates?.some(output=>
+                  output.itemId===row.itemId&&output.countPerUse>0));
+            const availableProvider=providers.find(provider=>
+              provider.uses.every(input=>
+                (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&
+              (!provider.requiresOwnedItem||
+                (shop?.item?.[provider.itemId-1]??0)>=1));
+            const kind=missingCount===0?'owned':
+              buyRule&&marketStock>=missingCount?'market-stock':
+              availableProvider?'registered-use':
+              replenishes?'source-plus':
+              providers.length?'upstream-use-not-ready':
+              'source-acquisition-not-implemented';
+            return Object.freeze({
+              itemId:row.itemId,name:sourceItem?.name??'未知商品',
+              required:row.count,owned:ownedCount,missing:missingCount,
+              marketStock,kind,sourcePlus:replenishes?plus:null,
+              provider:kind==='registered-use'?Object.freeze({
+                itemId:availableProvider.itemId,useId:availableProvider.useId,
+              }):null,
+              providerCandidates:providers.map(p=>Object.freeze({
+                itemId:p.itemId,useId:p.useId,
+              })),
+            });
+          }));
           const priorExp=shop?.exp;
           const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
@@ -572,7 +612,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           return Object.freeze({
             itemId:rule.itemId,useId:rule.useId,
             itemName:sourceName,useName:rule.name,
-            owned,materials,moneyPerUse:rule.money,
+            owned,materials,materialRoutes,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
             proficiency:exp,
             firstUseOnly:Boolean(rule.firstUseOnly),
