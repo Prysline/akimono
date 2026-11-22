@@ -217,6 +217,10 @@ sub step {
     die "actual generated ITEM load failed: $@" unless $executed;
   }
   my @current=map{{%{$_}}}@ITEM[1..79];
+  # The original compiled ITEM catalog also holds names (B-55 source uses
+  # $ITEM[64]{name} for the robot message); keep numeric DataRead snapshots
+  # separate from the source callback display metadata.
+  $ITEM[64]{name}='看門機器人';
   my $initial=$o{shop} or die 'single real callback shop needed';
   my $shop={%$initial,item=>[@{$initial->{item}}],
     showcase=>[@{$initial->{showcase}}],price=>[@{$initial->{price}}]};
