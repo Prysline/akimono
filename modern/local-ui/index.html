@@ -170,6 +170,17 @@
         <thead><tr><th>商品名稱</th><th>持有數量</th><th>備註</th></tr></thead>
         <tbody id="inventory"><tr><td colspan="3">請先建立世界並開店</td></tr></tbody>
       </table>
+      <div id="use-section" class="source-use-section">
+        <h3 class="sub-title">來源審閱的商品使用／製作（共用 USE）</h3>
+        <p class="help-text">所有可操作配方都來自原版 USE 規則，透過同一個 GameCore `use-item` 提交。
+          #79 禮物卷每次消耗 2 張並換取三張地圖；#14 劍市地圖目前僅審閱首次使用，
+          產生五種劍並依來源亂數可能加倍或損毀地圖。這不是全部原版 USE。</p>
+        <table class="market-table">
+          <thead><tr><th>原版 USE</th><th>持有／材料</th><th>單次成本</th><th>要求次數</th><th>使用／製作</th></tr></thead>
+          <tbody id="use-offers"><tr><td colspan="5">請先建立世界並開店</td></tr></tbody>
+        </table>
+        <p id="use-boundary" class="muted">僅執行已審閱配方；第二次地圖使用、未知回呼及未審閱事件會原子拒絕。</p>
+      </div>
       <form id="showcase-form" class="shelf-form">
         <fieldset>
           <legend>展示架設定｜原版第 1 架</legend>
