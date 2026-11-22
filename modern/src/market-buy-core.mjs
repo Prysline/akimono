@@ -76,6 +76,7 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   const inMarket=safe(world.market.wholesale[wholesaleIndex],
     'wholesale stock');
   if(owned>stockLimit)fail('original item holding limit already exceeded');
+  if(inMarket===0)fail('original wholesale item sold out');
   const quote=marketBuy.quote({rule,marketStock:inMarket});
   if(inMarket>0&&(!quote||typeof quote!=='object'))
     fail('missing source-reviewed market quote');
