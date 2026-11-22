@@ -93,6 +93,11 @@ export function projectOriginalSparseAllPlus({
      Object.hasOwn(world.period.eventState,'happy')&&
      reviewedEventTimeSlice!==true)
     bad('known source festival NOWFUNC cannot be bypassed by isolated PLUS');
+  if(world?.period?.eventState&&
+     typeof world.period.eventState==='object'&&
+     Object.hasOwn(world.period.eventState,'ken-sale')&&
+     reviewedEventTimeSlice!==true)
+    bad('known source sword demand EVENT requires reviewed full lifecycle, not isolated PLUS');
   if(typeof ironEventActive!=='boolean'||
      (ironEventActive&&(
        reviewedB59Iron?.source!==B59_IRON_SOURCE||
