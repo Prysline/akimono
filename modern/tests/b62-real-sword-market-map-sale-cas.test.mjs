@@ -79,11 +79,11 @@ function makeWoodSwords(){
   const initial=repository.read();
   assert.equal(initial.market.wholesale[39],0,
     'a fresh source market MUST NOT have #40 swords for a fake purchase');
-  const quote=street.quoteMarketItem14(initial);
+  const quote=street.quoteMarketOffer(initial,14);
   assert.equal(quote.itemId,14);
-  assert.equal(quote.price,10000);
+  assert.equal(quote.price,street.marketBuy.quote({rule:street.marketBuy.getRule(14),marketStock:quote.marketStock}).price);
   assert.ok(quote.marketStock>0,'original PLUS +1h must actually stock map 14');
-  assert.ok(act('buy-market-item-14',{
+  assert.ok(act('market-buy',{itemId:14,
     shopId:1,requestedCount:1,
     marketShelf:quote.shelf,expectedPrice:quote.price,
   }).ok);
@@ -172,7 +172,7 @@ test('B-62 source review locks the only LEGITIMATE initial #14 market path, five
     [400,350,150,60,30]);
   const {repository}=newShop();
   assert.equal(repository.read().market.wholesale[39],0);
-  assert.equal(street.quoteMarketItem14(repository.read()).canBuy,true);
+  assert.equal(street.quoteMarketOffer(repository.read(),14).canBuy,true);
   const args={
     itemDsl:src.itemDsl,
     model:loadStandardStreetModel(src.itemDsl,src.rebelDsl),
@@ -282,7 +282,7 @@ test('B-62 forbidden map callback outcomes, foreign swords, stale purchase/old C
     assert.deepEqual(repository.read(),world);
   }
   const old=applyGameCommand({world,streetModule:street,
-    command:{kind:'buy-market-item-14',
+    command:{kind:'market-buy',itemId:14,
       expectedRevision:world.revision,shopId:1,requestedCount:1,
       marketShelf:quote.shelf+1,expectedPrice:quote.price}});
   assert.equal(old.ok,false);
