@@ -223,3 +223,16 @@ for(const sourcePrice of priceOracle.cases){
     assert.ok(result.drawsUsed<=sourcePrice.randomDrawsUsed);
   });
 }
+
+test('R3 sourced non-default percentage price and markup GetSaleTax drift must fail before GameCore',()=>{
+  assert.throws(()=>createStandardStreetModule({...source,
+    originalItemSource:source.originalItemSource.replace(
+      '$taxrate=$taxrate*5 if $taxrate>0;',
+      '$taxrate=$taxrate*4 if $taxrate>0;'),
+  }),/source drift/);
+  assert.throws(()=>createStandardStreetModule({...source,
+    originalTurnSource:source.originalTurnSource.replace(
+      '$rank/=($DT->{price}[$cnt]-$ITEM[$itemno]->{price})/10000 if $rank<1;',
+      '$rank/=($DT->{price}[$cnt]-$ITEM[$itemno]->{price})/9000 if $rank<1;'),
+  }),/source drift/);
+});
