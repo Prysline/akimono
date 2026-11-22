@@ -1,3 +1,34 @@
+# 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
+
+> 本節為**最新執行方向**，優先於下方 B-63 及更早各階段的「下一步」敘述。**此文件更新僅代表決策及規劃，尚未修改程式、沒有完成新 Core、沒有新增玩家功能或解除原版 36h 決算限制。** 完整權威計畫：[共用規則引擎優先與最短可玩閉環](playable-loop-priority-plan.md)；成因與正式里程碑：[移植進度及架構修正](migration-progress-and-next-milestones.md)；原始契約與現行邊界：[GameCore 責任修正](game-core-contract-v1.md)。
+
+## 本次架構決策
+
+使用者要求：不要再沿用「每新增一個小商品／小事件，就新增一套專用模型／命令及近似整條測試流程」的開發模式。核心原因可從現有碼追溯：B-31 的 GameCore 主要處理命令分派、世界修訂版、記憶體 CAS；標準街模組逐步累積 buy-market-item-10/11/14、use-original-sword-map-14 等命令及個別 reviewed/project 模型。這使原始 Core 共同演算沒有真正形成所有商品／街道可重用的規則層，而來源 Perl 片段、Node 測試、CAS、事件、存檔、HTTP 常在小功能上重複串接。
+
+原版驗證必須保留。「新增小功能耗費十倍工時」未有計時數據，應描述為**大量逐案例實作與重複整合驗證造成的結構性成本**，不可宣稱量化倍率已證實，也不可為追求速度放寬原版規則及資料安全。
+
+**新分工：** GameCore 真正執行共通 UseItem／MakeAmount、交易、商品供需／自然販售、世界時間、EVENT、36h 決算等運算；StreetModule 提供經來源核對的街道 ITEM／USE／EVENT、職業、設定、特殊效果及狀態；WorldState／Repository 負責一致性、CAS、持久化；UI 只呈現與送命令。嚴禁把一般功能永久綁定 itemId/eventCode，或把每個新的來源合法商品變成新的 command 種類。
+
+## 下一輪不是「B-64 再多做 #41～#44 專用販售」
+
+1. **R0：固定現有 B-63 基準**。保留可驗證的全部原版 Perl／Node／HTTP、固定 Core／DSL SHA、WorldState／CAS、B-43 雙世代存檔與本機繁中 UI；清點既有專用命令對應的通用規則，不砍掉已通過測試。
+2. **R1：明確定義共同引擎的可執行合約及資料／回呼契約。** 依 Core 的 plug/use.cgi、buy-s.cgi、inc-turn.cgi、inc-period.cgi、inc-makeitem.cgi，列出來源、前置條件、輸入／輸出、運算／亂數、世界副作用、回呼順序、街道覆寫、拒絕邊界；不要求一口氣移植全部玩法。
+3. **R2–R3：從已有真流程提取通用操作。** 先讓共同商品使用及交易可接受不同來源合法 ITEM／USE 而不是 buy-market-item-10 一類專用命令，再整合共用市場、自然販售、世界時間及展示。#10、#40、#41～#44 是**資料驅動共用銷售驗證集**，不是新四條專用演算法。
+4. **R4–R5：同一筆世界狀態的 EVENT／期末／存檔／UI 閉環**；保留原版順序，讓玩家在同一繁中介面經開店、真進貨、上架、真販售、36h結算、落盤、重啟、下一期續營；之後一次集中人工驗收。
+5. **R6：跨街驗證，非先移植整個麵店／航海街。** 用 URon 售麵增加髒碗，WAtlas 期末海域更新，證明共同 Core 可以運作，且街道有自己的擴充與存檔，不必重寫販售／決算；多人及其他玩法留在後續。
+
+## 交接驗收與禁止事項
+
+- **能力驗收，而非 B 編號驗收：** 新增一種來源合法商品若不涉及新語義，應只更新 DSL／編譯資料與對應案例，不增加命令類型，也不複製獨立完整交易／販售函式。未知 DSL／回呼仍明確拒絕，不能直接 eval Perl 或偷偷跳過原版 EVENT／期末。
+- **驗證分層且重用：** 共用演算的來源 Perl oracle／Node 差分測試只建立一套穩定契約；新商品驗證編譯資料、特殊回呼和真正有差異的整合案例。保留固定來源 SHA、既有全部 regression 與同一 HEAD 的 Push／Draft PR CI completed/success。
+- **本輪修正文件之前的功能現況：** B-63 的地圖 #14 已支援首次使用五劍產出、加倍、損毀，#41～#44 可持有和存檔但尚不能一般自然售出；B-43 本機存檔、真 UI 存在；完整 36h 期末、通用 116 USE、三街共用引擎及多人均未完成。
+- **維持分支與原版凍結：** 僅修改 test/task02-baseline-on-s1 下 modern/ 文件／後續允許的新版碼；不碰 main、migration/standard-street-s1、Core Perl、標準街 DSL、Notion 正式狀態、不合併 Draft PR #1。本次沒有修改任何實際遊戲程式。
+
+---
+
+## 以下為 B-63 與更早的歷史交接（「下一步 B-64」已由本節新規劃取代）
+
 ## 2026-11-22｜B-63 最新交接（優先於 B-62 及更早紀錄）
 
 完成 [B-63：劍市地圖原版全部五劍 GET 首次使用、收穫加倍、地圖損毀的真原版數值＋CAS](b63-real-sword-map-all-original-first-use-outcomes.md)，只在現有 `test/task02-baseline-on-s1` 及 Draft PR #1（仍Draft未合併），不修改 frozen Core／DSL、main或 migration 底分支。此版以 B-62 **真原版批發來源 #14 劍市地圖**（不是憑空造劍）為前置。新增選配 `originalItemHelperSource` 指向真固定 `modern/tests/original-perl/core-inc-item.cgi`，來源齊備時才提供內部指令 `use-original-sword-map-14-all-outcomes`；既有 B-62 `use-original-sword-map-14` 的狹窄木刀分支保持不變、舊呼叫者不提供原版helper就不啟用 B-63。
