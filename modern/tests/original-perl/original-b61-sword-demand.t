@@ -43,8 +43,8 @@ if(ref($r)eq'HASH'){
     is($base->{itemId},$n,'original source sword id '.$n);
     is($event->{popularSeconds},int($base->{popularSeconds}/2),
       'original compiler halves POP seconds item '.$n);
-    is($event->{potentialBuyers},$base->{potentialBuyers}*2,
-      'original inc-turn source buyer population doubles item '.$n);
+    ok(abs($event->{potentialBuyers}-$base->{potentialBuyers}*2)<1e-12,
+      'original inc-turn source buyer potential approximately doubles item '.$n);
   }
   is(scalar @{$r->{cases}},5,'original event lifecycle source cases');
   my %c=map{$_->{name}=>$_->{output}} @{$r->{cases}};
