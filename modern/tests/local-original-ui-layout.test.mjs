@@ -125,6 +125,6 @@ test('manual local disk storage is at the bottom and collapsible, not in the hea
   assert.match(html,/id="save-world"/);
   assert.match(html,/id="load-world"/);
   assert.match(css,/\.save-details summary\{width:fit-content/);
-  assert.match(script,/\$('save-world'\)\.addEventListener/);
-  assert.match(script,/\$('load-world'\)\.addEventListener/);
+  assert.match(script,/\$\('save-world'\)\.addEventListener/);
+  assert.match(script,/\$\('load-world'\)\.addEventListener/);
 });
