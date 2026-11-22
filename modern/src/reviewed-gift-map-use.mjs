@@ -12,11 +12,6 @@
 import {parseDsl} from './parse-dsl.mjs';
 import {compileOrderedItemLimit,compileLiteralItemLimit}
   from './item-limit-model.mjs';
-import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
-import {
-  ORIGINAL_SPARSE_MARKET_SOURCE,traceOriginalSparseGiftWholesale,
-  validateSourceSparseMarket,
-} from './original-admin-world-bootstrap.mjs';
 
 const fail=s=>{throw new RangeError('B-33 reviewed gift map: '+s);};
 const integer=(v,n,min=0)=>{
@@ -138,90 +133,5 @@ export function compileReviewedGiftMapUse({itemDsl,rebelDsl,model}){
     sourceFile:'custom/inc-item-data.cgi',sourceLine:firstUse.startLine,
     compilerSource:'frozen inc-makeitem.cgi GetBuffer/OutItemData reviewed literal subset',
     limitations:'only gift first USE with non-random outputs and no callbacks; wholesale must be explicitly seeded fixture',
-  });
-}
-/** Run the original source numeric transaction as a pure projection of a
- * REAL original gift rule, but ONLY against a marked test wholesale fixture.
- */
-export function projectReviewedGiftMapUse({
-  world,shopId,requestedCount,compiled,
-}){
-  integer(shopId,'shopId',1);
-  integer(requestedCount,'requestedCount',0);
-  if(!compiled||compiled.itemId!==79||compiled.useNo!==0)
-    fail('unreviewed compiled rule');
-  if(!world||world.streetId!=='standard-street')fail('street ID');
-  const isOriginalSparse=world.market?.source===ORIGINAL_SPARSE_MARKET_SOURCE;
-  if(!world.market||
-      (world.market.source!=='explicit-b33-test-fixture'&&
-       !isOriginalSparse)||
-      !Array.isArray(world.market.wholesale)||
-      world.market.wholesale.length!==79)
-    fail('missing explicit 79-slot test wholesale or source-reviewed original admin bootstrap');
-  if(isOriginalSparse&&!validateSourceSparseMarket(world.market))
-    fail('invalid original sparse bootstrap provenance/wire data');
-  world.market.wholesale.forEach((n,i)=>integer(n,'wholesale '+i));
-  if(!Array.isArray(world.shops)||!world.shops.length||
-     world.shops.length>12)fail('shop list');
-  const acting=world.shops.findIndex(s=>s.id===shopId);
-  if(acting<0)fail('unknown shop');
-  for(const shop of world.shops){
-    if(!Array.isArray(shop.item)||shop.item.length!==79)
-      fail('shop item slots');
-    shop.item.forEach((n,i)=>integer(n,'item '+i));
-  }
-  const shop=world.shops[acting];
-  if(shop.status!==1)fail('unreviewed shop status');
-  for(const key of ['money','paytoday','time','rank'])
-    integer(shop[key],key);
-  const original=projectOriginalUseTransaction({
-    shops:world.shops.map(s=>s.item),
-    actingShopIndex:acting,
-    items:compiled.limits,
-    wholesale:world.market.wholesale,
-    uses:compiled.use,creates:compiled.create,
-    requestedCount,experience:0,needExperience:0,
-    experienceOld:0,job:'',needJob:'',point:0,needPoint:0,
-    rank:shop.rank,needPopularity:0,
-    needsEvent:false,eventActive:false,
-    money:shop.money,costPerUse:compiled.money,paytoday:shop.paytoday,
-    nowSeconds:world.nowSeconds,storedTimeSeconds:shop.time,
-    baseUseTimeSeconds:compiled.time,
-    trainedUseTimeSeconds:compiled.exptime,maxStockTimeSeconds:259200,
-    shopStatus:true,
-  });
-  if(original.count===0)fail('source use count zero: no operation');
-  if(original.count<0)fail('unreviewed negative use count');
-  const market=isOriginalSparse
-    ?traceOriginalSparseGiftWholesale({world,compiled,original})
-    :{...world.market,wholesale:[...original.wholesale]};
-  return freeze({
-    shops:world.shops.map((entry,i)=>i===acting?{
-      ...entry,
-      item:[...original.shops[i]],money:original.money,
-      paytoday:original.paytoday,time:original.storedTimeSeconds,
-    }:{...entry,item:[...original.shops[i]]}),
-    market,
-    receipt:{
-      action:'gift-exchange-maps',shopId,originalItemId:79,useNo:0,
-      sourceFile:compiled.sourceFile,sourceLine:compiled.sourceLine,
-      requestedCount,effectiveCount:original.count,
-      spentGift:original.multiItem.consumed.find(x=>x.itemId===79)?.amount??0,
-      gainedMaps:original.multiItem.added.map(x=>[x.itemId,x.amount]),
-      discarded:original.multiItem.discarded.map(x=>[x.itemId,x.amount]),
-      // Original UseItem pushes undefined source "message" once per
-      // nonzero MakeAmount row, even though this gift USE defines no
-      // per-item message. Preserve JSON null slots rather than omit them.
-      originalUseItem:original.multiItem.consumed.map(x=>[x.itemId,x.amount]),
-      originalAddItem:original.multiItem.added.map(x=>[x.itemId,x.amount]),
-      originalUseMsg:original.multiItem.consumed.map(()=>null),
-      originalAddMsg:original.multiItem.added.map(()=>null),
-      originalFunctionReturn:null,
-      originalResultOk:compiled.resultOk,
-      originalWholeStoreChecks:original.wholeStoreChecks,
-      sourceScope:isOriginalSparse
-        ?'real #79 gift USE on pinned Core sparse admin-init projection; memory numeric arithmetic and separately traced original wholesale wire; NO CGI/persistence'
-        :'real Standard Street gift USE #0, source deterministic, explicitly seeded synthetic wholesale; no real CGI/persistence',
-    },
   });
 }
