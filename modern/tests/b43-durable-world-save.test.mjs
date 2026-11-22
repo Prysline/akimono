@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile,symlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import path from 'node:path';
@@ -390,4 +390,126 @@ test('B-54 real HTTP source-time replay of same saved revision after Node SIGTER
   assert.ok(final.ok);
   assert.deepEqual(final.state.world,worldAfterOne,
     'B-43 durable generation persists the identical replay, including unknown EVENT state');
+});
+
+test('local test reset clears only its own two save slots, including corrupt records',async t=>{
+  const directory=await inDir(t);
+  const extraFile=join(directory,'keep-me.txt');
+  await writeFile(extraFile,'unrelated user data','utf8');
+  const store=createLocalWorldSaveStore({directory});
+  const {repository}=sample();
+  const world=repository.read();
+  store.save(world,{expectedGeneration:0});
+  store.save(world,{expectedGeneration:1});
+  assert.equal(store.status().generation,2);
+  assert.throws(()=>store.clear({expectedGeneration:1}),/存檔世代衝突/);
+  assert.equal(store.load().generation,2,'wrong generation must keep both slots');
+  const deleted=store.clear({expectedGeneration:2});
+  assert.deepEqual(deleted.deletedSlots,['world-a.json','world-b.json']);
+  assert.deepEqual(store.status(),{
+    available:false,generation:0,recoveryWarning:false,unreadable:false,
+  });
+  await assert.rejects(readFile(join(directory,'world-a.json'),'utf8'),{code:'ENOENT'});
+  await assert.rejects(readFile(join(directory,'world-b.json'),'utf8'),{code:'ENOENT'});
+  assert.equal(await readFile(extraFile,'utf8'),'unrelated user data');
+  store.save(world,{expectedGeneration:0});
+  assert.equal(store.status().generation,1,'reset starts new saves at generation one');
+  await writeFile(join(directory,'world-a.json'),'corrupt a','utf8');
+  await writeFile(join(directory,'world-b.json'),'corrupt b','utf8');
+  assert.equal(store.status().unreadable,true);
+  assert.deepEqual(store.clear({expectedGeneration:0}).deletedSlots,
+    ['world-a.json','world-b.json']);
+  assert.equal(store.status().unreadable,false);
+  assert.equal(await readFile(extraFile,'utf8'),'unrelated user data');
+  if(process.platform!=='win32'){
+    await symlink(extraFile,join(directory,'world-a.json'));
+    assert.equal(store.status().unreadable,true);
+    assert.throws(()=>store.clear({expectedGeneration:0}),
+      /拒絕刪除非一般檔案/,'reset must reject symlinks without deleting their target');
+    assert.equal(await readFile(extraFile,'utf8'),'unrelated user data');
+  }
+});
+
+test('local HTTP confirmed reset deletes shop and both saves, rejects stale state, then reopens',async t=>{
+  const directory=await inDir(t);
+  const extraFile=join(directory,'keep-me.txt');
+  await writeFile(extraFile,'safe','utf8');
+  const servers=[];
+  t.after(async()=>{for(const srv of servers)await srv.stop()});
+  let srv=await boot(directory);servers.push(srv);
+  const html=await (await fetch(srv.url)).text();
+  const js=await (await fetch(srv.url+'/app.js')).text();
+  assert.match(html,/id="reset-world"/);
+  assert.match(js,/window\.confirm/);
+  const init=await srv.post('/api/initialize');
+  assert.equal(init.ok,true,JSON.stringify(init));
+  const opened=await srv.post('/api/open-shop',{
+    expectedRevision:1,ownerName:'第一位測試店主',shopName:'要清除的測試商店',
+  });
+  assert.equal(opened.ok,true,JSON.stringify(opened));
+  let original=await srv.state();
+  assert.ok((await srv.post('/api/save',{
+    expectedRevision:original.world.revision,expectedGeneration:0,
+  })).ok);
+  assert.ok((await srv.post('/api/save',{
+    expectedRevision:original.world.revision,expectedGeneration:1,
+  })).ok);
+  original=await srv.state();
+  assert.equal(original.save.generation,2);
+  const confirmed={
+    confirm:'RESET_LOCAL_TEST_WORLD',expectedWorldId:original.world.worldId,
+    expectedRevision:original.world.revision,expectedGeneration:2,
+  };
+  assert.equal((await srv.post('/api/reset',{})).status,400,
+    'missing explicit confirmation must reject');
+  assert.equal((await srv.post('/api/reset',{
+    ...confirmed,confirm:'yes',
+  })).status,400,'arbitrary confirmation strings must reject');
+  assert.equal((await srv.post('/api/reset',{
+    ...confirmed,expectedRevision:1,
+  })).status,409,'stale live revision must reject');
+  assert.equal((await srv.post('/api/reset',{
+    ...confirmed,expectedGeneration:1,
+  })).status,409,'stale disk generation must reject');
+  assert.equal((await srv.state()).save.generation,2,
+    'rejected requests must keep both save generations');
+  const reset=await srv.post('/api/reset',confirmed);
+  assert.equal(reset.status,200,JSON.stringify(reset));
+  assert.equal(reset.code,'RESET');
+  assert.deepEqual(reset.details.deletedSlots,['world-a.json','world-b.json']);
+  assert.equal(reset.state.world,null);
+  assert.equal(reset.state.shop,null);
+  assert.equal(reset.state.save.available,false);
+  assert.equal(reset.state.save.generation,0);
+  await assert.rejects(readFile(join(directory,'world-a.json'),'utf8'),{code:'ENOENT'});
+  await assert.rejects(readFile(join(directory,'world-b.json'),'utf8'),{code:'ENOENT'});
+  assert.equal(await readFile(extraFile,'utf8'),'safe');
+  const newWorld=await srv.post('/api/initialize');
+  assert.equal(newWorld.ok,true,JSON.stringify(newWorld));
+  assert.notEqual(newWorld.state.world.worldId,original.world.worldId);
+  const reopened=await srv.post('/api/open-shop',{
+    expectedRevision:1,ownerName:'第二位測試店主',shopName:'新的測試商店',
+  });
+  assert.equal(reopened.ok,true,JSON.stringify(reopened));
+  assert.equal(reopened.state.shop.shopname,'新的測試商店');
+  const wrongWorld=await srv.post('/api/reset',{
+    ...confirmed,expectedGeneration:0,
+  });
+  assert.equal(wrongWorld.status,409,
+    'old worldId must be rejected even if revision and generation match');
+  await srv.stop();
+  srv=await boot(directory);servers.push(srv);
+  assert.equal((await srv.state()).world,null,'unsaved new world was not persisted');
+  await writeFile(join(directory,'world-a.json'),'broken','utf8');
+  await writeFile(join(directory,'world-b.json'),'broken','utf8');
+  assert.equal((await srv.state()).save.unreadable,true);
+  const corruptReset=await srv.post('/api/reset',{
+    confirm:'RESET_LOCAL_TEST_WORLD',
+    expectedWorldId:null,expectedRevision:null,expectedGeneration:0,
+  });
+  assert.equal(corruptReset.ok,true,JSON.stringify(corruptReset));
+  assert.equal(corruptReset.state.save.unreadable,false);
+  assert.equal((await srv.post('/api/initialize')).ok,true,
+    'a corrupt-save reset must allow new world initialization');
+  assert.equal(await readFile(extraFile,'utf8'),'safe');
 });
