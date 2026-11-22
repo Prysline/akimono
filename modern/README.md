@@ -1,5 +1,7 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
+**2026-11-23｜R3 ITEM 回呼分派與一分鐘抽樣（受控新增，整體未結案）：** 已在來源自然販售與 59 PLUS 之間加入依原版 `inc-turn.cgi` 審閱的 ITEM FUNCTURN／FUNCSALE 階段：標準街唯一 #70 回呼即使沒有持有者，60 秒仍會消耗一筆 rand(1)；並於 FUNCSALE 後清除 `_sale_count_` 暫存。原版 Perl 直接分派探針 `original-r3-item-callback-stage-probe.pl` 與 Node 差分已新增，真 HTTP 一分鐘／存檔重啟測試亦已補上；其他來源回呼或 #70 真持有仍拒絕。EVENT 17-key hash 順序、SortDT／36 小時結算、全部 USE／多商店尚未完成，R3 不宣告結案。
+
 
 **2026-11-23 市場貨架修正／R3 續驗：** 已依凍結原版 `whole.cgi::GetWholeStore` 將一般市場清單改為只顯示 `wholesale>0` 商品，原版 79 ITEM Registry 另供倉庫名稱查詢；缺貨品不再佔據市場貨架，原本的 `market-buy` 報價、上限、CAS、PLUS 不變。R2-C 新增直接執行原版 `GetWholeStore()` 的 HTTP 貨架與排序差分，R3 真時間＋PLUS、重啟後在售貨架與庫存同步回歸；本修正不代表 EVENT／FUNCTURN／FUNCSALE 或 36h 結算完成。
 

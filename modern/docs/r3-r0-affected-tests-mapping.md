@@ -1,5 +1,7 @@
 # R3 受影響 R0 測試映射（2026-11-22）
 
+**2026-11-23｜R3 ITEM 回呼分派與一分鐘抽樣（受控新增，整體未結案）：** 已在來源自然販售與 59 PLUS 之間加入依原版 `inc-turn.cgi` 審閱的 ITEM FUNCTURN／FUNCSALE 階段：標準街唯一 #70 回呼即使沒有持有者，60 秒仍會消耗一筆 rand(1)；並於 FUNCSALE 後清除 `_sale_count_` 暫存。原版 Perl 直接分派探針 `original-r3-item-callback-stage-probe.pl` 與 Node 差分已新增，真 HTTP 一分鐘／存檔重啟測試亦已補上；其他來源回呼或 #70 真持有仍拒絕。EVENT 17-key hash 順序、SortDT／36 小時結算、全部 USE／多商店尚未完成，R3 不宣告結案。
+
 > 只覆蓋 R3 共用販售／時間直接相關的既有測試，R0 和 R1 全量仍未結案。原版凍結來源不變。沒有可安全刪除的原有測試，所有過往證據均保留。
 
 | 測試路徑 | 原版來源 | 回歸風險 | 處置 | 替代／補強證據與理由 |
@@ -23,4 +25,14 @@
 | modern/tests/r3-shared-sword-acquisition-sales.test.mjs | #14 原版 USE、B-41／B-56、Core | 多商品未共用 CAS／存檔 | 新建 | 真地圖五劍合法取得／共同入口／雙世代載入續營 |
 | modern/tests/r3-real-sword-http-restart.test.mjs | 同上及 Core 讀寫 | UI 造價／拒絕部分提交／重啟資料遺失 | 新建 | 真 HTTP／CAS／兩代磁碟／兩次程序重啟；EVENT 變未知後劍類再販售必須原子拒絕，仍可合法上架／存檔 |
 
-R3 目前缺少的 R0／R1 完整映射：FUNCTURN／FUNCSALE 的所有來源／抽樣與清理順序、17 EVENT 真 Perl hash 遍歷及其他未知回呼、原版亂數狀態、非原價／多架／多商店／街道差異、非零稅率、跨 36 小時期末。沒有等價來源證據前**不得移除舊測試**、不得把部分 R0／R1 當全量完成。
+
+## 2026-11-23｜新增與修改的 R3 回呼測試清冊
+
+| 測試 | 原版依據／回歸風險 | 處置與替代證據 |
+|---|---|---|
+| `modern/tests/original-perl/original-r3-item-callback-stage-probe.pl` | 真 `inc-turn.cgi` ITEM FUNCTURN→FUNCSALE 分派與 #70 source inline 回呼，即使空持有者也抽樣，最後刪 `_sale_count_` | **新增**；直接執行原版兩段 Perl 分派及 callback，7 種來源情境 |
+| `modern/tests/r3-shared-natural-sale.test.mjs` | 1 分鐘回呼亂數位移與未知來源 callback | **擴充**；比較真正 Perl 分派輸出、零持有安全邊界與來源漂移拒絕 |
+| `modern/tests/b41-real-playable-sale.test.mjs`、`b42-continuous-shop.test.mjs` | B-38 原自然片段保留暫存 `_sale_count_`，但真正完整 `inc-turn.cgi` 回呼分派會刪除 | **改寫**正式時間結果為已清除暫存；來源販售數值及其他回歸保留 |
+| `modern/tests/r3-real-sword-http-restart.test.mjs` | 玩家真 HTTP 1 分鐘回呼抽樣、PLUS、市場實貨及磁碟重啟 | **擴充**一分鐘 E2E，原有五劍／CAS／雙代重啟場景保留 |
+
+R3 目前缺少的 R0／R1 完整映射：FUNCTURN／FUNCSALE 尚未支援的持有者／其他街道語義、17 EVENT 真 Perl hash 遍歷及其他未知回呼、原版亂數狀態、非原價／多架／多商店／街道差異、非零稅率、跨 36 小時期末。沒有等價來源證據前**不得移除舊測試**、不得把部分 R0／R1 當全量完成。
