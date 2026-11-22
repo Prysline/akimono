@@ -96,8 +96,10 @@ function sourceShopPoint(shop){
   const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
     'rankingcount'];
   const values=keys.map(key=>shop[key]??0);
-  if(values.some(value=>!Number.isSafeInteger(value)||value<0))return null;
+  if(values.some(value=>!Number.isSafeInteger(value)))return null;
   const [rank,profitstock,sales,tax,paid,wins]=values;
+  // Profit and adjustments may be signed; Perl GetDTPoint accepts losses.
+  if(rank<0||wins<0)return null;
   let profit=(profitstock*3+sales-tax-paid)/500000+1;
   const winFactor=0.5+5/(wins+10);
   if(profit>10)profit=15-50/profit;
