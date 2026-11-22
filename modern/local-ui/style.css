@@ -170,13 +170,26 @@ body.dev-mode .local-note{display:block}
 .status-table th{font-weight:normal;white-space:nowrap}
 .status-table #store-name{max-width:140px;overflow:hidden;text-overflow:ellipsis}
 .page-intro{color:#666;font-size:12px!important;margin:4px 0 8px!important}
-.shop-portrait{display:flex;flex-direction:column;align-items:center;
-  gap:8px;margin:3px auto 13px;text-align:center}
-.shop-identity{display:flex;align-items:center;justify-content:center;gap:10px}
-.shop-identity>div{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px}
+/* Compact original-style store overview: keep tables centered and scroll
+ * only their own contents when seven shelf columns exceed the viewport. */
+#tab-shop .sub-title{width:fit-content;max-width:100%;margin:8px auto 5px}
+#tab-shop .table-scroll{max-width:100%;overflow-x:auto}
+#tab-shop .shop-info-table,#tab-shop .shelf-table{
+  width:max-content;max-width:none;font-size:12px;white-space:nowrap
+}
+.shop-info-table th,.shop-turnover-table th{
+  background:#e8e8ef;font-weight:normal;white-space:nowrap
+}
+.shop-info-table td{white-space:nowrap}
+.shop-icon-cell{background:#fff;vertical-align:middle;padding:5px 7px}
 .portrait-placeholder{display:grid;place-items:center;background:#f4f3f7;
   width:46px;height:46px;border:1px solid #c8c8d0;color:#888;font-size:19px}
-.shop-links{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:4px 0 7px}
+#tab-shop .shelf-table th{background:#e8e8ef;font-weight:normal}
+#tab-shop .shelf-table td:not(:nth-child(2)){text-align:center}
+#tab-shop .shelf-table td:nth-child(2){text-align:left}
+.shop-turnover-table{width:max-content;max-width:100%;
+  margin:8px auto 6px;font-size:12px}
+.shop-turnover-table th,.shop-turnover-table td{padding:2px 5px}
 .text-link{appearance:none;background:transparent;border:0;color:var(--link);
   padding:0 1px;text-decoration:none;font-size:13px;font-weight:bold;cursor:pointer}
 .text-link:hover:not(:disabled){text-decoration:underline;color:#4d5f98}
@@ -184,9 +197,7 @@ body.dev-mode .local-note{display:block}
 .shelf-table,.warehouse-table,.balance-table,.item-detail-table{width:max-content;max-width:100%}
 .shelf-table th,.item-detail-table th,.balance-table th{background:#e8e8ef;font-weight:normal}
 .shelf-table{margin-bottom:6px}
-.shop-mini-record{display:flex;justify-content:center;flex-wrap:wrap;gap:3px 14px;
-  margin:5px auto 10px;font-size:12px;color:#666}
-.shop-mini-record strong{font-weight:normal;color:#444}
+
 .warehouse-table{max-width:none;white-space:nowrap}
 .warehouse-table th{background:#e8e8ef;font-weight:normal}
 .warehouse-table td:not(:first-child){text-align:center}
