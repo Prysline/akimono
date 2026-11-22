@@ -11,7 +11,7 @@
 <body>
   <main class="shell">
     <header class="site-heading">
-      <div class="heading-top"><span>商人物語 Standard Street</span><span>繁體中文・單機測試 B-43</span></div>
+      <div class="heading-top"><span>商人物語 Standard Street</span><button id="dev-toggle" type="button" aria-pressed="false" title="顯示或隱藏目前頁面的測試工具">開發工具：關</button></div>
       <h1>商人物語 <span class="town-name">標準街</span></h1>
       <nav class="menu-main" aria-label="原版主選單">
         <button type="button" data-group="self" class="selected" aria-pressed="true">【自店】</button>
@@ -26,7 +26,7 @@
           <button type="button" data-tab="shop" class="selected" aria-current="page">［店內］</button>
           <button type="button" data-tab="stock">［倉庫］</button>
           <button type="button" disabled title="尚未實作">［掃除］</button>
-          <button type="button" disabled title="尚未實作">［收支］</button>
+          <button type="button" data-tab="balance">［收支］</button>
           <button type="button" disabled title="尚未實作">［手續］</button>
         </span>
         <span class="subgroup" data-subgroup="trade" hidden>
@@ -57,35 +57,17 @@
       <div class="location-line"><span id="menu-location">自店 &gt; 店內</span><span id="settlement-status">下次決算：未開放</span></div>
     </header>
 
-    <section class="status-section" aria-label="自店營業資料">
-      <table class="status-table">
-        <tbody>
-          <tr>
-            <th scope="row">店舖</th><td id="store-name">未開店</td>
-            <th scope="row">資金</th><td><strong id="money">—</strong></td>
-          </tr>
-          <tr>
-            <th scope="row">人氣</th><td id="rank">—</td>
-            <th scope="row">可用行動時間</th><td id="time">—</td>
-          </tr>
-          <tr>
-            <th scope="row">來源城市資料</th><td id="city-seed">—</td>
-            <th scope="row">已完成決算</th><td id="period-count">—</td>
-          </tr>
-          <tr>
-            <th scope="row">事件資料</th><td id="event-state" colspan="3">—</td>
-          </tr>
-        </tbody>
-      </table>
+    <section class="status-section" aria-label="店家簡要資訊">
+      <table class="status-table"><tbody>
+        <tr><th scope="row">店名</th><td id="store-name">未開店</td><th scope="row">資金</th><td><strong id="money">—</strong></td></tr>
+        <tr><th scope="row">人氣</th><td id="rank">—</td><th scope="row">行動時間</th><td id="time">—</td></tr>
+      </tbody></table>
     </section>
 
-    <div class="notice" role="note">
-      <strong>單機測試：</strong>可按「儲存世界」落盤並在重啟服務後「載入存檔」。<strong>未儲存的操作仍會因關閉服務而遺失</strong>；來源城市／期別初始資料會與商店一起存檔；目前尚無原版完整跨期結算。
-      市場供貨按鈕是獨立來源子步驟；下方快轉則執行自然販售與來源 PLUS，可販售後再進貨、繼續營業。跨期決算尚未開放。
-    </div>
+    <div class="local-note" role="note">目前為單機測試：存檔需手動儲存；尚未支援跨期決算。</div>
 
     <details id="setup" class="setup section" open>
-      <summary>營業準備／建立商店</summary>
+      <summary>建立商店</summary>
       <div class="setup-content">
         <button id="initialize" class="primary" type="button">① 初始化世界</button>
         <form id="open-shop" class="inline-form">
@@ -96,38 +78,39 @@
       </div>
     </details>
 
-    <section id="save-section" class="section" aria-label="單機世界存讀檔">
-      <h2 class="section-title">單機存檔／載入</h2>
-      <p class="help-text">手動儲存目前的真實世界版本到本機磁碟，保留兩份可校驗的存檔世代。載入僅限尚未建立世界時，不能覆蓋正在營業的世界；未儲存的變更在關閉服務後仍會遺失。</p>
+    <section id="save-section" class="save-strip" aria-label="單機存讀檔">
       <div class="inline-form">
-        <button type="button" class="primary" id="save-world" disabled>儲存世界</button>
-        <button type="button" class="secondary" id="load-world" disabled>載入存檔</button>
-        <button type="button" class="secondary" id="reset-world" disabled>刪除店家／重置測試世界</button>
-        <span id="save-status" aria-live="polite">未發現磁碟存檔</span>
+        <button type="button" class="secondary" id="save-world" disabled>儲存</button>
+        <button type="button" class="secondary" id="load-world" disabled>載入</button>
+        <span id="save-status" aria-live="polite">尚未儲存</span>
       </div>
-      <p class="help-text">重置需再次確認；將刪除目前店家、記憶體世界與本機雙代存檔，無法復原。只刪除本程式管理的兩個存檔檔案，不清空其他資料。</p>
     </section>
 
+    <section class="section feedback" role="status" aria-live="polite">
+      <p id="feedback">請先建立商店，或載入本機存檔。</p>
+      <details id="receipt-details" class="dev-panel" data-dev-panel hidden>
+        <summary>查看操作收據與版本差異</summary>
+        <pre id="receipt" hidden></pre>
+      </details>
+    </section>
     <section id="tab-shop" class="section pane">
-      <h2 class="section-title">店內</h2>
-      <p class="help-text">商品由真市場購入後，在「自店 ＞ 倉庫」合法上架；這裡可快轉遊戲時間，觸發原版自然販售與市場補貨。</p>
-      <div class="game-columns">
-        <div>
-          <h3 class="sub-title">展示架</h3>
-          <table><tbody><tr><th scope="row">第 1 架</th><td><output id="showcase">未開店</output></td></tr></tbody></table>
-          <p class="muted">售出由原版價格、人氣、供需與亂數決定；快轉不保證每段都有成交。</p>
+      <h2 class="section-title">● <span id="shop-title">店內</span></h2>
+      <div class="shop-portrait">
+        <div class="shop-identity"><span class="portrait-placeholder" aria-hidden="true">店</span>
+          <div><strong id="owner-name">尚未開店</strong><span class="muted" id="shop-owner-note">商店經營狀態</span></div>
         </div>
-        <div>
-          <h3 class="sub-title">營業紀錄</h3>
-          <table><tbody>
-            <tr><th scope="row">本日進貨支出</th><td id="paid">—</td></tr>
-            <tr><th scope="row">本日售額</th><td id="sales">—</td></tr>
-          </tbody></table>
+        <div class="shop-links">
+          <button type="button" class="text-link" data-go-tab="stock">［倉庫］</button>
+          <button type="button" class="text-link" data-go-tab="market">［市場］</button>
+          <button type="button" class="text-link" data-go-tab="balance">［收支］</button>
         </div>
       </div>
-      <div class="time-control">
-        <h3 class="sub-title">營業時間快轉（本機測試）</h3>
-        <p class="help-text">原版自然販售 + 59 項市場 PLUS。每次 1～60 分鐘，尚不能跨越未實作的 36 小時結算邊界。</p>
+      <h3 class="sub-title">展示架</h3>
+      <table class="shelf-table"><tbody><tr><th scope="row">第 1 架</th><td><output id="showcase">目前空架</output></td></tr></tbody></table>
+      <div class="shop-links"><button type="button" class="text-link" data-go-tab="stock">［前往倉庫管理商品］</button></div>
+      <details class="dev-panel" data-dev-panel>
+        <summary>開發測試｜時間快轉</summary>
+        <p class="help-text">只用於驗證自然販售與來源市場供貨；不代表正式遊戲的自動時間流逝。</p>
         <div class="quick-time" aria-label="常用快轉時間">
           <button type="button" data-minutes="1" class="secondary">1 分鐘</button>
           <button type="button" data-minutes="10" class="secondary">10 分鐘</button>
@@ -138,20 +121,34 @@
           <label>自填分鐘 <input id="advance-minutes" type="number" min="1" max="60" step="1" value="30" required></label>
           <button class="primary" type="submit">快轉指定時間</button>
         </form>
-      </div>
+      </details>
+      <details class="dev-panel" data-dev-panel>
+        <summary>開發診斷｜世界、事件與存檔</summary>
+        <dl class="debug-data">
+          <dt>世界 ID</dt><dd><output id="world-id">尚未建立</output></dd>
+          <dt>版本 revision</dt><dd><output id="revision">—</output></dd>
+          <dt>遊戲時間</dt><dd><output id="now">—</output></dd>
+          <dt>城市資料</dt><dd id="city-seed">—</dd>
+          <dt>完成決算期數</dt><dd id="period-count">—</dd>
+          <dt>事件資訊</dt><dd id="event-state">—</dd>
+          <dt>市場來源</dt><dd id="market-source">—</dd>
+          <dt>本機重置</dt><dd><button type="button" class="secondary" id="reset-world" disabled>刪除店家／重置測試世界</button></dd>
+        </dl>
+        <p class="muted">重置會刪除目前世界及兩份存檔，且需要再次確認。這不是原版正式的關店／重新出發功能。</p>
+      </details>
     </section>
 
     <section id="tab-market" class="section pane" hidden>
       <h2 class="section-title">市場</h2>
-      <p class="help-text">市場只顯示目前實際有貨的原版商品；商品依來源排序，價格由當下批發庫存計算。市場缺貨時商品不會列出，但已買入的物品仍留在玩家倉庫。不支援的效果不會自動執行，超過現貨／現金的交易量可能縮減，縮減至 0 即拒絕。</p>
+      <p class="page-intro">市場目前有貨的商品如下。購買後，可在「倉庫」查看實際持有數量。</p>
       <div class="table-scroll">
         <table class="market-table">
           <thead><tr><th>來源商品</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
           <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
         </table>
       </div>
-      <p class="muted" id="market-boundary">只有來源編譯與回呼審閱完成的商品可在此成交。</p>
-      <details class="supply-details">
+      <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
+      <details class="supply-details dev-panel" data-dev-panel>
         <summary>開發測試：原版市場供貨子步驟</summary>
         <div class="supply">
           <p>執行已核對的 59 項 PLUS＋CheckWholeStore，僅測試來源供貨，不推進世界時鐘。</p>
@@ -168,42 +165,62 @@
     </section>
 
     <section id="tab-stock" class="section pane" hidden>
-      <h2 class="section-title">倉庫</h2>
-      <p class="help-text">顯示來源開店與實際市場交易後的商品，不是示意庫存。</p>
-      <table>
-        <thead><tr><th>商品名稱</th><th>持有數量</th><th>備註</th></tr></thead>
-        <tbody id="inventory"><tr><td colspan="3">請先建立世界並開店</td></tr></tbody>
-      </table>
-      <div id="use-section" class="source-use-section">
-        <h3 class="sub-title">來源審閱的商品使用／製作（共用 USE）</h3>
-        <p class="help-text">所有可操作配方都來自原版 USE 規則，透過同一個 GameCore `use-item` 提交。
-          #79 禮物卷每次消耗 2 張並換取三張地圖；#14 劍市地圖目前僅審閱首次使用，
-          產生五種劍並依來源亂數可能加倍或損毀地圖。這不是全部原版 USE。</p>
-        <div class="table-scroll">
-          <table class="market-table">
-            <thead><tr><th>原版 USE</th><th>持有／材料</th><th>單次成本</th><th>要求次數</th><th>使用／製作</th></tr></thead>
-            <tbody id="use-offers"><tr><td colspan="5">請先建立世界並開店</td></tr></tbody>
-          </table>
-        </div>
-        <p id="use-boundary" class="muted">僅執行已審閱配方；第二次地圖使用、未知回呼及未審閱事件會原子拒絕。</p>
-      </div>
+      <h2 class="section-title">● 倉庫</h2>
+      <p class="page-intro">點選商品名稱可查看明細、設定展示架或使用商品。</p>
+      <h3 class="sub-title">保管倉庫</h3>
+      <div class="table-scroll"><table class="warehouse-table">
+        <thead><tr><th>名稱</th><th>持有數量</th></tr></thead>
+        <tbody id="storage-inventory"><tr><td colspan="2">目前沒有保管商品</td></tr></tbody>
+      </table></div>
+      <h3 class="sub-title">販售倉庫</h3>
+      <div class="table-scroll"><table class="warehouse-table">
+        <thead><tr><th>名稱</th><th>標準價格</th><th>數量／上限</th><th>陳列</th></tr></thead>
+        <tbody id="inventory"><tr><td colspan="4">目前沒有販售商品</td></tr></tbody>
+      </table></div>
+      <p class="muted">維持費、熟練與市場行情等欄位尚未具備完整來源資料，暫不顯示推測數值。</p>
+    </section>
+
+    <section id="tab-item" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
+      <h2 class="section-title">● 商品明細</h2>
+      <h3 id="item-detail-name" class="sub-title">請從倉庫選擇商品</h3>
+      <table class="item-detail-table"><tbody>
+        <tr><th scope="row">持有數量</th><td id="item-detail-owned">—</td></tr>
+        <tr><th scope="row">標準價格</th><td id="item-detail-price">—</td></tr>
+        <tr><th scope="row">持有上限</th><td id="item-detail-limit">—</td></tr>
+        <tr><th scope="row">展示架</th><td id="item-detail-shelf">—</td></tr>
+      </tbody></table>
       <form id="showcase-form" class="shelf-form">
         <fieldset>
-          <legend>展示架設定｜原版第 1 架（來源商品共用販售）</legend>
-          <label>展示商品
-            <select id="shelf-item">
-              <option value="10">#10 書本寫作工具（售價 5,000 G）</option>
-              <option value="0">清空展示架</option>
-            </select>
+          <legend>展示架設定｜第 1 架</legend>
+          <label>商品
+            <select id="shelf-item"><option value="0">清空展示架</option></select>
           </label>
-          <label>原版定價比例
-            <input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required>
-            %
-          </label>
+          <label>定價比例 <input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required> %</label>
           <button id="set-showcase" class="primary" type="submit">設定展示架</button>
-          <span class="muted">原版操作消耗 10 分鐘行動時間；缺少真庫存會遭拒絕。</span>
         </fieldset>
       </form>
+      <div id="use-section" class="source-use-section">
+        <h3 class="sub-title">商品使用／製作</h3>
+        <div class="table-scroll"><table class="market-table">
+          <thead><tr><th>操作</th><th>材料／持有</th><th>成本／時間</th><th>次數</th><th>執行</th></tr></thead>
+          <tbody id="use-offers"><tr><td colspan="5">此商品暫無可執行操作</td></tr></tbody>
+        </table></div>
+        <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
+      </div>
+    </section>
+
+    <section id="tab-balance" class="section pane" hidden>
+      <h2 class="section-title">● 收支／店舖資訊</h2>
+      <table class="balance-table"><tbody>
+        <tr><th scope="row">店名</th><td id="balance-name">—</td><th scope="row">店主</th><td id="balance-owner">—</td></tr>
+        <tr><th scope="row">資金</th><td id="balance-money">—</td><th scope="row">行動時間</th><td id="balance-time">—</td></tr>
+        <tr><th scope="row">人氣</th><td id="balance-popularity">—</td><th scope="row">創業時間</th><td id="balance-founded">—</td></tr>
+        <tr><th scope="row">本期營業額</th><td id="sales">—</td><th scope="row">本期支出</th><td id="paid">—</td></tr>
+        <tr><th scope="row">本期維持費（累計）</th><td id="balance-cost">—</td><th scope="row">本期稅額</th><td id="balance-tax">—</td></tr>
+        <tr><th scope="row">前期營業額</th><td id="balance-prev-sales">—</td><th scope="row">前期支出</th><td id="balance-prev-paid">—</td></tr>
+      </tbody></table>
+      <p class="muted" id="balance-note">排名、點數、職業、爵位等原版欄位尚未具備可驗證的單機資料，暫不顯示。</p>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>
@@ -211,25 +228,7 @@
       <p class="help-text">保留原版選單位置，這個分類的功能尚未連接到新版 Core，不能操作。</p>
     </section>
 
-    <section class="section feedback" aria-live="polite">
-      <h2 class="section-title">操作訊息</h2>
-      <p id="feedback">請先初始化來源世界，再開店。</p>
-      <details id="receipt-details" class="debug-details" hidden>
-        <summary>檢視原版收據及操作前後數值</summary>
-        <pre id="receipt" hidden></pre>
-      </details>
-    </section>
-
-    <details class="debug-details">
-      <summary>原版來源與世界測試資訊</summary>
-      <dl class="debug-data">
-        <dt>世界 ID</dt><dd><output id="world-id">尚未建立</output></dd>
-        <dt>版本 revision</dt><dd><output id="revision">—</output></dd>
-        <dt>遊戲時間（固定快照）</dt><dd><output id="now">—</output></dd>
-        <dt>市場來源</dt><dd><output id="market-source">尚未初始化</output></dd>
-      </dl>
-    </details>
-    <footer>商人物語・標準街｜本機 127.0.0.1 測試。來源編譯商品由同一市場交易核心買入，可進行已審閱展示、營業時間與手動雙代磁碟存讀檔；未審閱回呼／事件會拒絕，完整決算、登入與多人尚未開放。未使用原版圖片或音樂。</footer>
+    <footer>商人物語・標準街｜單機測試版本；未完成的功能不會模擬正式交易。</footer>
   </main>
 </body>
 </html>
