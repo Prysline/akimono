@@ -35,7 +35,7 @@ function sourceRegistryRule(registry,index){
     r.stockLimit>0&&Number.isSafeInteger(r.unitPrice)&&r.unitPrice>0?
     r:null;
 }
-function reviewedPlayableWorld(raw,marketBuyRegistry=null){
+function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
   const w=validateMemoryWorld(raw);
   // Local save is a structural checkpoint, not an EVENT compiler. Only
   // the source-reviewed single active iron EVENT may extend the original
@@ -60,6 +60,26 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null){
     fail('only source-initialized single-shop Standard Street world is loadable');
   if(w.shops.length){
     const shop=w.shops[0];
+    // R2-E opt-in source-certified gift exchange: original starting grant 5
+    // minus exactly 2 per successful #79 USE. Unreviewed snapshots do NOT
+    // get permissive voucher inventory just by supplying a JSON array.
+    const gift=useItem?.getRule?.(79,0);
+    const reviewedGift=gift?.supported===true&&gift.itemId===79&&
+      gift.useId===0&&gift.money===0&&gift.time===1800&&
+      gift.uses?.length===1&&gift.uses[0].itemId===79&&
+      gift.uses[0].countPerUse===2&&
+      gift.uses[0].probabilityPermille===1000&&
+      gift.creates?.length===3&&
+      gift.creates.map(row=>row.itemId).join(',')==='12,9,14'&&
+      gift.creates.every(row=>row.countPerUse===1&&
+        row.probabilityPermille===1000)&&
+      !gift.beforeCallback&&!gift.afterCallback;
+    const giftSpent=(5-shop.item?.[78])/2;
+    const giftInventoryValid=shop.item?.[78]===5||
+      Boolean(reviewedGift&&Number.isSafeInteger(giftSpent)&&
+        giftSpent>=1&&giftSpent<=2&&
+        // #9/#12 maps are not consumed by either reviewed USE.
+        shop.item[8]>=giftSpent&&shop.item[11]>=giftSpent);
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
     // Registry may authorize additional item inventories and showcases.
     // Never accept arbitrary 79-slot extra stock merely because it is JSON.
@@ -76,7 +96,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null){
     if(shop.id!==1||shop.status!==1||
        !Array.isArray(shop.item)||shop.item.length!==79||
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
-       shop.item[62]!==1||shop.item[78]!==5||
+       shop.item[62]!==1||!giftInventoryValid||
        shop.item.some((n,i)=>!
          [9,10,13,39,40,41,42,43,62,78].includes(i)&&
          n!==0&&!extraStockValid(i,n))||
@@ -121,7 +141,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot,marketBuyRegistry){
+function readSlot(dir,slot,marketBuyRegistry,useItem){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -144,7 +164,8 @@ function readSlot(dir,slot,marketBuyRegistry){
       fail('invalid save record schema or generation');
     if(digest(record.world)!==record.sha256)
       fail('save content hash mismatch');
-    const world=reviewedPlayableWorld(decodeMemorySnapshot(record.world),marketBuyRegistry);
+    const world=reviewedPlayableWorld(decodeMemorySnapshot(record.world),
+      marketBuyRegistry,useItem);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
@@ -156,7 +177,8 @@ function readSlot(dir,slot,marketBuyRegistry){
     if(fd!==undefined)fs.closeSync(fd);
   }
 }
-export function createLocalWorldSaveStore({directory,marketBuyRegistry=null}){
+export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
+  useItem=null}){
   if(typeof directory!=='string'||!directory.trim())fail('save directory');
   const dir=path.resolve(directory);
   function scan(){
@@ -165,7 +187,8 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null}){
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0,marketBuyRegistry),readSlot(dir,1,marketBuyRegistry)];
+    const rows=[readSlot(dir,0,marketBuyRegistry,useItem),
+      readSlot(dir,1,marketBuyRegistry,useItem)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
@@ -192,7 +215,7 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null}){
   }
   function save(raw,{expectedGeneration}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=reviewedPlayableWorld(raw,marketBuyRegistry);
+    const world=reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
