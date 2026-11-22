@@ -16,6 +16,12 @@ const timeText=seconds=>{
   const t=Math.max(0,Math.floor(seconds));
   return Math.floor(t/3600)+' 小時 '+Math.floor(t%3600/60)+' 分鐘';
 };
+const conciseTimeText=seconds=>{
+  const t=Math.max(0,Math.floor(seconds));
+  const hours=Math.floor(t/3600),minutes=Math.floor(t%3600/60),rest=t%60;
+  return [hours?hours+' 小時':'',minutes?minutes+' 分鐘':'',
+    rest?rest+' 秒':''].filter(Boolean).join(' ')||'0 秒';
+};
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
@@ -108,7 +114,7 @@ function renderItemInfo(s){
   text('item-detail-shelf',item?shelf:'—');
   text('showcase-time-cost',
     Number.isSafeInteger(s.showcaseEditTimeSeconds)?
-      timeText(s.showcaseEditTimeSeconds):'—');
+      conciseTimeText(s.showcaseEditTimeSeconds):'—');
   const sourceShelves=s.showcaseOffers??[];
   const shelfSelect=$('shelf-item');
   const previous=Number(shelfSelect.value);
@@ -188,7 +194,7 @@ function renderUseDetail(s){
       nameFor(row.itemId)+' × '+number(row.count)+'（持有 '+
       number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料'):'—');
   text('use-detail-money',offer?money(offer.moneyPerUse):'—');
-  text('use-detail-time',offer?timeText(offer.timePerUseSeconds):'—');
+  text('use-detail-time',offer?conciseTimeText(offer.timePerUseSeconds):'—');
   text('use-detail-limit',offer?
     (offer.firstUseOnly?'僅限首次使用':'可選擇執行次數'):'—');
   const form=$('use-action-form');
@@ -209,7 +215,7 @@ function renderUseResult(data,offer,catalog){
   text('use-result-name',offer.useName);
   text('use-result-count',number(data.effectiveCount));
   text('use-result-money',money(data.moneySpent));
-  text('use-result-time',timeText(data.timeSpentSeconds));
+  text('use-result-time',conciseTimeText(data.timeSpentSeconds));
   text('use-result-consumed',tuples(data.originalUseItem));
   text('use-result-acquired',tuples(data.originalAddItem));
   text('use-result-message',data.originalResultOk??'操作已完成。');
