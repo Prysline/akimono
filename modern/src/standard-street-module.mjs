@@ -275,22 +275,24 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       minTotal:500000,
     });
   }
-  // R2-B: compile actual source ITEM ordering, LIMIT, PRICE, callback
-  // presence and special BASE classifications through one registry.
-  // The #14 historical oracle's incomplete BASE data is explicitly
-  // surfaced as a legacy compatibility boundary, not a new item whitelist.
+  // R2-B: all source ITEMs, including original BASE dynamic prices,
+  // use the same compiled Registry and one shared GameCore transaction.
+  // The legacy R2-A oracle's missing BASE is only a historical test fixture.
   const buyRegistry=reviewedMarketBuy10?
     compileStandardStreetMarketBuyRegistry({
       itemDsl,rebelDsl,model,compiled:giftMap,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
-      itemSource:originalBuyItemSource,legacyMapReview:reviewedB62Map,
+      itemSource:originalBuyItemSource,
     }):null;
   const marketBuy=Object.freeze({
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
     describe(itemId){return buyRegistry?.describe(itemId)??null;},
+    quote({rule,marketStock}){
+      return buyRegistry?.quote({rule,marketStock})??null;
+    },
     validateWorld(world){
       return world?.events===null&&world.shops?.length===1&&
         validateSourceSparseMarket(world.market);
@@ -310,9 +312,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         bad('original SetWholeStore write inconsistency');
       return next;
     },
-    // Global voucher on this three-item slice is a proven no-op (<500000 G).
-    // If a future item crosses that threshold, GameCore rejects unless its
-    // reviewed callback handler is provided. No original Perl is evaluated.
+    // Original @@FUNCBUY voucher crosses 500000G only with a reviewed
+    // handler. Shared GameCore refuses an unknown nonzero callback effect.
   });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
