@@ -39,7 +39,7 @@ for my $itemno (10,40,41,42,43,44){
    my @draws=(500000,0,(0)x125);
    @main::B35_DRAWS=@draws;$main::B35_USED=0;
    main::B39SourceNaturalTurnPlus($span);
-   my $shop=$main::DT[0],$used=$main::B35_USED;
+   my ($shop,$used)=($main::DT[0],$main::B35_USED);
    push @result,{
     itemId=>$itemno,percent=>$percent,span=>$span,
     basePrice=>0+$rule->{price},listedPrice=>$listed,
