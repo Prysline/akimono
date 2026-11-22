@@ -69,7 +69,9 @@ test('compact original-like tables are centered inside a stable responsive frame
   assert.match(css,/\.table-scroll\{max-width:100%;overflow-x:auto\}/);
   assert.match(html,/id="market-offers"/);
   assert.match(html,/持有／上限/);
-  assert.match(html,/data-go-tab="stock"/);
+  assert.match(html,/data-tab="stock"/);
+  assert.match(html,/data-tab="market"/);
+  assert.match(html,/data-tab="balance"/);
 });
 
 test('product details remain centered without a full-width shelf editor',()=>{
@@ -127,4 +129,29 @@ test('manual local disk storage is at the bottom and collapsible, not in the hea
   assert.match(css,/\.save-details summary\{width:fit-content/);
   assert.match(script,/\$\('save-world'\)\.addEventListener/);
   assert.match(script,/\$\('load-world'\)\.addEventListener/);
+});
+
+
+test('shop overview and shelf restore original compact data tables without duplicate nav',()=>{
+  const shop=html.slice(html.indexOf('id="tab-shop"'),html.indexOf('id="tab-market"'));
+  assert.match(shop,/<table class="shop-info-table">/);
+  assert.match(shop,/class="shop-icon-cell"/);
+  for(const id of ['shop-info-name','owner-name','shop-info-money',
+    'shop-info-time','shop-info-popularity'])
+    assert.ok(shop.includes('id="'+id+'"'),'shop information cell '+id);
+  assert.match(shop,/<table class="shelf-table">/);
+  for(const header of ['架號','商品名稱','售價','標準價格','庫存',
+    '本期售出','前期售出'])
+    assert.ok(shop.includes('<th>'+header+'</th>'),'original shelf column '+header);
+  for(const id of ['showcase','shop-shelf-price','shop-shelf-base-price',
+    'shop-shelf-stock','shop-shelf-today','shop-shelf-yesterday'])
+    assert.ok(shop.includes('id="'+id+'"'),'shelf data cell '+id);
+  assert.match(shop,/<table class="shop-turnover-table"/);
+  assert.doesNotMatch(shop,/data-go-tab=/,
+    'top navigation replaces redundant in-shop links');
+  assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
+  assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
+  assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
+  assert.match(script,/text\('shop-shelf-price',hasShelf\?money\(shop\.price\[0\]\)/);
+  assert.match(script,/text\('shop-shelf-today',hasShelf\?number\(shop\.itemtoday\?\.\[shelfId\]\?\?0\)/);
 });
