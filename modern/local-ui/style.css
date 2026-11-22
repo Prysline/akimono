@@ -140,3 +140,67 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
 .shelf-form fieldset{border:1px dotted #c4c4cc;display:flex;flex-wrap:wrap;align-items:end;gap:10px;padding:10px}
 .shelf-form legend{color:#777;font-size:12px}
 .shelf-form label,.time-control label{display:flex;flex-direction:column;gap:4px;font-size:12px}
+
+/* Original-style player page layout. All developer controls stay in context. */
+.heading-top #dev-toggle{
+  color:#80808b;background:none;border:1px solid #d8d8de;
+  font-size:11px;padding:1px 5px;min-height:22px
+}
+.heading-top #dev-toggle[aria-pressed=true]{background:var(--note);color:#515151}
+.local-note{color:#888;font-size:11px;text-align:center;margin:4px auto}
+.save-strip{margin:5px 0;padding:2px 0}
+.save-strip .inline-form{align-items:center;justify-content:center;gap:5px}
+.save-strip button{padding:2px 7px;min-height:25px}
+#save-status{font-size:11px;color:#888}
+.status-section{margin:4px auto 3px}
+.status-table{width:max-content;max-width:100%}
+.status-table th{font-weight:normal;white-space:nowrap}
+.status-table td{min-width:75px}
+.page-intro{color:#666;font-size:12px!important;margin:4px 0 8px!important}
+.shop-portrait{display:flex;flex-direction:column;align-items:center;
+  gap:8px;margin:3px auto 13px;text-align:center}
+.shop-identity{display:flex;align-items:center;justify-content:center;gap:10px}
+.shop-identity>div{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px}
+.portrait-placeholder{display:grid;place-items:center;background:#f4f3f7;
+  width:46px;height:46px;border:1px solid #c8c8d0;color:#888;font-size:19px}
+.shop-links{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:4px 0 7px}
+.text-link{appearance:none;background:transparent;border:0;color:var(--link);
+  padding:0 1px;text-decoration:none;font-size:13px;font-weight:bold;cursor:pointer}
+.text-link:hover:not(:disabled){text-decoration:underline;color:#4d5f98}
+.text-link:focus-visible{outline:2px solid #687bb1;outline-offset:2px}
+.shelf-table,.warehouse-table,.balance-table,.item-detail-table{width:max-content;max-width:100%}
+.shelf-table th,.item-detail-table th,.balance-table th{background:#e8e8ef;font-weight:normal}
+.shelf-table{margin-bottom:6px}
+.warehouse-table{max-width:none;white-space:nowrap}
+.warehouse-table th{background:#e8e8ef;font-weight:normal}
+.warehouse-table td:not(:first-child){text-align:center}
+.item-link{font-weight:700;white-space:nowrap}
+#tab-stock .sub-title{margin-top:11px}
+#tab-stock .table-scroll + .sub-title{margin-top:17px}
+.back-row{margin:0 0 8px}
+.item-detail-table{margin:8px auto 13px}
+.balance-table{margin-top:9px}
+.balance-table td{min-width:70px}
+.balance-table th{white-space:nowrap}
+.dev-panel{display:none}
+body.dev-mode .dev-panel:not([hidden]){display:block}
+details.dev-panel{margin:10px auto 6px;border:1px dotted #bcbcc6;
+  padding:5px 8px;font-size:12px;max-width:100%}
+details.dev-panel summary{color:#737eaa;cursor:pointer}
+details.dev-panel[open]{background:#fbfbfd}
+.dev-panel .debug-data{max-width:100%}
+.dev-panel .debug-data dd{max-width:420px}
+.feedback{margin:6px auto;padding:3px 7px;max-width:100%;border-left:3px solid #a8be82}
+.feedback p{margin:2px 0;font-size:12px}
+.feedback.error{border-left-color:#bb817d}
+.source-use-section{margin-top:12px}
+.source-use-section .sub-title{margin-bottom:6px}
+.source-use-section:has(#use-offers tr:only-child td[colspan="5"]){margin-bottom:3px}
+footer{margin-top:12px;font-size:10px}
+@media(max-width:640px){
+  .status-table td{min-width:48px}
+  .balance-table{font-size:12px}
+  .balance-table th,.balance-table td{min-width:0}
+  .shop-identity{gap:6px}
+  .table-scroll{max-width:100%;overflow-x:auto}
+}
