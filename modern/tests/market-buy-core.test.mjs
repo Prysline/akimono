@@ -554,10 +554,10 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   const timeCapped=apply(oldTime,buyCommand(oldTime,39,getQuote(oldTime)));
   assert.ok(timeCapped.ok);
   assert.equal(timeCapped.world.shops[0].time,oldTime.nowSeconds-259200+600);
-  const second=act('market-buy',{
-    shopId:1,itemId:39,requestedCount:1,
-    marketShelf:getQuote(repository.read()).shelf,
-    expectedPrice:getQuote(repository.read()).price,
+  // The original 60-second PLUS may stock only one #39; exercise a
+  // distinct real operation rather than fabricating a second wholesale supply.
+  const second=act('edit-showcase',{
+    shopId:1,shelf:0,itemId:39,per:100,priceOverride:500,
   });
   assert.ok(second.ok,JSON.stringify(second.details));
   const saved2=store.save(repository.read(),{expectedGeneration:1});
