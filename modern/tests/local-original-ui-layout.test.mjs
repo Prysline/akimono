@@ -187,7 +187,7 @@ test('showcase edit shows verified original source time, not a guessed number',(
   assert.match(html,/調整或清空展示架均消耗/);
   assert.match(adapter,/showcaseEditTimeSeconds:streetModule\.showcaseEditTimeSeconds/);
   assert.match(script,/Number\.isSafeInteger\(s\.showcaseEditTimeSeconds\)/);
-  assert.match(script,/timeText\(s\.showcaseEditTimeSeconds\)/);
+  assert.match(script,/conciseTimeText\(s\.showcaseEditTimeSeconds\)/);
   assert.match(css,/#tab-item \.shelf-form\{[\s\S]*?flex-direction:column/);
 });
 test('unreviewed disposal is not wired as a misleading browser-only mutation',()=>{
