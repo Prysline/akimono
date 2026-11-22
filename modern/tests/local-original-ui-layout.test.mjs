@@ -63,7 +63,8 @@ test('developer tools remain on their related pages and existing live commands s
   assert.match(script,/body\.classList\.toggle\('dev-mode'\)/);
 });
 
-test('compact original-like tables are centered by their own content width',()=>{
+test('compact original-like tables are centered inside a stable responsive frame',()=>{
+  assert.match(css,/\.shell\{width:fit-content;min-width:min\(100%,560px\);max-width:min\(100%,640px\)/);
   assert.match(css,/table\{width:max-content;max-width:100%;margin-inline:auto/);
   assert.match(css,/\.table-scroll\{max-width:100%;overflow-x:auto\}/);
   assert.match(html,/id="market-offers"/);
