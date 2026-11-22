@@ -7,7 +7,7 @@ let selectedItemId=null;
 let lastRenderedItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceUpkeep=raw=>{
-  if(typeof raw!=='string'||!/^\\d+$/.test(raw))return '—';
+  if(typeof raw!=='string'||!/^\d+$/.test(raw))return '—';
   const amount=Number(raw);
   return Number.isSafeInteger(amount)?money(amount):'—';
 };
