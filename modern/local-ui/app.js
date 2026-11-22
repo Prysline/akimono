@@ -6,6 +6,11 @@ let currentGroup='self';
 let selectedItemId=null;
 let lastRenderedItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
+const sourceUpkeep=raw=>{
+  if(typeof raw!=='string'||!/^\\d+$/.test(raw))return '—';
+  const amount=Number(raw);
+  return Number.isSafeInteger(amount)?money(amount):'—';
+};
 const timeText=seconds=>{
   const t=Math.max(0,Math.floor(seconds));
   return Math.floor(t/3600)+' 小時 '+Math.floor(t%3600/60)+' 分鐘';
@@ -79,6 +84,9 @@ function renderItemInfo(s){
   text('item-detail-name',item?.name??'請從倉庫選擇商品');
   text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
   text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
+  text('item-detail-type',item?.type??'—');
+  text('item-detail-cost',sourceUpkeep(item?.costRaw));
+  text('item-detail-info',item?.info??'—');
   text('item-detail-limit',item?number(item.stockLimit):'—');
   const shelf=shop?.showcase?.[0]===item?.itemId&&item?
     '第 1 架（售價 '+money(shop.price[0])+'）':'未陳列';
@@ -288,17 +296,21 @@ function showState(s){
   };
   const storage=entries.filter(item=>item.flagRaw.includes('s'));
   const selling=entries.filter(item=>!item.flagRaw.includes('s'));
-  if(!storage.length)addEmpty(storageBody,2,'目前沒有保管商品');
+  if(!storage.length)addEmpty(storageBody,4,'目前沒有保管商品');
   for(const item of storage){
     const tr=document.createElement('tr');
     addName(tr,item);
-    const qty=document.createElement('td');
-    qty.textContent=number(item.count);tr.append(qty);storageBody.append(tr);
+    for(const value of [money(item.basePrice),
+      sourceUpkeep(item.costRaw),number(item.count)]){
+      const td=document.createElement('td');
+      td.textContent=value;tr.append(td);
+    }
+    storageBody.append(tr);
   }
-  if(!selling.length)addEmpty(sellingBody,4,'目前沒有販售商品');
+  if(!selling.length)addEmpty(sellingBody,5,'目前沒有販售商品');
   for(const item of selling){
     const tr=document.createElement('tr');addName(tr,item);
-    const values=[money(item.basePrice),
+    const values=[money(item.basePrice),sourceUpkeep(item.costRaw),
       number(item.count)+'／'+number(item.stockLimit),
       shop.showcase?.[0]===item.itemId?'第 1 架｜'+money(shop.price[0]):'—'];
     for(const value of values){
