@@ -18,6 +18,8 @@
 
 **重啟驗證步驟：** 查 PR 當下 HEAD → `cd modern && npm test && npm run audit`、原始 Perl `prove`/來源 SHA/DSL workflow、原版 #39 差分→查同 SHA Push 與 PR workflow `completed/success`，核對 Node/Perl 測試數與來源完整性。每次變更後必須以**最後** HEAD 的 CI 為準。原 CI R2-A 903 Node／1867 Perl 屬歷史基準；不能當新 Registry 的證據。正式進度見 [shared-market-buy-r0-r2.md](shared-market-buy-r0-r2.md)；先解 R2-B 動態價格缺口，才能宣稱下一個工作窗可直接進 R2-C。
 
+**重要介面與證據補充：** B-43 並非自動接納所有新 ITEM；現在 `createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry})` 透過明確注入已審閱 Registry，才能保存新 #39 的庫存及原價展示架；未注入仍沿用原嚴格上限與商品白名單，來源缺席時拒絕。修改 `modern/src/local-world-save-store.mjs` 是擴展共用 B-43 來源驗證，不是新建商品專用存檔演算法。新增 `modern/tests/original-perl/original-r2b-pricehalf-probe.pl`：由固定原版 Perl 編譯器 `GetBuffer(BASE)`、`whole.cgi::GetWholeStore`、`item.cgi::GetTimeDeal` 直接驗證 #1/#14 真動態價；#14 歷史固定價失真已實測，不可繞過。
+
 ---
 
 
