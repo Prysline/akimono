@@ -4,6 +4,7 @@ let snapshot=null;
 let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
+let lastRenderedItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const timeText=seconds=>{
   const t=Math.max(0,Math.floor(seconds));
@@ -85,6 +86,8 @@ function renderItemInfo(s){
   const sourceShelves=s.showcaseOffers??[];
   const shelfSelect=$('shelf-item');
   const previous=Number(shelfSelect.value);
+  const newlyOpened=lastRenderedItemId!==selectedItemId;
+  lastRenderedItemId=selectedItemId;
   shelfSelect.replaceChildren();
   const empty=document.createElement('option');
   empty.value='0';empty.textContent='清空展示架';
@@ -98,7 +101,8 @@ function renderItemInfo(s){
     shelfSelect.append(option);
   }
   shelfSelect.value=offer?.canShow?
-    (previous===0?'0':String(offer.itemId)):'0';
+    (newlyOpened?String(offer.itemId):
+      previous===0?'0':String(offer.itemId)):'0';
   const canEdit=Boolean(item&&shop&&(offer||shop.showcase?.[0]===selectedItemId));
   $('showcase-form').hidden=!canEdit;
   $('set-showcase').disabled=!shop||!canEdit;
@@ -362,7 +366,8 @@ $('reset-world').addEventListener('click',async()=>{
       feedback('重置遭拒絕：'+(data.error??data.code??'未知原因'),null,true);
       return;
     }
-    delete $('setup').dataset.autoClosed;
+    selectedItemId=null;
+    lastRenderedItemId=null;
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
