@@ -71,3 +71,13 @@ test('compact original-like tables are centered inside a stable responsive frame
   assert.match(html,/持有／上限/);
   assert.match(html,/data-go-tab="stock"/);
 });
+
+test('product details remain centered without a full-width shelf editor',()=>{
+  assert.match(css,/#tab-item #item-detail-name\s*\{[\s\S]*?text-align:center/);
+  assert.match(css,/#tab-item \.shelf-form\s*\{[\s\S]*?justify-content:center/);
+  assert.match(css,/#tab-item \.shelf-form fieldset\s*\{[\s\S]*?width:fit-content;min-width:0;max-width:100%/);
+  assert.match(css,/#tab-item \.source-use-section\s*\{[\s\S]*?width:fit-content;max-width:100%;margin:16px auto 0/);
+  assert.match(css,/#tab-item \.source-use-section>\.sub-title\{text-align:center\}/);
+  assert.match(html,/id="showcase-form"/);
+  assert.match(script,/\$('showcase-form'\)\.addEventListener\('submit'/);
+});
