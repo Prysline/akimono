@@ -1,22 +1,24 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
-> **最新計畫以 [R0–R7 共用規則引擎計畫](playable-loop-priority-plan.md) 與 [R2-A～E 現況及退出門檻](shared-market-buy-r0-r2.md) 為準。** 早先的「這次只改規劃、程式尚無變動」已過期：`market-buy` 共用買入核心已提交，但 **R2-A 僅部分完成、R2-B～E 尚未完成、R2 整體未結案**。本文件下方 B-35～B-39 與「第三十九階段」表格均為當時的歷史快照，不能用來判斷目前完成度；最新工作交接見 [next-window-handoff.md](next-window-handoff.md)。沒有更動 Notion 正式任務或解除 36h 期末限制。
+> **最新計畫以 [R0–R7 共用規則引擎計畫](playable-loop-priority-plan.md) 與 [R2-A～E 現況及退出門檻](shared-market-buy-r0-r2.md) 為準。** 早先的「這次只改規劃、程式尚無變動」已過期：`market-buy` 共用買入核心已提交，**R2-A 已通過直接 Perl 差分及回呼邊界驗收；R2-B～E 尚未完成，R2 整體未結案**。本文件下方 B-35～B-39 與「第三十九階段」表格均為當時的歷史快照，不能用來判斷目前完成度；最新工作交接見 [next-window-handoff.md](next-window-handoff.md)。沒有更動 Notion 正式任務或解除 36h 期末限制。
 
 ## 2026-11-22｜R2 真實進度更正（優先於下方歷史決策敘述）
 
-**不應再記錄「R2 第一階段完成」。** 當前 `GameCore` 已有 `market-buy`，新 `market-buy-core.mjs` 提供共用買入數量裁切、帳務／庫存、原版 72h 時間上限等；#10／#11／#14 的共用命令及 CAS／存檔代表案例已有測試。但 `standard-street-module.mjs` 仍固定列舉三商品規則；原本 `buy-market-item-10/11/14` 還在各自獨立執行 `projectOriginalMarketBuy*`；本機 UI 尚未全面改送共用命令，通用 USE 尚未成立。**這是一項有效的初版子成果，不是通用市場與商品系統結案。**
+**不應把「R2 第一階段完成」當成整體 R2 完成。R2-A 核心已完成自己的退出驗收，R2-B～E 仍未完成。** 當前 `GameCore` 已有 `market-buy`，新 `market-buy-core.mjs` 提供共用買入數量裁切、帳務／庫存、原版 72h 時間上限等；#10／#11／#14 的共用命令及 CAS／存檔代表案例已有測試。但 `standard-street-module.mjs` 仍固定列舉三商品規則；原本 `buy-market-item-10/11/14` 還在各自獨立執行 `projectOriginalMarketBuy*`；本機 UI 尚未全面改送共用命令，通用 USE 尚未成立。**這是一項有效的初版子成果，不是通用市場與商品系統結案。**
 
 | 工作包 | 目前判定 | 未完成重點 |
 | --- | --- | --- |
 | R0 基準與測試遷移 | **局部完成** | 市場買入重點測試已有對照，但尚無受影響舊測試全部逐檔處置清冊 |
 | R1 共用契約 | **局部完成** | `market-buy` 子契約已有實作，ITEM／USE／EVENT／回呼及特殊規則完整契約未完 |
-| **R2-A** 共用市場買入核心 | **部分完成，未結案** | 仍要滿足原版 Oracle／回呼與共用核心的完整退出條件 |
+| **R2-A** 共用市場買入核心 | **已完成自身驗收** | 36 組直接原版 Perl／Node 差分、全域／商品買入回呼順序及 fail-closed；不含新商品接入或舊交易路徑去重 |
 | **R2-B** 商品資料接入 | **未完成** | 需取代 #10/#11/#14 白名單，讓有已支援語義的合法普通商品經 DSL/Registry 接入 |
 | **R2-C** 唯一正式買入流程 | **未完成** | UI／HTTP 走 `market-buy` 並移除三套獨立舊交易演算法，測試等價移轉 |
 | **R2-D** 商品使用／製作 | **未完成** | 統一 `use-item` 執行 #79 地圖交換與 #14 地圖使用已驗證情境 |
 | **R2-E** R2 真世界結案 | **未完成** | 原版 Perl／Node／HTTP、CAS／磁碟／重啟及測試治理均有可追溯證據 |
 
-**工作次序：** 先結束 R2-A 未結項與 R2-B／C 再進入 R2-D／E，避免跳到 R3 逐劍販售或 R4 事件結算。全數退出條件與程式實際路徑見 [R2 現況文件](shared-market-buy-r0-r2.md)；只有全數合格才能寫「R2 完成」。來源合法商品不在三筆白名單不是「原版無法交易」的證據，只有未支援的具體來源語義才能作合理拒絕原因。舊命令目前不是相容 alias，而是另一套會執行的商業演算法。
+**工作次序：** R2-A 已完成，接著優先 R2-B／C 再進入 R2-D／E，避免跳到 R3 逐劍販售或 R4 事件結算。全數退出條件與程式實際路徑見 [R2 現況文件](shared-market-buy-r0-r2.md)；只有全數合格才能寫「R2 完成」。來源合法商品不在三筆白名單不是「原版無法交易」的證據，只有未支援的具體來源語義才能作合理拒絕原因。舊命令目前不是相容 alias，而是另一套會執行的商業演算法。
+
+**R2-A 新完成證據：** 來源固定的 [`original-r2a-market-buy-oracle.pl`](../tests/original-perl/original-r2a-market-buy-oracle.pl) 跨 #10/#11/#14 各12情境比較真正 Perl `buy-s.cgi` 與新 Core、完整批發 CSV、時間／原版來源全域 `@@FUNCBUY` 及人工商品回呼順序。程式 SHA `bd7a504bdc473a0bd34c1beb5efab8ae621d2381` [CI #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) 完成成功（903 Node／1,867 Perl）；**僅證明 R2-A 子階段，R2-B～E 未結案，之後文件 HEAD 需另看 CI。**
 
 **CI 判讀：** 共用買入初版基準 `b2bfffc7a41a4d275043f448ad27541fdb704f98` 的 [run #45008806146](https://github.com/Prysline/akimono/actions/runs/45008806146) 曾成功（900 Node、1,867 Perl）；此結果屬歷史 HEAD，證明受測回歸成功，**不能推論 R2 已完成或未來 HEAD 的 CI 已成功**。每個新工作窗須重新讀取 [Draft PR #1](https://github.com/Prysline/akimono/pull/1) 與當下 head_sha，核對同 SHA CI。
 
