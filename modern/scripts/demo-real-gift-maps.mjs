@@ -31,7 +31,7 @@ const opened=executeMemoryCommand({
 if(!opened.ok)throw new Error('Unexpected source new-shop rejection');
 const missingMarket=executeMemoryCommand({
   repository:initialRepo,streetModule:street,
-  command:{kind:'gift-exchange-maps',expectedRevision:1,shopId:42,
+  command:{kind:'use-item',itemId:79,useId:0,expectedRevision:1,shopId:42,
     requestedCount:1},
 });
 if(missingMarket.code!=='SOURCE_BOUNDARY_REJECTED')
@@ -45,7 +45,7 @@ const results=[];
 for(const revision of [1,2]){
   const x=executeMemoryCommand({
     repository:repo,streetModule:street,
-    command:{kind:'gift-exchange-maps',expectedRevision:revision,shopId:42,
+    command:{kind:'use-item',itemId:79,useId:0,expectedRevision:revision,shopId:42,
       requestedCount:1},
   });
   if(x.code!=='COMMITTED')throw new Error('Unexpected reviewed gift trade rejection');
@@ -60,12 +60,12 @@ for(const revision of [1,2]){
 }
 const stale=executeMemoryCommand({
   repository:repo,streetModule:street,
-  command:{kind:'gift-exchange-maps',expectedRevision:1,shopId:42,
+  command:{kind:'use-item',itemId:79,useId:0,expectedRevision:1,shopId:42,
     requestedCount:1},
 });
 const noStock=executeMemoryCommand({
   repository:repo,streetModule:street,
-  command:{kind:'gift-exchange-maps',expectedRevision:3,shopId:42,
+  command:{kind:'use-item',itemId:79,useId:0,expectedRevision:3,shopId:42,
     requestedCount:1},
 });
 console.log(JSON.stringify({
