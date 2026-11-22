@@ -65,8 +65,12 @@ export function reviewOriginalB62SwordMap({
     fail('source map material/need/output changed');
   for(let i=0;i<5;i++){
     const n=model.items.find(x=>x.id===mkItemIds[i]);
-    if(val(use,'get')[i].trim().split(/\s+/).join(' ')!==
-       '10 '+n.name+' '+[40,35,15,6,3][i]+'%')
+    const tokens=val(use,'get')[i].trim().split(/\s+/);
+    const expectedExtras=i===3?['秘銀劍很便宜']:
+      i===4?['發現便宜的奧利哈鋼劍了!']:[];
+    if(tokens?.[0]!=='10'||tokens[1]!==n.name||
+       tokens[2]!==[40,35,15,6,3][i]+'%'||
+       tokens.slice(3).join(' ')!==expectedExtras.join(' '))
       fail('source original map GET reward #'+n.id);
   }
   for(const [source,needle]of [
