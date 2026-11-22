@@ -152,8 +152,9 @@ function useScenario(scenario){
   const evidence=oracle(scenario);
   const {repository,act,quote}=buyMap();
   const before=repository.read();
-  const response=act('use-original-sword-map-14-all-outcomes',{
-    shopId:1,randomDraws:evidence.originalSamples,
+  const response=act('use-item',{
+    shopId:1,itemId:14,useId:0,requestedCount:1,
+    randomDraws:evidence.originalSamples,
   });
   assert.equal(response.ok,true,JSON.stringify(response.details));
   const shop=response.world.shops[0];
@@ -269,7 +270,7 @@ test('B-63 old B-62 constrained action still refuses wider outputs; all-outcome 
   const saved=repository.read();
   const command=(draws)=>executeMemoryCommand({
     repository,streetModule:street,
-    command:{kind:'use-original-sword-map-14-all-outcomes',
+    command:{kind:'use-item',itemId:14,useId:0,requestedCount:1,
       expectedRevision:saved.revision,shopId:1,randomDraws:draws},
   });
   for(const draws of [
@@ -290,7 +291,7 @@ test('B-63 old B-62 constrained action still refuses wider outputs; all-outcome 
   });
   assert.equal(legacy.ok,false,'B62 no-second-use remains fail-closed');
   const stale=applyGameCommand({world:saved,streetModule:street,
-    command:{kind:'use-original-sword-map-14-all-outcomes',
+    command:{kind:'use-item',itemId:14,useId:0,requestedCount:1,
       expectedRevision:saved.revision-1,shopId:1,
       randomDraws:evidence.originalSamples},
   });
@@ -317,7 +318,7 @@ test('B-63 original lostbook destroyed-map world remains a source-bounded durabl
   const reloaded=createMemoryWorldAdapter(save.load().world);
   const fail=executeMemoryCommand({
     repository:reloaded,streetModule:street,
-    command:{kind:'use-original-sword-map-14-all-outcomes',
+    command:{kind:'use-item',itemId:14,useId:0,requestedCount:1,
       expectedRevision:before.revision,shopId:1,
       randomDraws:evidence.originalSamples},
   });
