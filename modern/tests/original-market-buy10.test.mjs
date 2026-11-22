@@ -202,7 +202,9 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.equal(bought.ok,true,JSON.stringify(bought));
   assert.equal(bought.state.shop.money,95000);
   assert.equal(bought.state.shop.item[9],1);
-  assert.equal(bought.state.marketOffers.find(o=>o.itemId===10).marketStock,before-1);
+  assert.equal(bought.state.world.market.wholesale[9],before-1);
+  assert.equal(bought.state.marketOffers.some(o=>o.itemId===10),before>1,
+    'original market shelf disappears once actual wholesale stock is sold out');
   assert.equal(bought.state.world.revision,4);
   const replay=await post('/api/buy',{expectedRevision:3,itemId:10,
     requestedCount:1,marketShelf:supplied.state.marketOffers.find(o=>o.itemId===10).shelf,
