@@ -1,5 +1,16 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
+## 2026-11-22｜最新 R2-B 程式進度（優先於以下歷史狀態）
+
+**R2-A 已完成自身退出驗收；R2-B 部分完成（未結案）；R2-C、R2-D、R2-E 未完成；R2 整體未完成。** R0 與 R1 仍只有買入局部成果。已在唯一允許工作分支的 `modern/` 新建 `standard-street-market-buy-registry.mjs` 並將 StreetModule 的 `sharedBuyRules` 三商品白名單替換為 79 ITEM DSL／原版 LIMIT 與排序編譯流程；`market-buy` Core 演算法未複製商品 ID。新增真實來源 ITEM #39「拆解/打包工具」按原價500、上限10/3透過通用市場命令買入，直接原版 Perl `buy-s.cgi` 與 Node 結果差分、回呼先後、79欄稀疏 CSV、CAS／保存追加驗證。來源未支援商品保留具體分類及行號。
+
+**未完成、阻止 R2-B 結案：** 原版 ITEM #14 `BASE 50/150` 動態市場價格未納入歷史 R2-A 原版商品編譯測資，#14 目前只能視作歷史相容狀態，需新的真正原版 `BASE`＋`GetWholeStore` 差分及遷移確認；一般 BASE 商品安全拒絕，不得以固定價假冒。全域 `@@FUNCBUY` 超過500,000G 的送禮實際處理器未落地，未知效果拒絕。R2-C 舊三條 `buy-market-item-10/11/14` 與 UI／HTTP 還未去重，R2-D USE 與 R2-E 整合未完成。**本次不改 Notion 正式任務狀態**。最新 HEAD 的 CI 數據需以實際 GitHub Actions 核對，不得沿用先前903／1867。
+
+詳見 [R2 工作包、來源與退出條件](shared-market-buy-r0-r2.md)、[新無記憶交接](next-window-handoff.md)。以下把 `sharedBuyRules` 描述為「仍存在」的舊段落是本次前歷史快照。
+
+---
+
+
 > **最新計畫以 [R0–R7 共用規則引擎計畫](playable-loop-priority-plan.md) 與 [R2-A～E 現況及退出門檻](shared-market-buy-r0-r2.md) 為準。** 早先的「這次只改規劃、程式尚無變動」已過期：`market-buy` 共用買入核心已提交，**R2-A 已通過直接 Perl 差分及回呼邊界驗收；R2-B～E 尚未完成，R2 整體未結案**。本文件下方 B-35～B-39 與「第三十九階段」表格均為當時的歷史快照，不能用來判斷目前完成度；最新工作交接見 [next-window-handoff.md](next-window-handoff.md)。沒有更動 Notion 正式任務或解除 36h 期末限制。
 
 ## 2026-11-22｜R2 真實進度更正（優先於下方歷史決策敘述）
