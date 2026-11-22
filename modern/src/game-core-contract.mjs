@@ -1,14 +1,15 @@
 import {MARKET_BUY_COMMAND,projectSharedMarketBuy} from './market-buy-core.mjs';
 
 /**
- * B-31: pure GameCore/StreetModule/WorldState contract for REVIEWED source
- * projections only. No actual authentication, database, CGI or storage.
- *
- * WorldState: {schema,worldId,streetId,revision,nowSeconds,shops,market,events}
- * Unknown market/events are NULL; never invent game state.
- * StreetModule: {id,capabilities,apply({world,command})}.
- * Command: {kind,expectedRevision,...street-specific arguments}.
- * GameCore never knows specific items, prices, DSL, or rules.
+ * GameCore/StreetModule/WorldState contract (B-31 foundation; R2-A market buy).
+ * No authentication, full CGI, database, or cross-process persistence here.
+ * Memory WorldState: {schema,worldId,streetId,revision,nowSeconds,shops,market,events}
+ * StreetModule: {id,capabilities,apply({world,command}),marketBuy?}.
+ * The shared 'market-buy' engine performs reviewed commercial math in GameCore;
+ * StreetModule supplies source-backed items, pricing, callbacks and market codec.
+ * All other legacy commands still use StreetModule.apply until their migration.
+ * GameCore knows no Standard Street item IDs or DSL; R2-B/C/D/E are unfinished.
+ * Actual disk-backed local save is a separate B-43 adapter.
  */
 export const MEMORY_WORLD_SCHEMA='akimono.memory-world.v1';
 export const PERIOD_WORLD_SCHEMA='akimono.memory-world.v2';
