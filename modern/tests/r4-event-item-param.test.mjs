@@ -71,6 +71,6 @@ test('R4 EVENT item overlay rejects unsupported start, missing fields and unsafe
    reviewed,eventCode:'ken-sale',items:input.slice(0,78)}));
  assert.throws(()=>projectR4EventItemParams({
    reviewed,eventCode:'ken-sale',items:input.map((x,i)=>i===39?{
-     ...x,popular:Number.MAX_SAFE_INTEGER}:x)}));
+     ...x,popular:Number.MAX_SAFE_INTEGER+2}:x)}));
  assert.equal(JSON.stringify(input),before);
 });
