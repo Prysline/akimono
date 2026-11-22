@@ -119,7 +119,7 @@ test('R4 reuses R3 market+natural sale+callbacks and adds real Perl SortDT befor
   const world=buildPurchasedWorld(),snapshot=JSON.stringify(world);
   const originalPreEvent=projectR3PreEventTurn(args(world));
   const sortedPreEvent=projectR4SortedPreEventTurn({
-    ...args(world),reviewed,
+    ...args(world),reviewedR4:reviewed,
   });
   const realPerl=originalSort(originalPreEvent.shops[0]);
   assert.deepEqual(sortedPreEvent.shops[0],realPerl.shop,
@@ -139,7 +139,7 @@ test('R4 reuses R3 market+natural sale+callbacks and adds real Perl SortDT befor
 test('R4 sorted phase rejects forged source or unknown prior EVENT without mutations',()=>{
   const world=buildPurchasedWorld(),snapshot=JSON.stringify(world);
   assert.throws(()=>projectR4SortedPreEventTurn({
-    ...args(world),reviewed:{...reviewed,sort:{source:'not-a-source'}},
+    ...args(world),reviewedR4:{...reviewed,sort:{source:'not-a-source'}},
   }));
   assert.throws(()=>projectR4SortedPreEventTurn({
     ...args(world),reviewed,

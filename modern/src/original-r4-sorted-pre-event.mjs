@@ -28,19 +28,19 @@ export function reviewR4SortedPreEvent({turnSource,detailSource,readSource}){
     scope:'single active shop SortDT after ITEM callbacks, before PLUS; no settlement/EVENT',
     committable:false});
 }
-export function projectR4SortedPreEventTurn({reviewed,...args}){
-  if(reviewed?.source!==R4_SORTED_PRE_EVENT_SOURCE||
-     reviewed.committable!==false||reviewed.sort?.source!==B47_SOLO_RANK_SOURCE)
+export function projectR4SortedPreEventTurn({reviewedR4,...args}){
+  if(reviewedR4?.source!==R4_SORTED_PRE_EVENT_SOURCE||
+     reviewedR4.committable!==false||reviewedR4.sort?.source!==B47_SOLO_RANK_SOURCE)
     fail('source-reviewed original SortDT required');
   if(args.world?.schema!==PERIOD_WORLD_SCHEMA||
      args.world?.period?.eventState===null)
     fail('known original EVENT state and source period world required');
-  const result=projectR3PreEventTurn({...args,r4ReviewedSort:reviewed.sort});
+  const result=projectR3PreEventTurn({...args,r4ReviewedSort:reviewedR4.sort});
   if(result.shops?.length!==1||!Number.isSafeInteger(result.shops[0].point)||
      result.receipt?.originalSortApplied!==true||Object.hasOwn(result,'period'))
     fail('incomplete sort projection cannot claim EVENT or period');
   return {...result,receipt:{
     ...result.receipt,action:'r4-sorted-pre-event',
-    r4SortSource:reviewed.source,r4Committable:false,
-    sourceScope:reviewed.scope}};
+    r4SortSource:reviewedR4.source,r4Committable:false,
+    sourceScope:reviewedR4.scope}};
 }
