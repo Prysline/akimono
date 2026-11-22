@@ -122,6 +122,8 @@ for my $item (12,14){
     die "original source market missing $item" unless defined($shelf);
     my $actualPrice=$offer->{price}[$shelf];
     die "BASE ignored $item" unless $actualPrice!=$ITEM[$item]{price};
+    # buy-s.cgi halves TIME_SEND_ITEM before GetTimeDeal.
+    $TIME_SEND_ITEM=600;
     my $expectedTime=GetTimeDeal($actualPrice,$item,1);
     $DT->{money}=$actualPrice+500 if $case eq 'cash-clamp';
     my $quotedPrice=$actualPrice+($case eq 'stale-price'?1:0);
