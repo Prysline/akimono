@@ -244,8 +244,33 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       originalCalcSource:originalBuyCalcSource,
       originalWholeSource,
     }):null;
-  // R2: Source review stays in the StreetModule. Commerce execution and
-  // quantity/price/time/accounting/CAS rules are shared in GameCore.
+  // R2-A: The real Standard Street @@FUNCBUY is NOT empty. Its source
+  // awards gift vouchers at int(wholesale-spend/500000), and only when
+  // the buying seller is the virtual market. Current three reviewed item
+  // limits keep total spend below this threshold: source-verified no-op.
+  // Do not silently skip this globally executable callback for future items.
+  const globalBuyBlocks=parseDsl(itemDsl,'custom/inc-item-data.cgi')
+    .blocks.filter(block=>block.kind==='FUNCBUY');
+  let reviewedGlobalBuyCallback=null;
+  if(reviewedMarketBuy10){
+    const block=globalBuyBlocks[0];
+    if(globalBuyBlocks.length!==1||!block||
+       !block.raw.includes('if($BUY->{whole})')||
+       !block.raw.includes('my $price=$BUY->{num}*$BUY->{price};')||
+       !block.raw.includes('my $count=int $price/500000;')||
+       !block.raw.includes('AddItemSub(@@ITEMNO"禮物卷",$count,$BUY->{dt}) if $count;')||
+       !block.raw.includes('WriteLog(0,$BUY->{dt}{id},')||
+       !originalBuySource.includes('require "$ITEM_DIR/funcbuy.cgi" if $DEFINE_FUNCBUY;')||
+       !originalBuySource.includes('SetWholeStore($DTS) if $id==0;'))
+      bad('unreviewed original @@FUNCBUY global voucher effect');
+    reviewedGlobalBuyCallback=Object.freeze({
+      key:'standard-street-global-wholesale-voucher',
+      source:'custom/inc-item-data.cgi:'+block.startLine,
+      minTotal:500000,
+    });
+  }
+  // R2-A shared purchase formula in GameCore. R2-B still needs the item
+  // registry and R2-C must remove the legacy buy-market-item-* paths.
   const sharedBuyRules=Object.freeze([
     reviewedMarketBuy10?{
       itemId:10,shopIndex:9,wholesaleIndex:9,
@@ -273,6 +298,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }:null,
   ].filter(Boolean).map(rule=>Object.freeze(rule)));
   const marketBuy=Object.freeze({
+    globalBuyCallback:reviewedGlobalBuyCallback,
     order:Object.freeze(model.items.map(item=>Object.freeze({
       itemId:item.id,wholesaleIndex:item.id-1,
     }))),
@@ -302,8 +328,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         bad('original SetWholeStore write inconsistency');
       return next;
     },
-    // An unreviewed global/item FUNCBUY is never executed or ignored.
-    // Future reviewed callbacks must be explicit JS functions supplied here.
+    // Global voucher on this three-item slice is a proven no-op (<500000 G).
+    // If a future item crosses that threshold, GameCore rejects unless its
+    // reviewed callback handler is provided. No original Perl is evaluated.
   });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
