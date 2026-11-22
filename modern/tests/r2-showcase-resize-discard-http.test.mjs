@@ -66,6 +66,9 @@ test('source #63 grows two shelves, second shelf is independently writable, no-t
     fetch(srv.url+'/app.js').then(r=>r.text()),
   ]);
   assert.match(html,/id="showcase-shelves"/);
+  assert.match(html,/id="shop-showcase-time"/);
+  assert.match(script,/button\.className='text-link shelf-action-link'/);
+  assert.doesNotMatch(script,/time\.textContent='行動時間：'/);
   assert.match(html,/id="showcase-shelf"/);
   assert.doesNotMatch(html,/id="shelf-item"/);
   assert.match(html,/id="set-showcase" class="primary" type="submit">陳列/);

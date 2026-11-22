@@ -168,7 +168,12 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(shop,/<table class="shop-turnover-table"/);
   assert.match(shop,/id="showcase-shelves"/);
   assert.match(script,/dataset\.shelfAction=hasItem\?'remove':'open'/);
-  assert.match(script,/time\.textContent='行動時間：'/);
+  assert.match(shop,/id="shop-showcase-time"/);
+  assert.match(script,/text\('shop-showcase-time',Number\.isSafeInteger\(shelfEditSeconds\)\?/);
+  assert.match(script,/button\.className='text-link shelf-action-link'/);
+  assert.match(script,/td\.append\(button\);tr\.append\(td\);shelfBody\.append\(tr\)/);
+  assert.doesNotMatch(script,/time\.textContent='行動時間：'/);
+  assert.match(css,/\.shelf-action-link\{font-weight:normal;white-space:nowrap\}/);
   assert.match(html,/<th>行動時間<\/th><th>購買<\/th>/);
   assert.match(script,/cell\(Number\.isSafeInteger\(offer\.timeSeconds\)\?\s*conciseTimeText\(offer\.timeSeconds\):'—'\)/);
   assert.match(script,/\$\('showcase-shelves'\)\.addEventListener\('click'/);

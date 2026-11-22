@@ -359,6 +359,8 @@ function showState(s){
   shelfBody.replaceChildren();
   const shelfCount=shop?.showcasecount??0;
   const shelfEditSeconds=s.showcaseEditTimeSeconds;
+  text('shop-showcase-time',Number.isSafeInteger(shelfEditSeconds)?
+    conciseTimeText(shelfEditSeconds):'—');
   const canEditShelf=Boolean(shop&&w.nowSeconds>=shop.time);
   if(!Number.isSafeInteger(shelfCount)||shelfCount<1||shelfCount>8||
      !Array.isArray(shop?.showcase)||shop.showcase.length!==shelfCount||
@@ -384,18 +386,13 @@ function showState(s){
       number(shop.itemyesterday?.[itemId]??0):'—');
     const td=document.createElement('td');
     const button=document.createElement('button');
-    button.type='button';button.className='secondary';
+    button.type='button';button.className='text-link shelf-action-link';
     button.dataset.shelfIndex=String(index);
     button.dataset.shelfAction=hasItem?'remove':'open';
     button.textContent=hasItem?'下架':'上架';
     button.disabled=hasItem?!canEditShelf:!shop;
     button.title=hasItem?'清空第 '+(index+1)+' 架':'選擇要上架的商品';
-    const time=document.createElement('small');
-    time.className='action-time';
-    time.textContent='行動時間：'+
-      (Number.isSafeInteger(shelfEditSeconds)?
-        conciseTimeText(shelfEditSeconds):'—');
-    td.append(button,time);tr.append(td);shelfBody.append(tr);
+    td.append(button);tr.append(td);shelfBody.append(tr);
   }
   text('paid',money(shop?.paytoday));
   text('sales',money(shop?.saletoday));
