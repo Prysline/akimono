@@ -15,6 +15,8 @@ import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {B58_MARKET11_SOURCE} from './original-market-buy11.mjs';
 import {B59_IRON_SOURCE,isReviewedB59EventPeriod,isB59IronActive}
   from './original-b59-iron-event-lifecycle.mjs';
+import {B60_HAPPY_SOURCE,B60_HAPPY_CODE,isReviewedB60HappyPeriod}
+  from './original-b60-happy-event-nowfunc.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
@@ -24,7 +26,8 @@ const safe=(x,label,min=0)=>{
   return x;
 };
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
-  configSource,reviewedMarket11=null,reviewedB59Iron=null}){
+  configSource,reviewedMarket11=null,reviewedB59Iron=null,
+  reviewedB60Happy=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -49,8 +52,14 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB59Iron?.source!==B59_IRON_SOURCE||
      reviewedB59Iron.itemId!==5||reviewedB59Iron.plusSeconds!==720))
     bad('source reviewed B-59 iron event changed');
+  if(reviewedB60Happy!==null&&(
+     reviewedB60Happy.source!==B60_HAPPY_SOURCE||
+     reviewedB60Happy.startProba!==100||
+     reviewedB60Happy.rankCap!==10000))
+    bad('source reviewed B-60 happy NOWFUNC changed');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    happyEventSource:reviewedB60Happy?.source??null,
     ironEventSource:reviewedB59Iron?.source??null,
     ticketSourceReviewed:reviewedMarket11!==null,
     maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
@@ -59,7 +68,8 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
-  reviewedB59Iron=null,reviewedEventTimeSlice=false,
+  reviewedB59Iron=null,reviewedB60Happy=null,
+  reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -74,23 +84,31 @@ export function projectB41Sale({
     world.market.sourceWriteShape!=='whole-store-79'||
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
-  if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null))
-    bad('source iron event contract mismatch');
+  if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
+     reviewed.happyEventSource!==(reviewedB60Happy?.source??null))
+    bad('source durable event contracts mismatch');
   if(world.schema===PERIOD_WORLD_SCHEMA&&
      !validateOriginalPeriodSeed(world.period)&&
      !isReviewedB59EventPeriod({
        period:world.period,reviewed:reviewedB59Iron,
+       nowSeconds:world.nowSeconds,
+     })&&
+     !isReviewedB60HappyPeriod({
+       period:world.period,reviewed:reviewedB60Happy,
        nowSeconds:world.nowSeconds,
      }))
     bad('source-initialized city and known EVENT state required');
   // Legacy B-41 intentionally marks all unknown prior EVENT instances
   // NULL. Do not claim an iron modifier is active in that case, but do
   // preserve B-41's existing best-effort no-event non-equivalence behavior.
-  const ironEventActive=world.schema===PERIOD_WORLD_SCHEMA&&
-    reviewedB59Iron!==null&&world.period?.eventState!==null?
-    isB59IronActive({period:world.period,
-      reviewed:reviewedB59Iron,nowSeconds:world.nowSeconds}):false;
-  if(ironEventActive&&reviewedEventTimeSlice!==true)
+  const activeKeys=world.schema===PERIOD_WORLD_SCHEMA&&
+    world.period?.eventState!==null&&
+    typeof world.period?.eventState==='object'?
+    Object.keys(world.period.eventState):[];
+  const ironEventActive=activeKeys.includes('plusup-tetu');
+  const happyEventActive=activeKeys.includes(B60_HAPPY_CODE);
+  if((ironEventActive||happyEventActive)&&
+     reviewedEventTimeSlice!==true)
     bad('known active EVENT requires fully reviewed lifecycle before advancing time');
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
@@ -192,6 +210,7 @@ export function projectB41Sale({
     world:{...world,shops:[nextShop]},reviewed:reviewedAllPlus,
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
     reviewedB59Iron,ironEventActive,
+    reviewedEventTimeSlice,
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
@@ -206,6 +225,7 @@ export function projectB41Sale({
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,stockBefore:beforeStock,stockAfter:items[9],
       ironVeinModifierApplied:ironEventActive,
+      festivalWasActiveAtDataRead:happyEventActive,
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
       rankBefore:shop.rank,rankAfter:rank,
