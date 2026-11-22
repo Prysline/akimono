@@ -57,11 +57,16 @@
       <div class="location-line"><span id="menu-location">自店 &gt; 店內</span><span id="settlement-status">下次決算：未開放</span></div>
     </header>
 
-    <section class="status-section" aria-label="店家簡要資訊">
-      <table class="status-table"><tbody>
-        <tr><th scope="row">店名</th><td id="store-name">未開店</td><th scope="row">資金</th><td><strong id="money">—</strong></td></tr>
-        <tr><th scope="row">人氣</th><td id="rank">—</td><th scope="row">行動時間</th><td id="time">—</td></tr>
-      </tbody></table>
+    <section id="status-summary" class="status-section" aria-label="店家簡要資訊" hidden>
+      <div class="status-scroll">
+        <table class="status-table"><tbody><tr>
+          <th scope="row">RANK</th><td id="rank">—</td>
+          <th scope="row">店名</th><td id="store-name">—</td>
+          <th scope="row">點數</th><td id="shop-points">—</td>
+          <th scope="row">資金</th><td><strong id="money">—</strong></td>
+          <th scope="row">行動時間</th><td id="time">—</td>
+        </tr></tbody></table>
+      </div>
     </section>
 
     <div class="local-note" role="note">目前為單機測試：存檔需手動儲存；尚未支援跨期決算。</div>
@@ -77,14 +82,6 @@
         </form>
       </div>
     </details>
-
-    <section id="save-section" class="save-strip" aria-label="單機存讀檔">
-      <div class="inline-form">
-        <button type="button" class="secondary" id="save-world" disabled>儲存</button>
-        <button type="button" class="secondary" id="load-world" disabled>載入</button>
-        <span id="save-status" aria-live="polite">尚未儲存</span>
-      </div>
-    </section>
 
     <section class="section feedback" role="status" aria-live="polite">
       <p id="feedback">請先建立商店，或載入本機存檔。</p>
@@ -236,6 +233,15 @@
       <h2 id="pending-title" class="section-title">尚未實作</h2>
       <p class="help-text">保留原版選單位置，這個分類的功能尚未連接到新版 Core，不能操作。</p>
     </section>
+
+    <details id="save-section" class="save-details" aria-label="本機存讀檔">
+      <summary>本機存檔／載入</summary>
+      <div class="inline-form">
+        <button type="button" class="secondary" id="save-world" disabled>儲存</button>
+        <button type="button" class="secondary" id="load-world" disabled>載入</button>
+        <span id="save-status" aria-live="polite">尚未儲存</span>
+      </div>
+    </details>
 
     <footer>商人物語・標準街｜單機測試版本；未完成的功能不會模擬正式交易。</footer>
   </main>
