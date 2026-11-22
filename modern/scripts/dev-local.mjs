@@ -29,7 +29,7 @@ const [
   originalConfigSource,originalCompilerSource,originalBuySource,
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
-  originalPeriodSource,
+  originalPeriodSource,originalUseSource,originalItemHelperSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -45,6 +45,8 @@ const [
   'modern/tests/original-perl/item.cgi',
   'modern/tests/original-perl/core-detail.cgi',
   'modern/tests/original-perl/period.cgi',
+  'modern/tests/original-perl/use.cgi',
+  'modern/tests/original-perl/core-inc-item.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -53,11 +55,14 @@ const streetModule=createStandardStreetModule({
   originalConfigSource,originalCompilerSource,
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
+  originalUseSource,originalItemHelperSource,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
-  'market-buy','edit-showcase','advance-source-time']
+  'market-buy','use-item','edit-showcase','advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
-  throw Error('B-40 runtime source-review capabilities missing');
+  throw Error('R2-E runtime source-review capabilities missing');
+if(!streetModule.reviewedB63Map)
+  throw Error('R2-E requires reviewed full original first-use map callbacks');
 if(streetModule.reviewedEventCatalog?.declaredCount!==25||
    streetModule.reviewedEventCatalog.compiledCount!==17||
    streetModule.reviewedEventCatalog.runtimeSupported!==false)
@@ -74,6 +79,7 @@ let repo=null;
 const saveStore=createLocalWorldSaveStore({
   directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
   marketBuyRegistry:streetModule.marketBuyRegistry,
+  useItem:streetModule.useItem,
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
@@ -96,8 +102,10 @@ function state(){
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
+    useOffers:streetModule.listUseOffers(world),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
-      '來源 Registry 全商品市場進貨','原版展示架 #10 上架','來源自然販售／時間快轉'],
+      '來源 Registry 全商品市場進貨','已審閱 #79／#14 共用 USE／製作',
+      '原版展示架 #10 上架','來源自然販售／時間快轉'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
@@ -159,6 +167,37 @@ function sampleOriginalPlus(world,timespanSeconds){
     throw Error('來源供貨拒絕：'+(probe.details?.reason??probe.code));
   }
   throw Error('無法配對原版 PLUS 隨機抽樣消耗次序');
+}
+// HTTP NEVER accepts randomDraws from a player. These source-reviewed
+// samples are command/revision-scoped; deterministic E2E cases match the
+// original frozen Perl probes and are selected ONLY by a local test env var.
+function sampleSourceUse(world,{itemId,useId,requestedCount}){
+  const rule=streetModule.useItem.getRule(itemId,useId);
+  if(!rule?.beforeCallback)return [];
+  const testMode=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1';
+  let draws;
+  if(testMode){
+    const scenario=process.env.AKIMONO_E2E_USE_SCENARIO??'mixed';
+    const mixed=Array.from({length:5},
+      ()=>[0,0,...Array(8).fill(999999)]).flat();
+    const gaussian=Array(10).fill(0);
+    const cases={
+      mixed:[999999,...mixed,999999],
+      'mixed-loss':[999999,...mixed,0],
+      'zero-loss':[999999,...Array(50).fill(999999),0],
+      doubled:[0,...gaussian,999999],
+      'doubled-loss':[0,...gaussian,0],
+      boundary:[100000,...gaussian,100000],
+    };
+    draws=cases[scenario];
+    if(!draws)throw Error('不支援的來源 E2E 亂數測試情境');
+  }else{
+    draws=sourceCommandDraws({world,kind:'use-item',
+      args:{shopId:1,itemId,useId,requestedCount},count:52});
+  }
+  // Original funcb uses <=100/1000 and runs BEFORE MakeAmount. It is
+  // followed by five 10-draw groups OR five 2-draw groups, then lostbook.
+  return draws.slice(0,draws[0]<=100000?12:52);
 }
 function sampleSourceTime(world,minutes){
   // One shared source draw stream: natural sales followed by 59 original PLUS.
@@ -273,6 +312,27 @@ async function api(req,res,url){
         marketShelf:commandNumber(body.marketShelf,'marketShelf'),
         expectedPrice:commandNumber(body.expectedPrice,'expectedPrice',1),
       });
+      break;
+    }
+    case '/api/use': {
+      if(!repo)return send(res,409,{ok:false,
+        error:'請先初始化來源世界',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      if(Object.keys(body).length!==fields.length||
+         fields.some(key=>!Object.hasOwn(body,key)))
+        throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
+      const expectedRevision=ensureRevision(body);
+      const itemId=commandNumber(body.itemId,'itemId',1);
+      const useId=commandNumber(body.useId,'useId');
+      const requestedCount=commandNumber(body.requestedCount,'requestedCount',1);
+      const world=repo.read();
+      if(world.revision!==expectedRevision)
+        return send(res,409,{ok:false,code:'REVISION_CONFLICT',
+          error:'REVISION_CONFLICT',state:state()});
+      const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
+      result=commit({kind:'use-item',expectedRevision,
+        shopId:1,itemId,useId,requestedCount,
+        ...(randomDraws.length?{randomDraws}:{})});
       break;
     }
     case '/api/showcase': {
