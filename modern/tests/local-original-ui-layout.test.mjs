@@ -151,24 +151,26 @@ test('shop overview and shelf restore original compact data tables without dupli
   for(const header of ['架號','商品名稱','售價','標準價格','庫存',
     '本期售出','前期售出','操作'])
     assert.ok(shop.includes('<th>'+header+'</th>'),'original shelf column '+header);
-  for(const id of ['showcase','shop-shelf-price','shop-shelf-base-price',
-    'shop-shelf-stock','shop-shelf-today','shop-shelf-yesterday'])
-    assert.ok(shop.includes('id="'+id+'"'),'shelf data cell '+id);
+  assert.match(shop,/id="showcase-shelves"/);
+  assert.match(script,/shop\.showcase\[index\]/);
+  assert.match(script,/shop\.price\[index\]/);
+  assert.match(script,/shop\.showcasecount/);
+  assert.match(html,/id="showcase-shelf"/);
   assert.match(shop,/<table class="shop-turnover-table"/);
-  assert.match(shop,/id="shop-remove-showcase"/);
-  assert.match(shop,/id="shop-remove-time">行動時間：—/);
-  assert.match(script,/text\('shop-remove-time'/);
+  assert.match(shop,/id="showcase-shelves"/);
+  assert.match(script,/dataset\.shelfAction=hasItem\?'remove':'open'/);
+  assert.match(script,/time\.textContent='行動時間：'/);
   assert.match(html,/<th>行動時間<\/th><th>購買<\/th>/);
-  assert.match(script,/每次交易 '\+conciseTimeText\(offer\.timeSeconds\)/);
-  assert.match(script,/\$\('shop-remove-showcase'\)\.addEventListener\('click'/);
-  assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100/);
+  assert.match(script,/cell\(Number\.isSafeInteger\(offer\.timeSeconds\)\?\s*conciseTimeText\(offer\.timeSeconds\):'—'\)/);
+  assert.match(script,/\$\('showcase-shelves'\)\.addEventListener\('click'/);
+  assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100,shelf/);
   assert.doesNotMatch(shop,/data-go-tab=/,
     'top navigation replaces redundant in-shop links');
   assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
   assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
-  assert.match(script,/text\('shop-shelf-price',hasShelf\?money\(shop\.price\[0\]\)/);
-  assert.match(script,/text\('shop-shelf-today',hasShelf\?number\(shop\.itemtoday\?\.\[shelfId\]\?\?0\)/);
+  assert.match(script,/money\(shop\.price\[index\]\)/);
+  assert.match(script,/number\(shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
 });
 
 
@@ -230,6 +232,19 @@ test('raw EXP and popularity source internals remain developer-only while action
   assert.match(script,/dev\.textContent=Number\.isSafeInteger\(raw\)/);
   assert.match(script,/缺少材料 ID #/);
   assert.match(script,/本次預估行動時間：/);
-  assert.match(html,/id="shop-remove-time"/);
+  assert.match(script,/dataset\.shelfIndex=String\(index\)/);
   assert.match(html,/id="market-offers"/);
+});
+
+test('bottom return controls and discard stay in the player workflow',()=>{
+  const item=html.slice(html.indexOf('id="tab-item"'),html.indexOf('id="tab-use"'));
+  const use=html.slice(html.indexOf('id="tab-use"'),html.indexOf('id="tab-use-result"'));
+  const result=html.slice(html.indexOf('id="tab-use-result"'),html.indexOf('id="tab-balance"'));
+  assert.ok(item.indexOf('id="back-to-stock"')>item.indexOf('id="use-offers"'));
+  assert.ok(use.indexOf('id="back-to-item"')>use.indexOf('id="use-estimated-time"'));
+  assert.ok(result.indexOf('id="result-back-to-item"')>
+    result.indexOf('id="use-result-message"'));
+  assert.match(item,/id="discard-form"/);
+  assert.match(script,/call\('\/api\/discard'/);
+  assert.match(css,/\.back-row\{display:flex;justify-content:center/);
 });

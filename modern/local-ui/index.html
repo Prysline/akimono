@@ -104,12 +104,7 @@
       <h3 class="sub-title">展示架</h3>
       <div class="table-scroll"><table class="shelf-table">
         <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th><th>操作</th></tr></thead>
-        <tbody><tr>
-          <td>第 1 架</td><td id="showcase">目前空架</td>
-          <td id="shop-shelf-price">—</td><td id="shop-shelf-base-price">—</td>
-          <td id="shop-shelf-stock">—</td><td id="shop-shelf-today">—</td><td id="shop-shelf-yesterday">—</td>
-          <td><button type="button" id="shop-remove-showcase" class="secondary" disabled>下架</button><small class="action-time" id="shop-remove-time">行動時間：—</small></td>
-        </tr></tbody>
+        <tbody id="showcase-shelves"><tr><td colspan="8">尚未開店</td></tr></tbody>
       </table></div>
       <p class="shelf-remove-note">下架後商品仍保留在倉庫。</p>
       <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
@@ -191,7 +186,6 @@
     </section>
 
     <section id="tab-item" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
       <h2 class="section-title">商品明細</h2>
       <h3 id="item-detail-name" class="sub-title">請從倉庫選擇商品</h3>
       <table class="item-detail-table"><tbody>
@@ -205,7 +199,10 @@
       </tbody></table>
       <form id="showcase-form" class="shelf-form">
         <fieldset>
-          <legend>展示架設定｜第 1 架</legend>
+          <legend>展示架設定</legend>
+          <label>架號
+            <select id="showcase-shelf" aria-label="選擇展示架"><option value="0">第 1 架</option></select>
+          </label>
           <label>商品
             <select id="shelf-item"><option value="0">清空展示架</option></select>
           </label>
@@ -214,6 +211,16 @@
         </fieldset>
         <p class="shelf-time-note">調整或清空展示架均消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
       </form>
+      <div class="discard-section">
+        <h3 class="sub-title">丟棄商品</h3>
+        <form id="discard-form" class="inline-form">
+          <label>丟棄數量
+            <input type="number" id="discard-count" min="1" step="1" value="1" required>
+          </label>
+          <button type="submit" id="discard-submit" class="secondary">丟棄</button>
+        </form>
+        <p id="discard-note" class="muted">丟棄不消耗行動時間；丟棄後無法復原。</p>
+      </div>
       <div id="use-section" class="source-use-section">
         <h3 class="sub-title">商品使用／製作</h3>
         <ul id="use-offers" class="use-action-list">
@@ -221,10 +228,10 @@
         </ul>
         <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
       </div>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
     </section>
 
     <section id="tab-use" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
       <h2 class="section-title">商品使用／製作</h2>
       <h3 class="sub-title" id="use-detail-name">選擇操作</h3>
       <table class="use-detail-table"><tbody>
@@ -245,10 +252,10 @@
       </form>
       <p id="use-estimated-time" class="use-estimated-time">本次預估行動時間：—</p>
       <p class="muted use-eligibility" id="use-detail-note" role="status"></p>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
     </section>
 
     <section id="tab-use-result" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
       <h2 class="section-title">操作結果</h2>
       <h3 class="sub-title" id="use-result-name">—</h3>
       <table class="use-detail-table"><tbody>
@@ -259,6 +266,7 @@
         <tr><th scope="row">獲得商品</th><td id="use-result-acquired">—</td></tr>
       </tbody></table>
       <p id="use-result-message" class="use-result-message" role="status"></p>
+      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
     </section>
 
     <section id="tab-balance" class="section pane" hidden>
