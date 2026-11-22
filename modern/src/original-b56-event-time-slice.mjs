@@ -4,6 +4,8 @@
  * process-dependent Perl keys(%EVENT) order. Unsupported starts abort CAS.
  */
 import {B41_SOURCE,projectR3PreEventTurn} from './original-b41-playable-sale.mjs';
+import {R4_SORTED_PRE_EVENT_SOURCE,projectR4SortedPreEventTurn}
+  from './original-r4-sorted-pre-event.mjs';
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
 import {B55_SOURCE,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
@@ -141,7 +143,7 @@ export function projectB56EventSlice({
   reviewedLoto=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,
   reviewedB62Map=null,reviewedB63Map=null,shopId,minutes,
-  saleDraws,eventDraws,eventHashOrderFixture,
+  saleDraws,eventDraws,eventHashOrderFixture,r4SortReview=null,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
      reviewed.b41!==reviewedB41?.source||
@@ -189,12 +191,20 @@ export function projectB56EventSlice({
     fail('exact bounded source event draws required');
   // R3's standalone pre-EVENT source stage NEVER overwrites the original
   // incoming period. This fixture supplies its own reviewed EVENT successor.
-  const sale=projectR3PreEventTurn({
+  // R4 opt-in: execute reviewed SortDT at its actual position before PLUS.
+  // Original 17-key hash order is still a caller-supplied fixture.
+  if(r4SortReview!==null&&
+     r4SortReview.source!==R4_SORTED_PRE_EVENT_SOURCE)
+    fail('unreviewed R4 SortDT source');
+  const beforeEvent={
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
     reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
     reviewedB62Map,reviewedB63Map,reviewedEventTimeSlice:true,
-  });
+  };
+  const sale=r4SortReview===null?
+    projectR3PreEventTurn(beforeEvent):
+    projectR4SortedPreEventTurn({...beforeEvent,reviewedR4:r4SortReview});
   let shop=sale.shops[0],used=0;
   const take=()=>{
     if(used>=eventDraws.length)fail('missing original EVENT random draw');
