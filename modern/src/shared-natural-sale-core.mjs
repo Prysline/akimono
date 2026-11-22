@@ -10,7 +10,7 @@ const int=(v,s,min=0)=>{
 };
 
 /** Frozen inc-turn.cgi lines 39–196; market.cgi::GetMarketStatus.
- * Supported scope: one store, one first-position showcase at original price.
+ * Supported scope: one store, one first-position source percentage price.
  * No ITEM-specific algorithm exists here.
  */
 export function projectSharedNaturalSale({
@@ -29,10 +29,12 @@ export function projectSharedNaturalSale({
      randomDraws.some(n=>!Number.isSafeInteger(n)||n<0||n>=1000000))
     fail('invalid source shop or draws');
   const displayed=shop.showcase[0],id=rule?.itemId??0;
+  const listedPrice=shop.price[0];
   if((displayed===0&&rule!==null)||
      (displayed!==0&&(!rule||id!==displayed||
-        rule.unitPrice!==shop.price[0])))
-    fail('displayed ITEM not source reviewed at original price');
+       !Number.isSafeInteger(listedPrice)||listedPrice<1||
+       !Number.isSafeInteger(rule.unitPrice)||rule.unitPrice<1)))
+    fail('displayed ITEM price not source reviewed');
   const popular=popularOverride??rule?.popularSeconds??null;
   if(rule!==null&&(
      !Number.isSafeInteger(id)||id<1||id>79||
@@ -52,8 +54,18 @@ export function projectSharedNaturalSale({
   const temprank=rankBefore+(displayed!==0?1000:0);
   let sold=0,rankUp=0,rankDown=0;
   if(rule!==null&&item[id-1]>0){
-    // Original price/display price=1, buypeoplebase=1, single shop rank ratio=1.
-    const buyerPool=population*saleSpeed/popular*spanSeconds/86400/2;
+    // Frozen inc-turn: one-shop buypeoplebase=(standard/listed)^4,
+    // visitor share = buypeoplebase/(buypeoplebase+1), then the
+    // separately computed overpricing attractiveness penalizes rand().
+    const priceRatio=rule.unitPrice/listedPrice;
+    const pricedDemand=priceRatio**4;
+    const visitors=population*saleSpeed/popular*spanSeconds/86400*
+      pricedDemand/(pricedDemand+1);
+    let saleRank=priceRatio;
+    if(saleRank<1)saleRank/=(listedPrice-rule.unitPrice)/10000;
+    const buyerPool=visitors*(saleRank>1?1:saleRank);
+    if(!Number.isFinite(buyerPool)||buyerPool<0)
+      fail('unsafe original price demand');
     let sale=buyerPool>0?rand()*buyerPool:0;
     if(sale<1&&sale>0&&rand()*(1/sale)<1)sale=1;
     sale=Math.trunc(sale);
@@ -66,7 +78,7 @@ export function projectSharedNaturalSale({
       const rankUpMulti=((10-rankBefore/1000)**2)/5;
       rankUp=Math.min(rand()*(rankUpMulti/uppoint*
         rule.point/10*sold),spanSeconds/3);
-      const proceeds=int(sold*rule.unitPrice,'proceeds');
+      const proceeds=int(sold*listedPrice,'proceeds');
       money=int(money+proceeds,'money after sale');
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
@@ -101,6 +113,6 @@ export function projectSharedNaturalSale({
   trush=int(trush+Math.trunc(accrual),'integer upkeep waste');
   return {shop:{
       ...shop,item,itemtoday,money,trush,saletoday,rank,temprank,costtoday,
-      _sale_count_:sold?{[id]:{count:sold,price:sold*rule.unitPrice}}:{},
+      _sale_count_:sold?{[id]:{count:sold,price:sold*listedPrice}}:{},
     },sold,drawsUsed:used};
 }

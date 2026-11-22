@@ -182,3 +182,44 @@ test('R3 executable frozen original ITEM FUNCTURN/FUNCSALE dispatch matches no-o
   assert.equal(wouldAffect.rankAfter,wouldAffect.rankBefore+1);
   assert.equal(wouldNotAffect.rankAfter,wouldNotAffect.rankBefore);
 });
+
+const priceOracle=JSON.parse(execFileSync('perl',
+  ['original-r3-price-sale-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+test('R3 frozen original natural-sale oracle has 24 price/ITEM cases',()=>{
+  assert.equal(priceOracle.cases.length,24);
+  assert.deepEqual([...new Set(priceOracle.cases.map(x=>x.percent))],
+    [50,100,150,200]);
+});
+for(const sourcePrice of priceOracle.cases){
+  test('R3 common source price '+sourcePrice.percent+'% ITEM #'+
+    sourcePrice.itemId+' matches frozen Perl',()=>{
+    const id=sourcePrice.itemId,stock=Array(79).fill(0);
+    stock[id-1]=sourcePrice.initialStock;stock[62]=1;stock[78]=5;
+    const shop={id:1,status:1,rank:5010,money:100000,item:stock,
+      showcasecount:1,showcase:[id],price:[sourcePrice.listedPrice],
+      trush:0,saletoday:0,taxtoday:0,costtoday:0,
+      itemtoday:{},itemyesterday:{},taxmode:0};
+    const prev=JSON.stringify(shop);
+    const rule=street.reviewedB41.saleRules[id];
+    assert.equal(rule.unitPrice,sourcePrice.standardPrice);
+    const result=projectSharedNaturalSale({
+      shop,rule,upkeepCosts:street.reviewedB41.upkeepCosts,
+      spanSeconds:1800,randomDraws:sourcePrice.consumedSamples,
+    });
+    assert.equal(JSON.stringify(shop),prev,'pure sale never mutates shop');
+    assert.equal(result.sold,sourcePrice.sold);
+    assert.equal(result.shop.item[id-1],sourcePrice.stockAfter);
+    assert.equal(result.shop.money,sourcePrice.money);
+    assert.equal(result.shop.rank,sourcePrice.rank);
+    assert.equal(result.shop.trush,sourcePrice.trush);
+    assert.equal(result.shop.saletoday,sourcePrice.saletoday);
+    assert.equal(result.shop.taxtoday,sourcePrice.taxtoday);
+    assert.equal(result.shop.temprank,sourcePrice.temprank);
+    assert.ok(Math.abs(result.shop.costtoday-sourcePrice.costtoday)<1e-9);
+    assert.equal(result.shop._sale_count_[id]?.price??0,
+      sourcePrice.salePriceRecord);
+    assert.ok(result.drawsUsed<=sourcePrice.randomDrawsUsed);
+  });
+}
