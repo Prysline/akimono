@@ -173,7 +173,13 @@ export function projectB41Sale({
         Object.keys(shop.exp).some(k=>k!=='14'||shop.exp[k]!==20)))))||
     (reviewed.ticketSourceReviewed&&shop.item[10]>50)||
     shop.paytoday<5000||
-    shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0||
+    // Earlier fixed-price receipts were multiples of 1000/5000 G.
+    // A genuine Registry-compiled BASE wholesale #14 receipt is not.
+    // GameCore has already verified its exact source price at CAS;
+    // retaining the fixed-only modulus when B62 is reviewed would
+    // reject a real original map BUY -> USE -> sword sale sequence.
+    (!reviewedB62Map&&
+      shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0)||
     !Number.isSafeInteger(shop.money)||shop.money<0||
     !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000||
     !Number.isSafeInteger(shop.trush??0)|| (shop.trush??0)<0||
