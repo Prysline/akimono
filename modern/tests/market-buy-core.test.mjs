@@ -172,7 +172,7 @@ test('R2 sequential common purchases use the same memory CAS adapter and preserv
   assert.equal(end.shops[0].time,first.shops[0].time+timeSpent);
   assert.equal(end.market.sourceWriteShape,'whole-store-79');
   assert.equal(end.market.originalWholesaleCsv.split(',').length,79);
-  const stale=apply(end,{...buyCommand(first,10,mappings[0][2](first)),
+  const stale=apply(end,{...buyCommand(first,10,mappings[0][1](first)),
     expectedRevision:first.revision});
   assert.equal(stale.code,'REVISION_CONFLICT');
   assert.deepEqual(stale.world,end);
