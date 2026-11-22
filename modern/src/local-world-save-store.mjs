@@ -267,5 +267,41 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       fail('post-save integrity re-read failed');
     return Object.freeze({generation:nextGen,revision:world.revision});
   }
-  return Object.freeze({status,load,save});
+  // Local test-only deletion. Never remove the save directory: it can be
+  // configured by AKIMONO_SAVE_DIR and may contain unrelated user files.
+  function clear({expectedGeneration}){
+    safeInt(expectedGeneration,'expected save generation');
+    const {latest}=scan();
+    if(expectedGeneration!==(latest?.generation??0))
+      fail('存檔世代衝突，請重新整理頁面後再確認重置');
+    // Preflight BOTH slots before changing anything. Refuse symlinks,
+    // directories and special files even if their JSON appears corrupted.
+    const removable=[];
+    for(const name of slotNames){
+      const filename=sourceFile(dir,name);
+      let st;
+      try{st=fs.lstatSync(filename);}
+      catch(error){
+        if(error?.code==='ENOENT')continue;
+        throw error;
+      }
+      if(!st.isFile()||st.isSymbolicLink())
+        fail('拒絕刪除非一般檔案的存檔槽位：'+name);
+      removable.push(filename);
+    }
+    for(const filename of removable)fs.unlinkSync(filename);
+    // Best-effort directory durability on Windows, consistent with save().
+    if(removable.length&&process.platform!=='win32'){
+      const folderFd=fs.openSync(dir,c.O_RDONLY);
+      try{fs.fsyncSync(folderFd);}finally{fs.closeSync(folderFd);}
+    }
+    const after=scan();
+    if(after.latest||after.corrupt.length)
+      fail('重置後仍偵測到存檔，請檢查磁碟檔案');
+    return Object.freeze({
+      deletedSlots:Object.freeze(removable.map(filename=>path.basename(filename))),
+      generation:0,
+    });
+  }
+  return Object.freeze({status,load,save,clear});
 }
