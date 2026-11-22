@@ -65,7 +65,7 @@ export function reviewOriginalB62SwordMap({
     fail('source map material/need/output changed');
   for(let i=0;i<5;i++){
     const n=model.items.find(x=>x.id===mkItemIds[i]);
-    if(val(use,'get')[i].trim()!==
+    if(val(use,'get')[i].trim().split(/\s+/).join(' ')!==
        '10 '+n.name+' '+[40,35,15,6,3][i]+'%')
       fail('source original map GET reward #'+n.id);
   }
