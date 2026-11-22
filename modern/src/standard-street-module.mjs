@@ -5,13 +5,15 @@
  * R2-A: common market-buy accounting runs in market-buy-core.mjs, NOT here.
  * Standard Street @@FUNCBUY voucher threshold is source-reviewed; buyers
  * above the threshold fail closed until its actual effect is implemented.
- * R2-B: item registry still has a #10/#11/#14 whitelist.
+ * R2-B: compiled ordinary market rules come from source ITEM data.
  * R2-C: legacy buy-market-item-* actions below STILL run separate engines.
  * Original Perl is never evaluated by live Node game commands.
  * Full generic USE, natural sales, period settlement, auth, and CGI are NOT
  * established by R2-A; B-xx reviewed portions remain source-bounded.
  */
 import {parseDsl} from './parse-dsl.mjs';
+import {compileStandardStreetMarketBuyRegistry}
+  from './standard-street-market-buy-registry.mjs';
 import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
@@ -273,46 +275,22 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       minTotal:500000,
     });
   }
-  // R2-A shared purchase formula in GameCore. R2-B still needs the item
-  // registry and R2-C must remove the legacy buy-market-item-* paths.
-  const sharedBuyRules=Object.freeze([
-    reviewedMarketBuy10?{
-      itemId:10,shopIndex:9,wholesaleIndex:9,
-      unitPrice:reviewedMarketBuy10.unitPrice,
-      stockLimit:reviewedMarketBuy10.stockLimit,
-      marketTimeSeconds:reviewedMarketBuy10.marketTimeSeconds,
-      source:reviewedMarketBuy10.source,scope:reviewedMarketBuy10.scope,
-      buyCallback:null,
-    }:null,
-    reviewedMarketBuy11?{
-      itemId:11,shopIndex:10,wholesaleIndex:10,
-      unitPrice:reviewedMarketBuy11.unitPrice,
-      stockLimit:reviewedMarketBuy11.stockLimit,
-      marketTimeSeconds:reviewedMarketBuy11.marketTimeSeconds,
-      source:reviewedMarketBuy11.source,scope:reviewedMarketBuy11.scope,
-      buyCallback:null,
-    }:null,
-    reviewedB62Map?{
-      itemId:14,shopIndex:13,wholesaleIndex:13,
-      unitPrice:reviewedB62Map.mapPrice,
-      stockLimit:reviewedB62Map.mapStockLimit,
-      marketTimeSeconds:reviewedB62Map.mapBuyTimeSeconds,
-      source:reviewedB62Map.source,scope:reviewedB62Map.scope,
-      buyCallback:null,
-    }:null,
-  ].filter(Boolean).map(rule=>Object.freeze(rule)));
+  // R2-B: compile actual source ITEM ordering, LIMIT, PRICE, callback
+  // presence and special BASE classifications through one registry.
+  // The #14 historical oracle's incomplete BASE data is explicitly
+  // surfaced as a legacy compatibility boundary, not a new item whitelist.
+  const buyRegistry=reviewedMarketBuy10?
+    compileStandardStreetMarketBuyRegistry({
+      itemDsl,rebelDsl,model,compiled:giftMap,
+      compilerSource:originalCompilerSource,
+      buySource:originalBuySource,wholeSource:originalWholeSource,
+      itemSource:originalBuyItemSource,legacyMapReview:reviewedB62Map,
+    }):null;
   const marketBuy=Object.freeze({
     globalBuyCallback:reviewedGlobalBuyCallback,
-    order:Object.freeze(model.items.map(item=>Object.freeze({
-      itemId:item.id,wholesaleIndex:item.id-1,
-    }))),
-    getRule(itemId){
-      const rule=sharedBuyRules.find(row=>row.itemId===itemId);
-      // Do not infer missing callback support from an arbitrary DSL item.
-      if(rule&&model.items.find(row=>row.id===itemId)?.funcbRaw!==null)
-        bad('original market item callback has not been reviewed');
-      return rule??null;
-    },
+    order:buyRegistry?.order??Object.freeze([]),
+    getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
+    describe(itemId){return buyRegistry?.describe(itemId)??null;},
     validateWorld(world){
       return world?.events===null&&world.shops?.length===1&&
         validateSourceSparseMarket(world.market);
@@ -414,7 +392,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB62Map,
     reviewedB63Map,
     reviewedB56,
-    marketBuy:reviewedMarketBuy10?marketBuy:null,
+    marketBuy:buyRegistry?marketBuy:null,
+    marketBuyRegistry:buyRegistry,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
