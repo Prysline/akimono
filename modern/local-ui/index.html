@@ -141,19 +141,12 @@
 
     <section id="tab-market" class="section pane" hidden>
       <h2 class="section-title">市場</h2>
-      <p class="help-text">依原版市場餘量、持有上限、現金與行動時間成交。缺貨時仍可送出，以確認原版拒絕。</p>
+      <p class="help-text">所有原版商品皆由同一 Registry 提供原始排序、即時價格、批發數量與來源審閱狀態；不支援的效果不會自動執行。超過現貨／現金可能自動縮減交易量，縮減至 0 即拒絕。</p>
       <table class="market-table">
-        <thead><tr><th>商品</th><th>價格</th><th>市場存量</th><th>持有／上限</th><th>買入數</th><th>購入</th></tr></thead>
-        <tbody><tr>
-          <td><strong>書本寫作工具</strong><span class="item-no">#10</span></td>
-          <td id="market-price">—</td>
-          <td id="market-count">—</td>
-          <td id="owned">—</td>
-          <td><input id="quantity" type="number" min="1" step="1" value="1" aria-label="購買數量"></td>
-          <td><button id="buy" class="primary" type="button">購買</button></td>
-        </tr></tbody>
+        <thead><tr><th>來源商品</th><th>實際市場價格</th><th>市場存量</th><th>持有／上限</th><th>買入數</th><th>購入</th></tr></thead>
+        <tbody id="market-offers"><tr><td colspan="6">請先初始化來源市場</td></tr></tbody>
       </table>
-      <p class="muted">超過現貨或現金時，原版可能自動縮減成交量；縮減為 0 則拒絕。其他商品尚未開放。</p>
+      <p class="muted" id="market-boundary">只有來源編譯與回呼審閱完成的商品可在此成交。</p>
       <details class="supply-details">
         <summary>開發測試：原版市場供貨子步驟</summary>
         <div class="supply">
@@ -215,7 +208,7 @@
         <dt>市場來源</dt><dd><output id="market-source">尚未初始化</output></dd>
       </dl>
     </details>
-    <footer>商人物語・標準街｜本機 127.0.0.1 測試。目前可真買入 #10、上架、售出後再進貨、繼續販售及手動磁碟存讀檔；尚未開放完整決算、登入與多人。未使用原版圖片或音樂。</footer>
+    <footer>商人物語・標準街｜本機 127.0.0.1 測試。來源編譯商品由同一市場交易核心買入，可進行已審閱展示、營業時間與手動雙代磁碟存讀檔；未審閱回呼／事件會拒絕，完整決算、登入與多人尚未開放。未使用原版圖片或音樂。</footer>
   </main>
 </body>
 </html>
