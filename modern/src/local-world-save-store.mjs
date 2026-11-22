@@ -87,7 +87,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null){
          Object.keys(shop.exp).length!==1||
          shop.exp['14']!==20))||
        shop.item[10]>50||
-       ![0,10,40].includes(shop.showcase?.[0])||
+       (![0,10,40].includes(shop.showcase?.[0])&&
+         !extraShowcaseValid())||
        shop.showcase?.length!==1||shop.price?.length!==1||
        (shop.showcase[0]===10&&shop.price[0]!==5000)||
        (shop.showcase[0]===40&&shop.price[0]!==1200)||
