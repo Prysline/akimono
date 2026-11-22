@@ -201,9 +201,10 @@ function showState(s){
       '來源新建世界：目前事件清單為空（尚未開始事件時間片）')+
     (eventDefinitionLabel?' '+eventDefinitionLabel:''));
   text('store-name',shop?.shopname??'未開店');
-  text('owner-name',shop?.name??'尚未開店');
-  text('shop-owner-note',shop?'店主／'+shop.name:'尚未建立商店');
-  text('shop-title',shop?shop.shopname+'・店內':'店內');
+  text('owner-name',shop?.name??'—');
+  text('shop-title','店內');
+  text('shop-info-name',shop?.shopname??'尚未開店');
+  text('shop-info-money',money(shop?.money));
   text('money',money(shop?.money));
   text('rank',number(s.shopSummary?.rankPosition));
   text('shop-points',number(s.shopSummary?.point));
@@ -212,11 +213,19 @@ function showState(s){
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
       timeText(Math.min(actionSeconds,72*3600));
   text('time',actionTime);
+  text('shop-info-time',actionTime);
+  text('shop-info-popularity',Number.isSafeInteger(shop?.rank)?
+    Math.trunc(shop.rank/100)+'%':'—');
   const shelfId=shop?.showcase?.[0]??0;
-  const shelfName=catalog.find(row=>row.itemId===shelfId)?.name??'商品 #'+shelfId;
-  text('showcase',!shop?'尚未開店':
-    shelfId===0?'目前空架':shelfName+'｜售價 '+money(shop.price[0])+
-      '｜持有 '+number(shop.item[shelfId-1]));
+  const hasShelf=Boolean(shop&&shelfId>0);
+  const shelfItem=hasShelf?catalog.find(row=>row.itemId===shelfId):null;
+  text('showcase',hasShelf?shelfItem?.name??'商品 #'+shelfId:'目前空架');
+  text('shop-shelf-price',hasShelf?money(shop.price[0]):'—');
+  text('shop-shelf-base-price',hasShelf?money(shelfItem?.basePrice):'—');
+  text('shop-shelf-stock',hasShelf?number(shop.item[shelfId-1]):'—');
+  text('shop-shelf-today',hasShelf?number(shop.itemtoday?.[shelfId]??0):'—');
+  text('shop-shelf-yesterday',hasShelf&&w?.period?.settledCount>0?
+    number(shop.itemyesterday?.[shelfId]??0):'—');
   text('paid',money(shop?.paytoday));
   text('sales',money(shop?.saletoday));
   text('shop-paid',money(shop?.paytoday));
