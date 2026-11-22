@@ -5,6 +5,8 @@
  * Unknown source effects are never treated as no-ops.
  */
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
+import {originalUseTimeSeconds,originalUseExperience}
+  from './shared-use-experience.mjs';
 
 export const USE_ITEM_COMMAND='use-item';
 const fail=reason=>{throw new RangeError('R2-D shared USE: '+reason);};
@@ -76,17 +78,19 @@ export function projectSharedUseItem({world,command,useItem}){
   for(const key of ['money','paytoday','time','rank'])int(shop[key],key);
   if(rule.singleUseOnly&&command.requestedCount!==1)
     fail('unreviewed original multiple USE');
-  const previousExp=shop.exp===undefined?0:
-    (()=>{if(!shop.exp||typeof shop.exp!=='object'||
-      Array.isArray(shop.exp))fail('unreviewed EXP record');
-      for(const [key,value] of Object.entries(shop.exp)){
-        if(!/^[1-9]\d*$/.test(key))fail('EXP key');
-        int(value,'EXP amount');
-      }
-      return shop.exp[String(rule.itemId)]??0;})();
-  if(rule.firstUseOnly&&
-     (previousExp!==0||shop.exp&&Object.keys(shop.exp).length>0))
-    fail('second USE / trained original GetItemUseTime unreviewed');
+  const expRecord=shop.exp??{};
+  if(!expRecord||typeof expRecord!=='object'||Array.isArray(expRecord))
+    fail('unreviewed EXP record');
+  for(const [key,value] of Object.entries(expRecord)){
+    if(!/^[1-9]\d*$/.test(key)||Number(key)>rule.limits.length)
+      fail('EXP item key');
+    if(int(value,'EXP amount')>1000)fail('EXP item cap');
+  }
+  const previousExp=expRecord[String(rule.itemId)]??0;
+  if(rule.firstUseOnly&&previousExp!==0)
+    fail('first-use-only reviewed rule');
+  originalUseTimeSeconds({time:rule.time,exptime:rule.exptime,
+    experience:previousExp});
   if(rule.requiresOwnedItem){
     if(shop.item[rule.itemId-1]<1||
        shop.item[rule.itemId-1]>rule.ownedMaximum)
@@ -182,9 +186,14 @@ export function projectSharedUseItem({world,command,useItem}){
     ...shop,item:stocks,money:original.money,
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
+  let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
-    const exp=int(previousExp+rule.experienceCallback.points,'EXP total');
-    nextShop.exp={...(shop.exp??{}),[rule.itemId]:exp};
+    const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
+      points:rule.experienceCallback.points,count:original.count,
+      limit:3600});
+    nextShop.exp=next.exp;
+    experienceGain=next.gained;
+    experienceReductions=next.reductions;
   }
   const nextShops=world.shops.map((row,i)=>i===shopIndex?nextShop:
     {...row,item:[...original.shops[i]]});
@@ -204,7 +213,8 @@ export function projectSharedUseItem({world,command,useItem}){
       sourceUseItemId:rule.itemId,useNo:rule.useId,
       requestedCount:command.requestedCount,effectiveCount:original.count,
       moneySpent:original.moneySpent,timeSpentSeconds:original.timeSpentSeconds,
-      experienceGain:rule.experienceCallback?.points??0,
+      experienceGain,experienceReductions,
+      useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
       originalAddItem:added,
       originalAddMsg:added.map(([id])=>
