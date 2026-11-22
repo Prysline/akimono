@@ -75,7 +75,8 @@ die 'B-60 original NOWFUNC source body not found' unless defined $body;
 my $compiledBody=$body;
 $compiledBody=~s/^\s+//mg;
 $compiledBody=~s/\s+$//mg;
-my($fh,$file)=tempfile('b60-event-now-XXXX',SUFFIX=>'.pl',UNLINK=>1);
+my($fh,$file)=tempfile('b60-event-now-XXXX',
+  DIR=>File::Spec->tmpdir(),SUFFIX=>'.pl',UNLINK=>1);
 $B60_NOW_PATH=$file;
 binmode $fh,':encoding(UTF-8)';
 print {$fh} "use utf8;\npackage event;\nsub _local_now {\n".
