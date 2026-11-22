@@ -76,7 +76,7 @@ export function reviewOriginalB60HappyEvent({
      body.some((line,i)=>line!==expectedBody[i]))
     fail('source complete Perl festival NOWFUNC body changed');
   for(const [source,literal]of [
-    [compilerSource,"$event->{nowfunc},$event->{localfuncnow}"],
+    [compilerSource,"$g_event->{nowfunc},$g_event->{localfuncnow}"],
     [compilerSource,"$ITEM_DIR/event-n/$event->{code}$FILE_EXT"],
     [readSource,'foreach(keys(%DTevent)){require(GetPath($ITEM_DIR,"event",$_));}'],
     [turnSource,'@event::DT=@DT;'],
