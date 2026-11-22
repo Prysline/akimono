@@ -17,6 +17,9 @@ import {B59_IRON_SOURCE,isReviewedB59EventPeriod,isB59IronActive}
   from './original-b59-iron-event-lifecycle.mjs';
 import {B60_HAPPY_SOURCE,B60_HAPPY_CODE,isReviewedB60HappyPeriod}
   from './original-b60-happy-event-nowfunc.mjs';
+import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
+  projectOriginalSwordDemand}
+  from './original-b61-sword-demand-event.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
@@ -27,7 +30,7 @@ const safe=(x,label,min=0)=>{
 };
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   configSource,reviewedMarket11=null,reviewedB59Iron=null,
-  reviewedB60Happy=null}){
+  reviewedB60Happy=null,reviewedB61Sword=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -57,8 +60,14 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB60Happy.startProba!==100||
      reviewedB60Happy.rankCap!==10000))
     bad('source reviewed B-60 happy NOWFUNC changed');
+  if(reviewedB61Sword!==null&&(
+     reviewedB61Sword.source!==B61_SWORD_SOURCE||
+     reviewedB61Sword.startProba!==100||
+     reviewedB61Sword.swordItems?.length!==5))
+    bad('source reviewed B-61 sword popular/2 changed');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    swordEventSource:reviewedB61Sword?.source??null,
     happyEventSource:reviewedB60Happy?.source??null,
     ironEventSource:reviewedB59Iron?.source??null,
     ticketSourceReviewed:reviewedMarket11!==null,
@@ -69,7 +78,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
   reviewedB59Iron=null,reviewedB60Happy=null,
-  reviewedEventTimeSlice=false,
+  reviewedB61Sword=null,reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -85,7 +94,8 @@ export function projectB41Sale({
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
   if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
-     reviewed.happyEventSource!==(reviewedB60Happy?.source??null))
+     reviewed.happyEventSource!==(reviewedB60Happy?.source??null)||
+     reviewed.swordEventSource!==(reviewedB61Sword?.source??null))
     bad('source durable event contracts mismatch');
   if(world.schema===PERIOD_WORLD_SCHEMA&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -95,6 +105,10 @@ export function projectB41Sale({
      })&&
      !isReviewedB60HappyPeriod({
        period:world.period,reviewed:reviewedB60Happy,
+       nowSeconds:world.nowSeconds,
+     })&&
+     !isReviewedB61SwordPeriod({
+       period:world.period,reviewed:reviewedB61Sword,
        nowSeconds:world.nowSeconds,
      }))
     bad('source-initialized city and known EVENT state required');
@@ -107,9 +121,21 @@ export function projectB41Sale({
     Object.keys(world.period.eventState):[];
   const ironEventActive=activeKeys.includes('plusup-tetu');
   const happyEventActive=activeKeys.includes(B60_HAPPY_CODE);
-  if((ironEventActive||happyEventActive)&&
+  const swordDemandEventActive=activeKeys.includes(B61_SWORD_CODE);
+  if((ironEventActive||happyEventActive||swordDemandEventActive)&&
      reviewedEventTimeSlice!==true)
     bad('known active EVENT requires fully reviewed lifecycle before advancing time');
+  // B-61 is a source-popular economic projection only. The real currently
+  // playable shelf is #10, not a sword. Never turn these potential visitors
+  // into fabricated sword inventory, money or sales.
+  const sourceSwordDemandPreview=reviewedB61Sword&&
+    world.schema===PERIOD_WORLD_SCHEMA&&
+    world.period?.eventState!==null?
+    projectOriginalSwordDemand({
+      reviewed:reviewedB61Sword,timespanSeconds:span,
+      activeAtDataRead:swordDemandEventActive,
+      population:world.period.dtPeople,saleSpeed:12,
+    }):null;
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
     shop.showcase?.length!==1||shop.price?.length!==1||
@@ -226,6 +252,8 @@ export function projectB41Sale({
       naturalSaleCount:sold,stockBefore:beforeStock,stockAfter:items[9],
       ironVeinModifierApplied:ironEventActive,
       festivalWasActiveAtDataRead:happyEventActive,
+      swordDemandWasActiveAtDataRead:swordDemandEventActive,
+      sourceSwordDemandPreview,
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
       rankBefore:shop.rank,rankAfter:rank,
