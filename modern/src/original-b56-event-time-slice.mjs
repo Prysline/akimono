@@ -23,6 +23,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,
   projectOriginalSwordExpiry}
   from './original-b61-sword-demand-event.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
+import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 export const B56_EVENT_SLICE_SOURCE='b56-reviewed-sale-plus-full-17-event-gate-fixture';
 const fail=s=>{throw new RangeError('B-56 original EVENT slice: '+s);};
@@ -38,7 +39,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
   reviewedCallbacks,reviewedSupportCallbacks=null,
   reviewedLoto=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,
-  reviewedB62Map=null}){
+  reviewedB62Map=null,reviewedB63Map=null}){
   if(reviewedB41?.source!==B41_SOURCE||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
@@ -115,6 +116,10 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
      reviewedB62Map.source!==B62_MAP_SOURCE||
      reviewedB62Map.swordItemId!==40))
     fail('B-62 original wood sword from map source review missing');
+  if(reviewedB63Map!==null&&(
+     reviewedB63Map.source!==B63_MAP_SOURCE||
+     reviewedB63Map.items?.join(',')!=='40,41,42,43,44'))
+    fail('B-63 source reviewed full sword outcomes missing');
   return Object.freeze({
     source:B56_EVENT_SLICE_SOURCE,
     eventCodes:Object.freeze(reviewedCatalog.compiled.map(e=>e.code)),
@@ -125,6 +130,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
     happy:reviewedB60Happy?.source??null,
     sword:reviewedB61Sword?.source??null,
     swordMap:reviewedB62Map?.source??null,
+    swordOutcomes:reviewedB63Map?.source??null,
     orderMode:'explicit-17-key-permutation-not-Perl-hash-order',
     publicGameplay:false,
   });
@@ -134,7 +140,7 @@ export function projectB56EventSlice({
   reviewedCatalog,reviewedCallbacks,reviewedSupportCallbacks=null,
   reviewedLoto=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,
-  reviewedB62Map=null,shopId,minutes,
+  reviewedB62Map=null,reviewedB63Map=null,shopId,minutes,
   saleDraws,eventDraws,eventHashOrderFixture,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
@@ -146,6 +152,8 @@ export function projectB56EventSlice({
      reviewed.happy!==(reviewedB60Happy?.source??null)||
      reviewed.sword!==(reviewedB61Sword?.source??null)||
      reviewed.swordMap!==(reviewedB62Map?.source??null)||
+     reviewed.swordOutcomes!==(reviewedB63Map?.source??null)||
+     (reviewedB63Map!==null&&reviewedB63Map.source!==B63_MAP_SOURCE)||
      (reviewedB62Map!==null&&reviewedB62Map.source!==B62_MAP_SOURCE)||
      (reviewedB61Sword!==null&&reviewedB61Sword.source!==B61_SWORD_SOURCE)||
      (reviewedB60Happy!==null&&reviewedB60Happy.source!==B60_HAPPY_SOURCE)||
@@ -184,7 +192,7 @@ export function projectB56EventSlice({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
     reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
-    reviewedB62Map,reviewedEventTimeSlice:true,
+    reviewedB62Map,reviewedB63Map,reviewedEventTimeSlice:true,
   });
   let shop=sale.shops[0],used=0;
   const take=()=>{
