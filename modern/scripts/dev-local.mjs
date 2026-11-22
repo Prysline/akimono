@@ -103,9 +103,20 @@ function state(){
     shop:world?.shops[0]??null,
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
     useOffers:streetModule.listUseOffers(world),
+    showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
+      .map(rule=>{
+        const shop=world?.shops?.[0]??null;
+        const owned=shop?.item?.[rule.itemId-1]??0;
+        return {itemId:rule.itemId,
+          name:streetModule.marketBuyRegistry?.describe(rule.itemId)?.itemName??
+            '商品 #'+rule.itemId,
+          unitPrice:rule.unitPrice,owned,
+          canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
+          source:rule.source};
+      }),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '來源 Registry 全商品市場進貨','已審閱 #79／#14 共用 USE／製作',
-      '原版展示架 #10 上架','來源自然販售／時間快轉'],
+      '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
@@ -338,9 +349,11 @@ async function api(req,res,url){
     case '/api/showcase': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
-      if(![0,10].includes(itemId))throw Error('僅開放來源 #10 或清空展示架');
-      if(body.priceOverride!==(itemId===10?5000:0))
-        throw Error('目前販售只審查原價 5000 G；清空展示架為 0');
+      const sourceRule=streetModule.reviewedB41?.saleRules?.[itemId]??null;
+       if(itemId!==0&&!sourceRule)
+         throw Error('僅支援已審閱的自然販售 ITEM 或清空展示架');
+       if(body.priceOverride!==(sourceRule?.unitPrice??0))
+         throw Error('展示架只接受已審閱原版 ITEM 原價');
       result=commit({kind:'edit-showcase',
         expectedRevision:ensureRevision(body),shopId:1,shelf:0,
         itemId,per:100,priceOverride:body.priceOverride});

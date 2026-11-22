@@ -177,6 +177,27 @@ function showState(s){
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
+  // Render eligible showcases from the server's source-reviewed ITEM rules.
+  // Browser submits a source price but NEVER calculates any sale or demand.
+  const shelfSelect=$('shelf-item');
+  const former=Number(shelfSelect.value);
+  const sourceShelves=s.showcaseOffers??[];
+  shelfSelect.replaceChildren();
+  const empty=document.createElement('option');
+  empty.value='0';empty.textContent='清空展示架';
+  shelfSelect.append(empty);
+  for(const offer of sourceShelves){
+    const option=document.createElement('option');
+    option.value=String(offer.itemId);
+    option.textContent='#'+offer.itemId+' '+offer.name+
+      '（原價 '+money(offer.unitPrice)+'，持有 '+offer.owned+'）';
+    option.disabled=!offer.canShow;
+    shelfSelect.append(option);
+  }
+  const preferred=sourceShelves.find(x=>x.itemId===former&&x.canShow)?former:
+    sourceShelves.find(x=>x.itemId===shop?.showcase?.[0]&&x.canShow)?.itemId??
+    sourceShelves.find(x=>x.canShow)?.itemId??0;
+  shelfSelect.value=String(preferred);
   $('set-showcase').disabled=!shop;
   for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
   $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
@@ -248,8 +269,9 @@ $('showcase-form').addEventListener('submit',async event=>{
   const itemId=Number($('shelf-item').value);
   await call('/api/showcase',{
     expectedRevision:snapshot?.world?.revision,
-    itemId,priceOverride:itemId===10?5000:0,
-  },itemId===10?'原版展示架上架 #10':'清空展示架');
+    itemId,priceOverride:itemId===0?0:
+      snapshot?.showcaseOffers?.find(x=>x.itemId===itemId)?.unitPrice,
+  },itemId===0?'清空展示架':'原版來源共用展示架上架 #'+itemId);
 });
 async function advance(minutes){
   await call('/api/advance-time',{
