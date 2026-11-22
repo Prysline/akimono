@@ -267,9 +267,9 @@ test('B-62 forbidden map callback outcomes, foreign swords, stale purchase/old C
   const world=repository.read();
   const run=(draws)=>executeMemoryCommand({
     repository,streetModule:street,
-    command:{kind:'use-original-sword-map-14',
+    command:{kind:'use-item',
       expectedRevision:world.revision,
-      shopId:1,randomDraws:draws},
+      shopId:1,itemId:14,useId:0,requestedCount:1,randomDraws:draws},
   });
   for(const modified of [
     useDraws.slice(0,-1),
@@ -289,9 +289,9 @@ test('B-62 forbidden map callback outcomes, foreign swords, stale purchase/old C
       marketShelf:quote.shelf+1,expectedPrice:quote.price}});
   assert.equal(old.ok,false);
   const stale=applyGameCommand({world,streetModule:street,
-    command:{kind:'use-original-sword-map-14',
+    command:{kind:'use-item',
       expectedRevision:world.revision+1,
-      shopId:1,randomDraws:useDraws}});
+      shopId:1,itemId:14,useId:0,requestedCount:1,randomDraws:useDraws}});
   assert.equal(stale.code,'REVISION_CONFLICT');
   assert.deepEqual(repository.read(),world);
 });
