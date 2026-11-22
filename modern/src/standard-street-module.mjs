@@ -117,6 +117,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalCompilerSource=null,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
+  originalUseSource=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
@@ -222,7 +223,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compiledCatalog:reviewedEventCatalog,model,
     }):null;
   const reviewedB62Map=reviewedMarketBuy10&&originalBuySource&&
-    originalDataReadSource?
+    originalDataReadSource&&originalUseSource?
     reviewOriginalB62SwordMap({
       itemDsl,model,compiled:giftMap,
       reviewedMarket10:reviewedMarketBuy10,
