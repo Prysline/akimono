@@ -72,6 +72,7 @@ function originalInitial(world){
   const s=world.shops[0];
   return {money:s.money,time:s.time,paytoday:s.paytoday,
     nowSeconds:world.nowSeconds,maps:s.item[13],exp:s.exp??{},
+    job:s.job??'',
     swords:Object.fromEntries([40,41,42,43,44].map(id=>[id,s.item[id-1]])),
     wholesale:Object.fromEntries([40,41,42,43,44].map(
       id=>[id,world.market.wholesale[id-1]]))};
@@ -190,5 +191,19 @@ test('R2 frozen Perl #14 financial/time clipping and failed source command are a
       3:1;
     // A count clipped to one uses the original 50 Bernoulli draws.
     compareWithPerl(world,[{requestedCount:count,randomDraws:normal()}]);
+  }
+});
+
+test('R2 source JOB peddle times/1.5 changes both frozen USE clocks before training',()=>{
+  const base=shopWorld();
+  for(const exp of [0,20,980,1000]){
+    const world=withShop(base,s=>({
+      job:'peddle',exp:{...(s.exp??{}),14:exp},
+    }));
+    const {truth}=compareWithPerl(world,[{
+      requestedCount:1,randomDraws:normal(),
+    }]);
+    assert.equal(truth.results[0].sourceUseTimeSeconds,
+      Math.trunc(4800-(4800-2400)*exp/1000));
   }
 });
