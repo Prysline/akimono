@@ -127,10 +127,16 @@ test('B-55 original robbery callback changes a REAL purchased source shop throug
   assert.ok(act('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:plusOracle.draws,
   }).ok);
+  // Before source time obscures active EVENT state, acquire two units in
+  // two actual source 60-second PLUS supplies. The old item-specific buy
+  // bypassed UNKNOWN event checks after time, which is not safe to retain.
+  assert.ok(act('reviewed-sparse-all-plus',{
+    timespanSeconds:60,randomDraws:plusOracle.draws,
+  }).ok);
   const buy=()=>{
     const offer=street.quoteMarketOffer(repo.read(),10);
     const r=act('market-buy',{itemId:10,
-      shopId:1,requestedCount:1,marketShelf:offer.shelf,
+      shopId:1,requestedCount:2,marketShelf:offer.shelf,
       expectedPrice:offer.price,
     });
     assert.ok(r.ok,JSON.stringify(r.details));return r;
@@ -147,7 +153,13 @@ test('B-55 original robbery callback changes a REAL purchased source shop throug
   });
   assert.ok(sold.ok,JSON.stringify(sold.details));
   assert.equal(repo.read().period.eventState,null,'other EVENT callbacks unknown');
-  buy();
+  assert.equal(repo.read().shops[0].item[9],1,
+    'first real source sale leaves the second purchased item');
+  const q=street.quoteMarketOffer(repo.read(),10);
+  const unsafe=act('market-buy',{itemId:10,shopId:1,requestedCount:1,
+    marketShelf:q.shelf??0,expectedPrice:q.price??5000});
+  assert.equal(unsafe.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(unsafe.details.reason,/unsupported market, event or shop configuration/);
   const before=repo.read(),oldRank=before.shops[0].rank;
   const applied=act('reviewed-instant-event-callback-fixture',{
     eventCode:'goutou',randomDraws:[0],
