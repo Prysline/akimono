@@ -133,7 +133,7 @@ for my $code(qw(getmoney getpop)){
 die 'original ITEMNO compiler changed' unless
   index($compiler,'GetFuncItemNo($event->{localfuncstart}')>=0&&
   index($compiler,'$val=~s/$g_define->{cmdhead}ITEMNO')>=0&&
-  $dsl=~/^@@ITEM[^\r\n]*\r?\n\s*no\s+64(?:\s|#)[\s\S]*?^\s*name\s+看門機器人(?:\s|$)/m;
+  $dsl=~/^\@\@ITEM[^\r\n]*\r?\n\s*no\s+64(?:\s|#)[\s\S]*?^\s*name\s+看門機器人(?:\s|$)/m;
 my %instantArgs=(manbiki=>'400,200',goutou=>'700');
 for my $code(qw(manbiki goutou)){
   my @hits=grep(/^\s*code\s+\Q$code\E(?:\s|$)/m,@blocks);
