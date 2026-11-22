@@ -3,7 +3,7 @@
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
-import {originalUseTimeSeconds} from '../src/shared-use-experience.mjs';
+import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -196,8 +196,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   // This is the reviewed source rule, not a separate player command.
   const shop=world.shops.find(row=>row.id===1);
   const experience=shop?.exp?.[String(itemId)]??0;
-  const time=originalUseTimeSeconds({time:rule.time,exptime:rule.exptime,
-    experience});
+  const time=originalSourceUseClock({rule,job:shop?.job??'',
+    experience}).seconds;
   const count=Math.max(0,Math.min(requestedCount,
     Math.floor(shop.money/rule.money),
     Math.floor((world.nowSeconds-shop.time)/time)));
