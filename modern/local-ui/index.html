@@ -92,23 +92,27 @@
     </section>
     <section id="tab-shop" class="section pane">
       <h2 class="section-title">● <span id="shop-title">店內</span></h2>
-      <div class="shop-portrait">
-        <div class="shop-identity"><span class="portrait-placeholder" aria-hidden="true">店</span>
-          <div><strong id="owner-name">尚未開店</strong><span class="muted" id="shop-owner-note">商店經營狀態</span></div>
-        </div>
-        <div class="shop-links">
-          <button type="button" class="text-link" data-go-tab="stock">［倉庫］</button>
-          <button type="button" class="text-link" data-go-tab="market">［市場］</button>
-          <button type="button" class="text-link" data-go-tab="balance">［收支］</button>
-        </div>
-      </div>
+      <h3 class="sub-title">店家資訊</h3>
+      <div class="table-scroll"><table class="shop-info-table"><tbody>
+        <tr><td rowspan="5" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
+        <tr><th scope="row">店主</th><td id="owner-name">—</td></tr>
+        <tr><th scope="row">資金</th><td id="shop-info-money">—</td></tr>
+        <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
+        <tr><th scope="row">人氣</th><td id="shop-info-popularity">—</td></tr>
+      </tbody></table></div>
       <h3 class="sub-title">展示架</h3>
-      <table class="shelf-table"><tbody><tr><th scope="row">第 1 架</th><td><output id="showcase">目前空架</output></td></tr></tbody></table>
-      <div class="shop-links"><button type="button" class="text-link" data-go-tab="stock">［前往倉庫管理商品］</button></div>
-      <div class="shop-mini-record" aria-label="本期即時營業摘要">
-        <span>本期售額 <strong id="shop-sales">—</strong></span>
-        <span>本期支出 <strong id="shop-paid">—</strong></span>
-      </div>
+      <div class="table-scroll"><table class="shelf-table">
+        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th></tr></thead>
+        <tbody><tr>
+          <td>第 1 架</td><td id="showcase">目前空架</td>
+          <td id="shop-shelf-price">—</td><td id="shop-shelf-base-price">—</td>
+          <td id="shop-shelf-stock">—</td><td id="shop-shelf-today">—</td><td id="shop-shelf-yesterday">—</td>
+        </tr></tbody>
+      </table></div>
+      <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
+        <th scope="row">本期售額</th><td id="shop-sales">—</td>
+        <th scope="row">本期支出</th><td id="shop-paid">—</td>
+      </tr></tbody></table>
       <details class="dev-panel" data-dev-panel>
         <summary>開發測試｜時間快轉</summary>
         <p class="help-text">只用於驗證自然販售與來源市場供貨；不代表正式遊戲的自動時間流逝。</p>
