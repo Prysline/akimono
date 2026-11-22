@@ -1,24 +1,19 @@
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
-## 2026-11-22｜R2-B **實際已提交程式**的新工作窗零記憶交接（本段取代下方舊待辦）
+## 2026-11-22｜**新工作窗零記憶權威交接：R2-B 已完成，可開始 R2-C**
 
-**準確階段判定：** R2-A 已完成自身直接 Perl 差分驗收；**R2-B 僅部分完成，未達退出條件**；R2-C／D／E 及 R2 整體仍未完成。R0/R1 也只完成市場買入局部。PR #1 必須持續 **Draft／Open／未合併**，基底 `migration/standard-street-s1`、唯一工作分支 `test/task02-baseline-on-s1`。每次先重新查實際 PR `head_sha` 及該 SHA 的 Push／PR Actions 成功與否；**本段不假裝歷史的 HEAD/CI 等於日後最新 HEAD**。只允許改 `modern/`，不改 frozen Perl／DSL、main、遷移底分支、Notion 正式任務。
+**R2-A 已完成、R2-B 已完成；R2-C／D／E 未完成，R2 整體仍未完成；R0／R1 全量未結案。** 只修改 [Draft PR #1](https://github.com/Prysline/akimono/pull/1) 的 `test/task02-baseline-on-s1` 分支 `modern/`，基底 `migration/standard-street-s1`；PR 必須 Open／Draft／未合併。不改凍結 Perl、Core 快照、原版 DSL 或來源 SHA，不改其他分支、不改 Notion 正式任務。**每次先重新查真實 HEAD SHA 及同一 HEAD 的 Push／PR Actions**，不要把下方老 HEAD/歷史 CI 或本次中間提交當現在驗收。
 
-**請先讀程式與來源：**
-- `modern/src/standard-street-market-buy-registry.mjs`：R2-B 新 Registry，從 `parseDsl` 的 ITEM 宣告順序、`model.items`、`compileReviewedGiftMapUse().limits` 及固定 Core 編譯／批發／買入原文，編出 79 筆可追溯規則描述 `entries/order/describe(itemId)/getRule(itemId)`。宣告順序與 `id-1` 庫存索引不可混淆；來源 DSL 固定 Git Blob `7a18185e98b32aee82ca1ce30d6f3c395157dbcb`。禁止執行未審閱原版 Perl callback。
-- `modern/src/standard-street-module.mjs`：`sharedBuyRules` 手工三筆陣列**已刪除**，`marketBuy` 改接 Registry；原版全域 `@@FUNCBUY` 來源驗證不變；`buy-market-item-10/11/14` 舊正式演算法**尚保留**，並非 alias，此為 R2-C 工作，不要提前聲稱完成。
-- `modern/src/market-buy-core.mjs` 和 `game-core-contract.mjs`：共同交易數量、付款、庫存、原版72小時、時序與 CAS 不放 Standard Street itemId；不支援商品透過 Registry `describe.reason` 返回具體來源條件。
-- `modern/tests/original-perl/original-r2b-market-buy39-probe.pl`、`modern/tests/market-buy-core.test.mjs`：新 ITEM #39 真原版 Perl `buy-s.cgi` 成交、拒絕、原版全域回呼、完整79欄稀疏 CSV 與 Node 差分；CAS、上限、72小時、兩代存檔測試。保留 `original-r2a-market-buy-oracle.pl` 原檔與其 #10／#11／#14×12 差分，不能為通過新測試而修改或降低原有保護。
+**目前已實作：** `src/standard-street-market-buy-registry.mjs` 的 `compileStandardStreetMarketBuyRegistry` 由原版兩份 DSL、`parseDsl`、79 ITEM 宣告順序／來源行號、固定 `inc-makeitem.cgi` 與 LIMIT、`whole.cgi`／`item.cgi`／`buy-s.cgi` 編譯 `entries/order/describe/getRule/quote`。`marketBuy.quote({rule,marketStock})` 真正根據 `BASE A/B` 庫存計價及 `GetTimeDeal` 計算 300～1200 秒範圍的交易時間；共用 `market-buy-core.mjs` 不存商品 ID／DSL／Perl 字串。StreetModule **已無 `sharedBuyRules`**；#10/#11/#14 與新 #39「拆解/打包工具」（500G、10/3、原版 `custom/inc-item-data.cgi:266`）及 #1/#12 等由同一 Registry 接入，沒有新專用交易命令／Node 成交演算法。
 
-**實際新增來源合法普通商品：** `custom/inc-item-data.cgi:266` 的 ITEM **#39「拆解/打包工具」**，code `book-kaitai`，`PRICE 500`、`LIMIT 10/3`、`PLUS 5h`，無 `BASE` 與 ITEM 層級 `FUNCB`；可直接用 `market-buy` 成交，不需要 `buy-market-item-39`、專用 Node 投影或新 CAS／HTTP 流程。#10／#11 亦由共同 Registry 自然編譯；#14 暫保留特殊歷史 R2-A 相容價 10000G，但**不能把這個價當成真來源對所有批發存量都相同**。任何未支援商品應檢查 `marketBuyRegistry.describe(itemId).classification/reason/sourceLine`，不可只說「不在白名單」。
+**原版驗收：** `tests/original-perl/original-r2b-dynamic-market-buy-oracle.pl` 對 #12、#14 各八種，合計 **16** 組真原版 `buy-s.cgi`、`GetBuffer(BASE)`、全域 `@@FUNCBUY`、`GetWholeStore`／`GetTimeDeal`、完整 79 欄 CSV 及拒絕／CAS 差分；`original-r2b-pricehalf-probe.pl` 對 #1 庫存 1／200／400、#14 庫存 1／2／3 的原版價與時間；`original-r2b-market-buy39-probe.pl` 三組普通商品 Perl 來源差分。`tests/market-buy-core.test.mjs` 加 CAS、商品上限、72h、全域/ITEM 回呼順序、未知活動/公會拒絕、兩代存檔／重啟及歷史測試邊界。**原 R2-A 36 組 Oracle 檔案完全保留**；其編譯子集漏 BASE，#14 10000G/600秒只適用於隔離的歷史測試 adapter，不適用正式 Registry。**原版 #14 BASE 50/150 已修正並有直接 Perl 差分證據，不再是 R2-B 缺口。**
 
-**最關鍵未完成且影響正確性的 R2-B 工作：** 固定標準街 ITEM #14 來源 `custom/inc-item-data.cgi:1156` 存在 `BASE 50/150`；原版 `whole.cgi::GetWholeStore` 在 `pricehalf` 非零時使用 `int(price / (((stock-pricebase)/pricehalf)+1))`，而原版 `item.cgi::GetTimeDeal` 依實際價改變交易時間。**既有 R2-A Perl 差分 Oracle 的 `OriginalGiftMapUseHarness::compile()` 僅編 no/code/name/price/limit/scale，漏編 BASE，故 #14 的既有 10000G／600秒並非完整來源語義。** 新 Registry 把 #14 分類 `legacy-r2a-price-incomplete`，維持原測試結果以免無驗證地改壞 R2-A；其他有 `BASE`（如 ITEM #1）的商品分類 `dynamic-price` 並明確拒絕。本輪**不能標記 R2-B 完成**。下一輪必須增補**真正固定原版 Perl 編譯 BASE ＋ GetWholeStore/買入差分**、選擇正確相容遷移方案；不能修改/偽造原版 Oracle、放鬆舊斷言或在生產路徑忽略 BASE。
+**仍拒絕的特殊語義：** 真實全域 `@@FUNCBUY` 會在每滿 500000G 給 #79；來源 #64 `defence-manbiki` 500000G、LIMIT 1/0.5 可以觸發，因此未審閱的非零贈券分支明確拒絕，不能稱之為不存在或全部零效果。未審閱 ITEM `FUNCB`、零價／批發上限0、活動 EVENT overlay、未知活動狀態、公會修正都 fail closed 且有 Registry 原因；#14 USE 的 `funcb` 屬 R2-D 使用分支，不是市場買入回呼。B-43 已可**顯式** `createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry})` 保存新普通商品；未提供 Registry 的舊存檔載入仍拒絕其庫存，不允許偷改為廣義79 ITEM 資料信任。
 
-**其餘特殊語義：** 全域 `@@FUNCBUY` 為每滿500000G 送 #79 的真實回呼，低於門檻有已審閱零效果，達門檻但未有審閱執行器時 **fail closed**；未知 ITEM-level `FUNCB`、零批發上限如 #79、零價、特殊活動、公會、多店皆需來源可檢查的限制，不可自行假定無副作用。此階段不包含 R2-C 的 UI／HTTP 統一或刪除三套舊 `projectOriginalMarketBuy*`，也不包含 R2-D 共用 USE 或 R2-E 真世界整合。
+**R2-C 專屬待辦：** (1) 實際繁中 UI／HTTP／內部買入報價改讀 Registry 並只送 `market-buy`；(2) B-43 真實存取入口提供同一已審閱 Registry；(3) 來源與 HTTP/回載驗收通過後，移除／轉接仍獨立的 `buy-market-item-10`、`buy-market-item-11`、`buy-market-item-14` 及 `projectOriginalMarketBuy10/11/14` 三套專用演算法，保留有來源相容價值的測試；(4) 確認 UI→WorldState→CAS→存檔全程唯一買入運算。R2-C 仍未完成，R2-D 共用 USE、R2-E 真世界、R0/R1 全量亦未結案。**不應再開 R2-B 工作包，也不應在 R2-C 之前偷刪舊演算法。** 具體來源與退出條件見 [R2 正式文件](shared-market-buy-r0-r2.md)。
 
-**重啟驗證步驟：** 查 PR 當下 HEAD → `cd modern && npm test && npm run audit`、原始 Perl `prove`/來源 SHA/DSL workflow、原版 #39 差分→查同 SHA Push 與 PR workflow `completed/success`，核對 Node/Perl 測試數與來源完整性。每次變更後必須以**最後** HEAD 的 CI 為準。原 CI R2-A 903 Node／1867 Perl 屬歷史基準；不能當新 Registry 的證據。正式進度見 [shared-market-buy-r0-r2.md](shared-market-buy-r0-r2.md)；先解 R2-B 動態價格缺口，才能宣稱下一個工作窗可直接進 R2-C。
+> 以下仍寫「R2-B 僅部分完成／#14 無法動態定價」的交接段落是此次完整修正以前的歷史記錄，不能用於決定下一步。
 
-**重要介面與證據補充：** B-43 並非自動接納所有新 ITEM；現在 `createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry})` 透過明確注入已審閱 Registry，才能保存新 #39 的庫存及原價展示架；未注入仍沿用原嚴格上限與商品白名單，來源缺席時拒絕。修改 `modern/src/local-world-save-store.mjs` 是擴展共用 B-43 來源驗證，不是新建商品專用存檔演算法。新增 `modern/tests/original-perl/original-r2b-pricehalf-probe.pl`：由固定原版 Perl 編譯器 `GetBuffer(BASE)`、`whole.cgi::GetWholeStore`、`item.cgi::GetTimeDeal` 直接驗證 #1/#14 真動態價；#14 歷史固定價失真已實測，不可繞過。
 
 ---
 
