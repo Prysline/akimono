@@ -1,5 +1,14 @@
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
+## 2026-11-22｜最新權威：R3 共用自然販售／時間「受控部分完成，未達退出條件」
+
+**現況與下一步（優先於下方 R2-E 歷史快照）：** R2 A～E 仍為原本受控完成；R3 新增來源審閱六商品（#10、#40～#44）共用自然販售算式與 24 組真 Perl 原版差分、真實 #14 地圖 BUY→共用 USE 五劍→同一販售入口、現有繁中 HTTP 上架／CAS／雙世代存檔／實際重啟續營測試。新程式：src/shared-natural-sale-core.mjs；更新 src/original-b41-playable-sale.mjs、src/standard-street-module.mjs、scripts/dev-local.mjs、local-ui 與 local-world-save-store。測試：tests/original-perl/original-r3-shared-sale-probe.pl、tests/r3-shared-natural-sale.test.mjs、tests/r3-shared-sword-acquisition-sales.test.mjs、tests/r3-real-sword-http-restart.test.mjs。原有市場買入、USE 與原版來源 SHA 未更動。
+
+**界線／不宣告結案：** 真原版完整時間執行的 FUNCTURN／FUNCSALE、EVENT 與 17 個 Perl hash 順序、跨期決算、多商店／街道差異、非原價與其他回呼尚未驗證。現存 B-41 時間仍只計算來源自然販售＋PLUS 子區，執行後 eventState:null 表示未知事件，不能當成沒有事件；B-56 僅為明示 EVENT 順序 fixture。B-54 可重播亂數是本機政策，不是原版 Perl rand。R0／R1 **只補了本輪必要範圍**，全量未完成；R4 EVENT／36 小時期末、R5 閉環不可假稱完成。本輪僅在 test/task02-baseline-on-s1 的 modern/ 修改，PR #1 保持 Open／Draft、基底 migration/standard-street-s1，未修改 Notion 狀態。
+
+**R3 新來源與 R0 清冊：** docs/r3-shared-natural-sale-source-contract.md；docs/r3-r0-affected-tests-mapping.md。下一工作窗優先：核對並實作完整 R3 回呼／EVENT 前置語義及可執行 Perl Oracle；對未知語義嚴格拒絕並保留 R4 跨期責任，不重做 R2。下方所有標示「最新權威：R2-E」段落僅為歷史記錄，非當前 R3 下一步。
+
+
 ## 2026-11-22｜最新權威：R2-E 真 HTTP／USE／存檔整合驗收（R2 A～E 受控範圍完成）
 
 **下一工作窗無記憶交接：** R2-A/B/C/D/E 已完成，直接進 R3；不要重做 R2-C 買入引擎或 R2-D 地圖 USE，R0／R1 全量仍有獨立工作未完成，勿改 Notion 正式狀態。
