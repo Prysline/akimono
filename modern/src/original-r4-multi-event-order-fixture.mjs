@@ -13,6 +13,8 @@ import {B55_SOURCE,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
 import {B58_LOTO_SOURCE,LOTO_RANGE,projectOriginalLotoStartfunc}
   from './original-b58-loto-startfunc.mjs';
+import {B60_HAPPY_SOURCE,projectOriginalHappyNow}
+  from './original-b60-happy-event-nowfunc.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -27,7 +29,8 @@ const sameKeys=(order,allowed)=>{
 
 export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven,
   turnSource,readSource,reviewedSupportCallbacks=null,
-  reviewedInstantCallbacks=null,reviewedLotoCallbacks=null}){
+  reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
+  reviewedHappyEvent=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -67,6 +70,23 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
      reviewedLotoCallbacks.gateIncluded!==false||
      reviewedLotoCallbacks.maxMoney!==999999999))
     fail('source-reviewed loto STARTFUNC callback required');
+  if(reviewedHappyEvent!==null&&(
+     reviewedHappyEvent.source!==B60_HAPPY_SOURCE||
+     reviewedHappyEvent.eventCode!=='happy'||
+     reviewedHappyEvent.startProba!==100||
+     reviewedHappyEvent.baseTimeSeconds!==18000||
+     reviewedHappyEvent.plusTimeSeconds!==18000||
+     reviewedHappyEvent.rankCap!==10000||
+     reviewedHappyEvent.maxNowSpanSeconds!==36000||
+     compiledCatalog.compiled.find(e=>e.code==='happy')?.group!==reviewedHappyEvent.group))
+    fail('source-reviewed happy duration and NOWFUNC required');
+  if(reviewedHappyEvent!==null){
+    for(const marker of ['my $extfile=GetPath($ITEM_DIR,"event-n",$key);',
+      'my($msg)=&$func(split(/[:,]/,$E->{funcparam}));',
+      'foreach my $key (keys(%DTevent))']){
+      if(!turnSource.includes(marker))fail('source NOWFUNC drift '+marker);
+    }
+  }
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -90,9 +110,9 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     catalog:Object.freeze(compiledCatalog.compiled),
     seven:reviewedSeven,support:reviewedSupportCallbacks,
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
-    committable:false,
+    happy:reviewedHappyEvent,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
-    scope:'17 compiled EVENT keys: seven declarative durable events, optional getmoney/getpop, manbiki/goutou and loto original STARTFUNC using one range-logged RNG; unreviewed starts reject, single shop only; not all callbacks or world save'});
+    scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG and original hash order fixture; other callbacks, world save and period still unsupported'});
 }
 
 /**
@@ -103,7 +123,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
  */
 export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
-  eventHashOrderFixture,randomDraws,shop=null}){
+  eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -117,20 +137,21 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
      !Array.isArray(items)||items.length!==79)
     fail('ITEM and active EVENT source fixture required');
   const keys=Object.keys(activeUntilSeconds);
-  if(keys.length>7||keys.some(code=>
-    !R4_DECLARATIVE_EVENT_CODES.includes(code)||
+  if(keys.length>(reviewed.happy===null?7:8)||keys.some(code=>
+    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
+      (code==='happy'&&reviewed.happy!==null))||
     !Number.isSafeInteger(activeUntilSeconds[code])||
     activeUntilSeconds[code]<0))
     fail('unreviewed active EVENT state');
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
-  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&shop!==null)||
-     ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null)&&
+  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&shop!==null)||
+     ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null||reviewed.happy!==null)&&
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
-  if(!Array.isArray(randomDraws)||randomDraws.length>86||
+  if(!Array.isArray(randomDraws)||randomDraws.length>87||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
 
@@ -141,12 +162,14 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     return {...item};
   });
   for(const code of activeHashOrderFixture){
+    // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
+    if(code==='happy')continue;
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
-    instantCallbacks=[],lotoCallbacks=[];
+    instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
   const groups=new Set();
   const end=startSeconds+spanSeconds;
@@ -155,7 +178,8 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     if(next[code]<end){
       delete next[code];
       expired.push(code);
-      logs.push([2,0,reviewed.seven.events[code].endMessage]);
+      logs.push([2,0,code==='happy'?
+        reviewed.happy.endMessage:reviewed.seven.events[code].endMessage]);
     }else groups.add(event.group);
   }
   let used=0;
@@ -177,6 +201,15 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       next[code]=startSeconds+Math.trunc(draw(spanSeconds))+
         meta.baseTimeSeconds+Math.trunc(draw(meta.plusTimeSeconds));
       safe(next[code],'EVENT expiration overflow');
+      started.push(code);
+      logs.push([2,0,meta.startMessage]);
+      groups.add(e.group);
+    }else if(code==='happy'&&reviewed.happy!==null){
+      // Source has no STARTFUNC: START then two duration rand calls.
+      const meta=reviewed.happy;
+      next.happy=startSeconds+Math.trunc(draw(spanSeconds))+
+        meta.baseTimeSeconds+Math.trunc(draw(meta.plusTimeSeconds));
+      safe(next.happy,'original happy expiration overflow');
       started.push(code);
       logs.push([2,0,meta.startMessage]);
       groups.add(e.group);
@@ -246,6 +279,30 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       groups.add(e.group);
     }else fail('unsupported original source EVENT started: '+code);
   }
+  // The frozen inc-turn NOWFUNC loop follows *all* END/START callbacks.
+  // A newly started happy EVENT is included immediately, and an expired
+  // happy EVENT runs only if restarted. No JS/DSL declaration order is used.
+  if(reviewed.happy!==null){
+    if(!sameKeys(nowHashOrderFixture,Object.keys(next)))
+      fail('exact Perl post-START active EVENT hash order required');
+    for(const code of nowHashOrderFixture){
+      if(code!=='happy')continue;
+      const range=Math.trunc(Math.min(spanSeconds,
+        reviewed.happy.maxNowSpanSeconds)/36);
+      if(range<1)fail('source happy NOWFUNC rand(0) not reviewed');
+      const sample=randomDraws[used];
+      draw(range);
+      const callback=projectOriginalHappyNow({
+        reviewed:reviewed.happy,shop:nextShop,
+        timespanSeconds:spanSeconds,randomDraws:[sample],
+      });
+      if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
+         callback.randMax!==range)
+        fail('reviewed happy NOWFUNC contract violation');
+      nextShop=callback.shop;
+      happyNowCallbacks.push(code);
+    }
+  }
   if(used!==randomDraws.length)fail('unused original RNG samples');
   return Object.freeze({
     source:reviewed.source,committable:false,
@@ -256,11 +313,12 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     skippedByGroup:Object.freeze(skippedByGroup),
     logs:Object.freeze(logs.map(log=>Object.freeze(log))),
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
-    ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null?{}:{
+    ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null?{}:{
       shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),
+      happyNowCallbacks:Object.freeze(happyNowCallbacks),
     }),
     sourceScope:reviewed.scope,
   });

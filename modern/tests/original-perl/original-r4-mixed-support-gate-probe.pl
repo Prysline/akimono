@@ -23,9 +23,9 @@ BEGIN {
 }
 binmode STDOUT,':raw';
 our (@ITEM,@out_item,@rows,%EVENT,%DTevent,$temptimenow,$timespan,
-     @DT,@LOG,@R4_MULTI_DRAWS,@R4_MULTI_RANGES,$ITEM_DIR,$MAX_MONEY);
+     @DT,@LOG,@R4_MULTI_DRAWS,@R4_MULTI_RANGES,$ITEM_DIR,$MAX_MONEY,$TIMESPAN);
 my $callbackRoot=tempdir('akimono-r4-mixed-XXXXXX',TMPDIR=>1,CLEANUP=>1);
-make_path("$callbackRoot/event-s");
+make_path("$callbackRoot/event-s","$callbackRoot/event-n");
 $ITEM_DIR=$callbackRoot;$MAX_MONEY=999999999;
 sub PushLog {push @LOG,[@_];1;}
 sub WriteLog {push @LOG,[@_];1;}
@@ -34,10 +34,13 @@ sub RequireFile {die 'unexpected original file' unless $_[0] eq 'inc-event.cgi';
 sub GetPath {
   my($dir,$kind,$code)=@_;
   die 'unsupported callback path' unless
-    $dir eq $ITEM_DIR&&$kind eq 'event-s'&&
-    ($code eq 'getmoney'||$code eq 'getpop'||
-     $code eq 'manbiki'||$code eq 'goutou'||$code eq 'loto');
-  return "$callbackRoot/event-s/$code.pl";
+    $dir eq $ITEM_DIR&&(
+      ($kind eq 'event-s'&&
+        ($code eq 'getmoney'||$code eq 'getpop'||
+         $code eq 'manbiki'||$code eq 'goutou'||$code eq 'loto'))||
+      ($kind eq 'event-n'&&exists($EVENT{$code}))
+    );
+  return "$callbackRoot/$kind/$code.pl";
 }
 sub GetMoneyString {return $_[0];}
 # The frozen callback runs as package event; the real game formatter is
@@ -74,6 +77,7 @@ my %wanted=map{($_=>1)}@targets;
 my %support=map{($_=>1)}qw(getmoney getpop);
 my %instant=map{($_=>1)}qw(manbiki goutou);
 my %loto=map{($_=>1)}qw(loto);
+my %happy=map{($_=>1)}qw(happy);
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
 shift @blocks;
 for(@blocks){s/^\s*\@\@(ITEM|USE|EVENT|DEFINE|END|FUNC[A-Z]+)\b[\s\S]*$//mi;}
@@ -180,6 +184,28 @@ for my $code(qw(manbiki goutou)){
     $body."\n}\n1;\n";
   close $w or die $!;
 }
+# True happy NOWFUNC: exact frozen DSL body compiled into the existing
+# event-n file, then required by the original inc-turn NOWFUNC loop.
+{
+  my @hits=grep(/^\s*code\s+happy(?:\s|$)/m,@blocks);
+  die 'original happy EVENT source changed' unless @hits==1;
+  my($body)=$hits[0]=~/
+    ^\s*func\s+_local_[ \t]*\r?\n
+    ([\s\S]*?)
+    ^[ \t]*_local_[ \t]*$
+  /mx;
+  die 'original happy NOWFUNC source changed' unless
+    defined($body)&&
+    index($body,'my $time=$main::TIMESPAN;')>=0&&
+    index($body,'$time=int($time/36);')>=0&&
+    index($body,'$_->{rank}+=int(rand($time));')>=0&&
+    index($body,'return 0;')>=0&&
+    $body!~/\@\@/;
+  open my $w,'>:encoding(UTF-8)',"$callbackRoot/event-n/happy.pl" or die $!;
+  print $w "use utf8;\npackage event;\nsub _local_now {\n".
+    $body."\n}\n1;\n";
+  close $w or die $!;
+}
 @rows=map{
   my $e=$_;
   my $m=$messages{$e->{code}}//{start=>'',end=>''};
@@ -215,8 +241,7 @@ die "source original EVENT initializer could not eval: $@" unless $ok;
 die 'source generated EVENT hash does not have 17 keys' unless keys(%EVENT)==17;
 my @runtimeHashKeys=keys(%EVENT);
 my $from=index($turn,"\t\t#イベント終了処理\n");
-my $to=index($turn,"\n\t\tforeach my \$key (keys(%DTevent))",
-  index($turn,"\t\t#イベント開始処理\n",$from));
+my $to=index($turn,"\n\t\t\$temptimenow+=\$timespan;",$from);
 die 'source END/START original fragment changed' unless $from>=0&&$to>$from;
 my $region=substr($turn,$from,$to-$from);
 $ok=eval "package main;use utf8;no strict;no warnings;\n".
@@ -232,10 +257,11 @@ my @baseItems=map {{
 sub step {
   my(%o)=@_;
   my ($begin,$span)=($o{begin},3600);
-  $temptimenow=$begin;$timespan=$span;
+  $temptimenow=$begin;$timespan=$span;$TIMESPAN=$span;
   @ITEM=(undef,map{{%{$_}}}@baseItems);
   my @activeOrder=keys(%DTevent);
   for my $key(@activeOrder){
+    if($key eq 'happy'){next;}
     die "unreviewed active code $key" unless $wanted{$key};
     my $executed=eval 'package main;use utf8;no strict;no warnings;'.
        $generated{$key}.'1;';
@@ -259,6 +285,9 @@ sub step {
     $groups{$EVENT{$code}{group}}=1 if $DTevent{$code}>=$begin+$span;
   }
   my @samples;
+  my $happyStillActive=exists($DTevent{happy}) &&
+    $DTevent{happy}>=$begin+$span;
+  my $happyStarted=0;
   my $robot=$shop->{item}[63];
   for my $code(@startOrder){
     my $e=$EVENT{$code};
@@ -266,11 +295,24 @@ sub step {
     my $start=($wanted{$code}&&$o{wantedStarts}{$code})||
       ($support{$code}&&$o{supportStarts}{$code})||
       ($instant{$code}&&($o{instantStarts}//{})->{$code})||
-      ($loto{$code}&&($o{lotoStarts}//{})->{$code});
+      ($loto{$code}&&($o{lotoStarts}//{})->{$code})||
+      ($happy{$code}&&($o{happyStarts}//{})->{$code});
     push @samples,$start?0:999999;
     if($start&&$wanted{$code}){
       push @samples,250000,500000;
       $groups{$e->{group}}=1;
+    }elsif($start&&$happy{$code}){
+      die 'compiled original happy START/NOW contract drift' unless
+        !$e->{startfunc}&&!$e->{endfunc}&&
+        $e->{func} eq '_local_now'&&
+        $e->{basetime}==18000&&$e->{plustime}==18000&&
+        $e->{startproba}==100;
+      my $durations=($o{happyDurations}//{})->{$code}//[250000,500000];
+      die 'two happy duration draws needed' unless
+        ref($durations)eq'ARRAY'&&@$durations==2;
+      push @samples,@$durations;
+      $groups{$e->{group}}=1;
+      $happyStarted=1;
     }elsif($start&&$support{$code}){
       die 'compiled support callback contract drift' unless
         $e->{startfunc} eq '_local_start'&&
@@ -314,13 +356,18 @@ sub step {
       $groups{$e->{group}}=1;
     }
   }
+  # Source NOWFUNC executes after all START callbacks for existing or
+  # freshly begun happy; the one original range is int(TIMESPAN/36).
+  push @samples,($o{happyNowDraw}//900000)
+    if $happyStillActive||$happyStarted;
   @R4_MULTI_DRAWS=@samples;
   @R4_MULTI_RANGES=();@LOG=();
   @DT=($shop);
   my $result=R4MultiOriginalEventSlice();
   die 'original multi-event RNG unused samples' if @R4_MULTI_DRAWS;
   my %state=%{$result->{state}};
-  for my $code(keys %state){die 'unsupported source EVENT persisted' unless $wanted{$code};}
+  for my $code(keys %state){die 'unsupported source EVENT persisted' unless $wanted{$code}||$happy{$code};}
+  my @nowHashOrder=keys(%DTevent);
   return {
     name=>$o{name},
     input=>{
@@ -328,6 +375,7 @@ sub step {
       activeUntilSeconds=>$o{prior},
       activeHashOrderFixture=>\@activeOrder,
       eventHashOrderFixture=>\@startOrder,
+      nowHashOrderFixture=>\@nowHashOrder,
       randomDraws=>\@samples,shop=>$initial,
     },
     output=>{
@@ -497,9 +545,50 @@ my $lotteryFifty=step(name=>'loto-50-tickets-all-miss',
   prior=>{},shop=>$lotoFiftyShop);
 push @lotoCases,$lotteryFifty;
 
+
+# Full original END/START/NOWFUNC with happy in the same 17-key hash,
+# including seven durable overlays and instant, support and loto callbacks.
+my @happyCases;
+%DTevent=();
+my @festivalStock=@lotoStock;$festivalStock[10]=3;
+my $festivalShop={%$lotoShop,item=>\@festivalStock,money=>100000,
+  rank=>5000};
+my $festivalStart=step(name=>'happy-start-now-with-seven-support-instant-loto',
+  begin=>1000000,wantedStarts=>{map{($_=>1)}@targets},
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>0,getpop=>0},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0],goutou=>[0]},
+  lotoStarts=>{loto=>1},lotoDraws=>{loto=>[100,10000,100000]},
+  happyStarts=>{happy=>1},
+  happyDurations=>{happy=>[250000,500000]},
+  happyNowDraw=>900000,
+  prior=>{},shop=>$festivalShop);
+push @happyCases,$festivalStart;
+%DTevent=%{$festivalStart->{output}{activeUntilSeconds}};
+my $festivalActive=step(name=>'happy-active-next-slice-now-again',
+  begin=>1003600,
+  happyNowDraw=>500000,
+  prior=>{%DTevent},shop=>$festivalStart->{output}{shop});
+push @happyCases,$festivalActive;
+%DTevent=%{$festivalActive->{output}{activeUntilSeconds}};
+my $festivalExpired=step(name=>'happy-expired-no-now-after-clock-jump',
+  begin=>1040000,
+  prior=>{%DTevent},shop=>$festivalActive->{output}{shop});
+push @happyCases,$festivalExpired;
+%DTevent=%{$festivalActive->{output}{activeUntilSeconds}};
+my $festivalReentry=step(name=>'happy-expired-and-restarts-now-same-slice',
+  begin=>1040000,
+  happyStarts=>{happy=>1},
+  happyDurations=>{happy=>[0,0]},
+  happyNowDraw=>999999,
+  prior=>{%DTevent},shop=>$festivalActive->{output}{shop});
+push @happyCases,$festivalReentry;
+
 print JSON::PP->new->canonical->utf8->encode({
-  source=>'frozen Perl 17 EVENT hash and original inc-turn END/START, actual generated getmoney/getpop STARTFUNC, seven ITEM PARAM files',
+  source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
+  happyCases=>\@happyCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });

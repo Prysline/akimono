@@ -14,6 +14,21 @@ if(ref($o)eq'HASH'){
   is($o->{compiledCount},17,'exact 17 original runtime EVENT keys');
   is(scalar(@{$o->{theftCases}}),6,'six original source theft/robbery scenarios');
   is(scalar(@{$o->{lotoCases}}),4,'four original 17-key loto cases');
+  is(scalar(@{$o->{happyCases}}),4,'four original 17-key happy START/END/NOWFUNC cases');
+  my $fresh=$o->{happyCases}[0]{output};
+  ok(exists($fresh->{activeUntilSeconds}{happy}),
+    'happy persisted from original START while others stay active');
+  is(scalar(grep{$_==100}@{$fresh->{randomDrawRanges}}),1,
+    'newly started happy immediately draws original NOWFUNC rand(100)');
+  ok($fresh->{shop}{rank}>5000,'original happy raises rank in same mixed slice');
+  is(scalar(grep{$_==100}@{$o->{happyCases}[1]{output}{randomDrawRanges}}),1,
+    'existing happy runs one NOWFUNC on next time slice');
+  ok(!exists($o->{happyCases}[2]{output}{activeUntilSeconds}{happy}),
+    'expired happy removed by source END before NOW');
+  is(scalar(grep{$_==100}@{$o->{happyCases}[2]{output}{randomDrawRanges}}),0,
+    'expired happy does not consume NOWFUNC RNG without reentry');
+  is(scalar(grep{$_==100}@{$o->{happyCases}[3]{output}{randomDrawRanges}}),1,
+    'expired-and-restarted happy immediately runs NOWFUNC');
   my $loto=$o->{lotoCases}[0]{output};
   is($loto->{shop}{item}[10],0,'original callback consumes five tickets');
   is($loto->{shop}{money},999999999,'original first prize caps cash');

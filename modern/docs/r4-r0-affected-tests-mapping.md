@@ -61,3 +61,8 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 
 - 保留既有 `r4-multi-event-order.test.mjs`、`r4-mixed-instant-gate.test.mjs` 與原 Perl 回歸，不破壞七種持續 EVENT、兩種支援回呼、偷搶機器人及 RNG。修改 `original-r4-mixed-support-gate-probe.pl`／`original-r4-mixed-instant-gate.t`，新增 `r4-mixed-loto-gate.test.mjs`，以同一原版 `rand(6096454)` 及 17-key 真 hash 遍歷，比較現金／票數／日誌及後續抽樣。
 - B-58 的 `b58-source-loto-real-ticket-cas.test.mjs` 和 `original-b58-loto-event.t` 仍檢驗五種獎等及精確整數邊界；R4 多事件樣本精度較低，不替代此驗收。R0／R1 全量與 R4 完整退出仍未達成。
+
+## 2026-11-23｜R4 感謝祭 NOWFUNC 混合事件測試
+
+- 更新 `src/original-r4-multi-event-order-fixture.mjs`：來源審閱 `happy` 持續時間、到期、同片 NOWFUNC、每有效片獨立 `rand(int(TIMESPAN/36))` 並與 STARTFUNC 共用 RNG；明示同 Perl 行程 `nowHashOrderFixture`，禁止使用 JS 物件遍歷假稱 Perl hash 原序。
+- 更新真 Perl `original-r4-mixed-support-gate-probe.pl`／`original-r4-mixed-instant-gate.t`，新增 Node `r4-mixed-happy-now-gate.test.mjs`，同世界比較八個同時生效 EVENT、79 ITEM、店鋪金錢／人氣／票券／機器人／日誌與 RNG 呼叫順序；保留 B-60 單事件及 B-58、R4 前輪完整回歸。未審閱事件 fail-closed 和不可正式提交界線不變。

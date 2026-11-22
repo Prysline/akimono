@@ -86,3 +86,9 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 - 將 B-58 已審閱 `loto` STARTFUNC 與原 R4 七種持續事件、`getmoney`／`getpop`、`manbiki`／`goutou` 接入同一 17-key Perl 同行程排列 fixture。閘門先用 `rand(100000)`，命中後依來源張數逐張消耗 `rand(6096454)`，插入原本單一 RNG 序列；回呼回傳 0，不保留持續事件或群組鎖，`WriteLog` 與其他事件日誌依真正執行順序合併。
 - 真凍結 DSL 的 `loto` 本體由 `original-r4-mixed-support-gate-probe.pl` 生成並在凍結 `inc-turn.cgi` EVENT END／START 原文中執行，Node `r4-mixed-loto-gate.test.mjs` 對同一 Perl 行程的 17-key hash、商店庫存／金錢／機器人／七種 EVENT、日誌及 RNG 範圍序列逐項差分。另測五票混合獎項、零票公告且不抽獎、普通獎金、50 張最大上限及未審閱狀態原子拒絕。單筆 rand 的百萬分位樣本不取代 B-58 整數各獎等邊界 Oracle。
 - 僅修改 `modern/`；仍為 `committable:false` 純投影，原版 Perl/DSL/Core、正式 WorldState、HTTP/CAS、存檔和 36h 期末均未改。尚缺其餘未整合事件回呼與完整 R4 時序，不宣告 R4 完成。
+
+## 2026-11-23｜R4 真 Perl 17-key EVENT × happy START／END／NOWFUNC（受控不可提交）
+
+- 既有 B-60 `happy`（感謝祭）原版回呼審閱器整合到 R4 共用 17-key 閘門的選用審閱路徑：開始命中先消耗兩次原版持續時間 `rand(timespan)`／`rand(18000)`，經原版 `keys(%DTevent)` NOWFUNC 階段對同片新開始及延續的感謝祭執行 `rank+=int(rand(int(TIMESPAN/36)))`，最高 10000。到期後在 END 階段刪除，除非同片重新開始，否則不再消耗 NOWFUNC RNG。
+- Perl `original-r4-mixed-support-gate-probe.pl` 在既有凍結 `inc-turn.cgi` END／START 原文後接回真正 NOWFUNC 原文，暫存 `event-n/happy.pl` 來自原版 DSL 的真 `_local_` body。以同 Perl 行程新舊 `keys(%DTevent)` 實際排列作明示 fixture，四組情境覆蓋當片開始、下一片持續、到期不執行、到期重新開始，且與七種持續 EVENT、資助／人氣、偷搶機器人、彩券同 RNG／商店／日誌逐項差分。既有 B-60 單事件九案及此前 R4 測試保留。
+- `rebel`、`guildbattle` 等尚未整合的 NOWFUNC／ENDFUNC 外部狀態依賴繼續拒絕；`committable:false`，不假裝已復原原版 Perl seed/hash，未授權 WorldState/CAS、永久日誌、36h 決算、多片真經營。R4 尚未退出。
