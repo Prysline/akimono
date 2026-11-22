@@ -157,9 +157,9 @@ function showState(s){
   text('revision',w?.revision??'—');
   const save=s.save??{available:false,generation:0,recoveryWarning:false};
   text('save-status',save.available?
-    '已有第 '+save.generation+' 代存檔'+
-      (save.recoveryWarning?'（備援世代可用；有一份存檔損毀）':''):
-    (save.unreadable?'存檔損毀，無可載入備援':'尚未儲存'));
+    (save.recoveryWarning?'已有存檔（備援需要檢查）':'已有存檔'):
+    (save.unreadable?'存檔無法載入':'尚未儲存'));
+  text('save-generation',number(save.generation));
   $('save-world').disabled=!w;
   $('load-world').disabled=Boolean(w)||!save.available;
   $('reset-world').disabled=!w&&!save.available&&!save.unreadable;
