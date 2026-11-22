@@ -258,7 +258,7 @@ $('load-world').addEventListener('click',()=>call('/api/load',{},'載入本機�
 $('reset-world').addEventListener('click',async()=>{
   const before=snapshot;
   if(!before?.world&&!before?.save?.available&&!before?.save?.unreadable)return;
-  if(!window.confirm('確定要刪除目前店家及整個測試世界嗎？\\n'+
+  if(!window.confirm('確定要刪除目前店家及整個測試世界嗎？\n'+
     '兩份本機磁碟存檔也會刪除，無法復原。'))return;
   const button=$('reset-world');
   button.disabled=true;
