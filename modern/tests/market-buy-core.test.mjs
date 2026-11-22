@@ -530,7 +530,7 @@ test('R2-B new original ordinary ITEM #39 executes shared market-buy with exact 
   const rejected=apply(market,{...buyCommand(market,39,{shelf,price:500}),
     itemId:1});
   assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
-  assert.match(rejected.details.reason,/BASE/);
+  assert.match(rejected.details.reason,/original wholesale item sold out/);
   assert.deepEqual(rejected.world,market);
 });
 
