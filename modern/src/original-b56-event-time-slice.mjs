@@ -3,7 +3,7 @@
  * Caller supplies the full 17-key event order; this does NOT reproduce
  * process-dependent Perl keys(%EVENT) order. Unsupported starts abort CAS.
  */
-import {B41_SOURCE,projectB41Sale} from './original-b41-playable-sale.mjs';
+import {B41_SOURCE,projectR3PreEventTurn} from './original-b41-playable-sale.mjs';
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
 import {B55_SOURCE,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
@@ -187,8 +187,9 @@ export function projectB56EventSlice({
   if(!Array.isArray(eventDraws)||eventDraws.length>96||
      eventDraws.some(x=>!validDraw(x)&&!validTicketDraw(x)))
     fail('exact bounded source event draws required');
-  // Same source B-41 natural-sale/59 PLUS, BEFORE the event region.
-  const sale=projectB41Sale({
+  // R3's standalone pre-EVENT source stage NEVER overwrites the original
+  // incoming period. This fixture supplies its own reviewed EVENT successor.
+  const sale=projectR3PreEventTurn({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
     reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,

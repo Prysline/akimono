@@ -12,6 +12,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
 import {sourceCommandDraws} from '../src/local-source-command-draws.mjs';
+import {projectR3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
 import {reviewB56EventSlice,B56_EVENT_SLICE_SOURCE}
   from '../src/original-b56-event-time-slice.mjs';
 
@@ -135,6 +136,31 @@ test('B-56 one GameCore CAS executes source sale, PLUS and genuine robbery, save
   });
   assert.ok(originalB41.ok,JSON.stringify(originalB41.details));
   assert.equal(originalB41.world.period.eventState,null,'existing B-41 remains honestly unknown');
+  const preEvent=projectR3PreEventTurn({
+    world:before,reviewed:street.reviewedB41,
+    reviewedAllPlus:street.reviewedAllPlus,
+    compiled:street.reviewedGiftMapUse,
+    shopId:1,minutes:30,randomDraws:saleDraws,
+    reviewedB59Iron:street.reviewedB59Iron,
+    reviewedB60Happy:street.reviewedB60Happy,
+    reviewedB61Sword:street.reviewedB61Sword,
+    reviewedB62Map:street.reviewedB62Map,
+    reviewedB63Map:street.reviewedB63Map,
+    reviewedEventTimeSlice:true,
+  });
+  assert.equal(Object.hasOwn(preEvent,'period'),false,
+    'R3 stage does not forge any EVENT or period successor');
+  assert.deepEqual(preEvent.shops,originalB41.world.shops);
+  assert.deepEqual(preEvent.market,originalB41.world.market);
+  assert.equal(preEvent.nowSeconds,originalB41.world.nowSeconds);
+  assert.deepEqual(before.period.eventState,{});
+  assert.throws(()=>projectR3PreEventTurn({
+    world:{...before,period:{...before.period,eventState:null}},
+    reviewed:street.reviewedB41,
+    reviewedAllPlus:street.reviewedAllPlus,
+    compiled:street.reviewedGiftMapUse,
+    shopId:1,minutes:30,randomDraws:saleDraws,
+  }),/known original incoming EVENT/);
   const slice=act('advance-source-time-reviewed-events',{
     shopId:1,minutes:30,saleDraws,eventDraws:eventDraws('goutou'),
     eventHashOrderFixture:order,

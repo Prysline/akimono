@@ -151,7 +151,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   });
 }
 
-export function projectB41Sale({
+function projectSourcePreEventSaleSlice({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
   reviewedB59Iron=null,reviewedB60Happy=null,
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
@@ -312,12 +312,9 @@ export function projectB41Sale({
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
-    // B-41 deliberately omits original EVENT callbacks. From the first
-    // elapsed turn onward, the active event instances are UNKNOWN, even
-    // though the source admin created an empty map at world inception.
-    ...(world.schema===PERIOD_WORLD_SCHEMA?{
-      period:{...world.period,eventState:null},
-    }:{}),
+    // R3 only projects the pre-EVENT source stages. Do not write period:
+    // the consumer must choose the original EVENT stage (R4) or explicitly
+    // mark unknown state in the legacy B-41 player compatibility wrapper.
     receipt:{
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
@@ -337,5 +334,37 @@ export function projectB41Sale({
       totalDraws:used+plus.receipt.drawsUsed,
       sourceScope:reviewed.sourceScope,
     },
+  };
+}
+
+/**
+ * R3 source stage handoff to R4: unchanged verified incoming EVENT context,
+ * source natural sale -> ITEM FUNCTURN/FUNCSALE -> all 59 PLUS, but no
+ * EVENT/SortDT/period claim. Refuse unknown prior EVENT, even for #10.
+ * No period write: R4 consumes the ORIGINAL input EVENT and must supply
+ * its own fully reviewed successor period for a full WorldState commit.
+ */
+export function projectR3PreEventTurn(args){
+  if(args?.world?.schema===PERIOD_WORLD_SCHEMA &&
+     args.world.period?.eventState===null)
+    bad('R3 pre-EVENT stage requires a known original incoming EVENT state');
+  const stage=projectSourcePreEventSaleSlice(args);
+  if(Object.hasOwn(stage,'period'))
+    bad('pre-EVENT stage cannot replace an unfinished period');
+  return stage;
+}
+
+/**
+ * Legacy B-41 HTTP command. This is intentionally NOT a full source turn:
+ * R4 EVENT isn't run, so the saved EVENT successor becomes UNKNOWN, not {}.
+ * Keep old narrow regression behavior until the R4 event engine replaces it.
+ */
+export function projectB41Sale(args){
+  const stage=projectSourcePreEventSaleSlice(args);
+  return {
+    ...stage,
+    ...(args.world?.schema===PERIOD_WORLD_SCHEMA?{
+      period:{...args.world.period,eventState:null},
+    }:{}),
   };
 }

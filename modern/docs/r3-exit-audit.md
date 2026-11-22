@@ -1,5 +1,7 @@
 # R3 共用自然販售／時間：退出驗收狀態（2026-11-23）
 
+**R3 → R4 程式邊界補強：** `src/original-b41-playable-sale.mjs::projectR3PreEventTurn` 現提供**不寫入 period** 的單店已審閱前 EVENT 純投影，且要求 incoming `eventState` 已知；當 EVENT 尚未處理時，不得將 `null` 假充 `{}`。既有 `projectB41Sale` 保留相容玩家測試時間命令、完成後明確標記 EVENT 未知；內部 `original-b56-event-time-slice.mjs` 則改呼叫 R3 前 EVENT 投影，再由事件測試 fixture 負責附上所審閱的事件後繼狀態。此項是**階段責任分離，不是 EVENT 完整實作**。
+
 > **判定：共用販售計算與已審閱來源時間子階段均已通過，R3 整體退出條件仍未滿足。** 此文件記錄可直接驗證的能力與阻塞，不把 EVENT 未知轉換成空事件，也不借用 R4 的 36 小時決算冒充 R3 已完成。
 
 ## 已驗證且可重用的能力
