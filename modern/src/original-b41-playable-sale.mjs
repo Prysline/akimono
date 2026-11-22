@@ -21,6 +21,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
   projectOriginalSwordDemand}
   from './original-b61-sword-demand-event.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
+import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
 const bad=x=>{throw new RangeError('B-41 original sale boundary: '+x);};
@@ -30,7 +31,7 @@ const safe=(x,label,min=0)=>{
 };
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   configSource,reviewedMarket11=null,reviewedB59Iron=null,
-  reviewedB60Happy=null,reviewedB61Sword=null}){
+  reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -65,8 +66,15 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB61Sword.startProba!==100||
      reviewedB61Sword.swordItems?.length!==5))
     bad('source reviewed B-61 sword popular/2 changed');
+  if(reviewedB62Map!==null&&(
+     reviewedB62Map.source!==B62_MAP_SOURCE||
+     reviewedB62Map.swordItemId!==40||
+     reviewedB62Map.woodPrice!==1200||
+     reviewedB62Map.mapItemId!==14))
+    bad('B-62 real sword map acquisition source drift');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
     happyEventSource:reviewedB60Happy?.source??null,
     ironEventSource:reviewedB59Iron?.source??null,
@@ -78,7 +86,8 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
   reviewedB59Iron=null,reviewedB60Happy=null,
-  reviewedB61Sword=null,reviewedEventTimeSlice=false,
+  reviewedB61Sword=null,reviewedB62Map=null,
+  reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -95,7 +104,8 @@ export function projectB41Sale({
     bad('real post-purchase source wholesale world required');
   if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
      reviewed.happyEventSource!==(reviewedB60Happy?.source??null)||
-     reviewed.swordEventSource!==(reviewedB61Sword?.source??null))
+     reviewed.swordEventSource!==(reviewedB61Sword?.source??null)||
+     reviewed.swordMapSource!==(reviewedB62Map?.source??null))
     bad('source durable event contracts mismatch');
   if(world.schema===PERIOD_WORLD_SCHEMA&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -125,9 +135,9 @@ export function projectB41Sale({
   if((ironEventActive||happyEventActive||swordDemandEventActive)&&
      reviewedEventTimeSlice!==true)
     bad('known active EVENT requires fully reviewed lifecycle before advancing time');
-  // B-61 is a source-popular economic projection only. The real currently
-  // playable shelf is #10, not a sword. Never turn these potential visitors
-  // into fabricated sword inventory, money or sales.
+  // B-61 source popular/2 is read at turn start. B-62 authorizes the
+  // source-purchased #14 map -> source-created #40 sword market route;
+  // never create or sell swords from the preview alone.
   const sourceSwordDemandPreview=reviewedB61Sword&&
     world.schema===PERIOD_WORLD_SCHEMA&&
     world.period?.eventState!==null?
@@ -141,8 +151,13 @@ export function projectB41Sale({
     shop.showcase?.length!==1||shop.price?.length!==1||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
     shop.item[62]!==1||shop.item[78]!==5||
-    shop.item.some((n,i)=>!(reviewed.ticketSourceReviewed?
+    shop.item.some((n,i)=>!(reviewedB62Map?
+      [9,10,13,39,62,78]:reviewed.ticketSourceReviewed?
       [9,10,62,78]:[9,62,78]).includes(i)&&n!==0)||
+    (reviewedB62Map&&(shop.item[13]>3||shop.item[39]>600||
+      (shop.exp!==undefined&&(
+        shop.exp===null||typeof shop.exp!=='object'||
+        Object.keys(shop.exp).some(k=>k!=='14'||shop.exp[k]!==20)))))||
     (reviewed.ticketSourceReviewed&&shop.item[10]>50)||
     shop.paytoday<5000||
     shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0||
@@ -152,12 +167,14 @@ export function projectB41Sale({
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
     !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
     !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday!==0||
-    ![0,10].includes(shop.showcase[0])||
+    !(reviewedB62Map?[0,10,40]:[0,10]).includes(shop.showcase[0])||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
-    (shop.showcase[0]===10&&shop.price[0]!==5000))
-    bad('only active B-40 purchased #10 and legitimate original shelf supported');
-  const beforeStock=shop.item[9];
-  if(beforeStock>20)bad('original #10 carrying limit exceeded');
+    (shop.showcase[0]===10&&shop.price[0]!==5000)||
+    (shop.showcase[0]===40&&shop.price[0]!==1200))
+    bad('only source-reviewed real #10 or #40 inventory/shelf supported');
+  const activeItemId=shop.showcase[0]===40?40:10;
+  const beforeStock=shop.item[activeItemId-1];
+  if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
   // The local clock is a controllable test clock; crossing an unimplemented
   // 36-hour settlement boundary is rejected, not silently skipped.
   safe(world.nowSeconds,'world clock');
@@ -177,36 +194,44 @@ export function projectB41Sale({
     if(used>=randomDraws.length)bad('missing natural/PLUS source draw');
     return randomDraws[used++]/1000000;
   }
-  const display=shop.showcase[0]===10&&beforeStock>0;
+  const display=shop.showcase[0]===activeItemId&&
+    shop.showcase[0]!==0&&beforeStock>0;
   const items=[...shop.item];
   const itemtoday={...shop.itemtoday};
   let sold=0,rankUp=0,rankDown=0;
   let money=shop.money,trush=shop.trush??0,saleToday=shop.saletoday;
   // Core's specialty group uses displayed ITEM type even when stock is zero.
-  const tempRank=shop.rank+(shop.showcase[0]===10?1000:0);
+  const tempRank=shop.rank+(shop.showcase[0]!==0?1000:0);
   if(display){
-    // Exact single-store original buypeoplebase = (5000/5000)^4 = 1.
-    // The sole shop has dtranksum=tempRank, so rank quotient is 1.
-    const buyers=500000*12/1728000*span/86400;
+    // Exactly one store/one shelf at reviewed original fixed item price:
+    // buypeoplebase=(sourcePrice/displayPrice)^4=1,
+    // dtranksum=tempRank so store rank quotient=1.
+    // B-61's DataRead sword popular/2 applies before natural sale.
+    const itemPopular=activeItemId===40?
+      (swordDemandEventActive?5400:10800):1728000;
+    const itemPoint=activeItemId===40?1250:200000;
+    const itemPrice=activeItemId===40?1200:5000;
+    const buyers=500000*12/itemPopular*span/86400;
     const buypeople=buyers/2;
     let sale=0;
     if(buypeople>0)sale=rand()*buypeople;
     if(sale<1&&sale>0&&rand()*(1/sale)<1)sale=1;
     sale=Math.trunc(sale);
     if(sale>0){
-      sold=Math.min(sale,items[9]);
+      sold=Math.min(sale,items[activeItemId-1]);
       const marketPoint=Math.max(10,Math.min(1000,
-        Math.trunc(beforeStock/40000*1728000)));
+        Math.trunc(beforeStock/40000*itemPopular)));
       const rankUpMulti=((10-shop.rank/1000)**2)/5;
-      rankUp=Math.min(rand()*(rankUpMulti/marketPoint*200000/10*sold),span/3);
+      rankUp=Math.min(rand()*(rankUpMulti/marketPoint*itemPoint/10*sold),span/3);
       // Source GetSaleTax at normal original price with user taxrate 0 -> 0.
-      const proceeds=safe(sold*5000,'sale proceeds');
+      const proceeds=safe(sold*itemPrice,'sale proceeds');
       money=safe(money+proceeds,'cash after natural sale');
       trush=safe(trush+proceeds,'trush after sale');
       saleToday=safe(saleToday+proceeds,'saletoday after sale');
-      items[9]-=sold;
-      itemtoday[10]=safe((itemtoday[10]??0)+sold,'itemtoday #10');
-      if(items[9]===0)rankDown+=(shop.rank/100)**3/1000;
+      items[activeItemId-1]-=sold;
+      itemtoday[activeItemId]=safe(
+        (itemtoday[activeItemId]??0)+sold,'original itemtoday');
+      if(items[activeItemId-1]===0)rankDown+=(shop.rank/100)**3/1000;
     }
   }
   rankDown+=Math.sqrt(span)*(shop.rank/1000)**5/(5**5*20);
@@ -218,8 +243,13 @@ export function projectB41Sale({
   // Original Core accumulates fractional costtoday. This is not rounded.
   // Exact original inc-turn.cgi upkeep loops through ALL owned ITEMs.
   // SOURCE ITEM #11 has COST 10 per held ticket, even though noshowcase.
-  const upkeep=50+(items[9]?(display?items[9]/10:items[9])*100:0)+
-    (reviewed.ticketSourceReviewed?items[10]*10:0);
+  const upkeep=50+
+    (items[9]? (shop.showcase[0]===10?items[9]/10:items[9])*100:0)+
+    (reviewed.ticketSourceReviewed?items[10]*10:0)+
+    (reviewedB62Map?(
+      items[13]*500+
+      (items[39]? (shop.showcase[0]===40?items[39]/10:items[39])*120:0)
+    ):0);
   const accrual=upkeep*span/86400;
   const costtoday=shop.costtoday+accrual;
   if(!Number.isFinite(costtoday)||costtoday<0||
@@ -229,7 +259,9 @@ export function projectB41Sale({
   const nextShop={
     ...shop,item:items,itemtoday,money,trush,
     saletoday:saleToday,rank,temprank:tempRank,costtoday,
-    _sale_count_:sold?{'10':{count:sold,price:sold*5000}}:{},
+    _sale_count_:sold?{
+      [activeItemId]:{count:sold,price:sold*(activeItemId===40?1200:5000)},
+    }:{} ,
   };
   const naturalDraws=used;
   const plus=projectOriginalSparseAllPlus({
@@ -249,7 +281,9 @@ export function projectB41Sale({
     receipt:{
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
-      naturalSaleCount:sold,stockBefore:beforeStock,stockAfter:items[9],
+      naturalSaleCount:sold,
+      soldItemId:display?activeItemId:0,
+      stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,
       festivalWasActiveAtDataRead:happyEventActive,
       swordDemandWasActiveAtDataRead:swordDemandEventActive,
