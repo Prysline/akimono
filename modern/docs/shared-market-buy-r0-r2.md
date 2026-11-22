@@ -1,5 +1,20 @@
 # R0／R1 範圍紀錄與 R2-A～E 現況｜共用市場、交易、商品使用
 
+## 2026-11-22｜R2-B 實作後的最新判定：**部分完成，禁止標記結案**
+
+**本段優先於下方 R2-A 交接時的「R2-B 未完成／sharedBuyRules 仍存在」歷史描述。** R2-A 保持已完成自身原版差分退出驗收；**R2-B 部分完成**；R2-C／D／E 未完成，R2 整體未完成。R0／R1 全量仍未結案。本次只在指定工作分支的 `modern/` 修改，PR #1 保持 Draft／Open，不能拿舊 CI 取代最新 HEAD 驗收。
+
+**實作：** 新增 [source-driven 商品編譯 Registry](../src/standard-street-market-buy-registry.mjs)；`standard-street-module.mjs` 已刪除手寫三筆 `sharedBuyRules`，改從兩份固定 DSL 的 79 筆 ITEM 宣告順序、`parseDsl`、已審閱 `compileReviewedGiftMapUse().limits`、原版編譯器和 `buy-s.cgi/whole.cgi/item.cgi` 來源片段產生 `entries/order/describe/getRule`。Registry 按原版宣告排序及 ID-1 稀疏批發索引，保留來源檔／行號、固定 DSL Git Blob `7a18185e98b32aee82ca1ce30d6f3c395157dbcb`、價格、LIMIT 與批發上限。`market-buy-core.mjs` 不含 Standard Street 商品 ID，仍只有一套共同成交、回呼順序和 CAS 寫回；不支援的商品回報具體來源語義原因，非「不在白名單」。
+
+**新增真原版商品：** ITEM #39「拆解/打包工具」(`book-kaitai`)，來源 `custom/inc-item-data.cgi:266`，`price=500`、`limit=10/3`、`plus=5h`；沒有 ITEM-level `FUNCB` 或 `BASE`。通過同一 `market-buy` 命令買入，沒有 `buy-market-item-39` 命令或專用 Node 成交演算法。新 [直接原版 Perl 買入探針](../tests/original-perl/original-r2b-market-buy39-probe.pl) 使用真正固定 `buy-s.cgi`、`GetWholeStore`、原版全域 `@@FUNCBUY` 及實際 59 項 PLUS 的來源市場，比較合法、過期價與資金不足，核對現金、日帳、庫存、時間、貨架、79 欄完整稀疏 CSV、回呼先後與拒絕原子性；[共用測試](../tests/market-buy-core.test.mjs) 另核對 Registry、CAS、持有上限、72 小時及兩世代存檔。**每筆新商品的驗收依最新 HEAD 的 GitHub Actions 判斷，不可引用 R2-A 歷史 903/1867 作新 HEAD 結論。**
+
+**特殊來源語義：** 固定 `whole.cgi::GetWholeStore` 使用 `BASE A/B` 生成的 `pricebase/pricehalf` 按批發庫存計算實價，並使 `item.cgi::GetTimeDeal` 可能不再是 600 秒。此版 Registry 對一般 `BASE` 商品（如 #1）標記 `dynamic-price`，在此尚未完成策略前明確拒絕；對原版批發上限為零（如 #79）、零價或商品層級未審閱 `FUNCB` 亦列具體原因並拒絕。**關鍵缺口：#14 有 `BASE 50/150`（`custom/inc-item-data.cgi:1156`），但既有 R2-A Perl Oracle 的商品編譯子集只讀 PRICE/LIMIT、不讀 BASE，故其 #14 10000G／600 秒只是歷史受控相容測資，不足以驗證完整原版動態行情。** 現有 Registry 明確將 #14 標為 `legacy-r2a-price-incomplete`，保留原 R2-A 測試行為，**不得把此例外視為一般商品正確定價、也不得宣稱 R2-B 已安全完成**。必須補原版真 BASE 編譯／市場價格差分、處理舊 Oracle 相容性，然後才能結案。
+
+全域 `@@FUNCBUY` 的每成交 500,000G 贈 #79 並未消失：受支援共同靜態商品在本次已驗證的成交金額下屬零效果；可能觸發而沒有已審閱實作時，共用 Core 保留 fail-closed。未執行未審閱的 Perl callback。R2-C 還要把 UI／HTTP／舊 `buy-market-item-10/11/14` 三條獨立演算法統一及去重，**本次沒有執行 R2-C**；R2-D 共用 USE、R2-E 全世界整合亦未完成。後續先排除 #14 BASE 缺口，再判 R2-B 是否合格，禁止直接宣告 R2-C 可結案。
+
+---
+
+
 > **2026-11-22 最新 R2-A 驗收判定（優先於本檔歷史初版紀錄）：R2-A「共用市場買入核心」已完成自身退出條件；R2-B／C／D／E 均未完成，R2 整體仍未完成。** 完成的是共用買入演算法與原版直接差分、全域／商品回呼時序及 fail-closed 邊界，**不是**全商品接入、正式 UI 遷移、刪除三條舊交易演算法或共用 USE。本檔可在沒有對話記憶時獨立閱讀；不可用舊標題或 CI 綠燈推論 R2 整體完成。只在 `test/task02-baseline-on-s1`／Draft PR #1 修改 `modern/`，不動凍結 Perl／DSL、其他分支與 Notion 正式狀態。
 
 ## 先讀：目前真正做了什麼、缺什麼
