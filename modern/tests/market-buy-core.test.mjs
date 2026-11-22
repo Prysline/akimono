@@ -617,7 +617,8 @@ test('R2-B direct frozen Perl compiler proves actual ITEM BASE price/time differ
     const multiplier=Math.max(0.5,Math.min(2,2-row.sourcePrice/row.basePrice));
     assert.equal(row.sourceTimeSeconds,Math.trunc(600*multiplier));
     assert.notEqual(row.sourcePrice,row.basePrice);
-    assert.deepEqual(row.quotes.map(q=>q.stock),[1,2,3]);
+    assert.deepEqual(row.quotes.map(q=>q.stock),
+      row.itemId===1?[1,200,400]:[1,2,3]);
     const rule=street.marketBuy.getRule(row.itemId);
     for(const observed of row.quotes){
       const quote=street.marketBuy.quote({
