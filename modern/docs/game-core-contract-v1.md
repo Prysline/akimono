@@ -1,15 +1,15 @@
 # GameCore／StreetModule／WorldState｜現行責任契約修正（2026-11-22）
 
-> **最新狀態（2026-11-22，優先於下方 B-31 歷史實作記錄）：已提交第一版共用 `market-buy` 到 GameCore，但 R2-A 僅部分完成、R2-B～E 未完成，R2 整體未完成。** 不能再說「所有 Core 商業規則仍完全靠 StreetModule.apply」，也不能說「共用市場已完成」：新命令已進 Core，三件商品仍手動白名單，三套專用舊買入流程仍可各自執行。完成狀態及驗收清單見 [R2-A～E 現況文件](shared-market-buy-r0-r2.md)、正式主線見 [R0–R7 計畫](playable-loop-priority-plan.md)。B-31 舊資料只供來源追溯，**不能作現行 API 能力或分工表**。
+> **最新狀態（2026-11-22，優先於下方 B-31 歷史實作記錄）：已提交共用 `market-buy` 到 GameCore，且 R2-A **已通過直接來源差分與回呼時序退出驗收**；R2-B～E 未完成，R2 整體未完成。** 不能再說「所有 Core 商業規則仍完全靠 StreetModule.apply」，也不能說「共用市場已完成」：新命令已進 Core，三件商品仍手動白名單，三套專用舊買入流程仍可各自執行。完成狀態及驗收清單見 [R2-A～E 現況文件](shared-market-buy-r0-r2.md)、正式主線見 [R0–R7 計畫](playable-loop-priority-plan.md)。B-31 舊資料只供來源追溯，**不能作現行 API 能力或分工表**。
 
 ## 已實作的 R2 買入介面與仍未達成的責任界線
 
 | 層次 | 已實作 | 尚未完成、不可推定 |
 | --- | --- | --- |
-| `GameCore` | `applyGameCommand` 在 `kind:'market-buy'` 時呼叫 `market-buy-core.mjs`，集中成交量裁切、金錢／庫存／時間、回執及一次世界版本提交；其他歷史命令仍可走 StreetModule | 尚未成為市場所有買入操作的唯一規則引擎，亦無共用 USE、全銷售或期末 |
+| `GameCore` | `applyGameCommand` 在 `kind:'market-buy'` 時呼叫 `market-buy-core.mjs`，集中成交量裁切、金錢／庫存／時間、回執及一次世界版本提交；R2-A 已通過 #10/#11/#14 ×12 的真正 Perl `buy-s.cgi` 直接差分 | 尚未成為市場所有買入操作的唯一規則引擎，亦無共用 USE、全銷售或期末 |
 | `StreetModule` | 提供三筆已審閱的 #10/#11/#14 買入規格、來源排序／單店市場驗證／79 欄原版批發寫回 | `sharedBuyRules` 手動列舉，`getRule` 對其餘 ID 回傳空；不代表其餘原版商品不合法，也未具資料驅動 Registry |
 | 買入相容路徑 | `buy-market-item-10/11/14` 專用命令仍可運作，保護舊 UI 與原版差分測試 | 它們仍分別執行 `projectOriginalMarketBuy10/11/14`，不是無副作用 alias；R2-C 要統一入口後刪除重複正式演算法 |
-| 回呼／DSL | 共用 Core 預留已審閱 `FUNCBUY` 接口，對未審閱特殊效果拒絕 | 三個現行 `buyCallback:null` 不能證明其他商品無回呼；規則來源／動態價格／特例尚需按來源審閱 |
+| 回呼／DSL | R2-A 已辨識標準街原版 `@@FUNCBUY`：市場進貨每滿500,000 G 贈 #79 禮物卷，三件已審閱商品單次買入不觸發；共用 Core 在來源帳務更新後按「全域 `FUNCBUY` → 商品 `FUNCBUY` → 市場寫回」執行已審閱回呼，未知效果明確拒絕，原版 Perl 探針已驗證順序 | 三個現行 `buyCallback:null` 只表示沒有個別商品回呼；**實際超門檻贈禮副作用尚未接入**（R2-B），動態價格／其他特例仍要依來源驗證 |
 | WorldState／UI | 既有 CAS、B-43 雙世代存檔可承載新共用命令的受測世界形狀 | 本機 UI 尚未全面切到 `market-buy`，未完成買入＋USE 真世界 HTTP／重啟整合 |
 
 **責任判定：** 共同商業運算只能由 GameCore 或其共用規則模組實作一次；StreetModule 應給來源已審閱、帶來源位置的商品／USE／回呼資料。新增能用現有語義表達的合法商品，不應新增 `buy-market-item-N` 或獨立 project/review 交易演算法。未知回呼、特殊價格及未支援 DSL 語義需精確指出來源並 fail closed，不能只靠三商品白名單認定不支援。R2-A～E 的退出門檻及與 R3～R5 的分界以 [實作狀態](shared-market-buy-r0-r2.md) 為準。
@@ -54,7 +54,7 @@ B-31 文件第「三個模組及責任界線」表明 GameCore 不涉及商品 I
 
 **測試治理：** 每個新增的共同執行能力須新增原版差分、共用命令、街道差異及 CAS／持久化風險測試；每個被取代的 B-xx 專用命令／模型須檢查其舊測試，屬重複或綁定過時內部實作且已有同等覆蓋者應移除，留下清楚的新舊測試／來源行為對照。不得用刪測試換取 CI 綠燈，也不得把測試斷言總數當作完成度。詳細準則見 [現行計畫的重構測試治理](playable-loop-priority-plan.md)。
 
-**狀態：共用 `market-buy` 初版已存在，但本契約所述的完整共同規則引擎及 R2 未完成。** 特別是三商品白名單、獨立舊買入路徑、共用 USE、實際 UI 遷移尚未結案；B-31 命令契約、B-43 本機存檔及 B-01～B-63 的必要原版對照成果保留。
+**狀態：R2-A 共用 `market-buy` 核心已完成自身退出驗收**（原版直接 Perl 差分36組及回呼時序；程式 SHA `bd7a504bdc473a0bd34c1beb5efab8ae621d2381` 的 [CI #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) 成功），**但本契約的完整共同規則引擎與 R2-B～E 均未完成，R2 整體未完成。** 特別是三商品白名單、獨立舊買入路徑、共用 USE、實際 UI 遷移尚未結案；B-31 命令契約、B-43 本機存檔及 B-01～B-63 的必要原版對照成果保留。
 
 ---
 
