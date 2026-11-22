@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn,execFileSync} from 'node:child_process';
-import {mkdtemp,rm,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -255,10 +255,18 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   const afterRebuy=await srv.state();
   assert.equal(afterRebuy.shop.exp['14'],20);
   assert.equal(afterRebuy.shop.item[78],1);
-  // Generation-2 is slot A: corrupt it and prove the older source-checked
-  // generation-1 is recovered, not an invented world or a poisoned newest.
+  // Generation-2 is slot A: forge a new SHA256 after illegally changing
+  // gift stock to 4. Semantic source guards must still reject this save
+  // and recover generation 1, not merely check a cryptographic digest.
   await srv.stop();
-  await writeFile(join(directory,'world-a.json'),'broken checkpoint\n');
+  const slot=join(directory,'world-a.json');
+  const tampered=JSON.parse(await readFile(slot,'utf8'));
+  const forged=JSON.parse(tampered.world);
+  forged.shops[0].item[78]=4; // Impossible: source gift USE consumes 2.
+  tampered.world=JSON.stringify(forged);
+  tampered.sha256=createHash('sha256')
+    .update(tampered.world,'utf8').digest('hex');
+  await writeFile(slot,JSON.stringify(tampered)+'\n');
   srv=await boot(directory);servers.push(srv);
   const recoverable=await srv.state();
   assert.equal(recoverable.save.generation,1);
