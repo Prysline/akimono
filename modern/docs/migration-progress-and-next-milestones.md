@@ -1,14 +1,12 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
-## 2026-11-22｜R2-B 已完成自身退出條件（最新權威進度）
+## 2026-11-22｜里程碑更新：R2-C 唯一市場買入路徑已完成
 
-**R2-A、R2-B 已完成；R2-C、R2-D、R2-E 未完成；R2 整體未完成。R0、R1 全量尚未結案。** `src/standard-street-market-buy-registry.mjs` 從固定兩份原版 DSL 的79 ITEM、來源行號、真實排列、編譯 LIMIT／批發上限、`BASE/pricehalf` 與原版 `GetTimeDeal` 建立資料驅動規則。StreetModule 已去除 `sharedBuyRules`，共用 `market-buy` 使用來源報價和真實秒數，仍由 GameCore/WorldState/CAS 唯一提交；#10/#11/#14 通用接入，新增 #39「拆解/打包工具」（500、LIMIT 10/3）由真原版市場正常買入，#1/#12 等動態價無須專用 Node 演算法。
+**R2-A、R2-B、R2-C 已完成；R2-D／R2-E 與 R2 整體未完成，R0／R1 全量未結案。** 在唯一允許的 Draft PR #1／`test/task02-baseline-on-s1` 分支之 `modern/`，已把商品市場買入統一為來源 `marketBuyRegistry` 報價及 GameCore `market-buy` → WorldState/CAS。B-40 #10、B-58 #11、B-62 #14（真正原版 BASE 動態價）和新來源商品 #39 及其他已審閱普通商品不再要求個別交易命令。StreetModule 刪除所有 `buy-market-item-10/11/14` capability／dispatch；三套 `projectOriginalMarketBuy*` 和專用 `quoteOriginalMarket*` 已真正刪除，原版固定來源審閱、USE／LOTO、Perl Oracle 原檔保留。
 
-**新原版證據：** 動態 #12/#14 真原版 `buy-s.cgi` 16 組直接 Perl/Node 差分、#39 三組直接原版 Perl 買入、#1/#14 多種實際批發庫存的 `GetBuffer(BASE)`／`GetWholeStore`／`GetTimeDeal` 原版計價，保留原 R2-A 36 組歷史 Oracle（其 BASE 遺漏只在舊測試 adapter 中重現）、CAS 拒絕、72h、雙世代存檔、完整79欄 CSV／DSL SHA／舊 UI/HTTP 回歸。原版全域 `@@FUNCBUY` 500000G 贈 #79 **確會被 #64 觸發**；未審閱非零回呼、EVENT overlay、公會與來源未支援商品一律拒絕而不忽略。B-43 可選用注入 Registry 保存新商品，但尚未接實際 UI。
+**實際可操作的 UI／HTTP／持久化：** 繁中市場頁依伺服器 `marketOffers` 呈現全部79 ITEM 的真實排序、即時價格與不支援原因；`POST /api/buy` 嚴格驗證五欄、只提交 `kind:'market-buy'`；實際 Node 服務的 B-43 雙代存檔已注入同一來源 Registry。新 `tests/r2c-unified-market-http.test.mjs` 真實驗證繁中頁／JS、#10/#11/#14/#39 同世界真原版 PLUS 供貨→買入帳務與稀疏79欄 CSV→CAS版本／舊格式拒絕→磁碟兩世代保存→伺服器重啟／載入後再次買入。原 36 組 R2-A Perl Oracle、R2-B 16 組動態 #12/#14 及 #39 原版交易、全部 B-40～B-63 來源測試與原版 SHA／DSL 審核繼續保留。因 B-41 以前只接受固定價 `paytoday` 模數而無法容納真 #14 BASE 市價，已在經 B-62 來源審閱時修正該過度拒絕；未知 EVENT 之後繼續買入仍**明確拒絕**，不以舊引擎繞過。
 
-**下一正式工作包為 R2-C（尚未完成）：** UI／HTTP／內部買入與實際存檔讀取統一使用已審閱 Registry，驗證後移除／改為相容轉接現存 `buy-market-item-10/11/14` 和三個獨立 `projectOriginalMarketBuy*`；禁止把 R2-B 完成說成去重完成。R2-D 共用 USE、R2-E 真世界及全量 R0/R1 仍未結案。本次**沒有修改 Notion 正式任務狀態**，PR #1 仍必須 Draft、Open、未合併。請每次查最新 HEAD 的 Push／PR GitHub Actions，別拿歷史成功數代替。最完整原版證據與下一工作窗交接見 [R2 正式狀態](shared-market-buy-r0-r2.md)、[next-window-handoff.md](next-window-handoff.md)。
-
-> 下方「R2-B 未完成／BASE 未支援」是之前的歷史快照，非當前結案判定。
+**下一階段為 R2-D（未完成）：** 共用 USE／製作（#79 交換、#14 地圖首次使用及受審閱成果）；R2-E（未完成）再串真世界買入→USE、HTTP/CAS/雙代存檔與重啟。R0／R1 全量仍待後續里程碑，沒有修改 Notion 正式任務、其他分支、凍結原版 Core／DSL。PR #1 必須 Open／Draft／未合併；每次完成後核對**同一 HEAD** 的 GitHub Push／PR Actions `completed/success` 及 Node／Perl／DSL／SHA 稽核，不能拿前一提交的綠燈替代。完整證據與無記憶交接見 [R2 正式現況](shared-market-buy-r0-r2.md)、[next-window-handoff](next-window-handoff.md)。下方原記錄 R2-C 尚未完成為歷史快照。
 
 
 ---
