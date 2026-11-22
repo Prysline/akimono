@@ -17,7 +17,9 @@ button:disabled{cursor:not-allowed;color:#aaa!important;opacity:.85}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
   outline:2px solid #687bb1;outline-offset:2px
 }
-.shell{width:fit-content;max-width:min(100%,640px);margin:8px auto 25px;padding:0 8px}
+/* Keep the page frame stable across short/long screens.
+ * On narrow viewports the floor shrinks to 100%, avoiding page-wide overflow. */
+.shell{width:fit-content;min-width:min(100%,560px);max-width:min(100%,640px);margin:8px auto 25px;padding:0 8px}
 .site-heading{text-align:center;border-bottom:1px solid #999;padding-bottom:4px}
 .heading-top{display:flex;justify-content:space-between;gap:8px;
   font-size:11px;color:#999;padding:4px 0;border-bottom:1px dotted #e2e2e6}
