@@ -128,8 +128,8 @@ test('B-55 original robbery callback changes a REAL purchased source shop throug
     timespanSeconds:60,randomDraws:plusOracle.draws,
   }).ok);
   const buy=()=>{
-    const offer=street.quoteMarketItem10(repo.read());
-    const r=act('buy-market-item-10',{
+    const offer=street.quoteMarketOffer(repo.read(),10);
+    const r=act('market-buy',{itemId:10,
       shopId:1,requestedCount:1,marketShelf:offer.shelf,
       expectedPrice:offer.price,
     });
