@@ -109,6 +109,13 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
     ownerName:'R2-C 來源買家',shopName:'來源編譯通用進貨'})).ok);
   const source=await srv.state();
   assert.equal(source.itemCatalog.length,79,'full ITEM registry is still available for warehouse');
+  const book=source.itemCatalog.find(item=>item.itemId===10);
+  assert.equal(book.name,'書本寫作工具');
+  assert.equal(book.basePrice,5000);
+  assert.equal(book.stockLimit,20);
+  assert.equal(book.type,'道具');
+  assert.equal(book.info,'寫書的基本工具包');
+  assert.equal(book.costRaw,'100');
   assert.equal(new Set(source.itemCatalog.map(x=>x.itemId)).size,79);
   assert.deepEqual(source.marketOffers,[],'original market starts with no stock');
   assert.deepEqual(source.marketOffers.map(x=>x.itemId),originalShelfIds(source));
