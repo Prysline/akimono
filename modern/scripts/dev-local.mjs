@@ -243,6 +243,35 @@ async function api(req,res,url){
   const body=await jsonBody(req);
   let result;
   switch(url.pathname){
+    case '/api/reset': {
+      // Destructive LOCAL TEST maintenance, not a gameplay delete-shop command.
+      // Match the whole payload to reject accidental/legacy unconfirmed POSTs.
+      if(Object.keys(body).sort().join(',')!==
+           'confirm,expectedGeneration,expectedRevision,expectedWorldId'||
+         body.confirm!=='RESET_LOCAL_TEST_WORLD')
+        return send(res,400,{ok:false,
+          error:'重置需要明確確認，不接受未確認的刪除請求',state:state()});
+      const current=repo?.read()??null;
+      if(body.expectedRevision!==null)
+        commandNumber(body.expectedRevision,'expectedRevision');
+      if(body.expectedWorldId!==null&&
+         (typeof body.expectedWorldId!=='string'||!body.expectedWorldId))
+        throw Error('expectedWorldId 必須是世界 ID 或 null');
+      const expectedGeneration=commandNumber(body.expectedGeneration,
+        'expectedGeneration');
+      if(body.expectedRevision!==(current?.revision??null)||
+         body.expectedWorldId!==(current?.worldId??null)||
+         expectedGeneration!==saveStore.status().generation)
+        return send(res,409,{ok:false,code:'RESET_CONFLICT',
+          error:'世界或存檔已更新，請重新確認後再重置',state:state()});
+      const cleared=saveStore.clear({expectedGeneration});
+      // Only discard live memory AFTER both disk slots are successfully cleared.
+      repo=null;
+      return send(res,200,{ok:true,code:'RESET',
+        details:{action:'reset-local-test-world',
+          deletedSlots:cleared.deletedSlots,generation:cleared.generation},
+        state:state()});
+    }
     case '/api/load': {
       if(repo)return send(res,409,{ok:false,
         error:'目前世界已啟用；不能將磁碟世界覆蓋正在營業的記憶體世界',state:state()});
