@@ -39,8 +39,12 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(script,/selectedItemId=itemId/);
   assert.match(script,/renderItemInfo\(s\)/);
   assert.match(adapter,/basePrice:e\.basePrice,stockLimit:e\.stockLimit/);
-  assert.match(adapter,/flagRaw:streetModule\.catalog\.items/);
-  assert.match(html,/尚未具備完整來源資料/);
+  assert.match(adapter,/flagRaw:item\?\.flagRaw/);
+  assert.match(adapter,/type:item\?\.typeRaw/);
+  assert.match(adapter,/costRaw:item\?\.costRaw/);
+  assert.match(html,/熟練、行情與供需/);
+  assert.match(html,/id="item-detail-cost"/);
+  assert.match(html,/id="item-detail-info"/);
 });
 
 test('developer tools remain on their related pages and existing live commands stay wired',()=>{
