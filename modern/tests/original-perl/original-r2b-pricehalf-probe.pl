@@ -51,10 +51,13 @@ for my $id (1,14){
       $market->{showcasecount}==1 && $market->{showcase}[0]==$id;
     my $actualPrice=$market->{price}[0];
     my $actualTime=GetTimeDeal($actualPrice,$id,1);
-    die "original BASE did not change dynamic price" if $actualPrice==$price;
     push @quotes,{stock=>$stock,price=>0+$actualPrice,
       timeSeconds=>0+$actualTime};
   }
+  # BASE may legitimately quote exactly the base PRICE when stock==A.
+  # Verify that the source actually changes between the observed endpoints.
+  die "original BASE price never varies across source-valid stock"
+    if $quotes[0]{price}==$quotes[-1]{price};
   my $actualPrice=$quotes[0]{price};
   my $actualTime=$quotes[0]{timeSeconds};
   push @rows,{
