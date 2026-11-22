@@ -7,6 +7,12 @@ let selectedItemId=null;
 let selectedUseId=null;
 let lastRenderedItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
+const sourceProficiency=(shop,itemId)=>{
+  if(!shop)return '—';
+  const exp=shop.exp?.[String(itemId)]??0;
+  return Number.isSafeInteger(exp)&&exp>=0&&exp<=1000?
+    (exp/10).toLocaleString('zh-TW')+'%（'+number(exp)+'/1000）':'—';
+};
 const sourceUpkeep=raw=>{
   if(typeof raw!=='string'||!/^\d+$/.test(raw))return '—';
   const amount=Number(raw);
@@ -178,7 +184,8 @@ $('use-offers').addEventListener('click',event=>{
     row.itemId===itemId&&row.useId===useId);
   if(!offer?.canUse||selectedItemId!==itemId)return;
   selectedUseId=useId;
-  $('use-count').value='1';
+  $('use-count').value='';
+  $('use-count-presets').value='';
   selectTab('use');
 });
 function renderUseDetail(s){
@@ -195,14 +202,30 @@ function renderUseDetail(s){
       number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料'):'—');
   text('use-detail-money',offer?money(offer.moneyPerUse):'—');
   text('use-detail-time',offer?conciseTimeText(offer.timePerUseSeconds):'—');
+  const maximum=offer?.maxUseCount??0;
+  const limitName=offer?.maxUseCountReason??'可執行上限';
   text('use-detail-limit',offer?
-    (offer.firstUseOnly?'僅限首次使用':'可選擇執行次數'):'—');
+    (maximum>0?'最多 '+number(maximum)+' 次（'+limitName+'）':
+      (offer.reason??'目前不可執行')):'—');
   const form=$('use-action-form');
   form.hidden=!offer;
+  const presets=$('use-count-presets');
+  const previous=Number(presets.value);
+  presets.replaceChildren();
+  const choices=[1,2,3,5,maximum].filter((n,i,all)=>
+    n>0&&n<=maximum&&all.indexOf(n)===i);
+  for(const n of choices){
+    const option=document.createElement('option');
+    option.value=String(n);
+    option.textContent=n===maximum&&maximum>1?
+      n+'（'+limitName+'）':String(n);
+    presets.append(option);
+  }
+  presets.disabled=!offer?.canUse||!choices.length;
+  presets.value=choices.includes(previous)?String(previous):String(choices[0]??'');
   const count=$('use-count');
   count.max=offer?.firstUseOnly?'1':'';
-  if(offer?.firstUseOnly)count.value='1';
-  $('perform-use').disabled=!offer?.canUse;
+  $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
     offer.canUse?'執行前請確認材料、資金與可用行動時間。':
       (offer.reason??'目前無法執行'));
@@ -287,6 +310,14 @@ function showState(s){
   text('shop-shelf-today',hasShelf?number(shop.itemtoday?.[shelfId]??0):'—');
   text('shop-shelf-yesterday',hasShelf&&w?.period?.settledCount>0?
     number(shop.itemyesterday?.[shelfId]??0):'—');
+  const removeShelf=$('shop-remove-showcase');
+  const shelfEditSeconds=s.showcaseEditTimeSeconds;
+  const canRemoveShelf=hasShelf&&Number.isSafeInteger(shelfEditSeconds)&&
+    w.nowSeconds-shop.time>=shelfEditSeconds;
+  removeShelf.disabled=!canRemoveShelf;
+  removeShelf.title=!hasShelf?'展示架目前沒有陳列商品':
+    canRemoveShelf?'下架商品（倉庫持有數量不變）':
+      '可用行動時間不足，無法下架';
   text('paid',money(shop?.paytoday));
   text('sales',money(shop?.saletoday));
   text('shop-paid',money(shop?.paytoday));
@@ -374,22 +405,24 @@ function showState(s){
   };
   const storage=entries.filter(item=>item.flagRaw.includes('s'));
   const selling=entries.filter(item=>!item.flagRaw.includes('s'));
-  if(!storage.length)addEmpty(storageBody,4,'目前沒有保管商品');
+  if(!storage.length)addEmpty(storageBody,5,'目前沒有保管商品');
   for(const item of storage){
     const tr=document.createElement('tr');
     addName(tr,item);
     for(const value of [money(item.basePrice),
-      sourceUpkeep(item.costRaw),number(item.count)]){
+      sourceUpkeep(item.costRaw),number(item.count),
+      sourceProficiency(shop,item.itemId)]){
       const td=document.createElement('td');
       td.textContent=value;tr.append(td);
     }
     storageBody.append(tr);
   }
-  if(!selling.length)addEmpty(sellingBody,5,'目前沒有販售商品');
+  if(!selling.length)addEmpty(sellingBody,6,'目前沒有販售商品');
   for(const item of selling){
     const tr=document.createElement('tr');addName(tr,item);
     const values=[money(item.basePrice),sourceUpkeep(item.costRaw),
       number(item.count)+'／'+number(item.stockLimit),
+      sourceProficiency(shop,item.itemId),
       shop.showcase?.[0]===item.itemId?'第 1 架｜'+money(shop.price[0]):'—'];
     for(const value of values){
       const td=document.createElement('td');td.textContent=value;tr.append(td);
@@ -486,6 +519,12 @@ $('supply').addEventListener('click',()=>call('/api/supply',{
   expectedRevision:snapshot?.world?.revision,
   timespanSeconds:Number($('supply-seconds').value),
 },'原版 PLUS 供貨子步驟'));
+$('shop-remove-showcase').addEventListener('click',async()=>{
+  if(!snapshot?.world||!snapshot?.shop?.showcase?.[0])return;
+  await call('/api/showcase',{
+    expectedRevision:snapshot.world.revision,itemId:0,per:100,
+  },'下架展示架商品');
+});
 $('showcase-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const itemId=Number($('shelf-item').value);
@@ -518,6 +557,9 @@ $('market-offers').addEventListener('click',event=>{
     marketShelf:offer.shelf,expectedPrice:offer.price,
   },'來源市場進貨 #'+itemId+' '+offer.name);
 });
+$('use-count-presets').addEventListener('change',()=>{
+  $('use-count').value='';
+});
 $('use-action-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const before=snapshot;
@@ -525,7 +567,8 @@ $('use-action-form').addEventListener('submit',async event=>{
   const offer=before?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
   if(!offer?.canUse||currentTab!=='use'||!before?.world)return;
-  const requestedCount=Number($('use-count').value);
+  const manual=$('use-count').value.trim();
+  const requestedCount=Number(manual!==''?manual:$('use-count-presets').value);
   if(!Number.isSafeInteger(requestedCount)||requestedCount<1||
     (offer.firstUseOnly&&requestedCount!==1)){
     feedback('請輸入有效的執行次數。',null,true);

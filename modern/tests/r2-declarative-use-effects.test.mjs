@@ -227,3 +227,19 @@ test('R2 material routes distinguish owned, real market PLUS, registered upstrea
   assert.equal(world.shops[0].item[7],0);
   assert.equal(world.market.wholesale[7],0);
 });
+
+
+test('read-only USE shortcuts track source material/time ceilings',()=>{
+  const world=createSourceWorld();
+  const offers=street.listUseOffers(world);
+  const gift=(id)=>offers.find(x=>x.itemId===79&&x.useId===id);
+  assert.equal(world.shops[0].item[78],5);
+  assert.equal(gift(0).maxUseCount,2,'five vouchers permit two map exchanges');
+  assert.equal(gift(0).maxUseCountReason,'材料最大');
+  assert.equal(gift(3).maxUseCount,2,'two-voucher kits cannot exceed stock');
+  assert.equal(gift(4).maxUseCount,5,'one-voucher exchange uses all vouchers');
+  assert.equal(gift(1).maxUseCount,1,'five-voucher book bundle once');
+  assert.equal(gift(2).maxUseCount,0,'ten-voucher book bundle unavailable');
+  const sword=offers.find(x=>x.itemId===14&&x.useId===0);
+  assert.equal(sword.maxUseCount,0,'unowned map must not be offered as usable');
+});

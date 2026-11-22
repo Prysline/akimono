@@ -62,7 +62,7 @@
         <table class="status-table"><tbody><tr>
           <th scope="row">RANK</th><td id="rank">—</td>
           <th scope="row">店名</th><td id="store-name">—</td>
-          <th scope="row">點數</th><td id="shop-points">—</td>
+          <th scope="row">點數</th><td id="shop-points" title="原版 GetDTPoint 點數（與人氣分開計算）">—</td>
           <th scope="row">資金</th><td><strong id="money">—</strong></td>
           <th scope="row">行動時間</th><td id="time">—</td>
         </tr></tbody></table>
@@ -102,13 +102,15 @@
       </tbody></table></div>
       <h3 class="sub-title">展示架</h3>
       <div class="table-scroll"><table class="shelf-table">
-        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th></tr></thead>
+        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th><th>操作</th></tr></thead>
         <tbody><tr>
           <td>第 1 架</td><td id="showcase">目前空架</td>
           <td id="shop-shelf-price">—</td><td id="shop-shelf-base-price">—</td>
           <td id="shop-shelf-stock">—</td><td id="shop-shelf-today">—</td><td id="shop-shelf-yesterday">—</td>
+          <td><button type="button" id="shop-remove-showcase" class="secondary" disabled>下架</button></td>
         </tr></tbody>
       </table></div>
+      <p class="shelf-remove-note">下架僅清空展示架，商品仍保留在倉庫；操作消耗原版展示架調整時間。</p>
       <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
         <th scope="row">本期售額</th><td id="shop-sales">—</td>
         <th scope="row">本期支出</th><td id="shop-paid">—</td>
@@ -176,15 +178,15 @@
       <p class="page-intro">點選商品名稱可查看明細、設定展示架或使用商品。</p>
       <h3 class="sub-title">保管倉庫</h3>
       <div class="table-scroll"><table class="warehouse-table">
-        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>持有數量</th></tr></thead>
-        <tbody id="storage-inventory"><tr><td colspan="4">目前沒有保管商品</td></tr></tbody>
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>持有數量</th><th>熟練度</th></tr></thead>
+        <tbody id="storage-inventory"><tr><td colspan="5">目前沒有保管商品</td></tr></tbody>
       </table></div>
       <h3 class="sub-title">販售倉庫</h3>
       <div class="table-scroll"><table class="warehouse-table">
-        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>數量／上限</th><th>陳列</th></tr></thead>
-        <tbody id="inventory"><tr><td colspan="5">目前沒有販售商品</td></tr></tbody>
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>數量／上限</th><th>熟練度</th><th>陳列</th></tr></thead>
+        <tbody id="inventory"><tr><td colspan="6">目前沒有販售商品</td></tr></tbody>
       </table></div>
-      <p class="muted">熟練、行情與供需等尚未完成的數值暫不顯示。</p>
+      <p class="muted">熟練度取自商品 EXP（滿值 1000＝100%）；行情與供需等尚未完成的數值暫不顯示。</p>
     </section>
 
     <section id="tab-item" class="section pane" hidden>
@@ -233,8 +235,11 @@
         <tr><th scope="row">操作限制</th><td id="use-detail-limit">—</td></tr>
       </tbody></table>
       <form id="use-action-form" class="use-action-form" hidden>
-        <label for="use-count">執行次數</label>
-        <input id="use-count" type="number" min="1" step="1" value="1" required>
+        <label for="use-count-presets">執行次數</label>
+        <select id="use-count-presets" aria-label="快捷執行次數"></select>
+        <span>次，或自訂</span>
+        <input id="use-count" type="number" min="1" step="1" placeholder="次數" aria-label="自訂執行次數（空白時使用快捷選擇）">
+        <span>次</span>
         <button type="submit" id="perform-use" class="primary">執行操作</button>
       </form>
       <p class="muted use-eligibility" id="use-detail-note" role="status"></p>

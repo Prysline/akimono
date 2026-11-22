@@ -44,7 +44,10 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/flagRaw:item\?\.flagRaw/);
   assert.match(adapter,/type:item\?\.typeRaw/);
   assert.match(adapter,/costRaw:item\?\.costRaw/);
-  assert.match(html,/熟練、行情與供需/);
+  assert.match(html,/熟練度取自商品 EXP/);
+  assert.match(html,/<th>持有數量<\/th><th>熟練度<\/th>/);
+  assert.match(html,/<th>數量／上限<\/th><th>熟練度<\/th><th>陳列<\/th>/);
+  assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);
   assert.match(html,/id="item-detail-cost"/);
   assert.match(html,/id="item-detail-info"/);
 });
@@ -143,12 +146,15 @@ test('shop overview and shelf restore original compact data tables without dupli
     assert.ok(shop.includes('id="'+id+'"'),'shop information cell '+id);
   assert.match(shop,/<table class="shelf-table">/);
   for(const header of ['架號','商品名稱','售價','標準價格','庫存',
-    '本期售出','前期售出'])
+    '本期售出','前期售出','操作'])
     assert.ok(shop.includes('<th>'+header+'</th>'),'original shelf column '+header);
   for(const id of ['showcase','shop-shelf-price','shop-shelf-base-price',
     'shop-shelf-stock','shop-shelf-today','shop-shelf-yesterday'])
     assert.ok(shop.includes('id="'+id+'"'),'shelf data cell '+id);
   assert.match(shop,/<table class="shop-turnover-table"/);
+  assert.match(shop,/id="shop-remove-showcase"/);
+  assert.match(script,/\$\('shop-remove-showcase'\)\.addEventListener\('click'/);
+  assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100/);
   assert.doesNotMatch(shop,/data-go-tab=/,
     'top navigation replaces redundant in-shop links');
   assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
@@ -168,7 +174,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(html,/id="back-to-item"/);
   for(const id of ['use-detail-name','use-detail-item','use-detail-owned',
     'use-detail-materials','use-detail-money','use-detail-time',
-    'use-detail-limit','use-action-form','use-count','perform-use',
+    'use-detail-limit','use-action-form','use-count-presets','use-count','perform-use',
     'use-result-count','use-result-money','use-result-time',
     'use-result-consumed','use-result-acquired'])
     assert.ok(html.includes('id="'+id+'"'),'original USE route element '+id);
@@ -179,6 +185,10 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/renderUseResult\(data\.details,offer,before\.itemCatalog/);
   assert.match(script,/selectTab\('use-result'\)/);
   assert.match(script,/expectedRevision:before\.world\.revision,itemId,useId,requestedCount/);
+  assert.match(script,/maxUseCount/);
+  assert.match(script,/maxUseCountReason/);
+  assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
+  assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
   assert.match(css,/\.use-action-list\{/);
   assert.match(css,/\.use-detail-table\{/);
 });

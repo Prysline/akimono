@@ -282,3 +282,9 @@ footer{margin-top:12px;font-size:10px}
   .site-heading h1{padding:0 75px 0 0;text-align:left;font-size:18px}
   .town-name{font-size:12px}
 }
+
+/* Shelf removal and original-style USE quantity shortcut controls. */
+#shop-remove-showcase{white-space:nowrap;min-height:24px;padding:2px 6px}
+.shelf-remove-note{text-align:center;font-size:11px!important;color:#888;margin:4px auto 7px!important}
+.use-action-form select{min-width:78px;max-width:165px;min-height:28px;padding:2px 4px}
+.use-action-form input{width:72px;min-height:28px;padding:2px 4px}

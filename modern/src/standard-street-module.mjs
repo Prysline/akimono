@@ -606,6 +606,31 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             (shop?.item?.[row.itemId-1]??0)<row.count);
           const validMarket=world?.market&&
             useItem.validateWorld({world,rule});
+          // Display-only original CheckUseItem count ceiling. Actual server
+          // request still runs the shared preflight and may be clipped.
+          const timeMaximum=shop&&actualTime>0?
+            Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
+          const moneyMaximum=shop&&rule.money>0?
+            Math.floor(shop.money/rule.money):Number.MAX_SAFE_INTEGER;
+          const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
+            const available=shop.item[input.itemId-1]??0;
+            // NEED/proba=0 is a holding requirement, not consumption per use.
+            return input.probabilityPermille===0?
+              (available>=input.countPerUse?maximum:0):
+              Math.min(maximum,Math.floor(available/input.countPerUse));
+          },rule.requiresOwnedItem&&owned<1?0:Number.MAX_SAFE_INTEGER):0;
+          const policyMaximum=rule.firstUseOnly||rule.singleUseOnly?
+            1:Number.MAX_SAFE_INTEGER;
+          const constraints=[
+            {label:'材料最大',maximum:materialsMaximum},
+            {label:'時間最大',maximum:timeMaximum},
+            {label:'資金最大',maximum:moneyMaximum},
+            {label:'僅限首次',maximum:policyMaximum},
+          ];
+          const maxUseCount=Math.max(0,Math.min(
+            ...constraints.map(limit=>limit.maximum)));
+          const maxUseCountReason=constraints.find(limit=>
+            limit.maximum===maxUseCount)?.label??'可執行上限';
           const reason=!shop?'請先開店':
             !safeEvents?'尚未審閱的 EVENT 世界狀態':
             shop.status!==1?'尚未審閱的商店狀態':
@@ -623,7 +648,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             itemName:sourceName,useName:rule.name,
             owned,materials,materialRoutes,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
-            proficiency:exp,
+            proficiency:exp,maxUseCount,maxUseCountReason,
             firstUseOnly:Boolean(rule.firstUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                [...rule.uses,...rule.creates].some(x=>
