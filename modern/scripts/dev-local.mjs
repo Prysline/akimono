@@ -261,6 +261,11 @@ async function api(req,res,url){
     }
     case '/api/buy': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
+      const fields=['expectedRevision','itemId','requestedCount',
+        'marketShelf','expectedPrice'];
+      if(Object.keys(body).length!==fields.length||
+         fields.some(key=>!Object.hasOwn(body,key)))
+        throw Error('市場只接受 market-buy 共用交易欄位；舊商品命令無效');
       result=commit({kind:'market-buy',
         expectedRevision:ensureRevision(body),shopId:1,
         itemId:commandNumber(body.itemId,'itemId',1),
