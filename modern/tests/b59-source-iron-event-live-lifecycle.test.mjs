@@ -111,6 +111,7 @@ function exactDraws(world,minutes){
         compiled:street.reviewedGiftMapUse,shopId:1,minutes,
         randomDraws:trial,reviewedB59Iron:review,
         reviewedB60Happy:street.reviewedB60Happy,
+        reviewedB61Sword:street.reviewedB61Sword,
         reviewedEventTimeSlice:true,
       });
       return trial;
