@@ -184,6 +184,30 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
 #tab-stock .table-scroll + .sub-title{margin-top:17px}
 .back-row{margin:0 0 8px}
 .item-detail-table{margin:8px auto 13px}
+/* Keep the product name, facts, shelf controls and use section on
+ * the same visual centreline. Do not stretch the shelf fieldset
+ * across the entire 640px page frame. */
+#tab-item #item-detail-name{
+  width:fit-content;max-width:100%;margin:10px auto 8px;text-align:center
+}
+#tab-item .shelf-form{
+  display:flex;justify-content:center;max-width:100%;margin:14px auto 0
+}
+#tab-item .shelf-form fieldset{
+  flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:flex-end;
+  justify-content:center;gap:8px;
+  width:fit-content;min-width:0;max-width:100%;
+  margin:0;padding:9px 12px
+}
+#tab-item .shelf-form label{max-width:100%}
+#tab-item #shelf-item{width:190px;max-width:100%}
+#tab-item #shelf-price-per{width:70px}
+#tab-item #set-showcase{align-self:flex-end}
+#tab-item .source-use-section{
+  width:fit-content;max-width:100%;margin:16px auto 0
+}
+#tab-item .source-use-section>.sub-title{text-align:center}
+#tab-item .source-use-section>.table-scroll{max-width:100%;overflow-x:auto}
 .balance-table{margin-top:9px}
 .balance-table td{min-width:70px}
 .balance-table th{white-space:nowrap}
