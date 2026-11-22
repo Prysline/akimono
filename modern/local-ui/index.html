@@ -209,15 +209,49 @@
           <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
           <button id="set-showcase" class="primary" type="submit">設定展示架</button>
         </fieldset>
+        <p class="shelf-time-note">調整或清空展示架均消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
       </form>
       <div id="use-section" class="source-use-section">
         <h3 class="sub-title">商品使用／製作</h3>
-        <div class="table-scroll"><table class="market-table">
-          <thead><tr><th>操作</th><th>材料／持有</th><th>成本／時間</th><th>次數</th><th>執行</th></tr></thead>
-          <tbody id="use-offers"><tr><td colspan="5">此商品暫無可執行操作</td></tr></tbody>
-        </table></div>
+        <ul id="use-offers" class="use-action-list">
+          <li>此商品暫無可執行的使用或製作方式</li>
+        </ul>
         <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
       </div>
+    </section>
+
+    <section id="tab-use" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
+      <h2 class="section-title">商品使用／製作</h2>
+      <h3 class="sub-title" id="use-detail-name">選擇操作</h3>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">商品</th><td id="use-detail-item">—</td></tr>
+        <tr><th scope="row">目前持有</th><td id="use-detail-owned">—</td></tr>
+        <tr><th scope="row">所需材料（每次）</th><td id="use-detail-materials">—</td></tr>
+        <tr><th scope="row">費用（每次）</th><td id="use-detail-money">—</td></tr>
+        <tr><th scope="row">時間（每次）</th><td id="use-detail-time">—</td></tr>
+        <tr><th scope="row">操作限制</th><td id="use-detail-limit">—</td></tr>
+      </tbody></table>
+      <form id="use-action-form" class="use-action-form" hidden>
+        <label for="use-count">執行次數</label>
+        <input id="use-count" type="number" min="1" step="1" value="1" required>
+        <button type="submit" id="perform-use" class="primary">執行操作</button>
+      </form>
+      <p class="muted use-eligibility" id="use-detail-note" role="status"></p>
+    </section>
+
+    <section id="tab-use-result" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
+      <h2 class="section-title">操作結果</h2>
+      <h3 class="sub-title" id="use-result-name">—</h3>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">實際次數</th><td id="use-result-count">—</td></tr>
+        <tr><th scope="row">實際費用</th><td id="use-result-money">—</td></tr>
+        <tr><th scope="row">消耗時間</th><td id="use-result-time">—</td></tr>
+        <tr><th scope="row">消耗商品</th><td id="use-result-consumed">—</td></tr>
+        <tr><th scope="row">獲得商品</th><td id="use-result-acquired">—</td></tr>
+      </tbody></table>
+      <p id="use-result-message" class="use-result-message" role="status"></p>
     </section>
 
     <section id="tab-balance" class="section pane" hidden>
