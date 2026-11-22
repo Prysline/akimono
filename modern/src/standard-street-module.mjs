@@ -370,7 +370,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     experienceCallback:Object.freeze({kind:'gain-fixed-exp',points:20}),
     outputMessages:Object.freeze({
-      40:null,41:null,42:null,
+      40:'',41:'',42:'',
       43:'秘銀劍很便宜',44:'發現便宜的奧利哈鋼劍了!',
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
@@ -414,10 +414,20 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return {...world.market,wholesale:[...original.wholesale]};
       }
       if(rule.marketCodec==='source-sparse'&&
-         world.market.source===ORIGINAL_SPARSE_MARKET_SOURCE)
+         world.market.source===ORIGINAL_SPARSE_MARKET_SOURCE){
+        // Frozen CheckWholeStore may leave both numeric wholesale AND sparse
+        // wire untouched. Preserve that existing source wire exactly so R3
+        // does not mistake a no-op USE for a fresh wholesale market write.
+        if(original.multiItem.discarded.length===0&&
+           original.wholesale.every((n,i)=>
+             n===world.market.wholesale[i]))
+          return world.market;
+        // Original overflow creates a defined wholesale slot even when a
+        // later CheckWholeStore reduces its numeric value to zero.
         return traceOriginalSparseGiftWholesale({
           world,compiled:giftMap,original,
         });
+      }
       bad('unreviewed USE market write/overflow branch');
     },
   });
