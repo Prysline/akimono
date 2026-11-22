@@ -89,6 +89,8 @@ export function compileStandardStreetMarketBuyRegistry({
       reason='zero-price wholesale GetTimeDeal and stock policy not yet reviewed at '+block.file+':'+priceRow.line;
     else if(limit.limit<1)
       reason='nonpositive original LIMIT at '+block.file+':'+limitRow.line;
+    else if(limit.wslimit<=0)
+      reason='original wholesale cap is zero at '+block.file+':'+limitRow.line+'; source market cannot offer this ITEM';
     else if(callback){
       classification='source-item-callback';
       reason='unreviewed ITEM FUNCB at '+block.file+':'+callback.line;
