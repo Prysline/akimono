@@ -4,9 +4,9 @@
 
 ## 確認總數與缺口層級
 
-- 原版 ITEM **79** 筆，USE **116** 筆；現行正式 `getRule` 僅 `79/0` 與 `14/0` 兩筆，其他 **114** 筆仍未接入正式玩家命令。
+- 原版 ITEM **79** 筆，USE **116** 筆；現行正式 `getRule` 已接入 `79/0`～`79/4` 與 `14/0` 六筆，其他 **110** 筆仍未接入正式玩家命令。
 - 靜態宣告特徵可重疊：無明示回呼／職業／EVENT／其他需要條件 **15** 筆；有回呼或 inline local func **56** 筆；職業條件／修正 **42** 筆；直接提到 EVENT 條件或 DTevent **1** 筆；公會 **0** 筆；其他熟練／人氣／分數門檻 **49** 筆。
-- **已完成演算法／來源驗證 ≠ 玩家功能已接入。** 79/0 是現有受控玩家操作。14/0 雖有此支線程式和 Oracle，必須在實際 CI 與重啟整合成功後才可判定完成。剩餘 114 筆目前均由 Registry 拒絕，不可標為「原版不支援」。
+- **已完成演算法／來源驗證 ≠ 玩家功能已接入。** 79/0 是現有受控玩家操作。14/0 雖有此支線程式和 Oracle，必須在實際 CI 與重啟整合成功後才可判定完成。剩餘 110 筆目前均由 Registry 拒絕，不可標為「原版不支援」。
 - 分類中的「否」只代表這份 USE 宣告未直接引用 EVENT，**不證明回呼內部不會讀 EVENT**；未審閱的 callback 均維持嚴格拒絕。
 
 ## 逐筆來源 × Registry 清冊
@@ -125,10 +125,10 @@
 | 78/12 | 「轉職成行腳商人」；耗材 1×轉職指南；產物 無 | `custom/inc-item-data.cgi:2697` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
 | 78/13 | 「想放下牌子」；耗材 1×轉職指南；產物 無 | `custom/inc-item-data.cgi:2707` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
 | 79/0 | 「交換地圖集」；耗材 2×禮物卷；產物 1 到附近山區的地圖；1 到附近礦山的地圖；1 到劍市的地圖 | `custom/inc-item-data.cgi:2727` | 來源受控條件不符則拒絕 | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 受控原版已可操作 |
-| 79/1 | 「交換入門書籍組合」；耗材 5×禮物卷；產物 1 15；1 16；1 17 | `custom/inc-item-data.cgi:2737` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 79/2 | 「交換高級書籍組合」；耗材 10×禮物卷；產物 1 20；1 21；1 22；1 23 | `custom/inc-item-data.cgi:2747` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 79/3 | 「交換修行套組」；耗材 2×禮物卷；產物 1 修行套組 | `custom/inc-item-data.cgi:2758` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 79/4 | 「交換米諾陶洛斯」；耗材 1×禮物卷；產物 1 25 | `custom/inc-item-data.cgi:2766` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
+| 79/1 | 「交換入門書籍組合」；耗材 5×禮物卷；產物 1 15；1 16；1 17 | `custom/inc-item-data.cgi:2737` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 本支線已接入，CI 待驗 |
+| 79/2 | 「交換高級書籍組合」；耗材 10×禮物卷；產物 1 20；1 21；1 22；1 23 | `custom/inc-item-data.cgi:2747` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 本支線已接入，CI 待驗 |
+| 79/3 | 「交換修行套組」；耗材 2×禮物卷；產物 1 修行套組 | `custom/inc-item-data.cgi:2758` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 本支線已接入，CI 待驗 |
+| 79/4 | 「交換米諾陶洛斯」；耗材 1×禮物卷；產物 1 25 | `custom/inc-item-data.cgi:2766` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 本支線已接入，CI 待驗 |
 
 ## R4 整合介面與實作限制
 
