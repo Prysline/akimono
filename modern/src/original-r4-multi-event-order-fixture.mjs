@@ -7,6 +7,8 @@ import {R4_DECLARATIVE_EVENT_SOURCE,R4_DECLARATIVE_EVENT_CODES}
   from './original-r4-declarative-event-cycle.mjs';
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
 import {projectR4EventItemParams} from './original-r4-event-item-param.mjs';
+import {B57_SUPPORT_SOURCE,projectOriginalSupportEventCallback}
+  from './original-b57-support-event-callbacks.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -20,7 +22,7 @@ const sameKeys=(order,allowed)=>{
 };
 
 export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven,
-  turnSource,readSource}){
+  turnSource,readSource,reviewedSupportCallbacks=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -37,6 +39,12 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     [readSource,'foreach(keys(%DTevent)){require(GetPath($ITEM_DIR,"event",$_));}'],
   ])if(typeof source!=='string'||!source.includes(marker))
     fail('source drift '+marker);
+  if(reviewedSupportCallbacks!==null&&(
+     reviewedSupportCallbacks.source!==B57_SUPPORT_SOURCE||
+     reviewedSupportCallbacks.gateIncluded!==false||
+     reviewedSupportCallbacks.maxMoney!==999999999||
+     reviewedSupportCallbacks.hitThreshold!==300))
+    fail('source-reviewed support STARTFUNC callbacks required');
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -58,10 +66,10 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   return Object.freeze({source:R4_MULTI_EVENT_FIXTURE_SOURCE,
     eventCodes:Object.freeze(catalogCodes),
     catalog:Object.freeze(compiledCatalog.compiled),
-    seven:reviewedSeven,
+    seven:reviewedSeven,support:reviewedSupportCallbacks,
     committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
-    scope:'full 17 compiled keys with source-gated seven declarative sustained EVENTs only; 10 other starts must miss (zero-start ephemeral allowed); no true runtime Perl hash oracle in Node, no full EVENT callbacks/period/save'});
+    scope:'full 17 compiled keys: seven declarative durable EVENTs and optional real getmoney/getpop single-shop STARTFUNC callbacks with shared gate/RNG; all other positive starts must miss; no true runtime Perl hash oracle in Node, no full EVENT callbacks/period/save'});
 }
 
 /**
@@ -72,7 +80,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
  */
 export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
-  eventHashOrderFixture,randomDraws}){
+  eventHashOrderFixture,randomDraws,shop=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -94,6 +102,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
+  if((reviewed.support===null&&shop!==null)||
+     (reviewed.support!==null&&(!shop||shop.id!==1||
+       shop.status!==1||!Array.isArray(shop.item)||shop.item.length!==79)))
+    fail('supported callback requires one real source shop');
   if(!Array.isArray(randomDraws)||randomDraws.length>51||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
@@ -109,7 +121,8 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
-    zeroStartTransient=[],skippedByGroup=[],ranges=[];
+    zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[];
+  let nextShop=shop===null?null:{...shop,item:[...shop.item]};
   const groups=new Set();
   const end=startSeconds+spanSeconds;
   for(const code of activeHashOrderFixture){
@@ -142,6 +155,22 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       started.push(code);
       logs.push([2,0,meta.startMessage]);
       groups.add(e.group);
+    }else if((code==='getmoney'||code==='getpop')&&
+       reviewed.support!==null){
+      // The frozen source STARTFUNC returns 0: it consumes one rand(1000),
+      // logs a message on hit, and reserves neither group nor DTevent.
+      const sample=randomDraws[used];
+      draw(1000);
+      const callback=projectOriginalSupportEventCallback({
+        reviewed:reviewed.support,eventCode:code,shop:nextShop,
+        randomDraws:[sample],
+      });
+      if(callback.returnCode!==0||callback.eventPersisted!==false||
+         callback.randomDrawsUsed!==1)
+        fail('reviewed support STARTFUNC must return 0');
+      nextShop=callback.shop;
+      supportCallbacks.push(code);
+      if(callback.message!==null)logs.push([2,0,callback.message]);
     }else if(e.startProba===0&&e.callbacks.start===null&&
        e.baseTimeSeconds===0&&e.plusTimeSeconds===0){
       // Original START=0 still calls rand(100000), then ret=1.
@@ -160,6 +189,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     skippedByGroup:Object.freeze(skippedByGroup),
     logs:Object.freeze(logs.map(log=>Object.freeze(log))),
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
+    ...(reviewed.support===null?{}:{
+      shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
+      supportCallbacks:Object.freeze(supportCallbacks),
+    }),
     sourceScope:reviewed.scope,
   });
 }
