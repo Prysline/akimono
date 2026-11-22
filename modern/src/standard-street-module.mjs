@@ -57,6 +57,7 @@ import {reviewOriginalB63SwordMapOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
+import {originalUseTimeSeconds} from './shared-use-experience.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -107,19 +108,12 @@ function structuralCatalog(itemDsl,rebelDsl,model){
       sourceMode:'raw-nonexecuting-dsl',
     })));
   return Object.freeze({
-    items:Object.freeze(model.items.map(x=>{
-      const block=blocks.find(b=>b.kind==='ITEM'&&
-        b.file===x.source&&b.startLine===x.line);
-      const raw=key=>block?.fields?.[key]?.[0]?.value??null;
-      return Object.freeze({
-        id:x.id,name:x.name,code:x.code,
-        priceRaw:x.priceRaw,limitRaw:x.limitRaw,flagRaw:x.flagRaw,
-        typeRaw:raw('type'),costRaw:raw('cost'),
-        infoRaw:raw('info'),scaleRaw:raw('scale'),
-        source:x.source,line:x.line,
-        runtimeSupported:false,
-      });
-    })),
+    items:Object.freeze(model.items.map(x=>Object.freeze({
+      id:x.id,name:x.name,code:x.code,
+      priceRaw:x.priceRaw,limitRaw:x.limitRaw,flagRaw:x.flagRaw,
+      source:x.source,line:x.line,
+      runtimeSupported:false,
+    }))),
     uses:records('USE'),
     events:records('EVENT'),
   });
@@ -360,9 +354,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }))),
     limits:giftMap.limits,time:reviewedB62Map.mapUseTimeSeconds,
     exptime:3600,money:reviewedB62Map.mapUsePrice,
-    singleUseOnly:true,firstUseOnly:true,requiresOwnedItem:true,
+    requiresOwnedItem:true,
     ownedMaximum:reviewedB62Map.mapStockLimit,
-    outputGuard:'no-overflow',
     outputAllowlist:reviewedB63Map?null:Object.freeze([40]),
     marketCodec:'source-sparse',
     beforeCallback:Object.freeze({
@@ -421,8 +414,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return {...world.market,wholesale:[...original.wholesale]};
       }
       if(rule.marketCodec==='source-sparse'&&
-         original.wholesale.every((n,i)=>n===world.market.wholesale[i]))
-        return world.market;
+         world.market.source===ORIGINAL_SPARSE_MARKET_SOURCE)
+        return traceOriginalSparseGiftWholesale({
+          world,compiled:giftMap,original,
+        });
       bad('unreviewed USE market write/overflow branch');
     },
   });
@@ -481,8 +476,6 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'reviewed-instant-event-callback-fixture']:[]),
     ]),
     metadata,
-    // Read-only value parsed from source @@DEFINE TimeEditShowcase (10m).
-    showcaseEditTimeSeconds:model.showcaseEditTime,
     catalog,
     reviewedGiftMapUse:giftMap,
     reviewedBootstrap,
@@ -525,9 +518,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
             (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
           const priorExp=shop?.exp;
-          const trained=rule.firstUseOnly&&priorExp!==undefined&&
+          const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
-             Array.isArray(priorExp)||Object.keys(priorExp).length>0);
+             Array.isArray(priorExp)||Object.entries(priorExp).some(
+               ([id,value])=>!/^[1-9]\\d*$/.test(id)||Number(id)>79||
+                 !Number.isSafeInteger(value)||value<0||value>1000));
+          const exp=invalidExp?0:(priorExp?.[String(rule.itemId)]??0);
+          const actualTime=originalUseTimeSeconds({
+            time:rule.time,exptime:rule.exptime,experience:exp,
+          });
           const missing=materials.find(row=>
             (shop?.item?.[row.itemId-1]??0)<row.count);
           const validMarket=world?.market&&
@@ -538,17 +537,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             ![undefined,null,0,'',false].includes(shop.guild)?
               '尚未審閱的公會效果':
             !validMarket?'來源市場尚未驗證':
-            trained?'地圖第二次使用／EXP 熟練縮時未審閱':
+            invalidExp?'熟練度紀錄不合法':
             missing?'材料不足：商品 #'+missing.itemId+
               ' 需要 '+missing.count+' 件':
             shop.money<rule.money?'資金不足':
-            shop.time+rule.time>world.nowSeconds?'可用行動時間不足':
+            shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
           return Object.freeze({
             itemId:rule.itemId,useId:rule.useId,
             itemName:sourceName,useName:rule.name,
             owned,materials,moneyPerUse:rule.money,
-            timePerUseSeconds:rule.time,
+            timePerUseSeconds:actualTime,
+            proficiency:exp,
             firstUseOnly:Boolean(rule.firstUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback),
             supported:true,canUse:reason===null,reason,
