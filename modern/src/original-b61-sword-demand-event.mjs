@@ -193,11 +193,20 @@ export function projectOriginalSwordDemand({
       // of these estimates may become a real #10 shop sale.
       const potentialBuyers=population*saleSpeed/popularSeconds*
         timespanSeconds/86400;
+      // GameCore receipts require safe integers for ALL numeric fields.
+      // Carry the exact rational demand as two safe integers and the
+      // original source-floating arithmetic only as explanatory text.
+      // Never loosen GameCore's JSON contract to permit fractions.
+      const potentialBuyerNumerator=safe(
+        population*saleSpeed*timespanSeconds,'original buyer numerator');
+      const potentialBuyerDenominator=safe(
+        popularSeconds*86400,'original buyer denominator',1);
       return {
         itemId:x.itemId,name:x.name,
         basePopularSeconds:x.basePopularSeconds,
         effectivePopularSeconds:popularSeconds,
-        potentialBuyers,
+        potentialBuyerNumerator,potentialBuyerDenominator,
+        potentialBuyersApprox:String(potentialBuyers),
         nominalPriceChanged:false,
         realSwordSalesSupported:false,
       };
