@@ -83,5 +83,6 @@ export function originalSourceUseClock({rule,job='',experience}){
       exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
     }
   }
-  return originalUseTimeSeconds({time,exptime,experience});
+  return {base:time,trained:exptime,
+    seconds:originalUseTimeSeconds({time,exptime,experience})};
 }
