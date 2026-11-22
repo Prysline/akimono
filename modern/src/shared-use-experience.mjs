@@ -62,3 +62,26 @@ export function originalUseExperience({records={},itemId,points,count,limit=3600
   }
   return {exp,gained,previous,reductions};
 }
+
+/** Source inc-makeitem.cgi emits _job_use_*_peddle_ from the
+ * @@USE job 行腳商人 times/job_peddle_time_rate declaration.
+ * The frozen definition specifies rate 1.5, and its emitted code applies
+ * Perl int(time/1.5) to BOTH time and exptime before GetItemUseTime.
+ */
+export function originalSourceUseClock({rule,job='',experience}){
+  if(!rule||typeof rule!=='object')fail('source USE clock rule');
+  if(job===null||job===undefined)job='';
+  if(typeof job!=='string')fail('shop job');
+  let time=safe(rule.time,'source use time',1);
+  let exptime=safe(rule.exptime,'source trained time');
+  const modifier=rule.jobTimeModifier;
+  if(modifier){
+    if(modifier.job!=='peddle'||modifier.numerator!==2||
+       modifier.denominator!==3)fail('unreviewed source job modifier');
+    if(job===modifier.job){
+      time=Math.trunc(time*modifier.numerator/modifier.denominator);
+      exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
+    }
+  }
+  return originalUseTimeSeconds({time,exptime,experience});
+}
