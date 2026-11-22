@@ -130,7 +130,7 @@ export function compileStandardStreetMarketBuyRegistry({
     }
     let pricePolicy={kind:'fixed'};
     if(rawBase!==null){
-      const parts=/^([0-9]+)\\/([1-9][0-9]*)$/.exec(rawBase);
+      const parts=/^([0-9]+)\/([1-9][0-9]*)$/.exec(rawBase);
       if(!parts||![Number(parts[1]),Number(parts[2])].every(Number.isSafeInteger)){
         classification='unsupported';
         reason='unreviewed source BASE syntax at '+block.file+':'+one(block,'base').line;
