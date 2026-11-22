@@ -287,7 +287,7 @@ export function projectB41Sale({
   const naturalDraws=natural.drawsUsed;
   // Exact original inc-turn callback placement precedes the 59 ITEM PLUS.
   const itemCallbackStage=projectR3ItemCallbackStage({
-    reviewed:reviewed.itemCallbacks,shop:nextShop,spanSeconds:span,
+    reviewed:reviewed.itemCallbacks,shop:natural.shop,spanSeconds:span,
     randomDraws:randomDraws.slice(naturalDraws),
   });
   const callbackDraws=itemCallbackStage.drawsUsed;
