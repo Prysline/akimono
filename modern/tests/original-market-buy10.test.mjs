@@ -161,8 +161,12 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.match(html,/data-subgroup="trade"/);
   assert.doesNotMatch(html,/【取引】/);
   assert.ok(html.indexOf('class="status-section"')>html.indexOf('</header>'));
-  assert.ok(html.indexOf('class="status-section"')<html.indexOf('class="notice"'),
-    'shop status table must sit directly under original-style navigation');
+  assert.match(html,/<\/header>\s*<section class="status-section"/,
+    'compact shop status must sit immediately under the original-style navigation');
+  assert.ok(html.indexOf('class="status-section"')<html.indexOf('class="local-note"'),
+    'player shop summary appears before local-only save notice');
+  assert.match(html,/id="tab-balance"/);
+  assert.match(html,/id="tab-item"/);
   const css=await (await fetch(url+'/style.css')).text();
   assert.match(css,/#fcfbff/i);
   assert.match(css,/#d9ff99/i);
