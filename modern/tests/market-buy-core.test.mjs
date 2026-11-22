@@ -801,3 +801,43 @@ test('R2-B all compiled ordinary ITEMs retain original global callback provenanc
   assert.ok(compiled.some(e=>e.itemId===1));
   assert.ok(compiled.some(e=>e.itemId===64));
 });
+
+test('R2-C archived three item-shaped buy commands have no live capability or second GameCore path',async()=>{
+  const world=seed().repository.read();
+  const original=encodeMemorySnapshot(world);
+  assert.equal(street.capabilities.filter(kind=>kind==='market-buy').length,1);
+  for(const itemId of [10,11,14]){
+    const oldKind='buy-market-item-'+itemId;
+    assert.equal(street.capabilities.includes(oldKind),false,oldKind);
+    const offer=street.quoteMarketOffer(world,itemId);
+    assert.ok(offer.canBuy);
+    const legacy=apply(world,{
+      kind:oldKind,expectedRevision:world.revision,
+      shopId:1,requestedCount:1,
+      marketShelf:offer.shelf,expectedPrice:offer.price,
+    });
+    assert.equal(legacy.code,'UNSUPPORTED_ACTION',oldKind);
+    assert.equal(encodeMemorySnapshot(legacy.world),original,oldKind);
+    assert.equal(street.quoteMarketOffer(world,itemId).price,
+      sourceMarketQuote(world,itemId).price);
+    const actual=apply(world,buyCommand(world,itemId,offer));
+    assert.ok(actual.ok,JSON.stringify(actual.details));
+    assert.equal(actual.details.action,'market-buy');
+  }
+  const sourcePaths=[
+    'modern/src/standard-street-module.mjs',
+    'modern/src/original-market-buy10.mjs',
+    'modern/src/original-market-buy11.mjs',
+    'modern/src/original-b62-sword-map-acquisition.mjs',
+  ];
+  for(const path of sourcePaths){
+    const source=await read(path);
+    assert.doesNotMatch(source,/projectOriginalMarketBuy(?:10|11|14)/,
+      path+' must not contain a second purchase projection');
+    assert.doesNotMatch(source,/quoteOriginalMarket(?:10|11|14)/,
+      path+' must not contain an item-specific wholesale quote');
+    assert.doesNotMatch(source,/buy-market-item-(?:10|11|14)/,
+      path+' must not expose legacy purchase command');
+  }
+  assert.equal(encodeMemorySnapshot(world),original);
+});
