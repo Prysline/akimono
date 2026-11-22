@@ -341,3 +341,70 @@ test('R2-E source USE local draw policy is command/revision scoped and does not 
     args:{...args,unknownCallback:'lostbook'},count:52}),
     /arguments|contract/);
 });
+
+
+test('R2 repeated map USE real HTTP from bought map through trained time, CAS, save and restart',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-r2-repeat-http-'));
+  const servers=[];
+  t.after(async()=>{
+    for(const server of servers)await server.stop();
+    await rm(dir,{recursive:true,force:true});
+  });
+  let srv=await boot(dir,'mixed');servers.push(srv);
+  await setup(srv);
+  await buy(srv,14);
+  await use(srv,79); // original 5 vouchers -> 3, obtains another real map
+  const durations=[];
+  for(let i=0;i<3;i++){
+    const before=await srv.state();
+    const offer=useOffer(before,14);
+    assert.equal(offer.canUse,true,offer.reason);
+    const {result}=await use(srv,14);
+    durations.push(result.details.timeSpentSeconds);
+    assert.equal(result.details.useTimeSeconds,offer.timePerUseSeconds);
+    assert.equal(result.state.shop.time,
+      before.shop.time+offer.timePerUseSeconds);
+    assert.equal(result.state.shop.money,before.shop.money-12000);
+    assert.equal(result.state.shop.exp['14'],20*(i+1));
+    assert.equal(result.state.world.revision,before.world.revision+1);
+    assert.equal(result.details.mapDestroyed,false);
+    assert.equal(result.state.shop.item[13],before.shop.item[13]);
+  }
+  assert.deepEqual(durations,[7200,7128,7056]);
+  const checkpoint=(await srv.state()).world;
+  const saved=await srv.post('/api/save',{
+    expectedRevision:checkpoint.revision,expectedGeneration:0,
+  });
+  assert.equal(saved.code,'SAVED',JSON.stringify(saved));
+  await srv.stop();
+  srv=await boot(dir,'mixed');servers.push(srv);
+  const loaded=await srv.post('/api/load');
+  assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+  assert.deepEqual(loaded.state.world,checkpoint);
+  const before=await srv.state();
+  const offer=useOffer(before,14);
+  assert.equal(offer.timePerUseSeconds,6984);
+  assert.equal(offer.canUse,true,offer.reason);
+  await reject(srv,'/api/use',{
+    ...usePayload(before,14),expectedRevision:before.world.revision-1,
+  });
+  await reject(srv,'/api/use',{
+    ...usePayload(before,14),useId:1,
+  });
+  const {result:fourth}=await use(srv,14);
+  assert.equal(fourth.details.timeSpentSeconds,6984);
+  assert.equal(fourth.state.shop.exp['14'],80);
+  assert.equal(fourth.state.shop.money,before.shop.money-12000);
+  assert.equal(fourth.state.shop.time,before.shop.time+6984);
+  assert.equal(fourth.state.world.revision,before.world.revision+1);
+  const savedAgain=await srv.post('/api/save',{
+    expectedRevision:fourth.state.world.revision,expectedGeneration:1,
+  });
+  assert.equal(savedAgain.code,'SAVED',JSON.stringify(savedAgain));
+  await srv.stop();
+  srv=await boot(dir,'mixed');servers.push(srv);
+  const loadedAgain=await srv.post('/api/load');
+  assert.equal(loadedAgain.code,'LOADED',JSON.stringify(loadedAgain));
+  assert.equal(loadedAgain.state.shop.exp['14'],80);
+  assert.deepEqual(loadedAgain.state.world,fourth.state.world);
+});
