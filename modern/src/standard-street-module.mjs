@@ -10,7 +10,8 @@
 import {parseDsl} from './parse-dsl.mjs';
 import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
-import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket}
+import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
+  validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparsePlusTurn,projectOriginalSparsePlusTurn}
   from './original-sparse-wholesale-plus.mjs';
@@ -243,6 +244,67 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       originalCalcSource:originalBuyCalcSource,
       originalWholeSource,
     }):null;
+  // R2: Source review stays in the StreetModule. Commerce execution and
+  // quantity/price/time/accounting/CAS rules are shared in GameCore.
+  const sharedBuyRules=Object.freeze([
+    reviewedMarketBuy10?{
+      itemId:10,shopIndex:9,wholesaleIndex:9,
+      unitPrice:reviewedMarketBuy10.unitPrice,
+      stockLimit:reviewedMarketBuy10.stockLimit,
+      marketTimeSeconds:reviewedMarketBuy10.marketTimeSeconds,
+      source:reviewedMarketBuy10.source,scope:reviewedMarketBuy10.scope,
+      buyCallback:null,
+    }:null,
+    reviewedMarketBuy11?{
+      itemId:11,shopIndex:10,wholesaleIndex:10,
+      unitPrice:reviewedMarketBuy11.unitPrice,
+      stockLimit:reviewedMarketBuy11.stockLimit,
+      marketTimeSeconds:reviewedMarketBuy11.marketTimeSeconds,
+      source:reviewedMarketBuy11.source,scope:reviewedMarketBuy11.scope,
+      buyCallback:null,
+    }:null,
+    reviewedB62Map?{
+      itemId:14,shopIndex:13,wholesaleIndex:13,
+      unitPrice:reviewedB62Map.mapPrice,
+      stockLimit:reviewedB62Map.mapStockLimit,
+      marketTimeSeconds:reviewedB62Map.mapBuyTimeSeconds,
+      source:reviewedB62Map.source,scope:reviewedB62Map.scope,
+      buyCallback:null,
+    }:null,
+  ].filter(Boolean).map(rule=>Object.freeze(rule)));
+  const marketBuy=Object.freeze({
+    order:Object.freeze(model.items.map(item=>Object.freeze({
+      itemId:item.id,wholesaleIndex:item.id-1,
+    }))),
+    getRule(itemId){
+      const rule=sharedBuyRules.find(row=>row.itemId===itemId);
+      // Do not infer missing callback support from an arbitrary DSL item.
+      if(rule&&model.items.find(row=>row.id===itemId)?.funcbRaw!==null)
+        bad('original market item callback has not been reviewed');
+      return rule??null;
+    },
+    validateWorld(world){
+      return world?.events===null&&world.shops?.length===1&&
+        validateSourceSparseMarket(world.market);
+    },
+    writeMarket({market,wholesale,wholesaleIndex}){
+      if(!validateSourceSparseMarket(market)||
+         !Array.isArray(wholesale)||wholesale.length!==model.items.length)
+        bad('original wholesale wire shape');
+      const positions=wholesale.map((n,i)=>
+        n>0||i===wholesaleIndex?i:-1).filter(i=>i>=0);
+      const present=new Set(positions);
+      const originalWholesaleCsv=Array.from({length:wholesale.length},(_,i)=>
+        present.has(i)?String(wholesale[i]):'').join(',');
+      const next={...market,wholesale,sparseWrittenSlots:positions,
+        originalWholesaleCsv,sourceWriteShape:'whole-store-79'};
+      if(!validateSourceSparseMarket(next))
+        bad('original SetWholeStore write inconsistency');
+      return next;
+    },
+    // An unreviewed global/item FUNCBUY is never executed or ignored.
+    // Future reviewed callbacks must be explicit JS functions supplied here.
+  });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
@@ -289,7 +351,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedAllPlus?['reviewed-sparse-all-plus']:[]),
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
-      ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
+      ...(reviewedMarketBuy10?['market-buy','buy-market-item-10']:[]),
       ...(reviewedMarketBuy11?['buy-market-item-11']:[]),
       ...(reviewedB62Map?['buy-market-item-14',
         'use-original-sword-map-14']:[]),
@@ -321,6 +383,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB62Map,
     reviewedB63Map,
     reviewedB56,
+    marketBuy:reviewedMarketBuy10?marketBuy:null,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
