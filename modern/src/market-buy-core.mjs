@@ -5,8 +5,8 @@
  *
  * A StreetModule supplies reviewed item rules, original sort order and its
  * wholesale wire codec. No item IDs, DSL evaluation or Perl execution here.
- * The optional reviewed buy callback runs AFTER accounting and BEFORE the
- * market write, matching the original buy-s.cgi lifecycle.
+ * Source global FUNCBUY executes before any item FUNCBUY, both AFTER
+ * accounting and BEFORE SetWholeStore; unreviewed effects fail closed.
  */
 export const MARKET_BUY_COMMAND='market-buy';
 
@@ -41,7 +41,8 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   if(!marketBuy||typeof marketBuy.getRule!=='function'||
      typeof marketBuy.validateWorld!=='function'||
      typeof marketBuy.writeMarket!=='function'||
-     !Array.isArray(marketBuy.order))
+     !Array.isArray(marketBuy.order)||
+     !Object.hasOwn(marketBuy,'globalBuyCallback'))
     fail('StreetModule reviewed wholesale contract unavailable');
   if(!marketBuy.validateWorld(world))
     fail('unsupported market, event or shop configuration');
@@ -120,21 +121,41 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
     marketBefore:inMarket,marketAfter:updatedWholesale[wholesaleIndex],
   };
   let finalShop=updatedShop,finalWholesale=updatedWholesale;
-  // The actual source invokes global and item-specific FUNCBUY after monetary
-  // and inventory changes, before SetWholeStore. Only a reviewed JS callback
-  // may run here; unsupported original Perl callbacks must fail closed.
+  // Original buy-s.cgi calls global FUNCBUY first, then per-item FUNCBUY;
+  // both see the buyer AFTER payment/stock transfers but BEFORE SetWholeStore.
+  // For the reviewed Standard Street DSL, global FUNCBUY grants a voucher
+  // only above a 500000 G purchase threshold; ordinary smaller buys are
+  // verified zero-effect, not an assumption that the global hook is absent.
+  const global=marketBuy.globalBuyCallback;
+  if(global!==null){
+    if(!global||typeof global!=='object'||
+       typeof global.source!=='string'||!global.source||
+       typeof global.key!=='string'||!global.key)
+      fail('unreviewed global FUNCBUY metadata');
+    const threshold=safe(global.minTotal,'global FUNCBUY threshold',1);
+    if(total>=threshold){
+      if(typeof marketBuy.runBuyCallback!=='function')
+        fail('unreviewed global FUNCBUY callback');
+      const result=marketBuy.runBuyCallback({
+        key:global.key,phase:'global',world,command,rule,
+        shop:finalShop,wholesale:finalWholesale,receipt,
+      });
+      if(!result||!result.shop||!Array.isArray(result.wholesale))
+        fail('reviewed global FUNCBUY result');
+      finalShop=result.shop;finalWholesale=result.wholesale;
+    }
+  }
   if(rule.buyCallback!==null){
     if(typeof rule.buyCallback!=='string'||!rule.buyCallback||
        typeof marketBuy.runBuyCallback!=='function')
-      fail('unreviewed source FUNCBUY callback');
-    const effect=marketBuy.runBuyCallback({
-      key:rule.buyCallback,world,command,rule,
-      shop:updatedShop,wholesale:updatedWholesale,receipt,
+      fail('unreviewed item FUNCBUY callback');
+    const result=marketBuy.runBuyCallback({
+      key:rule.buyCallback,phase:'item',world,command,rule,
+      shop:finalShop,wholesale:finalWholesale,receipt,
     });
-    if(!effect||!effect.shop||!Array.isArray(effect.wholesale))
-      fail('reviewed buy callback result');
-    finalShop=effect.shop;
-    finalWholesale=effect.wholesale;
+    if(!result||!result.shop||!Array.isArray(result.wholesale))
+      fail('reviewed item FUNCBUY result');
+    finalShop=result.shop;finalWholesale=result.wholesale;
   }
   const market=marketBuy.writeMarket({
     market:world.market,wholesale:finalWholesale,
