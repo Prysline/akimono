@@ -147,7 +147,7 @@ test('B-42 original +3h clock shift gates the real 36-hour settlement boundary',
   assert.equal(JSON.stringify(repository.read()),before);
 });
 
-test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf without fake stock',async t=>{
+test('B-42 browser HTTP buys two real units, sells twice, rejects unreviewed EVENT repurchase and advances empty shelf without fake stock',async t=>{
   const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
     cwd:path.join(root,'modern'),
     env:{...process.env,AKIMONO_PORT:'0',AKIMONO_E2E_FIXED_NOW:'1000000',
@@ -185,10 +185,11 @@ test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf
     expectedRevision:1,ownerName:'測試店主',shopName:'第二輪商店',
   })).ok);
   assert.ok((await post('/api/supply',{
-    expectedRevision:2,timespanSeconds:60,
+    expectedRevision:2,timespanSeconds:3600,
   })).ok);
   let current=await (await fetch(url+'/api/state')).json();
-  assert.ok(current.marketOffers.find(o=>o.itemId===10).marketStock>0);
+  assert.ok(current.marketOffers.find(o=>o.itemId===10).marketStock>=2,
+    'reviewed 1h PLUS must make at least two genuine #10 goods available');
   const purchase=async revision=>{
     const state=await (await fetch(url+'/api/state')).json();
     return post('/api/buy',{expectedRevision:revision,itemId:10,requestedCount:2,
