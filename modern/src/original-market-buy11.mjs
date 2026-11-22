@@ -4,15 +4,10 @@
  * flow; this extension locks ITEM #11 identity, quantities, price and flags.
  * No HTTP/UI route, guild, auth or arbitrary item purchase support.
  */
-import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 
 export const B58_MARKET11_SOURCE='b58-original-source-market-item11-lottery-purchase';
 const fail=s=>{throw new RangeError('B-58 source market ticket: '+s);};
-const safe=(n,label,min=0)=>{
-  if(!Number.isSafeInteger(n)||n<min)fail(label);
-  return n;
-};
 
 export function reviewOriginalMarketBuy11({reviewedBuy10,model,compiled,itemDsl}){
   if(reviewedBuy10?.itemId!==10||
@@ -47,81 +42,4 @@ export function reviewOriginalMarketBuy11({reviewedBuy10,model,compiled,itemDsl}
     scope:'genuine original ITEM #11 market stock/purchase, protected by B-40 fixed Core; no UI or general market',
   });
 }
-export function quoteOriginalMarket11({world,model,reviewed}){
-  if(reviewed?.source!==B58_MARKET11_SOURCE||
-     !Array.isArray(model?.items)||model.items[reviewed.position]?.id!==11||
-     !validateSourceSparseMarket(world?.market))
-    fail('source-reviewed market and ITEM #11 required');
-  const stock=safe(world.market.wholesale[10],'ticket wholesale');
-  const shelf=model.items.slice(0,reviewed.position)
-    .filter(item=>world.market.wholesale[item.id-1]>0).length;
-  return Object.freeze({
-    itemId:11,name:reviewed.itemName,price:reviewed.unitPrice,
-    marketStock:stock,shelf:stock?shelf:null,
-    owned:world.shops[0]?.item?.[10]??0,
-    limit:reviewed.stockLimit,canBuy:stock>0&&world.shops.length===1,
-  });
-}
-export function projectOriginalMarketBuy11({
-  world,model,reviewed,shopId,requestedCount,marketShelf,expectedPrice,
-}){
-  safe(shopId,'shopId',1);
-  safe(requestedCount,'requestedCount',1);
-  safe(marketShelf,'marketShelf');
-  safe(expectedPrice,'expectedPrice');
-  if(reviewed?.source!==B58_MARKET11_SOURCE||
-     !validateSourceSparseMarket(world?.market)||
-     world.events!==null||world.shops?.length!==1)
-    fail('source single-shop market required');
-  const shop=world.shops[0];
-  if(shop.id!==shopId||shop.status!==1||
-     !Array.isArray(shop.item)||shop.item.length!==79)
-    fail('original active source shop required');
-  const owned=safe(shop.item[10],'owned tickets');
-  if(owned>50)fail('original ticket carrying limit exceeded');
-  const quote=quoteOriginalMarket11({world,model,reviewed});
-  if(!quote.marketStock)fail('original ticket wholesale sold out');
-  if(marketShelf!==quote.shelf||expectedPrice!==quote.price)
-    fail('ticket shelf or source wholesale price stale');
-  let count=Math.min(requestedCount,reviewed.stockLimit-owned);
-  if(count<=0)fail('original ticket stock limit');
-  count=Math.min(count,quote.marketStock);
-  count=Math.min(count,Math.trunc(safe(shop.money,'money')/quote.price));
-  if(count<=0)fail('insufficient original purchase money');
-  const total=safe(count*quote.price,'total');
-  const elapsed=world.nowSeconds-safe(shop.time,'time');
-  if(elapsed<0)fail('original UseTime negative balance');
-  const timeBase=elapsed>259200?world.nowSeconds-259200:shop.time;
-  const updated={
-    ...shop,item:[...shop.item],
-    money:safe(shop.money-total,'money after ticket purchase'),
-    paytoday:safe(shop.paytoday+total,'paytoday'),
-    time:safe(timeBase+reviewed.marketTimeSeconds,'time spent'),
-  };
-  updated.item[10]=safe(owned+count,'tickets purchased');
-  const wholesale=[...world.market.wholesale];
-  wholesale[10]=safe(quote.marketStock-count,'post-buy wholesale');
-  const present=new Set(wholesale.map((n,i)=>n>0||i===10?i:-1)
-    .filter(i=>i>=0));
-  const defined=[...present].sort((a,b)=>a-b);
-  const csv=Array.from({length:79},(_,i)=>
-    present.has(i)?String(wholesale[i]):'').join(',');
-  const market={...world.market,wholesale,
-    sparseWrittenSlots:defined,originalWholesaleCsv:csv,
-    sourceWriteShape:'whole-store-79'};
-  if(!validateSourceSparseMarket(market))
-    fail('original wholesale 79-field disk shape changed');
-  return {
-    shops:[updated],market,
-    receipt:{
-      action:'buy-market-item-11',
-      source:B58_MARKET11_SOURCE,shopId,
-      requestedCount,purchasedCount:count,
-      unitPrice:2000,totalPaid:total,tax:0,timeConsumedSeconds:600,
-      moneyBefore:shop.money,moneyAfter:updated.money,
-      ticketsBefore:owned,ticketsAfter:updated.item[10],
-      marketBefore:quote.marketStock,marketAfter:wholesale[10],
-      marketShelf:quote.shelf,scope:reviewed.scope,
-    },
-  };
-}
+// B-58 source verification stays for lottery, all buying is common GameCore.
