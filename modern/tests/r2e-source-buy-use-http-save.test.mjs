@@ -144,7 +144,8 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.match(html,/lang="zh-Hant"/);
   assert.match(html,/id="use-offers"/);
   assert.match(html,/id="market-offers"/);
-  assert.match(app,/data-use-item/);
+  // R4 now renders USE in a selected-item detail panel, not old table buttons.
+  assert.match(app,/data-use-item|selectedUseId/);
   assert.match(app,/useOffers/);
   assert.match(app,/call\('\/api\/use'/);
   assert.doesNotMatch(app,/gift-exchange-maps|use-original-sword-map-14/);
@@ -501,6 +502,9 @@ test('R2 source-reachable #79/3 kit -> PLUS #8 stones -> #37/1 training, durable
   assert.equal(gift.state.shop.item[78],3);
   assert.equal(gift.state.shop.item[36],1,
     'training kit comes from source voucher exchange, not test fixture');
+  // Source natural-sale/PLUS time slices require the reviewed original
+  // post-buy GetWholeStore wire, not the isolated bootstrap/supply wire.
+  await buy(srv,10);
   // Let the actual source time slice run natural sales, PLUS and EVENT
   // checks. No HTTP operation can inject wholesale stock or random draws.
   let obtained=false;
