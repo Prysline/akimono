@@ -110,6 +110,7 @@ function exactDraws(world,minutes){
         reviewedAllPlus:street.reviewedAllPlus,
         compiled:street.reviewedGiftMapUse,shopId:1,minutes,
         randomDraws:trial,reviewedB59Iron:review,
+        reviewedB60Happy:street.reviewedB60Happy,
         reviewedEventTimeSlice:true,
       });
       return trial;
