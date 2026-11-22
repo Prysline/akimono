@@ -43,7 +43,7 @@ export function compileReviewedShowcaseResizeUses({itemDsl,model,limits}){
       get(block,'name')!=='將展示架改為'+count+'個'||
       get(block,'info')!=='將展示架改為'+count+'個'||
       get(block,'arg')!=='nocount'||get(block,'param')!==String(count)||
-      get(block,'use')!=='1 展示架擴建拆卸工具'||
+      get(block,'use')?.replace(/\s+/g,' ')!=='1 展示架擴建拆卸工具'||
       get(block,'func')!==(index===0?'_local_':'_local_1'))
       bad('original USE values changed '+count);
     return Object.freeze({
