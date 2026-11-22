@@ -481,6 +481,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'reviewed-instant-event-callback-fixture']:[]),
     ]),
     metadata,
+    // Read-only value parsed from source @@DEFINE TimeEditShowcase (10m).
+    showcaseEditTimeSeconds:model.showcaseEditTime,
     catalog,
     reviewedGiftMapUse:giftMap,
     reviewedBootstrap,
