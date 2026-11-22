@@ -1,12 +1,12 @@
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
-> **最新執行判定（2026-11-22）：共用 `market-buy` 核心初版已寫入程式，但 R2-A 仍是「部分完成」，R2-B／C／D／E 均「未完成」，R2 整體「未完成」。** 此段優先於下方 B-63 及更早的交接與「下一步」；舊句「這次只有規劃、沒有修改程式」已失效。**不要依對話記憶、歷史 CI、過時階段名稱或本檔下方 B-xx 的下一步推斷目前完成度。** 權威計畫：[R0–R7](playable-loop-priority-plan.md)；可獨立閱讀的程式證據及階段退出條件：[R2-A～E 實作狀態](shared-market-buy-r0-r2.md)；正式任務進度：[移植進度](migration-progress-and-next-milestones.md)；責任合約：[GameCore 契約](game-core-contract-v1.md)。
+> **最新執行判定（2026-11-22）：共用 `market-buy` 核心已通過 R2-A 的直接 Perl 差分與原版回呼時序驗收，**R2-A 已完成自身退出條件**；R2-B／C／D／E 均「未完成」，R2 整體「未完成」。** 此段優先於下方 B-63 及更早的交接與「下一步」；舊句「這次只有規劃、沒有修改程式」已失效。**不要依對話記憶、歷史 CI、過時階段名稱或本檔下方 B-xx 的下一步推斷目前完成度。** 權威計畫：[R0–R7](playable-loop-priority-plan.md)；可獨立閱讀的程式證據及階段退出條件：[R2-A～E 實作狀態](shared-market-buy-r0-r2.md)；正式任務進度：[移植進度](migration-progress-and-next-milestones.md)；責任合約：[GameCore 契約](game-core-contract-v1.md)。
 
 ## 新工作窗零記憶交接：請按此判斷，不要跳階段
 
 **當前 PR：** `Prysline/akimono` 的 [Draft PR #1](https://github.com/Prysline/akimono/pull/1)，工作分支 `test/task02-baseline-on-s1`，目標 `migration/standard-street-s1`；每次先**重新讀取當下** PR head_sha、Draft／merged 狀態與最新 CI，不能把舊 SHA 當現況。只改 `modern/`；不改 `main`、基底、凍結 Core Perl／兩份 DSL、Notion 任務、不合併 PR。
 
-**實際已提交的程式：** `modern/src/market-buy-core.mjs` 在 `GameCore.applyGameCommand` 的 `market-buy` 分支執行來源限定的共用買入量、金錢、庫存、時間與回執，三商品 #10／#11／#14 可藉同一命令測試，沿用 WorldState／CAS 與 B-43 存檔。此為買入公式的有效初版，而非整套市場系統通用化。
+**R2-A 已完成的程式與驗收：** `modern/src/market-buy-core.mjs` 在 `GameCore.applyGameCommand` 的 `market-buy` 分支執行共用買入量、金錢、庫存、時間與回執，沿用 WorldState／CAS 與 B-43 存檔。直接執行原版 `buy-s.cgi` 的 [`original-r2a-market-buy-oracle.pl`](../tests/original-perl/original-r2a-market-buy-oracle.pl) 已讓 #10／#11／#14 各 12 種情境（共36組）與新 Core 逐欄比對，含現金／數量／時間／完整79欄批發 CSV。標準街 **`@@FUNCBUY` 全域贈禮回呼並非不存在**：原版交易金額每滿500,000 G 贈禮物卷；三件商品的個別持有上限令本輪買入不達門檻，未知超門檻效果在沒有已審閱處理器時明確拒絕。固定原版回呼順序（全域→商品→批發寫回）、缺失回呼拒絕及 CAS／存檔已驗證。程式 SHA `bd7a504bdc473a0bd34c1beb5efab8ae621d2381` 的 [CI #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) 已 `completed/success`（903 Node、1,867 Perl）；此證明 **R2-A 退出條件**，不是整體 R2 通用化或未來 HEAD 的成功報告。
 
 **尚未解決的三個具體阻礙：**
 
@@ -18,15 +18,15 @@
 
 | 階段 | 狀態 | 結案要件摘要 |
 | --- | --- | --- |
-| **R2-A 共用買入核心** | **部分完成，不可結案** | 補齊直接／可追溯原版 Perl oracle、時序及邊界；三商品使用共用公式不能算整體完成 |
+| **R2-A 共用買入核心** | **已完成自身退出條件** | 三商品 ×12 原版 Perl 直接對照、全域／商品回呼次序及拒絕、價格／時間／CSV／CAS 對照，未聲稱 B～E 完成 |
 | **R2-B 資料驅動接入** | **未完成** | 商品規則從固定來源編譯／Registry 取得，新增已支援語義的原版普通商品無需新增白名單與獨立命令 |
 | **R2-C 單一買入執行路徑** | **未完成** | UI／HTTP／內部操作全面走 `market-buy`，移除三套專用正式交易演算法及不再必要的重複測試 |
 | **R2-D 共用商品使用／製作** | **未完成** | 統一 `use-item(itemId,useId,...)` 執行已審閱 #79、#14 用途，保留原版副作用與拒絕 |
 | **R2-E 真世界結案驗證** | **未完成** | Perl／Node／HTTP＋CAS＋磁碟 save/load/restart，同一世界買入→USE 串接，R0 測試映射與同 HEAD CI 完整 |
 
-**R0／R1 也只是市場買入範圍的部分成果：** R0 代表性測試對照不是全部舊測試處置清單，R1 `market-buy` 子契約不是完整共用商品／事件契約。完整退出門檻、證據及拒絕分類在 [R2-A～E 文件](shared-market-buy-r0-r2.md)，本表不可取代該文件。
+**R0／R1 仍只是市場買入範圍的部分成果；R2-A 完成不會自動補足其餘範圍：** R0 代表性測試對照不是全部舊測試處置清單，R1 `market-buy` 子契約不是完整共用商品／事件契約。完整退出門檻、證據及拒絕分類在 [R2-A～E 文件](shared-market-buy-r0-r2.md)，本表不可取代該文件。
 
-**下一次實作優先序：先完成 R2-A 未結項與 R2-B／C，才推進 R2-D／E；R2 全項合格後才將 R3 共用自然販售／時間作主線。** 不要再加 `buy-market-item-XX`、逐商品 `use-XX` 或逐劍販售模型。允許歷史來源探針繼續作證據，但不可保留兩套可分岔的正式買入演算法。所有不支援商品或用途必須說明**具體原版語義、來源、原因**，不能只寫「未在三商品白名單」。
+**下一次實作優先序：R2-A 已完成自身退出驗收；先實作 R2-B 資料驅動接入和 R2-C 共用買入唯一執行路徑，再推進 R2-D／E；R2 全項合格後才將 R3 共用自然販售／時間作主線。** 不要再加 `buy-market-item-XX`、逐商品 `use-XX` 或逐劍販售模型。允許歷史來源探針繼續作證據，但不可保留兩套可分岔的正式買入演算法。所有不支援商品或用途必須說明**具體原版語義、來源、原因**，不能只寫「未在三商品白名單」。
 
 **完成報告必須列：** PR 當下 HEAD 與 CI 狀態、實際改動檔案、已支援普通商品／特殊商品及 USE、成功與拒絕的原版證據、唯一正式命令入口、已移除／改寫的重複交易程式與測試、真實 UI／HTTP/CAS/存檔結果、尚未完成原因。不以 900 個 Node 測試或 1,867 個 Perl 斷言當作 R2 完成證據；那只是前一次初版的已驗證回歸基準。
 
