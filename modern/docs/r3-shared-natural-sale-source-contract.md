@@ -33,6 +33,8 @@ GetMarketStatus 的來源基數為 DTpeople*SALE_SPEED/3/50；販售按原版 bu
 
 凍結 inc-turn.cgi：來源需求／市場狀態 → 各店自然販售及維持費 → ITEM FUNCTURN → FUNCSALE／_sale_count_ 清理 → SortDT／必要期末 → 59 ITEM PLUS／CheckWholeStore → EVENT 結束、開始、NOWFUNC。這個排序是來源契約，不能把跳過的回呼視為已實作。
 
+新增 R3 安全防線：當 period.eventState 為 null 且展示 #40～#44 時，後續 B-41 劍類自然販售必須原子拒絕。讀檔後仍可進行來源合法上架與雙代存檔，但不能跳過未知 EVENT 再次賣劍。舊 #10 保留 B-41 歷史數值續營行為供 R2 回歸；這不等於完整原版時間引擎。
+
 現行 advance-source-time **僅**正式支援 B-41 自然販售／PLUS 數值子區，未完成整個時間引擎的 FUNCTURN／FUNCSALE／EVENT。成功後的 period.eventState=null 代表事件狀態**未知**，絕不等於空事件；歷史 B-41 允許繼續有限數值時間片不構成完整原版事件等價。B-56 advance-source-time-reviewed-events 對已知鐵礦／祭典／劍需求 EVENT 及部分瞬間事件有明示 fixture，但需要外部完整 17 個 EVENT hash key 順序、eventDraws；測試用明確排列**不是**真實 Perl hash traversal。
 
 B-54 本機 RNG 使用同一 world/revision/command 固定重播的 source-shaped 抽樣，不重建原版 Perl 隨程序漂移的 rand 內部狀態。未審閱或未知 FUNCTURN／FUNCSALE、其他商品特殊回呼、任意售價／架數／多商店、街道差異、非零稅率、任意 EVENT 持續效果或跨期，仍需來源 Oracle 和拒絕設計。不能為通過時間測試而清空事件、重抽事件或將 R4 的 36 小時期末偽裝為完成。

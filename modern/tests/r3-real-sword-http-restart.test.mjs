@@ -118,11 +118,13 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  const secondSale=await api('/api/advance-time',{
   expectedRevision:secondShelf.state.world.revision,minutes:30,
  });
- assert.equal(secondSale.code,'COMMITTED',JSON.stringify(secondSale));
- assert.equal(secondSale.details.soldItemId,42);
- assert.ok(secondSale.state.shop.item[41]<2);
+ assert.equal(secondSale.ok,false,'unknown EVENT must refuse later sword sale');
+ assert.match(secondSale.error,/EVENT state unknown/);
+ assert.equal(secondSale.state.world.revision,secondShelf.state.world.revision);
+ assert.equal(secondSale.state.shop.item[41],secondShelf.state.shop.item[41]);
+ assert.deepEqual(secondSale.state.world,secondShelf.state.world);
  const saved2=await api('/api/save',{
-  expectedRevision:secondSale.state.world.revision,expectedGeneration:1,
+  expectedRevision:secondShelf.state.world.revision,expectedGeneration:1,
  });
  assert.equal(saved2.code,'SAVED',JSON.stringify(saved2));
  await server.stop();
@@ -130,6 +132,6 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  const finalLoad=await api('/api/load');
  assert.equal(finalLoad.code,'LOADED',JSON.stringify(finalLoad));
  assert.equal(finalLoad.state.save.generation,2);
- assert.equal(finalLoad.state.shop.item[40],secondSale.state.shop.item[40]);
- assert.equal(finalLoad.state.shop.item[41],secondSale.state.shop.item[41]);
+ assert.equal(finalLoad.state.shop.item[40],secondShelf.state.shop.item[40]);
+ assert.equal(finalLoad.state.shop.item[41],secondShelf.state.shop.item[41]);
 });

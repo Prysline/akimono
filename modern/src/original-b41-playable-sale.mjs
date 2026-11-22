@@ -246,6 +246,13 @@ export function projectB41Sale({
       shop.price[0]!==reviewed.saleRules?.[shop.showcase[0]]?.unitPrice)||
     ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
+  // New R3 sword sales may not interpret B-41 unknown EVENT as empty.
+  // Preserve historical R2 #10 behavior, but reject later sword turns
+  // until the original lifecycle has been source-reviewed.
+  if(world.schema===PERIOD_WORLD_SCHEMA &&
+     world.period?.eventState===null &&
+     shop.showcase[0]>=40&&shop.showcase[0]<=44)
+    bad('R3 sword natural sale blocked: EVENT state unknown; reviewed lifecycle required');
   const activeItemId=shop.showcase[0]||10;
   const beforeStock=shop.item[activeItemId-1];
   if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
