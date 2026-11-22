@@ -159,3 +159,52 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  assert.equal(finalLoad.state.shop.item[40],secondShelf.state.shop.item[40]);
  assert.equal(finalLoad.state.shop.item[41],secondShelf.state.shop.item[41]);
 });
+
+test('R3 real HTTP one-minute callback RNG and temporary sale cleanup survive disk reload',async t=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-callback-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ let server=await boot(directory);
+ t.after(async()=>await server.stop());
+ const api=(endpoint,payload={})=>server.post(endpoint,payload);
+ assert.equal((await api('/api/initialize')).code,'COMMITTED');
+ assert.equal((await api('/api/open-shop',{
+  expectedRevision:1,ownerName:'原版回呼店主',shopName:'R3一分鐘商店',
+ })).code,'COMMITTED');
+ assert.equal((await api('/api/supply',{
+  expectedRevision:2,timespanSeconds:3600,
+ })).code,'COMMITTED');
+ const before=await server.get();
+ const offer=before.marketOffers.find(x=>x.itemId===10);
+ assert.ok(offer?.canBuy,'original PLUS supplies #10');
+ const bought=await api('/api/buy',{
+  expectedRevision:before.world.revision,itemId:10,requestedCount:1,
+  marketShelf:offer.shelf,expectedPrice:offer.price,
+ });
+ assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
+ assert.equal(bought.state.shop.item[69],0);
+ const turned=await api('/api/advance-time',{
+  expectedRevision:bought.state.world.revision,minutes:1,
+ });
+ assert.equal(turned.code,'COMMITTED',JSON.stringify(turned));
+ assert.equal(turned.details.elapsedSeconds,60);
+ assert.equal(turned.details.callbackDraws,1);
+ assert.deepEqual(turned.details.itemCallbackStage.itemTurnDispatched,[70]);
+ assert.equal(turned.details.itemCallbackStage.itemTurnAffectedShops,0);
+ assert.equal(turned.details.itemCallbackStage.itemSaleCallbackCount,0);
+ assert.equal(turned.details.totalDraws,
+  turned.details.naturalDraws+turned.details.callbackDraws+
+  turned.details.plusDraws);
+ assert.equal(Object.hasOwn(turned.state.shop,'_sale_count_'),false);
+ assertActualMarketShelf(turned.state);
+ assert.equal(turned.state.world.nowSeconds,bought.state.world.nowSeconds+60);
+ const saved=await api('/api/save',{
+  expectedRevision:turned.state.world.revision,expectedGeneration:0,
+ });
+ assert.equal(saved.code,'SAVED',JSON.stringify(saved));
+ await server.stop();
+ server=await boot(directory);
+ const restored=await api('/api/load');
+ assert.equal(restored.code,'LOADED',JSON.stringify(restored));
+ assert.deepEqual(restored.state.world,turned.state.world);
+ assertActualMarketShelf(restored.state);
+});
