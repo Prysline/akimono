@@ -90,8 +90,8 @@ function setupWorld(){
   assert.ok(act('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:plusOracle.draws,
   }).ok);
-  const offer=street.quoteMarketItem10(adapter.read());
-  assert.ok(act('buy-market-item-10',{
+  const offer=street.quoteMarketOffer(adapter.read(),10);
+  assert.ok(act('market-buy',{itemId:10,
     shopId:1,requestedCount:1,marketShelf:offer.shelf,
     expectedPrice:offer.price,
   }).ok);
