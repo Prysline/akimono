@@ -2,21 +2,23 @@
 
 ## 目前實作與未完成項目（2026-11-22，開啟工作區請先讀）
 
-> **R2「共用市場／交易／商品使用」尚未完成。R2-A 買入核心僅部分完成，R2-B～E 均未完成；先前「R2 第一階段完成」不應再使用。** 正式開發優先序：[R0–R7 計畫](docs/playable-loop-priority-plan.md)；無對話記憶仍可獨立使用的 [R2-A～E 現況／完成門檻／程式與測試證據](docs/shared-market-buy-r0-r2.md)；[最新交接](docs/next-window-handoff.md)。下方大量 B-xx 段落是當時的歷史增量紀錄，**不可拿過時的「目前／尚未／下一步／HEAD」當現在的能力與 CI**。
+> **R2-A「共用市場買入核心」已完成原版直接差分與回呼邊界驗收；但 R2「共用市場／交易／商品使用」整體仍未完成，R2-B～E 都未完成。** 先前「R2 第一階段完成」只描述了三商品初版，不能拿來當 R2 完工證據。 正式開發優先序：[R0–R7 計畫](docs/playable-loop-priority-plan.md)；無對話記憶仍可獨立使用的 [R2-A～E 現況／完成門檻／程式與測試證據](docs/shared-market-buy-r0-r2.md)；[最新交接](docs/next-window-handoff.md)。下方大量 B-xx 段落是當時的歷史增量紀錄，**不可拿過時的「目前／尚未／下一步／HEAD」當現在的能力與 CI**。
 
 **已有：** `src/market-buy-core.mjs` 由 GameCore 的 `market-buy` 命令共用執行 #10／#11／#14 的來源受限買入數量裁切、付款、批發／店鋪庫存、操作時間（受審閱資料為600秒）、72小時累積時間上限、一次 CAS／可保存世界形狀。已通過舊模型對照、來源 Perl 代表性證據、拒絕、版本衝突及雙世代存檔相關自動化測試；不代表所有合法商品都已接入。
 
-**尚缺：** `standard-street-module.mjs` 仍以 `sharedBuyRules` 硬列三個商品，其他商品由目前白名單拒絕（**不是已確認原版不合法**）；`buy-market-item-10/11/14` 仍分別調用三套 `projectOriginalMarketBuy*` **獨立交易演算法**（不是相容 alias）；UI／HTTP 未全面改用 `market-buy`；共用 `use-item`／製作尚未完成；市場特殊價格、回呼、多店、公會等需按實際來源語義辨識，不得假裝已支援或全都沒有特殊效果。
+**R2-A 已補充：** 標準街來源的全域 `@@FUNCBUY` 並非不存在；市場進貨滿 500,000 G 可獲禮物卷。現有三商品各自購買上限低於門檻，因而有來源證實的零效果；若將來交易達門檻而無已審閱回呼，Core 會拒絕，不會靜默略過。新增的原版 Perl `buy-s.cgi` 直接差分涵蓋 #10/#11/#14 各 12 種情境（共 36 組）、完整批發 CSV 與時序，見 [驗收證據](docs/shared-market-buy-r0-r2.md)。**R2-A 程式基準** `bd7a504bdc473a0bd34c1beb5efab8ae621d2381` 的 [CI #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) 已成功：903 Node、1,867 Perl。之後的 HEAD 仍須重新核對 CI。
+
+**尚缺（屬 R2-B～E）：** `standard-street-module.mjs` 仍以 `sharedBuyRules` 硬列三個商品，其他商品由目前白名單拒絕（**不是已確認原版不合法**）；`buy-market-item-10/11/14` 仍分別調用三套 `projectOriginalMarketBuy*` **獨立交易演算法**（不是相容 alias）；UI／HTTP 未全面改用 `market-buy`；共用 `use-item`／製作尚未完成；市場特殊價格、回呼、多店、公會等需按實際來源語義辨識，不得假裝已支援或全都沒有特殊效果。
 
 | R2 工作包 | 判定 | 下一步 |
 | --- | --- | --- |
-| **A 共用買入核心** | **部分完成，不可結案** | 補齊原版 Perl Oracle／邊界及已審閱回呼時序的驗收 |
+| **A 共用買入核心** | **已完成自身驗收** | 原版 Perl 三商品 ×12 情境、全域／商品回呼順序與拒絕、數量／時間／CSV 差分均通過；**不代表** B～E 完成 |
 | **B 資料驅動 ITEM 規則** | **未完成** | 經審閱 DSL/Registry 讓合法普通商品以資料接入，移除三商品硬編碼白名單 |
 | **C 交易路徑統一** | **未完成** | UI／HTTP 改用 `market-buy`，移除三條舊正式買入演算法，保留必要差分證據 |
 | **D 共用 USE／製作** | **未完成** | 共用 `use-item` 承接已審閱 #79／#14 USE |
 | **E 整合驗收** | **未完成** | 原版 Perl、Node、HTTP、CAS、雙世代存檔／重啟及舊測試遷移驗收 |
 
-**先完成 R2-A 未結項與 R2-B／C，再完成 R2-D／E；R2 結案後 R3 才專注共用自然販售／時間，R4 做 EVENT／36 小時決算，R5 做繁中單機跨期閉環。** R0 目前只有市場進貨重點舊測試映射，R1 只有 `market-buy` 子契約，不能宣稱 R0／R1 全量結案。新增原版合法普通商品不應再新增 `buy-market-item-XX` 或整套重複交易測試。
+**R2-A 已驗收，接著先完成 R2-B／C，再完成 R2-D／E；R2 整體結案後 R3 才專注共用自然販售／時間，R4 做 EVENT／36 小時決算，R5 做繁中單機跨期閉環。** R0 目前只有市場進貨重點舊測試映射，R1 只有 `market-buy` 子契約，不能宣稱 R0／R1 全量結案。新增原版合法普通商品不應再新增 `buy-market-item-XX` 或整套重複交易測試。
 
 **工作分支：** `test/task02-baseline-on-s1`／[Draft PR #1](https://github.com/Prysline/akimono/pull/1)，基底 `migration/standard-street-s1`；**請以當下 PR head_sha 與同 HEAD CI** 核對最新狀態，不修改 `main`、基底、凍結 Perl／DSL、Notion，也不合併 PR。
 
