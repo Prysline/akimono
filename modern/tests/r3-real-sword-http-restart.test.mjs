@@ -208,3 +208,68 @@ test('R3 real HTTP one-minute callback RNG and temporary sale cleanup survive di
  assert.deepEqual(restored.state.world,turned.state.world);
  assertActualMarketShelf(restored.state);
 });
+
+test('R3 player-facing 150% source sale uses original GetSaleTax, CAS and durable reload',async t=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-price-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ let server=await boot(directory);
+ t.after(async()=>await server.stop());
+ const api=(endpoint,payload={})=>server.post(endpoint,payload);
+ assert.equal((await api('/api/initialize')).code,'COMMITTED');
+ assert.equal((await api('/api/open-shop',{
+  expectedRevision:1,ownerName:'原版售價測試',shopName:'R3有稅商品商店',
+ })).code,'COMMITTED');
+ const supplied=await api('/api/supply',{
+  expectedRevision:2,timespanSeconds:3600,
+ });
+ assert.equal(supplied.code,'COMMITTED',JSON.stringify(supplied));
+ const row=supplied.state.marketOffers.find(x=>x.itemId===10);
+ assert.ok(row?.canBuy,'true source original PLUS stocks item #10');
+ const bought=await api('/api/buy',{
+  expectedRevision:3,itemId:10,requestedCount:2,
+  marketShelf:row.shelf,expectedPrice:row.price,
+ });
+ assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
+ const invalid=await api('/api/showcase',{
+  expectedRevision:bought.state.world.revision,itemId:10,per:201,
+ });
+ assert.equal(invalid.ok,false);
+ assert.equal(invalid.state.world.revision,bought.state.world.revision);
+ const bypass=await api('/api/showcase',{
+  expectedRevision:bought.state.world.revision,itemId:10,
+  priceOverride:7500,
+ });
+ assert.equal(bypass.ok,false,'arbitrary price override is not sourced percent');
+ const displayed=await api('/api/showcase',{
+  expectedRevision:bought.state.world.revision,itemId:10,per:150,
+ });
+ assert.equal(displayed.code,'COMMITTED',JSON.stringify(displayed));
+ assert.equal(displayed.state.shop.showcase[0],10);
+ assert.equal(displayed.state.shop.price[0],7500);
+ const sold=await api('/api/advance-time',{
+  expectedRevision:displayed.state.world.revision,minutes:30,
+ });
+ assert.equal(sold.code,'COMMITTED',JSON.stringify(sold));
+ const quantity=sold.details.naturalSaleCount;
+ assert.ok(quantity>0,'the controlled source deterministic stream sells #10');
+ const gross=quantity*7500;
+ const tax=Math.trunc(gross*3/100); // Frozen GetSaleTax: 150% -> 3%.
+ assert.equal(sold.state.shop.saletoday,gross);
+ assert.equal(sold.state.shop.taxtoday,tax);
+ assert.equal(sold.state.shop.money,bought.state.shop.money+gross-tax);
+ assert.equal(sold.details.taxTodayAfter,tax);
+ assert.equal(Object.hasOwn(sold.state.shop,'_sale_count_'),false);
+ assertActualMarketShelf(sold.state);
+ const saved=await api('/api/save',{
+  expectedRevision:sold.state.world.revision,expectedGeneration:0,
+ });
+ assert.equal(saved.code,'SAVED',JSON.stringify(saved));
+ await server.stop();
+ server=await boot(directory);
+ const loaded=await api('/api/load');
+ assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+ assert.deepEqual(loaded.state.world,sold.state.world);
+ assert.equal(loaded.state.shop.price[0],7500);
+ assert.equal(loaded.state.shop.taxtoday,tax);
+ assertActualMarketShelf(loaded.state);
+});

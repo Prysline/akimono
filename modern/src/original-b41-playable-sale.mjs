@@ -146,7 +146,8 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
     happyEventSource:reviewedB60Happy?.source??null,
     ironEventSource:reviewedB59Iron?.source??null,
     ticketSourceReviewed:reviewedMarket11!==null,
-    maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,sourceScope:'single reviewed #10 natural-sale region, followed by 59 original PLUS and CheckWholeStore; no callbacks, sorting, period settlement, persistence or other items',
+    maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,
+    sourceScope:'six source-reviewed ITEM price/POP/POINT/COST; one-shop original 1..200% pricing and GetSaleTax; reviewed empty-holder item callbacks, then 59 PLUS. EVENT, SortDT and 36h settlement still unsupported',
   });
 }
 
@@ -243,7 +244,7 @@ export function projectB41Sale({
     !Number.isSafeInteger(shop.trush??0)|| (shop.trush??0)<0||
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
     !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
-    !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday!==0||
+    !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||
     !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
       [0,10,40]:[0,10]).includes(shop.showcase[0])||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
@@ -329,6 +330,7 @@ export function projectB41Sale({
       sourceSwordDemandPreview,
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
+      taxTodayBefore:shop.taxtoday,taxTodayAfter:newShop.taxtoday,
       rankBefore:shop.rank,rankAfter:rank,
       naturalDraws,callbackDraws,itemCallbackStage:callbackReceipt,
       plusDraws:plus.receipt.drawsUsed,
