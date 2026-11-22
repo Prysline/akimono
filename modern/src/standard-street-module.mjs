@@ -261,7 +261,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       reviewedCallbacks:reviewedInstantEventCallbacks,
       reviewedSupportCallbacks:reviewedSupportEventCallbacks,
       reviewedLoto,reviewedB59Iron,reviewedB60Happy,
-      reviewedB61Sword}):null;
+      reviewedB61Sword,reviewedB62Map}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -441,7 +441,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           reviewedCallbacks:reviewedInstantEventCallbacks,
           reviewedSupportCallbacks:reviewedSupportEventCallbacks,
           reviewedLoto,reviewedB59Iron,reviewedB60Happy,
-          reviewedB61Sword,
+          reviewedB61Sword,reviewedB62Map,
           shopId:command.shopId,minutes:command.minutes,
           saleDraws:command.saleDraws,eventDraws:command.eventDraws,
           eventHashOrderFixture:command.eventHashOrderFixture,
