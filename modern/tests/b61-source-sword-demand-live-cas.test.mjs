@@ -83,8 +83,8 @@ function setup(){
   assert.ok(act('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:plusOracle.draws,
   }).ok);
-  const q=street.quoteMarketItem10(repository.read());
-  assert.ok(act('buy-market-item-10',{
+  const q=street.quoteMarketOffer(repository.read(),10);
+  assert.ok(act('market-buy',{itemId:10,
     shopId:1,requestedCount:1,
     marketShelf:q.shelf,expectedPrice:q.price,
   }).ok);
