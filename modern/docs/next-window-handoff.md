@@ -1,3 +1,15 @@
+## 2026-11-22｜B-63 最新交接（優先於 B-62 及更早紀錄）
+
+完成 [B-63：劍市地圖原版全部五劍 GET 首次使用、收穫加倍、地圖損毀的真原版數值＋CAS](b63-real-sword-map-all-original-first-use-outcomes.md)，只在現有 `test/task02-baseline-on-s1` 及 Draft PR #1（仍Draft未合併），不修改 frozen Core／DSL、main或 migration 底分支。此版以 B-62 **真原版批發來源 #14 劍市地圖**（不是憑空造劍）為前置。新增選配 `originalItemHelperSource` 指向真固定 `modern/tests/original-perl/core-inc-item.cgi`，來源齊備時才提供內部指令 `use-original-sword-map-14-all-outcomes`；既有 B-62 `use-original-sword-map-14` 的狹窄木刀分支保持不變、舊呼叫者不提供原版helper就不啟用 B-63。
+
+原版 ITEM #14 SOURCE `@@USE` 五條 GET：`ITEM 40..44` 木刀、鐵劍、鋼鐵劍、秘銀劍、奧利哈鋼劍，10次抽取、機率400/350/150/60/30 permille；`funcb _local_` 若 `rand(1000)<=100`（含等號）將5份count皆加倍為20，再依原版 `MakeAmount` 進入 **每組2筆 rand() 正弦平方根分支**，不是把十次抽樣結果x2；`lostbook` 若最後 `rand(1000)<100`（不含等號）呼叫真正 `item::UseItem(14,1,...)→UseItemSub`，真扣地圖1份並將 `originalUseItem/originalUseMsg` 記入來源回執。一般原版抽樣總數52、加倍12，對照真原版 Perl 擷取編譯器 `GetBuffer/GetLocalFunction` + 原始 DSL `funcb` 本體 + frozen Perl `UseItem/MakeAmount/GetItemUseTime/UseTime/CheckWholeStore/item::lostbook`。六個原版獨立情境：一般五種劍各2／保留地圖；各2／地圖損毀；加倍產生8,7,3,1,1／保留；加倍產生8,7,3,1,1／損毀；全部沒有 GET + 損毀；100/1000等值邊界會**加倍但不會損毀**。首次用地圖仍花12000、用時7200、EXP[14]=20；未提供的亂數、額外亂數、過期CAS、來源 callback 改動（包含多出副作用）都完整拒絕。
+
+修改 `modern/src/original-b63-sword-map-all-outcomes.mjs` 並接 `standard-street-module.mjs`，B-41／B-56 時間片可保留5種真來源劍的玩家庫存、原版持有成本 `[120,150,320,800,1200]` 及各自上限 `[600,500,300,100,75]`；原版 B-43 雙世代磁碟存檔可保存真來源其它四種劍和地圖已毀狀態，重載後沒有地圖就不能再用。`modern/tests/b63-source-all-sword-map-outcomes-cas.test.mjs` 與 `modern/tests/original-perl/original-b63-sword-map-all-outcomes-probe.pl` 及同名 `.t` 都逐情境比對原版真函式結果及CAS。
+
+**邊界須維持**：只支援地圖**首次使用**；EXP20後再次使用之熟練縮時未審查；除了原版木刀#40，鐵劍#41～奧利哈鋼劍#44 目前可真的取得、持有、存檔和付維持費，但**尚未實作各自的展示架自然販售**；沒有原版全部道具／市場回補或超量丟棄支線、原版完整 PRNG 和 Perl hash keys 次序、同時多持續EVENT、原版 log 持久化、玩家 HTTP 及 **36小時結算**。本回合完整 Migration 任務02/04/05仍**進行中**，絕不可宣稱整款遊戲已完成或合併 PR。
+
+**最終原版 Perl／Node測試總數、HEAD、CI連結，以本交接修改後同一 SHA Push和Draft PR均 `completed/success` 為準**；不要沿用 B-62 的 886/1702。下一步 B-64 推薦真原版 #41～#44 販售時的 `popular/2`、價格／point及成本，而不是先把地圖熟練時間／假原版 RNG 當作完整支援。
+
 ## 2026-11-22｜B-62 最新交接（優先於 B-61 及更早紀錄）
 
 完成 [B-62 真實劍市地圖 #14 → 木刀 #40 來源產出 → `ken-sale` 木刀真實銷量／營收](b62-real-sword-map-buy-use-sale-cas.md)。核心關鍵：原始 DSL 木刀 #40 的 `plus -1h`，初始真批發市場沒有木刀，故**不能直接偽造木刀批發進貨**。改採真來源：原始市場 `plus 1h` 補充地圖 ITEM #14「到劍市的地圖」，原版 `buy-s.cgi` 數值路徑真正花10,000購入地圖、扣市場與資金、600秒；#14 原版 USE 再花12,000及7200秒，`exp 2%`（20點），經過來源限定的 `funcb _local_` 跳過收穫加倍、五個來源 GET（木刀40%、鐵劍35%、鋼鐵劍15%、秘銀劍6%、奧利哈鋼劍3%）中僅10次木刀成功、其它四組40次全失敗、`func lostbook` 不摧毀地圖——總計**52筆原版 rand(1000)**，在真世界取得十把 #40，原始地圖仍保留。其它抽樣路徑及重複使用因熟練度改變時間等未審查分支仍**整筆拒絕**，不可假稱所有來源地圖功能已完成。
