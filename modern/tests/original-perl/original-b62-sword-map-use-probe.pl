@@ -58,6 +58,17 @@ for my $needle (
 my $ok=eval "package item;use utf8;no strict;no warnings;\n".
   "sub _local_b1 {\n$callbackBody\n}\n1;";
 die "B-62 original Perl pre-callback couldn't compile: $@" unless $ok;
+# The previously bundled B-33 compiler harness does not install
+# GetLocalFunction. Compile that ORIGINAL frozen subroutine as well. The
+# in-memory source fixture has already isolated the _local_ body; GetLine
+# serves only the original compiler's local-function terminator.
+my $originalGetLocal=OriginalFullUseLostbookHarness::section(
+  $make,'GetLocalFunction');
+my $compiledFunc=eval "package main;use utf8;no strict;no warnings;\n".
+  $originalGetLocal."\n1;";
+die "B-62 exact original compiler GetLocalFunction failed: $@"
+  unless $compiledFunc;
+sub main::GetLine { return "_local_\n"; }
 $main::g_item={code=>'shiire-ken',no=>14,scale=>'份'};
 $main::g_use={no=>-1,exptime=>0};
 main::ClearBuffer('use');
