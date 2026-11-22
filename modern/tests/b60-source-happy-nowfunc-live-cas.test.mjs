@@ -378,9 +378,15 @@ test('B-60 unknown/multiple EVENT, missing/misordered NOWFUNC draw, unsupported 
     assert.equal(isReviewedB60HappyPeriod({
       period:corrupt.period,reviewed,nowSeconds:corrupt.nowSeconds,
     }),false);
-    const r=run(corrupt);
-    assert.equal(r.ok,false);
-    assert.equal(r.code,'SOURCE_BOUNDARY_REJECTED');
+    try{
+      const r=run(corrupt);
+      assert.equal(r.ok,false);
+      assert.equal(r.code,'SOURCE_BOUNDARY_REJECTED');
+    }catch(error){
+      // An invalid scalar (fractional expiry) can be rejected by GameCore
+      // snapshot validation before the reviewed StreetModule is reached.
+      assert.match(error.message,/B-31 contract: WorldState/);
+    }
     assert.deepEqual(adapter.read(),world);
   }
   const stale=run(world,{expectedRevision:world.revision+1});
