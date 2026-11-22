@@ -8,7 +8,6 @@ use lib $FindBin::Bin;
 use OriginalGiftMapUseHarness;
 binmode STDOUT,':encoding(UTF-8)';
 our (@ITEM,@DTwholestore,$MAX_ITEM,$TIME_SEND_ITEM);
-sub l {$_[0]}
 # Use the fixed, previously reviewed original compiler subroutines only:
 # ClearBuffer/GetBuffer/GetNumber; DO NOT execute top-level Perl compiler,
 # ITEM callbacks or any CGI I/O.
@@ -50,7 +49,7 @@ for my $id (1,14){
   my $actualTime=GetTimeDeal($actualPrice,$id,1);
   die "original BASE did not change dynamic price" if $actualPrice==$price;
   push @rows,{
-    itemId=>$id,sourceBaseRaw=>$base,basePrice=>$price,
+    itemId=>$id,sourceBaseRaw=>$base,basePrice=>0+$price,
     compiledPricebase=>0+$compiled->{pricebase},
     compiledPricehalf=>0+$compiled->{pricehalf},
     stocked=>1,sourcePrice=>0+$actualPrice,
