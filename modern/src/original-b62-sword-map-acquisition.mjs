@@ -95,7 +95,9 @@ export function reviewOriginalB62SwordMap({
   // Original pre-callback doubles create counts, before source UseItem.
   if(!use.raw.includes('return 0 if rand(1000)>100;')||
      !use.raw.includes('$_->{count}*=2;')||
-     !use.raw.includes('foreach(@{$USE->{result}->{create}})'))
+     !use.raw.includes('foreach(@{$USE->{result}->{create}})')||
+     !use.raw.includes(
+       "$USE->{result}->{message}->{resultok}='這次我們收穫的比平時多。';"))
     fail('original sword map funcb source changed');
   const position=model.items.indexOf(mapModel);
   if(position<0||!Number.isSafeInteger(position))fail('source market sort');
