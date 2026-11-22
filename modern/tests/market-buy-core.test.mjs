@@ -509,3 +509,59 @@ test('R2-B new original ordinary ITEM #39 executes shared market-buy with exact 
   assert.match(rejected.details.reason,/BASE/);
   assert.deepEqual(rejected.world,market);
 });
+
+
+test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-generation save contract',async t=>{
+  const directory=await mkdtemp(join(tmpdir(),'akimono-r2b-market-'));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const {repository,act}=seed();
+  const getQuote=world=>{
+    const index=street.marketBuy.order.findIndex(row=>row.itemId===39);
+    const shelf=street.marketBuy.order.slice(0,index)
+      .filter(row=>world.market.wholesale[row.wholesaleIndex]>0).length;
+    return {shelf,price:street.marketBuy.getRule(39).unitPrice};
+  };
+  const start=repository.read(),q=getQuote(start);
+  const purchased=act('market-buy',{
+    shopId:1,itemId:39,requestedCount:2,
+    marketShelf:q.shelf,expectedPrice:q.price,
+  });
+  assert.ok(purchased.ok,JSON.stringify(purchased.details));
+  assert.equal(purchased.world.revision,start.revision+1);
+  assert.equal(purchased.world.shops[0].item[38],purchased.details.purchasedCount);
+  assert.equal(purchased.world.shops[0].time,start.shops[0].time+600);
+  const store=createLocalWorldSaveStore({directory});
+  const first=store.save(repository.read(),{expectedGeneration:0});
+  assert.equal(first.generation,1);
+  const loaded=store.load();
+  assert.equal(loaded.generation,1);
+  assert.equal(encodeMemorySnapshot(loaded.world),encodeMemorySnapshot(repository.read()));
+  const wrongVersion=apply(repository.read(),{
+    ...buyCommand(repository.read(),39,q),expectedRevision:start.revision,
+  });
+  assert.equal(wrongVersion.code,'REVISION_CONFLICT');
+  assert.deepEqual(wrongVersion.world,repository.read());
+  const capped={...repository.read(),shops:[{
+    ...repository.read().shops[0],
+    item:repository.read().shops[0].item.map((x,i)=>i===38?10:x),
+  }]};
+  const rejected=apply(capped,buyCommand(capped,39,getQuote(capped)));
+  assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(rejected.world,capped);
+  const oldTime={...repository.read(),shops:[{
+    ...repository.read().shops[0],time:repository.read().nowSeconds-259201,
+  }]};
+  const timeCapped=apply(oldTime,buyCommand(oldTime,39,getQuote(oldTime)));
+  assert.ok(timeCapped.ok);
+  assert.equal(timeCapped.world.shops[0].time,oldTime.nowSeconds-259200+600);
+  const second=act('market-buy',{
+    shopId:1,itemId:39,requestedCount:1,
+    marketShelf:getQuote(repository.read()).shelf,
+    expectedPrice:getQuote(repository.read()).price,
+  });
+  assert.ok(second.ok,JSON.stringify(second.details));
+  const saved2=store.save(repository.read(),{expectedGeneration:1});
+  assert.equal(saved2.generation,2);
+  assert.equal(encodeMemorySnapshot(store.load().world),
+    encodeMemorySnapshot(repository.read()));
+});
