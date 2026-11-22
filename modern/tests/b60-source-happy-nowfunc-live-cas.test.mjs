@@ -84,8 +84,8 @@ function openRealShop(){
   assert.equal(act('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:supply.draws,
   }).ok,true);
-  const quote=street.quoteMarketItem10(adapter.read());
-  assert.equal(act('buy-market-item-10',{
+  const quote=street.quoteMarketOffer(adapter.read(),10);
+  assert.equal(act('market-buy',{itemId:10,
     shopId:1,requestedCount:1,marketShelf:quote.shelf,
     expectedPrice:quote.price,
   }).ok,true);
