@@ -216,9 +216,10 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
     expectedRevision:1,ownerName:'實際店主',shopName:'可復原測試商店',
   })).ok);
   assert.ok((await server.post('/api/supply',{
-    expectedRevision:2,timespanSeconds:60,
+    expectedRevision:2,timespanSeconds:3600,
   })).ok);
   let st=await server.state();
+  assert.ok(st.marketOffers.find(o=>o.itemId===10).marketStock>=2);
   assert.ok((await server.post('/api/buy',{
     expectedRevision:3,itemId:10,requestedCount:2,marketShelf:st.marketOffers.find(o=>o.itemId===10).shelf,
     expectedPrice:st.marketOffers.find(o=>o.itemId===10).price,
