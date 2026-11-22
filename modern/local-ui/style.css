@@ -155,15 +155,20 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
 .heading-top #dev-toggle[aria-pressed=true]{background:var(--note);color:#515151}
 .local-note{display:none;color:#888;font-size:11px;text-align:center;margin:2px auto}
 body.dev-mode .local-note{display:block}
-.save-strip{margin:2px 0;padding:0}
-.save-strip .inline-form{align-items:center;justify-content:center;gap:4px}
-.save-strip button{padding:1px 6px;min-height:23px;font-size:12px}
+.save-details{margin:9px auto 3px;border-top:1px dotted #d2d2d9;
+  padding:5px 2px;color:#888;font-size:12px}
+.save-details summary{width:fit-content;margin:0 auto;cursor:pointer;
+  color:var(--link);font-size:12px}
+.save-details .inline-form{align-items:center;justify-content:center;
+  gap:5px;margin:6px 0 0}
+.save-details button{padding:1px 6px;min-height:23px;font-size:12px}
 #save-status{font-size:11px;color:#888}
-.status-section{margin:1px auto}
-.status-table{width:max-content;max-width:100%;font-size:12px}
-.status-table th,.status-table td{padding:1px 4px}
+.status-section{margin:2px auto}
+.status-scroll{max-width:100%;overflow-x:auto}
+.status-table{width:max-content;max-width:none;font-size:12px;white-space:nowrap}
+.status-table th,.status-table td{padding:2px 4px;min-width:0}
 .status-table th{font-weight:normal;white-space:nowrap}
-.status-table td{min-width:75px}
+.status-table #store-name{max-width:140px;overflow:hidden;text-overflow:ellipsis}
 .page-intro{color:#666;font-size:12px!important;margin:4px 0 8px!important}
 .shop-portrait{display:flex;flex-direction:column;align-items:center;
   gap:8px;margin:3px auto 13px;text-align:center}
@@ -234,7 +239,7 @@ details.dev-panel[open]{background:#fbfbfd}
 .source-use-section:has(#use-offers tr:only-child td[colspan="5"]){margin-bottom:3px}
 footer{margin-top:12px;font-size:10px}
 @media(max-width:640px){
-  .status-table td{min-width:48px}
+  .status-table td{min-width:0}
   .balance-table{font-size:12px}
   .balance-table th,.balance-table td{min-width:0}
   .shop-identity{gap:6px}
