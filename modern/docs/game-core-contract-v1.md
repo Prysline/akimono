@@ -1,5 +1,16 @@
 # GameCore／StreetModule／WorldState｜現行責任契約修正（2026-11-22）
 
+## 2026-11-22｜R2-B Registry 實作後的權威契約更正
+
+**狀態：R2-A 已完成，R2-B 部分完成而非已驗收，R2-C／D／E 與 R2 整體未完成。** 下方「StreetModule 仍手工 `sharedBuyRules`」是更新前歷史內容。現行 `standard-street-module.mjs` 接入新的 `compileStandardStreetMarketBuyRegistry`，回傳 `marketBuyRegistry` 與 `marketBuy`；Registry 從固定兩份 DSL 的 ITEM 欄位及 source sort、原版 LIMIT 編譯結果與凍結 Core 來源建立 79 筆 `entries`、`order`，提供 `describe(itemId)`（來源／分類／拒絕原因）與 `getRule(itemId)`（僅可安全執行規則）。新增原版普通 ITEM #39 `book-kaitai` 由此共通編譯得到交易規則，無需新指令、額外 CAS 與商品專用演算法。
+
+**分工不變：** `market-buy-core.mjs` 的 `projectSharedMarketBuy` 僅處理共用成交、數量裁切、過期貨架、現金、時間、全域→商品回呼先後、`writeMarket`；不硬碼 Standard Street ID。StreetModule/Registry 擁有來源校驗、分類、回呼審閱、79項商品排序及原版稀疏批發 CSV 轉碼。WorldState／CAS／B-43 持有單次原子提交與雙代存檔。未知 `BASE`、未審閱商品回呼、零批發上限等由 Registry 具來源行號拒絕；全域 `@@FUNCBUY` 每滿500,000G 贈 #79 的可能非零效果由 Core 原 fail-closed 機制阻斷，**不是回呼不存在**。
+
+**必須修復的例外：** ITEM #14 原版 `BASE 50/150`（`custom/inc-item-data.cgi:1156`）會產生庫存依賴成交價及 `GetTimeDeal` 耗時；舊 R2-A Perl 商品編譯／Oracle 漏讀 BASE，原來 #14 固定 10000G/600秒僅為歷史相容。Registry 特別註記 `legacy-r2a-price-incomplete`，當前仍保留該受控行為，**尚未對真正原版市場價完成驗收，R2-B 不可標記完成**。R2-C 要統一 UI／HTTP、移除三套舊交易演算法，但本次完全未進行該遷移；保留舊命令不代表去重。測試和來源列表見 [R2 現況](shared-market-buy-r0-r2.md)；無記憶接手先讀 [交接](next-window-handoff.md)。
+
+---
+
+
 > **最新狀態（2026-11-22，優先於下方 B-31 歷史實作記錄）：已提交共用 `market-buy` 到 GameCore，且 R2-A 已通過直接來源差分與回呼時序退出驗收；R2-B～E 未完成，R2 整體未完成。** 不能再說「所有 Core 商業規則仍完全靠 StreetModule.apply」，也不能說「共用市場已完成」：新命令已進 Core，三件商品仍手動白名單，三套專用舊買入流程仍可各自執行。完成狀態及驗收清單見 [R2-A～E 現況文件](shared-market-buy-r0-r2.md)、正式主線見 [R0–R7 計畫](playable-loop-priority-plan.md)。B-31 舊資料只供來源追溯，**不能作現行 API 能力或分工表**。
 
 ## 已實作的 R2 買入介面與仍未達成的責任界線
