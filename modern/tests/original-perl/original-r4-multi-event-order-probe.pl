@@ -126,7 +126,7 @@ my @baseItems=map {{
 }}1..79;
 sub step {
   my(%o)=@_;
-  my $begin=$o{begin},$span=3600;
+  my ($begin,$span)=($o{begin},3600);
   $temptimenow=$begin;$timespan=$span;
   @ITEM=(undef,map{{%{$_}}}@baseItems);
   my @activeOrder=keys(%DTevent);
