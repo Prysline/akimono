@@ -14,9 +14,10 @@ const safe=(n,s)=>{if(!Number.isSafeInteger(n)||n<0)fail(s);return n;};
 const unit=n=>Number.isSafeInteger(n)&&n>=0&&n<1000000;
 const own=(obj,key)=>Object.hasOwn(obj,key);
 const sameKeys=(order,allowed)=>{
-  Array.isArray(order)&&order.length===allowed.length&&
+  return Array.isArray(order)&&order.length===allowed.length&&
   new Set(order).size===allowed.length&&
   order.every(x=>typeof x==='string'&&allowed.includes(x));
+};
 
 export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven,
   turnSource,readSource}){
