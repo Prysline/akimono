@@ -16,6 +16,8 @@ import {compileStandardStreetMarketBuyRegistry}
   from './standard-street-market-buy-registry.mjs';
 import {compileReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
+import {compileReviewedGiftUseVariants}
+  from './reviewed-gift-use-variants.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
   validateSourceSparseMarket,ORIGINAL_SPARSE_MARKET_SOURCE,
   traceOriginalSparseGiftWholesale}
@@ -334,6 +336,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // R2-D: StreetModule compiles source-approved USE recipes and callbacks.
   // All use-item accounting, material clipping, MakeAmount and EXP happen
   // once inside GameCore. Unknown USEs are described but not executable.
+  const giftUseVariants=compileReviewedGiftUseVariants({
+    itemDsl,model,giftMap,
+  });
   const giftUseRule=Object.freeze({
     supported:true,itemId:giftMap.itemId,useId:giftMap.useNo,
     source:'reviewed-original-gift-use',sourceFile:giftMap.sourceFile,
@@ -378,9 +383,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   }):null;
   const useItem=Object.freeze({
     getRule(itemId,useId){
-      if(useId!==0)return null;
-      if(itemId===giftUseRule.itemId)return giftUseRule;
-      if(itemId===swordUseRule?.itemId)return swordUseRule;
+      if(itemId===giftUseRule.itemId)
+        return useId===0?giftUseRule:
+          giftUseVariants.find(x=>x.useId===useId)??null;
+      if(itemId===swordUseRule?.itemId&&useId===0)return swordUseRule;
       return null;
     },
     describe(itemId,useId){
@@ -521,7 +527,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
-      return Object.freeze([giftUseRule,swordUseRule].filter(Boolean)
+      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
