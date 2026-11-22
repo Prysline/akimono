@@ -161,8 +161,8 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.match(html,/data-subgroup="trade"/);
   assert.doesNotMatch(html,/【取引】/);
   assert.ok(html.indexOf('class="status-section"')>html.indexOf('</header>'));
-  assert.match(html,/<\/header>\s*<section class="status-section"/,
-    'compact shop status must sit immediately under the original-style navigation');
+  assert.match(html,/<\/header>\s*<section id="status-summary" class="status-section"/,
+    'original owner strip follows navigation and can hide on shop/balance');
   assert.ok(html.indexOf('class="status-section"')<html.indexOf('class="local-note"'),
     'player shop summary appears before local-only save notice');
   assert.match(html,/id="tab-balance"/);
@@ -173,8 +173,8 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   assert.match(css,/#fff789/i);
   assert.match(css,/\[hidden\]/);
   assert.match(css,/\.status-section\{margin:3px 0 5px\}/);
-  assert.match(css,/\.site-heading\{[^\n]*padding-bottom:4px\}/);
-  assert.match(css,/margin-top:2px;font-size:13px;min-height:0/);
+  assert.match(css,/\.site-heading\{[^\n]*padding-bottom:2px\}/);
+  assert.match(css,/margin-top:0;font-size:12px;min-height:0/);
   assert.doesNotMatch(css,/#477558/i); // no B-40 dashboard green theme
   assert.doesNotMatch(html,/bg\.gif|logo\.gif|mark\.png/);
   const post=async(path,body={})=>{
