@@ -1,6 +1,6 @@
 # R0／R1 範圍紀錄與 R2-A～E 現況｜共用市場、交易、商品使用
 
-> **2026-11-22 現行交接與驗收判定（優先於本檔任何較早的「第一階段完成」說法）：R2-A 僅完成共用買入核心初版，尚未結案；R2-B／C／D／E 均未完成；R2 整體未完成。** 本檔可以在沒有對話記憶的情況下獨立判讀；不可從 CI 綠燈、三商品共用測試成功或舊標題的「第一階段」推論 R2 完工。僅允許在 `test/task02-baseline-on-s1`／Draft PR #1 修改 `modern/`，不修改凍結 Perl／DSL、其他分支及 Notion 正式狀態。
+> **2026-11-22 最新 R2-A 驗收判定（優先於本檔歷史初版紀錄）：R2-A「共用市場買入核心」已完成自身退出條件；R2-B／C／D／E 均未完成，R2 整體仍未完成。** 完成的是共用買入演算法與原版直接差分、全域／商品回呼時序及 fail-closed 邊界，**不是**全商品接入、正式 UI 遷移、刪除三條舊交易演算法或共用 USE。本檔可在沒有對話記憶時獨立閱讀；不可用舊標題或 CI 綠燈推論 R2 整體完成。只在 `test/task02-baseline-on-s1`／Draft PR #1 修改 `modern/`，不動凍結 Perl／DSL、其他分支與 Notion 正式狀態。
 
 ## 先讀：目前真正做了什麼、缺什麼
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | R0 基準盤點 | 市場進貨重點清冊已做；R0 全量尚未結案 | 下表只列與買入直接相關的代表性測試；**不是**原有全部測試逐檔「來源行為／風險／替代／處置」映射 |
 | R1 共用契約 | `market-buy` 子契約已可執行；完整 R1 尚未結案 | `market-buy-core.mjs` 與本文契約存在；通用 ITEM／USE／EVENT 編譯及全回呼生命週期契約尚不完整 |
-| **R2-A 買入核心** | **部分完成，禁止標為完成** | Core 已處理數量／資金／時間／庫存與 CAS，#10／#11／#14 可使用 `market-buy`；仍須完成原版 Oracle／回呼與正式執行來源的一致性驗收 |
+| **R2-A 買入核心** | **已完成 R2-A 退出條件** | Core 共用買入演算、#10／#11／#14 ×12 類原版 Perl 直接差分、原版全域／商品回呼順序及未支援效果明確拒絕，見下方 R2-A 完成證據；**不包含** B/C 的新商品接入與舊演算法去重 |
 | **R2-B 資料驅動接入** | **未完成** | `standard-street-module.mjs` 的 `sharedBuyRules` 仍逐項硬列 #10／#11／#14；`marketBuy.getRule` 只能取得這三項 |
 | **R2-C 唯一買入路徑** | **未完成** | 仍有 `buy-market-item-10/11/14` 分派到三套 `projectOriginalMarketBuy*`；本機 UI 尚未全面改送 `market-buy` |
 | **R2-D 共用 USE／生產** | **未完成** | `use-item(itemId,useId,...)` 尚非正式共用執行命令；#79、#14 仍是來源特定操作 |
@@ -20,7 +20,7 @@
 
 - [`market-buy-core.mjs`](../src/market-buy-core.mjs)：共同計算買入裁切、付款、`paytoday`、庫存、600 秒（由已審閱規則提供）、原版 72 小時 `UseTime` 上限與交易回執，透過 [`game-core-contract.mjs`](../src/game-core-contract.mjs) 的不可變快照／CAS 提交。
 - [`standard-street-module.mjs`](../src/standard-street-module.mjs)：由已存在的三筆來源審閱模型手動組出 `sharedBuyRules`，提供商品順序、單店市場驗證、原版 79 欄 `SetWholeStore` 寫回；**尚無能自動讓來源合法一般商品接入的完整規則編譯／Registry**。
-- 商品 #10／#11／#14 的 `buyCallback:null` 表示在本輪已審閱的買入範圍沒有額外已啟用回呼，**不是**所有其他商品都沒有 `FUNCBUY`。共用 Core 只有已審閱回呼接口，並非已實作任意原版買入特殊效果。
+- 商品 #10／#11／#14 的 `buyCallback:null` 表示這三商品本輪沒有商品專屬買入回呼，**絕非全域 `@@FUNCBUY` 不存在**。標準街原版 DSL 的 `@@FUNCBUY`（`custom/inc-item-data.cgi:3369`）明確在市場買入每滿 500,000 G 時透過 `AddItemSub` 贈送 #79 禮物卷；三商品個別買入上限使成交總額均低於門檻，因此是**來源已證實的零效果**，不是跳過未知效果。Core 依來源審閱的門檻檢查；若未來商品可能觸發，缺少已審閱執行回呼即拒絕交易，不會默默省略。
 - `buy-market-item-10/11/14` 舊命令目前仍各自呼叫三個舊 `projectOriginalMarketBuy*`，它們是**重複的正式可執行路徑**，不能稱為單純改名 alias；保留目的是遷移期間維持 UI 與既有回歸，不是架構上的永久需要。
 - 本輪驗證的是既有單店、來源驗證市場、指定商品的受控範圍；沒有宣稱所有動態價格、全域回呼、公會、多店、所有合法商品或跨街道進貨已支援。
 
@@ -75,7 +75,7 @@
 
 此段是已實作買入命令的**狹義契約**，尚未覆蓋共用 `use-item`、全商品 DSL 語義／回呼、事件及全交易模型。StreetModule 在此子契約中**應只**提供來源審閱結果（商品、單價、持有上限、搬運時間、排序、回呼能力）、市場格式驗證與 `SetWholeStore` 序列化；目前三筆仍為手動白名單，未達資料驅動目標。Core 不內建標準街 ID 與 79 件商品；這裡 79 欄是 Standard Street 的凍結來源格式，不是所有街道的引擎假設。
 
-## 已跑通之 R2-A 初版範圍與原版錨點（R2-A 尚未結案）
+## 已通過 R2-A 出口驗收的商品範圍與原版錨點（不代表 R2 全商品支援）
 
 | 商品 | 原版商品資料（審閱值） | 共用命令範圍 |
 |---|---|---|
@@ -91,11 +91,19 @@
 
 以下 A～E 是對既定 **R2｜共用市場／交易／商品使用** 的細分執行工作包，**不是額外的新里程碑**；階段可能為完成驗證而交錯實作，但不得省略驗收。狀態見本檔開頭，**沒有任何階段可因僅有綠燈而自動轉成「完成」**。
 
-### R2-A｜共用市場買入核心穩定化｜部分完成，尚未結案
+### R2-A｜共用市場買入核心穩定化｜**已完成自身退出條件**（2026-11-22）
 
-**已交付：** 可執行 `market-buy`，三件審閱商品跨同一公式更新現金、批發、庫存、時間；版本衝突、拒絕不改世界、保存結構等已由 `modern/tests/market-buy-core.test.mjs` 與舊測試核對。
+**驗收結論：** 真正執行同一個 `market-buy-core.mjs` 共用買入公式，Core 不硬寫 Standard 商品 ID；不同商品由 StreetModule 提供已審閱規格。直接執行固定原版 Perl `buy-s.cgi`／`GetWholeStore`／`SetWholeStore`／`CheckCount`／`GetTimeDeal`／`UseTime` 的 `modern/tests/original-perl/original-r2a-market-buy-oracle.pl`，與新 `market-buy` 指令**逐項比較三種原版合法商品各 12 類、合計 36 組**。並非只與先前 Node 專用交易模型交叉比對。
 
-**退出條件：** 明確核對原版 `buy-s.cgi`、`GetWholeStore/SetWholeStore`、`CheckCount`、`GetTimeDeal/UseTime` 的成交量／裁切／貨架與價格重檢／時間上限／原版批發 CSV；有新命令自身與**直接或可追溯原版 Perl Oracle**的跨商品及邊界測試（不能只用與舊 Node 模型相同作為全部來源證據）；將原版全域及商品 `FUNCBUY` 的時序、缺席與拒絕範圍記明並測試；共用規則中不得硬寫 Standard 商品 ID。只有上述條件均有程式與測試證據才標示完成。完成 A **不代表** B/C/D/E 完成。
+**12 類來源情境（每種商品均跑）：** 一般成交、要求量超額裁切、可支付額裁切、持有上限餘量裁切、持有上限拒絕、零資金拒絕、過期價格拒絕、錯誤貨架拒絕、零申請量拒絕、72 小時儲存時間上限裁切、未來店鋪時間拒絕、批發缺貨拒絕。對每個成功案例比較：`purchasedCount`、現金、`paytoday`、商品庫存、店鋪時間、批發數值、**完整 79 欄原版 `SetWholeStore` CSV 與稀疏定義索引**；失敗案例比較原版**未提交**與 Node 原世界／版本不變。已有連續三商品 CAS、回執、雙世代磁碟保存／重載後續操作測試。這些是 R2-A 驗證範圍，不代表有實機 CGI HTTP 或多人行為。
+
+**被舊測試漏掉的原版 `@@FUNCBUY`：** 標準街 `custom/inc-item-data.cgi:3369` 的**全域**買入回呼，在來源 `if($BUY->{whole})` 下按 `int(成交額/500000)` 贈送 #79 禮物卷並寫入日誌。三個已審閱商品的單店持有上限 × 標價都低於 500,000 G，因此本階段的成功買入不觸發贈禮，**不可寫成「原版沒有全域 FUNCBUY」**。`standard-street-module.mjs` 檢查固定 DSL 的原文門檻／效果與原版 buy-s 回呼入口；`market-buy-core.mjs` 區分全域和商品回呼，交易額達門檻卻無已審閱處理器時 **fail closed**；本階段**未實作超門檻贈禮副作用**，待 R2-B 特殊規則接入及 R2-C 正式遷移驗收。原版 Perl 探針會執行由原始 `@@FUNCBUY` 本體隔離建立的全域回呼（僅將原版 `@@ITEMNO"禮物卷"` 巨集核對替換為 #79），並以**明示人工商品回呼測資**驗證真 `buy-s.cgi` 順序是「買方帳務／庫存完成 → `RequireFile("inc-item.cgi")` → 全域 `FUNCBUY` → 商品 `FUNCBUY` → `SetWholeStore`」；相同順序的 Node hook 測試與缺失回呼拒絕均通過。人工回呼僅用來測生命週期，**不代表原版三商品有該商品回呼**。
+
+**來源及可查測試：** `modern/tests/original-perl/original-r2a-market-buy-oracle.pl`（新）、`modern/tests/market-buy-core.test.mjs`（加入三個新測試）、`modern/src/market-buy-core.mjs`（全域→商品回呼順序與拒絕）、`modern/src/standard-street-module.mjs`（原版全域回呼門檻來源審核）。原版 `modern/tests/original-perl/{buy-s.cgi,whole.cgi,item.cgi,calc.cgi}`、兩份 DSL 均未修改。
+
+**驗收 CI 的程式版本：** `bd7a504bdc473a0bd34c1beb5efab8ae621d2381`，[GitHub Actions #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) `completed/success`：Node **903/903**、Perl **1,867/1,867**（52 檔），固定 Core SHA、DSL 稽核與其他 workflow 步驟皆通過。文件提交後的**最新 HEAD 須重新核對**同 SHA CI；不得拿此歷史驗證當未來功能成功證據。
+
+**R2-A 完成≠R2 完成：** 三件商品仍靠 `sharedBuyRules` 手動接入（R2-B 未完成）；`buy-market-item-10/11/14` 仍分流舊 `projectOriginalMarketBuy*`，本機 UI 未全面遷移（R2-C 未完成）；通用 `use-item` 與真世界買入→USE 結案驗收尚未完成（R2-D/E 未完成）。本階段不刪原本 Perl 探針、舊專用程式或測試，待 R2-C/E 按測試遷移清單去重。
 
 ### R2-B｜商品 DSL 資料驅動接入｜未完成
 
@@ -131,7 +139,7 @@
 ## 下一個工作窗必須先做的事
 
 1. 讀 [正式 R0–R7 計畫](playable-loop-priority-plan.md)、本文件、[最新交接](next-window-handoff.md)、[GameCore 責任契約](game-core-contract-v1.md) 及真實程式與相關測試；以 PR #1 **當下** head_sha 確認分支、Draft 與未合併，不可以歷史 SHA 當現況。
-2. **優先完成 R2-A 未結條件與 R2-B／C**（資料驅動的市場買入及單一路徑），再以 R2-D／E 完成商品使用與可驗證整合；不要直接跳 R3／R4 或為新商品複製專用引擎。
+2. **R2-A 已完成自身退出驗收；接著優先 R2-B 商品資料驅動規則與 R2-C 唯一買入路徑／舊程式去重**，再以 R2-D／E 完成共用 USE 與真世界結案；不要直接跳 R3／R4 或為新商品複製專用引擎。
 3. 每輪回報實際支援商品及 USE 範圍、來源例外與具體拒絕原因、共用命令／特殊回呼、移除或改寫之舊命令及測試、原版對照、可玩操作與最新 HEAD 的 CI；**不要只報測試數或「第一階段完成」**。
 4. 保留主線 `main`、基底 `migration/standard-street-s1`、固定 Perl/DSL、Notion 不變；PR #1 保持 Draft、不合併。
 
