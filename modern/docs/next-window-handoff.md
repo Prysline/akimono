@@ -1,3 +1,13 @@
+## 2026-11-22｜B-62 最新交接（優先於 B-61 及更早紀錄）
+
+完成 [B-62 真實劍市地圖 #14 → 木刀 #40 來源產出 → `ken-sale` 木刀真實銷量／營收](b62-real-sword-map-buy-use-sale-cas.md)。核心關鍵：原始 DSL 木刀 #40 的 `plus -1h`，初始真批發市場沒有木刀，故**不能直接偽造木刀批發進貨**。改採真來源：原始市場 `plus 1h` 補充地圖 ITEM #14「到劍市的地圖」，原版 `buy-s.cgi` 數值路徑真正花10,000購入地圖、扣市場與資金、600秒；#14 原版 USE 再花12,000及7200秒，`exp 2%`（20點），經過來源限定的 `funcb _local_` 跳過收穫加倍、五個來源 GET（木刀40%、鐵劍35%、鋼鐵劍15%、秘銀劍6%、奧利哈鋼劍3%）中僅10次木刀成功、其它四組40次全失敗、`func lostbook` 不摧毀地圖——總計**52筆原版 rand(1000)**，在真世界取得十把 #40，原始地圖仍保留。其它抽樣路徑及重複使用因熟練度改變時間等未審查分支仍**整筆拒絕**，不可假稱所有來源地圖功能已完成。
+
+真正的玩家 #40 於商店展示架按原版定價1200上架，`original-b41-playable-sale.mjs` 來源販售新增木刀這條已審查支線：原版 buyer/sale/補貨、原版木刀 point1250、原版成本120（展示時/10）、地圖庫存成本500，保留 B-59/60/61 的事件契約及交易歷史。B-56 完整受控17鍵 EVENT 首片觸發 `ken-sale`，**啟動片**使用未被修飾的10800秒 `popular`，相同30分鐘樣本實售木刀 **2把、收入2400**；存檔至B43磁碟再用新 memory adapter 重讀，下一片 DataRead 依活動 `popular/2=5400` 秒，真實成交 **5把、收入6000**，木刀原來10把經兩片後剩3把、`itemtoday[40]=7`，兩次售出皆實際增加玩家金錢。若第二片沒有EVENT，受控對照只賣2把／2400。不是只讀潛在需求預測。
+
+新增程式 `modern/src/original-b62-sword-map-acquisition.mjs`，Street `originalUseSource` **選配**：舊呼叫者不提供此來源時保留B-41/B-56原本契約及舊測試通過；僅提供固定原始 `use.cgi` 才出現內部 `buy-market-item-14`、`use-original-sword-map-14`。`modern/tests/b62-real-sword-market-map-sale-cas.test.mjs` 含真市場/真地圖/真受控木刀成交/硬碟復原、原版交易抽樣及未審查分支、過期交易拒絕。**真原版 Perl 執行** `modern/tests/original-perl/original-b62-sword-map-use-probe.pl` 透過固定原版 `GetBuffer` 加上固定原版 `GetLocalFunction`，真正執行從 DSL 擷取的本體 `_local_b1`、固定原版 Core `UseItem`、`MakeAmount`、`GetItemUseTime`、`UseTime`、`CheckWholeStore`、`item::lostbook` 與EXP，來源52次rand、10把木刀、原版時鐘與收入前置費用皆有斷言 `original-b62-sword-map-use.t`。
+
+B-62 原始來源只接受地圖未加倍、未損毀、只得到十把木刀的這條狹窄分支，**不支援所有地圖結果、其它劍真的進貨／販售或真原版全 CGI/玩家 HTTP**。其它持續EVENT不得並行、Perl `keys(%EVENT)` 實際順序及PRNG未復原、持久化日誌與**36小時期末結算**仍未實作。任務02、04、05及專案總覽都仍進行中、不得假稱完整可玩遊戲。Draft PR #1 仍Draft未合併，原版 Core／DSL、main與migration底分支未修改。**最終 SHA/Node與Perl計數及CI網址須以本交接提交後同SHA Push與PR兩個成功CI確認**。下一個 B-63 建議拓展原版地圖加倍/損毀分支與其他劍的真正買賣，或優先打通來源36h跨期結算。
+
 ## 2026-11-22｜B-61 最新開發交接（優先於 B-60 與更早紀錄）
 
 本輪 B-61 接續 B-59 `plusup-tetu` 真批發持續 EVENT 與 B-60 `happy` 真商店人氣 NOWFUNC，新增 [原版「對劍的需求增加」 `ken-sale` 的持續期限、真正 Perl 編譯的商品需求與市場計算、真世界 CAS 與存檔](b61-source-sword-demand-economics-cas.md)。原版固定 Standard Street DSL 指明 `start 10%`（編譯機率100）、`basetime 6h + plustime 24h`，無 start/end/nowfunc，五條來源 `PARAM` 只有木刀(#40)、鐵劍(#41)、鋼鐵劍(#42)、秘銀劍(#43)、奧利哈鋼劍(#44) 各自 `pop/2`。原版 `inc-makeitem.cgi::OutEventData` 真編譯迴圈實際導出對應五行 `$ITEM[40..44]->{popular}=int($ITEM[40..44]->{popular}/2)`，不改售價；原版 `inc-turn.cgi` 真買家準備區及 `market.cgi::GetMarketStatus` 真執行，獨立來源 fixture 中200把木刀定價1200的市場 `uppoint` 54→27、商品平均價1200→1200、五種劍的 `buypeople` 約兩倍，證據來自執行原版程式，**不是玩家已取得或賣出200把木刀**。原版 `priceup-*` 雖有 `price*2`，DSL 後面的 `start -1` 已移除自然觸發，本輪不做假漲價。
