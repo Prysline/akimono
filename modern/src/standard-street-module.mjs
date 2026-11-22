@@ -39,6 +39,8 @@ import {reviewOriginalLotoStartfunc}
   from './original-b58-loto-startfunc.mjs';
 import {reviewOriginalB59IronEvent}
   from './original-b59-iron-event-lifecycle.mjs';
+import {reviewOriginalB60HappyEvent}
+  from './original-b60-happy-event-nowfunc.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {
@@ -200,12 +202,19 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       readSource:originalDataReadSource,
       compiledCatalog:reviewedEventCatalog,reviewedAllPlus,model,
     }):null;
+  const reviewedB60Happy=reviewedEventCatalog&&originalDataReadSource?
+    reviewOriginalB60HappyEvent({
+      itemDsl,turnSource:originalTurnSource,
+      compilerSource:originalCompilerSource,
+      readSource:originalDataReadSource,
+      compiledCatalog:reviewedEventCatalog,
+    }):null;
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
       configSource:originalConfigSource,
       reviewedMarket11:reviewedMarketBuy11,
-      reviewedB59Iron}):null;
+      reviewedB59Iron,reviewedB60Happy}):null;
   const reviewedSupportEventCallbacks=reviewedEventCatalog?
     reviewOriginalSupportEventCallbacks({
       itemDsl,turnSource:originalTurnSource,
@@ -225,7 +234,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       reviewedB41,reviewedCatalog:reviewedEventCatalog,
       reviewedCallbacks:reviewedInstantEventCallbacks,
       reviewedSupportCallbacks:reviewedSupportEventCallbacks,
-      reviewedLoto,reviewedB59Iron}):null;
+      reviewedLoto,reviewedB59Iron,reviewedB60Happy}):null;
   const metadata=Object.freeze({
     source:'custom/inc-item-data.cgi + custom/inc-rebel-data.cgi',
     compiler:'reviewed-declarative-subset; NO full Perl compiler',
@@ -268,6 +277,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedSupportEventCallbacks,
     reviewedLoto,
     reviewedB59Iron,
+    reviewedB60Happy,
     reviewedB56,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
@@ -369,7 +379,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectB41Sale({world,reviewed:reviewedB41,
           reviewedAllPlus,compiled:giftMap,shopId:command.shopId,
           minutes:command.minutes,randomDraws:command.randomDraws,
-          reviewedB59Iron});
+          reviewedB59Iron,reviewedB60Happy});
       }
       if(command.kind==='advance-source-time-reviewed-events'&&reviewedB56){
         ownKeysExact(command,['shopId','minutes','saleDraws',
@@ -380,7 +390,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           compiled:giftMap,reviewedCatalog:reviewedEventCatalog,
           reviewedCallbacks:reviewedInstantEventCallbacks,
           reviewedSupportCallbacks:reviewedSupportEventCallbacks,
-          reviewedLoto,reviewedB59Iron,
+          reviewedLoto,reviewedB59Iron,reviewedB60Happy,
           shopId:command.shopId,minutes:command.minutes,
           saleDraws:command.saleDraws,eventDraws:command.eventDraws,
           eventHashOrderFixture:command.eventHashOrderFixture,
