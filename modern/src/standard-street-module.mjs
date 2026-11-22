@@ -521,7 +521,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
              Array.isArray(priorExp)||Object.entries(priorExp).some(
-               ([id,value])=>!/^[1-9]\\d*$/.test(id)||Number(id)>79||
+               ([id,value])=>!/^[1-9]\d*$/.test(id)||Number(id)>79||
                  !Number.isSafeInteger(value)||value<0||value>1000));
           const exp=invalidExp?0:(priorExp?.[String(rule.itemId)]??0);
           const actualTime=originalUseTimeSeconds({
