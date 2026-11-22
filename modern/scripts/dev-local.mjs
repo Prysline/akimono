@@ -159,7 +159,9 @@ function state(){
       }),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
-      '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
+      '來源 #10／#40～#44 共用展示架',
+      '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
+      '原版自然販售片段／時間（多架／EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
@@ -465,6 +467,17 @@ async function api(req,res,url){
         ...(randomDraws.length?{randomDraws}:{})});
       break;
     }
+    case '/api/discard': {
+      if(!repo)return send(res,409,{ok:false,
+        error:'請先初始化世界',state:state()});
+      if(Object.keys(body).sort().join(',')!=='count,expectedRevision,itemId')
+        throw Error('丟棄僅接受 itemId、count、expectedRevision');
+      result=commit({kind:'discard-item',
+        expectedRevision:ensureRevision(body),shopId:1,
+        itemId:commandNumber(body.itemId,'itemId',1),
+        count:commandNumber(body.count,'count',1)});
+      break;
+    }
     case '/api/showcase': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
@@ -473,16 +486,22 @@ async function api(req,res,url){
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const fields=Object.keys(body).sort().join(',');
       if(fields!=='expectedRevision,itemId,per'&&
-         fields!=='expectedRevision,itemId,priceOverride')
-        throw Error('僅允許原版販售百分比或相容原價欄位');
+         fields!=='expectedRevision,itemId,per,shelf'&&
+         fields!=='expectedRevision,itemId,priceOverride'&&
+         fields!=='expectedRevision,itemId,priceOverride,shelf')
+        throw Error('僅允許原版販售比例、指定架號或相容原價欄位');
       const fromPercent=Object.hasOwn(body,'per');
       const per=fromPercent?commandNumber(body.per,'per',1):100;
       if(per>200)throw Error('原版展示架比例限制 1–200%');
       const sourcePrice=sourceRule?.unitPrice??0;
       if(!fromPercent&&body.priceOverride!==sourcePrice)
         throw Error('相容 priceOverride 只接受來源原價');
+      const shelf=Object.hasOwn(body,'shelf')?
+        commandNumber(body.shelf,'shelf'):0;
+      if(shelf>=(repo.read().shops[0]?.showcasecount??0))
+        throw Error('展示架不存在，請先使用擴建工具');
       result=commit({kind:'edit-showcase',
-        expectedRevision:ensureRevision(body),shopId:1,shelf:0,
+        expectedRevision:ensureRevision(body),shopId:1,shelf,
         itemId,per,priceOverride:fromPercent?0:sourcePrice});
       break;
     }

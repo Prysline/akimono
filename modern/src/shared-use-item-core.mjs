@@ -189,6 +189,25 @@ export function projectSharedUseItem({world,command,useItem}){
     ...shop,item:stocks,money:original.money,
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
+  let inlineShowcase=null;
+  if(rule.inlineCallback){
+    if(rule.inlineCallback.kind!=='showcase-resize'||
+      !rule.singleUseOnly||rule.itemId!==63||original.count!==1||
+      typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed inline source callback');
+    inlineShowcase=useItem.runInlineCallback({rule,shop:nextShop});
+    if(!inlineShowcase||!Number.isSafeInteger(inlineShowcase.showcaseCountAfter)||
+      inlineShowcase.showcaseCountAfter!==rule.inlineCallback.newCount||
+      !Array.isArray(inlineShowcase.showcase)||
+      !Array.isArray(inlineShowcase.prices)||
+      inlineShowcase.showcase.length!==inlineShowcase.showcaseCountAfter||
+      inlineShowcase.prices.length!==inlineShowcase.showcaseCountAfter)
+      fail('source inline callback result invalid');
+    nextShop.showcasecount=inlineShowcase.showcaseCountAfter;
+    nextShop.showcase=[...inlineShowcase.showcase];
+    nextShop.price=[...inlineShowcase.prices];
+    functionReturn=inlineShowcase.returned;
+  }
   let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
     const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
@@ -223,11 +242,16 @@ export function projectSharedUseItem({world,command,useItem}){
       originalAddMsg:added.map(([id])=>
         rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
+      ...(inlineShowcase?{
+        showcaseCountBefore:inlineShowcase.showcaseCountBefore,
+        showcaseCountAfter:inlineShowcase.showcaseCountAfter,
+      }:{}),
       originalWholeStoreChecks:original.wholeStoreChecks,
       randomDrawsUsed:pointer,callbackOrder:Object.freeze([
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
+        ...(inlineShowcase?['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
       doubleRewardTriggered:doubled,mapDestroyed:destroyed,

@@ -197,7 +197,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
     if(shop.id!==1||shop.status!==1||
        !Array.isArray(shop.item)||shop.item.length!==79||
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
-       shop.item[62]!==1||!giftInventoryValid||
+       ![0,1].includes(shop.item[62])||!giftInventoryValid||
        shop.item.some((n,i)=>!
          [9,10,13,18,39,40,41,42,43,62,78].includes(i)&&
          n!==0&&!extraStockValid(i,n))||
@@ -205,14 +205,27 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
        [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
        !sourceExpValid||
        shop.item[10]>50||
-       (![0,10,40,41,42,43,44].includes(shop.showcase?.[0])&&
-         !extraShowcaseValid())||
-       shop.showcase?.length!==1||shop.price?.length!==1||
-       ([10,40,41,42,43,44].includes(shop.showcase[0])&&
-          !isSourceShowcasePercentPrice({
-            10:5000,40:1200,41:1500,42:3200,43:8000,44:12000,
-          }[shop.showcase[0]],shop.price[0]))||
-       (shop.showcase[0]===0&&shop.price[0]!==0)||
+       !Number.isSafeInteger(shop.showcasecount)||
+       shop.showcasecount<1||shop.showcasecount>8||
+       !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
+       shop.showcase.length!==shop.showcasecount||
+       shop.price.length!==shop.showcasecount||
+       (shop.showcasecount>1&&
+         (shop.item[62]!==0||shop.paytoday<shop.showcasecount*10000))||
+       shop.showcase.some((id,shelf)=>{
+         if(!Number.isSafeInteger(id)||id<0||id>79)return true;
+         if(id===0)return shop.price[shelf]!==0;
+         if(!Number.isSafeInteger(shop.price[shelf])||shop.price[shelf]<0||
+           !Number.isSafeInteger(shop.item[id-1])||shop.item[id-1]<=0)
+           return true;
+         const reviewed={10:5000,40:1200,41:1500,42:3200,
+           43:8000,44:12000};
+         const entry=reviewed[id];
+         if(entry!==undefined)
+           return !isSourceShowcasePercentPrice(entry,shop.price[shelf]);
+         const r=sourceRegistryRule(marketBuyRegistry,id-1);
+         return r===null||shop.price[shelf]!==r.unitPrice;
+       })||
        !Number.isSafeInteger(shop.money)||shop.money<0||
        !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||
        !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||

@@ -62,6 +62,10 @@ import {reviewOriginalB63SwordMapOutcomes}
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {originalSourceUseClock} from './shared-use-experience.mjs';
+import {compileReviewedShowcaseResizeUses}
+  from './reviewed-showcase-resize-use.mjs';
+import {projectOriginalShowcaseResizeCallback}
+  from './original-inline-work-showcase-model.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -69,7 +73,7 @@ import {
 } from './standard-street-model.mjs';
 
 export const STANDARD_STREET_ID='standard-street';
-const actions=Object.freeze(['open-shop','edit-showcase']);
+const actions=Object.freeze(['open-shop','edit-showcase','discard-item']);
 function bad(message){throw new RangeError('B-31 Standard Street: '+message);}
 function ownKeysExact(command,required,optional=[]){
   const allowed=new Set(['kind','expectedRevision',...required,...optional]);
@@ -351,6 +355,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const declarativeUses=compileReviewedDeclarativeUses({
     itemDsl,model,limits:giftMap.limits,
   });
+  const showcaseResizeUses=compileReviewedShowcaseResizeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const declarativeUseIndex=new Map(declarativeUses.map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -401,6 +408,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:
           giftUseVariants.find(x=>x.useId===useId)??null;
+      if(itemId===63)return showcaseResizeUses[useId]??null;
       if(itemId===swordUseRule?.itemId&&useId===0)return swordUseRule;
       return declarativeUseIndex.get(itemId+':'+useId)??null;
     },
@@ -416,6 +424,22 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original USE effects/callbacks not reviewed at '+
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
+    },
+    runInlineCallback({rule,shop}){
+      if(rule?.itemId!==63||rule.inlineCallback?.kind!=='showcase-resize'||
+        !Number.isSafeInteger(rule.inlineCallback.newCount)||
+        rule.inlineCallback.newCount<1||rule.inlineCallback.newCount>8||
+        !showcaseResizeUses.includes(rule)||
+        !Number.isSafeInteger(shop?.showcasecount)||
+        !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
+        shop.showcase.length!==shop.showcasecount||
+        shop.price.length!==shop.showcasecount)
+        bad('unsupported inline showcase callback');
+      return projectOriginalShowcaseResizeCallback({
+        showcaseCount:shop.showcasecount,showcase:shop.showcase,
+        prices:shop.price,newCount:rule.inlineCallback.newCount,
+        shopId:shop.id,shopName:shop.shopname,
+      });
     },
     validateWorld({world,rule}){
       const market=world?.market;
@@ -545,7 +569,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
-        ...declarativeUses].filter(Boolean)
+        ...showcaseResizeUses,...declarativeUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -652,6 +676,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             proficiency:exp,maxUseCount,maxUseCountReason,
             missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
+            singleUseOnly:Boolean(rule.singleUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                [...rule.uses,...rule.creates].some(x=>
                  x.probabilityPermille>0&&x.probabilityPermille<1000),
@@ -818,6 +843,33 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='discard-item'){
+        ownKeysExact(command,['shopId','itemId','count']);
+        integer(command.shopId,'shopId',1);
+        integer(command.itemId,'itemId',1);
+        integer(command.count,'count',1);
+        const idx=world.shops.findIndex(s=>s.id===command.shopId);
+        if(idx<0)bad('unknown shop');
+        const shop=world.shops[idx];
+        const item=model.items.find(x=>x.id===command.itemId);
+        if(shop.status!==1||!item||item.flagRaw.split('|').includes('notrash')||
+          !Number.isSafeInteger(shop.item?.[command.itemId-1])||
+          shop.item[command.itemId-1]<command.count)
+          bad('source discard not permitted or stock insufficient');
+        // Source item-detail.cgi permits discard unless the t/notrash flag
+        // is present; original player screen specifies NO action-time cost.
+        // Do not mutate price, wholesale, money, time or showcase locations.
+        const next={...shop,item:[...shop.item]};
+        next.item[command.itemId-1]-=command.count;
+        const shops=[...world.shops];shops[idx]=next;
+        return {shops,receipt:{
+          action:'discard-item',shopId:shop.id,
+          itemId:command.itemId,discardedCount:command.count,
+          stockAfter:next.item[command.itemId-1],
+          timeSpentSeconds:0,
+          source:'original item-detail discard gate; bounded local no-time discard',
+        }};
       }
       if(command.kind==='edit-showcase'){
         ownKeysExact(command,['shopId','shelf','itemId'],
