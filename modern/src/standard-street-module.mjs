@@ -409,14 +409,39 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB56,
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
-    quoteMarketItem10(world){
-      return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
+    // R2-C read-only common wholesale offer projection: identical Registry,
+    // source sorting and live pricing as the GameCore transaction.
+    quoteMarketOffer(world,itemId){
+      const entry=buyRegistry?.describe(itemId);
+      if(!entry||!validateSourceSparseMarket(world?.market))
+        bad('source-backed wholesale offer unavailable');
+      const marketStock=world.market.wholesale[entry.wholesaleIndex];
+      if(!Number.isSafeInteger(marketStock)||marketStock<0)
+        bad('invalid original wholesale stock');
+      const rule=buyRegistry.getRule(itemId);
+      const shelf=marketStock>0?buyRegistry.order.slice(0,entry.sort)
+        .filter(row=>world.market.wholesale[row.wholesaleIndex]>0).length:null;
+      const quote=rule&&marketStock>0?
+        buyRegistry.quote({rule,marketStock}):null;
+      const shop=world.shops?.[0]??null;
+      const canBuy=Boolean(quote&&marketBuy.validateWorld(world)&&
+        shop?.id===1&&shop.status===1&&
+        shop.item[entry.shopIndex]<entry.stockLimit);
+      return Object.freeze({
+        itemId,name:entry.itemName,itemCode:entry.itemCode,
+        price:quote?.price??null,timeSeconds:quote?.timeSeconds??null,
+        basePrice:entry.basePrice,marketStock,shelf,
+        owned:shop?.item?.[entry.shopIndex]??0,limit:entry.stockLimit,
+        classification:entry.classification,source:entry.source,
+        reason:entry.reason??(rule?null:'unsupported original source semantics'),
+        canBuy,
+      });
     },
-    quoteMarketItem11(world){
-      return quoteOriginalMarket11({world,model,reviewed:reviewedMarketBuy11});
-    },
-    quoteMarketItem14(world){
-      return quoteOriginalMarket14({world,model,reviewed:reviewedB62Map});
+    listMarketOffers(world){
+      if(!buyRegistry||!validateSourceSparseMarket(world?.market))
+        return Object.freeze([]);
+      return Object.freeze(buyRegistry.entries.map(e=>
+        this.quoteMarketOffer(world,e.itemId)));
     },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
