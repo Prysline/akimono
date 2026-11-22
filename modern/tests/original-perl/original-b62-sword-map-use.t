@@ -11,7 +11,7 @@ is($?,0,'B-62 true original Perl source map USE/MakeAmount/UseTime/EXP and callb
 my $o=eval{decode_json($raw)};
 ok(!$@&&ref($o)eq'HASH','original use source result decoded');
 if(ref($o)eq'HASH'){
-  my $c=$o->{compiled},$r=$o->{result};
+  my($c,$r)=($o->{compiled},$o->{result});
   is($c->{itemId},14,'original sword map ITEM14 owner');
   is($c->{seconds},7200,'original GetBuffer compiles 4h to 2h');
   is($c->{expTimeSeconds},3600,'original SOURCE 2h exptime halved');
