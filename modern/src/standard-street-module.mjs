@@ -421,7 +421,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
-      reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
+       itemDsl,reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
       configSource:originalConfigSource,
       reviewedMarket11:reviewedMarketBuy11,
       reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,

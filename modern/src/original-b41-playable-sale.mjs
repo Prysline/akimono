@@ -7,6 +7,8 @@
  * unsupported. Time is advanced by an explicit isolated local test slice.
  */
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
+import {parseDsl} from './parse-dsl.mjs';
+import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
 import {ALL_PLUS_SOURCE,projectOriginalSparseAllPlus}
   from './original-sparse-all-plus.mjs';
 import {validateSourceSparseMarket}
@@ -30,8 +32,57 @@ const safe=(x,label,min=0)=>{
   if(!Number.isSafeInteger(x)||x<min)bad(label);
   return x;
 };
+
+// Core ITEM PRICE/POP/POINT/COST compilation, pinned to the six reviewed
+// Standard Street items. Unlike the source-specific B-41 sale formula, this
+// metadata is supplied to a single ITEM-id-independent shared Core executor.
+function reviewR3SourceSaleItems(itemDsl){
+  const parsed=parseDsl(itemDsl,'custom/inc-item-data.cgi');
+  if(parsed.issues.length)bad('original ITEM parse issues');
+  const blocks=parsed.blocks.filter(b=>b.kind==='ITEM');
+  const one=(b,k)=>b?.fields[k]?.length===1?b.fields[k][0].value:null;
+  const items=new Map(blocks.map(b=>[Number(one(b,'no')),b]));
+  const selected=[
+    [10,'5000','20d',null,'100'],[40,'1200','3h',null,null],
+    [41,'1500','3h',null,null],[42,'3200','5h','80%',null],
+    [43,'8000','10h','70%',null],[44,'12000','16h','60%',null],
+  ];
+  const rules={};
+  for(const [id,price,pop,point,cost] of selected){
+    const b=items.get(id);
+    if(!b||one(b,'price')!==price||one(b,'pop')!==pop||
+       one(b,'point')!==point||one(b,'cost')!==cost||
+       ['funct','functurn','funcs','funcsale','funcb'].some(k=>
+         b.fields[k]?.length))
+      bad('R3 ITEM or callback source drift: #'+id);
+    const match=/^([1-9]\d*)(m|h|d)$/.exec(pop);
+    if(!match)bad('unsupported source POP time');
+    const seconds=Number(match[1])*({m:60,h:3600,d:86400}[match[2]]);
+    rules[id]=Object.freeze({
+      itemId:id,unitPrice:Number(price),popularSeconds:seconds,
+      point:point===null?Math.trunc(seconds*100/24/36):
+        Number(point.slice(0,-1))*10,
+      cost:cost===null?Math.trunc(Number(price)/10):Number(cost),
+      source:b.file+':'+b.startLine,
+    });
+  }
+  const costs={};
+  // Explicitly bound to all source stocks currently permitted by B-41/B-63.
+  // Missing or changed upkeep data fails before any CAS.
+  for(const id of [9,10,11,12,14,39,40,41,42,43,44,63,79]){
+    const block=items.get(id),price=one(block,'price'),
+      cost=one(block,'cost');
+    if(!block||price===null||!/^\d+$/.test(price)||
+       (cost!==null&&!/^\d+$/.test(cost)))
+      bad('unsupported original upkeep ITEM #'+id);
+    costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
+  }
+  return Object.freeze({
+    rules:Object.freeze(rules),costs:Object.freeze(costs),
+  });
+}
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
-  configSource,reviewedMarket11=null,reviewedB59Iron=null,
+  itemDsl,configSource,reviewedMarket11=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null,
   reviewedB63Map=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
@@ -80,8 +131,10 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB63Map.limits?.join(',')!=='600,500,300,100,75'||
      reviewedB63Map.cost?.join(',')!=='120,150,320,800,1200'))
     bad('B-63 original all-sword inventory source review drift');
+  const r3=reviewR3SourceSaleItems(itemDsl);
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    saleRules:r3.rules,upkeepCosts:r3.costs,
     swordOutcomesSource:reviewedB63Map?.source??null,
     swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
@@ -186,12 +239,14 @@ export function projectB41Sale({
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
     !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
     !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday!==0||
-    !(reviewedB62Map?[0,10,40]:[0,10]).includes(shop.showcase[0])||
+    !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
+      [0,10,40]:[0,10]).includes(shop.showcase[0])||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
-    (shop.showcase[0]===10&&shop.price[0]!==5000)||
-    (shop.showcase[0]===40&&shop.price[0]!==1200))
+    (shop.showcase[0]!==0&&
+      shop.price[0]!==reviewed.saleRules?.[shop.showcase[0]]?.unitPrice)||
+    ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed real #10 or #40 inventory/shelf supported');
-  const activeItemId=shop.showcase[0]===40?40:10;
+  const activeItemId=shop.showcase[0]||10;
   const beforeStock=shop.item[activeItemId-1];
   if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
   // The local clock is a controllable test clock; crossing an unimplemented
@@ -208,83 +263,20 @@ export function projectB41Sale({
   if(Math.floor((world.nowSeconds+shift)/period)!==
      Math.floor((nextTime+shift)/period))
     bad('this interval crosses original period settlement; not yet supported');
-  let used=0;
-  function rand(){
-    if(used>=randomDraws.length)bad('missing natural/PLUS source draw');
-    return randomDraws[used++]/1000000;
-  }
-  const display=shop.showcase[0]===activeItemId&&
-    shop.showcase[0]!==0&&beforeStock>0;
-  const items=[...shop.item];
-  const itemtoday={...shop.itemtoday};
-  let sold=0,rankUp=0,rankDown=0;
-  let money=shop.money,trush=shop.trush??0,saleToday=shop.saletoday;
-  // Core's specialty group uses displayed ITEM type even when stock is zero.
-  const tempRank=shop.rank+(shop.showcase[0]!==0?1000:0);
-  if(display){
-    // Exactly one store/one shelf at reviewed original fixed item price:
-    // buypeoplebase=(sourcePrice/displayPrice)^4=1,
-    // dtranksum=tempRank so store rank quotient=1.
-    // B-61's DataRead sword popular/2 applies before natural sale.
-    const itemPopular=activeItemId===40?
-      (swordDemandEventActive?5400:10800):1728000;
-    const itemPoint=activeItemId===40?1250:200000;
-    const itemPrice=activeItemId===40?1200:5000;
-    const buyers=500000*12/itemPopular*span/86400;
-    const buypeople=buyers/2;
-    let sale=0;
-    if(buypeople>0)sale=rand()*buypeople;
-    if(sale<1&&sale>0&&rand()*(1/sale)<1)sale=1;
-    sale=Math.trunc(sale);
-    if(sale>0){
-      sold=Math.min(sale,items[activeItemId-1]);
-      const marketPoint=Math.max(10,Math.min(1000,
-        Math.trunc(beforeStock/40000*itemPopular)));
-      const rankUpMulti=((10-shop.rank/1000)**2)/5;
-      rankUp=Math.min(rand()*(rankUpMulti/marketPoint*itemPoint/10*sold),span/3);
-      // Source GetSaleTax at normal original price with user taxrate 0 -> 0.
-      const proceeds=safe(sold*itemPrice,'sale proceeds');
-      money=safe(money+proceeds,'cash after natural sale');
-      trush=safe(trush+proceeds,'trush after sale');
-      saleToday=safe(saleToday+proceeds,'saletoday after sale');
-      items[activeItemId-1]-=sold;
-      itemtoday[activeItemId]=safe(
-        (itemtoday[activeItemId]??0)+sold,'original itemtoday');
-      if(items[activeItemId-1]===0)rankDown+=(shop.rank/100)**3/1000;
-    }
-  }
-  rankDown+=Math.sqrt(span)*(shop.rank/1000)**5/(5**5*20);
-  rankDown*=0.75+trush/10000000;
-  let rankChange=Math.abs(rankUp-rankDown);
-  if(rankChange<1&&rankDown>0&&rand()*(1/rankChange)<1)rankChange=1;
-  const rank=Math.max(0,Math.min(10000,shop.rank+
-    Math.trunc(rankUp>rankDown?rankChange:-rankChange)));
-  // Original Core accumulates fractional costtoday. This is not rounded.
-  // Exact original inc-turn.cgi upkeep loops through ALL owned ITEMs.
-  // SOURCE ITEM #11 has COST 10 per held ticket, even though noshowcase.
-  const upkeep=50+
-    (items[9]? (shop.showcase[0]===10?items[9]/10:items[9])*100:0)+
-    (reviewed.ticketSourceReviewed?items[10]*10:0)+
-    (reviewedB62Map?(
-      items[13]*500+
-      (items[39]? (shop.showcase[0]===40?items[39]/10:items[39])*120:0)
-    ):0)+
-    (reviewedB63Map?[40,41,42,43].reduce((total,slot,i)=>
-      total+items[slot]*reviewedB63Map.cost[i+1],0):0);
-  const accrual=upkeep*span/86400;
-  const costtoday=shop.costtoday+accrual;
-  if(!Number.isFinite(costtoday)||costtoday<0||
-     Math.abs(costtoday)>Number.MAX_SAFE_INTEGER)
-    bad('unsafe original fractional upkeep');
-  trush=safe(trush+Math.trunc(accrual),'original integer waste increment');
-  const nextShop={
-    ...shop,item:items,itemtoday,money,trush,
-    saletoday:saleToday,rank,temprank:tempRank,costtoday,
-    _sale_count_:sold?{
-      [activeItemId]:{count:sold,price:sold*(activeItemId===40?1200:5000)},
-    }:{} ,
-  };
-  const naturalDraws=used;
+  // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
+  // The six items now execute exactly the same GameCore sale math.
+  const rule=shop.showcase[0]?reviewed.saleRules[shop.showcase[0]]:null;
+  const popularOverride=rule&&swordDemandEventActive&&
+    rule.itemId>=40&&rule.itemId<=44?
+    Math.trunc(rule.popularSeconds/2):null;
+  const natural=projectSharedNaturalSale({
+    shop,rule,upkeepCosts:reviewed.upkeepCosts,
+    spanSeconds:span,randomDraws,popularOverride,
+  });
+  const newShop=natural.shop,sold=natural.sold;
+  const naturalDraws=natural.drawsUsed,used=naturalDraws;
+  const money=newShop.money,saleToday=newShop.saletoday;
+  const rank=newShop.rank,items=newShop.item;
   const plus=projectOriginalSparseAllPlus({
     world:{...world,shops:[nextShop]},reviewed:reviewedAllPlus,
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
