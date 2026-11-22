@@ -82,7 +82,7 @@ async function setup(server){
   assert.equal(supplied.itemCatalog.length,79);
   assert.ok(supplied.marketOffers.length>0&&supplied.marketOffers.length<79);
   assert.ok(supplied.marketOffers.every(o=>o.marketStock>0));
-  assert.equal(supplied.useOffers.length,2);
+  assert.equal(supplied.useOffers.length,6);
   for(const id of [10,11,14,39]){
     const row=find(supplied,id);
     assert.equal(row.canBuy,true,'true original PLUS stock #'+id);
@@ -148,8 +148,8 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.match(app,/useOffers/);
   assert.match(app,/call\('\/api\/use'/);
   assert.doesNotMatch(app,/gift-exchange-maps|use-original-sword-map-14/);
-  assert.deepEqual((await srv.state()).useOffers.map(x=>x.itemId),
-    [79,14]);
+  assert.deepEqual((await srv.state()).useOffers.map(x=>[x.itemId,x.useId]),
+    [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   assert.equal(useOffer(await srv.state(),79).canUse,false);
   await reject(srv,'/api/use',{
     expectedRevision:0,itemId:79,useId:0,requestedCount:1},409);
@@ -407,4 +407,76 @@ test('R2 repeated map USE real HTTP from bought map through trained time, CAS, s
   assert.equal(loadedAgain.code,'LOADED',JSON.stringify(loadedAgain));
   assert.equal(loadedAgain.state.shop.exp['14'],80);
   assert.deepEqual(loadedAgain.state.world,fourth.state.world);
+});
+
+
+test('R2 pure-source gift variants #79/4 and #79/3 execute real HTTP/CAS/dual-save/restart',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-r2-gift-variants-http-'));
+  const servers=[];
+  t.after(async()=>{
+    for(const server of servers)await server.stop();
+    await rm(dir,{recursive:true,force:true});
+  });
+  let srv=await boot(dir);servers.push(srv);
+  await setup(srv);
+  const initial=await srv.state();
+  const offering=(state,useId)=>state.useOffers.find(
+    row=>row.itemId===79&&row.useId===useId);
+  assert.equal(offering(initial,4).canUse,true);
+  assert.equal(offering(initial,3).canUse,true);
+  assert.equal(offering(initial,2).canUse,false);
+  await reject(srv,'/api/use',{
+    expectedRevision:initial.world.revision,
+    itemId:79,useId:2,requestedCount:1,
+  });
+  const per4=perl('original-r2-gift-use-variants-probe.pl',
+    JSON.stringify({useId:4,initialGift:5,requestedCount:1}));
+  const first=await srv.post('/api/use',{
+    expectedRevision:initial.world.revision,itemId:79,useId:4,
+    requestedCount:1,
+  });
+  assert.equal(first.code,'COMMITTED',JSON.stringify(first));
+  assert.equal(first.state.shop.item[78],per4.result.item[78]);
+  assert.equal(first.state.shop.item[24],per4.result.item[24]);
+  assert.deepEqual(first.details.originalAddItem,per4.result.additem);
+  assert.equal(first.state.shop.time,
+    initial.shop.time+per4.compiled.time);
+  assert.equal(first.state.world.revision,initial.world.revision+1);
+  const save1=await srv.post('/api/save',{
+    expectedRevision:first.state.world.revision,expectedGeneration:0,
+  });
+  assert.equal(save1.code,'SAVED',JSON.stringify(save1));
+  await srv.stop();
+  srv=await boot(dir);servers.push(srv);
+  const load1=await srv.post('/api/load');
+  assert.equal(load1.code,'LOADED',JSON.stringify(load1));
+  assert.deepEqual(load1.state.world,first.state.world);
+  assert.equal(offering(load1.state,3).canUse,true);
+  const before3=await srv.state();
+  const second=await srv.post('/api/use',{
+    expectedRevision:before3.world.revision,itemId:79,useId:3,
+    requestedCount:1,
+  });
+  assert.equal(second.code,'COMMITTED',JSON.stringify(second));
+  assert.equal(second.state.shop.item[78],2);
+  assert.equal(second.state.shop.item[36],1);
+  assert.equal(second.state.shop.item[24],1);
+  assert.equal(second.state.shop.time,before3.shop.time+1800);
+  assert.equal(second.state.shop.money,before3.shop.money);
+  assert.equal(second.state.world.revision,before3.world.revision+1);
+  await reject(srv,'/api/use',{
+    expectedRevision:before3.world.revision,itemId:79,useId:4,
+    requestedCount:1,
+  });
+  const save2=await srv.post('/api/save',{
+    expectedRevision:second.state.world.revision,expectedGeneration:1,
+  });
+  assert.equal(save2.code,'SAVED',JSON.stringify(save2));
+  await srv.stop();
+  srv=await boot(dir);servers.push(srv);
+  const load2=await srv.post('/api/load');
+  assert.equal(load2.code,'LOADED',JSON.stringify(load2));
+  assert.deepEqual(load2.state.world,second.state.world);
+  assert.equal(load2.state.save.generation,2);
+  assert.equal(offering(load2.state,4).canUse,true);
 });
