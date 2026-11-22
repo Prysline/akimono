@@ -50,7 +50,7 @@ groups.forEach(group=>group.addEventListener('click',
 function text(id,value){$(id).textContent=String(value);}
 function showState(s){
   snapshot=s;
-  const w=s.world,shop=s.shop,item=s.item10;
+  const w=s.world,shop=s.shop,offers=s.marketOffers??[];
   text('world-id',w?.worldId??'尚未建立');
   text('revision',w?.revision??'—');
   const save=s.save??{available:false,generation:0,recoveryWarning:false};
@@ -89,8 +89,46 @@ function showState(s){
     '第 1 架：商品 #'+shop.showcase[0]+'，售價 '+money(shop.price[0])):'未開店');
   text('paid',money(shop?.paytoday));text('sales',money(shop?.saletoday));
   text('market-source',w?.market?.source??'尚未初始化');
-  text('market-price',money(item?.price));text('market-count',item?.marketStock??'—');
-  text('owned',item?item.owned+'／'+item.limit:'—');
+  // Prices, shelf and eligibility are derived from the same Registry used by
+  // HTTP/GameCore, never a browser-side copied item whitelist.
+  const marketBody=$('market-offers');
+  marketBody.replaceChildren();
+  if(!offers.length){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=6;td.textContent='請先初始化來源市場';
+    tr.append(td);marketBody.append(tr);
+  }else for(const offer of offers){
+    const tr=document.createElement('tr');
+    tr.dataset.marketItemId=String(offer.itemId);
+    const cell=value=>{
+      const td=document.createElement('td');
+      td.textContent=String(value);tr.append(td);
+      return td;
+    };
+    cell('#'+offer.itemId+' '+offer.name);
+    cell(offer.price===null?'—':money(offer.price));
+    cell(offer.marketStock);
+    cell(offer.owned+'／'+offer.limit);
+    const tdInput=document.createElement('td');
+    const count=document.createElement('input');
+    count.type='number';count.min='1';count.step='1';count.value='1';
+    count.setAttribute('aria-label','#'+offer.itemId+' 購買數量');
+    count.dataset.marketCount=String(offer.itemId);
+    count.disabled=!offer.canBuy;
+    tdInput.append(count);tr.append(tdInput);
+    const tdButton=document.createElement('td');
+    const button=document.createElement('button');
+    button.type='button';button.className='primary';
+    button.dataset.marketBuy=String(offer.itemId);
+    button.textContent=offer.canBuy?'購買':offer.reason?'不支援':'暫不可買';
+    button.disabled=!offer.canBuy;
+    button.title=offer.reason??(offer.marketStock===0?'市場缺貨':
+      !shop?'請先開店':'來源市場或持有上限暫不可交易');
+    tdButton.append(button);tr.append(tdButton);
+    marketBody.append(tr);
+  }
+  text('market-boundary',
+    '原版商品依來源宣告順序與實際市場價列出；未審閱的回呼／活動／公會、批發上限0等情況明確拒絕。');
   // Collapse setup once after a shop exists, but let the user reopen it.
   if(shop && !$('setup').dataset.autoClosed){
     $('setup').open=false;
@@ -99,15 +137,12 @@ function showState(s){
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
-  $('buy').disabled=!shop; // Deliberately permit empty-market click.
   $('set-showcase').disabled=!shop;
   for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
   $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
-  const entries=shop?[
-    {id:10,name:'書本寫作工具',count:shop.item[9],origin:'原版市場進貨'},
-    {id:63,name:'展示架擴建拆卸工具',count:shop.item[62],origin:'原版開店贈品'},
-    {id:79,name:'禮物卷',count:shop.item[78],origin:'原版開店贈品'},
-  ]:[];
+  const entries=shop?offers.filter(offer=>shop.item[offer.itemId-1]>0)
+    .map(offer=>({id:offer.itemId,name:offer.name,
+      count:shop.item[offer.itemId-1],origin:'原版商品／實際持有'})):[];
   const tbody=$('inventory');tbody.replaceChildren();
   if(!entries.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
@@ -140,9 +175,7 @@ async function call(path,payload={},label='操作'){
         {result:data.code??'拒絕',beforeRevision:before?.world?.revision,
          afterRevision:data.state?.world?.revision,
          moneyBefore:before?.shop?.money,moneyAfter:data.state?.shop?.money,
-         stockBefore:before?.shop?.item?.[9],stockAfter:data.state?.shop?.item?.[9],
-         marketBefore:before?.item10?.marketStock,
-         marketAfter:data.state?.item10?.marketStock},true);
+         sourceReceipt:data.details??null},true);
       return false;
     }
     const after=data.state;
@@ -150,8 +183,7 @@ async function call(path,payload={},label='操作'){
       {sourceReceipt:data.details,
        revision:[before?.world?.revision??null,after.world.revision],
        money:[before?.shop?.money??null,after.shop?.money??null],
-       stock10:[before?.shop?.item?.[9]??null,after.shop?.item?.[9]??null],
-       wholesale10:[before?.item10?.marketStock??null,after.item10?.marketStock??null]});
+       paid:[before?.shop?.paytoday??null,after.shop?.paytoday??null]});
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
@@ -190,12 +222,19 @@ $('advance-time-form').addEventListener('submit',async event=>{
   event.preventDefault();
   await advance(Number($('advance-minutes').value));
 });
-$('buy').addEventListener('click',()=>call('/api/buy',{
-  expectedRevision:snapshot?.world?.revision,
-  requestedCount:Number($('quantity').value),
-  marketShelf:snapshot?.item10?.shelf??0,
-  expectedPrice:snapshot?.item10?.price,
-},'市場進貨 #10'));
+$('market-offers').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-market-buy]');
+  if(!button||button.disabled)return;
+  const itemId=Number(button.dataset.marketBuy);
+  const offer=snapshot?.marketOffers?.find(row=>row.itemId===itemId);
+  if(!offer||!offer.canBuy)return;
+  const input=button.closest('tr')?.querySelector('input[data-market-count]');
+  call('/api/buy',{
+    expectedRevision:snapshot.world.revision,itemId,
+    requestedCount:Number(input?.value),
+    marketShelf:offer.shelf,expectedPrice:offer.price,
+  },'來源市場進貨 #'+itemId+' '+offer.name);
+});
 async function refresh(){
   try{const res=await fetch('/api/state',{cache:'no-store'});
     showState(await res.json());}
