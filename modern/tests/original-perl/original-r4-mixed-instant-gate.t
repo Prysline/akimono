@@ -13,6 +13,18 @@ ok(!$@&&ref($o)eq'HASH','frozen mixed EVENT oracle JSON');
 if(ref($o)eq'HASH'){
   is($o->{compiledCount},17,'exact 17 original runtime EVENT keys');
   is(scalar(@{$o->{theftCases}}),6,'six original source theft/robbery scenarios');
+  is(scalar(@{$o->{lotoCases}}),4,'four original 17-key loto cases');
+  my $loto=$o->{lotoCases}[0]{output};
+  is($loto->{shop}{item}[10],0,'original callback consumes five tickets');
+  is($loto->{shop}{money},999999999,'original first prize caps cash');
+  is(scalar(grep{$_==6096454}@{$loto->{randomDrawRanges}}),5,
+    'five real rand(6096454) from same shared RNG');
+  is(scalar(grep{$_==6096454}@{$o->{lotoCases}[1]{output}{randomDrawRanges}}),0,
+    'zero tickets produce original opening log without extra draw');
+  is($o->{lotoCases}[2]{output}{shop}{money},210000,
+    'ordinary source fourth/fifth prizes');
+  is(scalar(grep{$_==6096454}@{$o->{lotoCases}[3]{output}{randomDrawRanges}}),50,
+    '50 tickets consume 50 original lotto draws');
   my $one=$o->{theftCases}[0]{output};
   is(scalar(keys %{$one->{activeUntilSeconds}}),7,
     'seven original declarative EVENTs coexist with both instant callbacks');

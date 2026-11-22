@@ -11,6 +11,8 @@ import {B57_SUPPORT_SOURCE,projectOriginalSupportEventCallback}
   from './original-b57-support-event-callbacks.mjs';
 import {B55_SOURCE,projectOriginalInstantEventCallback}
   from './original-instant-event-callbacks.mjs';
+import {B58_LOTO_SOURCE,LOTO_RANGE,projectOriginalLotoStartfunc}
+  from './original-b58-loto-startfunc.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -25,7 +27,7 @@ const sameKeys=(order,allowed)=>{
 
 export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven,
   turnSource,readSource,reviewedSupportCallbacks=null,
-  reviewedInstantCallbacks=null}){
+  reviewedInstantCallbacks=null,reviewedLotoCallbacks=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -55,6 +57,16 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
      reviewedInstantCallbacks.robotStockIndex!==63||
      reviewedInstantCallbacks.callbackCodes?.join(',')!=='manbiki,goutou'))
     fail('source-reviewed instant STARTFUNC callbacks required');
+  if(reviewedLotoCallbacks!==null&&(
+     reviewedLotoCallbacks.source!==B58_LOTO_SOURCE||
+     reviewedLotoCallbacks.eventCode!=='loto'||
+     reviewedLotoCallbacks.ticketId!==11||
+     reviewedLotoCallbacks.stockIndex!==10||
+     reviewedLotoCallbacks.maxTickets!==50||
+     reviewedLotoCallbacks.ticketDrawRange!==LOTO_RANGE||
+     reviewedLotoCallbacks.gateIncluded!==false||
+     reviewedLotoCallbacks.maxMoney!==999999999))
+    fail('source-reviewed loto STARTFUNC callback required');
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -77,9 +89,10 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     eventCodes:Object.freeze(catalogCodes),
     catalog:Object.freeze(compiledCatalog.compiled),
     seven:reviewedSeven,support:reviewedSupportCallbacks,
-    instant:reviewedInstantCallbacks,committable:false,
+    instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
+    committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
-    scope:'full 17 compiled keys: seven declarative durable EVENTs, optional getmoney/getpop and manbiki/goutou source STARTFUNC with one shared source-gated RNG; unreviewed starts reject, single-shop only; not full 17 callbacks, period/save'});
+    scope:'17 compiled EVENT keys: seven declarative durable events, optional getmoney/getpop, manbiki/goutou and loto original STARTFUNC using one range-logged RNG; unreviewed starts reject, single shop only; not all callbacks or world save'});
 }
 
 /**
@@ -112,12 +125,12 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
-  if((reviewed.support===null&&reviewed.instant===null&&shop!==null)||
-     ((reviewed.support!==null||reviewed.instant!==null)&&
+  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&shop!==null)||
+     ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null)&&
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
-  if(!Array.isArray(randomDraws)||randomDraws.length>51||
+  if(!Array.isArray(randomDraws)||randomDraws.length>86||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
 
@@ -133,7 +146,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
-    instantCallbacks=[];
+    instantCallbacks=[],lotoCallbacks=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
   const groups=new Set();
   const end=startSeconds+spanSeconds;
@@ -207,6 +220,24 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       nextShop=callback.shop;
       instantCallbacks.push(code);
       if(callback.message!==null)logs.push([2,0,callback.message]);
+    }else if(code==='loto'&&reviewed.loto!==null){
+      // Consume exactly one original rand(6096454) per owned ticket, in
+      // the same sequence as the other 17 hash-gated event callbacks.
+      const count=nextShop?.item?.[10];
+      if(!Number.isSafeInteger(count)||count<0||count>50)
+        fail('source lotto ticket count out of bounds');
+      const ticketDraws=[];
+      for(let i=0;i<count;i++)ticketDraws.push(Math.trunc(draw(LOTO_RANGE)));
+      const callback=projectOriginalLotoStartfunc({
+        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,
+      });
+      if(callback.returnCode!==0||callback.eventPersisted!==false||
+         callback.randomDrawsUsed!==count||
+         callback.ticketCountConsumed!==count)
+        fail('reviewed loto STARTFUNC must consume all tickets and return zero');
+      nextShop=callback.shop;
+      lotoCallbacks.push(code);
+      for(const log of callback.logs)logs.push([log.level,log.shopId,log.message]);
     }else if(e.startProba===0&&e.callbacks.start===null&&
        e.baseTimeSeconds===0&&e.plusTimeSeconds===0){
       // Original START=0 still calls rand(100000), then ret=1.
@@ -225,10 +256,11 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     skippedByGroup:Object.freeze(skippedByGroup),
     logs:Object.freeze(logs.map(log=>Object.freeze(log))),
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
-    ...(reviewed.support===null&&reviewed.instant===null?{}:{
+    ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null?{}:{
       shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),
       instantCallbacks:Object.freeze(instantCallbacks),
+      lotoCallbacks:Object.freeze(lotoCallbacks),
     }),
     sourceScope:reviewed.scope,
   });

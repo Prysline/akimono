@@ -28,13 +28,15 @@ my $callbackRoot=tempdir('akimono-r4-mixed-XXXXXX',TMPDIR=>1,CLEANUP=>1);
 make_path("$callbackRoot/event-s");
 $ITEM_DIR=$callbackRoot;$MAX_MONEY=999999999;
 sub PushLog {push @LOG,[@_];1;}
+sub WriteLog {push @LOG,[@_];1;}
+sub event::WriteLog {return main::WriteLog(@_);}
 sub RequireFile {die 'unexpected original file' unless $_[0] eq 'inc-event.cgi';1;}
 sub GetPath {
   my($dir,$kind,$code)=@_;
   die 'unsupported callback path' unless
     $dir eq $ITEM_DIR&&$kind eq 'event-s'&&
     ($code eq 'getmoney'||$code eq 'getpop'||
-     $code eq 'manbiki'||$code eq 'goutou');
+     $code eq 'manbiki'||$code eq 'goutou'||$code eq 'loto');
   return "$callbackRoot/event-s/$code.pl";
 }
 sub GetMoneyString {return $_[0];}
@@ -71,6 +73,7 @@ my @targets=qw(boom-posyon tate-sale yoroi-sale tue-sale
 my %wanted=map{($_=>1)}@targets;
 my %support=map{($_=>1)}qw(getmoney getpop);
 my %instant=map{($_=>1)}qw(manbiki goutou);
+my %loto=map{($_=>1)}qw(loto);
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
 shift @blocks;
 for(@blocks){s/^\s*\@\@(ITEM|USE|EVENT|DEFINE|END|FUNC[A-Z]+)\b[\s\S]*$//mi;}
@@ -151,6 +154,28 @@ for my $code(qw(manbiki goutou)){
   die "unreviewed original callback macro in $code" if $body=~/\@\@/;
   open my $w,'>:encoding(UTF-8)',"$callbackRoot/event-s/$code.pl"
     or die $!;
+  print $w "use utf8;\npackage event;\nsub _local_start {\n".
+    $body."\n}\n1;\n";
+  close $w or die $!;
+}
+# Compile the actual unchanged loto _local_ body into the same event
+# package as the other callbacks; only file dispatch and log IO are stubbed.
+{
+  my @hits=grep(/^\s*code\s+loto(?:\s|$)/m,@blocks);
+  die 'original loto EVENT source changed' unless @hits==1;
+  my($head,$body)=$hits[0]=~/
+    ^\s*startfunc\s+(\S+)[^\n]*\r?\n
+    ([\s\S]*?)
+    ^[ \t]*_local_[ \t]*$
+  /mx;
+  die 'original loto STARTFUNC body drift' unless
+    defined($body)&&$head eq '_local_'&&
+    index($body,'my $rnd=rand(6096454);')>=0&&
+    index($body,'$DT->{item}[11-1]=0;')>=0&&
+    index($body,'WriteLog(2,0,"抽獎卷的開獎開始了");')>=0&&
+    index($body,'return 0;')>=0&&
+    $body!~/\@\@/;
+  open my $w,'>:encoding(UTF-8)',"$callbackRoot/event-s/loto.pl" or die $!;
   print $w "use utf8;\npackage event;\nsub _local_start {\n".
     $body."\n}\n1;\n";
   close $w or die $!;
@@ -240,7 +265,8 @@ sub step {
     next if $groups{$e->{group}};
     my $start=($wanted{$code}&&$o{wantedStarts}{$code})||
       ($support{$code}&&$o{supportStarts}{$code})||
-      ($instant{$code}&&($o{instantStarts}//{})->{$code});
+      ($instant{$code}&&($o{instantStarts}//{})->{$code})||
+      ($loto{$code}&&($o{lotoStarts}//{})->{$code});
     push @samples,$start?0:999999;
     if($start&&$wanted{$code}){
       push @samples,250000,500000;
@@ -269,6 +295,19 @@ sub step {
         $robot=0;
       }
       # Original instant callback always returns ret=0, no group lock.
+    }elsif($start&&$loto{$code}){
+      die 'compiled source loto contract changed' unless
+        $e->{startfunc} eq '_local_start' &&
+        $e->{startfuncparam} eq '' &&
+        !$e->{basetime}&&!$e->{plustime}&&
+        $e->{startproba}==500;
+      my $draws=($o{lotoDraws}//{})->{$code}//[];
+      my $tickets=$shop->{item}[10];
+      die 'source loto requires exactly one draw per owned ticket' unless
+        ref($draws)eq'ARRAY'&&$tickets>=0&&$tickets<=50&&
+        @$draws==$tickets;
+      push @samples,@$draws;
+      # Original returns zero, not a durable event or group reservation.
     }elsif($e->{startproba}==0){
       die 'original zero-start callback/duration changed' if
         $e->{startfunc}||$e->{basetime}||$e->{plustime};
@@ -406,9 +445,61 @@ my $destroy=step(name=>'manbiki-only-robot-destroyed',
   prior=>{ %DTevent },shop=>$destroyShop);
 push @theftCases,$destroy;
 
+# 17-key source regression with loto interleaved in original hash order.
+my @lotoCases;
+%DTevent=();
+my @lotoStock=(0)x79;
+$lotoStock[9]=12;$lotoStock[10]=5;$lotoStock[62]=1;$lotoStock[78]=5;
+my $lotoShop={
+  id=>1,status=>1,shopname=>'原版商店',money=>100000,rank=>5000,
+  item=>\@lotoStock,showcasecount=>1,showcase=>[10],price=>[5000],
+};
+my $lotteryFirst=step(name=>'loto-five-tickets-with-seven-support-and-instant',
+  begin=>1000000,wantedStarts=>{map{($_=>1)}@targets},
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>0,getpop=>0},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0],goutou=>[0]},
+  lotoStarts=>{loto=>1},
+  lotoDraws=>{loto=>[0,1,100,10000,100000]},
+  prior=>{},shop=>$lotoShop);
+push @lotoCases,$lotteryFirst;
+%DTevent=%{$lotteryFirst->{output}{activeUntilSeconds}};
+my @lotoRobotStock=@{$lotteryFirst->{output}{shop}{item}};
+$lotoRobotStock[63]=1;
+my $lotoRobotShop={%{$lotteryFirst->{output}{shop}},
+  item=>\@lotoRobotStock};
+my $lotteryZero=step(name=>'loto-zero-tickets-robot-and-next-DataRead',
+  begin=>1003600,wantedStarts=>{},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0,900000],goutou=>[0]},
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>999999,getpop=>999999},
+  lotoStarts=>{loto=>1},lotoDraws=>{loto=>[]},
+  prior=>{%DTevent},shop=>$lotoRobotShop);
+push @lotoCases,$lotteryZero;
+%DTevent=();
+my @lotoThreeStock=@lotoStock;$lotoThreeStock[10]=3;
+my $lotoThreeShop={%$lotoShop,item=>\@lotoThreeStock};
+my $lotteryThree=step(name=>'loto-three-tickets-ordinary-payout',
+  begin=>2000000,wantedStarts=>{},
+  lotoStarts=>{loto=>1},
+  lotoDraws=>{loto=>[100,10000,100000]},
+  prior=>{},shop=>$lotoThreeShop);
+push @lotoCases,$lotteryThree;
+%DTevent=();
+my @lotoFiftyStock=@lotoStock;$lotoFiftyStock[10]=50;
+my $lotoFiftyShop={%$lotoShop,item=>\@lotoFiftyStock};
+my $lotteryFifty=step(name=>'loto-50-tickets-all-miss',
+  begin=>3000000,wantedStarts=>{},
+  lotoStarts=>{loto=>1},
+  lotoDraws=>{loto=>[(999999)x50]},
+  prior=>{},shop=>$lotoFiftyShop);
+push @lotoCases,$lotteryFifty;
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and original inc-turn END/START, actual generated getmoney/getpop STARTFUNC, seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
-  cases=>\@cases,theftCases=>\@theftCases,
+  cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });

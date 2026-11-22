@@ -80,3 +80,9 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 新增 modern/tests/r4-mixed-instant-gate.test.mjs 和 modern/tests/original-perl/original-r4-mixed-instant-gate.t。六個來源場景包括七種持續事件與四個真回呼同時啟動、無機器人時商品遭偷／搶、機器人防護與破壞、下一時間片的 ITEM overlay、以及獨立強制 manbiki 防護與毀損兩條分支（各驗證正好兩次 rand(1000)）。Node 逐項比對 Perl 實際商店庫存、金錢、人氣、79 ITEM 效果、活動狀態、事件日誌及每次 rand(range) 呼叫範圍／次數；另外在多個 Perl 行程中重新測不同原版 hash 順序。
 
 來源驗收提交 55dd45990ee4b4f15073c222e043a628055e4415：Push Actions 45070082991、Pull Request Actions 45070092650 均 completed/success，Node 1049／1049，Perl 2022／2022（61 個 .t）。邊界：仍是 committable:false 的原版純差分，不是正式 WorldState／CAS 存檔／HTTP 引擎；尚未接通 loto、happy、rebel、guildbattle 等其他回呼的完整混合行為，亦未涵蓋自然販售、PLUS、SortDT、36h 期末結算、真正跨期和重啟。受控 RNG 樣本／從同一 Perl 行程觀察到的 hash 順序不等於 JS 已能自行重現原版 RNG／hash。R4 仍未結案。
+
+## 2026-11-23｜R4 原版 17-key EVENT × loto 混合 RNG（受控，不可提交）
+
+- 將 B-58 已審閱 `loto` STARTFUNC 與原 R4 七種持續事件、`getmoney`／`getpop`、`manbiki`／`goutou` 接入同一 17-key Perl 同行程排列 fixture。閘門先用 `rand(100000)`，命中後依來源張數逐張消耗 `rand(6096454)`，插入原本單一 RNG 序列；回呼回傳 0，不保留持續事件或群組鎖，`WriteLog` 與其他事件日誌依真正執行順序合併。
+- 真凍結 DSL 的 `loto` 本體由 `original-r4-mixed-support-gate-probe.pl` 生成並在凍結 `inc-turn.cgi` EVENT END／START 原文中執行，Node `r4-mixed-loto-gate.test.mjs` 對同一 Perl 行程的 17-key hash、商店庫存／金錢／機器人／七種 EVENT、日誌及 RNG 範圍序列逐項差分。另測五票混合獎項、零票公告且不抽獎、普通獎金、50 張最大上限及未審閱狀態原子拒絕。單筆 rand 的百萬分位樣本不取代 B-58 整數各獎等邊界 Oracle。
+- 僅修改 `modern/`；仍為 `committable:false` 純投影，原版 Perl/DSL/Core、正式 WorldState、HTTP/CAS、存檔和 36h 期末均未改。尚缺其餘未整合事件回呼與完整 R4 時序，不宣告 R4 完成。

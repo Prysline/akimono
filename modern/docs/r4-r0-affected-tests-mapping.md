@@ -56,3 +56,8 @@ R4／R0／R1 全量未完成；不刪既有原版 Node、Perl 差分，也不修
 
 R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合成及 HTTP/CAS／雙代存檔重啟的受影響映射必須待真正加入後補足，不能以本組純計算測試代替。
 
+
+## 2026-11-23｜R4 彩券混合 EVENT 測試映射
+
+- 保留既有 `r4-multi-event-order.test.mjs`、`r4-mixed-instant-gate.test.mjs` 與原 Perl 回歸，不破壞七種持續 EVENT、兩種支援回呼、偷搶機器人及 RNG。修改 `original-r4-mixed-support-gate-probe.pl`／`original-r4-mixed-instant-gate.t`，新增 `r4-mixed-loto-gate.test.mjs`，以同一原版 `rand(6096454)` 及 17-key 真 hash 遍歷，比較現金／票數／日誌及後續抽樣。
+- B-58 的 `b58-source-loto-real-ticket-cas.test.mjs` 和 `original-b58-loto-event.t` 仍檢驗五種獎等及精確整數邊界；R4 多事件樣本精度較低，不替代此驗收。R0／R1 全量與 R4 完整退出仍未達成。
