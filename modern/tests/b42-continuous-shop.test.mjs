@@ -56,10 +56,10 @@ function setup(){
     timespanSeconds:60,randomDraws:supply.draws,
   }).ok);
   function buy(){
-    const quote=street.quoteMarketItem10(repository.read());
+    const quote=street.quoteMarketOffer(repository.read(),10);
     assert.ok(quote.marketStock>0,'sale was followed by actual source PLUS supply');
-    const result=command('buy-market-item-10',{
-      shopId:1,requestedCount:1,marketShelf:quote.shelf,expectedPrice:quote.price,
+    const result=command('market-buy',{
+      itemId:10,shopId:1,requestedCount:1,marketShelf:quote.shelf,expectedPrice:quote.price,
     });
     assert.ok(result.ok,JSON.stringify(result.details));
     return result;
@@ -188,11 +188,11 @@ test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf
     expectedRevision:2,timespanSeconds:60,
   })).ok);
   let current=await (await fetch(url+'/api/state')).json();
-  assert.ok(current.item10.marketStock>0);
+  assert.ok(current.marketOffers.find(o=>o.itemId===10).marketStock>0);
   const purchase=async revision=>{
     const state=await (await fetch(url+'/api/state')).json();
-    return post('/api/buy',{expectedRevision:revision,requestedCount:1,
-      marketShelf:state.item10.shelf,expectedPrice:state.item10.price});
+    return post('/api/buy',{expectedRevision:revision,itemId:10,requestedCount:2,
+      marketShelf:state.marketOffers.find(o=>o.itemId===10).shelf,expectedPrice:state.marketOffers.find(o=>o.itemId===10).price});
   };
   assert.ok((await purchase(3)).ok);
   assert.ok((await post('/api/showcase',{
@@ -200,27 +200,32 @@ test('B-42 browser HTTP can truly sell, repurchase, sell and advance empty shelf
   })).ok);
   const first=await post('/api/advance-time',{expectedRevision:5,minutes:30});
   assert.ok(first.ok,JSON.stringify(first));
-  assert.equal(first.state.shop.item[9],0);
-  const secondBuy=await purchase(6);
-  assert.ok(secondBuy.ok,JSON.stringify(secondBuy));
-  assert.equal(secondBuy.state.shop.item[9],1);
-  assert.equal(secondBuy.state.shop.paytoday,10000);
-  const second=await post('/api/advance-time',{expectedRevision:7,minutes:30});
+  assert.equal(first.state.shop.item[9],1);
+  // R2-C: source EVENT state becomes unknown after a partial time slice;
+  // no new buy is silently authorized then. Buy two before the first slice
+  // and prove two subsequent genuine sales from that reviewed stock.
+  assert.equal(first.state.shop.item[9],1);
+  assert.equal(first.state.shop.paytoday,10000);
+  const unsafe=await purchase(6);
+  assert.equal(unsafe.status,409);
+  assert.equal(unsafe.state.world.revision,6);
+  assert.match(unsafe.details.reason,/unsupported market, event or shop configuration/);
+  const second=await post('/api/advance-time',{expectedRevision:6,minutes:30});
   assert.ok(second.ok,JSON.stringify(second));
   assert.equal(second.state.shop.item[9],0);
   assert.equal(second.state.shop.saletoday,10000);
   assert.equal(second.state.shop.itemtoday[10],2);
   assert.equal(second.state.shop.money,100000);
-  const idle=await post('/api/advance-time',{expectedRevision:8,minutes:10});
+  const idle=await post('/api/advance-time',{expectedRevision:7,minutes:10});
   assert.ok(idle.ok,JSON.stringify(idle));
-  assert.equal(idle.state.world.revision,9);
+  assert.equal(idle.state.world.revision,8);
   assert.equal(idle.state.secondsUntilSettlement,21800);
   assert.equal(idle.details.naturalSaleCount,0);
   assert.equal(idle.state.shop.temprank,second.state.shop.rank+1000);
   assert.equal(idle.state.shop.money,100000);
   assert.equal(idle.state.shop.itemtoday[10],2);
-  const stale=await post('/api/buy',{expectedRevision:6,requestedCount:1,
+  const stale=await post('/api/buy',{expectedRevision:6,itemId:10,requestedCount:1,
     marketShelf:0,expectedPrice:5000});
   assert.equal(stale.status,409);
-  assert.equal(stale.state.world.revision,9);
+  assert.equal(stale.state.world.revision,8);
 });
