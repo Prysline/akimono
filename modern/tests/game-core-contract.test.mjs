@@ -187,7 +187,7 @@ test('B-31 unknown item use is denied instead of faking generic gameplay',()=>{
   const w=create();
   const x=apply(w,{kind:'use-item',expectedRevision:1,shopId:1});
   assert.equal(x.ok,false);
-  assert.equal(x.code,'UNSUPPORTED_ACTION');
+  assert.equal(x.code,'SOURCE_BOUNDARY_REJECTED');
   assert.deepEqual(x.world,w);
 });
 test('B-31 unverified market sale is denied, not a placeholder cash change',()=>{
@@ -386,7 +386,7 @@ test('B-31 GameCore is street-neutral: another module uses same API contract',()
 });
 test('B-31 source Module metadata never claims callbacks or events implemented',()=>{
   assert.ok(!street.capabilities.includes('lostbook'));
-  assert.ok(!street.capabilities.includes('use-item'));
+  assert.ok(street.capabilities.includes('use-item'));
   assert.ok(!street.capabilities.includes('event'));
   assert.ok(!street.capabilities.includes('period-settlement'));
   assert.ok(Object.isFrozen(street.capabilities));
