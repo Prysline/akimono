@@ -1,5 +1,11 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
+## 2026-11-22｜R2 共用市場進貨執行第一階段
+
+新的 `market-buy` 命令已由 **GameCore** 執行真正共用的買入數量、金錢／庫存、600 秒搬運時間、原版 72 小時時間上限與 WorldState/CAS 提交流程；**Standard Street** 只提供已來源審閱的 #10、#11、#14 商品規格、來源商品排序、批發市場 `SetWholeStore` 格式和回呼邊界。完整契約、原版依據與測試替代對照見 [R0–R2 共用市場進貨](docs/shared-market-buy-r0-r2.md)。
+
+新命令欄位為 `{kind:'market-buy',expectedRevision,shopId,itemId,requestedCount,marketShelf,expectedPrice}`。成功會更新真實世界狀態與現有持久化相容結構；失敗或版本衝突不改動原世界。**現有本機 UI 與 #10／#11／#14 舊命令暫不修改**，作為相容與原版差分測試。未審閱的商品、動態定價、全域／商品買入回呼、公會及多店市場不得默默略過或自行推測；本階段不是全商品、全街道或真正 CGI 等價的宣告。
+
 此目錄位於移植分支 migration/standard-street-s1，從固定原版 Commit 7301b0c2b1e27226d1770e153fa3c68cfeae6d48 建立。原版 CGI 與 custom/ 保持不變。
 
 ## B-40｜先實際開啟繁體中文「店內／市場／倉庫」本機測試版
