@@ -60,7 +60,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  const map=state.marketOffers.find(x=>x.itemId===14);
  assert.equal(map.canBuy,true);
  const bought=await api('/api/buy',{
-  expectedRevision:state.world.revision,shopId:1,itemId:14,
+  expectedRevision:state.world.revision,itemId:14,
   marketShelf:map.shelf,expectedPrice:map.price,requestedCount:1,
  });
  assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
