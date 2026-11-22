@@ -20,29 +20,33 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* Keep the page frame stable across short/long screens.
  * On narrow viewports the floor shrinks to 100%, avoiding page-wide overflow. */
 .shell{width:fit-content;min-width:min(100%,640px);max-width:min(100%,640px);margin:8px auto 25px;padding:0 8px}
-.site-heading{text-align:center;border-bottom:1px solid #999;padding-bottom:4px}
-.heading-top{display:flex;justify-content:space-between;gap:8px;
-  font-size:11px;color:#999;padding:4px 0;border-bottom:1px dotted #e2e2e6}
-.site-heading h1{font-size:26px;font-weight:700;color:#777;margin:6px 0 4px;line-height:1.25}
-.town-name{font-size:16px;background:var(--highlight);color:#606060;
-  padding:2px 8px;vertical-align:middle;font-weight:400}
-.menu-main{display:flex;justify-content:center;flex-wrap:wrap;gap:2px 6px}
+.site-heading{position:relative;text-align:center;border-bottom:1px solid #999;padding-bottom:2px}
+.heading-top{position:absolute;top:0;right:0;display:flex;align-items:center;
+  font-size:11px;color:#999;padding:0}
+.heading-top>span{display:none}
+.site-heading h1{font-size:20px;font-weight:700;color:#777;margin:0 0 2px;
+  line-height:1.2;padding:0 82px}
+.town-name{font-size:13px;background:var(--highlight);color:#606060;
+  padding:1px 5px;vertical-align:middle;font-weight:400}
+.menu-main{display:flex;justify-content:center;flex-wrap:wrap;gap:0 7px}
 .menu-main button,.menu-sub button{
   appearance:none;border:0;background:none;color:var(--link);
-  font-weight:bold;padding:3px 3px;text-decoration:none
+  font-weight:bold;padding:1px 2px;line-height:1.2;text-decoration:none
 }
 .menu-main button:hover:not(:disabled),.menu-sub button:hover:not(:disabled){
   text-decoration:underline;color:#4d5f98
 }
 .menu-main button.selected{color:#595f7a;background:var(--highlight)}
 .menu-sub{display:flex;align-items:flex-start;justify-content:center;
-  flex-wrap:wrap;gap:1px;margin-top:2px;font-size:13px;min-height:0}
-.menu-sub .sub-caption{color:#888;padding:3px 0}
+  flex-wrap:wrap;gap:1px;margin-top:0;font-size:12px;min-height:0}
+.menu-sub .sub-caption{color:#888;padding:1px 0}
 .subgroup{display:flex;flex-wrap:wrap;justify-content:center;gap:0}
 .menu-sub button{font-weight:400;white-space:nowrap}
 .menu-sub button.selected{background:var(--note);color:#606060;font-weight:700}
 .location-line{display:flex;justify-content:space-between;flex-wrap:wrap;
-  gap:8px;margin:3px 0 0;color:#888;font-size:12px;text-align:left}
+  gap:4px;margin:1px 0 0;color:#888;font-size:11px;line-height:1.2;text-align:left}
+#settlement-status{display:none}
+body.dev-mode #settlement-status{display:inline}
 .notice{margin:4px 0 5px;padding:4px 8px;background:#fffde9;
   border:1px solid #e8e2b4;font-size:12px}
 .notice strong{color:#6f6b43}
@@ -122,7 +126,7 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
 @media(max-width:640px){
   .shell{margin:8px auto;padding:0 8px}
   .heading-top{font-size:10px}
-  .site-heading h1{font-size:23px}
+  .site-heading h1{font-size:19px}
   .location-line{font-size:11px}
   .section{padding:9px}
   .section-title{margin:-9px -9px 10px}
@@ -149,13 +153,15 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
   font-size:11px;padding:1px 5px;min-height:22px
 }
 .heading-top #dev-toggle[aria-pressed=true]{background:var(--note);color:#515151}
-.local-note{color:#888;font-size:11px;text-align:center;margin:4px auto}
-.save-strip{margin:5px 0;padding:2px 0}
-.save-strip .inline-form{align-items:center;justify-content:center;gap:5px}
-.save-strip button{padding:2px 7px;min-height:25px}
+.local-note{display:none;color:#888;font-size:11px;text-align:center;margin:2px auto}
+body.dev-mode .local-note{display:block}
+.save-strip{margin:2px 0;padding:0}
+.save-strip .inline-form{align-items:center;justify-content:center;gap:4px}
+.save-strip button{padding:1px 6px;min-height:23px;font-size:12px}
 #save-status{font-size:11px;color:#888}
-.status-section{margin:4px auto 3px}
-.status-table{width:max-content;max-width:100%}
+.status-section{margin:1px auto}
+.status-table{width:max-content;max-width:100%;font-size:12px}
+.status-table th,.status-table td{padding:1px 4px}
 .status-table th{font-weight:normal;white-space:nowrap}
 .status-table td{min-width:75px}
 .page-intro{color:#666;font-size:12px!important;margin:4px 0 8px!important}
@@ -220,8 +226,8 @@ details.dev-panel summary{color:#737eaa;cursor:pointer}
 details.dev-panel[open]{background:#fbfbfd}
 .dev-panel .debug-data{max-width:100%}
 .dev-panel .debug-data dd{max-width:420px}
-.feedback{margin:6px auto;padding:3px 7px;max-width:100%;border-left:3px solid #a8be82}
-.feedback p{margin:2px 0;font-size:12px}
+.feedback{margin:3px auto;padding:2px 6px;max-width:100%;border-left:3px solid #a8be82}
+.feedback p{margin:1px 0;font-size:12px}
 .feedback.error{border-left-color:#bb817d}
 .source-use-section{margin-top:12px}
 .source-use-section .sub-title{margin-bottom:6px}
@@ -233,4 +239,10 @@ footer{margin-top:12px;font-size:10px}
   .balance-table th,.balance-table td{min-width:0}
   .shop-identity{gap:6px}
   .table-scroll{max-width:100%;overflow-x:auto}
+}
+
+/* On narrow screens keep the title clear of the top-right developer toggle. */
+@media(max-width:420px){
+  .site-heading h1{padding:0 75px 0 0;text-align:left;font-size:18px}
+  .town-name{font-size:12px}
 }
