@@ -142,10 +142,12 @@
     <section id="tab-market" class="section pane" hidden>
       <h2 class="section-title">市場</h2>
       <p class="help-text">所有原版商品皆由同一 Registry 提供原始排序、即時價格、批發數量與來源審閱狀態；不支援的效果不會自動執行。超過現貨／現金可能自動縮減交易量，縮減至 0 即拒絕。</p>
-      <table class="market-table">
-        <thead><tr><th>來源商品</th><th>實際市場價格</th><th>市場存量</th><th>持有／上限</th><th>買入數</th><th>購入</th></tr></thead>
-        <tbody id="market-offers"><tr><td colspan="6">請先初始化來源市場</td></tr></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="market-table">
+          <thead><tr><th>來源商品</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
+          <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
+        </table>
+      </div>
       <p class="muted" id="market-boundary">只有來源編譯與回呼審閱完成的商品可在此成交。</p>
       <details class="supply-details">
         <summary>開發測試：原版市場供貨子步驟</summary>
@@ -175,10 +177,12 @@
         <p class="help-text">所有可操作配方都來自原版 USE 規則，透過同一個 GameCore `use-item` 提交。
           #79 禮物卷每次消耗 2 張並換取三張地圖；#14 劍市地圖目前僅審閱首次使用，
           產生五種劍並依來源亂數可能加倍或損毀地圖。這不是全部原版 USE。</p>
-        <table class="market-table">
-          <thead><tr><th>原版 USE</th><th>持有／材料</th><th>單次成本</th><th>要求次數</th><th>使用／製作</th></tr></thead>
-          <tbody id="use-offers"><tr><td colspan="5">請先建立世界並開店</td></tr></tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="market-table">
+            <thead><tr><th>原版 USE</th><th>持有／材料</th><th>單次成本</th><th>要求次數</th><th>使用／製作</th></tr></thead>
+            <tbody id="use-offers"><tr><td colspan="5">請先建立世界並開店</td></tr></tbody>
+          </table>
+        </div>
         <p id="use-boundary" class="muted">僅執行已審閱配方；第二次地圖使用、未知回呼及未審閱事件會原子拒絕。</p>
       </div>
       <form id="showcase-form" class="shelf-form">
