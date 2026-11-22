@@ -530,6 +530,10 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   assert.equal(purchased.world.revision,start.revision+1);
   assert.equal(purchased.world.shops[0].item[38],purchased.details.purchasedCount);
   assert.equal(purchased.world.shops[0].time,start.shops[0].time+600);
+  // Without a reviewed Registry, the original B-43 save restrictions stay
+  // intact; extra source goods are never accepted by an unchecked flag.
+  assert.throws(()=>createLocalWorldSaveStore({directory}).save(
+    repository.read(),{expectedGeneration:0}),/outside reviewed/);
   const store=createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry});
   const first=store.save(repository.read(),{expectedGeneration:0});
   assert.equal(first.generation,1);
@@ -541,9 +545,11 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   });
   assert.equal(wrongVersion.code,'REVISION_CONFLICT');
   assert.deepEqual(wrongVersion.world,repository.read());
-  const capped={...repository.read(),shops:[{
-    ...repository.read().shops[0],
-    item:repository.read().shops[0].item.map((x,i)=>i===38?10:x),
+  // Ensure we are rejecting the actual source inventory cap, not an
+  // unrelated sold-out post-purchase wholesale market.
+  const capped={...start,shops:[{
+    ...start.shops[0],
+    item:start.shops[0].item.map((x,i)=>i===38?10:x),
   }]};
   const rejected=apply(capped,buyCommand(capped,39,getQuote(capped)));
   assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
