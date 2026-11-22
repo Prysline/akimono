@@ -530,7 +530,7 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   assert.equal(purchased.world.revision,start.revision+1);
   assert.equal(purchased.world.shops[0].item[38],purchased.details.purchasedCount);
   assert.equal(purchased.world.shops[0].time,start.shops[0].time+600);
-  const store=createLocalWorldSaveStore({directory});
+  const store=createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry});
   const first=store.save(repository.read(),{expectedGeneration:0});
   assert.equal(first.generation,1);
   const loaded=store.load();
