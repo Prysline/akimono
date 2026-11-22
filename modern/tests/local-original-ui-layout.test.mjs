@@ -89,11 +89,42 @@ test('shared top area is compact without removing real navigation or shop stats'
   assert.match(css,/\.site-heading\{position:relative;[^\n]*padding-bottom:2px/);
   assert.match(css,/\.heading-top\{position:absolute;top:0;right:0/);
   assert.match(css,/\.site-heading h1\{font-size:20px/);
-  assert.match(css,/\.status-table th,\.status-table td\{padding:1px 4px\}/);
-  assert.match(css,/\.save-strip\{margin:2px 0;padding:0\}/);
+  assert.match(css,/\.status-table th,\.status-table td\{padding:2px 4px;min-width:0\}/);
+  assert.match(css,/\.save-details\{margin:9px auto 3px/);
   assert.match(css,/body\.dev-mode \.local-note\{display:block\}/);
   for(const label of ['【自店】','【交易】','【情報】','【施設】','【交流】'])
     assert.ok(html.includes(label),'keeps navigation '+label);
   for(const id of ['store-name','money','rank','time','save-world','load-world','dev-toggle'])
     assert.ok(html.includes('id="'+id+'"'),'keeps top-level data and actions '+id);
+});
+
+
+test('single line original owner strip only appears where it is not duplicated',()=>{
+  const summary=html.match(/<section id="status-summary"[\s\S]*?<\/section>/)?.[0]??'';
+  assert.match(summary,/hidden>/);
+  assert.equal((summary.match(/<tr>/g)??[]).length,1,
+    'RANK, shop name, points, money, time share one logical row');
+  assert.match(summary,/<th scope="row">RANK<\/th>[\s\S]*?<th scope="row">店名<\/th>[\s\S]*?<th scope="row">點數<\/th>[\s\S]*?<th scope="row">資金<\/th>[\s\S]*?<th scope="row">行動時間<\/th>/);
+  for(const id of ['rank','store-name','shop-points','money','time'])
+    assert.match(summary,new RegExp('id="'+id+'"'));
+  assert.match(script,/function syncStatusVisibility\(\)/);
+  assert.match(script,/currentTab==='shop'\|\|currentTab==='balance'/);
+  assert.match(script,/text\('rank',number\(s\.shopSummary\?\.rankPosition\)\)/);
+  assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
+  assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
+  assert.match(css,/\.status-table\{width:max-content;max-width:none;font-size:12px;white-space:nowrap\}/);
+  assert.match(css,/\.status-scroll\{max-width:100%;overflow-x:auto\}/);
+});
+
+test('manual local disk storage is at the bottom and collapsible, not in the header',()=>{
+  const start=html.indexOf('id="save-section"');
+  const pagesEnd=html.indexOf('id="tab-pending"');
+  const footer=html.indexOf('<footer>');
+  assert.ok(start>pagesEnd&&start<footer,'storage belongs after all game pages');
+  assert.match(html,/<details id="save-section" class="save-details"/);
+  assert.match(html,/id="save-world"/);
+  assert.match(html,/id="load-world"/);
+  assert.match(css,/\.save-details summary\{width:fit-content/);
+  assert.match(script,/\$('save-world'\)\.addEventListener/);
+  assert.match(script,/\$('load-world'\)\.addEventListener/);
 });
