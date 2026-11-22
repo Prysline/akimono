@@ -70,3 +70,13 @@
 同一條受控 RNG 串流交錯包含原版 rand(100000) gate、兩個來源 rand(1000) 回呼、原版 rand(timespan) 與 rand(plustime) 活動時間；每個 Oracle Perl 行程直接取得當行程真實 EVENT 和既存 DTevent 的 hash 遍歷順序，不將 DSL 順序假裝成原版 hash。新 modern/tests/r4-mixed-support-gate.test.mjs 和 original-r4-mixed-support-gate.t 比對七個同時存續 EVENT、兩回呼成功與各自未命中、時間片到期及重新觸發、資金上限 999999999、人氣上限 10000、全部 79 ITEM DataRead 欄位、全部商店欄位、日誌次序及每次 RNG 呼叫範圍和數量；缺失來源順序、shop、事件狀態與 RNG 都 fail-closed。
 
 CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 45067706804 與 PR run 45067712054 都成功。Node 1046／1046；Perl 2007／2007、60 個 .t。此路徑仍為 committable:false 的內部受控原版差分。manbiki、goutou、loto、happy、rebel、guildbattle 等混合回呼仍未完整接通；其他正機率事件在此受控樣本下明確 gate miss。人工跳躍時鐘不等於連續可提交遊戲時間，亦不包含完整 36 小時結算、真實世界存檔和重啟。R4 仍未完成。
+
+## 2026-11-23｜R4 七宣告 EVENT＋四個原版 STARTFUNC（含偷竊／搶劫）的同序差分
+
+延伸 modern/src/original-r4-multi-event-order-fixture.mjs 的選配來源審閱參數 reviewedInstantCallbacks，將 B-55 真實 manbiki／goutou 回呼與既有七種持續 ITEM PARAM EVENT、B-57 getmoney／getpop 回呼放入同一個來源 17-key EVENT 啟動閘門。抽中事件 gate 後，偷竊／搶劫各消耗一次 rand(1000) 決定商店是否被選中；若 manbiki 命中且看門機器人仍在，原版額外消耗一次 rand(1000) 決定防護或機器人毀損。兩個 STARTFUNC 都回傳 0，不佔用 EVENT group，也不建立 DTevent。每次回呼後剩餘 shop item、rank、資金、下一段 RNG 及回呼日誌均保持同來源一致；缺少來源審閱、精確序列或超出單店限制的情況持續 fail-closed。
+
+延伸 modern/tests/original-perl/original-r4-mixed-support-gate-probe.pl：使用凍結 inc-makeitem.cgi 的完整 17-event Perl hash 初始化與凍結 inc-turn.cgi 的原文 END／START，同一個暫存測試 EVENT 資料夾加入凍結 Standard Street DSL 的 manbiki／goutou STARTFUNC 原始正文（只依原編譯器 GetFuncItemNo 規則展開看門機器人 ITEMNO 64），讓真正 Perl require、event::_local_start、undef、INC 清理執行回呼。Oracle 額外載入原版 ITEM#64 名稱「看門機器人」以完整驗證來源訊息；僅 GetMoneyString 的數字顯示部分沿用前一工作包已明示的 formatter stub。保留真 keys(%EVENT) 和 keys(%DTevent) 的逐行程觀察，未硬編執行順序。所有正機率未支援 EVENT 仍由明確受控 RNG 令 gate miss。
+
+新增 modern/tests/r4-mixed-instant-gate.test.mjs 和 modern/tests/original-perl/original-r4-mixed-instant-gate.t。六個來源場景包括七種持續事件與四個真回呼同時啟動、無機器人時商品遭偷／搶、機器人防護與破壞、下一時間片的 ITEM overlay、以及獨立強制 manbiki 防護與毀損兩條分支（各驗證正好兩次 rand(1000)）。Node 逐項比對 Perl 實際商店庫存、金錢、人氣、79 ITEM 效果、活動狀態、事件日誌及每次 rand(range) 呼叫範圍／次數；另外在多個 Perl 行程中重新測不同原版 hash 順序。
+
+來源驗收提交 55dd45990ee4b4f15073c222e043a628055e4415：Push Actions 45070082991、Pull Request Actions 45070092650 均 completed/success，Node 1049／1049，Perl 2022／2022（61 個 .t）。邊界：仍是 committable:false 的原版純差分，不是正式 WorldState／CAS 存檔／HTTP 引擎；尚未接通 loto、happy、rebel、guildbattle 等其他回呼的完整混合行為，亦未涵蓋自然販售、PLUS、SortDT、36h 期末結算、真正跨期和重啟。受控 RNG 樣本／從同一 Perl 行程觀察到的 hash 順序不等於 JS 已能自行重現原版 RNG／hash。R4 仍未結案。
