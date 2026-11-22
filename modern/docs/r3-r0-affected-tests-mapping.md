@@ -1,5 +1,7 @@
 # R3 受影響 R0 測試映射（2026-11-22）
 
+**2026-11-23｜R3 共用自然販售／時間里程碑受控來源範圍完成。** 已驗證標準街六種商品 (#10、#40～#44)、1–200% 來源定價、GetSaleTax、原版 ITEM 回呼、59 PLUS 與時間片；24 基準＋24 價格＋24 完整前 EVENT 時序 Perl 差分，以及真 HTTP、CAS、存檔／重啟均已通過。`projectR3PreEventTurn` 不覆寫 EVENT 期間資料，R4 接續處理原版 EVENT／SortDT／36h；舊玩家 B-41 在未執行 EVENT 後將其狀態保持未知，不能宣稱可無限制連續販售。完整狀態見 [R3 退出清冊](r3-exit-audit.md)。
+
 **2026-11-23｜R3 六商品販售原版定價／稅額擴充：** 共用 `projectSharedNaturalSale` 從「固定原價」擴充到來源 `sc-s.cgi` 的 1～200% 定價；同一個來源支援的 #10、#40～#44 共用販售需求、價格懲罰、供需、售量、人氣與 `item.cgi::GetSaleTax` 超價附加稅，賣出總額與扣稅後入帳分開，`taxtoday` 更新。`shared-showcase-price.mjs`、來源審閱、`POST /api/showcase`、繁中 UI 與 B-43 兩代存檔接受合法來源百分比，拒絕任意造價和 201%／多餘欄位；原價 `priceOverride` 只保留測試相容。新增原版 Perl 6 商品 × 4 比例 24 組差分、原版直接「自然販售 → ITEM FUNCTURN/FUNCSALE → 59 PLUS」6×2×2 整合探針、標記稅額與需求原始碼 drift，以及真 HTTP 150% 稅額→保存→重啟。**完整 R3 退出仍須以最後同 SHA CI、EVENT 前置語義與合法連續經營驗收確認；EVENT 全生命週期與 36h 期末屬 R4，不可把未知事件當作無事件。**
 
 **2026-11-23｜R3 ITEM 回呼分派與一分鐘抽樣（受控新增，整體未結案）：** 已在來源自然販售與 59 PLUS 之間加入依原版 `inc-turn.cgi` 審閱的 ITEM FUNCTURN／FUNCSALE 階段：標準街唯一 #70 回呼即使沒有持有者，60 秒仍會消耗一筆 rand(1)；並於 FUNCSALE 後清除 `_sale_count_` 暫存。原版 Perl 直接分派探針 `original-r3-item-callback-stage-probe.pl` 與 Node 差分已新增，真 HTTP 一分鐘／存檔重啟測試亦已補上；其他來源回呼或 #70 真持有仍拒絕。EVENT 17-key hash 順序、SortDT／36 小時結算、全部 USE／多商店尚未完成，R3 不宣告結案。
@@ -53,3 +55,11 @@
 **仍未覆蓋：** EVENT 17-key Perl hash 原序及全生命週期、真世界跨期 SortDT/36h、其他街道／多商店、非零基礎使用者稅、公會、所有未審閱 ITEM 使用回呼。以上不能因本段差分通過而推論已完成。
 
 R3 目前缺少的 R0／R1 完整映射：FUNCTURN／FUNCSALE 尚未支援的持有者／其他街道語義、17 EVENT 真 Perl hash 遍歷及其他未知回呼、原版亂數狀態、未審閱來源售價／多架／多商店／街道差異、非零基本使用者稅、跨 36 小時期末。沒有等價來源證據前**不得移除舊測試**、不得把部分 R0／R1 當全量完成。
+
+## 2026-11-23｜R3 → R4 可重用前 EVENT 階段實作
+
+- `modern/src/original-b41-playable-sale.mjs::projectR3PreEventTurn`：前 EVENT 共用自然販售＋商品回呼＋59 PLUS 純投影，原版事件 incoming 未知即拒絕；**不寫入 period**，R4 需自行核對事件後繼。
+- `modern/src/original-b56-event-time-slice.mjs`：內部原版事件 fixture 現改用 R3 正式前 EVENT 階段，無第二套販售運算；仍依 caller 傳入 17-key 假設順序，**不是已完成的原版 EVENT**。
+- `modern/tests/b56-source-event-time-slice.test.mjs`：確認階段純投影與 B-41 已審閱數值一致、不覆寫 period、拒絕未知原版 EVENT；保留 B-56 原事件 CAS／原始 Perl 來源合約回歸。
+
+**R3 退出限於來源審閱的單店單架六商品；R4 EVENT／SortDT／36h，R0／R1 全量、全部 USE、多店／多街道尚未完成。**
