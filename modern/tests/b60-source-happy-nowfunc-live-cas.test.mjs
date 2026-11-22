@@ -370,7 +370,7 @@ test('B-60 unknown/multiple EVENT, missing/misordered NOWFUNC draw, unsupported 
   }
   for(const value of [
     {happy:12000,'plusup-tetu':13000},
-    {happy:-1},{happy:1.5},{not-a-real-event:12000},
+    {happy:-1},{happy:1.5},{'not-a-real-event':12000},
   ]){
     const corrupt={...world,period:{
       ...world.period,eventState:value,
