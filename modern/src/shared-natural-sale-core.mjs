@@ -51,6 +51,7 @@ export function projectSharedNaturalSale({
   let money=int(shop.money,'money');
   let trush=int(shop.trush??0,'trush');
   let saletoday=int(shop.saletoday,'saletoday');
+  let taxtoday=int(shop.taxtoday??0,'taxtoday');
   const temprank=rankBefore+(displayed!==0?1000:0);
   let sold=0,rankUp=0,rankDown=0;
   if(rule!==null&&item[id-1]>0){
@@ -79,7 +80,17 @@ export function projectSharedNaturalSale({
       rankUp=Math.min(rand()*(rankUpMulti/uppoint*
         rule.point/10*sold),spanSeconds/3);
       const proceeds=int(sold*listedPrice,'proceeds');
-      money=int(money+proceeds,'money after sale');
+      // Frozen item.cgi::GetSaleTax: source default GetUserTaxRate=0.
+      // Above standard price, the markup is multiplied by five, rounded
+      // to an integer percent, and deducted from cash (NOT gross sales).
+      let taxRate=listedPrice/rule.unitPrice-1;
+      if(taxRate>0)taxRate*=5;
+      let taxRateDown=1;
+      if(taxRate<0){taxRateDown=taxRate+1;taxRate=0;}
+      taxRate=Math.min(99,Math.trunc(taxRate*taxRateDown+0.5));
+      const tax=int(Math.trunc(proceeds*taxRate/100),'sale tax');
+      money=int(money+proceeds-tax,'money after sale');
+      taxtoday=int(taxtoday+tax,'taxtoday after sale');
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
       item[id-1]-=sold;
@@ -112,7 +123,7 @@ export function projectSharedNaturalSale({
     fail('unsafe fractional upkeep');
   trush=int(trush+Math.trunc(accrual),'integer upkeep waste');
   return {shop:{
-      ...shop,item,itemtoday,money,trush,saletoday,rank,temprank,costtoday,
+      ...shop,item,itemtoday,money,trush,saletoday,taxtoday,rank,temprank,costtoday,
       _sale_count_:sold?{[id]:{count:sold,price:sold*listedPrice}}:{},
     },sold,drawsUsed:used};
 }

@@ -101,7 +101,7 @@ test('R3 shared calculator fails closed on unknown price, missing draw, overflow
     spanSeconds:1800,randomDraws:[500000,0,0,0]};
   for(const change of [
     {randomDraws:[]},
-    {rule:{...rule,unitPrice:1300}},
+    {rule:{...rule,unitPrice:0}},
     {rule:{...rule,popularSeconds:0}},
     {shop:{...shop,money:Number.MAX_SAFE_INTEGER}},
     {shop:{...shop,item:[...item.slice(0,39),-1,...item.slice(40)]}},
