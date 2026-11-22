@@ -28,7 +28,14 @@ function safeInt(value,label,min=0){
   if(!Number.isSafeInteger(value)||value<min)fail(label);
   return value;
 }
-function reviewedPlayableWorld(raw){
+function sourceRegistryRule(registry,index){
+  const r=registry?.getRule?.(index+1);
+  return r?.itemId===index+1&&r?.shopIndex===index&&
+    r?.wholesaleIndex===index&&Number.isSafeInteger(r.stockLimit)&&
+    r.stockLimit>0&&Number.isSafeInteger(r.unitPrice)&&r.unitPrice>0?
+    r:null;
+}
+function reviewedPlayableWorld(raw,marketBuyRegistry=null){
   const w=validateMemoryWorld(raw);
   // Local save is a structural checkpoint, not an EVENT compiler. Only
   // the source-reviewed single active iron EVENT may extend the original
@@ -53,6 +60,19 @@ function reviewedPlayableWorld(raw){
     fail('only source-initialized single-shop Standard Street world is loadable');
   if(w.shops.length){
     const shop=w.shops[0];
+    // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
+    // Registry may authorize additional item inventories and showcases.
+    // Never accept arbitrary 79-slot extra stock merely because it is JSON.
+    const extraStockValid=(index,count)=>{
+      const r=sourceRegistryRule(marketBuyRegistry,index);
+      return r!==null&&count<=r.stockLimit;
+    };
+    const extraShowcaseValid=()=>{
+      const id=shop.showcase?.[0];
+      const r=Number.isSafeInteger(id)&&id>0?
+        sourceRegistryRule(marketBuyRegistry,id-1):null;
+      return r!==null&&shop.item[id-1]>0&&shop.price?.[0]===r.unitPrice;
+    };
     if(shop.id!==1||shop.status!==1||
        !Array.isArray(shop.item)||shop.item.length!==79||
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
@@ -99,7 +119,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot){
+function readSlot(dir,slot,marketBuyRegistry){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -122,7 +142,7 @@ function readSlot(dir,slot){
       fail('invalid save record schema or generation');
     if(digest(record.world)!==record.sha256)
       fail('save content hash mismatch');
-    const world=reviewedPlayableWorld(decodeMemorySnapshot(record.world));
+    const world=reviewedPlayableWorld(decodeMemorySnapshot(record.world),marketBuyRegistry);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
@@ -134,7 +154,7 @@ function readSlot(dir,slot){
     if(fd!==undefined)fs.closeSync(fd);
   }
 }
-export function createLocalWorldSaveStore({directory}){
+export function createLocalWorldSaveStore({directory,marketBuyRegistry=null}){
   if(typeof directory!=='string'||!directory.trim())fail('save directory');
   const dir=path.resolve(directory);
   function scan(){
@@ -143,7 +163,7 @@ export function createLocalWorldSaveStore({directory}){
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0),readSlot(dir,1)];
+    const rows=[readSlot(dir,0,marketBuyRegistry),readSlot(dir,1,marketBuyRegistry)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
@@ -170,7 +190,7 @@ export function createLocalWorldSaveStore({directory}){
   }
   function save(raw,{expectedGeneration}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=reviewedPlayableWorld(raw);
+    const world=reviewedPlayableWorld(raw,marketBuyRegistry);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
