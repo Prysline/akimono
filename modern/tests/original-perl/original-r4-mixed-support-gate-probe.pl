@@ -33,7 +33,8 @@ sub GetPath {
   my($dir,$kind,$code)=@_;
   die 'unsupported callback path' unless
     $dir eq $ITEM_DIR&&$kind eq 'event-s'&&
-    ($code eq 'getmoney'||$code eq 'getpop');
+    ($code eq 'getmoney'||$code eq 'getpop'||
+     $code eq 'manbiki'||$code eq 'goutou');
   return "$callbackRoot/event-s/$code.pl";
 }
 sub GetMoneyString {return $_[0];}
@@ -69,6 +70,7 @@ my @targets=qw(boom-posyon tate-sale yoroi-sale tue-sale
   plusdown-yakusou plusup-misuriru plusup-oriharukon);
 my %wanted=map{($_=>1)}@targets;
 my %support=map{($_=>1)}qw(getmoney getpop);
+my %instant=map{($_=>1)}qw(manbiki goutou);
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
 shift @blocks;
 for(@blocks){s/^\s*\@\@(ITEM|USE|EVENT|DEFINE|END|FUNC[A-Z]+)\b[\s\S]*$//mi;}
@@ -125,6 +127,34 @@ for my $code(qw(getmoney getpop)){
   close $writer or die $!;
 }
 
+# Compile the two frozen robbery/theft STARTFUNC bodies exactly as emitted
+# by source compiler GetLocalFunction/GetFuncItemNo. The only macro is item
+# no 64 ("看門機器人"); validate both compiler source and original DSL.
+die 'original ITEMNO compiler changed' unless
+  index($compiler,'GetFuncItemNo($event->{localfuncstart}')>=0&&
+  index($compiler,'$val=~s/$g_define->{cmdhead}ITEMNO')>=0&&
+  $dsl=~/^@@ITEM[^\r\n]*\r?\n\s*no\s+64(?:\s|#)[\s\S]*?^\s*name\s+看門機器人(?:\s|$)/m;
+my %instantArgs=(manbiki=>'400,200',goutou=>'700');
+for my $code(qw(manbiki goutou)){
+  my @hits=grep(/^\s*code\s+\Q$code\E(?:\s|$)/m,@blocks);
+  die "original instant source EVENT $code changed" unless @hits==1;
+  my($head,$body)=$hits[0]=~/
+    ^\s*startfunc\s+(\S+)[^\n]*\r?\n
+    ([\s\S]*?)
+    ^[ \t]*_local_[ \t]*$
+  /mx;
+  die "$code source STARTFUNC body or args changed" unless
+    defined($body)&&$head eq "_local_($instantArgs{$code})";
+  my $macros=()=$body=~/\@\@ITEMNO"看門機器人"/g;
+  die "$code original robot macro absent" unless $macros>=2;
+  $body=~s/\@\@ITEMNO"看門機器人"/64/g;
+  die "unreviewed original callback macro in $code" if $body=~/\@\@/;
+  open my $w,'>:encoding(UTF-8)',"$callbackRoot/event-s/$code.pl"
+    or die $!;
+  print $w "use utf8;\npackage event;\nsub _local_start {\n".
+    $body."\n}\n1;\n";
+  close $w or die $!;
+}
 @rows=map{
   my $e=$_;
   my $m=$messages{$e->{code}}//{start=>'',end=>''};
@@ -200,11 +230,13 @@ sub step {
     $groups{$EVENT{$code}{group}}=1 if $DTevent{$code}>=$begin+$span;
   }
   my @samples;
+  my $robot=$shop->{item}[63];
   for my $code(@startOrder){
     my $e=$EVENT{$code};
     next if $groups{$e->{group}};
     my $start=($wanted{$code}&&$o{wantedStarts}{$code})||
-      ($support{$code}&&$o{supportStarts}{$code});
+      ($support{$code}&&$o{supportStarts}{$code})||
+      ($instant{$code}&&($o{instantStarts}//{})->{$code});
     push @samples,$start?0:999999;
     if($start&&$wanted{$code}){
       push @samples,250000,500000;
@@ -215,6 +247,24 @@ sub step {
         $e->{startfuncparam}==$argsFor{$code}&&
         !$e->{basetime}&&!$e->{plustime};
       push @samples,$o{supportDraws}{$code}//0;
+    }elsif($start&&$instant{$code}){
+      die 'actual source instant STARTFUNC compiled arguments drift' unless
+        $e->{startfunc} eq '_local_start' &&
+        $e->{startfuncparam} eq $instantArgs{$code} &&
+        !$e->{basetime}&&!$e->{plustime};
+      my $draws=($o{instantDraws}//{})->{$code}//[0];
+      die 'unreviewed source instant draw fixture' unless
+        ref($draws)eq'ARRAY'&&@$draws>=1&&@$draws<=2;
+      my $first=$draws->[0];push @samples,$first;
+      if($code eq 'manbiki'&&$first<=400000&&$robot>0){
+        die 'robot protection consumes second rand(1000)' unless
+          defined($draws->[1]);
+        push @samples,$draws->[1];
+        $robot=0 if $draws->[1]<=200000;
+      }elsif($code eq 'goutou'&&$first<=700000&&$robot>0){
+        $robot=0;
+      }
+      # Original instant callback always returns ret=0, no group lock.
     }elsif($e->{startproba}==0){
       die 'original zero-start callback/duration changed' if
         $e->{startfunc}||$e->{basetime}||$e->{plustime};
@@ -283,9 +333,56 @@ my $fourth=step(name=>'retriggered-overlays-next-DataRead',
   begin=>1043600,wantedStarts=>{},prior=>{ %DTevent },
   shop=>$third->{output}{shop});
 push @cases,$fourth;
+# Four additional source slices with the same true 17-key gate and
+# getmoney/getpop + manbiki/goutou STARTFUNCs. No other positive EVENTs
+# start; separate isolated scenario resets are not full gameplay time.
+my @theftCases;
+%DTevent=();
+my @stockWithShowcase=(0)x79;
+$stockWithShowcase[9]=12;$stockWithShowcase[62]=1;$stockWithShowcase[78]=5;
+my $shopWithShowcase={
+  id=>1,status=>1,shopname=>'原版商店',money=>100000,rank=>5000,
+  item=>\@stockWithShowcase,showcasecount=>1,showcase=>[10],price=>[5000],
+};
+my $both=step(name=>'both-instant-no-robot-with-seven-and-support',
+  begin=>1000000,wantedStarts=>{map{($_=>1)}@targets},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0],goutou=>[0]},
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>0,getpop=>0},
+  prior=>{},shop=>$shopWithShowcase);
+push @theftCases,$both;
+%DTevent=%{$both->{output}{activeUntilSeconds}};
+my @freshRobot=@{$both->{output}{shop}{item}};
+$freshRobot[9]=12;$freshRobot[63]=1;
+my $robotShop={%{$both->{output}{shop}},item=>\@freshRobot};
+my $protected=step(name=>'robot-protect-or-break-and-support-miss',
+  begin=>1003600,wantedStarts=>{},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0,900000],goutou=>[0]},
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>999999,getpop=>999999},
+  prior=>{ %DTevent },shop=>$robotShop);
+push @theftCases,$protected;
+%DTevent=%{$protected->{output}{activeUntilSeconds}};
+my @breakRobot=@{$protected->{output}{shop}{item}};
+$breakRobot[9]=12;$breakRobot[63]=1;
+my $breakShop={%{$protected->{output}{shop}},item=>\@breakRobot};
+my $break=step(name=>'robot-destroyed-or-robbery-first',
+  begin=>1007200,wantedStarts=>{},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0,0],goutou=>[0]},
+  prior=>{ %DTevent },shop=>$breakShop);
+push @theftCases,$break;
+%DTevent=%{$break->{output}{activeUntilSeconds}};
+my $miss=step(name=>'instant-gates-miss-later-DataRead',
+  begin=>1010800,wantedStarts=>{},prior=>{ %DTevent },
+  shop=>$break->{output}{shop});
+push @theftCases,$miss;
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and original inc-turn END/START, actual generated getmoney/getpop STARTFUNC, seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
-  cases=>\@cases,
-  scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop callbacks in shared RNG; single shop artificial samples/clock jump, not all callbacks, period or persistent world',
+  cases=>\@cases,theftCases=>\@theftCases,
+  scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });
