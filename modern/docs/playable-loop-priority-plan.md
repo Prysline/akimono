@@ -1,20 +1,22 @@
 # 《商人物語》現行開發計畫｜共用規則引擎優先、標準街完整經營閉環
 
-> **2026-11-22 現行權威計畫（優先於下方所有 B-40～B-55 歷史規劃與 B-63 的 B-64 建議）。** 原先「只修訂規劃、沒有程式」的說法已過期：其後已提交 `market-buy` 共用市場買入核心初版，但 **R2-A 仍僅部分完成、R2-B～E 未完成、R2 整體未完成**。完整現況、實作證據、工作包與驗收門檻見 [R0/R1 範圍與 R2-A～E 狀態](shared-market-buy-r0-r2.md)。保留 B-01～B-63 原版行為證據、固定 SHA、WorldState/CAS、既有 UI 與雙世代存檔；重構可改寫／合併／移除已有等價替代的測試，不可以斷言總數充當品質目標。
+> **2026-11-22 現行權威計畫（優先於下方所有 B-40～B-55 歷史規劃與 B-63 的 B-64 建議）。** 原先「只修訂規劃、沒有程式」的說法已過期：其後已提交 `market-buy` 共用市場買入核心初版，且 **R2-A 已通過原版直接差分與回呼時序驗收；R2-B～E 未完成、R2 整體仍未完成**。完整現況、實作證據、工作包與驗收門檻見 [R0/R1 範圍與 R2-A～E 狀態](shared-market-buy-r0-r2.md)。保留 B-01～B-63 原版行為證據、固定 SHA、WorldState/CAS、既有 UI 與雙世代存檔；重構可改寫／合併／移除已有等價替代的測試，不可以斷言總數充當品質目標。
 
 ## 最新實作判定與 R2 子階段（2026-11-22，無對話記憶也應先讀）
 
-**R2 未結案，且先前「R2 第一階段完成」不成立。** 共用引擎初版已在 [`market-buy-core.mjs`](../src/market-buy-core.mjs) 執行 #10／#11／#14 交易，GameCore 透過 `market-buy` 分派並沿用 CAS／B-43 存檔。但是 [`standard-street-module.mjs`](../src/standard-street-module.mjs) 的 `sharedBuyRules` 仍硬列這三項，`buy-market-item-10/11/14` 仍各自執行舊 `projectOriginalMarketBuy*`，UI／HTTP 還未全面切換；共用 `use-item` 及可資料驅動接入其他合法普通商品均未完成。**CI 通過只證明已測行為，不是架構完成。**
+**R2 整體未結案；先前僅以三商品共用初版稱為「R2 第一階段完成」的判定不成立。R2-A 現已補齊直接原版 Perl Oracle、全域／商品回呼順序及拒絕邊界，可獨立標為完成。** 共用引擎初版已在 [`market-buy-core.mjs`](../src/market-buy-core.mjs) 執行 #10／#11／#14 交易，GameCore 透過 `market-buy` 分派並沿用 CAS／B-43 存檔。但是 [`standard-street-module.mjs`](../src/standard-street-module.mjs) 的 `sharedBuyRules` 仍硬列這三項，`buy-market-item-10/11/14` 仍各自執行舊 `projectOriginalMarketBuy*`，UI／HTTP 還未全面切換；共用 `use-item` 及可資料驅動接入其他合法普通商品均未完成。**CI 通過只證明已測行為，不是架構完成。**
 
 | 工作包 | 現況 | 必須完成才可結案 |
 | --- | --- | --- |
-| **R2-A 買入 Core** | **部分完成** | 共用公式與來源 Perl Oracle／回呼時序／拒絕邊界驗證齊全，只有一套可靠的共同買入規則；已可測三商品不等於結案 |
+| **R2-A 買入 Core** | **已完成自身驗收** | #10/#11/#14 各12種情境直跑固定 Perl `buy-s.cgi` 對照共同 Core，原版回呼時序、缺席／觸發拒絕、CSV／時間及 CAS 驗證通過；舊路徑去重仍在 R2-C |
 | **R2-B 商品資料驅動接入** | **未完成** | 規則由經核對的 ITEM/DSL 編譯或 Registry 提供，新增來源合法普通商品不須新增白名單、專用交易演算法或 command，未支援語義逐項明示 |
 | **R2-C 舊買入路徑遷移** | **未完成** | UI／API／內部呼叫統一 `market-buy`，移除三套舊正式交易演算法／重複 dispatch，保留或改寫必要 Perl／Node／HTTP 回歸 |
 | **R2-D 共用 USE／製作** | **未完成** | 同一 `use-item`/共用執行器依已審閱規則處理 #79 地圖交換與 #14 地圖使用及必要特殊回呼，未知語義拒絕 |
 | **R2-E 整合驗收** | **未完成** | 原版合法商品買入→USE／製作於同一真 WorldState、HTTP、CAS、磁碟存檔／重啟續營可重現；受影響測試映射與最新 HEAD CI 完整 |
 
-**R0／R1 也不能因為市場買入局部清冊、局部 `market-buy` 契約存在就宣告全量完成。** R0 尚缺所有受影響舊測試完整映射與去重處置，R1 尚缺跨 ITEM／USE／EVENT 的完整資料與回呼契約；可將已完成子成果保留，對剩餘能力分別驗收。
+**R0／R1 不能因為市場買入局部清冊、局部 `market-buy` 契約存在就宣告全量完成；R2-A 的完成也不會自動完成 R0/R1 或 R2-B～E。** R0 尚缺所有受影響舊測試完整映射與去重處置，R1 尚缺跨 ITEM／USE／EVENT 的完整資料與回呼契約；可將已完成子成果保留，對剩餘能力分別驗收。
+
+**R2-A 原版差分與安全回呼驗收證據：** [`original-r2a-market-buy-oracle.pl`](../tests/original-perl/original-r2a-market-buy-oracle.pl) 對 #10/#11/#14 各12情境逐欄比對 Perl／Node；原版標準街 `@@FUNCBUY` 贈禮門檻500,000 G 不再被當作不存在，超門檻效果未審閱時拒絕；[CI #45011886766](https://github.com/Prysline/akimono/actions/runs/45011886766) 的程式 SHA `bd7a504bdc473a0bd34c1beb5efab8ae621d2381` 為903 Node／1,867 Perl 成功基準（**不是**最新文件 HEAD）。詳見 [R2-A 完成證據](shared-market-buy-r0-r2.md)。
 
 **R2 的核心目的**是讓來源合法、已能由共同語義表達的商品／USE 只需要商品資料和必要特殊效果，而不是每件商品、每條用途再做新模型、新命令和整套 CAS/存檔/HTTP。**不能用「不是 #10/#11/#14」當正式拒絕理由；**只有真正未知或不支援的原版語義才安全拒絕，並給具體原因。舊命令可在遷移期間暫存，但不得作為另一套永久交易引擎。
 
