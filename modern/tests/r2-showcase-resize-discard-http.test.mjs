@@ -89,6 +89,7 @@ test('source #63 grows two shelves, second shelf is independently writable, no-t
   assert.equal(grown.ok,true,JSON.stringify(grown));
   assert.equal(grown.details.showcaseCountBefore,1);
   assert.equal(grown.details.showcaseCountAfter,2);
+  assert.equal(grown.details.originalFunctionReturn,'展示架已經改成2個了');
   assert.equal(grown.details.timeSpentSeconds,3600);
   assert.equal(grown.details.moneySpent,20000);
   assert.equal(grown.state.shop.money,80000);
