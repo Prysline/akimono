@@ -1,6 +1,6 @@
 # GameCore／StreetModule／WorldState｜現行責任契約修正（2026-11-22）
 
-> **最新狀態（2026-11-22，優先於下方 B-31 歷史實作記錄）：已提交共用 `market-buy` 到 GameCore，且 R2-A **已通過直接來源差分與回呼時序退出驗收**；R2-B～E 未完成，R2 整體未完成。** 不能再說「所有 Core 商業規則仍完全靠 StreetModule.apply」，也不能說「共用市場已完成」：新命令已進 Core，三件商品仍手動白名單，三套專用舊買入流程仍可各自執行。完成狀態及驗收清單見 [R2-A～E 現況文件](shared-market-buy-r0-r2.md)、正式主線見 [R0–R7 計畫](playable-loop-priority-plan.md)。B-31 舊資料只供來源追溯，**不能作現行 API 能力或分工表**。
+> **最新狀態（2026-11-22，優先於下方 B-31 歷史實作記錄）：已提交共用 `market-buy` 到 GameCore，且 R2-A 已通過直接來源差分與回呼時序退出驗收；R2-B～E 未完成，R2 整體未完成。** 不能再說「所有 Core 商業規則仍完全靠 StreetModule.apply」，也不能說「共用市場已完成」：新命令已進 Core，三件商品仍手動白名單，三套專用舊買入流程仍可各自執行。完成狀態及驗收清單見 [R2-A～E 現況文件](shared-market-buy-r0-r2.md)、正式主線見 [R0–R7 計畫](playable-loop-priority-plan.md)。B-31 舊資料只供來源追溯，**不能作現行 API 能力或分工表**。
 
 ## 已實作的 R2 買入介面與仍未達成的責任界線
 
