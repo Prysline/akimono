@@ -115,7 +115,12 @@ test('R3 all five real source #14 first-USE swords share one sale engine; source
   directory:folder,marketBuyRegistry:street.marketBuyRegistry,
   useItem:street.useItem,
  });
- const {repository,command}=newWorld();
+ const {repository:firstRepository}=newWorld();
+ let repository=firstRepository;
+ const command=(kind,fields={})=>executeMemoryCommand({
+  repository,streetModule:street,
+  command:{kind,expectedRevision:repository.read().revision,...fields},
+ });
  const initial=repository.read();
  for(let id=40;id<=44;id++)
   assert.equal(initial.market.wholesale[id-1],0,
@@ -164,9 +169,11 @@ test('R3 all five real source #14 first-USE swords share one sale engine; source
    assert.equal(loaded.world.revision,result.world.revision);
    assert.deepEqual(loaded.world.period.eventState,{});
    // Restarted adapter must continue the same source-driven five-item loop.
+   const previousWorld=JSON.stringify(repository.read());
    const restarted=createMemoryWorldAdapter(loaded.world);
-   const current=restarted.read();
-   assert.equal(current.shops[0].item[41],repository.read().shops[0].item[41]);
+   assert.equal(JSON.stringify(restarted.read()),previousWorld);
+   // All subsequent CAS operations run against the reloaded adapter.
+   repository=restarted;
   }
  }
  assert.ok(totalSold>0);
