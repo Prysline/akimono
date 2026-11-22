@@ -55,9 +55,9 @@ function sample(){
   assert.ok(apply('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:sourceSupply.draws,
   }).ok);
-  const offer=street.quoteMarketItem10(repository.read());
-  assert.ok(apply('buy-market-item-10',{
-    shopId:1,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price,
+  const offer=street.quoteMarketOffer(repository.read(),10);
+  assert.ok(apply('market-buy',{
+    itemId:10,shopId:1,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price,
   }).ok);
   assert.ok(apply('edit-showcase',{
     shopId:1,shelf:0,itemId:10,per:100,priceOverride:5000,
@@ -95,9 +95,9 @@ test('B-43 two verified generations exactly restore source purchase, shelf and W
   assert.equal(encodeMemorySnapshot(loaded.world),encodeMemorySnapshot(second.world));
   const recovered=createMemoryWorldAdapter(loaded.world);
   assert.equal(recovered.read().revision,6);
-  const quote=street.quoteMarketItem10(recovered.read());
+  const quote=street.quoteMarketOffer(recovered.read(),10);
   const bought=executeMemoryCommand({repository:recovered,streetModule:street,
-    command:{kind:'buy-market-item-10',expectedRevision:6,
+    command:{kind:'market-buy',itemId:10,expectedRevision:6,
       shopId:1,requestedCount:1,marketShelf:quote.shelf,
       expectedPrice:quote.price}});
   assert.ok(bought.ok,JSON.stringify(bought.details));
@@ -220,16 +220,16 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   })).ok);
   let st=await server.state();
   assert.ok((await server.post('/api/buy',{
-    expectedRevision:3,requestedCount:1,marketShelf:st.item10.shelf,
-    expectedPrice:st.item10.price,
+    expectedRevision:3,itemId:10,requestedCount:2,marketShelf:st.marketOffers.find(o=>o.itemId===10).shelf,
+    expectedPrice:st.marketOffers.find(o=>o.itemId===10).price,
   })).ok);
   assert.ok((await server.post('/api/showcase',{
     expectedRevision:4,itemId:10,priceOverride:5000,
   })).ok);
   const first=await server.post('/api/advance-time',{expectedRevision:5,minutes:30});
   assert.ok(first.ok,JSON.stringify(first));
-  assert.equal(first.state.shop.money,100000);
-  assert.equal(first.state.shop.item[9],0);
+  assert.equal(first.state.shop.money,95000);
+  assert.equal(first.state.shop.item[9],1);
   const saved1=await server.post('/api/save',{
     expectedRevision:6,expectedGeneration:0,
   });
@@ -240,13 +240,21 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   });
   assert.equal(conflict.status,409);
   assert.equal(conflict.state.save.generation,1);
+  // Genuine partial source time leaves EVENT overlay unknown; the
+  // formerly separate #10 transaction ignored that uncertainty. The
+  // unified GameCore path now rejects the unsafe repurchase atomically.
   const quote=await server.state();
-  assert.ok((await server.post('/api/buy',{
-    expectedRevision:6,requestedCount:1,
-    marketShelf:quote.item10.shelf,expectedPrice:5000,
-  })).ok);
+  const unavailable=await server.post('/api/buy',{
+    expectedRevision:6,itemId:10,requestedCount:1,
+    marketShelf:quote.marketOffers.find(o=>o.itemId===10).shelf,expectedPrice:5000,
+  });
+  assert.equal(unavailable.status,409);
+  assert.equal(unavailable.state.world.revision,6);
+  assert.match(unavailable.details.reason,/unsupported market, event or shop configuration/);
+  // Save generation 2 of the same reviewed revision. The first source buy
+  // acquired two items, leaving one for a second legitimate sale on reload.
   const saved2=await server.post('/api/save',{
-    expectedRevision:7,expectedGeneration:1,
+    expectedRevision:6,expectedGeneration:1,
   });
   assert.ok(saved2.ok,JSON.stringify(saved2));
   assert.equal(saved2.state.save.generation,2);
@@ -261,7 +269,7 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   const loaded=await server.post('/api/load');
   assert.ok(loaded.ok,JSON.stringify(loaded));
   assert.equal(loaded.state.world.worldId,oldId);
-  assert.equal(loaded.state.world.revision,7);
+  assert.equal(loaded.state.world.revision,6);
   assert.equal(loaded.state.world.schema,'akimono.memory-world.v2');
   assert.equal(loaded.state.world.period.town.develop,5001);
   assert.equal(loaded.state.world.period.dtPeople,500000);
@@ -274,14 +282,14 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   const duplicate=await server.post('/api/load');
   assert.equal(duplicate.status,409);
   const next=await server.post('/api/advance-time',{
-    expectedRevision:7,minutes:30,
+    expectedRevision:6,minutes:30,
   });
   assert.ok(next.ok,JSON.stringify(next));
   assert.equal(next.state.shop.item[9],0);
   assert.equal(next.state.shop.saletoday,10000);
   assert.equal(next.state.shop.money,100000);
   const saved3=await server.post('/api/save',{
-    expectedRevision:8,expectedGeneration:2,
+    expectedRevision:7,expectedGeneration:2,
   });
   assert.ok(saved3.ok);
   await server.stop();
@@ -291,7 +299,7 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   const fromBackup=await server.post('/api/load');
   assert.ok(fromBackup.ok,JSON.stringify(fromBackup));
   assert.equal(fromBackup.details.recoveredPreviousGeneration,true);
-  assert.equal(fromBackup.state.world.revision,7);
+  assert.equal(fromBackup.state.world.revision,6);
   assert.equal(fromBackup.state.shop.item[9],1);
   const resumed=await server.post('/api/advance-time',{
     expectedRevision:7,minutes:30,
@@ -299,7 +307,7 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   assert.ok(resumed.ok);
   assert.equal(resumed.state.shop.saletoday,10000);
   const overwriteBad=await server.post('/api/save',{
-    expectedRevision:8,expectedGeneration:2,
+    expectedRevision:7,expectedGeneration:2,
   });
   assert.ok(overwriteBad.ok);
   assert.equal(overwriteBad.state.save.generation,3);
@@ -321,12 +329,12 @@ test('B-54 real HTTP source-time replay of same saved revision after Node SIGTER
   });
   assert.ok(supplied.ok,JSON.stringify(supplied));
   const stateAfterSupply=await srv.state();
-  assert.ok(stateAfterSupply.item10.marketStock>=1,
+  assert.ok(stateAfterSupply.marketOffers.find(o=>o.itemId===10).marketStock>=1,
     'source 60-minute PLUS must really supply at least one #10 for purchase');
   const bought=await srv.post('/api/buy',{
-    expectedRevision:3,requestedCount:1,
-    marketShelf:stateAfterSupply.item10.shelf,
-    expectedPrice:stateAfterSupply.item10.price,
+    expectedRevision:3,itemId:10,requestedCount:1,
+    marketShelf:stateAfterSupply.marketOffers.find(o=>o.itemId===10).shelf,
+    expectedPrice:stateAfterSupply.marketOffers.find(o=>o.itemId===10).price,
   });
   assert.ok(bought.ok,JSON.stringify(bought));
   assert.ok((await srv.post('/api/showcase',{
