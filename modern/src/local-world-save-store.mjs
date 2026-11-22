@@ -13,6 +13,8 @@ import {validateOriginalPeriodSeed}
   from './original-period-world-seed.mjs';
 import {B59_IRON_SOURCE,isReviewedB59EventPeriod}
   from './original-b59-iron-event-lifecycle.mjs';
+import {B60_HAPPY_SOURCE,isReviewedB60HappyPeriod}
+  from './original-b60-happy-event-nowfunc.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 
@@ -34,6 +36,10 @@ function reviewedPlayableWorld(raw){
      !isReviewedB59EventPeriod({
        period:w.period,nowSeconds:w.nowSeconds,
        reviewed:{source:B59_IRON_SOURCE},
+     })&&
+     !isReviewedB60HappyPeriod({
+       period:w.period,nowSeconds:w.nowSeconds,
+       reviewed:{source:B60_HAPPY_SOURCE},
      }))
     fail('unreviewed or settled v2 city/period source state');
   if(w.streetId!=='standard-street'||w.events!==null||w.shops.length>1||
