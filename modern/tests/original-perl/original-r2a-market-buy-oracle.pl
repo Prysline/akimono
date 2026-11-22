@@ -67,7 +67,7 @@ open my $in,'<:encoding(UTF-8)',$dsl or die $!;
 local $/;
 my $source=<$in>;
 close $in;
-my ($globalBody)=$source=~/^@@FUNCBUY\s*\n(.*?)(?=^@@END)/ms;
+my ($globalBody)=$source=~/^\@\@FUNCBUY\s*\n(.*?)(?=^\@\@END)/ms;
 die 'missing original global FUNCBUY source' unless $globalBody;
 die 'original global voucher threshold drift'
   unless $globalBody=~/my \$count=int \$price\/500000;/;
