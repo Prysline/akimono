@@ -6,6 +6,7 @@ import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   executeMemoryCommand,applyGameCommand} from '../src/game-core-contract.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
@@ -173,7 +174,8 @@ test('B-62 source review locks the only LEGITIMATE initial #14 market path, five
   assert.equal(repository.read().market.wholesale[39],0);
   assert.equal(street.quoteMarketItem14(repository.read()).canBuy,true);
   const args={
-    itemDsl:src.itemDsl,model:street.metadata.model??null,
+    itemDsl:src.itemDsl,
+    model:loadStandardStreetModel(src.itemDsl,src.rebelDsl),
     compiled:street.reviewedGiftMapUse,
     reviewedMarket10:street.reviewedMarketBuy10,
     buySource:src.originalBuySource,
