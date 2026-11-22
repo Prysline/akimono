@@ -52,3 +52,11 @@
 新增 tests/original-perl/original-r4-declarative-event-cycle-probe.pl 和 .t，直接在 Perl 記憶體中執行凍結 inc-makeitem.cgi::OutEventData 的 ITEM PARAM 生成片段與凍結 inc-turn.cgi 的完整 EVENT END/START 原文（單一 EVENT 鍵，故沒有假造 17-key hash 遍歷順序）。Node tests/r4-declarative-event-cycle.test.mjs 比較七類事件各四種到期情境、全部 79 ITEM 數值欄位、隨機數消耗、日誌，以及從開始跨多個連續 3600 秒時間片直到實際到期後的 DataRead 與再觸發 gate。
 
 仍保留嚴格界線：committable:false，一次只允許單一來源事件；不是同一個玩家 WorldState 的自然販售、PLUS、EVENT 17-key hash 與全局 RNG、36h 結算、HTTP/CAS、存檔或重啟。rebel、guildbattle 的 callback、已存在的其他 durable EVENT 同時作用及所有同組互斥均未授權。本驗證提升七種 EVENT 的局部可信度，不能宣告 R4 完成。同輪同步修復 tests/local-original-ui-layout.test.mjs 一個原先未跳脫左括號的無效 regex，使獨立 UI 佈局測試可被 Node 解析。
+
+## 2026-11-23｜R4 17-key Perl hash × 七種同時存續 EVENT 的來源差分（仍不可提交）
+
+新增 `src/original-r4-multi-event-order-fixture.mjs`、`tests/original-perl/original-r4-multi-event-order-probe.pl`、`tests/original-perl/original-r4-multi-event-order.t` 和 `tests/r4-multi-event-order.test.mjs`。原版 Oracle 直接執行凍結 `inc-makeitem.cgi::OutEventData` 生成的 ITEM PARAM 與 EVENT hash 初始化 Perl 原文，然後在同一 Perl 行程內以真正的 `keys(%EVENT)`、`keys(%DTevent)` 順序執行凍結 `inc-turn.cgi` END/START 區段；沒有把宣告順序偽裝成 Perl 遍歷順序。
+
+完整 17 個編譯後 EVENT 鍵都存在於來源 hash。七種無自訂回呼的 EVENT 可以同時啟動及存續；其餘正機率 EVENT 只在明示外供 RNG 令 gate 失敗的受控 fixture 下執行，原版零機率特殊事件的當片無持續時間 group 也會保留。任何尚未支援的其他事件實際啟動仍嚴格拒絕。針對每片，直接比較所有 79 ITEM 的 DataRead 前次 EVENT overlay、既存 EVENT 過期、實際開始與結束日誌、下一次事件存續時間、原版 rand(range) 呼叫次序和精確樣本數。不同 Perl 行程各自取得鍵序，不假設 hash seed 固定；包括同時開始、下一片七事件生效、人工來源時間跳躍後部分到期／重觸發、下一片重新載入 overlay 四個情境。時鐘跳躍僅為來源隔離探針，**不是**跨 36 小時可提交遊戲時間轉換。
+
+原版對照於提交 `d98e17ff34adea0114e237d9e139c598db2fdb76` 同 SHA 兩條 Actions 皆成功（Node 1043/1043；Perl 1995/1995、59 個檔案）。本路徑仍明示 `committable:false`，必須由測試呼叫端提供在同一個 Perl 行程實際觀察到的 17 鍵及當片既存事件鍵序；**不是** JS 自行再現原版 hash 遍歷或完整 RNG 產生器。尚缺其他十個 EVENT 的真正回呼／共同全域隨機序列、未知多事件共存的正式 WorldState 存檔、自然販售／PLUS／SortDT 與 36h 結算共用可提交時間核心、HTTP／CAS／重啟原版差分。**R4 仍不可宣告完成。**
