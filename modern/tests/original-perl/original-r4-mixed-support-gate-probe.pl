@@ -383,6 +383,28 @@ my $miss=step(name=>'instant-gates-miss-later-DataRead',
   begin=>1010800,wantedStarts=>{},prior=>{ %DTevent },
   shop=>$break->{output}{shop});
 push @theftCases,$miss;
+%DTevent=%{$miss->{output}{activeUntilSeconds}};
+# Source order cannot hide the robot-protection rand(1000): only manbiki
+# is gate-hit; the original Perl callback must consume exactly two draws.
+my @guardStock=@{$miss->{output}{shop}{item}};
+$guardStock[9]=12;$guardStock[63]=1;
+my $guardShop={%{$miss->{output}{shop}},item=>\@guardStock};
+my $guard=step(name=>'manbiki-only-robot-protects',
+  begin=>1014400,wantedStarts=>{},
+  instantStarts=>{manbiki=>1},
+  instantDraws=>{manbiki=>[0,900000]},
+  prior=>{ %DTevent },shop=>$guardShop);
+push @theftCases,$guard;
+%DTevent=%{$guard->{output}{activeUntilSeconds}};
+my @destroyStock=@{$guard->{output}{shop}{item}};
+$destroyStock[63]=1;
+my $destroyShop={%{$guard->{output}{shop}},item=>\@destroyStock};
+my $destroy=step(name=>'manbiki-only-robot-destroyed',
+  begin=>1018000,wantedStarts=>{},
+  instantStarts=>{manbiki=>1},
+  instantDraws=>{manbiki=>[0,100000]},
+  prior=>{ %DTevent },shop=>$destroyShop);
+push @theftCases,$destroy;
 
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and original inc-turn END/START, actual generated getmoney/getpop STARTFUNC, seven ITEM PARAM files',

@@ -46,7 +46,7 @@ const original=()=>JSON.parse(execFileSync('perl',
 test('R4 real Perl 17-key RNG source mixed seven durable, support and theft/robbery callback matches Node',()=>{
   const oracle=original();
   assert.equal(oracle.compiledCount,17);
-  assert.equal(oracle.theftCases.length,4);
+  assert.equal(oracle.theftCases.length,6);
   let prior=null;
   for(const [i,row] of oracle.theftCases.entries()){
     const actual=projectOriginalR4MultiEventFixture({reviewed,...row.input});
@@ -70,6 +70,18 @@ test('R4 real Perl 17-key RNG source mixed seven durable, support and theft/robb
       assert.deepEqual(actual.instantCallbacks.slice().sort(),['goutou','manbiki']);
     }
     if(i===3)assert.equal(actual.instantCallbacks.length,0);
+    if(i===4){
+      assert.equal(actual.shop.item[63],1,'guard protects robot');
+      assert.deepEqual(actual.instantCallbacks,['manbiki']);
+      assert.equal(actual.randomDrawRanges.filter(range=>range===1000).length,2,
+        'protect branch exactly two source rand(1000) calls');
+    }
+    if(i===5){
+      assert.equal(actual.shop.item[63],0,'source robot destroyed');
+      assert.deepEqual(actual.instantCallbacks,['manbiki']);
+      assert.equal(actual.randomDrawRanges.filter(range=>range===1000).length,2,
+        'destroy branch exactly two source rand(1000) calls');
+    }
     if(i>0)assert.deepEqual(row.input.activeUntilSeconds,prior,
       'next step uses prior genuine source EVENT state');
     prior=actual.activeUntilSeconds;

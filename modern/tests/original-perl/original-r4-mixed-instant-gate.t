@@ -12,7 +12,7 @@ my $o=eval{decode_json($raw)};
 ok(!$@&&ref($o)eq'HASH','frozen mixed EVENT oracle JSON');
 if(ref($o)eq'HASH'){
   is($o->{compiledCount},17,'exact 17 original runtime EVENT keys');
-  is(scalar(@{$o->{theftCases}}),4,'four source theft/robbery scenarios');
+  is(scalar(@{$o->{theftCases}}),6,'six original source theft/robbery scenarios');
   my $one=$o->{theftCases}[0]{output};
   is(scalar(keys %{$one->{activeUntilSeconds}}),7,
     'seven original declarative EVENTs coexist with both instant callbacks');
@@ -25,6 +25,14 @@ if(ref($o)eq'HASH'){
   my $three=$o->{theftCases}[2]{output};
   is($three->{shop}{item}[63],0,'source robot destroy path consumes robot');
   is(scalar(@{$o->{theftCases}[3]{input}{activeHashOrderFixture}}),7,
-    'source final next DataRead sees seven prior durable events');
+    'source next DataRead sees seven prior durable events');
+  my $guard=$o->{theftCases}[4]{output};
+  is($guard->{shop}{item}[63],1,'source manbiki robot protection preserves robot');
+  is(scalar(grep{$_==1000}@{$guard->{randomDrawRanges}}),2,
+    'manbiki guard protection consumes exactly two rand(1000)');
+  my $destroy=$o->{theftCases}[5]{output};
+  is($destroy->{shop}{item}[63],0,'source manbiki robot destroyed');
+  is(scalar(grep{$_==1000}@{$destroy->{randomDrawRanges}}),2,
+    'manbiki guard destruction consumes exactly two rand(1000)');
 }
 done_testing();
