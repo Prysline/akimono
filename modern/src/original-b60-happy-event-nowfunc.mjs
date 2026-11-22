@@ -174,12 +174,12 @@ export function projectOriginalHappyNow({
     fail('one exact original rand(int(TIMESPAN/36)) result required');
   const randMax=Math.trunc(Math.min(timespanSeconds,36000)/36);
   if(randMax<1)fail('source festival zero-range rand unreviewed');
-  const rankGain=Math.trunc(randomDraws[0]*randMax/1000000);
-  const nextRank=Math.min(reviewed.rankCap,shop.rank+rankGain);
+  const rankRoll=Math.trunc(randomDraws[0]*randMax/1000000);
+  const nextRank=Math.min(reviewed.rankCap,shop.rank+rankRoll);
   return Object.freeze({
     source:reviewed.source,eventCode:B60_HAPPY_CODE,
     shop:{...shop,rank:nextRank},rankBefore:shop.rank,
-    rankAfter:nextRank,rankGain,
+    rankAfter:nextRank,rankGain:nextRank-shop.rank,rankRoll,
     randMax,randomDrawsUsed:1,
     returnCode:0,message:null,
     scope:reviewed.scope,
