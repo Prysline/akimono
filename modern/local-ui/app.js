@@ -90,6 +90,7 @@ const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)?
 function openItem(itemId){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
   selectedItemId=itemId;
+  selectedUseId=null;
   selectTab('item');
 }
 function renderItemInfo(s){
@@ -105,6 +106,9 @@ function renderItemInfo(s){
   const shelf=shop?.showcase?.[0]===item?.itemId&&item?
     '第 1 架（售價 '+money(shop.price[0])+'）':'未陳列';
   text('item-detail-shelf',item?shelf:'—');
+  text('showcase-time-cost',
+    Number.isSafeInteger(s.showcaseEditTimeSeconds)?
+      timeText(s.showcaseEditTimeSeconds):'—');
   const sourceShelves=s.showcaseOffers??[];
   const shelfSelect=$('shelf-item');
   const previous=Number(shelfSelect.value);
@@ -387,6 +391,7 @@ function showState(s){
     sellingBody.append(tr);
   }
   renderItemInfo(s);
+  if(currentTab==='use')renderUseDetail(s);
   syncStatusVisibility();
 }
 function feedback(message,receipt=null,failed=false){
@@ -397,7 +402,7 @@ function feedback(message,receipt=null,failed=false){
   pre.hidden=!receipt;
   pre.textContent=receipt?JSON.stringify(receipt,null,2):'';
 }
-async function call(path,payload={},label='操作'){
+async function call(path,payload={},label='操作',onSuccess=null){
   const before=snapshot;
   try{
     const res=await fetch(path,{method:'POST',
@@ -418,6 +423,7 @@ async function call(path,payload={},label='操作'){
        revision:[before?.world?.revision??null,after.world.revision],
        money:[before?.shop?.money??null,after.shop?.money??null],
        paid:[before?.shop?.paytoday??null,after.shop?.paytoday??null]});
+    onSuccess?.(data);
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
@@ -450,6 +456,7 @@ $('reset-world').addEventListener('click',async()=>{
       return;
     }
     selectedItemId=null;
+    selectedUseId=null;
     lastRenderedItemId=null;
     $('setup').open=true;
     selectTab('shop');
@@ -505,19 +512,32 @@ $('market-offers').addEventListener('click',event=>{
     marketShelf:offer.shelf,expectedPrice:offer.price,
   },'來源市場進貨 #'+itemId+' '+offer.name);
 });
-$('use-offers').addEventListener('click',event=>{
-  const button=event.target.closest('button[data-use-item]');
-  if(!button||button.disabled)return;
-  const itemId=Number(button.dataset.useItem);
-  const useId=Number(button.dataset.useId);
-  const offer=snapshot?.useOffers?.find(row=>
+$('use-action-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const before=snapshot;
+  const itemId=selectedItemId,useId=selectedUseId;
+  const offer=before?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
-  if(!offer||!offer.canUse)return;
-  const input=button.closest('tr')?.querySelector('input[data-use-count]');
-  call('/api/use',{
-    expectedRevision:snapshot.world.revision,itemId,useId,
-    requestedCount:Number(input?.value),
-  },'原版共用 USE #'+itemId+' '+offer.useName);
+  if(!offer?.canUse||currentTab!=='use'||!before?.world)return;
+  const requestedCount=Number($('use-count').value);
+  if(!Number.isSafeInteger(requestedCount)||requestedCount<1||
+    (offer.firstUseOnly&&requestedCount!==1)){
+    feedback('請輸入有效的執行次數。',null,true);
+    return;
+  }
+  const submit=$('perform-use');
+  submit.disabled=true;
+  try{
+    await call('/api/use',{
+      expectedRevision:before.world.revision,itemId,useId,requestedCount,
+    },'商品使用／製作：'+offer.useName,data=>{
+      if(!data.details||!data.state)return;
+      renderUseResult(data.details,offer,before.itemCatalog??[]);
+      selectTab('use-result');
+    });
+  }finally{
+    if(currentTab==='use')renderUseDetail(snapshot??before);
+  }
 });
 async function refresh(){
   try{const res=await fetch('/api/state',{cache:'no-store'});
