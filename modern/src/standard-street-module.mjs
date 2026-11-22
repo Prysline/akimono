@@ -14,10 +14,11 @@
 import {parseDsl} from './parse-dsl.mjs';
 import {compileStandardStreetMarketBuyRegistry}
   from './standard-street-market-buy-registry.mjs';
-import {compileReviewedGiftMapUse,projectReviewedGiftMapUse}
+import {compileReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
-  validateSourceSparseMarket}
+  validateSourceSparseMarket,ORIGINAL_SPARSE_MARKET_SOURCE,
+  traceOriginalSparseGiftWholesale}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparsePlusTurn,projectOriginalSparsePlusTurn}
   from './original-sparse-wholesale-plus.mjs';
@@ -50,9 +51,9 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
-import {reviewOriginalB62SwordMap,projectOriginalSwordMapUse}
+import {reviewOriginalB62SwordMap}
   from './original-b62-sword-map-acquisition.mjs';
-import {reviewOriginalB63SwordMapOutcomes,projectOriginalSwordMapAllOutcomes}
+import {reviewOriginalB63SwordMapOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
@@ -63,7 +64,7 @@ import {
 } from './standard-street-model.mjs';
 
 export const STANDARD_STREET_ID='standard-street';
-const actions=Object.freeze(['open-shop','edit-showcase','gift-exchange-maps']);
+const actions=Object.freeze(['open-shop','edit-showcase']);
 function bad(message){throw new RangeError('B-31 Standard Street: '+message);}
 function ownKeysExact(command,required,optional=[]){
   const allowed=new Set(['kind','expectedRevision',...required,...optional]);
@@ -328,6 +329,96 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     // Original @@FUNCBUY voucher crosses 500000G only with a reviewed
     // handler. Shared GameCore refuses an unknown nonzero callback effect.
   });
+
+  // R2-D: StreetModule compiles source-approved USE recipes and callbacks.
+  // All use-item accounting, material clipping, MakeAmount and EXP happen
+  // once inside GameCore. Unknown USEs are described but not executable.
+  const giftUseRule=Object.freeze({
+    supported:true,itemId:giftMap.itemId,useId:giftMap.useNo,
+    source:'reviewed-original-gift-use',sourceFile:giftMap.sourceFile,
+    sourceLine:giftMap.sourceLine,name:giftMap.name,
+    uses:giftMap.use,creates:giftMap.create,limits:giftMap.limits,
+    time:giftMap.time,exptime:giftMap.exptime,money:giftMap.money,
+    resultOk:giftMap.resultOk,marketCodec:'gift',
+    scope:giftMap.limitations,
+  });
+  const swordUseRule=reviewedB62Map?Object.freeze({
+    supported:true,itemId:reviewedB62Map.mapItemId,useId:0,
+    source:reviewedB63Map?.source??reviewedB62Map.source,
+    sourceFile:'custom/inc-item-data.cgi',sourceLine:null,
+    name:'去劍的市場收購',uses:Object.freeze([]),
+    creates:Object.freeze(reviewedB62Map.outputs.map(x=>Object.freeze({
+      itemId:x.itemId,countPerUse:x.count,
+      probabilityPermille:x.probabilityPermille,
+    }))),
+    limits:giftMap.limits,time:reviewedB62Map.mapUseTimeSeconds,
+    exptime:3600,money:reviewedB62Map.mapUsePrice,
+    singleUseOnly:true,firstUseOnly:true,requiresOwnedItem:true,
+    ownedMaximum:reviewedB62Map.mapStockLimit,
+    outputGuard:'no-overflow',
+    outputAllowlist:reviewedB63Map?null:Object.freeze([40]),
+    marketCodec:'source-sparse',
+    beforeCallback:Object.freeze({
+      kind:'double-create',threshold:100,
+      allowDouble:Boolean(reviewedB63Map),
+      resultOk:'這次我們收穫的比平時多。',
+    }),
+    afterCallback:Object.freeze({
+      kind:'lostbook',threshold:100,consumedCount:1,
+      allowLoss:Boolean(reviewedB63Map),
+      message:'到劍市的地圖已經破爛到看不懂，就扔掉了。',
+    }),
+    experienceCallback:Object.freeze({kind:'gain-fixed-exp',points:20}),
+    outputMessages:Object.freeze({
+      40:null,41:null,42:null,
+      43:'秘銀劍很便宜',44:'發現便宜的奧利哈鋼劍了!',
+    }),
+    scope:reviewedB63Map?.scope??reviewedB62Map.scope,
+  }):null;
+  const useItem=Object.freeze({
+    getRule(itemId,useId){
+      if(useId!==0)return null;
+      if(itemId===giftUseRule.itemId)return giftUseRule;
+      if(itemId===swordUseRule?.itemId)return swordUseRule;
+      return null;
+    },
+    describe(itemId,useId){
+      if(!Number.isSafeInteger(itemId)||itemId<1||
+         !Number.isSafeInteger(useId)||useId<0)
+        return 'invalid source USE id';
+      const sourceItem=model.items.find(x=>x.id===itemId);
+      if(!sourceItem)return 'unknown original ITEM';
+      const sourceUse=catalog.uses.filter(x=>x.ownerItemLine===
+        catalog.items.find(v=>v.id===itemId)?.line)?.[useId];
+      return sourceUse?
+        'original USE effects/callbacks not reviewed at '+
+          sourceUse.sourceFile+':'+sourceUse.sourceLine:
+        'original ITEM has no reviewed USE #'+useId;
+    },
+    validateWorld({world,rule}){
+      const market=world?.market;
+      if(rule?.marketCodec==='gift'&&
+         market?.source==='explicit-b33-test-fixture')
+        return Array.isArray(market.wholesale)&&
+          market.wholesale.length===giftMap.limits.length;
+      return validateSourceSparseMarket(market)&&
+        (rule?.marketCodec==='gift'||rule?.marketCodec==='source-sparse')&&
+        (rule.marketCodec!=='source-sparse'||world.shops.length===1);
+    },
+    writeMarket({world,rule,original}){
+      if(rule.marketCodec==='gift'){
+        if(world.market.source===ORIGINAL_SPARSE_MARKET_SOURCE)
+          return traceOriginalSparseGiftWholesale({
+            world,compiled:giftMap,original,
+          });
+        return {...world.market,wholesale:[...original.wholesale]};
+      }
+      if(rule.marketCodec==='source-sparse'&&
+         original.wholesale.every((n,i)=>n===world.market.wholesale[i]))
+        return world.market;
+      bad('unreviewed USE market write/overflow branch');
+    },
+  });
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
@@ -375,8 +466,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(buyRegistry?['market-buy']:[]),
-      ...(reviewedB62Map?['use-original-sword-map-14']:[]),
-      ...(reviewedB63Map?['use-original-sword-map-14-all-outcomes']:[]),
+      'use-item',
       ...(reviewedB41?['advance-source-time']:[]),
       ...(reviewedB56?['advance-source-time-reviewed-events']:[]),
       ...(reviewedInstantEventCallbacks?[
@@ -406,6 +496,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB56,
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
+    useItem,
     // R2-C read-only common wholesale offer projection: identical Registry,
     // source sorting and live pricing as the GameCore transaction.
     quoteMarketOffer(world,itemId){
@@ -512,20 +603,6 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           compiled:giftMap,randomDraws:command.randomDraws,
         });
       }
-      if(command.kind==='use-original-sword-map-14'&&reviewedB62Map){
-        ownKeysExact(command,['shopId','randomDraws']);
-        return projectOriginalSwordMapUse({
-          world,reviewed:reviewedB62Map,
-          shopId:command.shopId,randomDraws:command.randomDraws,
-        });
-      }
-      if(command.kind==='use-original-sword-map-14-all-outcomes'&&reviewedB63Map){
-        ownKeysExact(command,['shopId','randomDraws']);
-        return projectOriginalSwordMapAllOutcomes({
-          world,reviewed:reviewedB63Map,reviewedB62Map,
-          shopId:command.shopId,randomDraws:command.randomDraws,
-        });
-      }
       if(command.kind==='advance-source-time'&&reviewedB41){
         ownKeysExact(command,['shopId','minutes','randomDraws']);
         return projectB41Sale({world,reviewed:reviewedB41,
@@ -574,14 +651,6 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
-      }
-      if(command.kind==='gift-exchange-maps'){
-        ownKeysExact(command,['shopId','requestedCount']);
-        const result=projectReviewedGiftMapUse({
-          world,shopId:command.shopId,
-          requestedCount:command.requestedCount,compiled:giftMap,
-        });
-        return result;
       }
       if(command.kind==='edit-showcase'){
         ownKeysExact(command,['shopId','shelf','itemId'],
