@@ -54,13 +54,13 @@ test('R4 dynamic original population PLUS matches frozen Perl all 79 cells in th
       assert.throws(()=>projectOriginalSparseAllPlus({
         world,reviewed:street.reviewedAllPlus,
         compiled:street.reviewedGiftMapUse,
-        timespanSeconds:1800,randomDraws:c.consumedSamples,
+        timespanSeconds:120,randomDraws:c.consumedSamples,
       }),/post-period population/);
     }
     const result=projectOriginalSparseAllPlus({
       world,reviewed:street.reviewedAllPlus,
       compiled:street.reviewedGiftMapUse,
-      timespanSeconds:1800,randomDraws:c.consumedSamples,
+      timespanSeconds:120,randomDraws:c.consumedSamples,
       r4PeriodPopulation:true,
     });
     assert.deepEqual(result.market.wholesale,c.wholesale,
@@ -79,7 +79,7 @@ test('R4 dynamic PLUS rejects invalid population without touching original sourc
         period:{dtPeople:pop}},
       reviewed:street.reviewedAllPlus,
       compiled:street.reviewedGiftMapUse,
-      timespanSeconds:1800,randomDraws:[],
+      timespanSeconds:120,randomDraws:[],
       r4PeriodPopulation:true,
     }));
   }

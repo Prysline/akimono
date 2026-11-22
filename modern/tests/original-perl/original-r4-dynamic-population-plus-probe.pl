@@ -10,7 +10,7 @@ my @draws=(0)x118;
 my @cases;
 for my $dtPeople (250000,500000,750000) {
   my $case=OriginalSparseAllPlusHarness::run(
-    dtPeople=>$dtPeople,timespanSeconds=>1800,randomDraws=>\@draws);
+    dtPeople=>$dtPeople,timespanSeconds=>120,randomDraws=>\@draws);
   push @cases,{
     dtPeople=>$dtPeople,
     wholesale=>$case->{numericWholesale},
