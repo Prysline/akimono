@@ -42,8 +42,8 @@ const boot=rev=>makeCommand('initialize-source-market',rev);
 const open=rev=>makeCommand('open-shop',rev,{
   shopId:42,ownerName:'原版空白市場測試店主',shopName:'來源初始化的標準街商店',
 });
-const gift=(rev,count=1)=>makeCommand('gift-exchange-maps',rev,{
-  shopId:42,requestedCount:count,
+const gift=(rev,count=1)=>makeCommand('use-item',rev,{
+  shopId:42,itemId:79,useId:0,requestedCount:count,
 });
 const exec=(adapter,command,mod=street)=>executeMemoryCommand({
   repository:adapter,streetModule:mod,command,
@@ -120,14 +120,14 @@ test('B-34 optional source bootstrap requires complete original admin/read/write
 });
 test('B-34 legacy module remains unchanged without opt-in original admin source',()=>{
   assert.deepEqual(legacyStreet.capabilities,[
-    'open-shop','edit-showcase','gift-exchange-maps',
+    'open-shop','edit-showcase','use-item',
   ]);
   assert.equal(legacyStreet.reviewedBootstrap,null);
   assert.ok(!legacyStreet.capabilities.includes('initialize-source-market'));
 });
 test('B-34 review-ready Standard Street adds only one opt-in admin bootstrap command',()=>{
   assert.deepEqual(street.capabilities,[
-    'open-shop','edit-showcase','gift-exchange-maps','initialize-source-market',
+    'open-shop','edit-showcase','use-item','initialize-source-market',
   ]);
   assert.equal(street.reviewedBootstrap.source,ORIGINAL_SPARSE_MARKET_SOURCE);
   assert.ok(!street.capabilities.includes('create-wholesale-stock'));
