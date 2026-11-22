@@ -57,7 +57,7 @@ import {reviewOriginalB63SwordMapOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
-import {originalUseTimeSeconds} from './shared-use-experience.mjs';
+import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -354,6 +354,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }))),
     limits:giftMap.limits,time:reviewedB62Map.mapUseTimeSeconds,
     exptime:3600,money:reviewedB62Map.mapUsePrice,
+    jobTimeModifier:Object.freeze({job:'peddle',numerator:2,denominator:3}),
     requiresOwnedItem:true,
     ownedMaximum:reviewedB62Map.mapStockLimit,
     outputAllowlist:reviewedB63Map?null:Object.freeze([40]),
@@ -534,9 +535,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
                ([id,value])=>!/^[1-9]\d*$/.test(id)||Number(id)>79||
                  !Number.isSafeInteger(value)||value<0||value>1000));
           const exp=invalidExp?0:(priorExp?.[String(rule.itemId)]??0);
-          const actualTime=originalUseTimeSeconds({
-            time:rule.time,exptime:rule.exptime,experience:exp,
-          });
+          const actualTime=originalSourceUseClock({
+            rule,job:shop?.job??'',experience:exp,
+          }).seconds;
           const missing=materials.find(row=>
             (shop?.item?.[row.itemId-1]??0)<row.count);
           const validMarket=world?.market&&
