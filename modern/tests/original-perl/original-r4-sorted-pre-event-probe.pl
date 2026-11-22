@@ -13,7 +13,8 @@ sub source {
     or die "Missing frozen $file: $!";
   local $/;my $value=<$fh>;close $fh;return $value;
 }
-my $read=source('inc-func.cgi'),$detail=source('core-detail.cgi');
+my $read=source('inc-func.cgi');
+my $detail=source('core-detail.cgi');
 my $turn=source('inc-turn.cgi');
 my($get)=$read=~/(^sub GetDTPoint\n\{[\s\S]*?^\}\n)(?=\nsub CheckUserPass)/m;
 my($sort)=$detail=~/(^sub SortDT\n\{[\s\S]*?^\}\n)(?=\nsub GetRankMessage)/m;
