@@ -439,7 +439,7 @@ test('R2-B registry compiles ordinary ITEM #39 without a per-item buy program',(
     assert.equal(rule.buyCallback,null);
     assert.equal(rule.stockLimit,street.reviewedGiftMapUse.limits[id-1].limit);
     assert.equal(rule.marketTimeSeconds,600);
-    assert.match(rule.source,/custom\/inc-item-data.cgi:\\d+/);
+    assert.match(rule.source,/custom\/inc-item-data.cgi:\d+/);
   }
   const item39=registry.describe(39);
   assert.equal(item39.itemCode,'book-kaitai');
