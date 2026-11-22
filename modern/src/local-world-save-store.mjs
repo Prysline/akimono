@@ -82,6 +82,28 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         giftSpent>=1&&giftSpent<=2&&
         // #9/#12 maps are not consumed by either reviewed USE.
         shop.item[8]>=giftSpent&&shop.item[11]>=giftSpent);
+    const mapRule=useItem?.getRule?.(14,0);
+    const repeatableMap=mapRule?.supported===true&&
+      mapRule.itemId===14&&mapRule.useId===0&&
+      mapRule.money===12000&&mapRule.time===7200&&
+      mapRule.exptime===3600&&mapRule.experienceCallback?.points===20&&
+      mapRule.afterCallback?.kind==='lostbook'&&
+      mapRule.beforeCallback?.kind==='double-create'&&
+      !mapRule.firstUseOnly;
+    const expRecord=shop.exp;
+    const expEntries=expRecord&&typeof expRecord==='object'&&
+      !Array.isArray(expRecord)?Object.entries(expRecord):null;
+    const expShapeValid=expRecord===undefined||Boolean(expEntries&&
+      expEntries.every(([id,value])=>
+        /^[1-9]\d*$/.test(id)&&Number(id)<=79&&
+        Number.isSafeInteger(value)&&value>=0&&value<=1000));
+    const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
+    const sourceExpValid=expShapeValid&&expTotal<=3600&&
+      (expRecord===undefined||
+        (repeatableMap?
+          (expRecord['14']===undefined||
+           expRecord['14']%20===0):
+          expEntries.length===1&&expRecord['14']===20));
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
     // Registry may authorize additional item inventories and showcases.
     // Never accept arbitrary 79-slot extra stock merely because it is JSON.
@@ -104,11 +126,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
          n!==0&&!extraStockValid(i,n))||
        shop.item[13]>3||shop.item[39]>600||
        [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
-       (shop.exp!==undefined&&(
-         shop.exp===null||typeof shop.exp!=='object'||
-         Array.isArray(shop.exp)||
-         Object.keys(shop.exp).length!==1||
-         shop.exp['14']!==20))||
+       !sourceExpValid||
        shop.item[10]>50||
        (![0,10,40,41,42,43,44].includes(shop.showcase?.[0])&&
          !extraShowcaseValid())||
