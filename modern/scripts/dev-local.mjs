@@ -55,7 +55,7 @@ const streetModule=createStandardStreetModule({
   originalMarketSource,originalItemSource,originalDetailSource,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
-  'buy-market-item-10','edit-showcase','advance-source-time']
+  'market-buy','edit-showcase','advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('B-40 runtime source-review capabilities missing');
 if(streetModule.reviewedEventCatalog?.declaredCount!==25||
@@ -73,6 +73,7 @@ const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
 let repo=null;
 const saveStore=createLocalWorldSaveStore({
   directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
+  marketBuyRegistry:streetModule.marketBuyRegistry,
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
@@ -94,9 +95,9 @@ function state(){
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
-    item10:world?.market?streetModule.quoteMarketItem10(world):null,
+    marketOffers:world?.market?streetModule.listMarketOffers(world):[],
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
-      '市場 #10 進貨','原版展示架 #10 上架','來源自然販售／時間快轉'],
+      '來源 Registry 全商品市場進貨','原版展示架 #10 上架','來源自然販售／時間快轉'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
@@ -260,8 +261,9 @@ async function api(req,res,url){
     }
     case '/api/buy': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
-      result=commit({kind:'buy-market-item-10',
+      result=commit({kind:'market-buy',
         expectedRevision:ensureRevision(body),shopId:1,
+        itemId:commandNumber(body.itemId,'itemId',1),
         requestedCount:commandNumber(body.requestedCount,'requestedCount',1),
         marketShelf:commandNumber(body.marketShelf,'marketShelf'),
         expectedPrice:commandNumber(body.expectedPrice,'expectedPrice',1),
