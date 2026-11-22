@@ -565,3 +565,31 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   assert.equal(encodeMemorySnapshot(store.load().world),
     encodeMemorySnapshot(repository.read()));
 });
+
+test('R2-B direct frozen Perl compiler proves actual ITEM BASE price/time differs from legacy R2-A item-14 fixture',()=>{
+  const source=JSON.parse(execFileSync('perl',['original-r2b-pricehalf-probe.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.match(source.source,/fixed inc-makeitem.cgi GetBuffer\(BASE\)/);
+  assert.deepEqual(source.cases.map(row=>row.itemId),[1,14]);
+  for(const row of source.cases){
+    const entry=street.marketBuyRegistry.describe(row.itemId);
+    assert.equal(entry.sourceBaseRaw,row.sourceBaseRaw);
+    assert.equal(entry.basePrice,row.basePrice);
+    const [base,half]=row.sourceBaseRaw.split('/').map(Number);
+    assert.equal(row.compiledPricebase,base);
+    assert.equal(row.compiledPricehalf,half);
+    assert.equal(row.stocked,1);
+    assert.equal(row.sourcePrice,Math.trunc(
+      row.basePrice/(((row.stocked-base)/half)+1)));
+    const multiplier=Math.max(0.5,Math.min(2,2-row.sourcePrice/row.basePrice));
+    assert.equal(row.sourceTimeSeconds,Math.trunc(600*multiplier));
+    assert.notEqual(row.sourcePrice,row.basePrice);
+  }
+  const map=source.cases.find(row=>row.itemId===14);
+  assert.notEqual(map.sourcePrice,street.marketBuy.getRule(14).unitPrice,
+    'legacy #14 static Oracle did not compile actual BASE; R2-B remains partial');
+  assert.notEqual(map.sourceTimeSeconds,600);
+  assert.equal(street.marketBuyRegistry.describe(14).classification,
+    'legacy-r2a-price-incomplete');
+});
