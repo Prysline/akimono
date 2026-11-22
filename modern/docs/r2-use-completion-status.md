@@ -33,7 +33,7 @@
 - 職業 `book`、`weapon`、`armor`、`tool` 的 `times/job_*_time_rate=1.5` 使用原版 `int(time/rate)` 語義，並保留 EXP 20／50／10 點、每商品熟練度上限及 `LIMIT_EXP` 裁切。
 - `modern/tests/original-perl/original-r2-declarative-use-probe.pl` 執行凍結 `GetBuffer`／`GetItemNumber`／`UseItem`／`MakeAmount`／`CheckWholeStore`。`modern/tests/r2-declarative-use-effects.test.mjs` 差分 31/31 USE 的原版編譯結果、材料與產物、隨機抽樣、金錢、時間、庫存、批發市場、EXP；另外測 `need` 失敗原子性、四種職業縮時以及來源漂移拒絕。
 - 真 HTTP 的 `sampleSourceUse` 已支援無回呼 USE 的原版有效數量與 MakeAmount 亂數預先配置，但**B-43 本機存檔仍維持原先嚴格來源庫存白名單**；31 項新增製作尚未逐條建立實際玩家取得→製作→雙世代保存→重啟載入的來源證明。不得把這 31 項標記為「完整玩家玩法驗收完成」。
-- CI 須分辨 R2 來源差分與最新 R4 PR 合併投影的失敗；R4 側新增 `modern/tests/local-original-ui-layout.test.mjs` 測試檔有獨立正規表示式語法錯誤，該檔不屬於本 R2 分支，不可將它算作 USE 邏輯差分失敗或自行修改 R4 分支。
+- CI 須分辨 R2 來源差分與 R4 PR 合併投影的失敗；R4 曾在 `modern/tests/local-original-ui-layout.test.mjs` 引入獨立的正規表示式語法錯誤，已由 R4 工作線自行修正。R2 必須在最新 R4 基底重新觸發完整 CI，不能用修正前失敗或本地模型結果宣稱最終合併驗收。
 
 ## 3. 尚未完成與 R4 依賴
 
