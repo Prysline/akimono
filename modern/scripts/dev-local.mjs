@@ -105,7 +105,11 @@ function state(){
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
-      .map(e=>({itemId:e.itemId,name:e.itemName})),
+      .map(e=>({
+        itemId:e.itemId,name:e.itemName,
+        basePrice:e.basePrice,stockLimit:e.stockLimit,
+        flagRaw:streetModule.catalog.items.find(i=>i.id===e.itemId)?.flagRaw??'',
+      })),
     useOffers:streetModule.listUseOffers(world),
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
