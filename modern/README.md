@@ -1,14 +1,12 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
-## 2026-11-22｜R2-B 正式完成（本段優先於以下歷史資訊）
+## 2026-11-22｜R2-C 正式結案：買入 UI／HTTP／Core／磁碟只有一套共用路徑
 
-**R2-A 與 R2-B 已各自完成退出驗收；R2-C／D／E 及 R2 整體未完成；R0／R1 全量未結案。** 本輪 `src/standard-street-market-buy-registry.mjs` 編譯兩份凍結 ITEM DSL、79 件原始商品排序、LIMIT/批發上限、來源行號與原版 `BASE A/B` 動態價格，`standard-street-module.mjs` 已刪手寫三商品 `sharedBuyRules`。共同 `market-buy` Core 使用 Registry 提供的**實際市場價與交易時間**，不硬寫 ITEM ID；#10/#11/#14 與新增真原版 #39「拆解/打包工具」（500G、10/3）及 #1/#12 等有 BASE 的商品皆沿通用流程。舊 R2-A Oracle 未編 BASE，故其 #14 固定價僅為**歷史測資**，已用僅測試環境的相容介面保留全部 36 組；正式 Registry 的 #14 使用已實際對原版 Perl 驗證的 BASE 50/150，而非固定價白名單例外。
+**R2-A、R2-B、R2-C 已完成自身退出驗收；R2-D／E、R2 整體尚未完成，R0／R1 全量未結案。** 原版 79 件 ITEM 的即時名稱、批發庫存、來源排序、動態 `BASE` 市價、限額、審閱狀態由同一 `marketBuyRegistry` 供應；`standard-street-module.mjs` 提供 `quoteMarketOffer(world,itemId)`／`listMarketOffers(world)`。繁中 `local-ui` 不再只有 #10 寫死單列；`POST /api/buy` 必須帶 `itemId`、revision、數量、實際價格和貨架，且**只**走 `market-buy` → GameCore／WorldState CAS，沒有商品 ID 專用買入公式。
 
-**安全界線：** #64「看門機器人」可合法達到全域 `@@FUNCBUY` 500000G 贈 #79 門檻；未知非零贈券效果、ITEM FUNCB、無效／零批發上限、尚未審閱的 EVENT 覆寫／公會差異一律有來源分類與原子拒絕，沒有執行任意 Perl 回呼。B-43 保留兩代存檔，選用 `createLocalWorldSaveStore({directory,marketBuyRegistry:street.marketBuyRegistry})` 讓來源驗證過的新增商品安全回載；不注入時仍維持原本嚴格限制。新直接原版 Perl 差分涵蓋 #12/#14 16 組動態 `buy-s.cgi`、#39 三組、#1/#14 多種庫存 BASE 報價；既有回歸與 DSL SHA 稽核不刪。
+**三套舊執行器已去重：** `buy-market-item-10/11/14` command 與 StreetModule.apply 分派已移除，舊命令會 `UNSUPPORTED_ACTION`，`projectOriginalMarketBuy10/11/14`、`quoteOriginalMarket10/11/14` 已刪；原版來源審閱／Perl 探針、#14 地圖 USE 與樂透事件保留。服務真實 `createLocalWorldSaveStore` 已注入 Registry，讓 #39 等新增普通商品安全存檔／重啟／載入。新 `tests/r2c-unified-market-http.test.mjs` 實際完成繁中頁面 → #10/#11/#14(原版動態價)/#39 多商品共用 HTTP 買入 → CAS → 雙代磁碟往返與繼續買入，且驗證過期價、缺 itemId、舊格式／過期 revision 的原子拒絕。
 
-**R2-C 下一步：** UI／HTTP／內部買入統一 `market-buy`、將選用 Registry 接入實際 B-43 讀寫，然後驗證及移除仍獨立運算的舊 `buy-market-item-10/11/14` 與 `projectOriginalMarketBuy*`；R2-D USE／R2-E 真世界仍待完成。最新 HEAD SHA 與 CI 必須查 [Draft PR #1](https://github.com/Prysline/akimono/pull/1) 同次 Push／PR workflow，不可引用歷史 903／1867 或中途的測試數。完整程式、原版對照、支援／拒絕範圍與無記憶交接見 [R2 正式狀態](docs/shared-market-buy-r0-r2.md) 和 [next-window-handoff.md](docs/next-window-handoff.md)。
-
-> 下方原稱 R2-B 部分／未完成或 #14 固定價唯一支援的內容，均是更新前的歷史記錄。
+**安全範圍沒擅自放大：** EVENT 時間片後若狀態未知（`eventState:null`），後續買入會拒絕；不能使用舊 #10 專用引擎跳過。#14 `BASE` 動態買入的非固定 `paytoday` 已能繼續完成已審閱 #14 USE／木刀販售，未審閱 EVENT／公會／超 500000G 贈券回呼仍 fail closed。**下一正式工作包 R2-D 共用 USE／製作；R2-E 真世界整合仍未完成。** 最終成功依照 Draft PR #1 的**同 HEAD** Push／PR Actions 驗證；完整證據、退出條件與無記憶交接請看 [R2 權威狀態](docs/shared-market-buy-r0-r2.md)、[next-window-handoff](docs/next-window-handoff.md)。本節以下 R2-B 與更早說「R2-C 未完成」者均為歷史快照。
 
 
 ---
