@@ -59,6 +59,7 @@ export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
   reviewedB39Span8640=false,
   reviewedB59Iron=null,ironEventActive=false,
+  reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -87,6 +88,11 @@ export function projectOriginalSparseAllPlus({
      Object.hasOwn(world.period.eventState,'plusup-tetu')&&
      ironEventActive!==true)
     bad('known source iron EVENT requires reviewed active PLUS overlay');
+  if(world?.period?.eventState&&
+     typeof world.period.eventState==='object'&&
+     Object.hasOwn(world.period.eventState,'happy')&&
+     reviewedEventTimeSlice!==true)
+    bad('known source festival NOWFUNC cannot be bypassed by isolated PLUS');
   if(typeof ironEventActive!=='boolean'||
      (ironEventActive&&(
        reviewedB59Iron?.source!==B59_IRON_SOURCE||
