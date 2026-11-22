@@ -38,7 +38,8 @@ export function sourceCommandDraws({world,kind,args,count}){
     ['itemId','requestedCount','shopId','useId']:['timespanSeconds'];
   if(names.join(',')!==expected.join(','))
     fail('source argument contract changed');
-  for(const name of names)integer(args[name],name,1);
+  for(const name of names)
+    integer(args[name],name,kind==='use-item'&&name==='useId'?0:1);
   integer(count,'sample count',1);
   if(count>(kind==='use-item'?52:121))
     fail('original source sample budget exceeded');
