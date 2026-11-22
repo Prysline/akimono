@@ -1,3 +1,5 @@
+import {MARKET_BUY_COMMAND,projectSharedMarketBuy} from './market-buy-core.mjs';
+
 /**
  * B-31: pure GameCore/StreetModule/WorldState contract for REVIEWED source
  * projections only. No actual authentication, database, CGI or storage.
@@ -137,8 +139,14 @@ export function applyGameCommand({world,command,streetModule}){
   if(!streetModule.capabilities.includes(cmd.kind))
     return answer(false,'UNSUPPORTED_ACTION',original);
   let applied;
-  try{applied=streetModule.apply({world:original,command:cmd});}
-  catch(error){
+  try{
+    // Common commerce rules execute in GameCore, not StreetModule.apply.
+    // StreetModule only supplies source-reviewed item rules and wire hooks.
+    applied=cmd.kind===MARKET_BUY_COMMAND?
+      projectSharedMarketBuy({world:original,command:cmd,
+        marketBuy:streetModule.marketBuy}):
+      streetModule.apply({world:original,command:cmd});
+  }catch(error){
     return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{
       reason:error instanceof Error?error.message:'rejected by street',
     });
