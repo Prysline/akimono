@@ -195,3 +195,35 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
       'func\tunknown_callback\n\t\tname\t寫作『藥劑調和入門』'),
   }),/source|unsupported|audit|missing|drift/i);
 });
+
+test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
+  const world=createSourceWorld();
+  const offers=street.listUseOffers(world);
+  assert.equal(offers.length,37);
+  const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
+  const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
+    .find(row=>row.itemId===materialId);
+  const kit=source(37,1,37);
+  assert.equal(kit.missing,1);
+  assert.equal(kit.kind,'registered-use');
+  assert.deepEqual(kit.provider,{itemId:79,useId:3});
+  const stone=source(37,1,8);
+  assert.equal(stone.missing,30);
+  assert.equal(stone.kind,'source-plus');
+  assert.equal(stone.sourcePlus,'6h');
+  assert.equal(stone.marketStock,0,'fresh source world is sparse, not prefilled');
+  const herb=source(10,0,1);
+  assert.equal(herb.missing,30);
+  assert.equal(herb.kind,'source-acquisition-not-implemented');
+  assert.equal(herb.sourcePlus,null,
+    'negative original PLUS cannot be presented as positive market supply');
+  assert.equal(source(10,0,30).kind,'source-plus');
+  assert.equal(source(10,0,32).kind,'source-plus');
+  const soul=source(39,0,38);
+  assert.equal(soul.kind,'upstream-use-not-ready');
+  assert.deepEqual(soul.providerCandidates,[{itemId:37,useId:3}]);
+  // Route descriptions must not mutate the original shop or wholesale state.
+  assert.deepEqual(street.listUseOffers(world),offers);
+  assert.equal(world.shops[0].item[7],0);
+  assert.equal(world.market.wholesale[7],0);
+});
