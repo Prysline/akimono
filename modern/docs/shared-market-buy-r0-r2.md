@@ -12,6 +12,8 @@
 
 全域 `@@FUNCBUY` 的每成交 500,000G 贈 #79 並未消失：受支援共同靜態商品在本次已驗證的成交金額下屬零效果；可能觸發而沒有已審閱實作時，共用 Core 保留 fail-closed。未執行未審閱的 Perl callback。R2-C 還要把 UI／HTTP／舊 `buy-market-item-10/11/14` 三條獨立演算法統一及去重，**本次沒有執行 R2-C**；R2-D 共用 USE、R2-E 全世界整合亦未完成。後續先排除 #14 BASE 缺口，再判 R2-B 是否合格，禁止直接宣告 R2-C 可結案。
 
+**B-43 存檔整合補充：** `createLocalWorldSaveStore({directory,marketBuyRegistry})` 可選擇注入同一來源編譯 Registry，讓經審閱的一般新商品（例如 #39）依真實 `stockLimit` 保存／回載；未注入時，B-43 原有封閉的可保存商品清單與展示架限制保持不變，不能任意新增庫存。新測試驗證預設拒絕、注入後兩世代保存及重載；本機 HTTP/UI 尚未自動採用此參數，屬 R2-C 接線工作。另有 `original-r2b-pricehalf-probe.pl` 直接執行已審閱的原版 `GetBuffer(BASE)`、`GetWholeStore` 與 `GetTimeDeal`：證實 #1/#14 在原版庫存1時，市場價及交易時間與固定值不同，故 #14 相容缺口是已證實而非推測。
+
 ---
 
 
