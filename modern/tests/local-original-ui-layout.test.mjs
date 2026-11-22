@@ -84,3 +84,16 @@ test('product details remain centered without a full-width shelf editor',()=>{
   assert.doesNotMatch(html,/<h2 class="section-title">● 商品明細<\/h2>/);
   assert.match(script,/\$\('showcase-form'\)\.addEventListener\('submit'/);
 });
+
+test('shared top area is compact without removing real navigation or shop stats',()=>{
+  assert.match(css,/\.site-heading\{position:relative;[^\n]*padding-bottom:2px/);
+  assert.match(css,/\.heading-top\{position:absolute;top:0;right:0/);
+  assert.match(css,/\.site-heading h1\{font-size:20px/);
+  assert.match(css,/\.status-table th,\.status-table td\{padding:1px 4px\}/);
+  assert.match(css,/\.save-strip\{margin:2px 0;padding:0\}/);
+  assert.match(css,/body\.dev-mode \.local-note\{display:block\}/);
+  for(const label of ['【自店】','【交易】','【情報】','【施設】','【交流】'])
+    assert.ok(html.includes(label),'keeps navigation '+label);
+  for(const id of ['store-name','money','rank','time','save-world','load-world','dev-toggle'])
+    assert.ok(html.includes('id="'+id+'"'),'keeps top-level data and actions '+id);
+});
