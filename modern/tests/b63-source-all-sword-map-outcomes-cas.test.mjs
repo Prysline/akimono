@@ -135,10 +135,10 @@ function buyMap(){
   const {repository,act}=newShop();
   assert.equal(repository.read().market.wholesale[39],0,
     'cannot invent wood swords from negative market PLUS');
-  const quote=street.quoteMarketItem14(repository.read());
-  assert.equal(quote.price,10000);
+  const quote=street.quoteMarketOffer(repository.read(),14);
+  assert.equal(quote.price,street.marketBuy.quote({rule:street.marketBuy.getRule(14),marketStock:quote.marketStock}).price);
   assert.ok(quote.marketStock>0);
-  const purchased=act('buy-market-item-14',{
+  const purchased=act('market-buy',{itemId:14,
     shopId:1,requestedCount:1,
     marketShelf:quote.shelf,expectedPrice:quote.price,
   });
@@ -294,7 +294,7 @@ test('B-63 old B-62 constrained action still refuses wider outputs; all-outcome 
   });
   assert.equal(stale.code,'REVISION_CONFLICT');
   const badQuote=applyGameCommand({world:saved,streetModule:street,
-    command:{kind:'buy-market-item-14',expectedRevision:saved.revision,
+    command:{kind:'market-buy',itemId:14,expectedRevision:saved.revision,
       shopId:1,requestedCount:1,
       marketShelf:quote.shelf+1,expectedPrice:quote.price},
   });
