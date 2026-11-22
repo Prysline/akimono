@@ -1,5 +1,8 @@
 # R3 共用自然販售／時間來源契約（R0／R1 證據）
 
+
+**2026-11-23 市場貨架修正／R3 續驗：** 已依凍結原版 `whole.cgi::GetWholeStore` 將一般市場清單改為只顯示 `wholesale>0` 商品，原版 79 ITEM Registry 另供倉庫名稱查詢；缺貨品不再佔據市場貨架，原本的 `market-buy` 報價、上限、CAS、PLUS 不變。R2-C 新增直接執行原版 `GetWholeStore()` 的 HTTP 貨架與排序差分，R3 真時間＋PLUS、重啟後在售貨架與庫存同步回歸；本修正不代表 EVENT／FUNCTURN／FUNCSALE 或 36h 結算完成。
+
 > 2026-11-22 現況：R3 **受控部分完成，尚未達完整退出條件**。本文件記錄已執行的原版 Oracle、資料驅動共用核心及仍需拒絕的來源語義。R0、R1 全量未結案。原版 Perl／Core／DSL 不修改。
 
 ## 來源與責任分工
@@ -28,6 +31,8 @@
 GetMarketStatus 的來源基數為 DTpeople*SALE_SPEED/3/50；販售按原版 buypeoplebase、售價、排名、需求、庫存及 ran​​d 呼叫次序，先抽需求、必要時進行小於 1 的補抽，售出後才抽人氣、完成 rank 衰減；金額、庫存、saletoday、itemtoday、trush、rank、temprank、costtoday、暫時 _sale_count_ 依 source 收支更新。保留 Perl 整數截斷和浮點維持費；原版初始禮物卷 COST=10×5 不是額外固定店舖成本 50。現行受審閱稅率是 0，未知非零稅率不得默許。59 項 PLUS 接續自然販售、與同一抽樣串流對齊，市場上限使用原版 CheckWholeStore。
 
 成功 receipt 內含 naturalSaleCount、soldItemId、stockBefore/stockAfter、moneyBefore/moneyAfter、naturalDraws、plusDraws 與 totalDraws。WorldState 在純投影成功後以單次 revision CAS 提交；過期 revision、錯價、來源未知、抽樣不足、負資產／溢出、跨期等拒絕時記憶世界不變。雙世代磁碟是**獨立** /api/save，經 generation CAS、原子 rename 與 fsync，不可聲稱世界指令自動持久化。損毀存檔／不合法持有及展示欄位依 B-43 拒絕，不假造恢復狀態。
+
+**回呼來源核對（不等於已實作）：** `custom/inc-item-data.cgi` 的 ITEM 宣告中，`funct` 僅 #70「那由多的項鍊」一筆（既有 B-39 隔離 Perl/Node 測試），主街與 rebel ITEM 都沒有 `funcs` 宣告。R3 本輪六種受控商品本身沒有商品 `FUNCTURN`／`FUNCSALE`，但 `inc-turn.cgi` 確實會遍歷所有 ITEM 的 FUNCTURN／FUNCSALE；#70 並無本輪可合法進貨取得的來源，因此不可把 B-39 人工持有量 fixture 視為正常玩法，也不可因這項審閱就直接宣布完整時間階段完成。
 
 ## 來源順序及未結案限制
 

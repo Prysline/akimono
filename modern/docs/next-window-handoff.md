@@ -1,5 +1,8 @@
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
+
+**2026-11-23 市場貨架修正／R3 續驗：** 已依凍結原版 `whole.cgi::GetWholeStore` 將一般市場清單改為只顯示 `wholesale>0` 商品，原版 79 ITEM Registry 另供倉庫名稱查詢；缺貨品不再佔據市場貨架，原本的 `market-buy` 報價、上限、CAS、PLUS 不變。R2-C 新增直接執行原版 `GetWholeStore()` 的 HTTP 貨架與排序差分，R3 真時間＋PLUS、重啟後在售貨架與庫存同步回歸；本修正不代表 EVENT／FUNCTURN／FUNCSALE 或 36h 結算完成。
+
 ## 2026-11-22｜最新權威：R3 共用自然販售／時間「受控部分完成，未達退出條件」
 
 **現況與下一步（優先於下方 R2-E 歷史快照）：** R2 A～E 仍為原本受控完成；R3 新增來源審閱六商品（#10、#40～#44）共用自然販售算式與 24 組真 Perl 原版差分、真實 #14 地圖 BUY→共用 USE 五劍→同一販售入口、現有繁中 HTTP 上架／CAS／雙世代存檔／實際重啟續營測試。新程式：src/shared-natural-sale-core.mjs；更新 src/original-b41-playable-sale.mjs、src/standard-street-module.mjs、scripts/dev-local.mjs、local-ui 與 local-world-save-store。測試：tests/original-perl/original-r3-shared-sale-probe.pl、tests/r3-shared-natural-sale.test.mjs、tests/r3-shared-sword-acquisition-sales.test.mjs、tests/r3-real-sword-http-restart.test.mjs。原有市場買入、USE 與原版來源 SHA 未更動。

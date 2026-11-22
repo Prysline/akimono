@@ -43,6 +43,20 @@ async function boot(directory){
   new Promise(resolve=>{child.once('exit',resolve);child.kill();});
  return {get,post,stop,url};
 }
+// Live R3 time/PLUS and disk reload must keep the same source-stocked market
+// shelves as GetWholeStore. An ITEM catalog is not a market shelf.
+function assertActualMarketShelf(state){
+ const wholesale=state.world.market.wholesale;
+ assert.equal(state.itemCatalog.length,79,'warehouse metadata must remain complete');
+ const visible=state.itemCatalog.filter(item=>wholesale[item.itemId-1]>0)
+  .map(item=>item.itemId);
+ assert.deepEqual(state.marketOffers.map(row=>row.itemId),visible,
+  'source time/PLUS must change actual shelf stock, not list the full catalog');
+ for(const [i,row] of state.marketOffers.entries()){
+  assert.equal(row.marketStock,wholesale[row.itemId-1]);
+  assert.equal(row.shelf,i);
+ }
+}
 test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slot save -> process reboot and next sale',async t=>{
  const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-http-'));
  t.after(()=>rm(directory,{recursive:true,force:true}));
@@ -57,6 +71,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
   expectedRevision:2,timespanSeconds:3600,
  })).code,'COMMITTED');
  let state=await server.get();
+ assertActualMarketShelf(state);
  const map=state.marketOffers.find(x=>x.itemId===14);
  assert.equal(map.canBuy,true);
  const bought=await api('/api/buy',{
@@ -65,6 +80,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  });
  assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
  state=bought.state;
+ assertActualMarketShelf(state);
  const made=await api('/api/use',{
   expectedRevision:state.world.revision,itemId:14,useId:0,requestedCount:1,
  });
@@ -95,6 +111,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  });
  assert.equal(sold.code,'COMMITTED',JSON.stringify(sold));
  assert.equal(sold.details.soldItemId,41);
+ assertActualMarketShelf(sold.state); // Natural sale + original 59 PLUS.
  assert.equal(sold.state.shop.showcase[0],41);
  assert.ok(sold.state.shop.item[40]<2);
  assert.equal(sold.state.world.period.eventState,null,
@@ -108,6 +125,8 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  server=await boot(directory);
  const loaded=await api('/api/load');
  assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+ assertActualMarketShelf(loaded.state);
+ assert.deepEqual(loaded.state.marketOffers,snapshot.marketOffers);
  assert.equal(loaded.state.world.revision,snapshot.world.revision);
  assert.equal(loaded.state.shop.money,snapshot.shop.money);
  assert.deepEqual(loaded.state.shop.itemtoday,snapshot.shop.itemtoday);
@@ -132,6 +151,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
  const finalLoad=await api('/api/load');
  assert.equal(finalLoad.code,'LOADED',JSON.stringify(finalLoad));
  assert.equal(finalLoad.state.save.generation,2);
+ assertActualMarketShelf(finalLoad.state);
  assert.equal(finalLoad.state.shop.item[40],secondShelf.state.shop.item[40]);
  assert.equal(finalLoad.state.shop.item[41],secondShelf.state.shop.item[41]);
 });
