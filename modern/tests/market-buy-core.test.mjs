@@ -628,3 +628,93 @@ test('R2-B direct frozen Perl compiler proves actual ITEM BASE price/time differ
     rule:street.marketBuy.getRule(14),marketStock:map.stocked,
   }),{price:map.sourcePrice,timeSeconds:map.sourceTimeSeconds});
 });
+
+
+test('R2-B actual Perl buy-s.cgi with compiled BASE: original #12/#14 dynamic price, time, CAS and exact 79-slot CSV',()=>{
+  const oracle=JSON.parse(execFileSync('perl',['original-r2b-dynamic-market-buy-oracle.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.match(oracle.source,/original Perl inc-makeitem.cgi GetBuffer\(BASE\)/);
+  assert.equal(oracle.cases.length,16);
+  const supplied=seed().repository.read();
+  const originalSnapshot=encodeMemorySnapshot(supplied);
+  for(const c of oracle.cases){
+    const shop={...supplied.shops[0],item:[...supplied.shops[0].item]};
+    if(c.case==='cash-clamp')shop.money=c.trueMarketPrice+500;
+    if(c.case==='zero-money')shop.money=0;
+    if(c.case==='limit-reject')
+      shop.item[c.itemId-1]=street.marketBuy.getRule(c.itemId).stockLimit;
+    if(c.case==='time-cap')shop.time=supplied.nowSeconds-259201;
+    if(c.case==='future-clock')shop.time=supplied.nowSeconds+1;
+    const world={...supplied,shops:[shop]};
+    const quote=sourceMarketQuote(world,c.itemId);
+    assert.equal(quote.price,c.trueMarketPrice,c.itemId+'/'+c.case+' source price');
+    assert.equal(quote.timeSeconds,c.trueMarketTimeSeconds,c.itemId+'/'+c.case+' source time');
+    assert.equal(quote.shelf,
+      c.marketShelf-(c.case==='stale-shelf'?1:0),'source sorted shelf');
+    const before=encodeMemorySnapshot(world);
+    const result=apply(world,{kind:'market-buy',
+      expectedRevision:world.revision,shopId:1,itemId:c.itemId,
+      requestedCount:c.requestedCount,marketShelf:c.marketShelf,
+      expectedPrice:c.expectedPrice});
+    const label=c.itemId+'/'+c.case;
+    assert.equal(result.ok,c.accepted,label+' real Perl source acceptance');
+    assert.equal(encodeMemorySnapshot(world),before,label+' immutable source world');
+    if(!c.accepted){
+      assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED',label);
+      assert.deepEqual(result.world,world,label+' no partial original write');
+      assert.equal(c.commits,0,label);
+      continue;
+    }
+    assert.equal(c.commits,1,label);
+    assert.equal(c.writes,1,label);
+    assert.equal(result.details.unitPrice,c.trueMarketPrice,label);
+    assert.equal(result.details.timeConsumedSeconds,c.trueMarketTimeSeconds,label);
+    assert.equal(result.details.purchasedCount,c.purchasedCount,label);
+    assert.equal(result.world.shops[0].money,c.money,label);
+    assert.equal(result.world.shops[0].paytoday,c.paytoday,label);
+    assert.equal(result.world.shops[0].item[c.itemId-1],c.stock,label);
+    assert.equal(result.world.shops[0].time,c.time,label);
+    assert.equal(result.world.market.wholesale[c.itemId-1],c.marketStock,label);
+    assert.equal(result.world.market.originalWholesaleCsv,c.wholesaleCsv,label);
+    assert.deepEqual(result.world.market.sparseWrittenSlots,c.sparseWrittenSlots,label);
+    assert.equal(result.world.market.originalWholesaleCsv.split(',').length,79,label);
+    assert.deepEqual(c.stages,[
+      'item-init','global-after-account','source-market-write',
+    ],label+' reviewed zero effect global FUNCBUY remains executed');
+  }
+  assert.equal(encodeMemorySnapshot(supplied),originalSnapshot);
+});
+
+test('R2-B source-compiled BASE pricing is data-driven for previously excluded ITEM #1, and malformed quote is atomic',()=>{
+  const real=JSON.parse(execFileSync('perl',['original-r2b-pricehalf-probe.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  })).cases.find(c=>c.itemId===1);
+  assert.ok(real);
+  const initial=seed().repository.read();
+  // A carried-over wholesale unit, not natural negative PLUS generation.
+  // This is an explicitly named source-compatible market carryover fixture.
+  const stock=[...initial.market.wholesale];stock[0]=real.stocked;
+  const defined=[...new Set([...initial.market.sparseWrittenSlots,0])]
+    .sort((a,b)=>a-b);
+  const slots=new Set(defined);
+  const market={...initial.market,wholesale:stock,
+    sparseWrittenSlots:defined,sourceWriteShape:'whole-store-79',
+    originalWholesaleCsv:Array.from({length:79},(_,i)=>
+      slots.has(i)?String(stock[i]):'').join(',')};
+  const world={...initial,market};
+  const q=sourceMarketQuote(world,1);
+  assert.equal(q.price,real.sourcePrice);
+  assert.equal(q.timeSeconds,real.sourceTimeSeconds);
+  const bought=apply(world,buyCommand(world,1,q));
+  assert.ok(bought.ok,JSON.stringify(bought.details));
+  assert.equal(bought.world.shops[0].item[0],1);
+  assert.equal(bought.world.shops[0].money,world.shops[0].money-q.price);
+  assert.equal(bought.world.shops[0].time,world.shops[0].time+q.timeSeconds);
+  const stale=apply(world,{...buyCommand(world,1,q),expectedPrice:50});
+  assert.equal(stale.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(stale.world,world);
+  const unsupported=apply(world,{...buyCommand(world,1,q),itemId:79});
+  assert.equal(unsupported.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(unsupported.details.reason,/wholesale cap is zero/);
+});
