@@ -1,0 +1,242 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import path,{join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {
+  createPeriodMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand,
+  applyGameCommand,encodeMemorySnapshot,
+} from '../src/game-core-contract.mjs';
+import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
+  from '../src/original-period-world-seed.mjs';
+import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const read=p=>readFile(join(root,p),'utf8');
+const sources=[
+  ['itemDsl','custom/inc-item-data.cgi'],
+  ['rebelDsl','custom/inc-rebel-data.cgi'],
+  ['originalAdminInitSource','modern/tests/original-perl/core-inc-admin-func.cgi'],
+  ['originalDataReadSource','modern/tests/original-perl/inc-func.cgi'],
+  ['originalDataWriteSource','modern/tests/original-perl/write.cgi'],
+  ['originalTurnSource','modern/tests/original-perl/inc-turn.cgi'],
+  ['originalWholeSource','modern/tests/original-perl/whole.cgi'],
+  ['originalConfigSource','_config.cgi'],
+  ['originalCompilerSource','modern/tests/original-perl/inc-makeitem.cgi'],
+  ['originalBuySource','modern/tests/original-perl/buy-s.cgi'],
+  ['originalBuyItemSource','modern/tests/original-perl/item.cgi'],
+  ['originalBuyCalcSource','modern/tests/original-perl/calc.cgi'],
+  ['originalMarketSource','modern/tests/original-perl/market.cgi'],
+  ['originalItemSource','modern/tests/original-perl/item.cgi'],
+  ['originalDetailSource','modern/tests/original-perl/core-detail.cgi'],
+  ['originalPeriodSource','modern/tests/original-perl/period.cgi'],
+  ['originalUseSource','modern/tests/original-perl/use.cgi'],
+];
+const rows=await Promise.all(sources.map(async ([key,p])=>[key,await read(p)]));
+const src=Object.fromEntries(rows);
+const street=createStandardStreetModule(src);
+const supply=JSON.parse(execFileSync('perl',['original-market-buy10-probe.pl'],{
+  cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+})).supply;
+const mappings=[
+  [10,'buy-market-item-10',w=>street.quoteMarketItem10(w)],
+  [11,'buy-market-item-11',w=>street.quoteMarketItem11(w)],
+  [14,'buy-market-item-14',w=>street.quoteMarketItem14(w)],
+];
+function seed({withSupply=true}={}){
+  const reviewed=reviewOriginalPeriodBootstrap({
+    periodSource:src.originalPeriodSource,
+    adminSource:src.originalAdminInitSource,
+    readSource:src.originalDataReadSource,
+    writeSource:src.originalDataWriteSource,
+    reviewedB41:street.reviewedB41,
+  });
+  const repository=createMemoryWorldAdapter(createPeriodMemoryWorld({
+    worldId:'r2-shared-market',streetId:'standard-street',
+    nowSeconds:897400,period:createOriginalPeriodSeed(reviewed),
+  }));
+  const act=(kind,fields={})=>executeMemoryCommand({
+    repository,streetModule:street,
+    command:{kind,expectedRevision:repository.read().revision,...fields},
+  });
+  for(const [kind,fields] of [
+    ['initialize-source-market',{}],
+    ['open-shop',{shopId:1,ownerName:'共用市場',shopName:'共用購貨驗證'}],
+    ...(withSupply?[['reviewed-sparse-all-plus',{
+      timespanSeconds:60,randomDraws:supply.draws,
+    }]]:[]),
+  ]){
+    const r=act(kind,fields);
+    assert.ok(r.ok,JSON.stringify(r.details));
+  }
+  return {repository,act};
+}
+function buyCommand(world,itemId,quote,count=1){
+  return {kind:'market-buy',expectedRevision:world.revision,
+    shopId:1,itemId,requestedCount:count,
+    marketShelf:quote.shelf,expectedPrice:quote.price};
+}
+function apply(world,command,customStreet=street){
+  return applyGameCommand({world,command,streetModule:customStreet});
+}
+
+test('R1 original Core buy-s.cgi callback order and three reviewed DSL item rules are pinned',()=>{
+  const source=src.originalBuySource;
+  const accounting=source.indexOf('$DT->{paytoday}+=$num*$price;');
+  const callback=source.indexOf('require "$ITEM_DIR/funcbuy.cgi"');
+  const write=source.indexOf('SetWholeStore($DTS) if $id==0;');
+  assert.ok(accounting>0&&accounting<callback&&callback<write);
+  assert.equal(street.capabilities.includes('market-buy'),true);
+  assert.deepEqual([10,11,14].map(id=>street.marketBuy.getRule(id).itemId),
+    [10,11,14]);
+  assert.equal(street.marketBuy.getRule(79),null);
+  for(const id of [10,11,14]){
+    assert.equal(street.marketBuy.getRule(id).buyCallback,null);
+    assert.equal(street.marketBuy.getRule(id).marketTimeSeconds,600);
+  }
+  assert.deepEqual(street.marketBuy.order.map(x=>x.itemId),
+    street.catalog.items.map(x=>x.id));
+});
+
+test('R2 one GameCore market-buy produces exact three legacy source-backed world transitions',()=>{
+  const {repository}=seed();
+  const start=repository.read();
+  for(const [itemId,legacyKind,quote] of mappings){
+    const offer=quote(start);
+    assert.ok(offer.marketStock>0,'original PLUS must stock item '+itemId);
+    const command=buyCommand(start,itemId,offer,2);
+    const common=apply(start,command);
+    // Legacy commands do not accept itemId at all.
+    const old=apply(start,{
+      kind:legacyKind,expectedRevision:start.revision,shopId:1,
+      requestedCount:2,marketShelf:offer.shelf,expectedPrice:offer.price,
+    });
+    assert.ok(common.ok,JSON.stringify(common.details));
+    assert.ok(old.ok,JSON.stringify(old.details));
+    assert.equal(common.details.action,'market-buy');
+    assert.equal(common.details.itemId,itemId);
+    assert.equal(common.details.unitPrice,offer.price);
+    assert.equal(common.details.tax,0);
+    assert.equal(common.details.timeConsumedSeconds,600);
+    assert.ok(common.details.purchasedCount>0);
+    assert.deepEqual(common.world,old.world,'market-buy drift: '+itemId);
+    assert.equal(start.shops[0].item[itemId-1],0);
+    assert.equal(common.world.market.wholesale[itemId-1],
+      start.market.wholesale[itemId-1]-common.details.purchasedCount);
+    assert.equal(common.world.shops[0].paytoday,
+      start.shops[0].paytoday+common.details.totalPaid);
+  }
+  assert.equal(encodeMemorySnapshot(repository.read()),encodeMemorySnapshot(start));
+});
+
+test('R2 sequential common purchases use the same memory CAS adapter and preserve all three stocks',()=>{
+  const {repository,act}=seed();
+  const first=repository.read(),money=first.shops[0].money;
+  let spent=0;
+  for(const [id,,getQuote] of mappings){
+    const quote=getQuote(repository.read());
+    const result=act('market-buy',{
+      shopId:1,itemId:id,requestedCount:1,
+      marketShelf:quote.shelf,expectedPrice:quote.price,
+    });
+    assert.ok(result.ok,JSON.stringify(result.details));
+    spent+=result.details.totalPaid;
+    assert.equal(result.world.shops[0].item[id-1],1);
+  }
+  const end=repository.read();
+  assert.equal(end.revision,first.revision+3);
+  assert.equal(end.shops[0].money,money-spent);
+  assert.equal(end.shops[0].paytoday,spent);
+  assert.equal(end.shops[0].time,first.shops[0].time+1800);
+  assert.equal(end.market.sourceWriteShape,'whole-store-79');
+  assert.equal(end.market.originalWholesaleCsv.split(',').length,79);
+  const stale=apply(end,{...buyCommand(first,10,mappings[0][2](first)),
+    expectedRevision:first.revision});
+  assert.equal(stale.code,'REVISION_CONFLICT');
+  assert.deepEqual(stale.world,end);
+});
+
+test('R2 no stock, zero cash, carrying cap, stale shelf/price and unsupported item fail without world mutations',()=>{
+  const empty=seed({withSupply:false}).repository.read();
+  const zero=apply(empty,{kind:'market-buy',
+    expectedRevision:empty.revision,shopId:1,itemId:10,
+    requestedCount:1,marketShelf:0,expectedPrice:5000});
+  assert.equal(zero.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(zero.world,empty);
+  const {repository}=seed(),start=repository.read();
+  const q=street.quoteMarketItem10(start);
+  for(const extra of [
+    {requestedCount:0},{requestedCount:-1},{requestedCount:1.5},
+    {marketShelf:q.shelf+1},{expectedPrice:q.price-1},
+    {itemId:999},{itemId:79},{shopId:2},{skipCallbacks:true},
+  ]){
+    const command={...buyCommand(start,10,q),...extra};
+    const r=apply(start,command);
+    assert.equal(r.ok,false,JSON.stringify(extra));
+    assert.deepEqual(r.world,start);
+  }
+  for(const changed of [
+    {...start.shops[0],money:0},
+    {...start.shops[0],item:start.shops[0].item.map((x,i)=>i===9?20:x)},
+  ]){
+    const state={...start,shops:[changed]};
+    const r=apply(state,buyCommand(state,10,q));
+    assert.equal(r.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.deepEqual(r.world,state);
+  }
+  assert.equal(encodeMemorySnapshot(repository.read()),encodeMemorySnapshot(start));
+});
+
+test('R2 money/limit clamp is source-equivalent and an unreviewed FUNCBUY is not silently skipped',()=>{
+  const original=seed().repository.read(),q=street.quoteMarketItem10(original);
+  const withCash={...original,shops:[{...original.shops[0],money:5500}]};
+  const bought=apply(withCash,buyCommand(withCash,10,q,99));
+  assert.ok(bought.ok,JSON.stringify(bought.details));
+  assert.equal(bought.details.purchasedCount,1);
+  assert.equal(bought.details.totalPaid,5000);
+  const capped={...original,shops:[{
+    ...original.shops[0],
+    item:original.shops[0].item.map((n,i)=>i===9?19:n),
+  }]};
+  const r=apply(capped,buyCommand(capped,10,q,99));
+  assert.ok(r.ok);
+  assert.equal(r.details.purchasedCount,1);
+  const unsafeStreet={...street,marketBuy:{
+    ...street.marketBuy,
+    getRule(id){const found=street.marketBuy.getRule(id);
+      return found&&{...found,buyCallback:'unreviewed-perl'};},
+  }};
+  const refused=apply(original,buyCommand(original,10,q),unsafeStreet);
+  assert.equal(refused.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(refused.details.reason,/FUNCBUY/);
+  assert.deepEqual(refused.world,original);
+});
+
+test('R2 actual two-generation local save and load round-trips the same shared commands',async t=>{
+  const directory=await mkdtemp(join(tmpdir(),'akimono-r2-market-'));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const {repository,act}=seed(),store=createLocalWorldSaveStore({directory});
+  let generation=0;
+  for(const [id,,getQuote] of mappings){
+    const q=getQuote(repository.read());
+    const r=act('market-buy',{shopId:1,itemId:id,
+      requestedCount:1,marketShelf:q.shelf,expectedPrice:q.price});
+    assert.ok(r.ok,JSON.stringify(r.details));
+    const saved=store.save(repository.read(),{expectedGeneration:generation});
+    generation=saved.generation;
+    const restored=store.load();
+    assert.equal(restored.generation,generation);
+    assert.equal(encodeMemorySnapshot(restored.world),
+      encodeMemorySnapshot(repository.read()));
+  }
+  assert.equal(generation,3);
+  const restored=createMemoryWorldAdapter(store.load().world);
+  const q=street.quoteMarketItem10(restored.read());
+  const next=executeMemoryCommand({repository:restored,streetModule:street,
+    command:buyCommand(restored.read(),10,q)});
+  assert.ok(next.ok,JSON.stringify(next.details));
+  assert.equal(next.world.revision,repository.read().revision+1);
+});
