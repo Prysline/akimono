@@ -95,6 +95,36 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
     // Validate a feasible combination of source recipes, not a one-use
     // fixture. Proven outputs are non-consumable in the current bounded
     // playable scope, except #14 map (lostbook), so map proof uses #9/#12.
+    // R2 source-certified reachable training chain:
+    // fresh grant #79/3 (2 vouchers) -> one #37 kit -> #37/1 consumes
+    // exactly one kit and 30 market-bought #8 stones, creates #19 knowledge,
+    // and grants 50 EXP. Do not authorize arbitrary output/EXP inventories.
+    const magicTraining=useItem?.getRule?.(37,1);
+    const reviewedMagicTraining=magicTraining?.supported===true&&
+      magicTraining.source==='original-declarative-use-dsl'&&
+      magicTraining.itemId===37&&magicTraining.useId===1&&
+      magicTraining.time===21600&&magicTraining.money===0&&
+      magicTraining.needExperience===0&&
+      magicTraining.experienceCallback?.points===50&&
+      magicTraining.uses?.length===2&&
+      magicTraining.uses[0].itemId===37&&
+      magicTraining.uses[0].countPerUse===1&&
+      magicTraining.uses[0].probabilityPermille===1000&&
+      magicTraining.uses[1].itemId===8&&
+      magicTraining.uses[1].countPerUse===30&&
+      magicTraining.uses[1].probabilityPermille===1000&&
+      magicTraining.creates?.length===1&&
+      magicTraining.creates[0].itemId===19&&
+      magicTraining.creates[0].countPerUse===1&&
+      magicTraining.creates[0].probabilityPermille===1000&&
+      !magicTraining.beforeCallback&&!magicTraining.afterCallback;
+    const knowledge=shop.item?.[18]??0;
+    const trainedMagic=reviewedMagicTraining&&knowledge===1&&
+      shop.item[36]===0&&shop.exp?.['37']===50;
+    // Only one consumed gift kit is certified. Further training, direct
+    // market-acquired kits, or other #37 USEs need their own source proof.
+    const magicProof=(knowledge===0&&shop.exp?.['37']===undefined)||
+      trainedMagic;
     const vouchers=shop.item?.[78];
     const totalSpent=5-vouchers;
     const recipeProof=[
@@ -110,7 +140,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       for(let n=0;n<=Math.floor(spent/recipe.cost);n++){
         const possible=recipe.created.every(itemId=>{
           const max=itemId===37?1:itemId===9||itemId===12?3:20;
-          return shop.item[itemId-1]>=Math.min(n,max);
+          return shop.item[itemId-1]+(itemId===37&&trainedMagic?1:0)>=
+            Math.min(n,max);
         });
         if(possible&&plausibleVoucherConsumption(index+1,
            spent-n*recipe.cost))return true;
@@ -119,6 +150,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
     }
     const giftInventoryValid=Number.isSafeInteger(vouchers)&&
       vouchers>=0&&vouchers<=5&&
+      (!trainedMagic||vouchers<=3)&&
       (vouchers===5||Boolean(reviewedGift&&
         (reviewedVariants?
           plausibleVoucherConsumption(0,totalSpent):
@@ -140,12 +172,15 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         /^[1-9]\d*$/.test(id)&&Number(id)<=79&&
         Number.isSafeInteger(value)&&value>=0&&value<=1000));
     const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
-    const sourceExpValid=expShapeValid&&expTotal<=3600&&
+    const sourceExpValid=expShapeValid&&expTotal<=3600&&magicProof&&
       (expRecord===undefined||
         (repeatableMap?
-          (expRecord['14']===undefined||
-           expRecord['14']%20===0):
-          expEntries.length===1&&expRecord['14']===20));
+          expEntries.every(([id,value])=>
+            id==='14'?value%20===0:
+              id==='37'&&trainedMagic&&value===50):
+          expEntries.every(([id,value])=>
+            id==='14'?value===20:
+              id==='37'&&trainedMagic&&value===50)));
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
     // Registry may authorize additional item inventories and showcases.
     // Never accept arbitrary 79-slot extra stock merely because it is JSON.
@@ -164,7 +199,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
        shop.item[62]!==1||!giftInventoryValid||
        shop.item.some((n,i)=>!
-         [9,10,13,39,40,41,42,43,62,78].includes(i)&&
+         [9,10,13,18,39,40,41,42,43,62,78].includes(i)&&
          n!==0&&!extraStockValid(i,n))||
        shop.item[13]>3||shop.item[39]>600||
        [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
