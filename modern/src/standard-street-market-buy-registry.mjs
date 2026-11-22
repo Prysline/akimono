@@ -70,7 +70,7 @@ export function compileStandardStreetMarketBuyRegistry({
      globalBuyCallback.key!=='standard-street-global-wholesale-voucher'||
      !Number.isSafeInteger(globalBuyCallback.minTotal)||
      globalBuyCallback.minTotal!==500000||
-     !/custom\\/inc-item-data.cgi:\\d+/.test(globalBuyCallback.source))
+     !globalBuyCallback.source?.startsWith('custom/inc-item-data.cgi:'))
     fail('source-reviewed global FUNCBUY metadata required');
   for(const [s,fragment] of [
     [compilerSource,'$g_item->{pricebase}=0;'],
