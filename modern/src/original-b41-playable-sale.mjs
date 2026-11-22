@@ -29,6 +29,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
   from './original-r4-time-slices.mjs';
+import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
@@ -158,7 +159,7 @@ function projectSourcePreEventSaleSlice({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
   reviewedB59Iron=null,reviewedB60Happy=null,
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
-  reviewedEventTimeSlice=false,
+  reviewedEventTimeSlice=false,r4ReviewedSort=null,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -312,11 +313,16 @@ function projectSourcePreEventSaleSlice({
   const {shop:nextShop,...callbackReceipt}=itemCallbackStage;
   const callbackDraws=callbackReceipt.drawsUsed;
   const used=naturalDraws+callbackDraws;
-  const newShop=nextShop;
+  // R4 source SortDT: ITEM callbacks -> SortDT -> settlement -> PLUS.
+  // This is an opt-in uncommittable pure stage; legacy R3 is unchanged.
+  if(r4ReviewedSort!==null&&world.schema!==PERIOD_WORLD_SCHEMA)
+    bad('reviewed R4 SortDT requires original period world');
+  const newShop=r4ReviewedSort===null?nextShop:
+    projectOriginalSoloSort({shop:nextShop,reviewed:r4ReviewedSort}).shop;
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;
   const plus=projectOriginalSparseAllPlus({
-    world:{...world,shops:[nextShop]},reviewed:reviewedAllPlus,
+    world:{...world,shops:[newShop]},reviewed:reviewedAllPlus,
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
     reviewedB59Iron,ironEventActive,
     reviewedEventTimeSlice,
@@ -342,6 +348,7 @@ function projectSourcePreEventSaleSlice({
       rankBefore:shop.rank,rankAfter:rank,
       naturalDraws,callbackDraws,itemCallbackStage:callbackReceipt,
       plusDraws:plus.receipt.drawsUsed,
+      ...(r4ReviewedSort===null?{}:{originalSortApplied:true,originalSortPoint:newShop.point}),
       totalDraws:used+plus.receipt.drawsUsed,
       sourceScope:reviewed.sourceScope,
     },
