@@ -100,17 +100,17 @@ function setupWorld({tickets=2}={}){
   assert.equal(act('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:plusOracle.draws,
   }).ok,true);
-  const original10=street.quoteMarketItem10(adapter.read());
-  assert.equal(act('buy-market-item-10',{
+  const original10=street.quoteMarketOffer(adapter.read(),10);
+  assert.equal(act('market-buy',{itemId:10,
     shopId:1,requestedCount:1,
     marketShelf:original10.shelf,expectedPrice:original10.price,
   }).ok,true);
-  const offer11=street.quoteMarketItem11(adapter.read());
+  const offer11=street.quoteMarketOffer(adapter.read(),11);
   assert.equal(offer11.itemId,11);
   assert.equal(offer11.price,2000);
   assert.ok(offer11.marketStock>=2,
     'original B-37 wholesale PLUS with pinned Perl samples stocks real tickets');
-  const purchase=act('buy-market-item-11',{
+  const purchase=act('market-buy',{itemId:11,
     shopId:1,requestedCount:tickets,
     marketShelf:offer11.shelf,expectedPrice:offer11.price,
   });
