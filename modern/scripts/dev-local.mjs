@@ -4,6 +4,8 @@
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
+import {projectOriginalUseTransaction}
+  from '../src/original-use-transaction-model.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -189,7 +191,41 @@ function sampleOriginalPlus(world,timespanSeconds){
 // original frozen Perl probes and are selected ONLY by a local test env var.
 function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
-  if(!rule?.beforeCallback)return [];
+  if(!rule)return [];
+  if(!rule.beforeCallback){
+    // Source callback-free recipes use the same bounded original preflight
+    // as GameCore to find the *effective* batch before sampling MakeAmount.
+    // A dry-run with 0.5 samples changes no WorldState; all source random
+    // branches consume a fixed count from the effective material quantities.
+    const shopIndex=world.shops.findIndex(row=>row.id===1);
+    if(shopIndex<0)throw Error('USE 需要已開設的店舖');
+    const shop=world.shops[shopIndex];
+    const exp=shop.exp?.[String(itemId)]??0;
+    const clock=originalSourceUseClock({rule,job:shop.job??'',
+      experience:exp});
+    const trial=projectOriginalUseTransaction({
+      shops:world.shops.map(x=>x.item),actingShopIndex:shopIndex,
+      items:rule.limits,wholesale:world.market.wholesale,
+      uses:rule.uses,creates:rule.creates,requestedCount,
+      experience:exp,experienceOld:exp,
+      needExperience:rule.needExperience??0,
+      job:shop.job??'',needJob:rule.needJob??'',
+      point:shop.point??0,needPoint:rule.needPoint??0,
+      rank:shop.rank,needPopularity:rule.needPopularity??0,
+      needsEvent:false,eventActive:false,
+      money:shop.money,costPerUse:rule.money,
+      paytoday:shop.paytoday,nowSeconds:world.nowSeconds,
+      storedTimeSeconds:shop.time,baseUseTimeSeconds:clock.base,
+      trainedUseTimeSeconds:clock.trained,maxStockTimeSeconds:259200,
+      shopStatus:true,random:()=>0.5,
+    });
+    const n=trial.multiItem?.randomDraws??0;
+    if(!n)return [];
+    return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
+      ?Array(n).fill(500000)
+      :sourceCommandDraws({world,kind:'use-item',
+        args:{shopId:1,itemId,useId,requestedCount},count:n});
+  }
   // #14 has no material USE list. The frozen UseItem preflight clips the
   // batch by money and remaining action time BEFORE MakeAmount, and the
   // latter selects the Gaussian two-draw branch at 20+ requested products.
