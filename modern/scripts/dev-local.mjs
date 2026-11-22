@@ -91,6 +91,25 @@ const send=(res,status,obj)=>{
     'cache-control':'no-store','x-content-type-options':'nosniff'});
   res.end(JSON.stringify(obj));
 };
+// Read-only original GetDTPoint projection: frozen Core inc-func.cgi.
+// Uninitialized Perl shop fields count as zero; invalid fields never become a
+// guessed score. This is NOT a leaderboard/RANK implementation.
+function sourceShopPoint(shop){
+  if(!shop)return null;
+  const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
+    'rankingcount'];
+  const values=keys.map(key=>shop[key]??0);
+  if(values.some(value=>!Number.isSafeInteger(value)))return null;
+  const [rank,profitstock,sales,tax,paid,wins]=values;
+  // Profit and adjustments may be signed; Perl GetDTPoint accepts losses.
+  if(rank<0||wins<0)return null;
+  let profit=(profitstock*3+sales-tax-paid)/500000+1;
+  const winFactor=0.5+5/(wins+10);
+  if(profit>10)profit=15-50/profit;
+  if(profit<1)profit=1/(2-profit);
+  const point=Math.trunc(rank*winFactor*profit);
+  return Number.isSafeInteger(point)?point:null;
+}
 function state(){
   const world=repo?.read()??null;
   const save=saveStore.status();
@@ -104,12 +123,29 @@ function state(){
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
+    // Original point calculation; RANK is unknown until true multi-shop
+    // SortDT is available. Do not label the rank field as point or RANK.
+    shopSummary:{
+      point:sourceShopPoint(world?.shops?.[0]??null),
+      rankPosition:null,
+    },
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
-      .map(e=>({itemId:e.itemId,name:e.itemName})),
+      .map(e=>{
+        const item=streetModule.catalog.items.find(i=>i.id===e.itemId);
+        return {
+          itemId:e.itemId,name:e.itemName,
+          basePrice:e.basePrice,stockLimit:e.stockLimit,
+          flagRaw:item?.flagRaw??'',
+          type:item?.typeRaw??null,
+          costRaw:item?.costRaw??null,
+          info:item?.infoRaw??null,
+        };
+      }),
     useOffers:streetModule.listUseOffers(world),
+    showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
