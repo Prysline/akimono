@@ -144,7 +144,7 @@ for my $itemno(keys %{ $initial->{wholesale}||{} }){
 }
 $main::NOW_TIME=$initial->{nowSeconds} if exists $initial->{nowSeconds};
 $main::DT->{job}=$initial->{job} if exists $initial->{job};
-my ($originalJobRate)=$dsl=~/^[ \\t]*set[ \\t]+job_peddle_time_rate[ \\t]+([0-9.]+)/m;
+my ($originalJobRate)=$dsl=~/^\s*set\s+job_peddle_time_rate\s+([0-9.]+)/m;
 die 'source Peddle job rate declaration missing' unless defined $originalJobRate;
 $main::g_define->{job_peddle_time_rate}=$originalJobRate;
 die 'frozen GetBuffer job compiler did not preserve source job declaration'
