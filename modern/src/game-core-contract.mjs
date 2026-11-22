@@ -1,4 +1,5 @@
 import {MARKET_BUY_COMMAND,projectSharedMarketBuy} from './market-buy-core.mjs';
+import {USE_ITEM_COMMAND,projectSharedUseItem} from './shared-use-item-core.mjs';
 
 /**
  * GameCore/StreetModule/WorldState contract (B-31 foundation; R2-A market buy).
@@ -8,7 +9,8 @@ import {MARKET_BUY_COMMAND,projectSharedMarketBuy} from './market-buy-core.mjs';
  * The shared 'market-buy' engine performs reviewed commercial math in GameCore;
  * StreetModule supplies source-backed items, pricing, callbacks and market codec.
  * Source market purchases have exactly one supported command: market-buy.
- * Other source-reviewed actions (USE, sale, events) still use StreetModule.apply.
+ * Source-reviewed USE executes only through shared use-item in GameCore;
+ * sale and event slices still use StreetModule.apply.
  * No product-ID-shaped market-buy commands or independent buy projections.
  * GameCore knows no Standard Street ITEM IDs or DSL; R2-A/B/C have
  * separate exit evidence, while R2-D/E are still outside this shared core.
@@ -149,7 +151,10 @@ export function applyGameCommand({world,command,streetModule}){
     applied=cmd.kind===MARKET_BUY_COMMAND?
       projectSharedMarketBuy({world:original,command:cmd,
         marketBuy:streetModule.marketBuy}):
-      streetModule.apply({world:original,command:cmd});
+      cmd.kind===USE_ITEM_COMMAND?
+        projectSharedUseItem({world:original,command:cmd,
+          useItem:streetModule.useItem}):
+        streetModule.apply({world:original,command:cmd});
   }catch(error){
     return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{
       reason:error instanceof Error?error.message:'rejected by street',
