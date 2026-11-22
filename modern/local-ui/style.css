@@ -297,7 +297,8 @@ footer{margin-top:12px;font-size:10px}
 /* Per-source indexed showcase shelves and original bottom return positioning. */
 .back-row{display:flex;justify-content:center;margin:18px auto 6px;text-align:center}
 #showcase-shelves .action-time{font-size:11px;white-space:nowrap}
-#tab-item #showcase-shelf{max-width:115px;min-width:93px}
+#tab-item #showcase-shelf{width:280px;max-width:100%;min-width:0}
+#tab-item .shelf-current-note{font-size:12px!important;max-width:100%;text-align:center;color:#666;margin:5px auto 1px!important}
 .discard-section{width:fit-content;max-width:100%;margin:16px auto 0;text-align:center;border-top:1px dotted #bbb;padding-top:6px}
 .discard-section .sub-title{text-align:center}
 .discard-section .inline-form{justify-content:center}

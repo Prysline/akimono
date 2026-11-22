@@ -100,6 +100,29 @@ $('back-to-stock').addEventListener('click',()=>selectTab('stock'));
 $('back-to-item').addEventListener('click',()=>selectTab('item'));
 $('result-back-to-item').addEventListener('click',()=>selectTab('item'));
 const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
+function showcaseSlotDescription(s,index){
+  const shop=s?.shop;
+  if(!shop||!Array.isArray(shop.showcase)||
+     !Number.isSafeInteger(index)||index<0||
+     index>=shop.showcasecount)return '—';
+  const itemId=shop.showcase[index]??0;
+  if(itemId===0)return '空架';
+  const name=catalogItem(s,itemId)?.name??'未知商品';
+  return name+'（售價 '+money(shop.price?.[index])+'）';
+}
+function updateShowcaseShelfCurrent(){
+  const index=Number($('showcase-shelf').value);
+  const shop=snapshot?.shop;
+  if(!shop||!Number.isSafeInteger(index)||index<0||
+     index>=shop.showcasecount){
+    text('showcase-shelf-current','目前陳列：—');
+    return;
+  }
+  const occupied=(shop.showcase[index]??0)!==0;
+  text('showcase-shelf-current',
+    '第 '+(index+1)+' 架目前：'+showcaseSlotDescription(snapshot,index)+
+    (occupied?'。設定其他商品會替換這一架的陳列。':'，可直接上架。'));
+}
 function openItem(itemId){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
   selectedItemId=itemId;
@@ -126,11 +149,14 @@ function renderItemInfo(s){
     Math.min(shop.showcasecount,8):0;
   for(let index=0;index<shelfCount;index++){
     const option=document.createElement('option');
-    option.value=String(index);option.textContent='第 '+(index+1)+' 架';
+    option.value=String(index);
+    option.textContent='第 '+(index+1)+' 架｜'+
+      showcaseSlotDescription(s,index);
     shelfPicker.append(option);
   }
   if(selectedShelfIndex>=shelfCount)selectedShelfIndex=0;
   shelfPicker.value=String(selectedShelfIndex);
+  updateShowcaseShelfCurrent();
   text('showcase-time-cost',
     Number.isSafeInteger(s.showcaseEditTimeSeconds)?
       conciseTimeText(s.showcaseEditTimeSeconds):'—');
@@ -641,6 +667,7 @@ $('showcase-shelves').addEventListener('click',async event=>{
 });
 $('showcase-shelf').addEventListener('change',()=>{
   selectedShelfIndex=Number($('showcase-shelf').value);
+  updateShowcaseShelfCurrent();
 });
 $('discard-form').addEventListener('submit',async event=>{
   event.preventDefault();

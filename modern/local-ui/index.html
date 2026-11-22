@@ -202,7 +202,7 @@
         <fieldset>
           <legend>展示架設定</legend>
           <label>架號
-            <select id="showcase-shelf" aria-label="選擇展示架"><option value="0">第 1 架</option></select>
+            <select id="showcase-shelf" aria-label="選擇展示架及查看目前陳列"><option value="0">第 1 架｜空架</option></select>
           </label>
           <label>商品
             <select id="shelf-item"><option value="0">清空展示架</option></select>
@@ -210,6 +210,7 @@
           <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
           <button id="set-showcase" class="primary" type="submit">設定展示架</button>
         </fieldset>
+        <p id="showcase-shelf-current" class="shelf-current-note" role="status" aria-live="polite">第 1 架目前：—</p>
         <p class="shelf-time-note">調整或清空展示架均消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
       </form>
       <div class="discard-section">

@@ -67,7 +67,10 @@ test('source #63 grows two shelves, second shelf is independently writable, no-t
   ]);
   assert.match(html,/id="showcase-shelves"/);
   assert.match(html,/id="showcase-shelf"/);
+  assert.match(html,/id="showcase-shelf-current"/);
   assert.match(html,/id="discard-form"/);
+  assert.match(script,/showcaseSlotDescription\(s,index\)/);
+  assert.match(script,/updateShowcaseShelfCurrent\(\)/);
   assert.match(script,/dataset\.shelfIndex=String\(index\)/);
   assert.match(script,/call\('\/api\/discard'/);
   assert.equal((await srv.post('/api/initialize')).ok,true);
