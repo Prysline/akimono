@@ -497,6 +497,55 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
     useItem,
+    // R2-E: read-only view of the SAME source-reviewed USE registry that
+    // GameCore executes. This is UI affordance, never a second USE preflight.
+    listUseOffers(world){
+      const shop=world?.shops?.length===1?world.shops[0]:null;
+      const eventState=world?.period?.eventState;
+      const safeEvents=world?.events===null&&
+        (world?.period===undefined||
+          (eventState!==null&&eventState!==undefined&&
+           typeof eventState==='object'&&!Array.isArray(eventState)&&
+           Object.keys(eventState).length===0));
+      return Object.freeze([giftUseRule,swordUseRule].filter(Boolean)
+        .map(rule=>{
+          const owned=shop?.item?.[rule.itemId-1]??0;
+          const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
+          const materials=rule.uses.length?
+            rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
+            (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
+          const priorExp=shop?.exp;
+          const trained=rule.firstUseOnly&&priorExp!==undefined&&
+            (priorExp===null||typeof priorExp!=='object'||
+             Array.isArray(priorExp)||Object.keys(priorExp).length>0);
+          const missing=materials.find(row=>
+            (shop?.item?.[row.itemId-1]??0)<row.count);
+          const validMarket=world?.market&&
+            useItem.validateWorld({world,rule});
+          const reason=!shop?'請先開店':
+            !safeEvents?'尚未審閱的 EVENT 世界狀態':
+            shop.status!==1?'尚未審閱的商店狀態':
+            ![undefined,null,0,'',false].includes(shop.guild)?
+              '尚未審閱的公會效果':
+            !validMarket?'來源市場尚未驗證':
+            trained?'地圖第二次使用／EXP 熟練縮時未審閱':
+            missing?'材料不足：商品 #'+missing.itemId+
+              ' 需要 '+missing.count+' 件':
+            shop.money<rule.money?'資金不足':
+            shop.time+rule.time>world.nowSeconds?'可用行動時間不足':
+            null;
+          return Object.freeze({
+            itemId:rule.itemId,useId:rule.useId,
+            itemName:sourceName,useName:rule.name,
+            owned,materials,moneyPerUse:rule.money,
+            timePerUseSeconds:rule.time,
+            firstUseOnly:Boolean(rule.firstUseOnly),
+            randomSampleRequired:Boolean(rule.beforeCallback),
+            supported:true,canUse:reason===null,reason,
+            source:rule.source,sourceFile:rule.sourceFile,
+          });
+        }));
+    },
     // R2-C read-only common wholesale offer projection: identical Registry,
     // source sorting and live pricing as the GameCore transaction.
     quoteMarketOffer(world,itemId){
