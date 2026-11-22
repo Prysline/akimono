@@ -66,7 +66,7 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
   const output=[];
   for(const [itemId,expectedCount] of groups){
     const item=parsed.blocks.find(b=>b.kind==='ITEM'&&first(b,'no')===String(itemId));
-    if(!item||model.items[itemId-1]?.code!==first(item,'code'))
+    if(!item||model.items.find(x=>x.id===itemId)?.code!==first(item,'code'))
       fail('source owner ITEM '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
     if(uses.length!==expectedCount)fail('source USE count '+itemId);
