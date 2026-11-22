@@ -555,7 +555,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             const buyRule=buyRegistry?.getRule(row.itemId)??null;
             const plus=sourceItem?.plusRaw??'';
             const replenishes=Boolean(buyRule&&
-              /^[1-9][0-9]*(?:\\.[0-9]+)?[mhd]$/.test(plus));
+              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
             const providers=[giftUseRule,...giftUseVariants,
               swordUseRule,...declarativeUses].filter(provider=>
                 provider?.creates?.some(output=>
