@@ -424,3 +424,88 @@ test('R2-A global-before-item source lifecycle: accounted amounts visible and un
   assert.equal(result.world.shops[0].rank,world.shops[0].rank+2);
   assert.equal(world.shops[0].rank+2,result.world.shops[0].rank);
 });
+
+
+test('R2-B registry compiles ordinary ITEM #39 without a per-item buy program',()=>{
+  const registry=street.marketBuyRegistry;
+  assert.equal(registry.entries.length,79);
+  assert.deepEqual(registry.order.map(x=>x.itemId),street.catalog.items.map(x=>x.id));
+  for(const id of [10,11,39]){
+    const row=registry.describe(id),rule=street.marketBuy.getRule(id);
+    assert.equal(row.classification,'common-static');
+    assert.equal(rule.itemId,id);
+    assert.equal(rule.shopIndex,id-1);
+    assert.equal(rule.wholesaleIndex,id-1);
+    assert.equal(rule.buyCallback,null);
+    assert.equal(rule.stockLimit,street.reviewedGiftMapUse.limits[id-1].limit);
+    assert.equal(rule.marketTimeSeconds,600);
+    assert.match(rule.source,/custom\/inc-item-data.cgi:\\d+/);
+  }
+  const item39=registry.describe(39);
+  assert.equal(item39.itemCode,'book-kaitai');
+  assert.equal(item39.itemName,'拆解/打包工具');
+  assert.equal(item39.sourceLine,266);
+  assert.equal(item39.basePrice,500);
+  assert.equal(item39.stockLimit,10);
+  assert.equal(item39.wholesaleLimit,3);
+  assert.equal(registry.describe(1).classification,'dynamic-price');
+  assert.match(registry.describe(1).reason,/BASE.*1682/);
+  assert.equal(street.marketBuy.getRule(1),null);
+  assert.equal(registry.describe(14).classification,'legacy-r2a-price-incomplete');
+  assert.match(registry.describe(14).reason,/BASE 50\/150/);
+  assert.equal(registry.describe(79).classification,'unsupported');
+  assert.match(registry.describe(79).reason,/wholesale cap is zero/);
+  assert.equal(street.marketBuy.getRule(79),null);
+});
+
+test('R2-B new original ordinary ITEM #39 executes shared market-buy with exact real Perl transaction evidence',()=>{
+  const oracle=JSON.parse(execFileSync('perl',['original-r2b-market-buy39-probe.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.equal(oracle.itemId,39);
+  assert.equal(oracle.cases.length,3);
+  const market=seed().repository.read();
+  const itemId=39,rule=street.marketBuy.getRule(itemId);
+  const place=street.marketBuy.order.findIndex(row=>row.itemId===itemId);
+  const shelf=street.marketBuy.order.slice(0,place)
+    .filter(row=>market.market.wholesale[row.wholesaleIndex]>0).length;
+  assert.ok(market.market.wholesale[38]>0,'real PLUS must supply item #39');
+  const baseline=encodeMemorySnapshot(market);
+  for(const row of oracle.cases){
+    const shop={...market.shops[0],money:row.case==='zero-money'?0:market.shops[0].money};
+    const world={...market,shops:[shop]};
+    const command={kind:'market-buy',expectedRevision:world.revision,
+      shopId:1,itemId,requestedCount:row.requestedCount,
+      marketShelf:shelf,expectedPrice:rule.unitPrice+(row.case==='stale-price'?1:0)};
+    assert.equal(row.marketShelf,shelf,'original Perl source sort shelf');
+    assert.equal(row.expectedPrice,command.expectedPrice,'original Perl quote');
+    const result=apply(world,command);
+    assert.equal(result.ok,row.accepted,row.case);
+    if(!row.accepted){
+      assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+      assert.deepEqual(result.world,world);
+      assert.equal(row.commits,0);
+      continue;
+    }
+    assert.equal(row.commits,1);
+    assert.equal(row.writes,1);
+    assert.equal(result.details.purchasedCount,row.purchasedCount);
+    assert.equal(result.world.shops[0].money,row.money);
+    assert.equal(result.world.shops[0].paytoday,row.paytoday);
+    assert.equal(result.world.shops[0].item[38],row.stock);
+    assert.equal(result.world.shops[0].time,row.time);
+    assert.equal(result.world.market.wholesale[38],row.marketStock);
+    assert.equal(result.world.market.originalWholesaleCsv,row.wholesaleCsv);
+    assert.deepEqual(result.world.market.sparseWrittenSlots,row.sparseWrittenSlots);
+    assert.equal(result.world.market.originalWholesaleCsv.split(',').length,79);
+    assert.deepEqual(row.stages,[
+      'item-init','global-after-account','source-market-write',
+    ]);
+  }
+  assert.equal(encodeMemorySnapshot(market),baseline,'CAS source input unchanged');
+  const rejected=apply(market,{...buyCommand(market,39,{shelf,price:500}),
+    itemId:1});
+  assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(rejected.details.reason,/BASE/);
+  assert.deepEqual(rejected.world,market);
+});
