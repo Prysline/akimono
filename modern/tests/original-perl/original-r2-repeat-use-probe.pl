@@ -75,7 +75,7 @@ main::ClearBuffer('use');
 for my $raw(split(/\r?\n/,$useBody)){
   my($field)=$raw=~/^[ \t]*([a-z]+)\s+/i;
   next unless $field&&
-    $field=~/^(?:time|exp|exptime|price|name|action|func|param|funcb|get)$/i;
+    $field=~/^(?:time|exp|exptime|price|name|action|func|param|funcb|get|job)$/i;
   my $normalized=OriginalGiftMapUseHarness::line_for_compiler($raw);
   main::GetBuffer('use',$normalized);
 }
@@ -143,6 +143,13 @@ for my $itemno(keys %{ $initial->{wholesale}||{} }){
   $main::DTwholestore[$itemno-1]=$initial->{wholesale}{$itemno};
 }
 $main::NOW_TIME=$initial->{nowSeconds} if exists $initial->{nowSeconds};
+$main::DT->{job}=$initial->{job} if exists $initial->{job};
+my ($originalJobRate)=$dsl=~/^[ \\t]*set[ \\t]+job_peddle_time_rate[ \\t]+([0-9.]+)/m;
+die 'source Peddle job rate declaration missing' unless defined $originalJobRate;
+$main::g_define->{job_peddle_time_rate}=$originalJobRate;
+die 'frozen GetBuffer job compiler did not preserve source job declaration'
+  unless @{$u->{job}}==1 &&
+    $u->{job}[0] eq "行腳商人\ttimes/job_peddle_time_rate";
 my @results;
 for my $step (@{$input->{steps}}){
   my $requested=$step->{requestedCount}//1;
@@ -157,6 +164,15 @@ for my $step (@{$input->{steps}}){
     result=>{create=>[map {{%$_}} @create],function=>'lostbook'},
     arg=>{targetidx=>0},
   };
+  # Original compiler's declared job times/rate: use actual frozen
+  # GetNumber plus Perl integer truncation before the real UseItem.
+  # This isolates the _job_use hook until full generated item CGI is wired.
+  if(($main::DT->{job}//'') eq 'peddle'){
+    my $rate=main::GetNumber('job_peddle_time_rate');
+    die 'compiled source peddle rate wrong' unless $rate==1.5;
+    $this->{time}=int($this->{time}/$rate);
+    $this->{exptime}=int($this->{exptime}/$rate);
+  }
   my $oldexp=0+($main::DT->{exp}{14}//0);
   my $sourceTime=main::GetItemUseTime($this);
   my $before={
