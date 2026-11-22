@@ -14,6 +14,10 @@
 
 
 
+**2026-11-23｜R4 九種 EVENT ITEM PARAM：真凍結編譯器 Oracle 已通過（來源局部，不是 R4 結案）。** 新增共用 `original-r4-event-item-param.mjs`，以 B-53 17 EVENT 已審閱編譯結果解析其中九種 ITEM PARAM；真 Perl 探針直接從凍結 `inc-makeitem.cgi::OutEventData` 生成並執行原版 `$ITEM[n]` 算式，Node/Perl 九 EVENT × 79 ITEM 逐欄對照通過。它只處理來源欄位純算式，不執行 EVENT 的開始／結束／NOWFUNC、原版 hash/群組/RNG 或正式 WorldState；R4 及 36h 期末／HTTP 閉環仍不結案。詳見 [R4 來源契約](r4-source-time-slices-contract.md)／[R0 測試映射](r4-r0-affected-tests-mapping.md)。
+
+
+
 ---
 
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）

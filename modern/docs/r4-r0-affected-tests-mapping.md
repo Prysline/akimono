@@ -43,3 +43,16 @@
 | `tests/original-perl/OriginalSparseAllPlusHarness.pm`（僅測試 harness） | 之前測資永遠固定 DTpeople=500000，不能驗證原版人口式 | 增加選用 `dtPeople`，預設500000不變；凍結 `inc-turn.cgi`、Core／DSL SHA 均不改 |
 
 R4／R0／R1 全量未完成；不刪既有原版 Node、Perl 差分，也不修改凍結來源的 expected values。
+
+## R4 EVENT ITEM PARAM 受影響測試（2026-11-23）
+
+| 來源／真實檔案 | 回歸風險 | 保留／新增測試和理由 |
+|---|---|---|
+| `src/original-r4-event-item-param.mjs`（新增） | `OutEventData` 在 DataRead 生效的商品欄位若誤用 DSL 宣告序或自行編造數學運算，將改變自然販售／PLUS | 從 B-53 審閱的 17 EVENT 解析九種有 PARAM 的編譯資料，執行來源運算式純投影，不會 commit 未知 EVENT |
+| `tests/original-perl/original-r4-event-item-param-probe.pl`（新增） | 僅比對人工填寫 expected，未執行 Perl 真生成器 | 直接擷取凍結 `inc-makeitem.cgi` 的 `GetNumber/GetString/GetItemNumber/OutEventData` 相關原文，生成並執行 Perl ITEM 覆寫語句 |
+| `tests/original-perl/original-r4-event-item-param.t`（新增） | 漏掉 17 EVENT 中的來源 PARAM、名稱轉數字與原版整數除法 | 9 類來源效果、每類 79 格 Perl ITEM、原版生成語句的基本確認 |
+| `tests/r4-event-item-param.test.mjs`（新增） | Node 算法與原版 Perl 在 `pop/1.5`、`price*1.5`、`plus=...` 等有差分 | 直接原版生成運算的全部 79 ITEM × 九 EVENT 數值欄位差分、凍結編譯來源 drift 與非法輸入拒絕 |
+| `tests/b56-source-event-time-slice.test.mjs` 與所有 R3 差分（保留） | 將新 ITEM PARAM 純演算錯認完整 EVENT 生命週期 | 保留 B-56 明示排列 fixture 的限制，R3 原路徑與原版 Perl Oracle 均未移除 |
+
+R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合成及 HTTP/CAS／雙代存檔重啟的受影響映射必須待真正加入後補足，不能以本組純計算測試代替。
+

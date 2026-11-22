@@ -36,3 +36,12 @@
 - 36h：B-50 是同狀態原版期末子鏈而非正式 WorldState，尚未把 SortDT、期末、城市人口與稅、PLUS、EVENT 逐片原序合成至可提交的跨期核心；雙世代存檔目前不授權已結算 period。
 - 真 HTTP：目前缺少「買入→USE／製作→展示→多次營業→跨期決算→存檔→重啟繼續」的源碼等價驗收。**R4 不宣告結案，不移除跨期與未知事件的 fail-closed。**
 
+
+## 2026-11-23｜R4-A：九種 EVENT ITEM PARAM 真原版編譯差分（受控純投影）
+
+已新增 `src/original-r4-event-item-param.mjs`：從 B-53 已經直接與凍結 Perl `GetNumber/GetTime` 核對的 17 個編譯後 EVENT 中，建立**9 個有 ITEM PARAM 宣告的事件**之來源運算式清單。來源 ITEM 名稱經標準街 79 ITEM model 解析；不建立每個商品的專用回呼或硬寫固定市場結果。只支援原版 `inc-makeitem.cgi::OutEventData` 生成的 `price`、`pricebase`、`pricehalf`、`popular`、`point`、`plus` 數值變動；除法依凍結 Perl `int` 截斷。
+
+**直接原版 Oracle：** `tests/original-perl/original-r4-event-item-param-probe.pl` 執行凍結原版 `GetItemNumber`、`GetString`、`GetNumber` 與 `OutEventData` 中真正的 ITEM PARAM 程式生成區段，在 Perl 記憶體中執行生成的 `$ITEM[n]` 運算；`.t` 與 `tests/r4-event-item-param.test.mjs` 逐項比對九種 EVENT、79 項商品和六種數值欄位，驗證未審閱事件／不安全來源與輸入拒絕、世界不變。這個 Oracle 使用**人工原始數值的隔離商品 fixture**測運算式，並非已連接 DataRead 與動態 EVENT 的真玩家世界。
+
+**尚未完成：** EVENT 原版 17-key hash 與已存在 EVENT 的實際起訖和同組互斥、所有回呼／RNG、依 DataRead 時點對當期的 ITEM overlay、生效持續及過期、R3 自然販售與 36h 期末合成後的可提交同世界差分。因此 `projectR4EventItemParams` 保留 `committable:false`，不授權外部正式時間命令、不把來源未證實的 EVENT 當空事件。R4-A 和 R4 整體都**不宣告退出**。
+
