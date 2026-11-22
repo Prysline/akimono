@@ -78,7 +78,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null){
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
        shop.item[62]!==1||shop.item[78]!==5||
        shop.item.some((n,i)=>!
-         [9,10,13,39,40,41,42,43,62,78].includes(i)&&n!==0)||
+         [9,10,13,39,40,41,42,43,62,78].includes(i)&&
+         n!==0&&!extraStockValid(i,n))||
        shop.item[13]>3||shop.item[39]>600||
        [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
        (shop.exp!==undefined&&(
