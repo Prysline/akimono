@@ -17,7 +17,7 @@ button:disabled{cursor:not-allowed;color:#aaa!important;opacity:.85}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
   outline:2px solid #687bb1;outline-offset:2px
 }
-.shell{max-width:850px;margin:8px auto 25px;padding:0 15px}
+.shell{width:fit-content;max-width:min(100%,640px);margin:8px auto 25px;padding:0 8px}
 .site-heading{text-align:center;border-bottom:1px solid #999;padding-bottom:4px}
 .heading-top{display:flex;justify-content:space-between;gap:8px;
   font-size:11px;color:#999;padding:4px 0;border-bottom:1px dotted #e2e2e6}
@@ -72,23 +72,29 @@ button.primary:hover:not(:disabled),button.secondary:hover:not(:disabled){
   background:#fffbd8
 }
 .status-section{margin:3px 0 5px}
-table{width:100%;border-collapse:separate;border-spacing:1px;
+/* Tables use their content width; sparse data must not stretch into blank columns. */
+table{width:max-content;max-width:100%;border-collapse:separate;border-spacing:1px;
   background:#ccc;font-size:13px;text-align:left}
-td,th{background:var(--row);padding:7px 9px;vertical-align:middle;overflow-wrap:anywhere}
+td,th{background:var(--row);padding:3px 4px;vertical-align:middle;overflow-wrap:anywhere}
 th{color:#606060;font-weight:700}
 thead th{background:#e8e8ef;text-align:center;font-weight:normal}
-.status-table th{width:18%;background:#e8e8ef}
-.status-table td{width:32%}
+.status-table th{width:1%;white-space:nowrap;background:#e8e8ef}
+.status-table td{width:auto}
 .status-table strong{color:#424242}
-.game-columns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.game-columns{display:flex;flex-wrap:wrap;align-items:flex-start;gap:9px}
+.game-columns>div{min-width:0;max-width:100%}
 .sub-title{margin:1px 0 7px;font-size:14px;font-weight:normal}
 .sub-title::before{content:"◆ ";color:#9090a9;font-size:10px}
-.game-columns th{background:#e8e8ef;font-weight:normal;width:45%}
+.game-columns th{background:#e8e8ef;font-weight:normal;white-space:nowrap}
 .game-columns td{text-align:right}
 .muted{font-size:12px!important;color:#999}
-.market-table{white-space:normal}
+/* Wide source rows scroll only when required; never force empty horizontal space. */
+.table-scroll{max-width:100%;overflow-x:auto}
+.market-table{width:max-content;max-width:none;white-space:nowrap}
 .market-table td:not(:first-child){text-align:center}
-.market-table button{white-space:nowrap}
+.market-actions{display:flex;align-items:center;gap:4px}
+.market-table input[type=number]{width:45px;min-height:24px;padding:2px 3px}
+.market-table button{white-space:nowrap;min-height:24px;padding:2px 5px}
 .item-no{font-size:11px;color:#999;margin-left:6px}
 .supply-details,.debug-details{margin:12px 0;border:1px dotted #bcbcc6;
   padding:7px 9px;font-size:12px}
@@ -118,13 +124,11 @@ footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
   .location-line{font-size:11px}
   .section{padding:9px}
   .section-title{margin:-9px -9px 10px}
-  .game-columns{grid-template-columns:1fr;gap:12px}
-  td,th{padding:6px 5px}
+  .game-columns{flex-direction:column;gap:8px}
+  td,th{padding:3px 4px}
   .market-table{font-size:12px}
-  .market-table input{width:53px}
-  .market-table button{padding:4px 5px}
-  .status-table th{width:20%}
-  .status-table td{width:30%}
+  .market-table input[type=number]{width:42px}
+  .market-table button{padding:2px 4px}
   .setup-content,.inline-form{gap:7px}
 }
 
