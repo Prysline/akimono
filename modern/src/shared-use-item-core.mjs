@@ -50,6 +50,9 @@ export function projectSharedUseItem({world,command,useItem}){
      rule.useId!==command.useId||rule.supported!==true)
     fail(useItem.describe?.(command.itemId,command.useId)??
       'source USE not reviewed');
+  if(!world.market||!Array.isArray(world.market.wholesale)||
+     world.market.wholesale.length!==rule.limits.length)
+    fail('missing explicit 79-slot source wholesale or marked test fixture');
   if(world.events!==null||!emptyEventState(world)||
      !useItem.validateWorld({world,rule}))
     fail('unreviewed source EVENT/market/world overlay');
