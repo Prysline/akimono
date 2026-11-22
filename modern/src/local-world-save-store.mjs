@@ -57,11 +57,18 @@ function reviewedPlayableWorld(raw){
        !Array.isArray(shop.item)||shop.item.length!==79||
        shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
        shop.item[62]!==1||shop.item[78]!==5||
-       shop.item.some((n,i)=>![9,10,62,78].includes(i)&&n!==0)||
+       shop.item.some((n,i)=>![9,10,13,39,62,78].includes(i)&&n!==0)||
+       shop.item[13]>3||shop.item[39]>600||
+       (shop.exp!==undefined&&(
+         shop.exp===null||typeof shop.exp!=='object'||
+         Array.isArray(shop.exp)||
+         Object.keys(shop.exp).length!==1||
+         shop.exp['14']!==20))||
        shop.item[10]>50||
-       ![0,10].includes(shop.showcase?.[0])||
+       ![0,10,40].includes(shop.showcase?.[0])||
        shop.showcase?.length!==1||shop.price?.length!==1||
        (shop.showcase[0]===10&&shop.price[0]!==5000)||
+       (shop.showcase[0]===40&&shop.price[0]!==1200)||
        (shop.showcase[0]===0&&shop.price[0]!==0)||
        !Number.isSafeInteger(shop.money)||shop.money<0||
        !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||
@@ -73,7 +80,7 @@ function reviewedPlayableWorld(raw){
        !['itemtoday','itemyesterday'].every(field=>{
          const m=shop[field];
          return m!==null&&typeof m==='object'&&!Array.isArray(m)&&
-           Object.keys(m).every(k=>k==='10'&&
+           Object.keys(m).every(k=>['10','40'].includes(k)&&
              Number.isSafeInteger(m[k])&&m[k]>=0);
        }))
       fail('saved shop is outside reviewed current #10 source world');
