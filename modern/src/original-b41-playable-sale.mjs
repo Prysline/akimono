@@ -22,6 +22,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
   from './original-b61-sword-demand-event.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
+import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
 const bad=x=>{throw new RangeError('B-41 original sale boundary: '+x);};
@@ -31,7 +32,8 @@ const safe=(x,label,min=0)=>{
 };
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   configSource,reviewedMarket11=null,reviewedB59Iron=null,
-  reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null}){
+  reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null,
+  reviewedB63Map=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -72,8 +74,15 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
      reviewedB62Map.woodPrice!==1200||
      reviewedB62Map.mapItemId!==14))
     bad('B-62 real sword map acquisition source drift');
+  if(reviewedB63Map!==null&&(
+     reviewedB63Map.source!==B63_MAP_SOURCE||
+     reviewedB63Map.items?.join(',')!=='40,41,42,43,44'||
+     reviewedB63Map.limits?.join(',')!=='600,500,300,100,75'||
+     reviewedB63Map.cost?.join(',')!=='120,150,320,800,1200'))
+    bad('B-63 original all-sword inventory source review drift');
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
+    swordOutcomesSource:reviewedB63Map?.source??null,
     swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
     happyEventSource:reviewedB60Happy?.source??null,
@@ -86,7 +95,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
 export function projectB41Sale({
   world,reviewed,reviewedAllPlus,compiled,shopId,minutes,randomDraws,
   reviewedB59Iron=null,reviewedB60Happy=null,
-  reviewedB61Sword=null,reviewedB62Map=null,
+  reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
@@ -105,7 +114,8 @@ export function projectB41Sale({
   if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
      reviewed.happyEventSource!==(reviewedB60Happy?.source??null)||
      reviewed.swordEventSource!==(reviewedB61Sword?.source??null)||
-     reviewed.swordMapSource!==(reviewedB62Map?.source??null))
+     reviewed.swordMapSource!==(reviewedB62Map?.source??null)||
+     reviewed.swordOutcomesSource!==(reviewedB63Map?.source??null))
     bad('source durable event contracts mismatch');
   if(world.schema===PERIOD_WORLD_SCHEMA&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -151,9 +161,12 @@ export function projectB41Sale({
     shop.showcase?.length!==1||shop.price?.length!==1||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
     shop.item[62]!==1||shop.item[78]!==5||
-    shop.item.some((n,i)=>!(reviewedB62Map?
+    shop.item.some((n,i)=>!(reviewedB63Map?
+      [9,10,13,39,40,41,42,43,62,78]:reviewedB62Map?
       [9,10,13,39,62,78]:reviewed.ticketSourceReviewed?
       [9,10,62,78]:[9,62,78]).includes(i)&&n!==0)||
+    (reviewedB63Map&&[500,300,100,75].some((cap,i)=>
+      shop.item[40+i]>cap))||
     (reviewedB62Map&&(shop.item[13]>3||shop.item[39]>600||
       (shop.exp!==undefined&&(
         shop.exp===null||typeof shop.exp!=='object'||
@@ -249,7 +262,9 @@ export function projectB41Sale({
     (reviewedB62Map?(
       items[13]*500+
       (items[39]? (shop.showcase[0]===40?items[39]/10:items[39])*120:0)
-    ):0);
+    ):0)+
+    (reviewedB63Map?[40,41,42,43].reduce((total,slot,i)=>
+      total+items[slot]*reviewedB63Map.cost[i+1],0):0);
   const accrual=upkeep*span/86400;
   const costtoday=shop.costtoday+accrual;
   if(!Number.isFinite(costtoday)||costtoday<0||
