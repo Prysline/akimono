@@ -31,7 +31,8 @@ const open=()=>({
   ownerName:'試驗店主',shopName:'標準街真禮物卷來源測試店',
 });
 const exchange=(rev=1,requestedCount=1,extra={})=>({
-  kind:'gift-exchange-maps',expectedRevision:rev,shopId:42,requestedCount,...extra,
+  kind:'use-item',expectedRevision:rev,shopId:42,
+  itemId:79,useId:0,requestedCount,...extra,
 });
 function createShop(){
   const world=createMemoryWorld({
@@ -67,7 +68,7 @@ test('B-33 gift catalog is the real Standard Street ITEM #79, not B32 A/B/C',()=
   assert.equal(rule.name,'交換地圖集');
   assert.equal(street.catalog.items[78].name,'禮物卷');
   assert.equal(street.id,'standard-street');
-  assert.ok(street.capabilities.includes('gift-exchange-maps'));
+  assert.ok(street.capabilities.includes('use-item'));
   assert.ok(!street.capabilities.includes('source-fixture-use'));
 });
 test('B-33 actual source first gift USE has exactly reviewed compiler fields',()=>{
@@ -127,8 +128,8 @@ test('B-33 gift compiler rejects altered source time multiplier',()=>{
 test('B-33 source-reviewer still leaves all OTHER 115 USE entries nonexecuting',()=>{
   assert.equal(street.catalog.uses.length,116);
   assert.equal(street.catalog.uses.every(x=>x.runtimeSupported===false),true);
-  assert.equal(street.capabilities.filter(x=>x.includes('gift')).length,1);
-  assert.equal(street.capabilities.includes('use-item'),false);
+  assert.equal(street.capabilities.filter(x=>x.includes('gift')).length,0);
+  assert.equal(street.capabilities.includes('use-item'),true);
 });
 test('B-33 original opening grant contains five true gift vouchers',()=>{
   const w=createShop(),shop=w.shops[0];
