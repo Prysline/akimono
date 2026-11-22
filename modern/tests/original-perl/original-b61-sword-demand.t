@@ -39,7 +39,7 @@ if(ref($r)eq'HASH'){
     'original demand modifies pop not showcase price');
   for my $i(0..4){
     my $n=40+$i;
-    my $base=$b->{swordItems}[$i],$event=$a->{swordItems}[$i];
+    my($base,$event)=($b->{swordItems}[$i],$a->{swordItems}[$i]);
     is($base->{itemId},$n,'original source sword id '.$n);
     is($event->{popularSeconds},int($base->{popularSeconds}/2),
       'original compiler halves POP seconds item '.$n);
