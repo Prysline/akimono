@@ -61,6 +61,7 @@ function showState(s){
     (save.unreadable?'存檔損毀，無可載入備援':'尚未儲存'));
   $('save-world').disabled=!w;
   $('load-world').disabled=Boolean(w)||!save.available;
+  $('reset-world').disabled=!w&&!save.available&&!save.unreadable;
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
   const left=s.secondsUntilSettlement;
   text('settlement-status',w&&Number.isSafeInteger(left)?
@@ -254,6 +255,41 @@ $('save-world').addEventListener('click',()=>call('/api/save',{
   expectedGeneration:snapshot?.save?.generation,
 },'儲存本機世界'));
 $('load-world').addEventListener('click',()=>call('/api/load',{},'載入本機磁碟世界'));
+$('reset-world').addEventListener('click',async()=>{
+  const before=snapshot;
+  if(!before?.world&&!before?.save?.available&&!before?.save?.unreadable)return;
+  if(!window.confirm('確定要刪除目前店家及整個測試世界嗎？\\n'+
+    '兩份本機磁碟存檔也會刪除，無法復原。'))return;
+  const button=$('reset-world');
+  button.disabled=true;
+  try{
+    const res=await fetch('/api/reset',{method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        confirm:'RESET_LOCAL_TEST_WORLD',
+        expectedWorldId:before.world?.worldId??null,
+        expectedRevision:before.world?.revision??null,
+        expectedGeneration:before.save?.generation??0,
+      }),
+    });
+    const data=await res.json();
+    if(data.state)showState(data.state);
+    if(!res.ok||!data.ok){
+      feedback('重置遭拒絕：'+(data.error??data.code??'未知原因'),null,true);
+      return;
+    }
+    delete $('setup').dataset.autoClosed;
+    $('setup').open=true;
+    selectTab('shop');
+    feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
+      ' 份磁碟存檔）。可以重新初始化世界並開店。');
+  }catch(error){
+    feedback('重置失敗：'+error.message,null,true);
+  }finally{
+    button.disabled=!snapshot?.world&&!snapshot?.save?.available&&
+      !snapshot?.save?.unreadable;
+  }
+});
 $('initialize').addEventListener('click',()=>call('/api/initialize',{},'初始化來源世界'));
 $('open-shop').addEventListener('submit',async e=>{
   e.preventDefault();await call('/api/open-shop',{
