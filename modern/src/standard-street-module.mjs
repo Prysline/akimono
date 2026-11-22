@@ -6,7 +6,7 @@
  * Standard Street @@FUNCBUY voucher threshold is source-reviewed; buyers
  * above the threshold fail closed until its actual effect is implemented.
  * R2-B: compiled ordinary market rules come from source ITEM data.
- * R2-C: legacy buy-market-item-* actions below STILL run separate engines.
+ * R2-C: source buying has one formal command and one GameCore engine; no legacy projections.
  * Original Perl is never evaluated by live Node game commands.
  * Full generic USE, natural sales, period settlement, auth, and CGI are NOT
  * established by R2-A; B-xx reviewed portions remain source-bounded.
@@ -29,7 +29,7 @@ import {reviewOriginalNaturalSalePlus,projectOriginalNaturalSalePlus}
   from './original-natural-sale-plus.mjs';
 import {reviewOriginalNayutaFuncturn,projectOriginalNayutaFuncturn}
   from './original-nayuta-functurn.mjs';
-import {reviewOriginalMarketBuy10,quoteOriginalMarket10,projectOriginalMarketBuy10}
+import {reviewOriginalMarketBuy10}
   from './original-market-buy10.mjs';
 import {reviewB41Sale,projectB41Sale} from './original-b41-playable-sale.mjs';
 import {reviewOriginalCompiledEventCatalog}
@@ -40,7 +40,7 @@ import {reviewB56EventSlice,projectB56EventSlice}
   from './original-b56-event-time-slice.mjs';
 import {reviewOriginalSupportEventCallbacks}
   from './original-b57-support-event-callbacks.mjs';
-import {reviewOriginalMarketBuy11,quoteOriginalMarket11,projectOriginalMarketBuy11}
+import {reviewOriginalMarketBuy11}
   from './original-market-buy11.mjs';
 import {reviewOriginalLotoStartfunc}
   from './original-b58-loto-startfunc.mjs';
@@ -50,8 +50,7 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
-import {reviewOriginalB62SwordMap,quoteOriginalMarket14,
-  projectOriginalMarketBuy14,projectOriginalSwordMapUse}
+import {reviewOriginalB62SwordMap,projectOriginalSwordMapUse}
   from './original-b62-sword-map-acquisition.mjs';
 import {reviewOriginalB63SwordMapOutcomes,projectOriginalSwordMapAllOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
@@ -375,10 +374,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedAllPlus?['reviewed-sparse-all-plus']:[]),
       ...(reviewedNaturalPlus?['reviewed-natural-sale-plus']:[]),
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
-      ...(reviewedMarketBuy10?['market-buy','buy-market-item-10']:[]),
-      ...(reviewedMarketBuy11?['buy-market-item-11']:[]),
-      ...(reviewedB62Map?['buy-market-item-14',
-        'use-original-sword-map-14']:[]),
+      ...(buyRegistry?['market-buy']:[]),
+      ...(reviewedB62Map?['use-original-sword-map-14']:[]),
       ...(reviewedB63Map?['use-original-sword-map-14-all-outcomes']:[]),
       ...(reviewedB41?['advance-source-time']:[]),
       ...(reviewedB56?['advance-source-time-reviewed-events']:[]),
@@ -513,31 +510,6 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectOriginalNayutaFuncturn({
           world,reviewed:reviewedNayuta,reviewedAllPlus,
           compiled:giftMap,randomDraws:command.randomDraws,
-        });
-      }
-      if(command.kind==='buy-market-item-10'&&reviewedMarketBuy10){
-        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
-        return projectOriginalMarketBuy10({
-          world,model,reviewed:reviewedMarketBuy10,
-          shopId:command.shopId,requestedCount:command.requestedCount,
-          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
-        });
-      }
-      if(command.kind==='buy-market-item-11'&&reviewedMarketBuy11){
-        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
-        // SOURCE-REVIEWED INTERNAL acquisition of ITEM #11, not HTTP/UI.
-        return projectOriginalMarketBuy11({
-          world,model,reviewed:reviewedMarketBuy11,
-          shopId:command.shopId,requestedCount:command.requestedCount,
-          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
-        });
-      }
-      if(command.kind==='buy-market-item-14'&&reviewedB62Map){
-        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
-        return projectOriginalMarketBuy14({
-          world,model,reviewed:reviewedB62Map,
-          shopId:command.shopId,requestedCount:command.requestedCount,
-          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
         });
       }
       if(command.kind==='use-original-sword-map-14'&&reviewedB62Map){
