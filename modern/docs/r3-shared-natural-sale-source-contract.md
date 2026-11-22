@@ -36,9 +36,9 @@
 
 ## 有限共用命令契約
 
-既有 GameCore advance-source-time 命令輸入 kind、expectedRevision、shopId=1、minutes（1～60）與伺服器提供的整數百萬分位抽樣。公開 POST /api/advance-time 只接受 expectedRevision 和 minutes；客戶端不允許注入 randomDraws、回呼、售出量。正常出售要求來源初始化市場、合法單商店、單展示架、商品真持有量、編譯原價、可安全運算整數與未跨越 36h 結算邊界。上架經 edit-showcase；不能用 fake stock 跳過原版 market-buy／use-item。
+既有 GameCore advance-source-time 命令輸入 kind、expectedRevision、shopId=1、minutes（1～60）與伺服器提供的整數百萬分位抽樣。公開 POST /api/advance-time 只接受 expectedRevision 和 minutes；客戶端不允許注入 randomDraws、回呼、售出量。正常出售要求來源初始化市場、合法單商店、單展示架、商品真持有量、已審閱原版 ITEM 的 1～200% 定價、可安全運算整數與未跨越 36h 結算邊界。上架經 edit-showcase；不能用 fake stock 跳過原版 market-buy／use-item。
 
-GetMarketStatus 的來源基數為 DTpeople*SALE_SPEED/3/50；販售按原版 buypeoplebase、售價、排名、需求、庫存及 ran​​d 呼叫次序，先抽需求、必要時進行小於 1 的補抽，售出後才抽人氣、完成 rank 衰減；金額、庫存、saletoday、itemtoday、trush、rank、temprank、costtoday、暫時 _sale_count_ 依 source 收支更新。保留 Perl 整數截斷和浮點維持費；原版初始禮物卷 COST=10×5 不是額外固定店舖成本 50。現行受審閱稅率是 0，未知非零稅率不得默許。59 項 PLUS 接續自然販售、與同一抽樣串流對齊，市場上限使用原版 CheckWholeStore。
+GetMarketStatus 的來源基數為 DTpeople*SALE_SPEED/3/50；販售按原版 buypeoplebase、售價、排名、需求、庫存及 ran​​d 呼叫次序，先抽需求、必要時進行小於 1 的補抽，售出後才抽人氣、完成 rank 衰減；金額、庫存、saletoday、itemtoday、trush、rank、temprank、costtoday、暫時 _sale_count_ 依 source 收支更新。保留 Perl 整數截斷和浮點維持費；原版初始禮物卷 COST=10×5 不是額外固定店舖成本 50。標準街已審閱使用者基礎稅率為 0；超過原價的售價依凍結 item.cgi::GetSaleTax 計算附加稅，更新 taxtoday，gross 與扣稅後資金分開。未知非零基礎稅率不得默許。59 項 PLUS 接續自然販售、與同一抽樣串流對齊，市場上限使用原版 CheckWholeStore。
 
 成功 receipt 內含 naturalSaleCount、soldItemId、stockBefore/stockAfter、moneyBefore/moneyAfter、naturalDraws、plusDraws 與 totalDraws。WorldState 在純投影成功後以單次 revision CAS 提交；過期 revision、錯價、來源未知、抽樣不足、負資產／溢出、跨期等拒絕時記憶世界不變。雙世代磁碟是**獨立** /api/save，經 generation CAS、原子 rename 與 fsync，不可聲稱世界指令自動持久化。損毀存檔／不合法持有及展示欄位依 B-43 拒絕，不假造恢復狀態。
 
@@ -50,9 +50,9 @@ GetMarketStatus 的來源基數為 DTpeople*SALE_SPEED/3/50；販售按原版 bu
 
 新增 R3 安全防線：當 period.eventState 為 null 且展示 #40～#44 時，後續 B-41 劍類自然販售必須原子拒絕。讀檔後仍可進行來源合法上架與雙代存檔，但不能跳過未知 EVENT 再次賣劍。舊 #10 保留 B-41 歷史數值續營行為供 R2 回歸；這不等於完整原版時間引擎。
 
-現行 advance-source-time **僅**正式支援 B-41 自然販售／PLUS 數值子區，未完成整個時間引擎的 FUNCTURN／FUNCSALE／EVENT。成功後的 period.eventState=null 代表事件狀態**未知**，絕不等於空事件；歷史 B-41 允許繼續有限數值時間片不構成完整原版事件等價。B-56 advance-source-time-reviewed-events 對已知鐵礦／祭典／劍需求 EVENT 及部分瞬間事件有明示 fixture，但需要外部完整 17 個 EVENT hash key 順序、eventDraws；測試用明確排列**不是**真實 Perl hash traversal。
+現行 advance-source-time 正式支援 B-41 共用自然販售、已審閱空持有者的 ITEM FUNCTURN／FUNCSALE 與 59 PLUS 子區，但未完成整個時間引擎的 EVENT／SortDT／期末。成功後的 period.eventState=null 代表事件狀態**未知**，絕不等於空事件；歷史 B-41 允許繼續有限數值時間片不構成完整原版事件等價。B-56 advance-source-time-reviewed-events 對已知鐵礦／祭典／劍需求 EVENT 及部分瞬間事件有明示 fixture，但需要外部完整 17 個 EVENT hash key 順序、eventDraws；測試用明確排列**不是**真實 Perl hash traversal。
 
-B-54 本機 RNG 使用同一 world/revision/command 固定重播的 source-shaped 抽樣，不重建原版 Perl 隨程序漂移的 rand 內部狀態。未審閱或未知 FUNCTURN／FUNCSALE、其他商品特殊回呼、任意售價／架數／多商店、街道差異、非零稅率、任意 EVENT 持續效果或跨期，仍需來源 Oracle 和拒絕設計。不能為通過時間測試而清空事件、重抽事件或將 R4 的 36 小時期末偽裝為完成。
+B-54 本機 RNG 使用同一 world/revision/command 固定重播的 source-shaped 抽樣，不重建原版 Perl 隨程序漂移的 rand 內部狀態。未審閱或未知 FUNCTURN／FUNCSALE、其他商品特殊回呼、來源 1～200% 以外的售價／架數／多商店、街道差異、非零基礎稅率、任意 EVENT 持續效果或跨期，仍需來源 Oracle 和拒絕設計。不能為通過時間測試而清空事件、重抽事件或將 R4 的 36 小時期末偽裝為完成。
 
 ## 實際驗證
 
