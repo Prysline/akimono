@@ -76,6 +76,7 @@ function newShop(){
   return {repository,act};
 }
 function saleDraws(world,minutes,{first=500000,second=500000}={}){
+  let lastReason='none';
   for(let i=0;i<=118;i++){
     const draws=[first,second,...Array(i).fill(0)];
     try{
@@ -93,10 +94,11 @@ function saleDraws(world,minutes,{first=500000,second=500000}={}){
       });
       return draws;
     }catch(e){
-      if(e.message.includes('crosses original period settlement'))throw e;
+      lastReason=e?.message??String(e);
+      if(lastReason.includes('crosses original period settlement'))throw e;
     }
   }
-  throw Error('B-62 original natural/PLUS sample prefix not found');
+  throw Error('B-62 original natural/PLUS sample prefix not found: '+lastReason);
 }
 function eventDraws(world,minutes,enable=false){
   const occupied=Object.entries(world.period.eventState).filter(
