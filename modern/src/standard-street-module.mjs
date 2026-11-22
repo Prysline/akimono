@@ -43,6 +43,9 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
+import {reviewOriginalB62SwordMap,quoteOriginalMarket14,
+  projectOriginalMarketBuy14,projectOriginalSwordMapUse}
+  from './original-b62-sword-map-acquisition.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
 import {
@@ -218,12 +221,25 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       readSource:originalDataReadSource,
       compiledCatalog:reviewedEventCatalog,model,
     }):null;
+  const reviewedB62Map=reviewedMarketBuy10&&originalBuySource&&
+    originalDataReadSource?
+    reviewOriginalB62SwordMap({
+      itemDsl,model,compiled:giftMap,
+      reviewedMarket10:reviewedMarketBuy10,
+      buySource:originalBuySource,wholeSource:originalWholeSource,
+      calcSource:originalBuyCalcSource,
+      itemSource:originalBuyItemSource,
+      compilerSource:originalCompilerSource,
+      useSource:originalUseSource,
+      readSource:originalDataReadSource,
+    }):null;
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
       reviewedBuy:reviewedMarketBuy10,reviewedAllPlus,
       configSource:originalConfigSource,
       reviewedMarket11:reviewedMarketBuy11,
-      reviewedB59Iron,reviewedB60Happy,reviewedB61Sword}):null;
+      reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
+      reviewedB62Map}):null;
   const reviewedSupportEventCallbacks=reviewedEventCatalog?
     reviewOriginalSupportEventCallbacks({
       itemDsl,turnSource:originalTurnSource,
@@ -265,6 +281,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       ...(reviewedNayuta?['reviewed-nayuta-functurn']:[]),
       ...(reviewedMarketBuy10?['buy-market-item-10']:[]),
       ...(reviewedMarketBuy11?['buy-market-item-11']:[]),
+      ...(reviewedB62Map?['buy-market-item-14',
+        'use-original-sword-map-14']:[]),
       ...(reviewedB41?['advance-source-time']:[]),
       ...(reviewedB56?['advance-source-time-reviewed-events']:[]),
       ...(reviewedInstantEventCallbacks?[
@@ -289,12 +307,16 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB59Iron,
     reviewedB60Happy,
     reviewedB61Sword,
+    reviewedB62Map,
     reviewedB56,
     quoteMarketItem10(world){
       return quoteOriginalMarket10({world,model,reviewed:reviewedMarketBuy10});
     },
     quoteMarketItem11(world){
       return quoteOriginalMarket11({world,model,reviewed:reviewedMarketBuy11});
+    },
+    quoteMarketItem14(world){
+      return quoteOriginalMarket14({world,model,reviewed:reviewedB62Map});
     },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
@@ -385,12 +407,28 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
         });
       }
+      if(command.kind==='buy-market-item-14'&&reviewedB62Map){
+        ownKeysExact(command,['shopId','requestedCount','marketShelf','expectedPrice']);
+        return projectOriginalMarketBuy14({
+          world,model,reviewed:reviewedB62Map,
+          shopId:command.shopId,requestedCount:command.requestedCount,
+          marketShelf:command.marketShelf,expectedPrice:command.expectedPrice,
+        });
+      }
+      if(command.kind==='use-original-sword-map-14'&&reviewedB62Map){
+        ownKeysExact(command,['shopId','randomDraws']);
+        return projectOriginalSwordMapUse({
+          world,reviewed:reviewedB62Map,
+          shopId:command.shopId,randomDraws:command.randomDraws,
+        });
+      }
       if(command.kind==='advance-source-time'&&reviewedB41){
         ownKeysExact(command,['shopId','minutes','randomDraws']);
         return projectB41Sale({world,reviewed:reviewedB41,
           reviewedAllPlus,compiled:giftMap,shopId:command.shopId,
           minutes:command.minutes,randomDraws:command.randomDraws,
-          reviewedB59Iron,reviewedB60Happy,reviewedB61Sword});
+          reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
+          reviewedB62Map});
       }
       if(command.kind==='advance-source-time-reviewed-events'&&reviewedB56){
         ownKeysExact(command,['shopId','minutes','saleDraws',
