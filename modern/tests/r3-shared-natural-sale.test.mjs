@@ -236,3 +236,13 @@ test('R3 sourced non-default percentage price and markup GetSaleTax drift must f
       '$rank/=($DT->{price}[$cnt]-$ITEM[$itemno]->{price})/9000 if $rank<1;'),
   }),/source drift/);
 });
+
+const integratedOriginal=JSON.parse(execFileSync('perl',
+ ['original-r3-integrated-priced-turn-probe.pl'],{
+  cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+ }));
+test('R3 24 direct frozen Perl natural+ITEM callback+PLUS source combinations',()=>{
+ assert.equal(integratedOriginal.cases.length,24);
+ assert.ok(integratedOriginal.cases.some(c=>c.span===60));
+ assert.ok(integratedOriginal.cases.some(c=>c.percent===150));
+});
