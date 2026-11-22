@@ -16,7 +16,7 @@ const int=(v,s,min=0)=>{
 export function projectSharedNaturalSale({
   shop,rule,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
-  popDownRate=5,baseUpkeep=50,
+  popDownRate=5,baseUpkeep=0,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -82,6 +82,8 @@ export function projectSharedNaturalSale({
   if(delta<1&&rankDown>0&&rand()*(1/delta)<1)delta=1;
   const rank=Math.max(0,Math.min(10000,rankBefore+
     Math.trunc(rankUp>rankDown?delta:-delta)));
+  // Original upkeep has no shop base: the historical fixed 50 is
+  // precisely five source #79 vouchers at COST 10, already counted here.
   let upkeep=baseUpkeep;
   for(let i=0;i<item.length;i++){
     const count=int(item[i],'item count');
