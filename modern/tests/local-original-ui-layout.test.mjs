@@ -89,12 +89,11 @@ test('product details remain centered without a full-width shelf editor',()=>{
   assert.match(css,/#tab-item \.source-use-section\s*\{[\s\S]*?width:fit-content;max-width:100%;margin:16px auto 0/);
   assert.match(css,/#tab-item \.source-use-section>\.sub-title\{text-align:center\}/);
   assert.match(html,/id="showcase-form"/);
-  assert.match(html,/id="showcase-shelf-current" class="shelf-current-note" role="status"/);
   assert.match(script,/function showcaseSlotDescription\(s,index\)/);
-  assert.match(script,/option\.textContent='第 '\+\(index\+1\)\+' 架｜'/);
-  assert.match(script,/function updateShowcaseShelfCurrent\(\)/);
-  assert.match(script,/shelfPicker\.value=String\(selectedShelfIndex\);\s*updateShowcaseShelfCurrent\(\)/);
-  assert.match(script,/selectedShelfIndex=Number\(\$\('showcase-shelf'\)\.value\);\s*updateShowcaseShelfCurrent\(\)/);
+  assert.match(script,/option\.textContent='架'\+\(index\+1\)\+'（'\+/);
+  assert.match(html,/id="showcase-shelf" aria-label="展示架（括號內為目前陳列商品）"/);
+  assert.doesNotMatch(html,/id="showcase-shelf-current"/);
+  assert.doesNotMatch(script,/function updateShowcaseShelfCurrent\(/);
   assert.match(html,/class="shelf-percent"/);
   assert.match(css,/#tab-item \.shelf-percent\{display:inline-flex;align-items:center;gap:4px\}/);
   assert.doesNotMatch(html,/<h2 class="section-title">● 商品明細<\/h2>/);
