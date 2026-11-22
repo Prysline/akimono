@@ -84,7 +84,7 @@ export function reviewOriginalB61SwordDemand({
   const markers=[
     [compilerSource,'$key=~s/^pop$/popular/i;'],
     [compilerSource,'$keyitem=int($keyitem/$val);'],
-    [compilerSource,'my $keyitem="\$ITEM[".GetItemNumber($val[0])."]->{$key}";'],
+    [compilerSource,String.raw`my $keyitem="\$ITEM[".GetItemNumber($val[0])."]->{$key}";`],
     [readSource,'%DTevent=split(/,/,$DATA[$idx++]);'],
     [readSource,'foreach(keys(%DTevent)){require(GetPath($ITEM_DIR,"event",$_));}'],
     [turnSource,'DataRead();'],
