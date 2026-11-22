@@ -42,7 +42,9 @@ for my $id (1,14){
   @ITEM=();@DTwholestore=();
   $ITEM[$id]={%$compiled,sort=>0,no=>$id};
   my @quotes;
-  for my $stock (1,2,3){
+  # #1 is inexpensive: use source-valid larger stocks to expose
+  # integer-rounded price movement; #14 wholesale cap is only 3.
+  for my $stock ($id==1?(1,200,400):(1,2,3)){
     $DTwholestore[$id-1]=$stock;
     my $market=GetWholeStore();
     die "original whole.cgi did not quote $id" unless
