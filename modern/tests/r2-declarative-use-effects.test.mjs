@@ -243,3 +243,15 @@ test('read-only USE shortcuts track source material/time ceilings',()=>{
   const sword=offers.find(x=>x.itemId===14&&x.useId===0);
   assert.equal(sword.maxUseCount,0,'unowned map must not be offered as usable');
 });
+
+
+test('missing USE materials show source names instead of internal ITEM numbers',()=>{
+  const world=structuredClone(createSourceWorld());
+  world.shops[0].item[36]=1; // read-only source reason fixture for #37/0
+  const blacksmith=street.listUseOffers(world)
+    .find(row=>row.itemId===37&&row.useId===0);
+  assert.equal(blacksmith.reason,'材料不足：鐵塊需要 20 件');
+  assert.equal(blacksmith.missingMaterialId,5,
+    'numeric ITEM ID is available only for developer diagnostics');
+  assert.doesNotMatch(blacksmith.reason,/#5/);
+});

@@ -196,6 +196,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/maxUseCountReason/);
   assert.match(html,/id="use-estimated-time"/);
   assert.match(script,/function updateUseEstimate\(\)/);
+  assert.match(script,/const timeSuffix=Number\.isSafeInteger\(row\.timePerUseSeconds\)/);
   assert.match(script,/use-count'\)\.addEventListener\('input',updateUseEstimate/);
   assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
   assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);

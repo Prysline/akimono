@@ -155,17 +155,19 @@ function renderItemInfo(s){
   }
   for(const row of useOffers){
     const li=document.createElement('li');
+    const timeSuffix=Number.isSafeInteger(row.timePerUseSeconds)?
+      '（每次 '+conciseTimeText(row.timePerUseSeconds)+'）':'';
     if(row.canUse){
       const button=document.createElement('button');
       button.type='button';button.className='text-link use-action-link';
       button.dataset.openUse=String(row.useId);
       button.dataset.useItem=String(row.itemId);
-      button.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      button.textContent=row.useName+(row.firstUseOnly?'（限首次）':'')+timeSuffix;
       li.append(button);
     }else{
       const label=document.createElement('span');
       label.className='use-unavailable';
-      label.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      label.textContent=row.useName+(row.firstUseOnly?'（限首次）':'')+timeSuffix;
       li.append(label);
       const reason=document.createElement('small');
       reason.className='muted';
