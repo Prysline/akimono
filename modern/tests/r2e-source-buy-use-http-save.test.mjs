@@ -79,7 +79,9 @@ async function setup(server){
   });
   assert.equal(supply.code,'COMMITTED',JSON.stringify(supply));
   const supplied=await server.state();
-  assert.equal(supplied.marketOffers.length,79);
+  assert.equal(supplied.itemCatalog.length,79);
+  assert.ok(supplied.marketOffers.length>0&&supplied.marketOffers.length<79);
+  assert.ok(supplied.marketOffers.every(o=>o.marketStock>0));
   assert.equal(supplied.useOffers.length,2);
   for(const id of [10,11,14,39]){
     const row=find(supplied,id);

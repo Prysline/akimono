@@ -5,7 +5,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -51,6 +51,35 @@ async function boot(directory){
   return {url,child,post,state,stop};
 }
 const offer=(state,id)=>state.marketOffers.find(o=>o.itemId===id);
+// Execute the frozen, unmodified original GetWholeStore with the real HTTP
+// world's wholesale counts and the source ITEM declaration sort order.
+// This oracle checks WHICH goods the original displays, not fabricated JS
+// expectations or an unrelated per-product hardcoded whitelist.
+function originalShelfIds(state){
+  const perl=String.raw`
+use JSON::PP qw(decode_json encode_json);
+sub l { return $_[0]; }
+our ($MAX_ITEM,@ITEM,@DTwholestore);
+my $input=decode_json(do { local $/; <STDIN> });
+$MAX_ITEM=scalar @{$input->{catalog}};
+for my $sort (0..$#{$input->{catalog}}) {
+  my $id=$input->{catalog}[$sort]{itemId};
+  $ITEM[$id]={sort=>$sort,price=>1,pricebase=>0,pricehalf=>0};
+}
+@DTwholestore=@{$input->{wholesale}};
+do $ARGV[0] or die($@ || $!);
+my $whole=GetWholeStore();
+print encode_json($whole->{showcase}//[]);
+`;
+  const r=spawnSync('perl',['-e',perl,
+    join(root,'modern/tests/original-perl/whole.cgi')],{
+    input:JSON.stringify({
+      catalog:state.itemCatalog,wholesale:state.world.market.wholesale,
+    }),encoding:'utf8',
+  });
+  assert.equal(r.status,0,r.stderr||'frozen whole.cgi exited unsuccessfully');
+  return JSON.parse(r.stdout);
+}
 test('R2-C real zh-Hant browser HTTP: four original products share source quote, one CAS buy, B-43 save, restart and re-buy',async t=>{
   const directory=await mkdtemp(join(tmpdir(),'akimono-r2c-'));
   const servers=[];
@@ -65,6 +94,8 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   assert.match(html,/id="market-offers"/);
   assert.match(html,/id="market-boundary"/);
   assert.match(script,/marketOffers/);
+  assert.match(script,/itemCatalog/);
+  assert.match(script,/catalog.filter\(item=>shop.item/);
   assert.match(script,/data-market-buy/);
   assert.match(script,/itemId,\s*requestedCount/);
   assert.doesNotMatch(script,/buy-market-item-\d+/);
@@ -77,20 +108,24 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   assert.ok((await srv.post('/api/open-shop',{expectedRevision:1,
     ownerName:'R2-C 來源買家',shopName:'來源編譯通用進貨'})).ok);
   const source=await srv.state();
-  assert.equal(source.marketOffers.length,79);
-  assert.equal(new Set(source.marketOffers.map(x=>x.itemId)).size,79);
-  assert.equal(offer(source,39).name,'拆解/打包工具');
-  assert.equal(offer(source,39).basePrice,500);
-  assert.equal(offer(source,39).classification,'common-static');
-  assert.equal(offer(source,14).classification,'common-dynamic');
-  assert.equal(offer(source,14).price,null,'not quoted while sold out');
-  assert.equal(offer(source,79).canBuy,false);
-  assert.match(offer(source,79).reason,/wholesale cap is zero/);
+  assert.equal(source.itemCatalog.length,79,'full ITEM registry is still available for warehouse');
+  assert.equal(new Set(source.itemCatalog.map(x=>x.itemId)).size,79);
+  assert.deepEqual(source.marketOffers,[],'original market starts with no stock');
+  assert.deepEqual(source.marketOffers.map(x=>x.itemId),originalShelfIds(source));
   const supplied=await srv.post('/api/supply',{
     expectedRevision:2,timespanSeconds:3600,
   });
   assert.equal(supplied.ok,true,JSON.stringify(supplied));
   const enough=await srv.state();
+  assert.ok(enough.marketOffers.length>0&&enough.marketOffers.length<79);
+  assert.ok(enough.marketOffers.every(o=>o.marketStock>0));
+  assert.equal(offer(enough,79),undefined,'zero wholesale cap never becomes a shelf');
+  assert.deepEqual(enough.marketOffers.map(x=>x.itemId),originalShelfIds(enough),
+    'visible market shelf and ordering must match frozen original whole.cgi');
+  assert.equal(offer(enough,39).name,'拆解/打包工具');
+  assert.equal(offer(enough,39).basePrice,500);
+  assert.equal(offer(enough,39).classification,'common-static');
+  assert.equal(offer(enough,14).classification,'common-dynamic');
   for(const id of [10,11,14,39]){
     const o=offer(enough,id);
     assert.ok(o.marketStock>0,'real original PLUS must stock ITEM '+id);
@@ -142,6 +177,8 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   };
   for(const id of [39,10,11,14])await buy(id);
   const beforeSave=await srv.state();
+  assert.deepEqual(beforeSave.marketOffers.map(x=>x.itemId),originalShelfIds(beforeSave),
+    'buying changes actual source stock, not the full product catalog');
   assert.equal(beforeSave.world.revision,7);
   assert.ok(beforeSave.shop.item[38]===1);
   const stale=await srv.post('/api/buy',{
@@ -166,7 +203,8 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   assert.deepEqual(loaded.state.world,savedWorld);
   for(const id of [39,10,11,14])
     assert.equal(loaded.state.shop.item[id-1],1);
-  assert.equal(loaded.state.marketOffers.length,79);
+  assert.equal(loaded.state.itemCatalog.length,79);
+  assert.deepEqual(loaded.state.marketOffers.map(x=>x.itemId),originalShelfIds(loaded.state));
   assert.equal(loaded.state.world.market.originalWholesaleCsv.split(',').length,79);
   const next=await buy(10);
   assert.equal(next.state.world.revision,8);

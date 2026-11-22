@@ -102,6 +102,10 @@ function state(){
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
+    // Product names for owned inventory must not disappear when source
+    // wholesale stock is sold out; catalog is not the market's offers.
+    itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
+      .map(e=>({itemId:e.itemId,name:e.itemName})),
     useOffers:streetModule.listUseOffers(world),
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
@@ -115,7 +119,7 @@ function state(){
           source:rule.source};
       }),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
-      '來源 Registry 全商品市場進貨','已審閱 #79／#14 共用 USE／製作',
+      '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,

@@ -577,8 +577,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     listMarketOffers(world){
       if(!buyRegistry||!validateSourceSparseMarket(world?.market))
         return Object.freeze([]);
-      return Object.freeze(buyRegistry.entries.map(e=>
-        this.quoteMarketOffer(world,e.itemId)));
+      // Frozen whole.cgi::GetWholeStore first greps nonzero wholesale stock,
+      // then sorts that subset by ITEM declaration order. The full Registry
+      // is a product catalog, never the original market's visible shelves.
+      return Object.freeze(buyRegistry.entries
+        .filter(e=>world.market.wholesale[e.wholesaleIndex]>0)
+        .map(e=>this.quoteMarketOffer(world,e.itemId)));
     },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');

@@ -51,6 +51,7 @@ function text(id,value){$(id).textContent=String(value);}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
+  const catalog=s.itemCatalog??[];
   text('world-id',w?.worldId??'尚未建立');
   text('revision',w?.revision??'—');
   const save=s.save??{available:false,generation:0,recoveryWarning:false};
@@ -95,7 +96,7 @@ function showState(s){
   marketBody.replaceChildren();
   if(!offers.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=5;td.textContent='請先初始化來源市場';
+    td.colSpan=5;td.textContent=w?'目前市場沒有進貨商品':'請先初始化來源市場';
     tr.append(td);marketBody.append(tr);
   }else for(const offer of offers){
     const tr=document.createElement('tr');
@@ -168,7 +169,7 @@ function showState(s){
   }
   text('use-boundary','僅支援來源已審閱 #79 禮物卷交換及 #14 劍市地圖首次使用；未審閱回呼、二次使用及未知事件會拒絕。');
   text('market-boundary',
-    '原版商品依來源宣告順序與實際市場價列出；未審閱的回呼／活動／公會、批發上限0等情況明確拒絕。');
+    '只顯示原版市場當下實際有貨的商品，依來源宣告順序及即時市價排列；未審閱效果仍拒絕交易。');
   // Collapse setup once after a shop exists, but let the user reopen it.
   if(shop && !$('setup').dataset.autoClosed){
     $('setup').open=false;
@@ -201,9 +202,9 @@ function showState(s){
   $('set-showcase').disabled=!shop;
   for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
   $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
-  const entries=shop?offers.filter(offer=>shop.item[offer.itemId-1]>0)
-    .map(offer=>({id:offer.itemId,name:offer.name,
-      count:shop.item[offer.itemId-1],origin:'原版商品／實際持有'})):[];
+  const entries=shop?catalog.filter(item=>shop.item[item.itemId-1]>0)
+    .map(item=>({id:item.itemId,name:item.name,
+      count:shop.item[item.itemId-1],origin:'原版商品／實際持有'})):[];
   const tbody=$('inventory');tbody.replaceChildren();
   if(!entries.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
