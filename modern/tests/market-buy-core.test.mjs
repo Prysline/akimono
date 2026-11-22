@@ -294,3 +294,133 @@ test('R2 actual two-generation local save and load round-trips the same shared c
   assert.equal(next.world.revision,repository.read().revision+1);
   assert.equal(next.world.shops[0].showcase[0],10);
 });
+
+
+test('R2-A original Perl buy-s.cgi direct oracle: three items x twelve cases, original wholesale CSV and time',()=>{
+  const oracle=JSON.parse(execFileSync('perl',['original-r2a-market-buy-oracle.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.match(oracle.source,/fixed buy-s.cgi/);
+  assert.equal(oracle.nowSeconds,897400);
+  assert.equal(oracle.cases.length,36);
+  assert.deepEqual(oracle.callbackStages,[
+    'item-init','global-after-account','item-after-global',
+    'source-market-write',
+  ],'actual frozen buy-s.cgi must call item init, global FUNCBUY, item FUNCBUY, SetWholeStore in order');
+  const supplied=seed().repository.read();
+  const empty=seed({withSupply:false}).repository.read();
+  for(const c of oracle.cases){
+    const baseline=c.case==='no-stock'?empty:supplied;
+    const shop={...baseline.shops[0],item:[...baseline.shops[0].item]};
+    if(c.case==='cash-clamp')shop.money=c.price+500;
+    if(c.case==='zero-money')shop.money=0;
+    const limit=street.marketBuy.getRule(c.itemId).stockLimit;
+    if(c.case==='limit-clamp')shop.item[c.itemId-1]=limit-1;
+    if(c.case==='limit-reject')shop.item[c.itemId-1]=limit;
+    if(c.case==='time-cap')shop.time=baseline.nowSeconds-259201;
+    if(c.case==='future-clock')shop.time=baseline.nowSeconds+1;
+    const world={...baseline,shops:[shop]};
+    const before=encodeMemorySnapshot(world);
+    const result=apply(world,{
+      kind:'market-buy',expectedRevision:world.revision,
+      shopId:1,itemId:c.itemId,requestedCount:c.requestedCount,
+      marketShelf:c.marketShelf,expectedPrice:c.expectedPrice,
+    });
+    const label=c.itemId+'/'+c.case;
+    assert.equal(result.ok,c.accepted,label+': direct Perl acceptance');
+    assert.equal(encodeMemorySnapshot(world),before,label+': input immutability');
+    if(!c.accepted){
+      assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED',label);
+      assert.deepEqual(result.world,world,label+': refused purchase is atomic');
+      assert.equal(c.commits,0,label+': original Perl refused commit');
+      continue;
+    }
+    assert.equal(result.code,'APPLIED',label);
+    assert.equal(c.commits,1,label+': original Perl committed once');
+    assert.equal(c.writes,1,label+': original Perl wrote once');
+    assert.equal(result.details.purchasedCount,c.count,label+': CheckCount/stock/cash clamp');
+    assert.equal(result.world.shops[0].money,c.money,label+': cash');
+    assert.equal(result.world.shops[0].paytoday,c.paytoday,label+': daily payments');
+    assert.equal(result.world.shops[0].item[c.itemId-1],c.stock,label+': item');
+    assert.equal(result.world.shops[0].time,c.time,label+': GetTimeDeal/UseTime');
+    assert.equal(result.world.market.wholesale[c.itemId-1],c.marketStock,label+': wholesale');
+    assert.equal(result.world.market.originalWholesaleCsv,c.wholesaleCsv,label+': exact SetWholeStore sparse wire');
+    assert.deepEqual(result.world.market.sparseWrittenSlots,c.sparseWrittenSlots,
+      label+': exact original defined slots');
+    assert.equal(result.world.revision,world.revision+1,label+': single CAS revision');
+    assert.deepEqual(c.stages,[
+      'item-init','global-after-account','source-market-write',
+    ],label+': source global exists and is harmless below 500000');
+  }
+});
+
+test('R2-A pins nonempty original @@FUNCBUY, fails closed when its voucher source changes',()=>{
+  const global=street.marketBuy.globalBuyCallback;
+  assert.deepEqual(global,{
+    key:'standard-street-global-wholesale-voucher',
+    source:'custom/inc-item-data.cgi:3369',
+    minTotal:500000,
+  });
+  assert.match(src.itemDsl,/\@\@FUNCBUY[\s\S]*?int \$price\/500000;/);
+  assert.ok(street.marketBuy.getRule(10).stockLimit*5000<global.minTotal);
+  assert.ok(street.marketBuy.getRule(11).stockLimit*2000<global.minTotal);
+  assert.ok(street.marketBuy.getRule(14).stockLimit*10000<global.minTotal);
+  assert.throws(()=>createStandardStreetModule({
+    ...src,itemDsl:src.itemDsl.replace(
+      'my $count=int $price/500000;',
+      'my $count=int $price/100;',
+    ),
+  }),/FUNCBUY/);
+  const world=seed().repository.read(),q=street.quoteMarketItem10(world);
+  const withoutReview={...street,marketBuy:{...street.marketBuy,
+    globalBuyCallback:undefined}};
+  const denied=apply(world,buyCommand(world,10,q),withoutReview);
+  assert.equal(denied.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(denied.world,world);
+});
+
+test('R2-A global-before-item source lifecycle: accounted amounts visible and unreviewed effect rejects',()=>{
+  const world=seed().repository.read(),q=street.quoteMarketItem10(world);
+  const noHandler={...street,marketBuy:{
+    ...street.marketBuy,
+    globalBuyCallback:{...street.marketBuy.globalBuyCallback,minTotal:1},
+  }};
+  const reject=apply(world,buyCommand(world,10,q),noHandler);
+  assert.equal(reject.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(reject.details.reason,/global FUNCBUY/);
+  assert.deepEqual(reject.world,world);
+  const stages=[];
+  const adapter={...street.marketBuy,
+    globalBuyCallback:{...street.marketBuy.globalBuyCallback,minTotal:1},
+    getRule(id){
+      const rule=street.marketBuy.getRule(id);
+      return rule&&{...rule,buyCallback:'reviewed-item-hook-fixture'};
+    },
+    runBuyCallback({key,phase,shop,wholesale,receipt}){
+      assert.equal(shop.money,world.shops[0].money-5000);
+      assert.equal(shop.item[9],world.shops[0].item[9]+1);
+      assert.equal(wholesale[9],world.market.wholesale[9]-1);
+      assert.equal(receipt.totalPaid,5000);
+      stages.push(phase);
+      if(phase==='global'){
+        assert.equal(key,'standard-street-global-wholesale-voucher');
+        return {shop:{...shop,rank:shop.rank+1},wholesale};
+      }
+      assert.equal(phase,'item');
+      assert.equal(key,'reviewed-item-hook-fixture');
+      assert.equal(shop.rank,world.shops[0].rank+1);
+      return {shop:{...shop,rank:shop.rank+1},wholesale};
+    },
+    writeMarket(input){
+      stages.push('market-write');
+      return street.marketBuy.writeMarket(input);
+    },
+  };
+  const result=apply(world,buyCommand(world,10,q),{
+    ...street,marketBuy:adapter,
+  });
+  assert.ok(result.ok,JSON.stringify(result.details));
+  assert.deepEqual(stages,['global','item','market-write']);
+  assert.equal(result.world.shops[0].rank,world.shops[0].rank+2);
+  assert.equal(world.shops[0].rank+2,result.world.shops[0].rank);
+});
