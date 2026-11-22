@@ -1,3 +1,9 @@
+# R4 執行中｜2026-11-23 已驗收時間片 Oracle，完整 EVENT／期末尚未完成
+
+**2026-11-23｜R4-B 第一個可驗證來源工作包。** 新增 `src/original-r4-time-slices.mjs` 與從凍結 `inc-turn.cgi` 原文擷取執行的真 Perl Oracle；九個單次、多次、恰好跨 36h 與零尾段測試逐筆比對。原版 `@timespan` 切割器已接到既有 R3 前 EVENT 投影的跨期 fail-closed 前置檢查。**此工作包不執行 SortDT、完整 inc-period、EVENT；跨期仍拒絕提交，不宣稱 R4 退出。** R3 已完成自身受控來源退出，R2 A～E 不重做。後續須以 EVENT 真 Perl hash 次序／回呼／RNG、SortDT＋36h 期末與完整 HTTP/CAS 重啟來源差分收斂。PR #1 保持 Open／Draft，僅修改 modern/，不碰 Notion、凍結 Perl／DSL／Core。來源契約：[`r4-source-time-slices-contract.md`](r4-source-time-slices-contract.md)，受影響測試：[`r4-r0-affected-tests-mapping.md`](r4-r0-affected-tests-mapping.md)。
+
+---
+
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）
 
 **2026-11-23｜最新正式判定：R3 共用自然販售／時間已完成自身受控來源退出驗收。** 標準街單店單架、六商品 #10／#40～#44，經原版直接 Perl 24+24+24 案（含 1–200% 定價、GetSaleTax、ITEM FUNCTURN／FUNCSALE、59 PLUS 與來源時間片）、真 HTTP、GameCore CAS、雙世代存檔與重啟驗證。正式 `projectR3PreEventTurn` 只產生前 EVENT 的來源狀態，拒絕未知 incoming EVENT，**不寫入 period**，供 R4 接續；舊公開 `advance-source-time` 仍標記未跑 EVENT 為 `null`（未知）。**R3 的完成不表示完整原版時間或玩家可不限次數經營**：EVENT 17-key Perl hash 原序、SortDT／36h、合法連續販售由 R4/R5 負責，R0／R1 全量與其餘 USE 仍未完成。下方標示 R3「部分完成／未結案」者是先前歷史狀態；以此判定和 [R3 退出清冊](r3-exit-audit.md) 為準。

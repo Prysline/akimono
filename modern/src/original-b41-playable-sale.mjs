@@ -27,6 +27,8 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
   projectOriginalSwordDemand}
   from './original-b61-sword-demand-event.mjs';
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
+import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
+  from './original-r4-time-slices.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
@@ -137,9 +139,10 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
     bad('B-63 original all-sword inventory source review drift');
   const r3=reviewR3SourceSaleItems(itemDsl);
   const itemCallbacks=reviewR3ItemCallbackStage({itemDsl,rebelDsl,turnSource});
+  const turnSlices=reviewOriginalR4TimeSlices({turnSource,configSource});
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
-    saleRules:r3.rules,upkeepCosts:r3.costs,itemCallbacks,
+    saleRules:r3.rules,upkeepCosts:r3.costs,itemCallbacks,turnSlices,
     swordOutcomesSource:reviewedB63Map?.source??null,
     swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
@@ -275,8 +278,16 @@ function projectSourcePreEventSaleSlice({
      !Number.isSafeInteger(world.nowSeconds+shift)||
      !Number.isSafeInteger(nextTime+shift))
     bad('unreviewed or unsafe source period clock');
-  if(Math.floor((world.nowSeconds+shift)/period)!==
-     Math.floor((nextTime+shift)/period))
+  // Use the exact source-reviewed inc-turn @timespan partition, including
+  // the dateupdate flag on an exact 36h boundary. Until R4 settlement is
+  // implemented and composed, fail atomically rather than skipping it.
+  const originalSlices=projectOriginalR4TimeSlices({
+    reviewed:reviewed.turnSlices,
+    lastSeconds:world.nowSeconds,nowSeconds:nextTime,
+  });
+  if(originalSlices.crossesSettlement||
+     originalSlices.effectiveSlices.length!==1||
+     originalSlices.effectiveSlices[0].timespanSeconds!==span)
     bad('this interval crosses original period settlement; not yet supported');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
