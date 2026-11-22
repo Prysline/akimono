@@ -76,12 +76,54 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       gift.creates.every(row=>row.countPerUse===1&&
         row.probabilityPermille===1000)&&
       !gift.beforeCallback&&!gift.afterCallback;
-    const giftSpent=(5-shop.item?.[78])/2;
-    const giftInventoryValid=shop.item?.[78]===5||
-      Boolean(reviewedGift&&Number.isSafeInteger(giftSpent)&&
-        giftSpent>=1&&giftSpent<=2&&
-        // #9/#12 maps are not consumed by either reviewed USE.
-        shop.item[8]>=giftSpent&&shop.item[11]>=giftSpent);
+    const reviewedVariants=[
+      [1,5,[15,16,17]],[2,10,[20,21,22,23]],
+      [3,2,[37]],[4,1,[25]],
+    ].every(([useId,needed,created])=>{
+      const rule=useItem?.getRule?.(79,useId);
+      return rule?.supported===true&&rule.time===1800&&rule.money===0&&
+        rule.itemId===79&&rule.useId===useId&&
+        rule.uses?.length===1&&rule.uses[0].itemId===79&&
+        rule.uses[0].countPerUse===needed&&
+        rule.uses[0].probabilityPermille===1000&&
+        rule.creates?.map(x=>x.itemId).join(',')===created.join(',')&&
+        rule.creates.every(x=>x.countPerUse===1&&
+          x.probabilityPermille===1000)&&
+        !rule.beforeCallback&&!rule.afterCallback;
+    });
+    // Each source-certified voucher exchange consumes 1/2/5/10 vouchers.
+    // Validate a feasible combination of source recipes, not a one-use
+    // fixture. Proven outputs are non-consumable in the current bounded
+    // playable scope, except #14 map (lostbook), so map proof uses #9/#12.
+    const vouchers=shop.item?.[78];
+    const totalSpent=5-vouchers;
+    const recipeProof=[
+      {cost:2,created:[9,12]},
+      {cost:5,created:[15,16,17]},
+      {cost:10,created:[20,21,22,23]},
+      {cost:2,created:[37]},
+      {cost:1,created:[25]},
+    ];
+    function plausibleVoucherConsumption(index,spent){
+      if(index===recipeProof.length)return spent===0;
+      const recipe=recipeProof[index];
+      for(let n=0;n<=Math.floor(spent/recipe.cost);n++){
+        const possible=recipe.created.every(itemId=>{
+          const max=itemId===37?1:itemId===9||itemId===12?3:20;
+          return shop.item[itemId-1]>=Math.min(n,max);
+        });
+        if(possible&&plausibleVoucherConsumption(index+1,
+           spent-n*recipe.cost))return true;
+      }
+      return false;
+    }
+    const giftInventoryValid=Number.isSafeInteger(vouchers)&&
+      vouchers>=0&&vouchers<=5&&
+      (vouchers===5||Boolean(reviewedGift&&
+        (reviewedVariants?
+          plausibleVoucherConsumption(0,totalSpent):
+          totalSpent%2===0&&totalSpent>=2&&totalSpent<=4&&
+          shop.item[8]>=totalSpent/2&&shop.item[11]>=totalSpent/2)));
     const mapRule=useItem?.getRule?.(14,0);
     const repeatableMap=mapRule?.supported===true&&
       mapRule.itemId===14&&mapRule.useId===0&&
