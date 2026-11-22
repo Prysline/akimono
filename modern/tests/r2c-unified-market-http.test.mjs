@@ -108,6 +108,8 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   assert.ok((await srv.post('/api/open-shop',{expectedRevision:1,
     ownerName:'R2-C 來源買家',shopName:'來源編譯通用進貨'})).ok);
   const source=await srv.state();
+  assert.deepEqual(source.shopSummary,{point:5010,rankPosition:null},
+    'original GetDTPoint gives 5010 initially, but league RANK is unavailable');
   assert.equal(source.itemCatalog.length,79,'full ITEM registry is still available for warehouse');
   const book=source.itemCatalog.find(item=>item.itemId===10);
   assert.equal(book.name,'書本寫作工具');
@@ -178,6 +180,12 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
     assert.equal(result.state.shop.item[id-1],before.shop.item[id-1]+1);
     assert.equal(result.state.shop.money,before.shop.money-o.price);
     assert.equal(result.state.shop.paytoday,before.shop.paytoday+o.price);
+    // Original inc-func.cgi::GetDTPoint: with source baseline fields,
+    // purchases decrease the score through the paytoday term.
+    const rawProfit=1-result.state.shop.paytoday/500000;
+    const adjusted=rawProfit<1?1/(2-rawProfit):rawProfit;
+    assert.equal(result.state.shopSummary.point,Math.trunc(5010*adjusted));
+    assert.equal(result.state.shopSummary.rankPosition,null);
     assert.equal(result.state.world.market.wholesale[id-1],o.marketStock-1);
     assert.equal(result.state.world.market.originalWholesaleCsv.split(',').length,79);
     return result;
