@@ -19,6 +19,11 @@ const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場',balance:'收支',item:'商品明細'};
+function syncStatusVisibility(){
+  // The short global owner strip is redundant on the shop and balance pages.
+  $('status-summary').hidden=!snapshot?.shop||
+    currentTab==='shop'||currentTab==='balance';
+}
 function updateNavigation(){
   for(const group of groups){
     const selected=group.dataset.group===currentGroup;
@@ -44,6 +49,7 @@ function updateNavigation(){
   if(currentTab==='item'&&snapshot)renderItemInfo(snapshot);
   text('menu-location',groupNames[currentGroup]+
     (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
+  syncStatusVisibility();
 }
 function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
@@ -199,7 +205,8 @@ function showState(s){
   text('shop-owner-note',shop?'店主／'+shop.name:'尚未建立商店');
   text('shop-title',shop?shop.shopname+'・店內':'店內');
   text('money',money(shop?.money));
-  text('rank',number(shop?.rank));
+  text('rank',number(s.shopSummary?.rankPosition));
+  text('shop-points',number(s.shopSummary?.point));
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -218,7 +225,8 @@ function showState(s){
   text('balance-owner',shop?.name??'—');
   text('balance-money',money(shop?.money));
   text('balance-time',actionTime);
-  text('balance-popularity',number(shop?.rank));
+  text('balance-popularity',Number.isSafeInteger(shop?.rank)?
+    Math.trunc(shop.rank/100)+'%':'—');
   text('balance-founded',shop?.foundation!==undefined?
     new Date(shop.foundation*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
   text('balance-cost',money(shop?.costtoday));
@@ -319,6 +327,7 @@ function showState(s){
     sellingBody.append(tr);
   }
   renderItemInfo(s);
+  syncStatusVisibility();
 }
 function feedback(message,receipt=null,failed=false){
   text('feedback',message);
