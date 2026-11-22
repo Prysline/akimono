@@ -28,18 +28,20 @@ export function sourceCommandDraws({world,kind,args,count}){
      !Number.isSafeInteger(world.revision)||world.revision<0||
      !Number.isSafeInteger(world.nowSeconds)||world.nowSeconds<0)
     fail('valid world identity, revision and clock required');
-  if(!['reviewed-sparse-all-plus','advance-source-time'].includes(kind))
+  if(!['reviewed-sparse-all-plus','advance-source-time','use-item'].includes(kind))
     fail('unsupported source command kind');
   if(args===null||typeof args!=='object'||Array.isArray(args))
     fail('source arguments must be fixed object');
   const names=Object.keys(args).sort();
   const expected=kind==='advance-source-time'?
-    ['minutes','shopId']:['timespanSeconds'];
+    ['minutes','shopId']:kind==='use-item'?
+    ['itemId','requestedCount','shopId','useId']:['timespanSeconds'];
   if(names.join(',')!==expected.join(','))
     fail('source argument contract changed');
   for(const name of names)integer(args[name],name,1);
   integer(count,'sample count',1);
-  if(count>121)fail('original source sample budget exceeded');
+  if(count>(kind==='use-item'?52:121))
+    fail('original source sample budget exceeded');
   // SHA-256 48-bit slices with rejection sampling prevent modulo bias.
   // Domain separation ensures changing a command, world/revision or
   // parameters cannot accidentally reuse a previous stream.
