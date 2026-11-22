@@ -37,6 +37,9 @@ sub GetPath {
   return "$callbackRoot/event-s/$code.pl";
 }
 sub GetMoneyString {return $_[0];}
+# The frozen callback runs as package event; the real game formatter is
+# outside this isolated oracle. Stub its package-level display dependency.
+sub event::GetMoneyString {return main::GetMoneyString(@_);}
 OriginalGiftMapUseHarness::compile();
 my $dsl=OriginalGiftMapUseHarness::original_dsl();
 my $compiler=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
