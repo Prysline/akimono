@@ -47,7 +47,7 @@ const opened=commit({
 const results=[];
 for(const rev of [2,3]){
   const c=commit({
-    kind:'gift-exchange-maps',expectedRevision:rev,
+    kind:'use-item',itemId:79,useId:0,expectedRevision:rev,
     shopId:42,requestedCount:1,
   });
   results.push({
@@ -61,7 +61,7 @@ for(const rev of [2,3]){
 }
 const third=executeMemoryCommand({
   repository:repo,streetModule:street,
-  command:{kind:'gift-exchange-maps',expectedRevision:4,
+  command:{kind:'use-item',itemId:79,useId:0,expectedRevision:4,
     shopId:42,requestedCount:1},
 });
 console.log(JSON.stringify({
