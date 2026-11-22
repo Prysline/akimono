@@ -1,14 +1,17 @@
 # GameCore／StreetModule／WorldState｜現行責任契約修正（2026-11-22）
 
-## 2026-11-22｜R2-B Registry 實作後的權威契約更正
+## 2026-11-22｜最新權威契約：R2-B 來源驅動商品買入已完成
 
-**狀態：R2-A 已完成，R2-B 部分完成而非已驗收，R2-C／D／E 與 R2 整體未完成。** 下方「StreetModule 仍手工 `sharedBuyRules`」是更新前歷史內容。現行 `standard-street-module.mjs` 接入新的 `compileStandardStreetMarketBuyRegistry`，回傳 `marketBuyRegistry` 與 `marketBuy`；Registry 從固定兩份 DSL 的 ITEM 欄位及 source sort、原版 LIMIT 編譯結果與凍結 Core 來源建立 79 筆 `entries`、`order`，提供 `describe(itemId)`（來源／分類／拒絕原因）與 `getRule(itemId)`（僅可安全執行規則）。新增原版普通 ITEM #39 `book-kaitai` 由此共通編譯得到交易規則，無需新指令、額外 CAS 與商品專用演算法。
+**R2-A、R2-B 已各自驗收；R2-C／D／E 與 R2 整體尚未完成，R0／R1 全量未結案。** `GameCore.applyGameCommand(kind:'market-buy')` 仍只負責共同 `projectSharedMarketBuy`：版本、數量裁切、錢、庫存、72h時間、回執、回呼順序與原子 CAS；**不寫 Standard Street 商品編號、原版 DSL 或專用價格**。StreetModule 提供 `marketBuyRegistry` 及 `marketBuy`（`order/getRule/describe/quote/validateWorld/writeMarket/globalBuyCallback`）；Registry 依兩份固定原版 DSL 79 ITEM、原版編譯器、LIMIT、來源排序及 `BASE` 編譯價格策略取得真實價／時間。#10/#11/#14 經同一流程，新增原版 #39 合法成交；#1/#12 等原版動態價走 `original-pricehalf` 而非固定價格，#14 10000G／600秒僅為原 R2-A 漏編 BASE 的歷史測資。
 
-**分工不變：** `market-buy-core.mjs` 的 `projectSharedMarketBuy` 僅處理共用成交、數量裁切、過期貨架、現金、時間、全域→商品回呼先後、`writeMarket`；不硬碼 Standard Street ID。StreetModule/Registry 擁有來源校驗、分類、回呼審閱、79項商品排序及原版稀疏批發 CSV 轉碼。WorldState／CAS／B-43 持有單次原子提交與雙代存檔。未知 `BASE`、未審閱商品回呼、零批發上限等由 Registry 具來源行號拒絕；全域 `@@FUNCBUY` 每滿500,000G 贈 #79 的可能非零效果由 Core 原 fail-closed 機制阻斷，**不是回呼不存在**。
+**受限回呼契約：** 原版順序「帳務／庫存 → 全域 `@@FUNCBUY` → ITEM `FUNCB` → `SetWholeStore`」。真實標準街全域在 500000G 贈 #79，#64 可達門檻；未審閱非零贈券、ITEM 買入回呼、來源未知活動／EVENT overlay、公會交易一律在 CAS 前拒絕，不可靜默跳過。來源價格 `BASE A/B` 使用 `GetWholeStore`，運送時間依 `item.cgi::GetTimeDeal`，`marketBuy.quote` 由 Registry 安全編譯及校驗；禁止在 Core 另寫 ITEM ID 或執行任意 Perl callback。
 
-**必須修復的例外：** ITEM #14 原版 `BASE 50/150`（`custom/inc-item-data.cgi:1156`）會產生庫存依賴成交價及 `GetTimeDeal` 耗時；舊 R2-A Perl 商品編譯／Oracle 漏讀 BASE，原來 #14 固定 10000G/600秒僅為歷史相容。Registry 特別註記 `legacy-r2a-price-incomplete`，當前仍保留該受控行為，**尚未對真正原版市場價完成驗收，R2-B 不可標記完成**。R2-C 要統一 UI／HTTP、移除三套舊交易演算法，但本次完全未進行該遷移；保留舊命令不代表去重。測試和來源列表見 [R2 現況](shared-market-buy-r0-r2.md)；無記憶接手先讀 [交接](next-window-handoff.md)。
+**B-43 的資料契約：** `createLocalWorldSaveStore({directory,marketBuyRegistry})` 是選用的來源驗證功能；顯式提供 StreetModule 同一 Registry 方能保存新增普通商品／上限與展示價格，未提供仍適用原 B-43 嚴格名單與雙代 recover/CAS。這是可用 API，不代表 UI／HTTP 已經接入；R2-C 才要統一三條舊買入演算法／專用命令並更新真實 HTTP/存檔管線。R2-D USE／R2-E 真世界仍待處理。
 
-**B-43 API 更新：** `createLocalWorldSaveStore({directory,marketBuyRegistry})` 可顯式接來源 Registry，並對新增普通商品只接受已編譯 `getRule`、來源正確索引及庫存上限內的存檔資料；不傳 Registry 時完全保留舊 B-43 嚴格存檔限制。相同 Registry 必須在重啟讀取時重新提供；沒有來源證據就拒絕載入，不能偷開廣義79商品信任。新增真正原版 Perl `GetBuffer(BASE)`＋`GetWholeStore`＋`GetTimeDeal` 探針證明 #14 動態價／時間落差；這是 R2-B 不能結案的直接測試證據。
+**直接原版差分：** 真原版 `buy-s.cgi` 的 #12/#14 動態價 16 組、#39 新普通商品 3 組、#1/#14 多庫存 `GetBuffer(BASE)`／`GetWholeStore`／`GetTimeDeal` 差分，以及保留原 R2-A 36 組歷史 Oracle、WorldState/CAS／雙代存檔／CSV／舊 HTTP/UI 回歸；詳情見 [R2 正式狀態](shared-market-buy-r0-r2.md)。以 PR #1 當下 HEAD 的 GitHub Actions 為驗收依據，不引用歷史 CI。
+
+> 下方舊表格若仍記載 `sharedBuyRules` 三商品白名單或把 #14 固定價當正式行為，皆為本版更新前歷史記錄。
+
 
 ---
 
