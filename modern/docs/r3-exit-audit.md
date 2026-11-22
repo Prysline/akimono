@@ -2,7 +2,7 @@
 
 **R3 → R4 程式邊界補強：** `src/original-b41-playable-sale.mjs::projectR3PreEventTurn` 現提供**不寫入 period** 的單店已審閱前 EVENT 純投影，且要求 incoming `eventState` 已知；當 EVENT 尚未處理時，不得將 `null` 假充 `{}`。既有 `projectB41Sale` 保留相容玩家測試時間命令、完成後明確標記 EVENT 未知；內部 `original-b56-event-time-slice.mjs` 則改呼叫 R3 前 EVENT 投影，再由事件測試 fixture 負責附上所審閱的事件後繼狀態。此項是**階段責任分離，不是 EVENT 完整實作**。
 
-> **判定：共用販售計算與已審閱來源時間子階段均已通過，R3 整體退出條件仍未滿足。** 此文件記錄可直接驗證的能力與阻塞，不把 EVENT 未知轉換成空事件，也不借用 R4 的 36 小時決算冒充 R3 已完成。
+> **R3 正式退出判定：已審閱的標準街單店單架／六商品來源範圍完成。** 原版售價／需求、自然販售、商品回呼、59 PLUS 與時間片已收斂至共用核心，並有實際 Perl 差分及真 HTTP/CAS／重啟證據。R4 才負責 EVENT／SortDT／36 小時期末；本判定不代表完整原版回合、玩家不限次數續營或整款遊戲完成。
 
 ## 已驗證且可重用的能力
 
@@ -15,7 +15,7 @@
 | 真商品取得、上架、HTTP/CAS/存檔 | #14 真 BUY→USE 生成五種劍；`r3-real-sword-http-restart.test.mjs` 檢查單一引擎、百分比上架、稅、原版貨架、雙世代存檔和兩次重啟 | 未完成的 EVENT 狀態會阻止部分後續買入與劍類販售，不宣稱不限次數的完整經營 |
 | 既有安全回歸 | B-41／B-42／B-43／B-54／R2-C/E 舊測試保留；原版 Perl／DSL SHA 不可修改 | 人工 fixture 只供算式差分，不算玩家合法取得 |
 
-## R3 尚未達成的退出條件
+## R3 既定受控範圍以外的 R4 前置工作與後續擴充
 
 1. **連續時間的 EVENT 前置語義。** 目前公開 `advance-source-time` 在執行受控自然販售及 PLUS 後，仍將 `period.eventState` 設為 `null`（未知）；不能把事件未執行當成沒有發生。#40～#44 第二次販售會因 EVENT 未知而拒絕。內部 `advance-source-time-reviewed-events` 需要外部提供 17 個 EVENT hash key 排列，是測試 fixture，不是原版 Perl `keys(%EVENT)` 順序。完整事件生命週期與 hash 順序屬 R4，但在正式驗證可連續經營之前不能宣告玩家時間行為已等價。
 2. **來源原序的 SortDT／週期邊界。** 真凍結 `inc-turn.cgi` 在 ITEM FUNCSALE 後會 SortDT，必要時進入 36 小時期末，才執行 PLUS／EVENT。現行 R3 來源隔離片段不包含 SortDT／期末；R4 需把來源排序及跨期作為原子命令整合，不可直接略過。
@@ -23,8 +23,9 @@
 
 ## 退出決策
 
-- **可認定完成的子成果**：來源審閱單店單架共用自然販售計算、1–200% 定價／GetSaleTax、空持有商品回呼順序及 59 PLUS 的真原版差分；真 HTTP/CAS/雙代存檔操作。
-- **尚不能正式結案 R3 整體**：連續世界時間仍依賴未完的 EVENT 前置語義；受控測試通過不等於完整的時間命令等價。
-- **後續接點**：先在 R4 實作真正可辨識的 EVENT 結束／開始／NOWFUNC 與其可重播亂數及 hash 順序，再接 SortDT／跨 36 小時。通過真 Perl↔Node↔HTTP 連續販售、兩代存檔及重啟後，再重新審查 R3／R4 的共同退出條件。每次提交都必須同一 HEAD Push／PR CI 完成成功。
+- **R3 受控範圍正式完成**：標準街單店單架六商品、1–200% 定價與 GetSaleTax、ITEM FUNCTURN／FUNCSALE 空持有者分派、59 PLUS、可檢驗的前 EVENT 時間片，三組各 24 案真 Perl 差分、HTTP/CAS/雙世代存檔與關服重啟。
+- **原版完整時間命令尚未完成**：公開 B-41 仍將未執行的 EVENT 後繼標記為 `null`，部分劍類無法連續販售。這是 R4 EVENT／SortDT／跨期及 R5 完整經營閉環的阻塞，不能描述為原版時間已全面移植。
+- **明確 R3→R4 接點**：`projectR3PreEventTurn` 只回傳 R3 已審閱的來源狀態，不覆寫 `period`，拒絕未知 incoming EVENT；B-56 內部事件 fixture 已使用該入口，但不是完成的 EVENT 引擎。R4 應補真正的事件結束／開始／NOWFUNC、17-key Perl hash 順序、SortDT／36 小時，再用原版 Perl↔Node↔HTTP 驗證連續營業。
+- **驗收約束**：所有提交都需由同一 HEAD 的 Push／PR Actions `completed/success` 證明；PR #1 保持 Open／Draft／未合併，未修改 Notion。
 
 PR #1 必須始終 Open／Draft／未合併，基底 `migration/standard-street-s1`；只修改 `test/task02-baseline-on-s1` 分支中的 `modern/`。本檔是狀態證據，不變更 Notion 正式任務。
