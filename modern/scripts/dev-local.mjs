@@ -142,6 +142,7 @@ function state(){
         };
       }),
     useOffers:streetModule.listUseOffers(world),
+    showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
