@@ -18,6 +18,8 @@ import {compileReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
 import {compileReviewedGiftUseVariants}
   from './reviewed-gift-use-variants.mjs';
+import {compileReviewedDeclarativeUses}
+  from './reviewed-declarative-use-compiler.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
   validateSourceSparseMarket,ORIGINAL_SPARSE_MARKET_SOURCE,
   traceOriginalSparseGiftWholesale}
@@ -339,6 +341,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const giftUseVariants=compileReviewedGiftUseVariants({
     itemDsl,model,giftMap,
   });
+  const declarativeUses=compileReviewedDeclarativeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const declarativeUseIndex=new Map(declarativeUses.map(rule=>[
+    rule.itemId+':'+rule.useId,rule,
+  ]));
   const giftUseRule=Object.freeze({
     supported:true,itemId:giftMap.itemId,useId:giftMap.useNo,
     source:'reviewed-original-gift-use',sourceFile:giftMap.sourceFile,
@@ -387,7 +395,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return useId===0?giftUseRule:
           giftUseVariants.find(x=>x.useId===useId)??null;
       if(itemId===swordUseRule?.itemId&&useId===0)return swordUseRule;
-      return null;
+      return declarativeUseIndex.get(itemId+':'+useId)??null;
     },
     describe(itemId,useId){
       if(!Number.isSafeInteger(itemId)||itemId<1||
@@ -527,7 +535,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
-      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule].filter(Boolean)
+      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
+        ...declarativeUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -567,7 +576,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             timePerUseSeconds:actualTime,
             proficiency:exp,
             firstUseOnly:Boolean(rule.firstUseOnly),
-            randomSampleRequired:Boolean(rule.beforeCallback),
+            randomSampleRequired:Boolean(rule.beforeCallback)||
+               [...rule.uses,...rule.creates].some(x=>
+                 x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,
             source:rule.source,sourceFile:rule.sourceFile,
           });
