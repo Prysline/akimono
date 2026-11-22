@@ -548,8 +548,10 @@ test('R2-B source-compiled ordinary ITEM #39 uses same CAS, time and dual-genera
   const rejected=apply(capped,buyCommand(capped,39,getQuote(capped)));
   assert.equal(rejected.code,'SOURCE_BOUNDARY_REJECTED');
   assert.deepEqual(rejected.world,capped);
-  const oldTime={...repository.read(),shops:[{
-    ...repository.read().shops[0],time:repository.read().nowSeconds-259201,
+  // Use the source-stocked pre-purchase world; after the first
+  // transaction the actual original 60-second PLUS stock may be sold out.
+  const oldTime={...start,shops:[{
+    ...start.shops[0],time:start.nowSeconds-259201,
   }]};
   const timeCapped=apply(oldTime,buyCommand(oldTime,39,getQuote(oldTime)));
   assert.ok(timeCapped.ok);
