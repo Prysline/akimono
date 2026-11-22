@@ -109,6 +109,7 @@ function saleDraws(world,minutes){
         shopId:1,minutes,randomDraws:samples,
         reviewedB59Iron:street.reviewedB59Iron,
         reviewedB60Happy:reviewed,
+        reviewedB61Sword:street.reviewedB61Sword,
         reviewedEventTimeSlice:true,
       });
       return samples;
@@ -248,7 +249,8 @@ test('B-60 true market/shop CAS: festival starts and increases rank in SAME sour
     compiled:street.reviewedGiftMapUse,
     shopId:1,minutes:30,randomDraws:saleDraws(initial,30),
     reviewedB59Iron:street.reviewedB59Iron,
-    reviewedB60Happy:reviewed,reviewedEventTimeSlice:true,
+    reviewedB60Happy:reviewed,reviewedB61Sword:street.reviewedB61Sword,
+    reviewedEventTimeSlice:true,
   });
   const started=slice(adapter,30,{startHappy:true});
   assert.ok(started.ok,JSON.stringify(started.details));
