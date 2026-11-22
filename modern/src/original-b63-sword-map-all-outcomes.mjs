@@ -48,14 +48,35 @@ export function reviewOriginalB63SwordMapOutcomes({
   const start=itemDsl?.indexOf('@@FUNCITEM');
   const end=itemDsl?.indexOf('@@FUNCUPDATE',start);
   const frag=start>=0&&end>start?itemDsl.slice(start,end):'';
-  // Source callback contains EXACT two function declarations in this
-  // section. Reject added executable behavior we have not inspected.
+  // Strip only blank/source-comment lines; compare COMPLETE executable
+  // function bodies. Checking a few substrings would miss newly injected
+  // original Perl side-effects even if the known markers remained intact.
+  const executable=body=>body.split(/\r?\n/)
+    .map(line=>line.trim()).filter(line=>line&&!line.startsWith('#'))
+    .join('\n');
   const lostbook=/sub lostbook\s*\n\{([\s\S]*?)^\}/m.exec(frag);
-  if(!lostbook||!/my \$itemno=\$USE->\{itemno\};/.test(lostbook[1])||
-     !/if\(rand\(1000\)<\$USE->\{param1\}\)/.test(lostbook[1])||
-     !/UseItem\(\$itemno,1,\$ITEM\[\$itemno\]->\{name\}\.'已經破爛到看不懂，就扔掉了。'\);/.test(lostbook[1])||
-     !/return "";/m.test(lostbook[1]))
-    reject('original lostbook callback source drift');
+  const expectedLost=[
+    'my $itemno=$USE->{itemno};',
+    'if(rand(1000)<$USE->{param1})','{',
+    "UseItem($itemno,1,$ITEM[$itemno]->{name}.'已經破爛到看不懂，就扔掉了。');",
+    '}','return "";',
+  ].join('\n');
+  if(!lostbook||executable(lostbook[1])!==expectedLost)
+    reject('actual complete original lostbook callback source drift');
+  const mapSection=/^@@ITEM[^\n]*\n[ \t]*no[ \t]+14\b([\s\S]*?)(?=^@@ITEM\b|^@@EVENT\b|^@@END\b|\z)/mi
+    .exec(itemDsl)?.[1]??'';
+  const pre=/^[ \t]*funcb[ \t]+_local_[ \t]*\r?\n([\s\S]*?)^[ \t]*_local_[ \t]*$/m
+    .exec(mapSection);
+  const expectedPre=[
+    'return 0 if rand(1000)>100;',
+    'my $USE=$_[0];',
+    'foreach(@{$USE->{result}->{create}})','{',
+    '$_->{count}*=2;','}',
+    "$USE->{result}->{message}->{resultok}='這次我們收穫的比平時多。';",
+    'return 0;',
+  ].join('\n');
+  if(!pre||executable(pre[1])!==expectedPre)
+    reject('actual complete original first-USE double callback source drift');
   for(const [source,part] of [
     [originalHelperSource,'sub UseItem\n'],
     [originalHelperSource,'$count=UseItemSub($itemno,$count,$DT);'],
