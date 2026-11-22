@@ -96,8 +96,8 @@ function makeWoodSwords(){
     ...Array(40).fill(999999), // no other sword creations
     999999, // original lostbook: does not destroy the map
   ];
-  const used=act('use-original-sword-map-14',{
-    shopId:1,randomDraws:useDraws,
+  const used=act('use-item',{
+    shopId:1,itemId:14,useId:0,requestedCount:1,randomDraws:useDraws,
   });
   assert.equal(used.ok,true,JSON.stringify(used));
   assert.equal(used.world.shops[0].item[39],10);
