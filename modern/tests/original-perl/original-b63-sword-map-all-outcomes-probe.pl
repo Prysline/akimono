@@ -125,7 +125,7 @@ my $runtime={
 };
 my $scenario=$ARGV[0]//'mixed';
 die 'B-63 unsupported original source scenario'
-  unless $scenario=~/^(?:mixed|mixed-loss|doubled|doubled-loss|zero-loss)$/;
+  unless $scenario=~/^(?:mixed|mixed-loss|doubled|doubled-loss|zero-loss|boundary)$/;
 my @mixed=();
 for(1..5){push(@mixed,0,0,(999999)x8);}
 my @double=(0,0,0,0,0,0,0,0,0,0);
@@ -134,6 +134,7 @@ my %scenarios=(
  'mixed-loss'=>[999999,@mixed,0],
  'doubled'=>[0,@double,999999],
  'doubled-loss'=>[0,@double,0],
+ 'boundary'=>[100000,@double,100000],
  'zero-loss'=>[999999,(999999)x50,0],
 );
 my @selected=@{$scenarios{$scenario}};
