@@ -10,6 +10,10 @@
 
 
 
+**2026-11-23｜R4 新增排序／EVENT fixture 與跨期人口 PLUS 證據（受控部分，未結案）：** R3 共用回呼後、PLUS 前的 B-47 真 `SortDT` 已接入 R4 純投影；B-56 可選擇用此排序完成同一個事件 fixture 時間片（非原版 hash 證明）。59 PLUS 新增原版動態 `$DTpeople` 支援，250000／500000／750000 的 Perl 真原文差分驗證，遇未授權的期末人口仍拒絕。**尚未**完成 17 EVENT 全生命週期、跨36h完整期末的可提交 WorldState、HTTP/CAS/重啟整合；R4 不得退出。來源與測試詳見 [R4 契約](r4-source-time-slices-contract.md)、[R0 測試映射](r4-r0-affected-tests-mapping.md)。
+
+
+
 ---
 
 # 最新開發交接｜2026-11-22 共用規則引擎優先（取代原 B-64 逐劍專用開發建議）

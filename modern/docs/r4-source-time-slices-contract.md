@@ -22,3 +22,17 @@
 ## 2026-11-23｜R4-B SortDT 接入來源共用引擎（非完整回合）
 
 已新增 `original-r4-sorted-pre-event.mjs`；核對凍結 `inc-turn.cgi` 中 `_sale_count_` 清理 → `SortDT()` → 期末 → 59 PLUS → EVENT 的相對順序。R3 唯一自然販售／ITEM 回呼在 R4 純投影路徑增加既有 B-47 `projectOriginalSoloSort`，其位置**確實在 PLUS 前**；既有 R3 與 B-56 預設執行仍維持原受限行為。直接凍結 `inc-func.cgi::GetDTPoint`、`core-detail.cgi::SortDT` Perl 原文 Oracle，並以合法市場進貨→上架→販售的同一世界比較 Node R4 排序、原版 shop 全欄、PLUS、RNG、未知事件拒絕及零變動。**本純投影不寫 `period`、不能提交正式完整回合，未支援期末或 EVENT。**
+
+## 2026-11-23｜R4 SortDT 同世界事件 fixture 與動態人口 PLUS（來源局部）
+
+1. **正確的 SortDT 位置：** `src/original-r4-sorted-pre-event.mjs` 使用真凍結 Core `GetDTPoint`／`SortDT`，R3 共享自然販售與 ITEM 回呼後、59 PLUS 前執行。Perl `original-r4-sorted-pre-event-probe.pl` 逐欄核對；Perl 的 `costtoday` JSON 輸出位數與 Node 不同，維持費以 1e-12 浮點序列化容差核對，其他欄位嚴格比較。
+2. **EVENT 順序受控組合：** 既有 B-56 事件 fixture 可選擇 R4 真 SortDT 前段，對同一世界連接已審閱事件（仍需呼叫端提供合法 17 鍵排列）；它不是原版 Perl process hash 真實序列認證，不提供正式玩家 EVENT 通道。
+3. **期末人口來源依賴：** 凍結 `inc-turn.cgi` 的 59 PLUS 使用 `$DTpeople`，不是永久固定初始 500,000。新增共用 PLUS `r4PeriodPopulation` 受控純投影、來源公式漂移檢查與明確拒絕未審閱人口；原版 Perl harness 只補可注入的 `dtPeople` 測試參數，未改凍結 `inc-turn.cgi`／`whole.cgi`。
+4. **真差分：** `original-r4-dynamic-population-plus-probe.pl` 在人口 250,000／500,000／750,000、120 秒（#10 尚未上限飽和）直接執行 59 PLUS＋完整 `CheckWholeStore`，Perl `.t` 與 Node 比對 79 個市場欄位、原始 CSV、稀疏定義位與逐筆 RNG。這是純人口公式差分，**沒有捏造成功的期末 WorldState 或存檔**。
+
+### R4 正式退出未通過的來源語義
+
+- 17 EVENT：B-55～61 已審閱的 8 類效果／2 個 zero-start 受限來源測試仍依賴 fixture；尚缺 7 類來源事件 `boom-posyon`、`tate-sale`、`yoroi-sale`、`tue-sale`、`plusdown-yakusou`、`plusup-misuriru`、`plusup-oriharukon` 的完整生命週期／ITEM overlay；既存 `rebel`／`guildbattle` 作用與所有 START／END／NOWFUNC 的真 Perl hash 原序、RNG 仍需全程核對。
+- 36h：B-50 是同狀態原版期末子鏈而非正式 WorldState，尚未把 SortDT、期末、城市人口與稅、PLUS、EVENT 逐片原序合成至可提交的跨期核心；雙世代存檔目前不授權已結算 period。
+- 真 HTTP：目前缺少「買入→USE／製作→展示→多次營業→跨期決算→存檔→重啟繼續」的源碼等價驗收。**R4 不宣告結案，不移除跨期與未知事件的 fail-closed。**
+

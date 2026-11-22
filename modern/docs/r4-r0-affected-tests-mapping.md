@@ -29,3 +29,17 @@
 | `src/original-b41-playable-sale.mjs` + 新 `src/original-r4-sorted-pre-event.mjs` | R3 回呼後若跳過 `SortDT`，後繼 PLUS／EVENT 看到錯誤 shop.point | R4 純投影在回呼後、PLUS 前接 B-47 原版已審閱算法，仍不宣告完整期末或 EVENT |
 | `tests/original-perl/original-r4-sorted-pre-event-probe.pl` + `.t` | 以手寫 point 取代 Core 原算式或錯置排序位置 | 擷取凍結 Core `GetDTPoint` 和 `SortDT` 原文真 Perl 執行，確認原版順序 |
 | `tests/r4-sorted-pre-event.test.mjs` | 獨立固定 shop 測試未涵蓋合法買入與自然販售 | 真市場買 #10 → 上架 → R3 共用販售+回呼 → R4 排序 → 59 PLUS，逐欄和 Perl 原版排序比較、拒絕零變動 |
+
+## R4 共用排序／人口式新增測試影響（2026-11-23）
+
+| 實際檔案 | 凍結原版來源與風險 | 處置／替代證據 |
+|---|---|---|
+| `src/original-b41-playable-sale.mjs`、`src/original-r4-sorted-pre-event.mjs` | `inc-turn.cgi` ITEM 回呼後的真 `SortDT`，不能把排名更新挪到 PLUS 後 | 在 R4 不可提交純投影插入 Core `SortDT`，既有 R3 與 B-56 舊程式路徑維持 |
+| `tests/original-perl/original-r4-sorted-pre-event-probe.pl`／`.t`、`tests/r4-sorted-pre-event.test.mjs` | `inc-func.cgi::GetDTPoint`、`core-detail.cgi::SortDT`；含合法買入後真正自然販售 | 直接抽取凍結 Perl 並逐欄對比 source-sorted shop；浮點維持費僅容忍 JSON 表示精度，其他欄位嚴格 |
+| `src/original-b56-event-time-slice.mjs` 與 R4 Node 測試 | EVENT fixture 若跳過 SortDT 會讓後段 PLUS 與 EVENT 使用錯誤 point | R4 opt-in source sorting 後串同世界 EVENT fixture；仍拒絕把提供的排列視為原版 hash |
+| `src/original-sparse-all-plus.mjs` | `inc-turn.cgi` PLUS 使用動態 `$DTpeople`，不能固定 500000 橫跨期末 | 非 500000 人口須使用 R4 來源受限純投影；其他路徑原子拒絕，原 B37／R3 回歸保留 |
+| `tests/original-perl/original-r4-dynamic-population-plus-probe.pl`／`.t` | 原本源人口 500000 外，使用 250000／750000 的原版 59 PLUS＋CheckWholeStore | 執行真凍結原版，120 秒未飽和 #10 可區別人口效果，保留原版市場上限 |
+| `tests/r4-dynamic-population-plus.test.mjs` | 新 Node 動態人口市場變動／RNG | 對真 Perl 79 欄、稀疏 CSV、抽樣逐筆差分；人工期末人口只供純函式測試、不進入 CAS／磁碟 |
+| `tests/original-perl/OriginalSparseAllPlusHarness.pm`（僅測試 harness） | 之前測資永遠固定 DTpeople=500000，不能驗證原版人口式 | 增加選用 `dtPeople`，預設500000不變；凍結 `inc-turn.cgi`、Core／DSL SHA 均不改 |
+
+R4／R0／R1 全量未完成；不刪既有原版 Node、Perl 差分，也不修改凍結來源的 expected values。
