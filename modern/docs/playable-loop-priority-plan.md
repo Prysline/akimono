@@ -1,5 +1,7 @@
 # 《商人物語》現行開發計畫｜共用規則引擎優先、標準街完整經營閉環
 
+**2026-11-23｜最新正式判定：R3 共用自然販售／時間已完成自身受控來源退出驗收。** 標準街單店單架、六商品 #10／#40～#44，經原版直接 Perl 24+24+24 案（含 1–200% 定價、GetSaleTax、ITEM FUNCTURN／FUNCSALE、59 PLUS 與來源時間片）、真 HTTP、GameCore CAS、雙世代存檔與重啟驗證。正式 `projectR3PreEventTurn` 只產生前 EVENT 的來源狀態，拒絕未知 incoming EVENT，**不寫入 period**，供 R4 接續；舊公開 `advance-source-time` 仍標記未跑 EVENT 為 `null`（未知）。**R3 的完成不表示完整原版時間或玩家可不限次數經營**：EVENT 17-key Perl hash 原序、SortDT／36h、合法連續販售由 R4/R5 負責，R0／R1 全量與其餘 USE 仍未完成。下方標示 R3「部分完成／未結案」者是先前歷史狀態；以此判定和 [R3 退出清冊](r3-exit-audit.md) 為準。
+
 **R3 退出驗收判定（2026-11-23）：** 來源六商品共用原價／百分比價格、需求、GetSaleTax、自然販售、ITEM 回呼及 59 PLUS 的 24+24+24 組真 Perl 差分與真 HTTP/CAS/重啟已成立，但完整 R3 尚未結案：正式時間仍有 EVENT 未知狀態，無法宣稱六種劍可無限制連續經營。**完整客觀通過／阻塞矩陣見 [R3 退出驗收清冊](r3-exit-audit.md)**。R4 的 EVENT／SortDT／36h 不以固定 fixture 代替，R0／R1 全量與所有 USE 均未完成。
 
 **2026-11-23｜R3 六商品販售原版定價／稅額擴充：** 共用 `projectSharedNaturalSale` 從「固定原價」擴充到來源 `sc-s.cgi` 的 1～200% 定價；同一個來源支援的 #10、#40～#44 共用販售需求、價格懲罰、供需、售量、人氣與 `item.cgi::GetSaleTax` 超價附加稅，賣出總額與扣稅後入帳分開，`taxtoday` 更新。`shared-showcase-price.mjs`、來源審閱、`POST /api/showcase`、繁中 UI 與 B-43 兩代存檔接受合法來源百分比，拒絕任意造價和 201%／多餘欄位；原價 `priceOverride` 只保留測試相容。新增原版 Perl 6 商品 × 4 比例 24 組差分、原版直接「自然販售 → ITEM FUNCTURN/FUNCSALE → 59 PLUS」6×2×2 整合探針、標記稅額與需求原始碼 drift，以及真 HTTP 150% 稅額→保存→重啟。**完整 R3 退出仍須以最後同 SHA CI、EVENT 前置語義與合法連續經營驗收確認；EVENT 全生命週期與 36h 期末屬 R4，不可把未知事件當作無事件。**
