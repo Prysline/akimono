@@ -54,9 +54,9 @@ function createFlow(){
   const supplied=command('reviewed-sparse-all-plus',{
     timespanSeconds:60,randomDraws:sourceSupply.draws});
   assert.ok(supplied.ok,JSON.stringify(supplied.details));
-  const quote=street.quoteMarketItem10(repository.read());
-  const bought=command('buy-market-item-10',{
-    shopId:1,requestedCount:1,marketShelf:quote.shelf,
+  const quote=street.quoteMarketOffer(repository.read(),10);
+  const bought=command('market-buy',{
+    itemId:10,shopId:1,requestedCount:1,marketShelf:quote.shelf,
     expectedPrice:quote.price,
   });
   assert.ok(bought.ok,JSON.stringify(bought.details));
@@ -179,8 +179,8 @@ test('B-41 HTTP interface performs real CAS buy -> shelf -> sourced sale, with v
   assert.equal(premature.state.world.revision,2);
   const supplied=await post('/api/supply',{expectedRevision:2,timespanSeconds:60});
   assert.ok(supplied.ok,JSON.stringify(supplied));
-  const bought=await post('/api/buy',{expectedRevision:3,requestedCount:1,
-    marketShelf:supplied.state.item10.shelf,expectedPrice:5000});
+  const bought=await post('/api/buy',{expectedRevision:3,itemId:10,requestedCount:1,
+    marketShelf:supplied.state.marketOffers.find(o=>o.itemId===10).shelf,expectedPrice:5000});
   assert.ok(bought.ok,JSON.stringify(bought));
   assert.equal(bought.state.shop.money,95000);
   assert.equal(bought.state.shop.item[9],1);
