@@ -5,6 +5,7 @@
  * Unknown source effects are never treated as no-ops.
  */
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
+import {readCommonUseEffectPlan} from './shared-use-effect-plan.mjs';
 import {originalSourceUseClock,originalUseExperience}
   from './shared-use-experience.mjs';
 
@@ -52,6 +53,7 @@ export function projectSharedUseItem({world,command,useItem}){
      rule.useId!==command.useId||rule.supported!==true)
     fail(useItem.describe?.(command.itemId,command.useId)??
       'source USE not reviewed');
+  const effects=readCommonUseEffectPlan(rule);
   if(!world.market||!Array.isArray(world.market.wholesale)||
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
@@ -114,7 +116,7 @@ export function projectSharedUseItem({world,command,useItem}){
     return draws[pointer++]/1000000;
   };
   let doubled=false,resultOk=rule.resultOk??null;
-  let creates=rule.creates;
+  let creates=effects.creates;
   if(rule.beforeCallback){
     const callback=rule.beforeCallback;
     if(callback.kind!=='double-create'||callback.threshold!==100)
@@ -135,12 +137,13 @@ export function projectSharedUseItem({world,command,useItem}){
     fail('unreviewed after callback');
   if(rule.experienceCallback&&
      (rule.experienceCallback.kind!=='gain-fixed-exp'||
-      rule.experienceCallback.points!==20))
+      !Number.isSafeInteger(effects.expPoints)||
+      effects.expPoints<1||effects.expPoints>1000))
     fail('unreviewed EXP callback');
   const original=projectOriginalUseTransaction({
     shops:world.shops.map(s=>s.item),
     actingShopIndex:shopIndex,items:rule.limits,
-    wholesale:world.market.wholesale,uses:rule.uses,creates,
+    wholesale:world.market.wholesale,uses:effects.uses,creates,
     requestedCount:command.requestedCount,
     experience:previousExp,needExperience:rule.needExperience??0,
     experienceOld:previousExp,job:shop.job??'',needJob:rule.needJob??'',
@@ -189,7 +192,7 @@ export function projectSharedUseItem({world,command,useItem}){
   let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
     const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
-      points:rule.experienceCallback.points,count:original.count,
+      points:effects.expPoints,count:original.count,
       limit:3600});
     nextShop.exp=next.exp;
     experienceGain=next.gained;
