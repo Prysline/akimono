@@ -1,5 +1,8 @@
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
+**2026-11-23｜R4-A 受限原版 hash 探針：** 已新增直接執行凍結編譯器輸出的 17 EVENT Perl hash 初始化、實際 `keys(%EVENT)` 與明示人工三鍵 `keys(%DTevent)` Oracle，並加 Perl／Node 差分。**這不等於 EVENT 真生命週期或 RNG 來源完全等價**，不硬編任何排列，也不將 B-56 的明示 fixture 假稱原版 runtime。R4 仍未退出；跨期正式世界繼續 fail-closed。詳見 [R4 來源契約](r4-source-time-slices-contract.md)、[R0 受影響測試](r4-r0-affected-tests-mapping.md)。
+
+
 **2026-11-23｜R4 部分進展（未結案）：** 已新增真原版 Perl `inc-turn.cgi` 36h `@timespan` 切割 Oracle、Node 逐案差分，並在 R3 前 EVENT 共用入口的跨期判定使用同一已審閱切割器；來源未知的 SortDT／完整 36h 期末與 17 EVENT／RNG 尚未完成，跨期仍 fail-closed，不把本工作包稱為 R4 出口。詳見 [R4 時間片來源契約](r4-source-time-slices-contract.md) 與 [R4 R0 測試映射](r4-r0-affected-tests-mapping.md)。
 
 

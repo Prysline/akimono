@@ -13,3 +13,11 @@
 | `tests/b47-period-solo-sort.test.mjs`、`tests/b50-period-same-state-chain.test.mjs`（保留） | 原版 `SortDT`、`period.cgi` | 將非可提交期末子鏈當完整決算 | 保留來源 fixture，R4 正式期末仍待補齊外部依賴 |
 
 完整 R4-A/B/C/D 的 EVENT／SortDT／期末／HTTP、CAS、雙世代存檔與重啟之新映射，須隨後續實際功能和測試逐案新增，不能僅以此表宣稱 R4 或 R0／R1 退出。
+
+## EVENT hash 新增 R0 差分對照（2026-11-23）
+
+| 路徑 | 原版來源／回歸風險 | 處置 |
+|---|---|---|
+| `tests/original-perl/original-r4-event-hash-order-probe.pl` | `inc-makeitem.cgi::OutEventData` 建立 `%EVENT`；若誤使用 DSL 排序會錯誤消耗 RNG | 從凍結編譯器來源擷取初始化 Perl 原文並執行，觀察真 `keys(%EVENT)`，不硬編排列 |
+| `tests/original-perl/original-r4-event-hash-order.t` | `inc-turn.cgi` EVENT／DTevent hash 迴圈；忽略 disabled EVENT 或遺失活動鍵 | 保證真正 17 鍵、同 Perl 行程重複次序與三鍵明示 `%DTevent` fixture 的精確集合 |
+| `tests/r4-original-event-hash-order.test.mjs` | 若把單次 Perl seed 的觀察當永遠不變的來源順序會產生假等價 | 多個獨立 Perl 行程的執行結果比對鍵集合，不要求不同行程排列相等或不等 |
