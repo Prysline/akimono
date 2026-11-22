@@ -175,7 +175,7 @@ function useScenario(scenario){
     evidence.result.callbackResult);
   assert.equal(response.details.mapDestroyed,scenario.endsWith('loss'));
   assert.equal(response.details.doubleRewardTriggered,
-    scenario.startsWith('doubled'));
+    scenario.startsWith('doubled')||scenario==='boundary');
   assert.equal(response.world.market.wholesale[39],0);
   return {repository,act,quote,evidence,response};
 }
@@ -206,6 +206,12 @@ test('B-63 source review is opt-in; verifies exact Core UseItemSub, original fiv
       'UseItem($itemno,1,$ITEM[$itemno]->{name}',
       'UseItem($itemno,2,$ITEM[$itemno]->{name}'),
   }),/B-63/);
+  assert.throws(()=>reviewOriginalB63SwordMapOutcomes({
+    ...base,
+    itemDsl:src.itemDsl.replace(
+      'return 0 if rand(1000)>100;',
+      'return 0 if rand(1000)>100;\n$DT->{money}+=100;'),
+  }),/B-63/);
 });
 test('B-63 original Perl oracle: no double five sword successes, map kept and map destroyed, no reward destroys map',()=>{
   for(const scenario of ['mixed','mixed-loss','zero-loss']){
@@ -220,13 +226,21 @@ test('B-63 original Perl oracle: no double five sword successes, map kept and ma
   }
 });
 test('B-63 original Perl oracle: inclusive funcb doubling uses 20-count Gaussian MakeAmount and lostbook may remove one actual map',()=>{
-  for(const scenario of ['doubled','doubled-loss']){
+  for(const scenario of ['doubled','doubled-loss','boundary']){
     const {response,evidence}=useScenario(scenario);
     assert.deepEqual(evidence.result.swords,[8,7,3,1,1]);
     assert.equal(response.details.randomDrawsUsed,12);
     assert.equal(response.details.originalResultOk,'這次我們收穫的比平時多。');
     assert.ok(response.details.acquired.every(x=>
       x.attemptedCount===20&&x.branch==='large-sqrt-absolute'));
+    if(scenario==='boundary'){
+      assert.equal(evidence.originalSamples[0],100000);
+      assert.equal(evidence.originalSamples.at(-1),100000);
+      assert.equal(response.details.mapDestroyed,false,
+        'source lostbook <100 does not destroy at equality');
+      assert.equal(response.details.doubleRewardTriggered,true,
+        'source funcb >100 means equality still doubles');
+    }
   }
 });
 test('B-63 all five sword inventory persists across B43 checkpoint and remains legitimate for full B56 event/PLUS time slice',async t=>{
@@ -286,4 +300,26 @@ test('B-63 old B-62 constrained action still refuses wider outputs; all-outcome 
   });
   assert.equal(badQuote.ok,false);
   assert.deepEqual(repository.read(),saved);
+});
+
+test('B-63 original lostbook destroyed-map world remains a source-bounded durable B43 checkpoint, no map can be reused',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-b63-loss-'));
+  t.after(()=>rm(dir,{recursive:true,force:true}));
+  const {repository,evidence}=useScenario('mixed-loss');
+  const before=repository.read();
+  assert.equal(before.shops[0].item[13],0);
+  assert.deepEqual(evidence.result.swords,[2,2,2,2,2]);
+  const save=createLocalWorldSaveStore({directory:dir});
+  save.save(before,{expectedGeneration:0});
+  assert.deepEqual(save.load().world,before);
+  const reloaded=createMemoryWorldAdapter(save.load().world);
+  const fail=executeMemoryCommand({
+    repository:reloaded,streetModule:street,
+    command:{kind:'use-original-sword-map-14-all-outcomes',
+      expectedRevision:before.revision,shopId:1,
+      randomDraws:evidence.originalSamples},
+  });
+  assert.equal(fail.ok,false);
+  assert.equal(fail.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.deepEqual(reloaded.read(),before);
 });
