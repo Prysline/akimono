@@ -41,6 +41,7 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   if(!marketBuy||typeof marketBuy.getRule!=='function'||
      typeof marketBuy.validateWorld!=='function'||
      typeof marketBuy.writeMarket!=='function'||
+     typeof marketBuy.quote!=='function'||
      !Array.isArray(marketBuy.order)||
      !Object.hasOwn(marketBuy,'globalBuyCallback'))
     fail('StreetModule reviewed wholesale contract unavailable');
@@ -55,8 +56,11 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   const shopIndex=safe(rule.shopIndex,'reviewed shop index');
   const wholesaleIndex=safe(rule.wholesaleIndex,'reviewed wholesale index');
   const stockLimit=safe(rule.stockLimit,'reviewed stock limit',1);
-  const price=safe(rule.unitPrice,'reviewed wholesale price',1);
-  const timeCost=safe(rule.marketTimeSeconds,'reviewed market time');
+  // StreetModule computes the ORIGINAL market price and delivery time
+  // from the currently observed wholesale stock (whole.cgi BASE pricehalf,
+  // item.cgi GetTimeDeal). GameCore must not hard-code street DSL or ITEM IDs.
+  safe(rule.unitPrice,'original base item PRICE',1);
+  safe(rule.marketTimeSeconds,'original base market transport time');
   if(typeof rule.source!=='string'||!rule.source)
     fail('missing original review provenance');
   if(!Array.isArray(world.shops)||world.shops.length!==1)
@@ -72,6 +76,13 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   const inMarket=safe(world.market.wholesale[wholesaleIndex],
     'wholesale stock');
   if(owned>stockLimit)fail('original item holding limit already exceeded');
+  const quote=marketBuy.quote({rule,marketStock:inMarket});
+  if(inMarket>0&&(!quote||typeof quote!=='object'))
+    fail('missing source-reviewed market quote');
+  const price=inMarket>0?
+    safe(quote.price,'reviewed actual market price',1):null;
+  const timeCost=inMarket>0?
+    safe(quote.timeSeconds,'reviewed actual market time'):null;
 
   // The shelf is the rank among in-stock goods in original source sort order.
   const place=marketBuy.order.findIndex(row=>
