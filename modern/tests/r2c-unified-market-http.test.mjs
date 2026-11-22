@@ -110,6 +110,8 @@ test('R2-C real zh-Hant browser HTTP: four original products share source quote,
   const source=await srv.state();
   assert.deepEqual(source.shopSummary,{point:5010,rankPosition:null},
     'original GetDTPoint gives 5010 initially, but league RANK is unavailable');
+  assert.equal(source.showcaseEditTimeSeconds,600,
+    'source @@DEFINE TimeEditShowcase=10m, shared by edit and clearing');
   assert.equal(source.itemCatalog.length,79,'full ITEM registry is still available for warehouse');
   const book=source.itemCatalog.find(item=>item.itemId===10);
   assert.equal(book.name,'書本寫作工具');
