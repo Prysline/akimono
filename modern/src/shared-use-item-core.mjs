@@ -5,7 +5,7 @@
  * Unknown source effects are never treated as no-ops.
  */
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
-import {originalUseTimeSeconds,originalUseExperience}
+import {originalSourceUseClock,originalUseExperience}
   from './shared-use-experience.mjs';
 
 export const USE_ITEM_COMMAND='use-item';
@@ -89,7 +89,7 @@ export function projectSharedUseItem({world,command,useItem}){
   const previousExp=expRecord[String(rule.itemId)]??0;
   if(rule.firstUseOnly&&previousExp!==0)
     fail('first-use-only reviewed rule');
-  originalUseTimeSeconds({time:rule.time,exptime:rule.exptime,
+  const effectiveClock=originalSourceUseClock({rule,job:shop.job??'',
     experience:previousExp});
   if(rule.requiresOwnedItem){
     if(shop.item[rule.itemId-1]<1||
@@ -149,7 +149,7 @@ export function projectSharedUseItem({world,command,useItem}){
     needsEvent:false,eventActive:false,
     money:shop.money,costPerUse:rule.money,paytoday:shop.paytoday,
     nowSeconds:world.nowSeconds,storedTimeSeconds:shop.time,
-    baseUseTimeSeconds:rule.time,trainedUseTimeSeconds:rule.exptime,
+    baseUseTimeSeconds:effectiveClock.base,trainedUseTimeSeconds:effectiveClock.trained,
     maxStockTimeSeconds:259200,shopStatus:true,random,
   });
   if(!original.performed||original.count<=0)
