@@ -50,10 +50,10 @@ function sourceWorld(){
     ownerName:'原版無回呼禮券測試',shopName:'真來源玩家店舖'}).code,'COMMITTED');
   return repo.read();
 }
-function perlVariant(useId,initialGift=5){
+function perlVariant(useId,initialGift=5,initialWholesale){
   return JSON.parse(execFileSync('perl',[
     'original-r2-gift-use-variants-probe.pl',
-    JSON.stringify({useId,initialGift,requestedCount:1}),
+    JSON.stringify({useId,initialGift,initialWholesale,requestedCount:1}),
   ],{cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
     timeout:15000}));
 }
@@ -73,9 +73,10 @@ test('R2 all four originally callback-free gift USEs compile into source-backed 
 });
 test('R2 #79 USE #1..#4 results compare original Perl per stock/wholesale/economy/log',()=>{
   for(const useId of [1,2,3,4]){
-    const origin=perlVariant(useId,useId===2?10:5);
-    const expected=origin.result;
     const base=sourceWorld();
+    const origin=perlVariant(useId,useId===2?10:5,
+      base.market.wholesale);
+    const expected=origin.result;
     const initialGift=useId===2?10:5;
     const world=initialGift===5?base:validateMemoryWorld({
       ...base,shops:base.shops.map(s=>({...s,item:s.item.map((v,i)=>
@@ -105,7 +106,7 @@ test('R2 original #79 USE #2 cannot be executed from initial 5-voucher world',()
   const world=sourceWorld();
   const repo=createMemoryWorldAdapter(world);
   const initial=encodeMemorySnapshot(world);
-  const expected=perlVariant(2,5);
+  const expected=perlVariant(2,5,world.market.wholesale);
   assert.equal(expected.result.count,0);
   const result=executeMemoryCommand({repository:repo,streetModule:model,
     command:{kind:'use-item',expectedRevision:world.revision,
