@@ -302,7 +302,7 @@ test('B-43 real HTTP save -> stop Node -> restart -> load -> continue sale and t
   assert.equal(fromBackup.state.world.revision,6);
   assert.equal(fromBackup.state.shop.item[9],1);
   const resumed=await server.post('/api/advance-time',{
-    expectedRevision:7,minutes:30,
+    expectedRevision:6,minutes:30,
   });
   assert.ok(resumed.ok);
   assert.equal(resumed.state.shop.saletoday,10000);
