@@ -42,9 +42,9 @@ const supply=JSON.parse(execFileSync('perl',['original-market-buy10-probe.pl'],{
   cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
 })).supply;
 const mappings=[
-  [10,'buy-market-item-10',w=>street.quoteMarketItem10(w)],
-  [11,'buy-market-item-11',w=>street.quoteMarketItem11(w)],
-  [14,'buy-market-item-14',w=>street.quoteMarketItem14(w)],
+  [10,w=>street.quoteMarketOffer(w,10)],
+  [11,w=>street.quoteMarketOffer(w,11)],
+  [14,w=>street.quoteMarketOffer(w,14)],
 ];
 function seed({withSupply=true}={}){
   const reviewed=reviewOriginalPeriodBootstrap({
@@ -124,28 +124,23 @@ test('R1 original Core buy-s.cgi callback order and three reviewed DSL item rule
     street.catalog.items.map(x=>x.id));
 });
 
-test('R2 one GameCore market-buy produces exact three legacy source-backed world transitions',()=>{
+test('R2-C three reviewed source items have one canonical GameCore transaction and Registry quote',()=>{
   const {repository}=seed();
   const start=repository.read();
-  for(const [itemId,legacyKind,quote] of mappings){
-    const offer=quote(start);
+  for(const [itemId,getQuote] of mappings){
+    const offer=getQuote(start),expected=sourceMarketQuote(start,itemId);
     assert.ok(offer.marketStock>0,'original PLUS must stock item '+itemId);
+    assert.equal(offer.price,expected.price,'original source live price '+itemId);
+    assert.equal(offer.shelf,expected.shelf,'original source sort '+itemId);
     const command=buyCommand(start,itemId,offer,2);
-    const common=apply(start,command,legacyR2AFixture);
-    // Legacy commands do not accept itemId at all.
-    const old=apply(start,{
-      kind:legacyKind,expectedRevision:start.revision,shopId:1,
-      requestedCount:2,marketShelf:offer.shelf,expectedPrice:offer.price,
-    });
+    const common=apply(start,command);
     assert.ok(common.ok,JSON.stringify(common.details));
-    assert.ok(old.ok,JSON.stringify(old.details));
     assert.equal(common.details.action,'market-buy');
     assert.equal(common.details.itemId,itemId);
     assert.equal(common.details.unitPrice,offer.price);
     assert.equal(common.details.tax,0);
-    assert.equal(common.details.timeConsumedSeconds,600);
+    assert.equal(common.details.timeConsumedSeconds,expected.timeSeconds);
     assert.ok(common.details.purchasedCount>0);
-    assert.deepEqual(common.world,old.world,'market-buy drift: '+itemId);
     assert.equal(start.shops[0].item[itemId-1],0);
     assert.equal(common.world.market.wholesale[itemId-1],
       start.market.wholesale[itemId-1]-common.details.purchasedCount);
@@ -159,7 +154,7 @@ test('R2 sequential common purchases use the same memory CAS adapter and preserv
   const {repository,act}=seed();
   const first=repository.read(),money=first.shops[0].money;
   let spent=0,timeSpent=0;
-  for(const [id,,getQuote] of mappings){
+  for(const [id,getQuote] of mappings){
     const quote=sourceMarketQuote(repository.read(),id);
     const result=act('market-buy',{
       shopId:1,itemId:id,requestedCount:1,
@@ -191,7 +186,7 @@ test('R2 no stock, zero cash, carrying cap, stale shelf/price and unsupported it
   assert.equal(zero.code,'SOURCE_BOUNDARY_REJECTED');
   assert.deepEqual(zero.world,empty);
   const {repository}=seed(),start=repository.read();
-  const q=street.quoteMarketItem10(start);
+  const q=street.quoteMarketOffer(start,10);
   for(const extra of [
     {requestedCount:0},{requestedCount:-1},
     {marketShelf:q.shelf+1},{expectedPrice:q.price-1},
@@ -220,7 +215,7 @@ test('R2 no stock, zero cash, carrying cap, stale shelf/price and unsupported it
 });
 
 test('R2 money/limit clamp is source-equivalent and an unreviewed FUNCBUY is not silently skipped',()=>{
-  const original=seed().repository.read(),q=street.quoteMarketItem10(original);
+  const original=seed().repository.read(),q=street.quoteMarketOffer(original,10);
   const withCash={...original,shops:[{...original.shops[0],money:5500}]};
   const bought=apply(withCash,buyCommand(withCash,10,q,99));
   assert.ok(bought.ok,JSON.stringify(bought.details));
@@ -245,7 +240,7 @@ test('R2 money/limit clamp is source-equivalent and an unreviewed FUNCBUY is not
 });
 
 test('R1 trusted callback hook occurs after account transfer and before SetWholeStore; missing hook rejects',()=>{
-  const world=seed().repository.read(),quote=street.quoteMarketItem10(world);
+  const world=seed().repository.read(),quote=street.quoteMarketOffer(world,10);
   const stages=[];
   const adapter={...street.marketBuy,
     getRule(id){
@@ -275,7 +270,7 @@ test('R1 trusted callback hook occurs after account transfer and before SetWhole
 });
 
 test('R2 original 72-hour stored-time cap and future shop clock reject without committing',()=>{
-  const world=seed().repository.read(),quote=street.quoteMarketItem10(world);
+  const world=seed().repository.read(),quote=street.quoteMarketOffer(world,10);
   const overCap={...world,shops:[{
     ...world.shops[0],time:world.nowSeconds-259201,
   }]};
@@ -295,7 +290,7 @@ test('R2 actual two-generation local save and load round-trips the same shared c
   t.after(()=>rm(directory,{recursive:true,force:true}));
   const {repository,act}=seed(),store=createLocalWorldSaveStore({directory});
   let generation=0;
-  for(const [id,,getQuote] of mappings){
+  for(const [id,getQuote] of mappings){
     const q=sourceMarketQuote(repository.read(),id);
     const r=act('market-buy',{shopId:1,itemId:id,
       requestedCount:1,marketShelf:q.shelf,expectedPrice:q.price});
@@ -395,7 +390,7 @@ test('R2-A pins nonempty original @@FUNCBUY, fails closed when its voucher sourc
       'my $count=int $price/100;',
     ),
   }),/FUNCBUY/);
-  const world=seed().repository.read(),q=street.quoteMarketItem10(world);
+  const world=seed().repository.read(),q=street.quoteMarketOffer(world,10);
   const withoutReview={...street,marketBuy:{...street.marketBuy,
     globalBuyCallback:undefined}};
   const denied=apply(world,buyCommand(world,10,q),withoutReview);
@@ -404,7 +399,7 @@ test('R2-A pins nonempty original @@FUNCBUY, fails closed when its voucher sourc
 });
 
 test('R2-A global-before-item source lifecycle: accounted amounts visible and unreviewed effect rejects',()=>{
-  const world=seed().repository.read(),q=street.quoteMarketItem10(world);
+  const world=seed().repository.read(),q=street.quoteMarketOffer(world,10);
   const noHandler={...street,marketBuy:{
     ...street.marketBuy,
     globalBuyCallback:{...street.marketBuy.globalBuyCallback,minTotal:1},
