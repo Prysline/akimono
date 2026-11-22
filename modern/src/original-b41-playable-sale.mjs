@@ -245,7 +245,7 @@ export function projectB41Sale({
     (shop.showcase[0]!==0&&
       shop.price[0]!==reviewed.saleRules?.[shop.showcase[0]]?.unitPrice)||
     ![undefined,0].includes(shop.taxmode))
-    bad('only source-reviewed real #10 or #40 inventory/shelf supported');
+    bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
   const activeItemId=shop.showcase[0]||10;
   const beforeStock=shop.item[activeItemId-1];
   if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
@@ -296,7 +296,7 @@ export function projectB41Sale({
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
-      soldItemId:display?activeItemId:0,
+      soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,
       festivalWasActiveAtDataRead:happyEventActive,
