@@ -14,6 +14,10 @@ import {B58_LOTO_SOURCE,LOTO_RANGE,projectOriginalLotoStartfunc}
 import {B59_IRON_SOURCE,B59_IRON_CODE,
   isReviewedB59EventPeriod,projectOriginalIronStart,projectOriginalIronExpiry}
   from './original-b59-iron-event-lifecycle.mjs';
+import {B60_HAPPY_SOURCE,B60_HAPPY_CODE,
+  isReviewedB60HappyPeriod,projectOriginalHappyStart,
+  projectOriginalHappyExpiry,projectOriginalHappyNow}
+  from './original-b60-happy-event-nowfunc.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 export const B56_EVENT_SLICE_SOURCE='b56-reviewed-sale-plus-full-17-event-gate-fixture';
 const fail=s=>{throw new RangeError('B-56 original EVENT slice: '+s);};
@@ -27,7 +31,8 @@ const validTicketDraw=x=>x!==null&&typeof x==='object'&&
 
 export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
   reviewedCallbacks,reviewedSupportCallbacks=null,
-  reviewedLoto=null,reviewedB59Iron=null}){
+  reviewedLoto=null,reviewedB59Iron=null,
+  reviewedB60Happy=null}){
   if(reviewedB41?.source!==B41_SOURCE||
      reviewedCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      reviewedCatalog.compiledCount!==17||
@@ -76,6 +81,13 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
      reviewedB59Iron.itemId!==5||
      reviewedB59Iron.plusSeconds!==720))
     fail('source-reviewed durable iron EVENT contract missing');
+  if(reviewedB60Happy!==null&&(
+     reviewedB60Happy.source!==B60_HAPPY_SOURCE||
+     reviewedB60Happy.startProba!==100||
+     reviewedB60Happy.baseTimeSeconds!==18000||
+     reviewedB60Happy.plusTimeSeconds!==18000||
+     reviewedB60Happy.rankCap!==10000))
+    fail('source-reviewed durable festival EVENT contract missing');
   const zero=reviewedCatalog.compiled.filter(e=>e.startProba===0);
   if(zero.length!==2||zero.some(e=>e.callbacks.start!==null||
      e.baseTimeSeconds!==0||e.plusTimeSeconds!==0))
@@ -93,6 +105,7 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
     support:reviewedSupportCallbacks?.source??null,
     loto:reviewedLoto?.source??null,
     iron:reviewedB59Iron?.source??null,
+    happy:reviewedB60Happy?.source??null,
     orderMode:'explicit-17-key-permutation-not-Perl-hash-order',
     publicGameplay:false,
   });
@@ -100,7 +113,8 @@ export function reviewB56EventSlice({turnSource,reviewedB41,reviewedCatalog,
 export function projectB56EventSlice({
   world,reviewed,reviewedB41,reviewedAllPlus,compiled,
   reviewedCatalog,reviewedCallbacks,reviewedSupportCallbacks=null,
-  reviewedLoto=null,reviewedB59Iron=null,shopId,minutes,
+  reviewedLoto=null,reviewedB59Iron=null,
+  reviewedB60Happy=null,shopId,minutes,
   saleDraws,eventDraws,eventHashOrderFixture,
 }){
   if(reviewed?.source!==B56_EVENT_SLICE_SOURCE||
@@ -109,6 +123,8 @@ export function projectB56EventSlice({
      reviewed.support!==(reviewedSupportCallbacks?.source??null)||
      reviewed.loto!==(reviewedLoto?.source??null)||
      reviewed.iron!==(reviewedB59Iron?.source??null)||
+     reviewed.happy!==(reviewedB60Happy?.source??null)||
+     (reviewedB60Happy!==null&&reviewedB60Happy.source!==B60_HAPPY_SOURCE)||
      (reviewedB59Iron!==null&&reviewedB59Iron.source!==B59_IRON_SOURCE)||
      (reviewedLoto!==null&&reviewedLoto.source!==B58_LOTO_SOURCE)||
      (reviewedSupportCallbacks!==null&&
@@ -118,11 +134,15 @@ export function projectB56EventSlice({
      reviewed.orderMode!=='explicit-17-key-permutation-not-Perl-hash-order')
     fail('reviewed source contracts missing');
   if(world?.schema!==PERIOD_WORLD_SCHEMA||world.events!==null||
-     !isReviewedB59EventPeriod({
+     (!isReviewedB59EventPeriod({
        period:world.period,reviewed:reviewedB59Iron,
        nowSeconds:world.nowSeconds,
-     }))
-    fail('only known empty or B-59 single-source iron active EVENT allowed');
+     })&&
+     !isReviewedB60HappyPeriod({
+       period:world.period,reviewed:reviewedB60Happy,
+       nowSeconds:world.nowSeconds,
+     })))
+    fail('only known empty or one source-reviewed iron/happy EVENT allowed');
   if(!Array.isArray(eventHashOrderFixture)||eventHashOrderFixture.length!==17||
      new Set(eventHashOrderFixture).size!==17||
      eventHashOrderFixture.some(code=>typeof code!=='string'||
@@ -135,7 +155,7 @@ export function projectB56EventSlice({
   const sale=projectB41Sale({
     world,reviewed:reviewedB41,reviewedAllPlus,compiled,
     shopId,minutes,randomDraws:saleDraws,
-    reviewedB59Iron,reviewedEventTimeSlice:true,
+    reviewedB59Iron,reviewedB60Happy,reviewedEventTimeSlice:true,
   });
   let shop=sale.shops[0],used=0;
   const take=()=>{
@@ -156,19 +176,36 @@ export function projectB56EventSlice({
   };
   const groups=new Set(),messages=[],started=[],eventLogEmissions=[];
   const lotteryWins=[];
+  // B-59 and B-60 support a single active durable source EVENT each.
+  // Original Perl can run multiple groups, but this subset intentionally
+  // rejects simultaneous active groups instead of inventing their order.
+  const previousState=world.period.eventState;
   const expiry=projectOriginalIronExpiry({
     reviewed:reviewedB59Iron,
-    eventState:world.period.eventState,
+    eventState:Object.hasOwn(previousState,B59_IRON_CODE)?previousState:{},
     startSeconds:world.nowSeconds,spanSeconds:minutes*60,
   });
-  const activeEventState={...expiry.remainingEventState};
+  const festivalExpiry=projectOriginalHappyExpiry({
+    reviewed:reviewedB60Happy,
+    eventState:Object.hasOwn(previousState,B60_HAPPY_CODE)?previousState:{},
+    startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+  });
+  const activeEventState={...expiry.remainingEventState,
+    ...festivalExpiry.remainingEventState};
   if(expiry.occupied){
     const active=reviewedCatalog.compiled.find(e=>e.code===B59_IRON_CODE);
+    groups.add(active.group);
+  }
+  if(festivalExpiry.occupied){
+    const active=reviewedCatalog.compiled.find(e=>e.code===B60_HAPPY_CODE);
     groups.add(active.group);
   }
   if(expiry.endMessage!==null)
     eventLogEmissions.push({eventCode:B59_IRON_CODE,
       level:2,shopId:0,message:expiry.endMessage});
+  if(festivalExpiry.endMessage!==null)
+    eventLogEmissions.push({eventCode:B60_HAPPY_CODE,
+      level:2,shopId:0,message:festivalExpiry.endMessage});
   let lotteryTicketsConsumed=0;
   let callbackCount=0;
   for(const code of eventHashOrderFixture){
@@ -228,6 +265,18 @@ export function projectB56EventSlice({
       // Original return 0: every ticket is gone, but no active event.
       continue;
     }
+    if(code===B60_HAPPY_CODE&&reviewedB60Happy){
+      const start=projectOriginalHappyStart({
+        reviewed:reviewedB60Happy,
+        startSeconds:world.nowSeconds,spanSeconds:minutes*60,
+        randomDraws:[takeUnit(),takeUnit()],
+      });
+      activeEventState[B60_HAPPY_CODE]=start.expiresAtSeconds;
+      groups.add(event.group);
+      eventLogEmissions.push({eventCode:code,
+        level:2,shopId:0,message:start.startMessage});
+      continue;
+    }
     if(code===B59_IRON_CODE&&reviewedB59Iron){
       const start=projectOriginalIronStart({
         reviewed:reviewedB59Iron,
@@ -246,6 +295,18 @@ export function projectB56EventSlice({
     // Source start=0, ret=1 and no duration: transient group only.
     groups.add(event.group);
   }
+  if(Object.keys(activeEventState).length>1)
+    fail('simultaneous original durable EVENT groups unreviewed; whole CAS rejected');
+  // Original inc-turn runs this NOWFUNC loop AFTER expiry and ALL start gates,
+  // even for happy created earlier in this very same source time slice.
+  let festivalNow=null;
+  if(Object.hasOwn(activeEventState,B60_HAPPY_CODE)){
+    festivalNow=projectOriginalHappyNow({
+      reviewed:reviewedB60Happy,shop,timespanSeconds:minutes*60,
+      randomDraws:[takeUnit()],
+    });
+    shop=festivalNow.shop;
+  }
   if(used!==eventDraws.length)fail('unused source EVENT random draws');
   return {
     shops:[shop],market:sale.market,nowSeconds:sale.nowSeconds,
@@ -261,6 +322,12 @@ export function projectB56EventSlice({
       ironEventWasActiveAtDataRead:expiry.wasActive,
       ironEventExpired:expiry.expired,
       ironEventExpiresAtSeconds:activeEventState[B59_IRON_CODE]??null,
+      festivalWasActiveAtDataRead:festivalExpiry.wasActive,
+      festivalEventExpired:festivalExpiry.expired,
+      festivalExpiresAtSeconds:activeEventState[B60_HAPPY_CODE]??null,
+      festivalNowRun:festivalNow!==null,
+      festivalRankGain:festivalNow?.rankGain??0,
+      festivalRandomMax:festivalNow?.randMax??null,
       totalDraws:sale.receipt.totalDraws+used,
       eventStateConfirmedEmpty:Object.keys(activeEventState).length===0,
       sourceScope:'B-41 sale/59 PLUS plus all 17 event gates in caller-provided order; unsupported starts reject; internal only, not exact Perl hash order.',
