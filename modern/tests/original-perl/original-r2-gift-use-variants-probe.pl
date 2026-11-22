@@ -75,7 +75,7 @@ print JSON::PP->new->canonical->utf8->encode({
   result=>{requestedCount=>0+$requested,count=>0+($runtime->{result}{count}//0),
     item=>[@{$main::DT->{item}}],
     wholesale=>[map {0+($_//0)} @main::DTwholestore],
-    money=>0+$main::DT->{money,paytoday=>0+$main::DT->{paytoday},
+    money=>0+$main::DT->{money},paytoday=>0+$main::DT->{paytoday},
     time=>0+$main::DT->{time},
     useitem=>$runtime->{result}{useitem}||[],
     additem=>$runtime->{result}{additem}||[],
