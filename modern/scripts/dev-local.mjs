@@ -88,6 +88,23 @@ const send=(res,status,obj)=>{
     'cache-control':'no-store','x-content-type-options':'nosniff'});
   res.end(JSON.stringify(obj));
 };
+// Read-only original GetDTPoint projection: frozen Core inc-func.cgi.
+// Uninitialized Perl shop fields count as zero; invalid fields never become a
+// guessed score. This is NOT a leaderboard/RANK implementation.
+function sourceShopPoint(shop){
+  if(!shop)return null;
+  const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
+    'rankingcount'];
+  const values=keys.map(key=>shop[key]??0);
+  if(values.some(value=>!Number.isSafeInteger(value)||value<0))return null;
+  const [rank,profitstock,sales,tax,paid,wins]=values;
+  let profit=(profitstock*3+sales-tax-paid)/500000+1;
+  const winFactor=0.5+5/(wins+10);
+  if(profit>10)profit=15-50/profit;
+  if(profit<1)profit=1/(2-profit);
+  const point=Math.trunc(rank*winFactor*profit);
+  return Number.isSafeInteger(point)?point:null;
+}
 function state(){
   const world=repo?.read()??null;
   const save=saveStore.status();
@@ -101,6 +118,12 @@ function state(){
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
+    // Original point calculation; RANK is unknown until true multi-shop
+    // SortDT is available. Do not label the rank field as point or RANK.
+    shopSummary:{
+      point:sourceShopPoint(world?.shops?.[0]??null),
+      rankPosition:null,
+    },
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
