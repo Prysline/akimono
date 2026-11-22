@@ -44,10 +44,13 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/flagRaw:item\?\.flagRaw/);
   assert.match(adapter,/type:item\?\.typeRaw/);
   assert.match(adapter,/costRaw:item\?\.costRaw/);
-  assert.match(html,/熟練度取自商品 EXP/);
-  assert.match(html,/<th>持有數量<\/th><th>熟練度<\/th>/);
+  assert.match(html,/class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP/);
+  assert.match(html,/<th>持有／上限<\/th><th>熟練度<\/th>/);
   assert.match(html,/<th>數量／上限<\/th><th>熟練度<\/th><th>陳列<\/th>/);
   assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);
+  assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
+  assert.match(script,/dev\.className='dev-panel dev-raw-value'/);
+  assert.match(script,/\(exp\/10\)\.toLocaleString\('zh-TW'\)\+'%'/);
   assert.match(html,/id="item-detail-cost"/);
   assert.match(html,/id="item-detail-info"/);
 });
@@ -153,6 +156,10 @@ test('shop overview and shelf restore original compact data tables without dupli
     assert.ok(shop.includes('id="'+id+'"'),'shelf data cell '+id);
   assert.match(shop,/<table class="shop-turnover-table"/);
   assert.match(shop,/id="shop-remove-showcase"/);
+  assert.match(shop,/id="shop-remove-time">行動時間：—/);
+  assert.match(script,/text\('shop-remove-time'/);
+  assert.match(html,/<th>行動時間<\/th><th>購買<\/th>/);
+  assert.match(script,/每次交易 '\+conciseTimeText\(offer\.timeSeconds\)/);
   assert.match(script,/\$\('shop-remove-showcase'\)\.addEventListener\('click'/);
   assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100/);
   assert.doesNotMatch(shop,/data-go-tab=/,
@@ -187,6 +194,9 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/expectedRevision:before\.world\.revision,itemId,useId,requestedCount/);
   assert.match(script,/maxUseCount/);
   assert.match(script,/maxUseCountReason/);
+  assert.match(html,/id="use-estimated-time"/);
+  assert.match(script,/function updateUseEstimate\(\)/);
+  assert.match(script,/use-count'\)\.addEventListener\('input',updateUseEstimate/);
   assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
   assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
   assert.match(css,/\.use-action-list\{/);
@@ -203,4 +213,22 @@ test('showcase edit shows verified original source time, not a guessed number',(
 test('unreviewed disposal is not wired as a misleading browser-only mutation',()=>{
   assert.doesNotMatch(adapter,/case '\/api\/(?:throw|discard)'/);
   assert.doesNotMatch(script,/fetch\('\/api\/(?:throw|discard)'/);
+});
+
+
+test('raw EXP and popularity source internals remain developer-only while action times remain player-visible',()=>{
+  const stock=html.slice(html.indexOf('id="tab-stock"'),
+    html.indexOf('id="tab-item"'));
+  const shop=html.slice(html.indexOf('id="tab-shop"'),
+    html.indexOf('id="tab-market"'));
+  assert.match(stock,/class="muted dev-panel" data-dev-panel>熟練度來源/);
+  assert.match(shop,/id="dev-popularity-raw"/);
+  assert.match(shop,/class="muted dev-panel" data-dev-panel>/);
+  assert.match(css,/\.dev-panel\{display:none\}/);
+  assert.match(css,/body\.dev-mode \.dev-panel:not\(\[hidden\]\)\{display:block\}/);
+  assert.match(script,/dev\.textContent=Number\.isSafeInteger\(raw\)/);
+  assert.match(script,/缺少材料 ID #/);
+  assert.match(script,/本次預估行動時間：/);
+  assert.match(html,/id="shop-remove-time"/);
+  assert.match(html,/id="market-offers"/);
 });

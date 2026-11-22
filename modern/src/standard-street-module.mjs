@@ -638,8 +638,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               '尚未審閱的公會效果':
             !validMarket?'來源市場尚未驗證':
             invalidExp?'熟練度紀錄不合法':
-            missing?'材料不足：商品 #'+missing.itemId+
-              ' 需要 '+missing.count+' 件':
+            missing?'材料不足：'+
+              (model.items.find(item=>item.id===missing.itemId)?.name??
+                '未知材料')+'需要 '+missing.count+' 件':
             shop.money<rule.money?'資金不足':
             shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
@@ -649,6 +650,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             owned,materials,materialRoutes,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
             proficiency:exp,maxUseCount,maxUseCountReason,
+            missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                [...rule.uses,...rule.creates].some(x=>

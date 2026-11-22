@@ -11,7 +11,7 @@ const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
   const exp=shop.exp?.[String(itemId)]??0;
   return Number.isSafeInteger(exp)&&exp>=0&&exp<=1000?
-    (exp/10).toLocaleString('zh-TW')+'%（'+number(exp)+'/1000）':'—';
+    (exp/10).toLocaleString('zh-TW')+'%':'—';
 };
 const sourceUpkeep=raw=>{
   if(typeof raw!=='string'||!/^\d+$/.test(raw))return '—';
@@ -171,6 +171,12 @@ function renderItemInfo(s){
       reason.className='muted';
       reason.textContent='（'+(row.reason??'目前不可執行')+'）';
       li.append(reason);
+      if(Number.isSafeInteger(row.missingMaterialId)){
+        const debug=document.createElement('small');
+        debug.className='dev-panel dev-raw-value';
+        debug.textContent='缺少材料 ID #'+row.missingMaterialId;
+        li.append(debug);
+      }
     }
     useList.append(li);
   }
@@ -229,6 +235,29 @@ function renderUseDetail(s){
   text('use-detail-note',!offer?'沒有可執行的操作':
     offer.canUse?'執行前請確認材料、資金與可用行動時間。':
       (offer.reason??'目前無法執行'));
+  updateUseEstimate();
+}
+function selectedUseCount(){
+  const manual=$('use-count').value.trim();
+  return Number(manual!==''?manual:$('use-count-presets').value);
+}
+function updateUseEstimate(){
+  const offer=snapshot?.useOffers?.find(row=>
+    row.itemId===selectedItemId&&row.useId===selectedUseId);
+  const requested=selectedUseCount();
+  if(!offer?.canUse||!Number.isSafeInteger(requested)||requested<1){
+    text('use-estimated-time','本次預估行動時間：—');
+    return;
+  }
+  const available=Math.min(requested,offer.maxUseCount??0);
+  const seconds=available*offer.timePerUseSeconds;
+  if(!Number.isSafeInteger(seconds)||available<=0){
+    text('use-estimated-time','本次預估行動時間：—');
+    return;
+  }
+  text('use-estimated-time','本次預估行動時間：'+
+    conciseTimeText(seconds)+'（'+number(available)+' 次）'+
+    (requested>available?'；超出可執行上限的次數將由來源裁切':''));
 }
 function renderUseResult(data,offer,catalog){
   const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
@@ -300,6 +329,8 @@ function showState(s){
   text('shop-info-time',actionTime);
   text('shop-info-popularity',Number.isSafeInteger(shop?.rank)?
     Math.trunc(shop.rank/100)+'%':'—');
+  text('dev-popularity-raw',Number.isSafeInteger(shop?.rank)?
+    number(shop.rank):'—');
   const shelfId=shop?.showcase?.[0]??0;
   const hasShelf=Boolean(shop&&shelfId>0);
   const shelfItem=hasShelf?catalog.find(row=>row.itemId===shelfId):null;
@@ -315,6 +346,8 @@ function showState(s){
   const canRemoveShelf=hasShelf&&Number.isSafeInteger(shelfEditSeconds)&&
     w.nowSeconds-shop.time>=shelfEditSeconds;
   removeShelf.disabled=!canRemoveShelf;
+  text('shop-remove-time',Number.isSafeInteger(shelfEditSeconds)?
+    '行動時間：'+conciseTimeText(shelfEditSeconds):'行動時間：—');
   removeShelf.title=!hasShelf?'展示架目前沒有陳列商品':
     canRemoveShelf?'下架商品（倉庫持有數量不變）':
       '可用行動時間不足，無法下架';
@@ -342,7 +375,7 @@ function showState(s){
   marketBody.replaceChildren();
   if(!offers.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=5;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
+    td.colSpan=6;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
     tr.append(td);marketBody.append(tr);
   }else for(const offer of offers){
     const tr=document.createElement('tr');
@@ -356,6 +389,8 @@ function showState(s){
     cell(offer.price===null?'—':money(offer.price));
     cell(offer.marketStock);
     cell(offer.owned+'／'+offer.limit);
+    cell(Number.isSafeInteger(offer.timeSeconds)?
+      '每次交易 '+conciseTimeText(offer.timeSeconds):'—');
     const tdAction=document.createElement('td');
     const actions=document.createElement('div');
     actions.className='market-actions';
@@ -395,6 +430,19 @@ function showState(s){
     const tr=document.createElement('tr'),td=document.createElement('td');
     td.colSpan=colspan;td.textContent=message;tr.append(td);body.append(tr);
   };
+  const addCell=(tr,value)=>{
+    const td=document.createElement('td');td.textContent=value;
+    tr.append(td);return td;
+  };
+  const addProficiency=(tr,item)=>{
+    const td=addCell(tr,sourceProficiency(shop,item.itemId));
+    const raw=shop?.exp?.[String(item.itemId)]??0;
+    const dev=document.createElement('small');
+    dev.className='dev-panel dev-raw-value';
+    dev.textContent=Number.isSafeInteger(raw)&&raw>=0&&raw<=1000?
+      'EXP '+number(raw)+'/1000':'EXP 不合法';
+    td.append(dev);
+  };
   const addName=(tr,item)=>{
     const td=document.createElement('td');
     const link=document.createElement('button');
@@ -410,23 +458,21 @@ function showState(s){
     const tr=document.createElement('tr');
     addName(tr,item);
     for(const value of [money(item.basePrice),
-      sourceUpkeep(item.costRaw),number(item.count),
-      sourceProficiency(shop,item.itemId)]){
-      const td=document.createElement('td');
-      td.textContent=value;tr.append(td);
-    }
+      sourceUpkeep(item.costRaw),
+      number(item.count)+'／'+number(item.stockLimit)])
+      addCell(tr,value);
+    addProficiency(tr,item);
     storageBody.append(tr);
   }
   if(!selling.length)addEmpty(sellingBody,6,'目前沒有販售商品');
   for(const item of selling){
     const tr=document.createElement('tr');addName(tr,item);
-    const values=[money(item.basePrice),sourceUpkeep(item.costRaw),
-      number(item.count)+'／'+number(item.stockLimit),
-      sourceProficiency(shop,item.itemId),
-      shop.showcase?.[0]===item.itemId?'第 1 架｜'+money(shop.price[0]):'—'];
-    for(const value of values){
-      const td=document.createElement('td');td.textContent=value;tr.append(td);
-    }
+    for(const value of [money(item.basePrice),sourceUpkeep(item.costRaw),
+      number(item.count)+'／'+number(item.stockLimit)])
+      addCell(tr,value);
+    addProficiency(tr,item);
+    addCell(tr,shop.showcase?.[0]===item.itemId?
+      '第 1 架｜'+money(shop.price[0]):'—');
     sellingBody.append(tr);
   }
   renderItemInfo(s);
@@ -559,7 +605,9 @@ $('market-offers').addEventListener('click',event=>{
 });
 $('use-count-presets').addEventListener('change',()=>{
   $('use-count').value='';
+  updateUseEstimate();
 });
+$('use-count').addEventListener('input',updateUseEstimate);
 $('use-action-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const before=snapshot;

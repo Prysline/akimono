@@ -288,3 +288,8 @@ footer{margin-top:12px;font-size:10px}
 .shelf-remove-note{text-align:center;font-size:11px!important;color:#888;margin:4px auto 7px!important}
 .use-action-form select{min-width:78px;max-width:165px;min-height:28px;padding:2px 4px}
 .use-action-form input{width:72px;min-height:28px;padding:2px 4px}
+
+/* Action time is essential player information; only raw diagnostics are gated. */
+.action-time{display:block;color:#777;font-size:11px;white-space:nowrap;margin-top:3px}
+.use-estimated-time{text-align:center;font-size:12px!important;color:#606060;margin:3px auto 4px!important}
+.dev-raw-value{font-size:11px;color:#999;font-weight:normal;white-space:nowrap}
