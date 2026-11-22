@@ -3,6 +3,7 @@
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
+import {originalUseTimeSeconds} from '../src/shared-use-experience.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -189,17 +190,30 @@ function sampleOriginalPlus(world,timespanSeconds){
 function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
   if(!rule?.beforeCallback)return [];
+  // #14 has no material USE list. The frozen UseItem preflight clips the
+  // batch by money and remaining action time BEFORE MakeAmount, and the
+  // latter selects the Gaussian two-draw branch at 20+ requested products.
+  // This is the reviewed source rule, not a separate player command.
+  const shop=world.shops.find(row=>row.id===1);
+  const experience=shop?.exp?.[String(itemId)]??0;
+  const time=originalUseTimeSeconds({time:rule.time,exptime:rule.exptime,
+    experience});
+  const count=Math.max(0,Math.min(requestedCount,
+    Math.floor(shop.money/rule.money),
+    Math.floor((world.nowSeconds-shop.time)/time)));
+  const batchGaussian=count>=2;
   const testMode=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1';
   let draws;
   if(testMode){
     const scenario=process.env.AKIMONO_E2E_USE_SCENARIO??'mixed';
-    const mixed=Array.from({length:5},
+    const ordinary=Array.from({length:5},
       ()=>[0,0,...Array(8).fill(999999)]).flat();
     const gaussian=Array(10).fill(0);
     const cases={
-      mixed:[999999,...mixed,999999],
-      'mixed-loss':[999999,...mixed,0],
-      'zero-loss':[999999,...Array(50).fill(999999),0],
+      mixed:[999999,...(batchGaussian?gaussian:ordinary),999999],
+      'mixed-loss':[999999,...(batchGaussian?gaussian:ordinary),0],
+      'zero-loss':[999999,...(batchGaussian?gaussian:
+        Array(50).fill(999999)),0],
       doubled:[0,...gaussian,999999],
       'doubled-loss':[0,...gaussian,0],
       boundary:[100000,...gaussian,100000],
@@ -210,9 +224,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     draws=sourceCommandDraws({world,kind:'use-item',
       args:{shopId:1,itemId,useId,requestedCount},count:52});
   }
-  // Original funcb uses <=100/1000 and runs BEFORE MakeAmount. It is
-  // followed by five 10-draw groups OR five 2-draw groups, then lostbook.
-  return draws.slice(0,draws[0]<=100000?12:52);
+  // One funcb, then five MakeAmount calls, then one lostbook.
+  return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 function sampleSourceTime(world,minutes){
   // One source stream: natural sales, ITEM FUNCTURN/FUNCSALE, then 59 PLUS.
