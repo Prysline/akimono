@@ -5,9 +5,9 @@
  * BUY callbacks are never evaluated as Perl. Unsupported semantics are
  * discoverable with describe(), and are not silently accepted.
  *
- * The legacy #14 review is kept as a separately identified R2-A compatibility
- * boundary because its older Perl oracle did not compile ITEM BASE; it must
- * not be mistaken for source-complete dynamic pricing.
+ * Source BASE A/B is a bounded GetWholeStore price policy, not a separate
+ * item implementation. The earlier R2-A Oracle did not compile BASE and
+ * remains a separate historical fixture, never a production price policy.
  */
 import {parseDsl} from './parse-dsl.mjs';
 
@@ -24,13 +24,44 @@ function positive(raw,label){
      !Number.isSafeInteger(Number(raw)))fail('unsupported '+label);
   return Number(raw);
 }
+export function quoteCompiledWholesaleRule(rule,marketStock){
+  if(!rule||!['common-static','common-dynamic'].includes(rule.classification))
+    fail('unsupported rule cannot be quoted');
+  if(!Number.isSafeInteger(marketStock)||marketStock<=0)
+    fail('wholesale quote requires source in-stock item');
+  const base=positive(String(rule.basePrice),'source compiled PRICE');
+  const policy=rule.pricePolicy;
+  if(!policy||!['fixed','original-pricehalf'].includes(policy.kind))
+    fail('unsupported source PRICE policy');
+  let price=base;
+  if(policy.kind==='original-pricehalf'){
+    const a=policy.pricebase,b=policy.pricehalf;
+    if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<=0)
+      fail('unreviewed source BASE compilation');
+    // Frozen whole.cgi::GetWholeStore, followed by source minimum price.
+    const denominator=((marketStock-a)/b)+1;
+    if(!Number.isFinite(denominator)||denominator===0)
+      fail('original GetWholeStore unsupported zero denominator');
+    price=Math.trunc(base/denominator);
+    if(price<=0)price=1;
+  }
+  if(!Number.isSafeInteger(price)||price<=0)
+    fail('invalid original market quote');
+  // Frozen item.cgi::GetTimeDeal(baseprice*num,itemno,num) after
+  // buy-s.cgi halves the original 1200s TIME_SEND_ITEM to 600s.
+  const multiplier=Math.max(0.5,Math.min(2,2-price/base));
+  const timeSeconds=Math.trunc(rule.marketTimeSeconds*multiplier);
+  if(!Number.isSafeInteger(timeSeconds)||timeSeconds<0)
+    fail('unsafe original GetTimeDeal time');
+  return Object.freeze({price,timeSeconds});
+}
 function sourceMarker(text,fragment){
   if(typeof text!=='string'||!text.includes(fragment))
     fail('frozen original source drift: '+fragment);
 }
 export function compileStandardStreetMarketBuyRegistry({
   itemDsl,rebelDsl,model,compiled,compilerSource,buySource,
-  wholeSource,itemSource,legacyMapReview=null,
+  wholeSource,itemSource,
 }){
   if(!Array.isArray(model?.items)||model.items.length!==79||
      !Array.isArray(compiled?.limits)||compiled.limits.length!==79)
@@ -48,6 +79,8 @@ export function compileStandardStreetMarketBuyRegistry({
     [buySource,'$DTS=GetWholeStore();'],
     [buySource,'require "$ITEM_DIR/funcbuy.cgi" if $DEFINE_FUNCBUY;'],
     [itemSource,'return int($TIME_SEND_ITEM*$mul);'],
+    [itemSource,'$mul=2 - ($price / $itemcount / $ITEM[$itemno]->{price})'],
+    [itemSource,'$mul=0.5 if $mul<0.5;'],
   ])sourceMarker(s,fragment);
   const main=parseDsl(itemDsl,ITEM_SOURCE);
   const rebel=parseDsl(rebelDsl,REBEL_SOURCE);
@@ -94,9 +127,19 @@ export function compileStandardStreetMarketBuyRegistry({
     else if(callback){
       classification='source-item-callback';
       reason='unreviewed ITEM FUNCB at '+block.file+':'+callback.line;
-    }else if(rawBase!==null){
-      classification='dynamic-price';
-      reason='original BASE / pricehalf requires stock-dependent GetWholeStore price and GetTimeDeal at '+block.file+':'+one(block,'base').line;
+    }
+    let pricePolicy={kind:'fixed'};
+    if(rawBase!==null){
+      const parts=/^([0-9]+)\\/([1-9][0-9]*)$/.exec(rawBase);
+      if(!parts||![Number(parts[1]),Number(parts[2])].every(Number.isSafeInteger)){
+        classification='unsupported';
+        reason='unreviewed source BASE syntax at '+block.file+':'+one(block,'base').line;
+      }else{
+        pricePolicy={kind:'original-pricehalf',
+          pricebase:Number(parts[1]),pricehalf:Number(parts[2]),
+          sourceFile:block.file,sourceLine:one(block,'base').line};
+        if(reason===null)classification='common-dynamic';
+      }
     }
     if(reason&&classification==='common-static')classification='unsupported';
     const source=block.file+':'+block.startLine+
@@ -107,6 +150,7 @@ export function compileStandardStreetMarketBuyRegistry({
       sort,source,sourceFile:block.file,sourceLine:block.startLine,
       basePrice:Number.isSafeInteger(price)?price:null,
       sourceBaseRaw:rawBase,
+      pricePolicy:Object.freeze(pricePolicy),
       stockLimit:limit.limit,wholesaleLimit:limit.wslimit,
       marketTimeSeconds,
       callbackSource:callback?block.file+':'+callback.line:null,
@@ -115,25 +159,6 @@ export function compileStandardStreetMarketBuyRegistry({
     byId.set(itemId,entry);
     return Object.freeze(entry);
   });
-  // Historical R2-A #14 Oracle only compiled PRICE and LIMIT, not BASE.
-  // Keep that explicit compatibility entry to avoid silently changing the
-  // previous accepted transactions; dynamic-price parity is an R2-B blocker.
-  if(legacyMapReview!==null){
-    const map=byId.get(legacyMapReview.mapItemId);
-    if(!map||map.itemId!==14||map.sourceBaseRaw!=='50/150'||
-       map.basePrice!==10000||map.stockLimit!==3||
-       legacyMapReview.mapPrice!==10000||
-       legacyMapReview.mapBuyTimeSeconds!==marketTimeSeconds)
-      fail('legacy map source review mismatch');
-    const legacy=Object.freeze({...map,
-      classification:'legacy-r2a-price-incomplete',
-      reason:'R2-A #14 Perl oracle omitted BASE 50/150 at '+map.sourceFile+':'+
-        one(sourceItems[map.sort],'base').line+
-        '; full source dynamic price requires new direct Perl parity',
-    });
-    byId.set(map.itemId,legacy);
-    entries[map.sort]=legacy;
-  }
   const order=Object.freeze(entries.map(e=>Object.freeze({
     itemId:e.itemId,wholesaleIndex:e.wholesaleIndex,
   })));
@@ -141,19 +166,24 @@ export function compileStandardStreetMarketBuyRegistry({
     entries:Object.freeze(entries),
     order,
     describe(itemId){return byId.get(itemId)??null;},
+    quote({rule,marketStock}){
+      return quoteCompiledWholesaleRule(rule,marketStock);
+    },
     getRule(itemId){
       const e=byId.get(itemId);
-      if(!e||!['common-static','legacy-r2a-price-incomplete'].includes(e.classification))
+      if(!e||!['common-static','common-dynamic'].includes(e.classification))
         return null;
       return Object.freeze({
         itemId:e.itemId,shopIndex:e.shopIndex,
         wholesaleIndex:e.wholesaleIndex,
-        unitPrice:e.basePrice,stockLimit:e.stockLimit,
+        unitPrice:e.basePrice,basePrice:e.basePrice,
+        classification:e.classification,pricePolicy:e.pricePolicy,
+        stockLimit:e.stockLimit,
         marketTimeSeconds:e.marketTimeSeconds,
         source:e.source,
         scope:e.classification==='common-static'?
           'R2-B source-compiled static wholesale rule, no item FUNCB':
-          'R2-A compatibility only: ITEM #14 dynamic BASE not compiled by historical Oracle',
+          'R2-B source-compiled original BASE pricehalf wholesale rule, no item FUNCB',
         buyCallback:null,
       });
     },
