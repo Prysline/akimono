@@ -73,7 +73,7 @@ button.primary:hover:not(:disabled),button.secondary:hover:not(:disabled){
 }
 .status-section{margin:3px 0 5px}
 /* Tables use their content width; sparse data must not stretch into blank columns. */
-table{width:max-content;max-width:100%;border-collapse:separate;border-spacing:1px;
+table{width:max-content;max-width:100%;margin-inline:auto;border-collapse:separate;border-spacing:1px;
   background:#ccc;font-size:13px;text-align:left}
 td,th{background:var(--row);padding:3px 4px;vertical-align:middle;overflow-wrap:anywhere}
 th{color:#606060;font-weight:700}
@@ -81,7 +81,7 @@ thead th{background:#e8e8ef;text-align:center;font-weight:normal}
 .status-table th{width:1%;white-space:nowrap;background:#e8e8ef}
 .status-table td{width:auto}
 .status-table strong{color:#424242}
-.game-columns{display:flex;flex-wrap:wrap;align-items:flex-start;gap:9px}
+.game-columns{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:9px}
 .game-columns>div{min-width:0;max-width:100%}
 .sub-title{margin:1px 0 7px;font-size:14px;font-weight:normal}
 .sub-title::before{content:"◆ ";color:#9090a9;font-size:10px}
