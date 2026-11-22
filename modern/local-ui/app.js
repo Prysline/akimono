@@ -223,7 +223,7 @@ function showState(s){
   marketBody.replaceChildren();
   if(!offers.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=5;td.textContent=w?'目前市場沒有進貨商品':'請先初始化來源市場';
+    td.colSpan=5;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
     tr.append(td);marketBody.append(tr);
   }else for(const offer of offers){
     const tr=document.createElement('tr');
