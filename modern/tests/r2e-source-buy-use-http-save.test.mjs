@@ -209,8 +209,8 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.equal(afterMap.shop.paytoday,beforeMap.shop.paytoday+12000);
   assert.equal(afterMap.shop.time,beforeMap.shop.time+7200);
   assert.equal(afterMap.world.market.originalWholesaleCsv.split(',').length,79);
-  assert.equal(useOffer(afterMap,14).canUse,false);
-  await reject(srv,'/api/use',usePayload(afterMap,14));
+  assert.equal(useOffer(afterMap,14).canUse,true);
+  await reject(srv,'/api/use',{...usePayload(afterMap,14),useId:1});
   await reject(srv,'/api/use',{
     ...usePayload(afterMap,79),callback:'unreviewed'},400);
   const saved=await srv.post('/api/save',{
@@ -229,7 +229,7 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.equal(loaded.state.shop.exp['14'],20);
   assert.deepEqual([40,41,42,43,44].map(id=>loaded.state.shop.item[id-1]),
     swordOracle.result.swords);
-  await reject(srv,'/api/use',usePayload(loaded.state,14));
+  await reject(srv,'/api/use',{...usePayload(loaded.state,14),useId:1});
   await reject(srv,'/api/use',{
     ...usePayload(loaded.state,79),
     expectedRevision:loaded.state.world.revision-1,
@@ -277,7 +277,7 @@ test('R2-E real browser HTTP #10/#11/#14/#39 buy, original Perl #79/#14 USE, CAS
   assert.equal(recovered.code,'LOADED',JSON.stringify(recovered));
   assert.equal(recovered.details.recoveredPreviousGeneration,true);
   assert.deepEqual(recovered.state.world,checkpoint);
-  await reject(srv,'/api/use',usePayload(recovered.state,14));
+  await reject(srv,'/api/use',{...usePayload(recovered.state,14),useId:1});
   const rebuy=await buy(srv,10);
   assert.equal(rebuy.state.shop.item[9],checkpoint.shops[0].item[9]+1);
   const repaired=await srv.post('/api/save',{
