@@ -5,7 +5,6 @@ let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
-let lastRenderedItemId=null;
 let selectedShelfIndex=0;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
@@ -145,23 +144,9 @@ function renderItemInfo(s){
   text('showcase-time-cost',
     Number.isSafeInteger(s.showcaseEditTimeSeconds)?
       conciseTimeText(s.showcaseEditTimeSeconds):'—');
-  const sourceShelves=s.showcaseOffers??[];
-  const shelfSelect=$('shelf-item');
-  const previous=Number(shelfSelect.value);
-  const newlyOpened=lastRenderedItemId!==selectedItemId;
-  lastRenderedItemId=selectedItemId;
-  shelfSelect.replaceChildren();
-  const empty=document.createElement('option');
-  empty.value='0';empty.textContent='清空展示架';
-  shelfSelect.append(empty);
-  const offer=sourceShelves.find(x=>x.itemId===selectedItemId);
-  if(offer){
-    const option=document.createElement('option');
-    option.value=String(offer.itemId);
-    option.textContent=offer.name+'（原價 '+money(offer.unitPrice)+'）';
-    option.disabled=!offer.canShow;
-    shelfSelect.append(option);
-  }
+  // This page already represents the chosen item. The one shelf picker
+  // shows occupancy; clearing a shelf is handled in the shop overview.
+  const offer=(s.showcaseOffers??[]).find(x=>x.itemId===selectedItemId);
   shelfSelect.value=offer?.canShow?
     (newlyOpened?String(offer.itemId):
       previous===0?'0':String(offer.itemId)):'0';
@@ -610,7 +595,6 @@ $('reset-world').addEventListener('click',async()=>{
     }
     selectedItemId=null;
     selectedUseId=null;
-    lastRenderedItemId=null;
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
@@ -671,12 +655,17 @@ $('discard-form').addEventListener('submit',async event=>{
 });
 $('showcase-form').addEventListener('submit',async event=>{
   event.preventDefault();
-  const itemId=Number($('shelf-item').value);
+  const itemId=selectedItemId;
+  if(!Number.isSafeInteger(itemId)||itemId<1||
+     !(snapshot?.showcaseOffers??[]).some(x=>x.itemId===itemId)){
+    feedback('此商品目前不可陳列。',null,true);
+    return;
+  }
   await call('/api/showcase',{
     expectedRevision:snapshot?.world?.revision,
     itemId,per:Number($('shelf-price-per').value),
     shelf:Number($('showcase-shelf').value),
-  },itemId===0?'清空展示架':'原版來源共用展示架上架 #'+itemId);
+  },'陳列：'+(catalogItem(snapshot,itemId)?.name??'商品'));
 });
 async function advance(minutes){
   await call('/api/advance-time',{

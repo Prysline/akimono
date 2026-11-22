@@ -91,7 +91,9 @@ test('product details remain centered without a full-width shelf editor',()=>{
   assert.match(html,/id="showcase-form"/);
   assert.match(script,/function showcaseSlotDescription\(s,index\)/);
   assert.match(script,/option\.textContent='架'\+\(index\+1\)\+'（'\+/);
-  assert.match(html,/id="showcase-shelf" aria-label="展示架（括號內為目前陳列商品）"/);
+  assert.match(html,/id="showcase-shelf" aria-label="選擇展示架（括號內為目前商品）"/);
+  assert.doesNotMatch(html,/id="shelf-item"/);
+  assert.match(script,/const itemId=selectedItemId;/);
   assert.doesNotMatch(html,/id="showcase-shelf-current"/);
   assert.doesNotMatch(script,/function updateShowcaseShelfCurrent\(/);
   assert.match(html,/class="shelf-percent"/);
@@ -214,7 +216,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
 });
 test('showcase edit shows verified original source time, not a guessed number',()=>{
   assert.match(html,/id="showcase-time-cost"/);
-  assert.match(html,/調整或清空展示架均消耗/);
+  assert.match(html,/調整展示架消耗/);
   assert.match(adapter,/showcaseEditTimeSeconds:streetModule\.showcaseEditTimeSeconds/);
   assert.match(script,/Number\.isSafeInteger\(s\.showcaseEditTimeSeconds\)/);
   assert.match(script,/conciseTimeText\(s\.showcaseEditTimeSeconds\)/);

@@ -67,6 +67,8 @@ test('source #63 grows two shelves, second shelf is independently writable, no-t
   ]);
   assert.match(html,/id="showcase-shelves"/);
   assert.match(html,/id="showcase-shelf"/);
+  assert.doesNotMatch(html,/id="shelf-item"/);
+  assert.match(html,/id="set-showcase" class="primary" type="submit">陳列/);
   assert.doesNotMatch(html,/id="showcase-shelf-current"/);
   assert.match(html,/id="discard-form"/);
   assert.match(script,/showcaseSlotDescription\(s,index\)/);
