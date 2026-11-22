@@ -290,9 +290,12 @@ export function projectB41Sale({
     reviewed:reviewed.itemCallbacks,shop:natural.shop,spanSeconds:span,
     randomDraws:randomDraws.slice(naturalDraws),
   });
-  const callbackDraws=itemCallbackStage.drawsUsed;
+  // Projected shop state belongs to WorldState, never inside the receipt.
+  // Copying a fractional maintenance cost through the receipt violates the
+  // original GameCore's strict receipt integer audit.
+  const {shop:nextShop,...callbackReceipt}=itemCallbackStage;
+  const callbackDraws=callbackReceipt.drawsUsed;
   const used=naturalDraws+callbackDraws;
-  const nextShop=itemCallbackStage.shop;
   const newShop=nextShop;
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;
@@ -323,7 +326,7 @@ export function projectB41Sale({
       moneyBefore:shop.money,moneyAfter:money,
       saleTodayBefore:shop.saletoday,saleTodayAfter:saleToday,
       rankBefore:shop.rank,rankAfter:rank,
-      naturalDraws,callbackDraws,itemCallbackStage,
+      naturalDraws,callbackDraws,itemCallbackStage:callbackReceipt,
       plusDraws:plus.receipt.drawsUsed,
       totalDraws:used+plus.receipt.drawsUsed,
       sourceScope:reviewed.sourceScope,
