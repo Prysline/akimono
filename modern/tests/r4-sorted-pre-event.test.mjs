@@ -122,8 +122,17 @@ test('R4 reuses R3 market+natural sale+callbacks and adds real Perl SortDT befor
     ...args(world),reviewedR4:reviewed,
   });
   const realPerl=originalSort(originalPreEvent.shops[0]);
-  assert.deepEqual(sortedPreEvent.shops[0],realPerl.shop,
-    'full shop matches real original Core SortDT');
+  // The original Perl JSON::PP prints this fractional maintenance charge
+  // to fewer significant decimal digits than JS JSON.stringify. Compare
+  // that single floating-point field with a bounded binary precision error;
+  // every other Core/stock/account field remains an exact deep comparison.
+  assert.ok(Math.abs(
+    sortedPreEvent.shops[0].costtoday-realPerl.shop.costtoday)<1e-12,
+    'original maintenance fraction agrees to 12 decimal places');
+  const {costtoday:nodeCost,...nodeFields}=sortedPreEvent.shops[0];
+  const {costtoday:perlCost,...perlFields}=realPerl.shop;
+  assert.deepEqual(nodeFields,perlFields,
+    'all other shop fields match real original Core SortDT exactly');
   assert.equal(realPerl.idIndex,0);
   assert.equal(realPerl.nameIndex,0);
   assert.equal(sortedPreEvent.receipt.originalSortApplied,true);
