@@ -95,7 +95,7 @@ function showState(s){
   marketBody.replaceChildren();
   if(!offers.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=6;td.textContent='請先初始化來源市場';
+    td.colSpan=5;td.textContent='請先初始化來源市場';
     tr.append(td);marketBody.append(tr);
   }else for(const offer of offers){
     const tr=document.createElement('tr');
@@ -109,14 +109,14 @@ function showState(s){
     cell(offer.price===null?'—':money(offer.price));
     cell(offer.marketStock);
     cell(offer.owned+'／'+offer.limit);
-    const tdInput=document.createElement('td');
+    const tdAction=document.createElement('td');
+    const actions=document.createElement('div');
+    actions.className='market-actions';
     const count=document.createElement('input');
     count.type='number';count.min='1';count.step='1';count.value='1';
     count.setAttribute('aria-label','#'+offer.itemId+' 購買數量');
     count.dataset.marketCount=String(offer.itemId);
     count.disabled=!offer.canBuy;
-    tdInput.append(count);tr.append(tdInput);
-    const tdButton=document.createElement('td');
     const button=document.createElement('button');
     button.type='button';button.className='primary';
     button.dataset.marketBuy=String(offer.itemId);
@@ -124,7 +124,7 @@ function showState(s){
     button.disabled=!offer.canBuy;
     button.title=offer.reason??(offer.marketStock===0?'市場缺貨':
       !shop?'請先開店':'來源市場或持有上限暫不可交易');
-    tdButton.append(button);tr.append(tdButton);
+    actions.append(count,button);tdAction.append(actions);tr.append(tdAction);
     marketBody.append(tr);
   }
   // R2-E: use offers are read-only projections of StreetModule.useItem.
