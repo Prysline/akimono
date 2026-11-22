@@ -60,3 +60,13 @@
 完整 17 個編譯後 EVENT 鍵都存在於來源 hash。七種無自訂回呼的 EVENT 可以同時啟動及存續；其餘正機率 EVENT 只在明示外供 RNG 令 gate 失敗的受控 fixture 下執行，原版零機率特殊事件的當片無持續時間 group 也會保留。任何尚未支援的其他事件實際啟動仍嚴格拒絕。針對每片，直接比較所有 79 ITEM 的 DataRead 前次 EVENT overlay、既存 EVENT 過期、實際開始與結束日誌、下一次事件存續時間、原版 rand(range) 呼叫次序和精確樣本數。不同 Perl 行程各自取得鍵序，不假設 hash seed 固定；包括同時開始、下一片七事件生效、人工來源時間跳躍後部分到期／重觸發、下一片重新載入 overlay 四個情境。時鐘跳躍僅為來源隔離探針，**不是**跨 36 小時可提交遊戲時間轉換。
 
 原版對照於提交 `d98e17ff34adea0114e237d9e139c598db2fdb76` 同 SHA 兩條 Actions 皆成功（Node 1043/1043；Perl 1995/1995、59 個檔案）。本路徑仍明示 `committable:false`，必須由測試呼叫端提供在同一個 Perl 行程實際觀察到的 17 鍵及當片既存事件鍵序；**不是** JS 自行再現原版 hash 遍歷或完整 RNG 產生器。尚缺其他十個 EVENT 的真正回呼／共同全域隨機序列、未知多事件共存的正式 WorldState 存檔、自然販售／PLUS／SortDT 與 36h 結算共用可提交時間核心、HTTP／CAS／重啟原版差分。**R4 仍不可宣告完成。**
+
+## 2026-11-23｜R4 七宣告事件＋兩真實支援 STARTFUNC 共用 17-key 閘門來源差分
+
+在既有 modern/src/original-r4-multi-event-order-fixture.mjs 上加入可選 B-57 reviewedSupportCallbacks，讓已驗證的 getmoney、getpop 和七種宣告型持續 ITEM PARAM EVENT 共用一份真正 Perl keys(%EVENT) 17 鍵遍歷及交錯 RNG 樣本。未提供 B-57 review 時，既有多事件 fixture 預設保持不變。兩支 STARTFUNC 回傳 0，因此抽中 gate 時不佔用 group、不寫入 DTevent，只會依各自 rand(1000) 的命中結果改變受控單店的資金／人氣及實際回呼 log。
+
+新增 modern/tests/original-perl/original-r4-mixed-support-gate-probe.pl，直接 source-eval 凍結 inc-makeitem.cgi 的原版 EVENT hash 初始化、inc-turn.cgi 的 END／START 完整區段；依原版 GetLocalFunction 命名，在暫存測試資料夾將凍結 Standard Street getmoney／getpop STARTFUNC 原文編成 event-s 內的 Perl 檔，讓原版 inc-turn 真的 require、呼叫 event::_local_start、undef callback、清理 INC。僅格式化相依的 event::GetMoneyString 沿用 B-57 既有的數值顯示 stub，並非原版 GUI 格式化引擎。
+
+同一條受控 RNG 串流交錯包含原版 rand(100000) gate、兩個來源 rand(1000) 回呼、原版 rand(timespan) 與 rand(plustime) 活動時間；每個 Oracle Perl 行程直接取得當行程真實 EVENT 和既存 DTevent 的 hash 遍歷順序，不將 DSL 順序假裝成原版 hash。新 modern/tests/r4-mixed-support-gate.test.mjs 和 original-r4-mixed-support-gate.t 比對七個同時存續 EVENT、兩回呼成功與各自未命中、時間片到期及重新觸發、資金上限 999999999、人氣上限 10000、全部 79 ITEM DataRead 欄位、全部商店欄位、日誌次序及每次 RNG 呼叫範圍和數量；缺失來源順序、shop、事件狀態與 RNG 都 fail-closed。
+
+CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 45067706804 與 PR run 45067712054 都成功。Node 1046／1046；Perl 2007／2007、60 個 .t。此路徑仍為 committable:false 的內部受控原版差分。manbiki、goutou、loto、happy、rebel、guildbattle 等混合回呼仍未完整接通；其他正機率事件在此受控樣本下明確 gate miss。人工跳躍時鐘不等於連續可提交遊戲時間，亦不包含完整 36 小時結算、真實世界存檔和重啟。R4 仍未完成。
