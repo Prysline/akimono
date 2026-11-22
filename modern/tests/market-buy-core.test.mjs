@@ -718,3 +718,78 @@ test('R2-B source-compiled BASE pricing is data-driven for previously excluded I
   assert.equal(unsupported.code,'SOURCE_BOUNDARY_REJECTED');
   assert.match(unsupported.details.reason,/wholesale cap is zero/);
 });
+
+
+test('R2-B original global FUNCBUY: real ITEM #64 reaches 500000 voucher condition, missing effect rejects atomically',()=>{
+  const reg=street.marketBuyRegistry,entry=reg.describe(64);
+  const rule=reg.getRule(64);
+  assert.equal(entry.itemCode,'defence-manbiki');
+  assert.equal(entry.basePrice,500000);
+  assert.equal(entry.stockLimit,1);
+  assert.equal(entry.wholesaleLimit,0.5);
+  assert.equal(entry.globalBuyCallback.minTotal,500000);
+  assert.equal(rule.globalBuyCallback.source,'custom/inc-item-data.cgi:3369');
+  const initial=seed().repository.read();
+  const wholesale=[...initial.market.wholesale];
+  wholesale[63]=1; // source CheckWholeStore(0.5, one shop) caps at 1
+  const defined=[...new Set([...initial.market.sparseWrittenSlots,63])]
+    .sort((a,b)=>a-b);
+  const slots=new Set(defined);
+  const market={...initial.market,wholesale,
+    sparseWrittenSlots:defined,sourceWriteShape:'whole-store-79',
+    originalWholesaleCsv:Array.from({length:79},(_,i)=>
+      slots.has(i)?String(wholesale[i]):'').join(',')};
+  const rich={...initial,market,shops:[{
+    ...initial.shops[0],money:600000,
+  }]};
+  const q=sourceMarketQuote(rich,64);
+  assert.equal(q.price,500000);
+  assert.equal(q.timeSeconds,600);
+  const before=encodeMemorySnapshot(rich);
+  const result=apply(rich,buyCommand(rich,64,q));
+  assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(result.details.reason,/unreviewed global FUNCBUY callback/);
+  assert.deepEqual(result.world,rich);
+  assert.equal(encodeMemorySnapshot(rich),before);
+  // A zero-price, zero-wholesale or unknown callback is NEVER inferred safe.
+  const invalid=street.marketBuyRegistry.describe(79);
+  assert.equal(invalid.classification,'unsupported');
+  assert.match(invalid.reason,/wholesale cap is zero/);
+});
+
+test('R2-B market-buy rejects unknown guild and active/unknown original EVENT overlays before any CAS',()=>{
+  const world=seed().repository.read(),q=sourceMarketQuote(world,10);
+  const unsupported=[
+    {...world,shops:[{...world.shops[0],guild:1}]},
+    {...world,period:{...world.period,eventState:{'ken-sale':1}}},
+    {...world,period:{...world.period,eventState:null}},
+  ];
+  for(const candidate of unsupported){
+    const result=apply(candidate,buyCommand(candidate,10,q));
+    assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.match(result.details.reason,/unsupported market, event or shop configuration/);
+    assert.deepEqual(result.world,candidate);
+  }
+});
+
+test('R2-B all compiled ordinary ITEMs retain original global callback provenance and pricebase safety',()=>{
+  const reg=street.marketBuyRegistry;
+  const compiled=reg.entries.filter(e=>e.classification.startsWith('common-'));
+  assert.ok(compiled.length>4,'data-driven flow must not be a relocated whitelist');
+  for(const e of reg.entries){
+    assert.equal(e.globalBuyCallback.minTotal,500000);
+    assert.equal(e.globalBuyCallback.source,'custom/inc-item-data.cgi:3369');
+    assert.equal(e.shopIndex,e.itemId-1);
+    assert.equal(e.wholesaleIndex,e.itemId-1);
+    assert.ok(e.sourceLine>0);
+    assert.ok(e.wholesaleLimit>=0);
+    if(e.classification==='common-dynamic'){
+      assert.equal(e.pricePolicy.kind,'original-pricehalf');
+      assert.ok(e.pricePolicy.pricehalf>0);
+    }
+  }
+  assert.ok(compiled.some(e=>e.itemId===39));
+  assert.ok(compiled.some(e=>e.itemId===14));
+  assert.ok(compiled.some(e=>e.itemId===1));
+  assert.ok(compiled.some(e=>e.itemId===64));
+});
