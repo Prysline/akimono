@@ -76,8 +76,9 @@ export function originalSourceUseClock({rule,job='',experience}){
   let exptime=safe(rule.exptime,'source trained time');
   const modifier=rule.jobTimeModifier;
   if(modifier){
-    if(modifier.job!=='peddle'||modifier.numerator!==2||
-       modifier.denominator!==3)fail('unreviewed source job modifier');
+    if(!['peddle','book','weapon','armor','tool'].includes(modifier.job)||
+       modifier.numerator!==2||modifier.denominator!==3)
+      fail('unreviewed source job modifier');
     if(job===modifier.job){
       time=Math.trunc(time*modifier.numerator/modifier.denominator);
       exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
