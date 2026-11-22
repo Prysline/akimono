@@ -3,6 +3,7 @@
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
+import {originalUseTimeSeconds} from '../src/shared-use-experience.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -88,25 +89,6 @@ const send=(res,status,obj)=>{
     'cache-control':'no-store','x-content-type-options':'nosniff'});
   res.end(JSON.stringify(obj));
 };
-// Read-only original GetDTPoint projection: frozen Core inc-func.cgi.
-// Uninitialized Perl shop fields count as zero; invalid fields never become a
-// guessed score. This is NOT a leaderboard/RANK implementation.
-function sourceShopPoint(shop){
-  if(!shop)return null;
-  const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
-    'rankingcount'];
-  const values=keys.map(key=>shop[key]??0);
-  if(values.some(value=>!Number.isSafeInteger(value)))return null;
-  const [rank,profitstock,sales,tax,paid,wins]=values;
-  // Profit and adjustments may be signed; Perl GetDTPoint accepts losses.
-  if(rank<0||wins<0)return null;
-  let profit=(profitstock*3+sales-tax-paid)/500000+1;
-  const winFactor=0.5+5/(wins+10);
-  if(profit>10)profit=15-50/profit;
-  if(profit<1)profit=1/(2-profit);
-  const point=Math.trunc(rank*winFactor*profit);
-  return Number.isSafeInteger(point)?point:null;
-}
 function state(){
   const world=repo?.read()??null;
   const save=saveStore.status();
@@ -120,29 +102,12 @@ function state(){
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     shop:world?.shops[0]??null,
-    // Original point calculation; RANK is unknown until true multi-shop
-    // SortDT is available. Do not label the rank field as point or RANK.
-    shopSummary:{
-      point:sourceShopPoint(world?.shops?.[0]??null),
-      rankPosition:null,
-    },
     marketOffers:world?.market?streetModule.listMarketOffers(world):[],
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
-      .map(e=>{
-        const item=streetModule.catalog.items.find(i=>i.id===e.itemId);
-        return {
-          itemId:e.itemId,name:e.itemName,
-          basePrice:e.basePrice,stockLimit:e.stockLimit,
-          flagRaw:item?.flagRaw??'',
-          type:item?.typeRaw??null,
-          costRaw:item?.costRaw??null,
-          info:item?.infoRaw??null,
-        };
-      }),
+      .map(e=>({itemId:e.itemId,name:e.itemName})),
     useOffers:streetModule.listUseOffers(world),
-    showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
@@ -225,17 +190,30 @@ function sampleOriginalPlus(world,timespanSeconds){
 function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
   if(!rule?.beforeCallback)return [];
+  // #14 has no material USE list. The frozen UseItem preflight clips the
+  // batch by money and remaining action time BEFORE MakeAmount, and the
+  // latter selects the Gaussian two-draw branch at 20+ requested products.
+  // This is the reviewed source rule, not a separate player command.
+  const shop=world.shops.find(row=>row.id===1);
+  const experience=shop?.exp?.[String(itemId)]??0;
+  const time=originalUseTimeSeconds({time:rule.time,exptime:rule.exptime,
+    experience});
+  const count=Math.max(0,Math.min(requestedCount,
+    Math.floor(shop.money/rule.money),
+    Math.floor((world.nowSeconds-shop.time)/time)));
+  const batchGaussian=count>=2;
   const testMode=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1';
   let draws;
   if(testMode){
     const scenario=process.env.AKIMONO_E2E_USE_SCENARIO??'mixed';
-    const mixed=Array.from({length:5},
+    const ordinary=Array.from({length:5},
       ()=>[0,0,...Array(8).fill(999999)]).flat();
     const gaussian=Array(10).fill(0);
     const cases={
-      mixed:[999999,...mixed,999999],
-      'mixed-loss':[999999,...mixed,0],
-      'zero-loss':[999999,...Array(50).fill(999999),0],
+      mixed:[999999,...(batchGaussian?gaussian:ordinary),999999],
+      'mixed-loss':[999999,...(batchGaussian?gaussian:ordinary),0],
+      'zero-loss':[999999,...(batchGaussian?gaussian:
+        Array(50).fill(999999)),0],
       doubled:[0,...gaussian,999999],
       'doubled-loss':[0,...gaussian,0],
       boundary:[100000,...gaussian,100000],
@@ -246,9 +224,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     draws=sourceCommandDraws({world,kind:'use-item',
       args:{shopId:1,itemId,useId,requestedCount},count:52});
   }
-  // Original funcb uses <=100/1000 and runs BEFORE MakeAmount. It is
-  // followed by five 10-draw groups OR five 2-draw groups, then lostbook.
-  return draws.slice(0,draws[0]<=100000?12:52);
+  // One funcb, then five MakeAmount calls, then one lostbook.
+  return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 function sampleSourceTime(world,minutes){
   // One source stream: natural sales, ITEM FUNCTURN/FUNCSALE, then 59 PLUS.
