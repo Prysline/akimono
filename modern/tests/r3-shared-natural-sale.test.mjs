@@ -8,6 +8,11 @@ import {createStandardStreetModule}
   from '../src/standard-street-module.mjs';
 import {projectSharedNaturalSale}
   from '../src/shared-natural-sale-core.mjs';
+import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand}
+  from '../src/game-core-contract.mjs';
+import {projectOriginalSparseAllPlus}
+  from '../src/original-sparse-all-plus.mjs';
+
 import {R3_ITEM_CALLBACK_STAGE,projectR3ItemCallbackStage}
   from '../src/r3-reviewed-item-callback-stage.mjs';
 
@@ -246,3 +251,68 @@ test('R3 24 direct frozen Perl natural+ITEM callback+PLUS source combinations',(
  assert.ok(integratedOriginal.cases.some(c=>c.span===60));
  assert.ok(integratedOriginal.cases.some(c=>c.percent===150));
 });
+
+const integratedRepository=createMemoryWorldAdapter(createMemoryWorld({
+ worldId:'r3-integrated-source-math-fixture',streetId:'standard-street',
+ nowSeconds:1000000,
+}));
+for(const [kind,revision,options] of [
+ ['initialize-source-market',0,{}],
+ ['open-shop',1,{shopId:1,ownerName:'原版整合測試',shopName:'R3價稅時間'}],
+]){
+ const done=executeMemoryCommand({
+  repository:integratedRepository,streetModule:street,
+  command:{kind,expectedRevision:revision,...options},
+ });
+ assert.equal(done.code,'COMMITTED',JSON.stringify(done.details));
+}
+const integratedBase=integratedRepository.read();
+for(const original of integratedOriginal.cases){
+ test('R3 fully ordered original one-shop pre-EVENT turn: #'+
+   original.itemId+' '+original.percent+'% '+original.span+'s',()=>{
+  const id=original.itemId;
+  const item=Array(79).fill(0);item[id-1]=10;item[62]=1;item[78]=5;
+  const shop={
+   ...integratedBase.shops[0],rank:5010,money:100000,item,
+   showcasecount:1,showcase:[id],price:[original.listedPrice],
+   trush:0,saletoday:0,taxtoday:0,costtoday:0,
+   itemtoday:{},itemyesterday:{},taxmode:0,
+  };
+  const world={...integratedBase,shops:[shop]};
+  const before=JSON.stringify(world);
+  const rule=street.reviewedB41.saleRules[id];
+  assert.equal(rule.unitPrice,original.basePrice);
+  const natural=projectSharedNaturalSale({
+   shop,rule,upkeepCosts:street.reviewedB41.upkeepCosts,
+   spanSeconds:original.span,randomDraws:original.draws,
+  });
+  const callback=projectR3ItemCallbackStage({
+   reviewed:street.reviewedB41.itemCallbacks,shop:natural.shop,
+   spanSeconds:original.span,
+   randomDraws:original.draws.slice(natural.drawsUsed),
+  });
+  const plus=projectOriginalSparseAllPlus({
+   world:{...world,shops:[callback.shop]},
+   reviewed:street.reviewedAllPlus,
+   compiled:street.reviewedGiftMapUse,
+   timespanSeconds:original.span,
+   randomDraws:original.draws.slice(natural.drawsUsed+callback.drawsUsed),
+  });
+  const final=plus.shops[0];
+  assert.equal(JSON.stringify(world),before,'pre-EVENT stage must stay pure');
+  assert.equal(natural.sold,original.sold);
+  assert.equal(callback.drawsUsed,original.span===60?1:0);
+  assert.equal(Object.hasOwn(final,'_sale_count_'),false);
+  assert.equal(final.item[id-1],original.shopStock);
+  assert.equal(final.money,original.money);
+  assert.equal(final.rank,original.rank);
+  assert.equal(final.trush,original.trush);
+  assert.equal(final.saletoday,original.saletoday);
+  assert.equal(final.taxtoday,original.taxtoday);
+  assert.equal(final.temprank,original.temprank);
+  assert.ok(Math.abs(final.costtoday-original.costtoday)<1e-9);
+  assert.deepEqual(plus.market.wholesale,original.wholesale);
+  assert.equal(natural.drawsUsed+callback.drawsUsed+
+   plus.receipt.drawsUsed,original.drawsUsed);
+ });
+}
