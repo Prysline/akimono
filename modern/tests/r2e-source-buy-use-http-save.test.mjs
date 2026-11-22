@@ -504,22 +504,22 @@ test('R2 source-reachable #79/3 kit -> PLUS #8 stones -> #37/1 training, durable
   assert.equal(gift.state.shop.item[78],3);
   assert.equal(gift.state.shop.item[36],1,
     'training kit comes from source voucher exchange, not test fixture');
-  // Source natural-sale/PLUS time slices require the reviewed original
-  // post-buy GetWholeStore wire, not the isolated bootstrap/supply wire.
-  await buy(srv,10);
-  // Let the actual source time slice run natural sales, PLUS and EVENT
-  // checks. No HTTP operation can inject wholesale stock or random draws.
+  // The isolated reviewed source PLUS supply path is available even
+  // while full original natural-sale time slices cannot yet accept gifted
+  // #37 inventory. It is NOT a proof of full player turn/period behavior.
+  // Every 3600s supply fragment is executed through source GameCore and
+  // original random draws; no test injects stones or bypasses market-buy.
   let obtained=false;
-  for(let hour=0;hour<16;hour++){
+  for(let step=0;step<16;step++){
     const state=await srv.state();
     if((find(state,8)?.marketStock??0)>=30){
       obtained=true;break;
     }
-    const turn=await srv.post('/api/advance-time',{
-      expectedRevision:state.world.revision,minutes:60,
+    const supply=await srv.post('/api/supply',{
+      expectedRevision:state.world.revision,timespanSeconds:3600,
     });
-    assert.equal(turn.code,'COMMITTED',
-      'source-reachable magic-stone PLUS turn: '+JSON.stringify(turn));
+    assert.equal(supply.code,'COMMITTED',
+      'source-reviewed magic-stone PLUS fragment: '+JSON.stringify(supply));
   }
   assert.equal(obtained,true,'original market supply must yield 30 stones');
   before=await srv.state();
