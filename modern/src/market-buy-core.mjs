@@ -47,7 +47,10 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   if(!marketBuy.validateWorld(world))
     fail('unsupported market, event or shop configuration');
   const rule=marketBuy.getRule(command.itemId);
-  if(!rule)fail('item has no source-reviewed market purchase semantics');
+  if(!rule){
+    const support=marketBuy.describe?.(command.itemId);
+    fail(support?.reason??'unknown original ITEM or unsupported source market purchase semantics');
+  }
   if(rule.itemId!==command.itemId)fail('reviewed item mismatch');
   const shopIndex=safe(rule.shopIndex,'reviewed shop index');
   const wholesaleIndex=safe(rule.wholesaleIndex,'reviewed wholesale index');
