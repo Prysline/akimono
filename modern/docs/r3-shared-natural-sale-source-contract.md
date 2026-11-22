@@ -9,7 +9,7 @@
 
 新增 `src/r3-reviewed-item-callback-stage.mjs`：從原版 `inc-turn.cgi`、標準街及 rebel DSL 審閱「自然販售 → ITEM FUNCTURN → ITEM FUNCSALE → 排序／期末 → PLUS」的順序與宣告。只有 #70「那由多的項鍊」具有 `funct _local_`，沒有商品 `funcs` 或全域 `FUNCTURN/FUNCSALE`。合法來源取得的 #10 與 #40～#44 玩家庫存不含 #70，因此原版會呼叫 #70 FUNCTURN，但沒有受影響店舖；目前正式時間命令會先執行此審閱階段，遇到未知回呼或 #70 真持有時 fail-closed。
 
-**關鍵 RNG 修正：** #70 的程式先計算 `$TIMESPAN/86.4`，當單次快轉 60 秒即使無持有者，仍需消耗一次 `rand(1)` 才對空店舖集合返回；這筆樣本現在置於自然販售與市場 59 PLUS 之間，避免市場進貨 RNG 位移。時間片 120 秒以上不需此抽樣。原版 Perl 的完整時間回呼、`_sale_count_` 暫存清除、排序／期末、EVENT 及 17 hash 順序尚未整合，不能宣告 R3 全面完成。
+**關鍵 RNG 修正：** #70 的程式先計算 `$TIMESPAN/86.4`，當單次快轉 60 秒即使無持有者，仍需消耗一次 `rand(1)` 才對空店舖集合返回；這筆樣本現在置於自然販售與市場 59 PLUS 之間，避免市場進貨 RNG 位移。時間片 120 秒以上不需此抽樣。本輪已補原版 `FUNCSALE` 階段對 `_sale_count_` 的暫存清除，並新增直接執行原版 Perl 分派片段的 Oracle。完整時間回呼的其他街道／持有 #70 情境、排序／期末、EVENT 及 17 hash 順序尚未整合，不能宣告 R3 全面完成。
 
 ## 來源與責任分工
 

@@ -77,9 +77,14 @@ export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraw
   if(needsRandom&&(!Number.isSafeInteger(randomDraws[0])||
       randomDraws[0]<0||randomDraws[0]>=1000000))
     fail('missing original #70 rand(1)');
-  // The original invokes #70 with no eligible shops: no state changes.
+  // Actual original FUNCSALE stage deletes _sale_count_ before later PLUS.
+  // Keep the projection pure: do not mutate the prior natural-sale proposal.
+  const cleanedShop={...shop};
+  delete cleanedShop._sale_count_;
+  // Original invokes #70 with no eligible shops: no asset changes.
   // At 1m it still consumes a draw, shifting every later PLUS rand.
   return Object.freeze({
+    shop:cleanedShop,
     source:R3_ITEM_CALLBACK_STAGE,
     itemTurnDispatched:Object.freeze([70]),
     itemTurnAffectedShops:0,itemSaleCallbackCount:0,

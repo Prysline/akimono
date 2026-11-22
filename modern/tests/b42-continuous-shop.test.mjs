@@ -109,7 +109,8 @@ test('B-42 actual two market acquisitions and two natural sales share a single W
   checkShop(two.world,expected.second);
   assert.equal(two.world.revision,8);
   assert.equal(two.world.shops[0].itemtoday[10],2);
-  assert.equal(two.world.shops[0]._sale_count_[10].count,1);
+  assert.equal(two.world.shops[0]._sale_count_,undefined,
+    'source FUNCSALE clears per-turn temporary sale counts');
   assert.equal(two.world.nowSeconds,1003600);
   const empty=command('advance-source-time',{
     shopId:1,minutes:10,randomDraws:expected.empty.consumedSamples,
@@ -119,7 +120,8 @@ test('B-42 actual two market acquisitions and two natural sales share a single W
   assert.equal(empty.world.revision,9);
   assert.equal(empty.world.nowSeconds,1004200);
   assert.equal(empty.details.naturalSaleCount,0);
-  assert.deepEqual(empty.world.shops[0]._sale_count_,{});
+  assert.equal(empty.world.shops[0]._sale_count_,undefined,
+    'source callback cleanup also runs for empty showcase');
   assert.equal(empty.world.shops[0].itemtoday[10],2);
   assert.equal(empty.world.shops[0].temprank,two.world.shops[0].rank+1000);
   const before=JSON.stringify(repository.read());

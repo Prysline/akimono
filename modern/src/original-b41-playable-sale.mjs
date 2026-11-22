@@ -283,7 +283,7 @@ export function projectB41Sale({
     shop,rule,upkeepCosts:reviewed.upkeepCosts,
     spanSeconds:span,randomDraws,popularOverride,
   });
-  const nextShop=natural.shop,sold=natural.sold;
+  const sold=natural.sold;
   const naturalDraws=natural.drawsUsed;
   // Exact original inc-turn callback placement precedes the 59 ITEM PLUS.
   const itemCallbackStage=projectR3ItemCallbackStage({
@@ -292,6 +292,7 @@ export function projectB41Sale({
   });
   const callbackDraws=itemCallbackStage.drawsUsed;
   const used=naturalDraws+callbackDraws;
+  const nextShop=itemCallbackStage.shop;
   const newShop=nextShop;
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;

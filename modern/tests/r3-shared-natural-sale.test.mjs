@@ -149,3 +149,36 @@ test('R3 ITEM callback source declaration and inc-turn dispatch edits are refuse
       'foreach(@DT){delete $_->{_sale_count_}}','foreach(@DT){}'),
   }),/drift|source/);
 });
+
+const perlCallbacks=JSON.parse(execFileSync('perl',
+  ['original-r3-item-callback-stage-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+test('R3 executable frozen original ITEM FUNCTURN/FUNCSALE dispatch matches no-owner Node callback projection',()=>{
+  assert.equal(perlCallbacks.cases.length,7);
+  const reviewed=street.reviewedB41.itemCallbacks;
+  for(const original of perlCallbacks.cases){
+    assert.equal(original.temporarySaleCountExists,false,
+      'original FUNCSALE dispatcher must remove per-turn temporary sales');
+    assert.equal(original.drawsUsed,original.span<86.4?1:0,
+      'original #70 consumes rand(1) below the 86.4s source threshold');
+    if(original.owned>0)continue; // real gameplay has no reviewed #70 source
+    const stock=Array(79).fill(0);stock[62]=1;stock[78]=5;
+    const shop={item:stock,rank:5010,showcase:[0],price:[0],
+      _sale_count_:{10:{count:1,price:5000}}};
+    const before=JSON.stringify(shop);
+    const actual=projectR3ItemCallbackStage({
+      reviewed,shop,spanSeconds:original.span,randomDraws:[original.draw],
+    });
+    assert.equal(actual.drawsUsed,original.drawsUsed);
+    assert.equal(original.rankAfter,original.rankBefore);
+    assert.equal(actual.itemTurnAffectedShops,0);
+    assert.equal(actual.itemSaleCallbackCount,0);
+    assert.equal(Object.hasOwn(actual.shop,'_sale_count_'),false);
+    assert.equal(JSON.stringify(shop),before,'source stage must not mutate input');
+  }
+  const wouldAffect=perlCallbacks.cases.find(x=>x.name==='owned-shown-60-low');
+  const wouldNotAffect=perlCallbacks.cases.find(x=>x.name==='owned-shown-60-high');
+  assert.equal(wouldAffect.rankAfter,wouldAffect.rankBefore+1);
+  assert.equal(wouldNotAffect.rankAfter,wouldNotAffect.rankBefore);
+});

@@ -118,7 +118,10 @@ for(const [minutes,perl] of [[30,source.sale30],[60,source.sale60]]){
     assert.ok(Math.abs(result.world.shops[0].costtoday-perl.costtoday)<1e-9);
     assert.equal(result.world.shops[0].temprank,perl.temprank);
     assert.equal(result.world.shops[0].time,perl.time);
-    assert.equal(result.world.shops[0]._sale_count_[10].count,perl.saleRecordCount);
+    // B-38 original natural-only probe retains the temporary sale map.
+    // Full original inc-turn FUNCSALE stage deletes it before PLUS.
+    assert.equal(result.world.shops[0]._sale_count_,undefined);
+    assert.equal(result.details.itemCallbackStage.itemSaleCallbackCount,0);
     assert.deepEqual(result.world.market.wholesale,perl.wholesale);
     assert.deepEqual(result.world.market.sparseWrittenSlots,perl.definedIndices);
     assert.equal(result.world.market.originalWholesaleCsv,perl.originalWholesaleCsv);
