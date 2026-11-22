@@ -201,6 +201,17 @@ for my $code(qw(manbiki goutou)){
     index($body,'$_->{rank}+=int(rand($time));')>=0&&
     index($body,'return 0;')>=0&&
     $body!~/\@\@/;
+  # START/END messages must be compiled from the same frozen happy DSL.
+  # Without this the original END/START region would execute a test-only
+  # blank message instead of the source EVENT log.
+  my($startmsg)=$hits[0]=~/^[ \t]*startmsg[ \t]+([^\r\n]+)$/m;
+  my($endmsg)=$hits[0]=~/^[ \t]*endmsg[ \t]+([^\r\n]+)$/m;
+  for($startmsg,$endmsg){s/^[ \t]+|[ \t]+$//g if defined $_;}
+  die 'original happy START/END messages missing or changed' unless
+    defined($startmsg)&&defined($endmsg)&&
+    $startmsg eq '街上開始舉辦感謝祭了。'&&
+    $endmsg eq '感謝祭已經結束了。';
+  $messages{happy}={start=>$startmsg,end=>$endmsg};
   open my $w,'>:encoding(UTF-8)',"$callbackRoot/event-n/happy.pl" or die $!;
   print $w "use utf8;\npackage event;\nsub _local_now {\n".
     $body."\n}\n1;\n";

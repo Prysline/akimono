@@ -16,6 +16,11 @@ if(ref($o)eq'HASH'){
   is(scalar(@{$o->{lotoCases}}),4,'four original 17-key loto cases');
   is(scalar(@{$o->{happyCases}}),4,'four original 17-key happy START/END/NOWFUNC cases');
   my $fresh=$o->{happyCases}[0]{output};
+  is(scalar(grep{$_->[2] eq '街上開始舉辦感謝祭了。'} @{$fresh->{logs}}),1,
+    'original compiled happy START emits its literal source message');
+  is(scalar(grep{$_->[2] eq '感謝祭已經結束了。'}
+      @{$o->{happyCases}[2]{output}{logs}}),1,
+    'original compiled happy END emits its literal source message');
   ok(exists($fresh->{activeUntilSeconds}{happy}),
     'happy persisted from original START while others stay active');
   is(scalar(grep{$_==100}@{$fresh->{randomDrawRanges}}),1,
