@@ -34,7 +34,7 @@ const perl=JSON.parse(execFileSync('perl',['original-market-buy10-probe.pl'],{
 
 test('B-40 actual Perl PLUS + buy-s.cgi: no stock rejected and successful purchase matches Node WorldState',async()=>{
   const streetModule=await sourceModule();
-  assert.ok(streetModule.capabilities.includes('buy-market-item-10'));
+  assert.ok(streetModule.capabilities.includes('market-buy'));
   const repository=createMemoryWorldAdapter(createMemoryWorld({
     worldId:'b40-source-test',streetId:'standard-street',nowSeconds:1_000_000,
   }));
@@ -46,10 +46,10 @@ test('B-40 actual Perl PLUS + buy-s.cgi: no stock rejected and successful purcha
     shopName:'原版驗收店'});
   assert.ok(created.ok);
   assert.equal(repository.read().shops[0].money,100000);
-  const empty=run('buy-market-item-10',2,{shopId:1,requestedCount:1,
+  const empty=run('market-buy',2,{itemId:10,shopId:1,requestedCount:1,
     marketShelf:0,expectedPrice:5000});
   assert.equal(empty.ok,false);
-  assert.match(empty.details.reason,/市場無貨/);
+  assert.match(empty.details.reason,/original wholesale item sold out/);
   assert.match(perl.initialEmpty.reason,/GAME_ERROR/);
   assert.equal(repository.read().revision,2);
   const supplied=run('reviewed-sparse-all-plus',2,{
@@ -57,10 +57,10 @@ test('B-40 actual Perl PLUS + buy-s.cgi: no stock rejected and successful purcha
   });
   assert.ok(supplied.ok,JSON.stringify(supplied.details));
   assert.deepEqual(supplied.world.market.wholesale,perl.supply.marketBefore);
-  const quote=streetModule.quoteMarketItem10(repository.read());
+  const quote=streetModule.quoteMarketOffer(repository.read(),10);
   assert.equal(quote.price,perl.price);
   assert.equal(quote.shelf,perl.shelf);
-  const success=run('buy-market-item-10',3,{shopId:1,requestedCount:1,
+  const success=run('market-buy',3,{itemId:10,shopId:1,requestedCount:1,
     marketShelf:quote.shelf,expectedPrice:quote.price});
   assert.ok(success.ok,JSON.stringify(success.details));
   assert.equal(success.world.revision,4);
@@ -95,14 +95,14 @@ test('B-40 rejected stale quote, invalid quantity and isolated no-money do not c
   run('open-shop',1,{shopId:1,ownerName:'來源店主',shopName:'來源店'});
   run('reviewed-sparse-all-plus',2,{timespanSeconds:60,
     randomDraws:perl.supply.draws});
-  const quote=streetModule.quoteMarketItem10(repository.read());
+  const quote=streetModule.quoteMarketOffer(repository.read(),10);
   for(const props of [
     {requestedCount:0,marketShelf:quote.shelf,expectedPrice:5000},
     {requestedCount:1,marketShelf:quote.shelf,expectedPrice:4999},
     {requestedCount:1,marketShelf:quote.shelf+1,expectedPrice:5000},
   ]){
     const before=JSON.stringify(repository.read());
-    const rejection=run('buy-market-item-10',3,{shopId:1,...props});
+    const rejection=run('market-buy',3,{itemId:10,shopId:1,...props});
     assert.equal(rejection.ok,false);
     assert.equal(JSON.stringify(repository.read()),before);
   }
@@ -114,10 +114,10 @@ test('B-40 rejected stale quote, invalid quantity and isolated no-money do not c
   const zeroCash={...base,shops:base.shops.map(s=>({...s,money:0}))};
   const lowCashRepository=createMemoryWorldAdapter(zeroCash);
   const rejected=executeMemoryCommand({repository:lowCashRepository,streetModule,
-    command:{kind:'buy-market-item-10',expectedRevision:3,shopId:1,
+    command:{kind:'market-buy',itemId:10,expectedRevision:3,shopId:1,
       requestedCount:1,marketShelf:quote.shelf,expectedPrice:5000}});
   assert.equal(rejected.ok,false);
-  assert.match(rejected.details.reason,/現金不足/);
+  assert.match(rejected.details.reason,/money or market stock prevents buying/);
   assert.equal(lowCashRepository.read().revision,3);
 });
 
@@ -153,8 +153,8 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
     assert.ok(html.includes(sub),sub);
   }
   for(const id of ['initialize','open-shop','store-name','money','rank',
-    'time','showcase','paid','sales','market-price','market-count','owned',
-    'quantity','buy','supply','inventory','feedback','receipt']){
+    'time','showcase','paid','sales','market-offers','market-boundary',
+    'supply','inventory','feedback','receipt']){
     assert.ok(html.includes('id="'+id+'"'),'missing live state DOM id '+id);
   }
   assert.match(html,/receipt-details/);
@@ -187,30 +187,32 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
     ownerName:'本機測試店主',shopName:'本機測試店'});
   assert.equal(opened.ok,true,JSON.stringify(opened));
   assert.equal(opened.state.shop.money,100000);
-  const missing=await post('/api/buy',{expectedRevision:2,
+  const missing=await post('/api/buy',{expectedRevision:2,itemId:10,
     requestedCount:1,marketShelf:0,expectedPrice:5000});
   assert.equal(missing.ok,false);
   assert.equal(missing.state.world.revision,2);
   const supplied=await post('/api/supply',{expectedRevision:2,
     timespanSeconds:60});
   assert.equal(supplied.ok,true,JSON.stringify(supplied));
-  assert.ok(supplied.state.item10.marketStock>0);
-  const before=supplied.state.item10.marketStock;
-  const bought=await post('/api/buy',{expectedRevision:3,
-    requestedCount:1,marketShelf:supplied.state.item10.shelf,
-    expectedPrice:supplied.state.item10.price});
+  assert.ok(supplied.state.marketOffers.find(o=>o.itemId===10).marketStock>0);
+  const before=supplied.state.marketOffers.find(o=>o.itemId===10).marketStock;
+  const bought=await post('/api/buy',{expectedRevision:3,itemId:10,
+    requestedCount:1,marketShelf:supplied.state.marketOffers.find(o=>o.itemId===10).shelf,
+    expectedPrice:supplied.state.marketOffers.find(o=>o.itemId===10).price});
   assert.equal(bought.ok,true,JSON.stringify(bought));
   assert.equal(bought.state.shop.money,95000);
   assert.equal(bought.state.shop.item[9],1);
-  assert.equal(bought.state.item10.marketStock,before-1);
+  assert.equal(bought.state.marketOffers.find(o=>o.itemId===10).marketStock,before-1);
   assert.equal(bought.state.world.revision,4);
-  const replay=await post('/api/buy',{expectedRevision:3,
-    requestedCount:1,marketShelf:supplied.state.item10.shelf,
-    expectedPrice:supplied.state.item10.price});
+  const replay=await post('/api/buy',{expectedRevision:3,itemId:10,
+    requestedCount:1,marketShelf:supplied.state.marketOffers.find(o=>o.itemId===10).shelf,
+    expectedPrice:supplied.state.marketOffers.find(o=>o.itemId===10).price});
   assert.equal(replay.ok,false);
   assert.equal(replay.state.world.revision,4);
   const js=await (await fetch(url+'/app.js')).text();
   assert.match(js,/\/api\/buy/);
+  assert.match(js,/data-market-buy/);
+  assert.doesNotMatch(js,/quoteMarketItem10/);
   assert.match(js,/trade:'交易'/);
   assert.doesNotMatch(js,/trade:'取引'/);
 });
