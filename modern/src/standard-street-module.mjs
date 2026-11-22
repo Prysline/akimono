@@ -295,7 +295,20 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       return buyRegistry?.quote({rule,marketStock})??null;
     },
     validateWorld(world){
-      return world?.events===null&&world.shops?.length===1&&
+      // Original DataRead may load EVENT overlays and guild effects before
+      // source buy-s.cgi. This standalone market-buy slice has neither a
+      // reviewed event-overlaid ITEM compiler nor a guild transaction hook.
+      // An empty source eventState is evidence; null/active is not.
+      const eventState=world?.period?.eventState;
+      const reviewedEvents=world?.period===undefined||
+        (eventState!==null&&eventState!==undefined&&
+         typeof eventState==='object'&&!Array.isArray(eventState)&&
+         Object.keys(eventState).length===0);
+      const guild=world?.shops?.[0]?.guild;
+      const noGuild=guild===undefined||guild===null||guild===0||
+        guild===''||guild===false;
+      return reviewedEvents&&noGuild&&
+        world?.events===null&&world.shops?.length===1&&
         validateSourceSparseMarket(world.market);
     },
     writeMarket({market,wholesale,wholesaleIndex}){
