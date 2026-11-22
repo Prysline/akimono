@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {reviewOriginalCompiledEventCatalog} from '../src/original-event-compiled-catalog.mjs';
 import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {reviewR4EventItemParams,projectR4EventItemParams,R4_EVENT_PARAM_SOURCE}
   from '../src/original-r4-event-item-param.mjs';
@@ -15,10 +15,10 @@ const [itemDsl,rebelDsl,turn,compiler]=await Promise.all([
  'modern/tests/original-perl/inc-turn.cgi',
  'modern/tests/original-perl/inc-makeitem.cgi',
 ].map(read));
-const street=createStandardStreetModule({
- itemDsl,rebelDsl,originalCompilerSource:compiler,originalTurnSource:turn});
+const catalog=reviewOriginalCompiledEventCatalog({
+ itemDsl,rebelDsl,compilerSource:compiler,turnSource:turn});
 const reviewed=reviewR4EventItemParams({
- catalog:street.reviewedEventCatalog,compilerSource:compiler,
+ catalog,compilerSource:compiler,
  model:loadStandardStreetModel(itemDsl,rebelDsl)});
 const oracle=JSON.parse(execFileSync('perl',
  ['original-r4-event-item-param-probe.pl'],{
@@ -33,7 +33,7 @@ test('R4 source ITEM overlay review locks frozen compiler and exactly 9 declarat
  assert.equal(reviewed.committable,false);
  assert.equal(Object.values(reviewed.rules).filter(x=>x.length).length,9);
  assert.throws(()=>reviewR4EventItemParams({
-   catalog:street.reviewedEventCatalog,
+   catalog,
    compilerSource:compiler.replace('$key=~s/^pop$/popular/i;',''),
    model:loadStandardStreetModel(itemDsl,rebelDsl),
  }),/drift/);
