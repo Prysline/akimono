@@ -111,7 +111,7 @@ test('R2 #15/#16/#17 sourced books craft from true #12 gathering, persist twice'
   assert.ok(gathered.shop.item[2]>=20,'source branches #3');
   const supply=await srv.post('/api/supply',{
     expectedRevision:gathered.world.revision,
-    timespanSeconds:86400,
+    timespanSeconds:3600,
   });
   assert.equal(supply.code,'COMMITTED',JSON.stringify(supply));
   for(const id of [15,16,17])await buy(srv,id);
