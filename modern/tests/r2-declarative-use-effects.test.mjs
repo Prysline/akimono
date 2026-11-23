@@ -92,7 +92,8 @@ function fixture(rule,{job='',missingNeed=false}={}){
     trainedUseTimeSeconds:clock.trained,maxStockTimeSeconds:259200,
     shopStatus:true,random:()=>0.5,
   });
-  const randomDraws=Array(dry.multiItem?.randomDraws??0).fill(500000);
+  const randomDraws=[...Array(dry.multiItem?.randomDraws??0).fill(500000),
+    ...(rule.afterCallback?[500000]:[])];
   return {world,randomDraws};
 }
 function frozenPerl(rule,world,randomDraws){
@@ -107,8 +108,12 @@ function frozenPerl(rule,world,randomDraws){
   ],{cwd:join(root,'modern/tests/original-perl'),
     encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024}));
 }
-function compare(rule,{job='',missingNeed=false}={}){
+function compare(rule,{job='',missingNeed=false,destroy=false}={}){
   const {world,randomDraws}=fixture(rule,{job,missingNeed});
+  if(destroy){
+    assert.equal(rule.afterCallback?.kind,'lostbook');
+    randomDraws[randomDraws.length-1]=0;
+  }
   const perl=frozenPerl(rule,world,randomDraws);
   const source=perl.compiled;
   assert.equal(source.time,rule.time);
@@ -146,11 +151,15 @@ function compare(rule,{job='',missingNeed=false}={}){
   assert.deepEqual(result.details.originalAddItem,perl.result.additem);
   assert.deepEqual(result.details.originalAddMsg,perl.result.addmsg);
   assert.equal(result.details.randomDrawsUsed,perl.result.drawsUsed);
+  if(rule.afterCallback){
+    assert.equal(result.details.mapDestroyed,destroy);
+    assert.equal(result.details.originalFunctionReturn,perl.result.functionReturn);
+  }
   assert.notEqual(encodeMemorySnapshot(repo.read()),before);
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,68);
+  assert.equal(offers.length,71);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -200,7 +209,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,68);
+  assert.equal(offers.length,71);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -272,9 +281,8 @@ test('R2 selected eight source #15/#16/#17 manufacturing USEs match frozen Perl'
       compare(rule);
     }
   }
-  for(const useId of [1,3,4])
-    assert.equal(street.useItem.getRule(15,useId),null,
-      'original lostbook potion USE must remain unavailable until reviewed');
+  for(const [useId,param] of [[1,25],[3,25],[4,50]])
+    assert.equal(street.useItem.getRule(15,useId)?.afterCallback?.threshold,param);
 });
 test('R2 #15/#16/#17 selected first-USE profession clocks match frozen Perl',()=>{
   for(const [itemId,useId,job] of [
@@ -285,7 +293,7 @@ test('R2 source advanced Ether requires 20% real #15 proficiency',()=>{
   const ether=street.useItem.getRule(15,2);
   assert.equal(ether.needExperience,200);
   assert.equal(ether.experienceCallback.points,20);
-  assert.equal(street.useItem.getRule(15,1),null);
+  assert.equal(street.useItem.getRule(15,1).needExperience,200);
 });
 test('R2 manufacturing requires source-owned book, not merely gathered materials',()=>{
   const rule=street.useItem.getRule(16,0);
@@ -335,4 +343,29 @@ test('R2 equipment first-USE job time matches original Perl',()=>{
   for(const [itemId,job] of [
     [20,'weapon'],[21,'armor'],[22,'armor'],[23,'weapon'],
   ])compare(street.useItem.getRule(itemId,0),{job});
+});
+test('R2 all three advanced potion lostbook callbacks match original Perl',()=>{
+  for(const [useId,threshold,needExperience] of [
+    [1,25,200],[3,25,400],[4,50,600],
+  ]){
+    const rule=street.useItem.getRule(15,useId);
+    assert.equal(rule?.source,'original-declarative-use-dsl');
+    assert.equal(rule?.requiresOwnedItem,true);
+    assert.equal(rule?.afterCallback?.kind,'lostbook');
+    assert.equal(rule?.afterCallback?.threshold,threshold);
+    assert.equal(rule.needExperience,needExperience);
+    compare(rule);
+    compare(rule,{destroy:true});
+  }
+});
+test('R2 original potion unknown callback/param source drift fails closed',()=>{
+  for(const [from,to] of [
+    ['param\t25','param\t999'],
+    ['func\tlostbook','func\tunknown_callback'],
+  ]){
+    const changed=sources.itemDsl.replace(from,to);
+    assert.notEqual(changed,sources.itemDsl);
+    assert.throws(()=>createStandardStreetModule({...sources,itemDsl:changed}),
+      /unsupported|drift|callback|source/i);
+  }
 });

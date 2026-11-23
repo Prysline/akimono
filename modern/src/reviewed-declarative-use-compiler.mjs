@@ -1,7 +1,7 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
  * #39 dismantling/packing and source-gated #15/#16/#17 plus #20-#23 initial iron/steel manufacturing.
- * The original callback-bearing #15/1,3,4 remain unsupported.
+ * Reviewed source #15/1,3,4 lostbook callbacks use exact 25/50 permille.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
  */
@@ -14,7 +14,6 @@ const groups=Object.freeze(new Map([
   [20,4],[21,4],[22,4],[23,4],
 ]));
 const selectedSubset=Object.freeze(new Map([
-  [15,new Set([0,2])],
   [20,new Set([0,1])],[21,new Set([0,1])],
   [22,new Set([0,1])],[23,new Set([0,1])],
 ]));
@@ -97,7 +96,10 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         continue;
       }
       for(const [field,rows] of Object.entries(block.fields)){
-        if(!accepted.has(field)||!['use','need','get'].includes(field)&&rows.length!==1)
+        const isReviewedPotionCallback=itemId===15&&[1,3,4].includes(useId)&&
+          (field==='func'||field==='param');
+        if((!accepted.has(field)&&!isReviewedPotionCallback)||
+           !['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
       }
       if(!first(block,'name')||!first(block,'time')||
@@ -123,6 +125,21 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       const requiredExperience=first(block,'needexp')?
         sourceAmount(first(block,'needexp'),'needexp'):0;
       const jobTimeModifier=jobsFor(block,define);
+      const sourceCallback=itemId===15&&[1,3,4].includes(useId);
+      const expectedParam=useId===4?50:25;
+      if(sourceCallback&&
+         (first(block,'func')!=='lostbook'||
+          first(block,'param')!==String(expectedParam)))
+        fail('source potion lostbook callback/param drift '+itemId+'/'+useId);
+      if(!sourceCallback&&
+         (first(block,'func')!==undefined||first(block,'param')!==undefined))
+        fail('unreviewed callback appeared '+itemId+'/'+useId);
+      const afterCallback=sourceCallback?Object.freeze({
+        kind:'lostbook',threshold:expectedParam,consumedCount:1,
+        allowLoss:true,
+        message:model.items.find(x=>x.id===itemId).name+
+          '已經破爛到看不懂，就扔掉了。',
+      }):undefined;
       const experienceCallback=inheritedExperience>0?
         Object.freeze({kind:'gain-fixed-exp',points:inheritedExperience}):undefined;
       // The phases match the shared original UseItem implementation. In
@@ -145,6 +162,7 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         limits,resultOk:first(block,'okmsg')??null,
         resultNg:first(block,'ngmsg')??null,
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
+        ...(afterCallback?{afterCallback}:{}),
         ...([15,16,17,20,21,22,23].includes(itemId)?{
           requiresOwnedItem:true,ownedMaximum:ownedLimit,
         }:{}),
@@ -152,6 +170,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==47)fail('original reviewed declarative USE total drift');
+  if(output.length!==50)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

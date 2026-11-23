@@ -31,8 +31,6 @@ die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
   20=>4,21=>4,22=>4,23=>4,37=>4,39=>19);
-my %selected=(15=>{0=>1,2=>1});
-die 'R2 unreviewed potion callback' if $itemId==15&&!$selected{15}{$useId};
 die 'R2 unreviewed advanced iron/steel callback' if
   $itemId>=20&&$itemId<=23&&$useId>1;
 
@@ -94,14 +92,30 @@ for my $i(0..$useId){
     next unless defined $normalized;
     die "R2 oracle unexpected callback/source field $raw"
       unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|okmsg|ngmsg|needexp|job|use|need|get|func|param)\s/i;
-    die 'R2 currently selected USE grew an unreviewed callback'
-      if $i==$useId&&$raw=~/^\s*(?:func|param)\s/i;
+    if($i==$useId&&$raw=~/^\s*(?:func|param)\s/i){
+      die 'R2 source callback out of reviewed potion set'
+        unless $itemId==15&&($useId==1||$useId==3||$useId==4);
+    }
     main::GetBuffer('use',$normalized);
   }
 }
 my $u=$main::g_use;
+my $sourcePotionCallback=($itemId==15&&($useId==1||$useId==3||$useId==4));
+my $expectedCallbackParam=$useId==4?50:25;
+if($sourcePotionCallback){
+  die 'R2 original potion callback source drift' unless
+    ($u->{func}//'')eq'lostbook'&&$u->{param1}==$expectedCallbackParam;
+}else{
+  die 'R2 noncallback recipe grew original callback'
+    if defined($u->{func})&&$u->{func}ne'';
+}
 die 'R2 compiled owner/index changed' unless
   $u->{itemno}==$itemId && $u->{no}==$useId && $u->{time}>0;
+if($sourcePotionCallback){
+  # Frozen lostbook references the real ITEM name while the Core callback
+  # itself is executed by the original Perl UseItem phase.
+  for my $src (@main::out_item){$main::ITEM[$src->{no}]={%$src};}
+}
 my @materials=map {
   my @parts=split(/\t/,$_,-1);
   {no=>main::GetItemNumber($parts[1]),count=>0+$parts[0],
@@ -136,9 +150,11 @@ my $runtime={
   exptime=>0+($u->{exptime}//0),
   money=>0+($u->{money}//0),exp=>0+($u->{exp}//0),
   needexp=>0+($u->{needexp}//0),needjob=>'',needpoint=>0,
-  needpop=>0,needevent=>'',
+  needpop=>0,needevent=>'',param1=>0+($u->{param1}//0),
   use=>\@materials,
-  result=>{create=>\@created,message=>{resultok=>$u->{okmsg}}},
+  result=>{create=>\@created,message=>{resultok=>$u->{okmsg}},
+    ...($sourcePotionCallback?(function=>'lostbook'):())},
+  arg=>{targetidx=>0},
 };
 # Source OutItemData emits this exact expression for each verified
 # 'times/job_*_time_rate' declaration. The full generated _job_use
@@ -180,6 +196,7 @@ print JSON::PP->new->canonical->utf8->encode({
     time=>0+$main::DT->{time},
     useitem=>$result->{useitem}||[],additem=>$result->{additem}||[],
     usemsg=>$result->{usemsg}||[],addmsg=>$result->{addmsg}||[],
+    functionReturn=>$result->{function_return},
     drawsUsed=>$main::R2_USED,randRanges=>\@main::R2_RANGES,
   },
 });

@@ -132,7 +132,7 @@ export function projectSharedUseItem({world,command,useItem}){
   }
   if(rule.afterCallback&&
      (rule.afterCallback.kind!=='lostbook'||
-      ![10,100].includes(rule.afterCallback.threshold)||
+      ![10,25,50,100].includes(rule.afterCallback.threshold)||
       rule.afterCallback.consumedCount!==1))
     fail('unreviewed after callback');
   if(rule.experienceCallback&&
