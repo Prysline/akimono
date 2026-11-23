@@ -161,7 +161,7 @@ function compare(rule,{job='',missingNeed=false,missingNeedId=null,
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,90);
+  assert.equal(offers.length,93);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -211,7 +211,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,90);
+  assert.equal(offers.length,93);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -469,4 +469,41 @@ test('R2 #26 milk inline callback is still gated by source, not silently ignored
   assert.throws(()=>createStandardStreetModule({...sources,itemDsl:
     sources.itemDsl.replace('my $val=$count;','my $val=$count+1;'),
   }),/inline function drift/);
+});
+
+test('R2 #27-#29 source festival nocount single-use matches frozen Perl',()=>{
+  for(const [itemId,expectedMessage] of [
+    [27,'肚子真飽'],[28,'感覺很好'],[29,'獨占了所有人的視線'],
+  ]){
+    const rule=street.useItem.getRule(itemId,0);
+    assert.equal(rule?.source,'original-declarative-use-dsl');
+    assert.equal(rule.singleUseOnly,true);
+    assert.deepEqual(rule.creates,[]);
+    assert.deepEqual(rule.sourceUseMessages,[expectedMessage]);
+    assert.equal(rule.uses.length,1);
+    assert.equal(rule.uses[0].itemId,itemId);
+    assert.equal(rule.uses[0].probabilityPermille,1000);
+    compare(rule);
+    const {world}=fixture(rule);
+    const repo=createMemoryWorldAdapter(world);
+    const before=encodeMemorySnapshot(repo.read());
+    const attempt=executeMemoryCommand({repository:repo,
+      streetModule:street,command:{kind:'use-item',
+        expectedRevision:world.revision,shopId:1,
+        itemId,useId:0,requestedCount:2}});
+    assert.equal(attempt.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.equal(encodeMemorySnapshot(repo.read()),before);
+  }
+});
+test('R2 festival nocount declaration and material message fail closed',()=>{
+  const mutations=[
+    sources.itemDsl.replace('arg\t\tnocount\n\t\t\tuse\t\t1\t整隻烤火雞',
+      'arg\t\tcount\n\t\t\tuse\t\t1\t整隻烤火雞'),
+    sources.itemDsl.replace('肚子真飽','偷換訊息'),
+  ];
+  for(const changed of mutations){
+    assert.notEqual(changed,sources.itemDsl);
+    assert.throws(()=>createStandardStreetModule({...sources,
+      itemDsl:changed}),/festival|source|nocount|drift/i);
+  }
 });

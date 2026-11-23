@@ -27,10 +27,11 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|26|35|36|37|39|66)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|26|27|28|29|35|36|37|39|66)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
-  20=>4,21=>4,22=>4,23=>4,26=>3,35=>1,36=>1,37=>4,39=>19,66=>4);
+  20=>4,21=>4,22=>4,23=>4,26=>3,27=>1,28=>1,29=>1,
+  35=>1,36=>1,37=>4,39=>19,66=>4);
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -101,7 +102,7 @@ for my $i(0..$useId){
     my $normalized=OriginalGiftMapUseHarness::line_for_compiler($raw);
     next unless defined $normalized;
     die "R2 oracle unexpected callback/source field $raw"
-      unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|okmsg|ngmsg|needexp|job|use|need|get|func|param)\s/i;
+      unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|arg|okmsg|ngmsg|needexp|job|use|need|get|func|param)\s/i;
     if($i==$useId&&$raw=~/^\s*(?:func|param)\s/i){
       die 'R2 source callback outside reviewed potion/equipment set'
         unless ($itemId==15&&($useId==1||$useId==3||$useId==4))||

@@ -164,7 +164,8 @@ export function projectSharedUseItem({world,command,useItem}){
     fail('source output callback/branch not reviewed');
   let destroyed=false;
   let useItems=original.multiItem.consumed.map(x=>[x.itemId,x.amount]);
-  let useMsgs=original.multiItem.consumed.map(()=>null);
+  let useMsgs=original.multiItem.consumed.map((row,i)=>
+    rule.sourceUseMessages?.[i]??null);
   let functionReturn=null;
   const stocks=[...original.shops[shopIndex]];
   if(rule.afterCallback){

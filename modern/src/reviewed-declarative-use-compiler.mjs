@@ -1,6 +1,7 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
- * #39 dismantling/packing plus #15/#16/#17, #20-#23 and #66 manufacturing.
+ * #39 dismantling/packing plus #15/#16/#17, #20-#23, #66
+ * manufacturing and #27-#29 single-use festival consumables.
  * Reviewed #15, #20-23 and #66 lostbook callbacks retain source 25/50/200 permille.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
@@ -13,6 +14,7 @@ const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
   [20,4],[21,4],[22,4],[23,4],[66,4],
   [35,1],[36,1],[26,3],
+  [27,1],[28,1],[29,1],
 ]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
@@ -101,18 +103,45 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
           ([20,21,22,23].includes(itemId)&&useId>=2)||
           (itemId===66&&useId>=1);
         const isReviewedCallbackField=reviewedLostbook&&
-          (field==='func'||field==='param');
+          (field==='func'||field==='param')||
+          festival&&field==='arg';
         if((!accepted.has(field)&&!isReviewedCallbackField)||
            !['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
       }
-      const sourceConsumptionOnly=[35,36].includes(itemId);
+      const festival=[27,28,29].includes(itemId);
+      const sourceConsumptionOnly=[27,28,29,35,36].includes(itemId);
+      if(festival){
+        const festivalMessages=new Map([
+          [27,['seven_face','食用','肚子真飽']],
+          [28,['ramusyu','喝','感覺很好']],
+          [29,['boots','穿著出門','獨占了所有人的視線']],
+        ]);
+        const [code,action,message]=festivalMessages.get(itemId);
+        const rawUse=first(block,'use')?.split(/\s+/);
+        if(first(item,'code')!==code||
+           first(item,'limit')!=='1/0'||
+           first(block,'arg')!=='nocount'||
+           first(block,'name')!==action||
+           first(block,'time')!=='1h'||
+           first(block,'price')!=='0'||
+           first(block,'func')!==undefined||
+           first(block,'exp')!==undefined||
+           first(block,'job')!==undefined||
+           rawUse?.length!==4||rawUse[0]!=='1'||
+           rawUse[1]!==model.items.find(x=>x.id===itemId)?.name||
+           rawUse[2]!=='100%'||rawUse[3]!==message||
+           (block.fields.use?.length??0)!==1||
+           (block.fields.get?.length??0)!==0)
+          fail('source nocount festival USE drift '+itemId);
+      }
       if(!first(block,'name')||!first(block,'time')||
          !(block.fields.use?.length)&&!(block.fields.need?.length)||
          (!sourceConsumptionOnly&&!(block.fields.get?.length))||
          (sourceConsumptionOnly&&((block.fields.get?.length??0)!==0||
           first(block,'price')!=='0'||uses.length!==1||
-          !['mino_yogurt','mino_cheese'].includes(first(item,'code')))))
+          !['mino_yogurt','mino_cheese','seven_face',
+            'ramusyu','boots'].includes(first(item,'code')))))
         fail('incomplete source recipe '+itemId+'/'+useId);
       const time=Math.trunc(sourceAmount(first(block,'time'),'time')/2);
       const exptime=first(block,'exptime')?
@@ -174,6 +203,11 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         resultNg:first(block,'ngmsg')??null,
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
         ...(afterCallback?{afterCallback}:{}),
+        ...(festival?{
+          singleUseOnly:true,
+          sourceUseMessages:Object.freeze(
+            [first(block,'use').trim().split(/\s+/)[3]]),
+        }:{}),
         ...([15,16,17,20,21,22,23,66].includes(itemId)?{
           requiresOwnedItem:true,ownedMaximum:ownedLimit,
         }:{}),
@@ -181,6 +215,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==66)fail('original reviewed declarative USE total drift');
+  if(output.length!==69)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }
