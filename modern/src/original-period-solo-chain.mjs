@@ -26,6 +26,8 @@ import {reviewR4GuildFee,projectR4GuildFee,R4_GUILD_FEE_SOURCE}
   from './original-r4-guild-period-fee.mjs';
 import {reviewR4PostPeriodTechLoss,projectR4PostPeriodTechLoss,
   R4_TECH_LOSS_SOURCE} from './original-r4-post-period-tech-loss.mjs';
+import {reviewR4PeriodShopExpiry,projectR4PeriodShopExpiry,
+  R4_EXPIRED_SHOP_SOURCE} from './original-r4-period-shop-expiry.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -38,7 +40,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   originalAddItemSource,detailSource,readSource,adminSource,
   bootstrapMeta,compiledLimits,includeReviewedDragon=false,
   includeReviewedDignity=false,includeReviewedGuild=false,
-  includeReviewedPostTech=false,
+  includeReviewedPostTech=false,includeReviewedShopExpiry=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -53,7 +55,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
   if(typeof includeReviewedDragon!=='boolean'||
      typeof includeReviewedDignity!=='boolean'||
      typeof includeReviewedGuild!=='boolean'||
-     typeof includeReviewedPostTech!=='boolean')
+     typeof includeReviewedPostTech!=='boolean'||
+     typeof includeReviewedShopExpiry!=='boolean')
     bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
@@ -63,6 +66,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
     reviewR4GuildFee({periodSource}):null;
   const postTech=includeReviewedPostTech?
     reviewR4PostPeriodTechLoss({itemDsl,model,periodSource}):null;
+  const shopExpiry=includeReviewedShopExpiry?
+    reviewR4PeriodShopExpiry({periodSource,configSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -97,10 +102,12 @@ export function reviewOriginalSoloPeriodPhaseChain({
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
     soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
+    shopExpiry,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
       'UpdateResetBefore-and-TopGetItem',
+      ...(shopExpiry?['original-absent-owner-CloseShop-call-only']:[]),
       ...(dragon?['dragon-shop-ledger-before-history']:[]),
       'single-shop-ledger',
       ...(guild?['guild-fee-and-attack-defense-after-sale-history']:[]),
@@ -108,8 +115,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
       'SortDT-after','unled-town',
       postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:dragon||dignity||guild||postTech?
-      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues and/or high-EXP technology forgetting after period; external EditGuildMoney IO only recorded, no actual guild file, stale close/events/backup; noncommittable period phase chain':
+    scope:dragon||dignity||guild||postTech||shopExpiry?
+      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues, high-EXP tech and/or absent-owner CloseShop call only; external CloseShop and EditGuildMoney IO only recorded, no actual deletion/guild file/events/backup; noncommittable period phase chain':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -122,7 +129,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   reviewed,shop,town,dtPeople,
   awardDrawMillionths,territoryDrawMillionths,
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
-  postTechDraws=null,
+  postTechDraws=null,nowSeconds=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -175,6 +182,16 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('source-reviewed post-period technical-loss contract required');
   if(reviewed.postTech===null&&postTechDraws!==null)
     bad('unreviewed post-period technique RNG on WorldState');
+  if(reviewed.shopExpiry!==null&&(
+    reviewed.shopExpiry.source!==R4_EXPIRED_SHOP_SOURCE||
+    reviewed.shopExpiry.committable!==false||
+    reviewed.shopExpiry.closeShopEffectKnown!==false||
+    reviewed.shopExpiry.absenceLimitSeconds!==604800))
+    bad('original absent-owner CloseShop source contract required');
+  if(reviewed.shopExpiry===null&&nowSeconds!==null)
+    bad('unreviewed absent-owner time on original period');
+  if(reviewed.shopExpiry!==null)
+    safe(nowSeconds,'actual original period NOW_TIME');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -194,6 +211,14 @@ export function projectOriginalSoloPeriodPhaseChain({
     shop:payout?.shops[0]??beforeSort.shop,reviewed:reviewed.topPrize,
     drawMillionths:awardDrawMillionths,
   });
+  // Frozen period.cgi checks absent owners inside its per-shop loop,
+  // AFTER UpdateResetBefore, BEFORE dragon ledger and sale histories.
+  // CloseShop itself is unreviewed external IO: record the exact call,
+  // never delete a shop, mutate owner records or claim a transaction.
+  const expiryEffect=reviewed.shopExpiry?
+    projectR4PeriodShopExpiry({
+      reviewed:reviewed.shopExpiry,shop:award.shop,nowSeconds,
+    }):null;
   const dragonSettlement=reviewed.dragon?
     projectR4DragonShopLedger({
       reviewed:reviewed.dragon,shops:[award.shop],
@@ -267,6 +292,10 @@ export function projectOriginalSoloPeriodPhaseChain({
     ...(reviewed.postTech?{
       postTechLoss:techLoss,
       postTechSource:reviewed.postTech.source,
+    }:{}),
+    ...(reviewed.shopExpiry?{
+      shopExpiry:expiryEffect,
+      shopExpirySource:reviewed.shopExpiry.source,
     }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
