@@ -115,7 +115,7 @@ my $target={
   id=>2,status=>1,job=>'',point=>0,
   rank=>defined($in->{targetRank})?$in->{targetRank}:5010,
   money=>100000,paytoday=>0,time=>$in->{time}//956800,
-  exp=>{},item=>[@$stock],shopname=>'目標廣告來源店',
+  exp=>{},item=>[@{$in->{targetStock}||$stock}],shopname=>'目標廣告來源店',
 };
 @main::DT=($main::DT,$target);
 @main::DTwholestore=@$wholesale;
