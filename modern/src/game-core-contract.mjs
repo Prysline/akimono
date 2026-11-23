@@ -268,6 +268,21 @@ export function createSourceReviewedMemoryWorldAdapter({
      streetModule?.id!==initial.streetId||
      typeof streetModule.reviewPeriodTransition!=='function')
     reject('source-reviewed v2 WorldState adapter and street required');
+  // Also check the loaded initial period. B43 validates disk snapshots,
+  // but direct callers of this exported factory must not begin with a
+  // fabricated settled period/city and only discover it at a later CAS.
+  if(initial.revision===Number.MAX_SAFE_INTEGER)
+    reject('source-reviewed v2 initial revision exhausted');
+  try{
+    if(streetModule.reviewPeriodTransition({
+      before:initial,
+      after:{...initial,revision:initial.revision+1},
+    })!==true)
+      reject('source-reviewed v2 initial world approval missing');
+  }catch(error){
+    reject('source-reviewed v2 initial world invalid: '+
+      (error instanceof Error?error.message:'source reviewer rejected'));
+  }
   return createMemoryWorldAdapter(initial,{
     reviewPeriodTransition:({before,after})=>
       streetModule.reviewPeriodTransition({before,after}),
