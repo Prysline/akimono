@@ -117,7 +117,7 @@ test('R4 TWO whole frozen original pre-backup periods really execute write.cgi C
   assert.deepEqual(second.output.activeShops,[]);
   assert.equal(second.output.closedShop.status,0);
   assert.equal(second.output.closedShop.rank,0);
-  assert.equal(second.output.closedShop.money,1408);
+  assert.equal(second.output.closedShop.money,1425);
   assert.deepEqual([...second.output.closeDeletedSessions].sort(),
     ['1-one.cgi','1-two.cgi']);
   assert.equal(second.output.closeWriteErrorLogCalls[0].file,'delete');

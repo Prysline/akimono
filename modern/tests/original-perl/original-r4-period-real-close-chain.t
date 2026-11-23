@@ -26,8 +26,8 @@ if(ref($x)eq'HASH'){
     'second source period has zero active shops after SortDT');
   is($second->{output}{closedShop}{status},0,'true frozen CloseShop status zero');
   is($second->{output}{closedShop}{rank},0,'true frozen CloseShop rank zero');
-  is($second->{output}{closedShop}{money},1408,
-    'original dragon and guild/maintenance still change closed shop after CloseShop');
+  is($second->{output}{closedShop}{money},1425,
+    'original second period 1500 payout minus 75 dues; no double charging prior upkeep');
   is($second->{output}{closedShop}{dragon},1500,
     'DragonBalance original file settles after real CloseShop');
   is_deeply([sort @{$second->{output}{closeDeletedSessions}}],
