@@ -33,3 +33,9 @@
 **尚未完成：** B-50 同一間商店和城市連續兩個來源原版期末的純階段，目前設 `nonCommittable:true`；需要將 B-44～B-50 的正確時序、原版 EVENT 真實回呼、FUNCTURN／FUNCSALE、原版人口／獎勵／商店帳務／59 PLUS 及必要持久化語義，實作成**一次且僅一次**的 WorldState CAS 跨期，並完成跨界、存檔、重啟後繼續真經營的 HTTP E2E。來源 EVENT 資料缺失時必須明確阻擋跨期，不得將 `eventState:null` 當作事件全都未發生。未完成前**玩家端仍拒絕任何跨越36小時的操作**；不要增加假期末按鈕。
 
 正式驗收仍依使用者要求：只在同一繁中介面完成「開店→真進貨→合法上架→自然販售→真跨期決算→存檔重啟→續營」後，集中人工驗收。原版 Core CGI／DSL、`main`、`migration/standard-street-s1` 不動，PR #1 保持 Draft 未合併。
+
+## 2026-11-23｜GameCore v2 正式期別／時鐘變更另須通過 R4 原版時鐘閘門
+
+B-51 起始期別和 B-43 雙世代存檔已能持久化來源城市，但**不代表已授權結算**。新增 `original-r4-world-transition-gate.mjs` 經 Standard Street 的 `reviewPeriodTransition` 餵入 GameCore：當來源 v2 世界的時鐘或 `period` 變化，必須先取得原版 36 小時／+3 小時及 B-51／B-59～61 合法期別的審閱許可；跨界結算、假城市、`settledCount>0` 與 `nonCommittable` 來源片段在 CAS 前拒絕。
+
+這是**正式命令進入記憶體 CAS 前**的拒絕契約，並不等於通用 `createMemoryWorldAdapter.compareAndSwap` 已可安全處理任意自訂 caller，或原版真 Guild/Army/Session/Backup 文件副作用已轉成完整 durable 原子提交。現有 B-51 玩家介面仍不得提供假期末完成按鈕；B-43 磁碟仍按來源初始期別或現行三種單 EVENT 狀態嚴格拒絕非審核 settled world。

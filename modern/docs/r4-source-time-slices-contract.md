@@ -136,3 +136,13 @@ rebel NOWFUNC 可能在回呼內 delete 自己的 DTevent；驗證器因此在�
 - `modern/src/original-r4-post-period-tech-loss.mjs` 審閱原版 Standard Street DSL `UpdateResetAfter`：**結算前綴的第二次 SortDT 和城市更新之後**，依期末衰減後 EXP 合計是否大於 4000，對仍持有的 #18 鐵匠的技術、#19 魔法的知識、#38 解體屋之魂、#24 行家的精隨 **依原版定序逐項**擲 `rand(14000)`，命中則減庫存並記錄兩筆 `WriteLog`。真 Perl `original-r4-period-high-exp-tech-probe.pl` 於同一個 shop/city/dragon/guild/dignity 世界連續兩期執行未改動期末前綴：第一期技術 #18／#24 消失，第二期 #19 消失、#38 保留；因上一期庫存改變，第二期技術 RNG 從 4 次降為 2 次。原版探針只以訊息欄位明確辨識技術遺忘日誌，不把早於此階段的頒獎日誌錯納入。
 - `modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs` 和 `modern/tests/original-perl/original-r4-period-high-exp-tech.t` 完整比對兩期整張商店、城市／人口、guild 狀態與明示外部財務呼叫、true drapay 檔案消耗、技術庫存與 WriteLog、來源抽樣範圍、輸入不可變和來源 drift 拒絕。原本 B-50 未選 opt-in 的高 EXP／Dragon／Guild／dignity 仍嚴格拒絕。新增投影結果皆 `nonCommittable:true`，**尚非 36 小時可提交 WorldState**。
 - 程式驗收 SHA `09a11a2ac73de26a8c76d777d768a4b79028211d` 已通過同 SHA Push #45122232062 與 PR #45122236936，Node 1094／1094、Perl 2210／2210（71 檔）。原始 Core／Perl／DSL 未改；完整 R4 仍未達退出條件，詳見 [R4 清冊](r4-exit-audit.md)。
+
+## 2026-11-23｜R4 正式 GameCore／StreetModule v2 期別轉場前置來源閘門（尚未授權結算）
+
+原本 B-51 的 `akimono.memory-world.v2` `period` 只是一個由街道驗證來源語義的 JSON 封套；B-43 磁碟保存器會拒絕偽造已結算城市，但 GameCore 在正式指令導向的記憶體 CAS 前，並沒有專門要求街道解釋來源時鐘與 `period` 的轉場。這與可提交完整 R4 期末仍有實際差距。
+
+現在新增 `src/original-r4-world-transition-gate.mjs`，只接受由凍結 `inc-turn.cgi` + `_config.cgi` 核對的 **36h、+3h** 期界時鐘，以及來源初始化 `B-51` 或現有單一受審核 `B-59/B-60/B-61` 活動封套。它對未經審閱的多事件、任意改人口／城市、`settledCount>0`、時鐘倒退、跨越期末，全部在指令記憶體 CAS 前拒絕。**這個 source gate 沒有任何可授權真期末的分支，`committable:false`。**
+
+`src/game-core-contract.mjs` 在 v2 正式 `applyGameCommand` 得到 StreetModule 結果後、交予記憶體 CAS 之前，若時鐘或期別改動，要求 `StreetModule.reviewPeriodTransition({before,after,command})===true`。缺審閱器、審閱拒絕、或傳回 `nonCommittable:true`／`committable:false` 投影時，回傳 `SOURCE_BOUNDARY_REJECTED` 並保留原版 revision／世界狀態。`src/standard-street-module.mjs` 實際接上已核對的 R4 來源 gate。這是**街道特定邏輯經通用 GameCore 延後驗證**，而非在 GameCore 假造 Standard Street 期末公式；舊 v1 世界的泛用合約不因此變更。
+
+`tests/r4-source-world-transition-cas-guard.test.mjs` 包含同一期內的許可推進、第一個 36h 邊界拒絕、偽造 settledCount／城市／EVENT／錯誤來源、缺審閱器與明示非提交的投影、經 `executeMemoryCommand` CAS 拒絕，以及**兩份已存在的 B-43 磁碟存檔世代**在錯誤期末及偽造儲存時均未被替換。這不取代實際存檔器驗證：直接呼叫測試型 `createMemoryWorldAdapter.compareAndSwap` 或繞過正式指令的自訂程式，不在此來源閘門的保護承諾內；正向可提交完整結算仍須來源與 durable 狀態整合。最初程式 SHA `eeaede783ebfe20745273181280d7f955debe33a` 的同 HEAD Push #45128104169、PR #45128111810 已 success，Node 1101/1101、Perl 2210/2210；後續兩份既有存檔世代的強化測試依最終 HEAD CI 另行驗證。

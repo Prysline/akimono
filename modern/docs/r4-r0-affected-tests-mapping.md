@@ -110,3 +110,10 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `src/original-period-solo-chain.mjs`、`src/original-period-shop-ledger.mjs`：明示 `includeReviewedDignity`／`includeReviewedGuild`／`includeReviewedPostTech` opt-in，保持 `UpdateResetBefore` → 店鋪收益／歷史與維持費 → Guild → Dignity → SortDT → 城市 → `UpdateResetAfter` 的凍結程式順序。舊 B44／B50 預設拒絕高熟練度、外部公會與龍賽，WorldState 仍不可提交。
 - `tests/original-perl/original-r4-guild-period-fee-probe.pl`、`.t`、`tests/r4-source-guild-period-fee.test.mjs`：七個真原版資金／攻防情境與每個 `EditGuildMoney` 呼叫、來源改寫與非法會員防護。
 - `tests/original-perl/original-r4-period-dragon-dignity-probe.pl`、`original-r4-period-all-finance-source-probe.pl`、`original-r4-period-high-exp-tech-probe.pl`，各自搭配 `.t` 及同名 Node 來源差分：同一張真 Perl 店鋪與城市跨兩期保留高 EXP、四技術庫存、財務、城市／人口與共享 RNG；自動核對第二期因前期扣除商品而少用 `rand(14000)`，以及 Perl `WriteLog` 過濾不誤含頒獎訊息。原版 hash／Perl seed、真公會資料檔、Store CAS、backup/session、HTTP 正式跨期均不因此授權。
+
+## 2026-11-23｜R4 正式 GameCore v2 時間與期別變更：來源轉場守門
+
+- `src/original-r4-world-transition-gate.mjs`：綁定凍結 `inc-turn.cgi` 時鐘分割與 `_config.cgi`，只容許 B-51 初始 period 或現有單種 B-59／B-60／B-61 受審核 EVENT 的**未跨 36 小時**安全轉場；已結算期、未知多 EVENT、城市偽改、時鐘倒退均拒絕。
+- `src/game-core-contract.mjs`：v2 的 `period`／時鐘變化必須於 CAS 之前得到 `StreetModule.reviewPeriodTransition` 許可；任何缺失／拒絕或明示非提交的來源純投影返回 `SOURCE_BOUNDARY_REJECTED`，不中斷 v1 泛用既有操作。
+- `src/standard-street-module.mjs`：以真 source text 審閱並接入新的 `reviewPeriodTransition`，不把未實作的 R4 `period-settlement` 暴露為玩家可用命令。
+- `tests/r4-source-world-transition-cas-guard.test.mjs`：原版時鐘跨界、城市／期數／事件假造、缺審閱器、舊 v1 保留、真記憶體 CAS 狀態不變，以及雙世代實際 B-43 save/load 不因拒絕而重寫。**此切片沒有正向 36h 結算，R4 仍不可退出。**
