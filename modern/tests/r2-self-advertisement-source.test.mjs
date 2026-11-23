@@ -142,10 +142,13 @@ test('R2 #62/0 exact RNG samples, ownership and nocount fail closed',()=>{
     assert.equal(encodeMemorySnapshot(repo.read()),before);
   }
 });
-test('R2 source #62 target and guild, and #65 target/event remain refused',()=>{
-  assert.equal(street.listUseOffers(fresh()).length,111);
+test('R2 source #62/1 is memory-only; guild and #65 remain refused',()=>{
+  assert.equal(street.listUseOffers(fresh()).length,111,
+    'no target selector/auth in the single-shop HTTP offer list');
+  assert.equal(street.useItem.getRule(62,1)?.inlineCallback?.kind,
+    'advertise-other');
   for(const [itemId,useIds] of [
-    [62,[1,2]],[65,[0,1,2]],
+    [62,[2]],[65,[0,1,2]],
   ])
     for(const useId of useIds){
       assert.equal(street.useItem.getRule(itemId,useId),null);
