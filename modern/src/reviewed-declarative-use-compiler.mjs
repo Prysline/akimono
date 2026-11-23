@@ -1,7 +1,7 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
- * #39 dismantling/packing and source-gated #15/#16/#17 plus #20-#23 initial iron/steel manufacturing.
- * Reviewed #15 and #20-23 source lostbook callbacks use exact 25/50 permille.
+ * #39 dismantling/packing plus #15/#16/#17, #20-#23 and #66 manufacturing.
+ * Reviewed #15, #20-23 and #66 lostbook callbacks retain source 25/50/200 permille.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
  */
@@ -11,7 +11,7 @@ import {parseSourceNumber} from './standard-street-model.mjs';
 const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
 const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
-  [20,4],[21,4],[22,4],[23,4],
+  [20,4],[21,4],[22,4],[23,4],[66,4],
 ]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
@@ -71,10 +71,10 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
   const output=[];
   for(const [itemId,expectedCount] of groups){
     const item=parsed.blocks.find(b=>b.kind==='ITEM'&&first(b,'no')===String(itemId));
-    const ownedLimit=itemId>=20&&itemId<=23?20:40;
-    const exactLimit=itemId>=20&&itemId<=23?'20/0.5':'40/1';
+    const ownedLimit=([20,21,22,23,66].includes(itemId))?20:40;
+    const exactLimit=([20,21,22,23,66].includes(itemId))?'20/0.5':'40/1';
     if(!item||model.items.find(x=>x.id===itemId)?.code!==first(item,'code')||
-       ([15,16,17,20,21,22,23].includes(itemId)&&
+       ([15,16,17,20,21,22,23,66].includes(itemId)&&
          first(item,'limit')!==exactLimit))
       fail('source owner ITEM/limit '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
@@ -85,7 +85,8 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
     for(const [useId,block] of uses.entries()){
       for(const [field,rows] of Object.entries(block.fields)){
         const reviewedLostbook=(itemId===15&&[1,3,4].includes(useId))||
-          ([20,21,22,23].includes(itemId)&&useId>=2);
+          ([20,21,22,23].includes(itemId)&&useId>=2)||
+          (itemId===66&&useId>=1);
         const isReviewedCallbackField=reviewedLostbook&&
           (field==='func'||field==='param');
         if((!accepted.has(field)&&!isReviewedCallbackField)||
@@ -116,12 +117,14 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         sourceAmount(first(block,'needexp'),'needexp'):0;
       const jobTimeModifier=jobsFor(block,define);
       const sourceCallback=(itemId===15&&[1,3,4].includes(useId))||
-        ([20,21,22,23].includes(itemId)&&useId>=2);
-      const expectedParam=itemId===15&&[1,3].includes(useId)?25:50;
+        ([20,21,22,23].includes(itemId)&&useId>=2)||
+        (itemId===66&&useId>=1);
+      const expectedParam=itemId===66&&useId===3?200:
+        itemId===15&&[1,3].includes(useId)?25:50;
       if(sourceCallback&&
          (first(block,'func')!=='lostbook'||
           first(block,'param')!==String(expectedParam)))
-        fail('source potion lostbook callback/param drift '+itemId+'/'+useId);
+        fail('source reviewed lostbook callback/param drift '+itemId+'/'+useId);
       if(!sourceCallback&&
          (first(block,'func')!==undefined||first(block,'param')!==undefined))
         fail('unreviewed callback appeared '+itemId+'/'+useId);
@@ -154,13 +157,13 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         resultNg:first(block,'ngmsg')??null,
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
         ...(afterCallback?{afterCallback}:{}),
-        ...([15,16,17,20,21,22,23].includes(itemId)?{
+        ...([15,16,17,20,21,22,23,66].includes(itemId)?{
           requiresOwnedItem:true,ownedMaximum:ownedLimit,
         }:{}),
-        effectPlan,scope:'original callback-free recipe; source MARKET, EXP and job clocks; save provenance separately gated',
+        effectPlan,scope:'source-reviewed recipe and optional lostbook; source MARKET, EXP and job clocks; durable save provenance separately gated',
       }));
     }
   }
-  if(output.length!==58)fail('original reviewed declarative USE total drift');
+  if(output.length!==62)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

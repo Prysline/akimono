@@ -27,10 +27,10 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|37|39)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|37|39|66)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
-  20=>4,21=>4,22=>4,23=>4,37=>4,39=>19);
+  20=>4,21=>4,22=>4,23=>4,37=>4,39=>19,66=>4);
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -93,7 +93,8 @@ for my $i(0..$useId){
     if($i==$useId&&$raw=~/^\s*(?:func|param)\s/i){
       die 'R2 source callback outside reviewed potion/equipment set'
         unless ($itemId==15&&($useId==1||$useId==3||$useId==4))||
-          ($itemId>=20&&$itemId<=23&&$useId>=2);
+          ($itemId>=20&&$itemId<=23&&$useId>=2)||
+          ($itemId==66&&$useId>=1);
     }
     main::GetBuffer('use',$normalized);
   }
@@ -101,8 +102,10 @@ for my $i(0..$useId){
 my $u=$main::g_use;
 my $sourceLostbookCallback=
   ($itemId==15&&($useId==1||$useId==3||$useId==4))||
-  ($itemId>=20&&$itemId<=23&&$useId>=2);
-my $expectedCallbackParam=($itemId==15&&($useId==1||$useId==3))?25:50;
+  ($itemId>=20&&$itemId<=23&&$useId>=2)||
+  ($itemId==66&&$useId>=1);
+my $expectedCallbackParam=($itemId==66&&$useId==3)?200:
+  ($itemId==15&&($useId==1||$useId==3))?25:50;
 if($sourceLostbookCallback){
   die 'R2 original lostbook callback source drift' unless
     ($u->{func}//'')eq'lostbook'&&$u->{param1}==$expectedCallbackParam;

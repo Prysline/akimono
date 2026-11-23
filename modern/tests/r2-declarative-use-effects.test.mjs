@@ -58,7 +58,7 @@ function createSourceWorld(){
   }
   return repo.read();
 }
-function fixture(rule,{job='',missingNeed=false}={}){
+function fixture(rule,{job='',missingNeed=false,missingNeedId=null}={}){
   const initial=createSourceWorld();
   const old=initial.shops[0];
   const stock=[...old.item];
@@ -68,7 +68,8 @@ function fixture(rule,{job='',missingNeed=false}={}){
   }
   if(rule.requiresOwnedItem)stock[rule.itemId-1]=1;
   if(missingNeed){
-    const needed=rule.uses.find(x=>x.probabilityPermille===0);
+    const needed=rule.uses.find(x=>x.probabilityPermille===0&&
+      (missingNeedId===null||x.itemId===missingNeedId));
     assert.ok(needed,'must select a NEED recipe');
     stock[needed.itemId-1]=0;
   }
@@ -108,8 +109,9 @@ function frozenPerl(rule,world,randomDraws){
   ],{cwd:join(root,'modern/tests/original-perl'),
     encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024}));
 }
-function compare(rule,{job='',missingNeed=false,destroy=false}={}){
-  const {world,randomDraws}=fixture(rule,{job,missingNeed});
+function compare(rule,{job='',missingNeed=false,missingNeedId=null,
+  destroy=false}={}){
+  const {world,randomDraws}=fixture(rule,{job,missingNeed,missingNeedId});
   if(destroy){
     assert.equal(rule.afterCallback?.kind,'lostbook');
     randomDraws[randomDraws.length-1]=0;
@@ -159,7 +161,7 @@ function compare(rule,{job='',missingNeed=false,destroy=false}={}){
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,79);
+  assert.equal(offers.length,83);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -209,7 +211,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,79);
+  assert.equal(offers.length,83);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -389,5 +391,45 @@ test('R2 #20-23 original advanced forging callbacks retain knowledge, EXP and so
         itemId===23?(useId===2?500:700):(useId===2?400:600));
       assert.equal(rule.experienceCallback.points,20);
     }
+  }
+});
+test('R2 #66 four source ornament manufacturing USEs match true Perl',()=>{
+  for(const useId of [0,1,2,3]){
+    const rule=street.useItem.getRule(66,useId);
+    assert.equal(rule?.source,'original-declarative-use-dsl');
+    assert.equal(rule?.requiresOwnedItem,true);
+    assert.equal(rule?.ownedMaximum,20);
+    assert.deepEqual(rule.uses.filter(x=>x.probabilityPermille===0)
+      .map(x=>x.itemId).slice(0,2),[18,19],
+      'both original knowledge requirements must be held but not consumed');
+    assert.equal(rule.experienceCallback.points,20);
+    assert.equal(rule.needExperience,[0,250,500,500][useId]);
+    assert.equal(rule.afterCallback?.threshold,
+      [undefined,50,50,200][useId]);
+    compare(rule);
+    if(useId>0)compare(rule,{destroy:true});
+  }
+  compare(street.useItem.getRule(66,0),{job:'tool'});
+});
+test('R2 #66 every source NEED is an atomic eligibility gate',()=>{
+  const rule=street.useItem.getRule(66,0);
+  compare(rule,{missingNeed:true,missingNeedId:18});
+  compare(rule,{missingNeed:true,missingNeedId:19});
+  const advanced=street.useItem.getRule(66,3);
+  assert.equal(advanced.uses.filter(x=>x.probabilityPermille===0).length,3);
+  const extra=advanced.uses.filter(x=>x.probabilityPermille===0)
+    .find(x=>![18,19].includes(x.itemId));
+  assert.ok(extra);
+  compare(advanced,{missingNeed:true,missingNeedId:extra.itemId});
+});
+test('R2 #66 source callback 200 permille or unknown func drift rejects',()=>{
+  for(const [needle,replacement] of [
+    ['param\t200','param\t201'],
+    ['func\tlostbook','func\tunreviewed_effect'],
+  ]){
+    const changed=sources.itemDsl.replace(needle,replacement);
+    assert.notEqual(changed,sources.itemDsl);
+    assert.throws(()=>createStandardStreetModule({...sources,itemDsl:changed}),
+      /drift|unsupported|callback|source/i);
   }
 });
