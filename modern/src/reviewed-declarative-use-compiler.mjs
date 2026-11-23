@@ -98,6 +98,7 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       // cumulative EXP is absent, so it cannot affect #26/1 and #26/2.
       // Review it as a boundary, but never generate an executable rule.
       if(itemId===26&&useId===0)continue;
+      const festival=[27,28,29].includes(itemId);
       for(const [field,rows] of Object.entries(block.fields)){
         const reviewedLostbook=(itemId===15&&[1,3,4].includes(useId))||
           ([20,21,22,23].includes(itemId)&&useId>=2)||
@@ -109,7 +110,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
            !['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
       }
-      const festival=[27,28,29].includes(itemId);
       const sourceConsumptionOnly=[27,28,29,35,36].includes(itemId);
       if(festival){
         const festivalMessages=new Map([
