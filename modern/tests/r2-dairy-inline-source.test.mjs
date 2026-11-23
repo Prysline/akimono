@@ -1,0 +1,148 @@
+/**
+ * Real frozen source Perl callback, not a written expected result.
+ * Tests all R2 #25/0-1 and #26/0 inline USEs through shared GameCore.
+ * Separately proves these source-executable worlds are not implicitly
+ * accepted by the B-43 durable-save validator.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path,{join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {createMemoryWorld,createMemoryWorldAdapter,
+  executeMemoryCommand,validateMemoryWorld,encodeMemorySnapshot}
+  from '../src/game-core-contract.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const files=[
+  ['itemDsl','custom/inc-item-data.cgi'],
+  ['rebelDsl','custom/inc-rebel-data.cgi'],
+  ['originalAdminInitSource','modern/tests/original-perl/core-inc-admin-func.cgi'],
+  ['originalDataReadSource','modern/tests/original-perl/inc-func.cgi'],
+  ['originalDataWriteSource','modern/tests/original-perl/write.cgi'],
+  ['originalTurnSource','modern/tests/original-perl/inc-turn.cgi'],
+  ['originalWholeSource','modern/tests/original-perl/whole.cgi'],
+  ['originalConfigSource','_config.cgi'],
+  ['originalCompilerSource','modern/tests/original-perl/inc-makeitem.cgi'],
+  ['originalMarketSource','modern/tests/original-perl/market.cgi'],
+  ['originalItemSource','modern/tests/original-perl/item.cgi'],
+  ['originalDetailSource','modern/tests/original-perl/core-detail.cgi'],
+  ['originalBuySource','modern/tests/original-perl/buy-s.cgi'],
+  ['originalBuyItemSource','modern/tests/original-perl/item.cgi'],
+  ['originalBuyCalcSource','modern/tests/original-perl/calc.cgi'],
+  ['originalUseSource','modern/tests/original-perl/use.cgi'],
+  ['originalItemHelperSource','modern/tests/original-perl/core-inc-item.cgi'],
+];
+const sources=Object.fromEntries(await Promise.all(files.map(
+  async ([key,file])=>[key,await readFile(join(root,file),'utf8')])));
+const street=createStandardStreetModule(sources);
+function fresh(){
+  const repo=createMemoryWorldAdapter(createMemoryWorld({
+    worldId:'r2-cow-inline-source',streetId:'standard-street',
+    nowSeconds:1000000,
+  }));
+  for(const [kind,attrs] of [
+    ['initialize-source-market',{}],
+    ['open-shop',{shopId:1,ownerName:'來源酪農',shopName:'乳製品來源店'}],
+  ]){
+    const cmd={kind,expectedRevision:repo.read().revision,...attrs};
+    assert.equal(executeMemoryCommand({repository:repo,
+      streetModule:street,command:cmd}).code,'COMMITTED');
+  }
+  return repo.read();
+}
+function original(rule,world,requestedCount,randomDraws){
+  const s=world.shops[0];
+  return JSON.parse(execFileSync('perl',[
+    'original-r2-dairy-inline-use-probe.pl',
+    JSON.stringify({itemId:rule.itemId,useId:rule.useId,
+      stock:s.item,wholesale:world.market.wholesale,exp:s.exp??{},
+      money:s.money,paytoday:s.paytoday,time:s.time,
+      rank:s.rank,job:s.job??'',nowSeconds:world.nowSeconds,
+      requestedCount,randomDraws}),
+  ],{cwd:join(root,'modern/tests/original-perl'),
+    encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024}));
+}
+function compare(itemId,useId,{
+  count=1,job='',rank=5010,draws=null,missingCow=false,
+}={}){
+  const rule=street.useItem.getRule(itemId,useId);
+  assert.equal(rule?.source,'original-reviewed-dairy-inline-use');
+  assert.equal(rule.inlineCallback.kind,itemId===25?'milk-cow':'drink-milk');
+  const initial=fresh(),old=initial.shops[0];
+  const stock=[...old.item];
+  if(itemId===25)stock[24]=missingCow?0:3;
+  else stock[25]=40;
+  const world=validateMemoryWorld({...initial,shops:[{
+    ...old,item:stock,rank,job,money:100000,time:956800,exp:{},
+  }]});
+  const total=itemId===25?count+1:count<10?1:0;
+  const randomDraws=draws??Array(total).fill(500000);
+  const oracle=original(rule,world,count,randomDraws);
+  assert.equal(oracle.compiled.time,rule.time);
+  assert.equal(oracle.compiled.exptime,rule.exptime);
+  assert.equal(oracle.compiled.exp,rule.experienceCallback?.points??0);
+  assert.equal(oracle.compiled.money,rule.money);
+  assert.deepEqual(oracle.compiled.uses.map(x=>
+    [x.no,x.count,x.proba]),rule.uses.map(x=>
+    [x.itemId,x.countPerUse,x.probabilityPermille]));
+  const repo=createMemoryWorldAdapter(world);
+  const snapshot=encodeMemorySnapshot(repo.read());
+  const cmd={kind:'use-item',expectedRevision:world.revision,
+    shopId:1,itemId,useId,requestedCount:count,
+    ...(randomDraws.length?{randomDraws}:{})};
+  const result=executeMemoryCommand({repository:repo,streetModule:street,
+    command:cmd});
+  if(missingCow){
+    assert.equal(oracle.result.count,0);
+    assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.equal(encodeMemorySnapshot(repo.read()),snapshot);
+    return;
+  }
+  assert.equal(result.code,'COMMITTED',result.details?.reason);
+  assert.equal(result.details.effectiveCount,oracle.result.count);
+  assert.deepEqual(result.world.shops[0].item,oracle.result.stock);
+  assert.equal(result.world.shops[0].rank,oracle.result.rank);
+  assert.deepEqual(result.world.shops[0].exp??{},oracle.result.exp);
+  assert.equal(result.world.shops[0].money,oracle.result.money);
+  assert.equal(result.world.shops[0].paytoday,oracle.result.paytoday);
+  assert.equal(result.world.shops[0].time,oracle.result.time);
+  assert.deepEqual(result.world.market.wholesale,oracle.result.wholesale);
+  assert.deepEqual(result.details.originalUseItem,oracle.result.useitem);
+  assert.deepEqual(result.details.originalUseMsg,oracle.result.usemsg);
+  assert.deepEqual(result.details.originalAddItem,oracle.result.additem);
+  assert.deepEqual(result.details.originalAddMsg,oracle.result.addmsg);
+  assert.equal(result.details.originalFunctionReturn,
+    oracle.result.functionReturn);
+  assert.deepEqual(result.details.originalInlineLogCalls,oracle.result.logs);
+  assert.equal(result.details.randomDrawsUsed,oracle.result.drawsUsed);
+}
+test('R2 cow both variants source Perl milking output and cow death RNG',()=>{
+  compare(25,0);compare(25,1);compare(25,0,{count:3,job:'cow'});
+  compare(25,1,{count:3,job:'cow'});
+  compare(25,0,{count:3,draws:[500000,0,0,0]});
+  compare(25,1,{count:3,draws:[500000,0,0,0]});
+});
+test('R2 milk drinking uses original small/medium/large rank branches',()=>{
+  compare(26,0,{count:1});
+  compare(26,0,{count:9,rank:9999,draws:[500000],job:'cow'});
+  compare(26,0,{count:10});
+  compare(26,0,{count:30,rank:4});
+  compare(26,0,{count:40,rank:10000});
+});
+test('R2 cow NEED missing rejects without callback RNG or world mutation',()=>{
+  compare(25,0,{missingCow:true,draws:[]});
+  compare(25,1,{missingCow:true,draws:[]});
+});
+test('R2 unknown dairy callback text fails closed',()=>{
+  for(const [before,after] of [
+    ['AddItem(26,$val,','AddItem(27,$val,'],
+    ['if($count>=30)','if($count>=40)'],
+  ]){
+    const changed=sources.itemDsl.replace(before,after);
+    assert.notEqual(changed,sources.itemDsl);
+    assert.throws(()=>createStandardStreetModule({...sources,
+      itemDsl:changed}),/R2 dairy inline source|drift|changed/i);
+  }
+});
