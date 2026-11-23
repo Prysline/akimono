@@ -126,10 +126,44 @@ async t=>{
   const supplied=await s.state();
   const offer=supplied.marketOffers.find(x=>x.itemId===62);
   assert.equal(offer?.canBuy,true,'source PLUS must actually supply #62');
-  const bought=await s.post('/api/buy',{
+  // Starting gold is 100000; the genuine #62 quote can exceed that.
+  // Earn the difference through the actual starter vouchers, #14 map USE
+  // and original source natural sales. No test balance/inventory injection.
+  const gift=await s.post('/api/use',{
     expectedRevision:supplied.world.revision,
+    itemId:79,useId:0,requestedCount:1,
+  });
+  assert.equal(gift.code,'COMMITTED',JSON.stringify(gift));
+  const map=await s.post('/api/use',{
+    expectedRevision:gift.state.world.revision,
+    itemId:14,useId:0,requestedCount:1,
+  });
+  assert.equal(map.code,'COMMITTED',JSON.stringify(map));
+  assert.ok(map.state.shop.item[43]>0,
+    'frozen #14 source GET must yield #44 swords in deterministic test');
+  const showcase=await s.post('/api/showcase',{
+    expectedRevision:map.state.world.revision,itemId:44,per:200,
+  });
+  assert.equal(showcase.code,'COMMITTED',JSON.stringify(showcase));
+  let earned=showcase.state;
+  for(let hour=0;hour<12;hour++){
+    const live=earned.marketOffers.find(x=>x.itemId===62);
+    if(live?.canBuy&&earned.shop.money>=live.price)break;
+    const step=await s.post('/api/advance-time',{
+      expectedRevision:earned.world.revision,minutes:60,
+    });
+    assert.equal(step.code,'COMMITTED',JSON.stringify(step));
+    earned=step.state;
+  }
+  const affordable=earned.marketOffers.find(x=>x.itemId===62);
+  assert.equal(affordable?.canBuy,true,
+    'advertising package must remain available from source PLUS');
+  assert.ok(earned.shop.money>=affordable.price,
+    'only authentic source sales may fund the expensive original package');
+  const bought=await s.post('/api/buy',{
+    expectedRevision:earned.world.revision,
     itemId:62,requestedCount:1,
-    marketShelf:offer.shelf,expectedPrice:offer.price,
+    marketShelf:affordable.shelf,expectedPrice:affordable.price,
   });
   assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
   assert.equal(bought.state.world.shops[0].item[61],1,
