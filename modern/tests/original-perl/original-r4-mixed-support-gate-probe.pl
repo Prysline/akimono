@@ -24,7 +24,9 @@ BEGIN {
 binmode STDOUT,':raw';
 our (@ITEM,@out_item,@rows,%EVENT,%DTevent,$temptimenow,$timespan,
      @DT,@LOG,@R4_MULTI_DRAWS,@R4_MULTI_RANGES,$ITEM_DIR,$MAX_MONEY,$TIMESPAN,
-     %GUILD,%GUILD_DATA,$DOMINION,$READ_GUILD,$READ_GUILD_DATA,$SET_TOWN);
+     %GUILD,%GUILD_DATA,$DOMINION,$READ_GUILD,$READ_GUILD_DATA,$SET_TOWN,
+     $STATE,$DTTaxrate,$BAL_JOB,$BAL_NAME,%RIOT,%ARMY,%id2idx,
+     $READ_ARMY,$WRITE_ARMY,@R4_NOW_KEYS);
 my $callbackRoot=tempdir('akimono-r4-mixed-XXXXXX',TMPDIR=>1,CLEANUP=>1);
 make_path("$callbackRoot/event-s","$callbackRoot/event-n",
   "$callbackRoot/event-e");
@@ -43,8 +45,11 @@ sub GetPath {
       ($kind eq 'event-n'&&exists($EVENT{$code}))||
       ($kind eq 'event-e'&&$code eq 'guildbattle')
     );
+  push @R4_NOW_KEYS,$code if $kind eq 'event-n';
   return "$callbackRoot/$kind/$code.pl";
 }
+sub ReadArmy {$READ_ARMY++;1;}
+sub WriteArmy {$WRITE_ARMY++;1;}
 sub ReadGuild {$READ_GUILD++;1;}
 sub ReadGuildData {$READ_GUILD_DATA++;1;}
 sub SetTownData {
@@ -88,6 +93,7 @@ my %instant=map{($_=>1)}qw(manbiki goutou);
 my %loto=map{($_=>1)}qw(loto);
 my %happy=map{($_=>1)}qw(happy);
 my %specialGuild=map{($_=>1)}qw(guildbattle);
+my %specialRebel=map{($_=>1)}qw(rebel);
 my @durableExtra=qw(plusup-tetu ken-sale);
 my %durableExtra=map{($_=>1)}@durableExtra;
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
@@ -229,6 +235,36 @@ for my $code(qw(manbiki goutou)){
   close $writer or die $!;
   $event::GUILDIDX_name=0;
 }
+# Extract and compile exact frozen rebel NOWFUNC into the same event-n
+# dispatcher as happy. Only external ReadArmy/WriteArmy/formatter are stubs.
+{
+  my $rebelPath=File::Spec->catfile($FindBin::Bin,
+    '../../../custom/inc-rebel-data.cgi');
+  open my $reader,'<:encoding(UTF-8)',$rebelPath or die $!;
+  local $/;my $dsl=<$reader>;
+  close $reader;
+  my @blocks=split(/^\s*\@\@event[^\r\n]*\r?\n/mi,$dsl);
+  shift @blocks;
+  for(@blocks){s/^\s*\@\@(event|END|ITEM|FUNC\w+)\b[\s\S]*$//mi;}
+  my @hits=grep(/^\s*code\s+rebel(?:\s|$)/m,@blocks);
+  die 'frozen original rebel source missing or ambiguous' unless @hits==1;
+  my($body)=$hits[0]=~/
+    ^\s*func\s+_local_\s*\r?\n
+    ([\s\S]*?)
+    ^[ \t]*_local_[ \t]*$
+  /mx;
+  die 'frozen original rebel NOWFUNC changed' unless
+    defined($body)&&index($body,'main::ReadArmy();')>=0&&
+    index($body,'main::WriteArmy();')>=0&&
+    index($body,'rand(100) > 75')>=0&&
+    index($body,'rand(5)')>=0&&
+    index($body,'return 0;')>=0&&$body!~/\@\@/;
+  open my $writer,'>:encoding(UTF-8)',"$callbackRoot/event-n/rebel.pl"
+    or die $!;
+  print $writer "use utf8;\npackage event;\nsub _local_now {\n".
+    $body."\n}\n1;\n";
+  close $writer or die $!;
+}
 # True happy NOWFUNC: exact frozen DSL body compiled into the existing
 # event-n file, then required by the original inc-turn NOWFUNC loop.
 {
@@ -317,7 +353,7 @@ sub step {
   @ITEM=(undef,map{{%{$_}}}@baseItems);
   my @activeOrder=keys(%DTevent);
   for my $key(@activeOrder){
-    if($key eq 'happy'||$specialGuild{$key}){next;}
+    if($key eq 'happy'||$specialGuild{$key}||$specialRebel{$key}){next;}
     die "unreviewed active code $key" unless
       $wanted{$key}||$durableExtra{$key};
     my $executed=eval 'package main;use utf8;no strict;no warnings;'.
@@ -353,6 +389,22 @@ sub step {
   # CGI process isolation: original END uses undef &$func but does not
   # delete %INC. Each step is one independent source CGI request.
   delete $INC{"$callbackRoot/event-e/guildbattle.pl"};
+  my $rebelInput=$o{rebelContext};
+  $READ_ARMY=0;$WRITE_ARMY=0;%RIOT=();%ARMY=();
+  $STATE=undef;$DTTaxrate=0;$BAL_JOB='外敵';$BAL_NAME='首領';
+  if($rebelInput){
+    die 'explicit original rebel context missing' unless
+      ref($rebelInput)eq'HASH'&&ref($rebelInput->{town})eq'HASH'&&
+      ref($rebelInput->{riotIds})eq'ARRAY'&&
+      ref($rebelInput->{armyById})eq'HASH';
+    $STATE={%{$rebelInput->{town}}};
+    %RIOT=map{($_=>1)}@{$rebelInput->{riotIds}};
+    %ARMY=%{$rebelInput->{armyById}};
+    $DTTaxrate=$rebelInput->{taxRate};
+    $BAL_JOB=$rebelInput->{balJob};
+    $BAL_NAME=$rebelInput->{balName};
+  }
+  %id2idx=($shop->{id}=>0);
   my @startOrder=keys(%EVENT);
   die 'source original 17-key order unexpectedly unstable' unless
     join("\0",@startOrder)eq join("\0",@runtimeHashKeys);
@@ -446,20 +498,40 @@ sub step {
       $groups{$e->{group}}=1;
     }
   }
-  # Source NOWFUNC executes after all START callbacks for existing or
-  # freshly begun happy; the one original range is int(TIMESPAN/36).
-  push @samples,($o{happyNowDraw}//900000)
-    if $happyStillActive||$happyStarted;
+  # Source NOWFUNC shares ONE RNG with START. Existing source hash keys
+  # already have a Perl-process order; the actual GetPath event-n calls
+  # below capture the true order before callback-side deletion (rebel may
+  # undef its own DTevent). Cases with rebel deliberately start no other
+  # durable event, so the old hash key order after filtering source END
+  # expirations is the Perl NOW order, not an invented DSL sequence.
+  my $rebelStillActive=exists($DTevent{rebel})&&
+    $DTevent{rebel}>=$begin+$span;
+  if($rebelStillActive){
+    my @nowExpected=grep{$DTevent{$_}>=$begin+$span} keys(%DTevent);
+    for my $code(@nowExpected){
+      if($code eq 'happy'){
+        push @samples,($o{happyNowDraw}//900000);
+      }elsif($code eq 'rebel'){
+        my $draws=$o{rebelNowDraws}//[];
+        die 'rebel NOW source sample count unsupported' unless
+          ref($draws)eq'ARRAY'&&@$draws<=2;
+        push @samples,@$draws;
+      }
+    }
+  }else{
+    push @samples,($o{happyNowDraw}//900000)
+      if $happyStillActive||$happyStarted;
+  }
   @R4_MULTI_DRAWS=@samples;
-  @R4_MULTI_RANGES=();@LOG=();
+  @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
   @DT=($shop);
   my $result=R4MultiOriginalEventSlice();
   die 'original multi-event RNG unused samples' if @R4_MULTI_DRAWS;
   my %state=%{$result->{state}};
   for my $code(keys %state){die 'unsupported source EVENT persisted' unless
     $wanted{$code}||$happy{$code}||$durableExtra{$code}||
-    $specialGuild{$code};}
-  my @nowHashOrder=keys(%DTevent);
+    $specialGuild{$code}||$specialRebel{$code};}
+  my @nowHashOrder=@R4_NOW_KEYS;
   return {
     name=>$o{name},
     input=>{
@@ -470,6 +542,10 @@ sub step {
       nowHashOrderFixture=>\@nowHashOrder,
       randomDraws=>\@samples,shop=>$initial,
       ($guildInput?(guildContext=>$guildInput):()),
+      ($rebelInput?(
+        rebelContext=>$rebelInput,
+        rebelNowDrawCount=>scalar(@{$o{rebelNowDraws}//[]}),
+      ):()),
     },
     output=>{
       activeUntilSeconds=>\%state,
@@ -486,6 +562,14 @@ sub step {
           }@{$guildInput->{guilds}}],
         },
         guildEndCallbacks=>$SET_TOWN?['guildbattle']:[],
+      ):()),
+      ($rebelInput?(
+        rebelContext=>{
+          town=>{%$STATE},riotIds=>[sort{$a<=>$b}keys(%RIOT)],
+          armyById=>{%ARMY},taxRate=>$DTTaxrate,
+          balJob=>$BAL_JOB,balName=>$BAL_NAME,
+        },
+        rebelNowCallbacks=>$READ_ARMY?['rebel']:[],
       ):()),
     },
   };
@@ -761,11 +845,58 @@ my $neverActive=step(name=>'guildbattle-zero-start-not-durable',
   guildContext=>$guildInput,shop=>$initialShop);
 push @guildCases,$neverActive;
 
+
+# Last R4 missing special callback: genuine original rebel NOWFUNC executed
+# in same 17-key Perl hash as ten durable overlays, happy, and guildbattle.
+my @rebelCases;
+my %townBase=(leader=>1,money=>10000,in=>0,out=>0,
+  develop=>5001,devem=>0,safety=>5001,safem=>0,
+  army=>10000,robina=>2000,robinb=>2500);
+my $rebelContext={
+  town=>{%townBase},riotIds=>[],armyById=>{},taxRate=>0,
+  balJob=>'外敵',balName=>'首領',
+};
+my $rebelShop={%{$allStart->{output}{shop}},
+  name=>'伊洛',shopname=>'原版商店',army=>100};
+%DTevent=(%{$allStart->{output}{activeUntilSeconds}},rebel=>2000000);
+my $rebelHappy=step(name=>'rebel-happy-ten-durable-interleaved-NOW',
+  begin=>1003600,prior=>{%DTevent},shop=>$rebelShop,
+  happyNowDraw=>300000,rebelNowDraws=>[900000,500000],
+  rebelContext=>$rebelContext);
+push @rebelCases,$rebelHappy;
+my $suppressContext={%$rebelContext,town=>{%townBase,robinb=>0}};
+%DTevent=(%{$allStart->{output}{activeUntilSeconds}},rebel=>2000000);
+my $rebelSuppressed=step(name=>'rebel-NOW-deletes-itself-while-happy-persists',
+  begin=>1003600,prior=>{%DTevent},shop=>$rebelShop,
+  happyNowDraw=>750000,rebelNowDraws=>[],
+  rebelContext=>$suppressContext);
+push @rebelCases,$rebelSuppressed;
+my $riotContext={%$rebelContext,
+  town=>{%townBase,robina=>0,robinb=>0},
+  riotIds=>[1],armyById=>{1=>3000}};
+%DTevent=(rebel=>2000000);
+my $rebelRiot=step(name=>'rebel-armed-rioter-updates-current-shop-and-army',
+  begin=>1000000,prior=>{%DTevent},shop=>$rebelShop,
+  rebelNowDraws=>[500000],rebelContext=>$riotContext);
+push @rebelCases,$rebelRiot;
+%DTevent=(%{$allStart->{output}{activeUntilSeconds}},
+  guildbattle=>1003600,rebel=>2000000);
+my $rebelWithGuild=step(name=>'guildbattle-END-then-rebel-and-happy-NOW',
+  begin=>1003600,prior=>{%DTevent},shop=>$rebelShop,
+  guildContext=>$guildInput,rebelContext=>$rebelContext,
+  happyNowDraw=>750000,rebelNowDraws=>[0,500000]);
+push @rebelCases,$rebelWithGuild;
+%DTevent=(rebel=>1003000);
+my $rebelExpired=step(name=>'expired-rebel-has-no-NOW-effect',
+  begin=>1000000,prior=>{%DTevent},shop=>$rebelShop,
+  rebelNowDraws=>[],rebelContext=>$rebelContext);
+push @rebelCases,$rebelExpired;
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
   happyCases=>\@happyCases,durableCases=>\@durableCases,
-  guildCases=>\@guildCases,
+  guildCases=>\@guildCases,rebelCases=>\@rebelCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });
