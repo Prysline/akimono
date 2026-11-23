@@ -35,6 +35,16 @@ die 'R2 unreviewed potion callback' if $itemId==15&&!$selected{15}{$useId};
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
+# #15/2 is callback-free, but its source compiler must first read #15/1.
+# That prior USE has a named lostbook callback; install the frozen original
+# GetLocalFunction, never execute the previous recipe or source CGI.
+my $sourceMake=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
+my $getLocal=OriginalFullUseLostbookHarness::section(
+  $sourceMake,'GetLocalFunction');
+my $compiledLocal=eval "package main;use utf8;no strict;no warnings;\n".
+  $getLocal."\n1;";
+die "R2 original GetLocalFunction failed: $@" unless $compiledLocal;
+sub main::GetLine { return "_local_\n"; }
 my $dsl=OriginalGiftMapUseHarness::original_dsl();
 my $compiler=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
 my $core=OriginalGiftMapUseHarness::source('use.cgi');
