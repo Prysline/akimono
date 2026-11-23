@@ -261,7 +261,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='drink-milk'&&trial.count<10?1:0;
+      inline==='advertise-self'?1:
+        inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
     return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'

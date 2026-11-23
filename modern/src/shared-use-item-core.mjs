@@ -189,7 +189,24 @@ export function projectSharedUseItem({world,command,useItem}){
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
   let inlineShowcase=null,inlineDairy=null,inlineWork=null;
-  let inlineCareer=null,inlineParty=null;
+  let inlineCareer=null,inlineParty=null,inlineAdvertisement=null;
+  if(rule.inlineCallback?.kind==='advertise-self'){
+    if(rule.itemId!==62||rule.useId!==0||
+       !rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed source advertisement callback');
+    inlineAdvertisement=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineAdvertisement||
+       !Number.isSafeInteger(inlineAdvertisement.rank)||
+       inlineAdvertisement.rank<0||inlineAdvertisement.rank>10000||
+       typeof inlineAdvertisement.returned!=='string'||
+       !Array.isArray(inlineAdvertisement.logCalls))
+      fail('original advertising callback invalid');
+    nextShop.rank=inlineAdvertisement.rank;
+    functionReturn=inlineAdvertisement.returned;
+  }
   if(rule.inlineCallback?.kind==='party-popularity'){
     if(rule.itemId!==77||rule.useId!==0||
        !rule.singleUseOnly||original.count!==1||
@@ -320,10 +337,11 @@ export function projectSharedUseItem({world,command,useItem}){
           inlineDairy.addMessages[index-original.multiItem.added.length]:
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
-      ...(inlineDairy||inlineWork||inlineCareer||inlineParty?{
-        originalInlineLogCalls:(inlineParty?.logCalls??
-          inlineCareer?.logCalls??inlineDairy?.logCalls??
-          inlineWork.logCalls),
+      ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
+         inlineAdvertisement?{
+        originalInlineLogCalls:(inlineAdvertisement?.logCalls??
+          inlineParty?.logCalls??inlineCareer?.logCalls??
+          inlineDairy?.logCalls??inlineWork.logCalls),
       }:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,
@@ -334,8 +352,8 @@ export function projectSharedUseItem({world,command,useItem}){
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
-        ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||inlineParty?
-          ['source-inline-callback']:[]),
+        ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||
+           inlineParty||inlineAdvertisement?['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
       doubleRewardTriggered:doubled,mapDestroyed:destroyed,

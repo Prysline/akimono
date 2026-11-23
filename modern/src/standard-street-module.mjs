@@ -66,6 +66,10 @@ import {PERIOD_WORLD_SCHEMA}
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
+import {compileReviewedSelfAdvertiseUse}
+  from './reviewed-self-advertise-use.mjs';
+import {projectOriginalSelfAdvertisement}
+  from './original-inline-self-advertise-model.mjs';
 import {compileReviewedPartyUse}
   from './reviewed-party-use.mjs';
 import {projectOriginalPartyPopup}
@@ -391,9 +395,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const partyUse=compileReviewedPartyUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  const selfAdvertiseUse=compileReviewedSelfAdvertiseUse({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
-    ...bookWorkUses,...careerChangeUses,partyUse,
+    ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -462,6 +469,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original ITEM has no reviewed USE #'+useId;
     },
     runInlineCallback({rule,shop,count,random}){
+      if(rule===selfAdvertiseUse){
+        if(rule.inlineCallback?.kind!=='advertise-self'||count!==1)
+          bad('unreviewed self-advertising callback');
+        return projectOriginalSelfAdvertisement({rule,shop,count,random});
+      }
       if(rule===partyUse){
         if(rule.inlineCallback?.kind!=='party-popularity'||count!==1)
           bad('unreviewed original party popup');
@@ -642,7 +654,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse].filter(Boolean)
+        ...careerChangeUses,partyUse,selfAdvertiseUse].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -665,7 +677,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             const providers=[giftUseRule,...giftUseVariants,
               swordUseRule,...declarativeUses,...gatheringUses,
               ...dairyInlineUses,...bookWorkUses,
-              ...careerChangeUses,partyUse].filter(provider=>
+              ...careerChangeUses,partyUse,
+              selfAdvertiseUse].filter(provider=>
                 provider?.creates?.some(output=>
                   output.itemId===row.itemId&&output.countPerUse>0)||
                 (row.itemId===26&&provider?.itemId===25&&
