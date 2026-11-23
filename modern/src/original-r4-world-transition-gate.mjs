@@ -68,6 +68,14 @@ export function allowR4UnsettledWorldTransition({reviewed,before,after}){
     fail('source WorldState identity or revision drift');
   if(!safe(after.nowSeconds)||after.nowSeconds<before.nowSeconds)
     fail('original clock regression');
+  // Source EVENT start/expiry is driven by inc-turn's nonzero time span.
+  // A syntactically valid single EVENT overlay alone is not proof that it
+  // started or ended. In particular, direct CAS at an identical timestamp
+  // may NOT silently invent an iron/happy/sword event or expiry.
+  if(after.nowSeconds===before.nowSeconds&&
+     JSON.stringify(before.period.eventState)!==
+       JSON.stringify(after.period.eventState))
+    fail('original EVENT schedule cannot change with zero time span');
   // Even when an otherwise trusted StreetModule supplies a period receipt,
   // crossing the source clock boundary requires the entire ORIGINAL
   // settlement state and durable transaction that are not yet reviewed.
