@@ -344,6 +344,19 @@ async function api(req,res,url){
   if(req.headers.origin && req.headers.origin!==`http://127.0.0.1:${server.address().port}`)
     return send(res,403,{ok:false,error:'僅允許相同來源的本機請求'});
   const body=await jsonBody(req);
+  // Opening a second shop is an isolated memory audit, not permission to
+  // run arbitrary single-shop player commands against a two-shop world.
+  const inTwoShopAudit=targetAdvertisementMemoryAudit&&
+    repo?.read().shops.length===2;
+  const reviewedTargetUse=inTwoShopAudit&&
+    url.pathname==='/api/use'&&body.itemId===62&&body.useId===1&&
+    Object.hasOwn(body,'targetShopId');
+  if(inTwoShopAudit&&!reviewedTargetUse&&
+     ['/api/use','/api/buy','/api/supply','/api/discard',
+       '/api/showcase','/api/advance-time'].includes(url.pathname))
+    return send(res,409,{ok:false,code:'UNREVIEWED_TWO_SHOP_ACTION',
+      error:'雙店驗證只允許原版 #62/1，共用單店玩法不得在多店中執行',
+      state:state()});
   let result;
   switch(url.pathname){
     case '/api/reset': {
