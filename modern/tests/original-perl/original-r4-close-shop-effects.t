@@ -19,9 +19,9 @@ if(ref($x)eq'HASH'){
   is($close->{output}{shop}{money},0,'actual source money reset');
   is($close->{output}{shop}{rank},0,'actual source rank reset');
   is($close->{output}{shop}{status},0,'actual source status inactive');
-  is_deeply($close->{output}{deletedSessions},[
+  is_deeply([sort @{$close->{output}{deletedSessions}}],[
     '1-alpha.cgi','1-beta.cgi',
-  ],'actual frozen original unlink removed only shop session files');
+  ],'actual frozen original unlink removed only shop session files regardless of readdir order');
   is(scalar(@{$close->{output}{setUserDataCalls}}),1,
     'original source SetUserData call is explicitly recorded');
   is($close->{output}{writeErrorLogCalls}[0]{file},'delete',

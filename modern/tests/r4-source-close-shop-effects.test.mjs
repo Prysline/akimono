@@ -53,7 +53,8 @@ test('R4 FULL original write.cgi::CloseShop mutates real shop and unlinks real s
   assert.equal(first.output.shop.status,0);
   assert.equal(first.output.shop.money,0);
   assert.equal(first.output.shop.rank,0);
-  assert.deepEqual(first.output.deletedSessions,['1-alpha.cgi','1-beta.cgi']);
+  assert.deepEqual([...first.output.deletedSessions].sort(),
+    ['1-alpha.cgi','1-beta.cgi']);
   assert.ok(first.output.archived.includes('123456'),
     'original archived shop must precede zeroing');
   assert.ok(first.output.archived.includes('來源原版關店店舖'));
@@ -86,10 +87,11 @@ test('R4 CloseShop source drift, ambiguous hash archive, filesystem traversal an
     writeSource,readSource:readSource.replace('job icon','icon job'),
     configSource,
   }),/source ordered shop archive index drift/);
+  const changedConfig=configSource.replace(
+    /(\$LOG_DELETESHOP_FILE\s*=\s*)'delete';/,"$1'other';");
+  assert.notEqual(changedConfig,configSource,'source drift must actually mutate frozen text');
   assert.throws(()=>reviewR4CloseShopEffects({
-    writeSource,readSource,
-    configSource:configSource.replace("$LOG_DELETESHOP_FILE\t\t='delete';",
-      "$LOG_DELETESHOP_FILE\t\t='other';"),
+    writeSource,readSource,configSource:changedConfig,
   }),/original delete archive or session directory config drift/);
   assert.throws(()=>projectR4CloseShopEffects({
     reviewed,...row,shop:{...row.shop,itemtoday:{10:2,11:3}},
