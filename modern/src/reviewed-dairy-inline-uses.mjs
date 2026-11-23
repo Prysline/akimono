@@ -71,8 +71,8 @@ export function compileReviewedDairyInlineUses({itemDsl,model,limits}){
   const cow=sourceItem(parsed,25),milk=sourceItem(parsed,26);
   if(first(cow,'code')!=='mino'||first(cow,'limit')!=='20/1.5'||
      first(milk,'code')!=='mino_milk'||first(milk,'limit')!=='2500/0'||
-     model.items[24]?.name!=='米諾陶洛斯♀'||
-     model.items[25]?.name!=='米諾牛乳')
+     model.items.find(x=>x.id===25)?.name!=='米諾陶洛斯♀'||
+     model.items.find(x=>x.id===26)?.name!=='米諾牛乳')
     fail('original cow/milk ITEM changed');
   const cowUses=parsed.blocks.filter(b=>b.kind==='USE'&&
     b.ownerItemLine===cow.startLine);
