@@ -21,8 +21,9 @@ if(ref($o)eq'HASH'){
     'ten real durable source EVENT coexist after START with instant callbacks');
   is($o->{durableCases}[1]{output}{dataReadItems}[4]{plus},720,
     'actual compiler iron PLUS #5 overlay on next DataRead');
-  is($o->{durableCases}[1]{output}{dataReadItems}[39]{popular},2500,
-    'actual compiler ken-sale divides synthetic #40 popular on next DataRead');
+  is($o->{durableCases}[1]{output}{dataReadItems}[39]{popular},
+    int($o->{durableCases}[1]{input}{items}[39]{popular}/2),
+    'actual compiler ken-sale halves this source fixture ITEM #40 popular on next DataRead');
   ok(!exists($o->{durableCases}[2]{output}{activeUntilSeconds}{'plusup-tetu'}),
     'expired iron EVENT removed at END');
   ok(!exists($o->{durableCases}[2]{output}{activeUntilSeconds}{'ken-sale'}),
