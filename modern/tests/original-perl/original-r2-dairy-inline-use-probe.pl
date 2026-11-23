@@ -106,7 +106,7 @@ die 'R2 dairy dynamic callback has static GET' if @{$u->{get}};
 for my $src(@main::out_item){
   $main::ITEM[$src->{no}]={%$src};
 }
-my $stock=$in->{stock},$whole=$in->{wholesale};
+my ($stock,$whole)=@{$in}{qw(stock wholesale)};
 die 'R2 dairy 79-slot input world required' unless
   ref($stock)eq'ARRAY'&&@$stock==79&&
   ref($whole)eq'ARRAY'&&@$whole==79;

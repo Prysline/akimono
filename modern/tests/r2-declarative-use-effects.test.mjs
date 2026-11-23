@@ -161,7 +161,7 @@ function compare(rule,{job='',missingNeed=false,missingNeedId=null,
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,87);
+  assert.equal(offers.length,90);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -211,7 +211,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,87);
+  assert.equal(offers.length,90);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -447,7 +447,8 @@ test('R2 #35/#36 source consumption USEs (no GET) match true frozen Perl',()=>{
   }
 });
 test('R2 #26 milk ferment #1/#2 matches original Perl without inline drinking',()=>{
-  assert.equal(street.useItem.getRule(26,0),null);
+  assert.equal(street.useItem.getRule(26,0)?.inlineCallback?.kind,
+    'drink-milk');
   for(const [useId,needCount,productId] of [
     [1,5,35],[2,10,36],
   ]){
