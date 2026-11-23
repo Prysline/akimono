@@ -174,6 +174,28 @@ export function applyGameCommand({world,command,streetModule}){
     nowSeconds:applied.nowSeconds===undefined?original.nowSeconds:applied.nowSeconds,
     revision:original.revision+1,
   });
+  // A v2 time/period mutation is not yet a source-reviewed settlement.
+  // GameCore owns the generic transactional boundary; the StreetModule
+  // must independently review the source-specific period transition.
+  // Missing reviewer, refused review or source drift all abort BEFORE
+  // the memory adapter sees a proposed CAS revision.
+  if(original.schema===PERIOD_WORLD_SCHEMA&&(
+    original.nowSeconds!==after.nowSeconds||
+    JSON.stringify(original.period)!==JSON.stringify(after.period)
+  )){
+    try{
+      if(typeof streetModule.reviewPeriodTransition!=='function'||
+         streetModule.reviewPeriodTransition({
+           before:original,after,command:cmd,
+         })!==true)
+        reject('source-reviewed v2 period transition permission missing');
+    }catch(error){
+      return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{
+        reason:error instanceof Error?error.message:
+          'period transition rejected by source reviewer',
+      });
+    }
+  }
   return answer(true,'APPLIED',after,freeze(copyJson(applied.receipt,'receipt')));
 }
 /**

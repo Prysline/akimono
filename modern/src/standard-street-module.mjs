@@ -51,6 +51,8 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
+import {reviewR4WorldTransitionGate,allowR4UnsettledWorldTransition}
+  from './original-r4-world-transition-gate.mjs';
 import {reviewOriginalB62SwordMap}
   from './original-b62-sword-map-acquisition.mjs';
 import {reviewOriginalB63SwordMapOutcomes}
@@ -448,6 +450,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       reviewedMarket11:reviewedMarketBuy11,
       reviewedSupportCallbacks:reviewedSupportEventCallbacks,
     }):null;
+  const reviewedR4Transition=originalTurnSource&&originalConfigSource?
+    reviewR4WorldTransitionGate({
+      turnSource:originalTurnSource,configSource:originalConfigSource,
+    }):null;
   const reviewedB56=reviewedB41&&reviewedInstantEventCallbacks?
     reviewB56EventSlice({turnSource:originalTurnSource,
       reviewedB41,reviewedCatalog:reviewedEventCatalog,
@@ -504,6 +510,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB62Map,
     reviewedB63Map,
     reviewedB56,
+    reviewedR4Transition,
+    reviewPeriodTransition({before,after}){
+      if(!reviewedR4Transition)
+        bad('unreviewed Standard Street v2 original period transition');
+      return allowR4UnsettledWorldTransition({
+        reviewed:reviewedR4Transition,before,after,
+      });
+    },
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
     useItem,
