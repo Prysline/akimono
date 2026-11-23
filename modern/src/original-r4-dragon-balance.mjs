@@ -55,7 +55,7 @@ export function projectR4DragonBalance({reviewed,shops,payoutText}){
     fail('source-reviewed original payout text and shops required');
   const ids=new Map(),next=shops.map((s,i)=>{
     if(!s||typeof s!=='object'||Array.isArray(s)||
-       !int(s.id)||s.id<=0||ids.has(s.id)||
+       !int(s.id)||s.id<=0||ids.has(String(s.id))||
        !['money','dragon','drmoney','saletoday','paytoday'].every(k=>int(s[k])))
       fail('original shop cash and dragon values required');
     ids.set(String(s.id),i);
