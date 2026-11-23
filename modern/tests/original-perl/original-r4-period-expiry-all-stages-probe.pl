@@ -153,7 +153,7 @@ $stock[62]=1;$stock[78]=5;
 for my $n(18,19,38,24){$stock[$n-1]=1;}
 my $originalShop={
   id=>1,status=>1,name=>'來源店主',shopname=>'同一商店',
-  foundation=>1000000,lastlogin=>0,
+  foundation=>1000000,lastlogin=>0,blocklogin=>'',
   time=>956800,rank=>5000,money=>100000,rankingcount=>0,
   profitstock=>0,point=>0,
   item=>\@stock,showcasecount=>1,showcase=>[10],price=>[5000],
