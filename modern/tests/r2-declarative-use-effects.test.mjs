@@ -150,7 +150,7 @@ function compare(rule,{job='',missingNeed=false}={}){
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,60);
+  assert.equal(offers.length,68);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -200,7 +200,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,60);
+  assert.equal(offers.length,68);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -302,4 +302,37 @@ test('R2 manufacturing requires source-owned book, not merely gathered materials
       shopId:1,itemId:16,useId:0,requestedCount:1}});
   assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
   assert.equal(encodeMemorySnapshot(repo.read()),before);
+});
+
+test('R2 eight #20-#23 source iron/steel equipment USEs match frozen Perl',()=>{
+  for(const itemId of [20,21,22,23]){
+    for(const useId of [0,1]){
+      const rule=street.useItem.getRule(itemId,useId);
+      assert.equal(rule?.source,'original-declarative-use-dsl');
+      assert.equal(rule?.requiresOwnedItem,true);
+      assert.equal(rule?.ownedMaximum,20);
+      assert.equal(rule?.beforeCallback,undefined);
+      assert.equal(rule?.afterCallback,undefined);
+      assert.ok(rule.uses.some(x=>x.probabilityPermille===0),
+        'iron/steel forging requires real blacksmith or magical knowledge');
+      compare(rule);
+    }
+    for(const useId of [2,3]){
+      assert.equal(street.useItem.getRule(itemId,useId),null,
+        'advanced original lostbook forging callback still unreviewed');
+    }
+  }
+});
+test('R2 blacksmith and magical NEED are held and never consumed',()=>{
+  for(const itemId of [20,21,22,23]){
+    const rule=street.useItem.getRule(itemId,0);
+    assert.deepEqual(rule.uses.filter(x=>x.probabilityPermille===0)
+      .map(x=>x.itemId),[itemId===23?19:18]);
+    compare(rule,{missingNeed:true});
+  }
+});
+test('R2 equipment first-USE job time matches original Perl',()=>{
+  for(const [itemId,job] of [
+    [20,'weapon'],[21,'armor'],[22,'armor'],[23,'weapon'],
+  ])compare(street.useItem.getRule(itemId,0),{job});
 });

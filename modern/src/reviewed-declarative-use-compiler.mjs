@@ -1,6 +1,6 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
- * #39 dismantling/packing and source-gated #15/#16/#17 manufacture.
+ * #39 dismantling/packing and source-gated #15/#16/#17 plus #20-#23 initial iron/steel manufacturing.
  * The original callback-bearing #15/1,3,4 remain unsupported.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
@@ -11,8 +11,13 @@ import {parseSourceNumber} from './standard-street-model.mjs';
 const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
 const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
+  [20,4],[21,4],[22,4],[23,4],
 ]));
-const selectedSubset=Object.freeze(new Map([[15,new Set([0,2])]]));
+const selectedSubset=Object.freeze(new Map([
+  [15,new Set([0,2])],
+  [20,new Set([0,1])],[21,new Set([0,1])],
+  [22,new Set([0,1])],[23,new Set([0,1])],
+]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
 const profession=Object.freeze({
@@ -71,8 +76,11 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
   const output=[];
   for(const [itemId,expectedCount] of groups){
     const item=parsed.blocks.find(b=>b.kind==='ITEM'&&first(b,'no')===String(itemId));
+    const ownedLimit=itemId>=20&&itemId<=23?20:40;
+    const exactLimit=itemId>=20&&itemId<=23?'20/0.5':'40/1';
     if(!item||model.items.find(x=>x.id===itemId)?.code!==first(item,'code')||
-       (selectedSubset.has(itemId)&&first(item,'limit')!=='40/1'))
+       ([15,16,17,20,21,22,23].includes(itemId)&&
+         first(item,'limit')!==exactLimit))
       fail('source owner ITEM/limit '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
     if(uses.length!==expectedCount)fail('source USE count '+itemId);
@@ -137,13 +145,13 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         limits,resultOk:first(block,'okmsg')??null,
         resultNg:first(block,'ngmsg')??null,
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
-        ...(selectedSubset.has(itemId)||itemId===16||itemId===17?{
-          requiresOwnedItem:true,ownedMaximum:40,
+        ...([15,16,17,20,21,22,23].includes(itemId)?{
+          requiresOwnedItem:true,ownedMaximum:ownedLimit,
         }:{}),
         effectPlan,scope:'original callback-free recipe; source MARKET, EXP and job clocks; save provenance separately gated',
       }));
     }
   }
-  if(output.length!==39)fail('original reviewed declarative USE total drift');
+  if(output.length!==47)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

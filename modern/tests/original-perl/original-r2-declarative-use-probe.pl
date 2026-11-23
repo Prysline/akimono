@@ -27,11 +27,14 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|37|39)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|37|39)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
-my %expected=(10=>8,15=>5,16=>2,17=>4,37=>4,39=>19);
+my %expected=(10=>8,15=>5,16=>2,17=>4,
+  20=>4,21=>4,22=>4,23=>4,37=>4,39=>19);
 my %selected=(15=>{0=>1,2=>1});
 die 'R2 unreviewed potion callback' if $itemId==15&&!$selected{15}{$useId};
+die 'R2 unreviewed advanced iron/steel callback' if
+  $itemId>=20&&$itemId<=23&&$useId>1;
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
