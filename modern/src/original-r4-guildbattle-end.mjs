@@ -64,6 +64,36 @@ export function reviewR4GuildbattleEnd({rebelDsl,turnSource,compiledCatalog}){
   });
 }
 const safe=n=>Number.isSafeInteger(n)&&n>=0;
+/** END callback only. The shared 17-key gate owns START's rand(100000). */
+export function projectR4GuildbattleEndCallback({reviewed,guilds,dominion=null}){
+  if(reviewed?.source!==R4_GUILDBATTLE_END_SOURCE||
+     reviewed.committable!==false||reviewed.eventCode!=='guildbattle'||
+     !Array.isArray(guilds)||!guilds.length||guilds.length>100||
+     !(dominion===null||typeof dominion==='string'))
+    fail('source-reviewed original guildbattle callback and guild IO required');
+  const used=new Set();
+  const copies=guilds.map(g=>{
+    if(!g||typeof g!=='object'||Array.isArray(g)||
+       !['id,money,name','guild,id,money,name'].includes(Object.keys(g).sort().join(','))||
+       typeof g.id!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(g.id)||
+       used.has(g.id)||typeof g.name!=='string'||!g.name||
+       g.name.length>100||!Number.isSafeInteger(g.money)||
+       (Object.hasOwn(g,'guild')&&g.guild!==g.id))
+      fail('unreviewed source guild snapshot');
+    used.add(g.id);return {...g};
+  });
+  const max=Math.max(...copies.map(g=>g.money));
+  const top=copies.filter(g=>g.money===max);
+  if(top.length!==1)fail('unreviewed Perl keys(%GUILD) sort money tie');
+  const winner=top[0];
+  return Object.freeze({
+    winner:winner.id,dominion:winner.id,
+    guildRecords:Object.freeze(copies.map(g=>Object.freeze({...g,guild:g.id}))),
+    message:'商會「'+winner.name+'」在對抗戰中勝出了。恭喜。',
+    readGuildCalls:1,readGuildDataCalls:1,setTownCalls:1,
+    committable:false,
+  });
+}
 export function projectR4GuildbattleEnd({
   reviewed,startSeconds,spanSeconds,activeUntilSeconds=null,
   guilds,dominion=null,randomDraws,
@@ -96,19 +126,13 @@ export function projectR4GuildbattleEnd({
   if(!Array.isArray(randomDraws)||randomDraws.length!==expectedDraws||
      randomDraws.some(x=>!safe(x)||x>=1000000))
     fail('exact original START gate sample count required');
-  let winner=null,nextDominion=dominion;
-  const logs=[];
-  if(expiry){
-    // The actual source sort has no tiebreaker and uses keys(%GUILD).
-    // One unique maximum is deterministic despite Perl hash randomization.
-    const max=Math.max(...copies.map(g=>g.money));
-    const top=copies.filter(g=>g.money===max);
-    if(top.length!==1)fail('unreviewed Perl hash/sort money tie');
-    winner=top[0].id;
-    nextDominion=winner;
-    logs.push([2,0,'商會「'+top[0].name+'」在對抗戰中勝出了。恭喜。']);
-  }
-  const records=expiry?copies.map(g=>({...g,guild:g.id})):copies;
+  const callback=expiry?projectR4GuildbattleEndCallback({
+    reviewed,guilds:copies,dominion,
+  }):null;
+  const winner=callback?.winner??null;
+  const nextDominion=callback?.dominion??dominion;
+  const logs=callback?[[2,0,callback.message]]:[];
+  const records=callback?.guildRecords??copies;
   return Object.freeze({
     source:reviewed.source,committable:false,
     activeUntilSeconds:occupied?activeUntilSeconds:null,

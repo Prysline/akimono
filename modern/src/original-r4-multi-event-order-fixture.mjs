@@ -19,6 +19,8 @@ import {B59_IRON_SOURCE,B59_IRON_CODE}
   from './original-b59-iron-event-lifecycle.mjs';
 import {B61_SWORD_SOURCE,B61_SWORD_CODE}
   from './original-b61-sword-demand-event.mjs';
+import {R4_GUILDBATTLE_END_SOURCE,projectR4GuildbattleEndCallback}
+  from './original-r4-guildbattle-end.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -35,7 +37,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   turnSource,readSource,reviewedSupportCallbacks=null,
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
   reviewedHappyEvent=null,reviewedIronEvent=null,
-  reviewedSwordEvent=null}){
+  reviewedSwordEvent=null,reviewedGuildbattleEvent=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -111,6 +113,15 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
          (code===B59_IRON_CODE?1:5))
       fail('source-reviewed iron/sword EVENT duration and ITEM PARAM required');
   }
+  if(reviewedGuildbattleEvent!==null&&(
+     reviewedGuildbattleEvent.source!==R4_GUILDBATTLE_END_SOURCE||
+     reviewedGuildbattleEvent.committable!==false||
+     reviewedGuildbattleEvent.eventCode!=='guildbattle'||
+     reviewedGuildbattleEvent.startProba!==0||
+     reviewedGuildbattleEvent.group!==
+       compiledCatalog.compiled.find(e=>e.code==='guildbattle')?.group||
+     compiledCatalog.compiled.find(e=>e.code==='guildbattle')?.callbacks.end!=='_local_'))
+    fail('source-reviewed guildbattle END and 17-key EVENT required');
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -135,7 +146,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     seven:reviewedSeven,support:reviewedSupportCallbacks,
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
     happy:reviewedHappyEvent,iron:reviewedIronEvent,
-    sword:reviewedSwordEvent,committable:false,
+    sword:reviewedSwordEvent,guildbattle:reviewedGuildbattleEvent,
+    committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
     scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
@@ -148,7 +160,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
  */
 export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
-  eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null}){
+  eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
+  guildContext=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -163,12 +176,14 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     fail('ITEM and active EVENT source fixture required');
   const keys=Object.keys(activeUntilSeconds);
   if(keys.length>(7+(reviewed.happy!==null?1:0)+
-    (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0))||
+    (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0)+
+    (reviewed.guildbattle!==null?1:0))||
     keys.some(code=>
     !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
       (code==='happy'&&reviewed.happy!==null)||
       (code===B59_IRON_CODE&&reviewed.iron!==null)||
-      (code===B61_SWORD_CODE&&reviewed.sword!==null))||
+      (code===B61_SWORD_CODE&&reviewed.sword!==null)||
+      (code==='guildbattle'&&reviewed.guildbattle!==null))||
     !Number.isSafeInteger(activeUntilSeconds[code])||
     activeUntilSeconds[code]<0))
     fail('unreviewed active EVENT state');
@@ -180,6 +195,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
+  if((reviewed.guildbattle!==null&&(
+      !guildContext||typeof guildContext!=='object'||
+      Array.isArray(guildContext)||!Array.isArray(guildContext.guilds)||
+      !(guildContext.dominion===null||typeof guildContext.dominion==='string')||
+      Object.keys(guildContext).sort().join(',')!=='dominion,guilds'))||
+     (reviewed.guildbattle===null&&guildContext!==null))
+    fail('explicit source guild snapshot required for mixed guildbattle');
   if(!Array.isArray(randomDraws)||randomDraws.length>96||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
@@ -192,14 +214,19 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   });
   for(const code of activeHashOrderFixture){
     // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
-    if(code==='happy')continue;
+    if(code==='happy'||code==='guildbattle')continue;
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
-    instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[];
+    instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[],
+    guildEndCallbacks=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
+  let nextGuild=guildContext===null?null:{
+    dominion:guildContext.dominion,
+    guilds:guildContext.guilds.map(g=>({...g})),
+  };
   const groups=new Set();
   const end=startSeconds+spanSeconds;
   for(const code of activeHashOrderFixture){
@@ -207,7 +234,15 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     if(next[code]<end){
       delete next[code];
       expired.push(code);
-      logs.push([2,0,code==='happy'?
+      if(code==='guildbattle'){
+        const ended=projectR4GuildbattleEndCallback({
+          reviewed:reviewed.guildbattle,
+          guilds:nextGuild.guilds,dominion:nextGuild.dominion,
+        });
+        nextGuild={dominion:ended.dominion,guilds:ended.guildRecords};
+        guildEndCallbacks.push(code);
+        logs.push([2,0,ended.message]);
+      }else logs.push([2,0,code==='happy'?
         reviewed.happy.endMessage:
         code===B59_IRON_CODE?reviewed.iron.endMessage:
         code===B61_SWORD_CODE?reviewed.sword.endMessage:
@@ -360,6 +395,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),
       happyNowCallbacks:Object.freeze(happyNowCallbacks),
+    }),
+    ...(reviewed.guildbattle===null?{}:{
+      guildContext:Object.freeze({
+        dominion:nextGuild.dominion,
+        guilds:Object.freeze(nextGuild.guilds.map(g=>Object.freeze({...g}))),
+      }),
+      guildEndCallbacks:Object.freeze(guildEndCallbacks),
     }),
     sourceScope:reviewed.scope,
   });
