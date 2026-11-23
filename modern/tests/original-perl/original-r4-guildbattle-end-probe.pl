@@ -97,6 +97,11 @@ sub run{
   });
   %DTevent=();
   $DTevent{guildbattle}=$in{active} if defined $in{active};
+  # Each run represents a separate original CGI invocation. The frozen
+  # END path undefines event::_local_end but does not delete its %INC entry;
+  # the next CGI request has a fresh %INC. Reset only between oracle cases,
+  # never inside the original END/START fragment.
+  delete $INC{"$dir/event-e/guildbattle.pl"};
   %GUILD=map{($_->{id}=>[$_->{name}])}@{$in{guilds}};
   %GUILD_DATA=map{($_->{id}=>{money=>$_->{money}})}@{$in{guilds}};
   $event::GUILDIDX_name=0;
