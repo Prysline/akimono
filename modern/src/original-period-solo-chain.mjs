@@ -16,6 +16,9 @@ import {reviewOriginalPeriodShopLedger,projectOriginalPeriodShopLedger}
   from './original-period-shop-ledger.mjs';
 import {reviewOriginalPeriodTerritory,projectOriginalPeriodTerritory}
   from './original-period-territory.mjs';
+import {reviewR4DragonBalance,projectR4DragonBalance,
+  projectR4DragonShopLedger,R4_DRAGON_BALANCE_SOURCE}
+  from './original-r4-dragon-balance.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -26,7 +29,7 @@ const safe=(n,label,min=0)=>{
 export function reviewOriginalSoloPeriodPhaseChain({
   periodSource,configSource,itemDsl,model,compilerSource,
   originalAddItemSource,detailSource,readSource,adminSource,
-  bootstrapMeta,compiledLimits,
+  bootstrapMeta,compiledLimits,includeReviewedDragon=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -38,6 +41,10 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const ledger=reviewOriginalPeriodShopLedger({
     periodSource,configSource,itemDsl,model,compilerSource,
   });
+  if(typeof includeReviewedDragon!=='boolean')
+    bad('explicit original DragonBalance opt-in boolean required');
+  const dragon=includeReviewedDragon?
+    reviewR4DragonBalance({periodSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -71,13 +78,18 @@ export function reviewOriginalSoloPeriodPhaseChain({
     bad('external update/dragon dependencies changed');
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
-    soloSort,topPrize,ledger,territory,
+    soloSort,topPrize,ledger,territory,dragon,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
-      'UpdateResetBefore-and-TopGetItem','single-shop-ledger',
-      'SortDT-after','unled-town','UpdateResetAfter-guard']),
+      ...(dragon?['DragonBalance-file-before-prize']:[]),
+      'UpdateResetBefore-and-TopGetItem',
+      ...(dragon?['dragon-shop-ledger-before-history']:[]),
+      'single-shop-ledger','SortDT-after','unled-town',
+      'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
+    scope:dragon?
+      'reviewed single-shop original DragonBalance file IO then real shop payout before history, no stale close/guild/events/backup, exp sum <=4000; noncommittable period phase chain':
+      'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
 /**
@@ -88,6 +100,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
 export function projectOriginalSoloPeriodPhaseChain({
   reviewed,shop,town,dtPeople,
   awardDrawMillionths,territoryDrawMillionths,
+  payoutText=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -98,15 +111,24 @@ export function projectOriginalSoloPeriodPhaseChain({
      !Array.isArray(shop.price)||shop.price.length!==1||
      shop.showcasecount!==1||
      !(shop.guild===undefined||shop.guild==='')||
-     ![undefined,0].includes(shop.dragon)||
+     (!reviewed.dragon&&![undefined,0].includes(shop.dragon))||
      ![undefined,0].includes(shop.dignity)||
-     ![undefined,0].includes(shop.drmoney)||
+     (!reviewed.dragon&&![undefined,0].includes(shop.drmoney))||
+     (reviewed.dragon&&
+       (![undefined,'number'].includes(typeof shop.dragon)||
+        ![undefined,'number'].includes(typeof shop.drmoney)))||
      !(shop.exp===undefined||(
        shop.exp!==null&&typeof shop.exp==='object'&&!Array.isArray(shop.exp)&&
        Object.values(shop.exp).every(x=>Number.isSafeInteger(x)&&x>=0)&&
        Object.values(shop.exp).reduce((a,b)=>a+b,0)<=4000))
     )
     bad('external guild, dragon, high EXP or post-period callback dependency');
+  if(reviewed.dragon!==null&&(
+     reviewed.dragon.source!==R4_DRAGON_BALANCE_SOURCE||
+     reviewed.dragon.committable!==false))
+    bad('original DragonBalance source contract required');
+  if(reviewed.dragon===null&&payoutText!==null)
+    bad('dragon payout file cannot be supplied without source review');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -115,12 +137,25 @@ export function projectOriginalSoloPeriodPhaseChain({
      territoryDrawMillionths.length!==2)
     bad('two reviewed source town draws required');
   const beforeSort=projectOriginalSoloSort({shop,reviewed:reviewed.soloSort});
+  // Original order: SortDT (inc-turn) -> DragonBalance file read
+  // -> UpdateResetBefore prize -> shop dragon ledger -> histories.
+  const payout=reviewed.dragon?
+    projectR4DragonBalance({
+      reviewed:reviewed.dragon,shops:[beforeSort.shop],payoutText,
+      applyShopLedger:false,
+    }):null;
   const award=projectOriginalTopPrize({
-    shop:beforeSort.shop,reviewed:reviewed.topPrize,
+    shop:payout?.shops[0]??beforeSort.shop,reviewed:reviewed.topPrize,
     drawMillionths:awardDrawMillionths,
   });
+  const dragonSettlement=reviewed.dragon?
+    projectR4DragonShopLedger({
+      reviewed:reviewed.dragon,shops:[award.shop],
+    }):null;
   const accounting=projectOriginalPeriodShopLedger({
-    shop:award.shop,reviewed:reviewed.ledger,
+    shop:dragonSettlement?.shops[0]??award.shop,
+    reviewed:reviewed.ledger,
+    reviewedDragonSettlement:dragonSettlement,
     limits:reviewed.compiledLimits,
   });
   const afterSort=projectOriginalSoloSort({
@@ -141,6 +176,11 @@ export function projectOriginalSoloPeriodPhaseChain({
     pointsAfter:afterSort.shop.point,
     prize:award.prize,
     maintenance:accounting.chargedMaintenance,
+    ...(reviewed.dragon?{
+      dragonLogs:dragonSettlement.logs,
+      dragonPayoutFileConsumed:payout.payoutFileConsumed,
+      dragonSource:reviewed.dragon.source,
+    }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
     worldStateWritten:false,

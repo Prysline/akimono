@@ -4,6 +4,7 @@
  * No WorldState write: prizes, world territory, events, callbacks, guilds,
  * ranking order, stale-shop closure, backup and sessions remain unimplemented.
  */
+import {R4_DRAGON_BALANCE_SOURCE} from './original-r4-dragon-balance.mjs';
 export const B44_LEDGER_SOURCE='core-inc-period-single-shop-ledger-before-dignity';
 const fail=x=>{throw new RangeError('B-44 source-period ledger: '+x);};
 const check=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
@@ -77,11 +78,26 @@ function expMap(value){
  * Project exactly the per-store ledger core subblock with guards for source
  * branches that the playable one-shop demo has not materialized.
  */
-export function projectOriginalPeriodShopLedger({shop,reviewed,limits}){
+export function projectOriginalPeriodShopLedger({
+  shop,reviewed,limits,reviewedDragonSettlement=null,
+}){
   if(reviewed?.source!==B44_LEDGER_SOURCE||reviewed.showcaseDailyCost!==0)
     fail('reviewed source required');
+  // The original dragon payout source stage is BEFORE this history block.
+  // B-44 standalone remains unchanged: any dragon requires a matching
+  // source-reviewed R4 shop-ledger result on this exact shop snapshot.
+  const dragonAuthorized=reviewedDragonSettlement!==null&&
+    reviewedDragonSettlement.source===R4_DRAGON_BALANCE_SOURCE&&
+    reviewedDragonSettlement.committable===false&&
+    reviewedDragonSettlement.shops?.length===1&&
+    ['id','money','dragon','drmoney','saletoday','paytoday'].every(k=>
+      reviewedDragonSettlement.shops[0][k]===shop?.[k]);
+  if(reviewedDragonSettlement!==null&&!dragonAuthorized)
+    fail('unreviewed or mismatched original dragon settlement receipt');
   if(!shop||shop.status!==1||shop.showcasecount!==1||
-     shop.guild&&shop.guild!==''||shop.dragon&&shop.dragon!==0||
+     shop.guild&&shop.guild!==''||
+     (!dragonAuthorized&&(
+       shop.dragon&&shop.dragon!==0||shop.drmoney&&shop.drmoney!==0))||
      shop.dignity&&shop.dignity!==0)
     fail('unreviewed guild, dragon, dignity or shop state');
   if(!Array.isArray(shop.item)||shop.item.length!==79||
