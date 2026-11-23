@@ -140,3 +140,70 @@ export function projectR4CloseShopEffects({
     scope:reviewed.scope,
   });
 }
+
+
+export const R4_CLOSED_STORE_PRUNE_SOURCE=
+  'r4-frozen-SortDT-and-DataWrite-closed-shop-omission';
+/**
+ * After the *real* CloseShop changes status=0, frozen SortDT drops the
+ * inactive store and its id/name index. Frozen DataWrite also skips
+ * status=0 stores. This is a source REVIEW and memory projection only;
+ * it does NOT invoke DataWrite, commit external files, or delete user data.
+ */
+export function reviewR4ClosedShopPrune({
+  detailSource,writeSource,reviewedClose,
+}){
+  if(reviewedClose?.source!==R4_CLOSE_SHOP_EFFECT_SOURCE||
+     reviewedClose.committable!==false||
+     reviewedClose.externalUserOrArchiveIOCommitted!==false||
+     typeof detailSource!=='string'||typeof writeSource!=='string')
+    fail('uncommittable full original CloseShop and SortDT source required');
+  const start=detailSource.indexOf('sub SortDT\n{');
+  const stop=detailSource.indexOf('\n}\n\nsub GetRankMessage',start);
+  const code=start<0||stop<=start?'':detailSource.slice(start,stop);
+  const markers=[
+    '@DT=grep($_->{status},@DT);',
+    'foreach(@DT){$_->{point}=GetDTPoint($_);}',
+    '@DT=sort{(!$a->{rankingyesterday})<=>(!$b->{rankingyesterday}) or $b->{point}<=>$a->{point}}@DT;',
+    '%id2idx  =map{($DT[$_]->{id},$_)}(0..$#DT);',
+    '%name2idx=map{($DT[$_]->{name},$_)}(0..$#DT);',
+  ];
+  let last=-1;
+  for(const marker of markers){
+    const i=code.indexOf(marker,last+1);
+    if(i<=last)fail('original SortDT closed shop pruning source drift '+marker);
+    last=i;
+  }
+  const dataStart=writeSource.indexOf('sub DataWrite\n{');
+  const dataEnd=writeSource.indexOf('\n}\n\nsub DataFilesBackup',dataStart);
+  const data=dataStart<0||dataEnd<=dataStart?'':writeSource.slice(dataStart,dataEnd);
+  if(!data.includes('for($cnt=0; $cnt<=$#DT; $cnt++)')||
+     !data.includes('next if !$DT->{status};')||
+     data.indexOf('next if !$DT->{status};')<
+       data.indexOf('for($cnt=0; $cnt<=$#DT; $cnt++)'))
+    fail('original DataWrite inactive shop filter source drift');
+  return immutable({
+    source:R4_CLOSED_STORE_PRUNE_SOURCE,committable:false,
+    closeSource:R4_CLOSE_SHOP_EFFECT_SOURCE,
+    actualDataWriteInvoked:false,
+    scope:'true frozen SortDT status=0 removal + frozen DataWrite inactive-filter review after CloseShop; no actual save, backup, disk commit or original SetUserData',
+  });
+}
+export function projectR4ClosedShopPrune({reviewed,closeEffect}){
+  if(reviewed?.source!==R4_CLOSED_STORE_PRUNE_SOURCE||
+     reviewed.committable!==false||
+     reviewed.actualDataWriteInvoked!==false||
+     reviewed.closeSource!==R4_CLOSE_SHOP_EFFECT_SOURCE||
+     closeEffect?.source!==R4_CLOSE_SHOP_EFFECT_SOURCE||
+     closeEffect.committable!==false||
+     closeEffect.closed!==true||
+     closeEffect.shop?.status!==0)
+    fail('source-reviewed closed shop result and SortDT exclusion required');
+  return immutable({
+    source:reviewed.source,committable:false,
+    activeShops:[],idToIndex:{},nameToIndex:{},
+    dataWriteActiveShopRows:[],
+    actualDataWriteInvoked:false,
+    scope:reviewed.scope,
+  });
+}
