@@ -23,9 +23,11 @@ BEGIN {
 }
 binmode STDOUT,':raw';
 our (@ITEM,@out_item,@rows,%EVENT,%DTevent,$temptimenow,$timespan,
-     @DT,@LOG,@R4_MULTI_DRAWS,@R4_MULTI_RANGES,$ITEM_DIR,$MAX_MONEY,$TIMESPAN);
+     @DT,@LOG,@R4_MULTI_DRAWS,@R4_MULTI_RANGES,$ITEM_DIR,$MAX_MONEY,$TIMESPAN,
+     %GUILD,%GUILD_DATA,$DOMINION,$READ_GUILD,$READ_GUILD_DATA,$SET_TOWN);
 my $callbackRoot=tempdir('akimono-r4-mixed-XXXXXX',TMPDIR=>1,CLEANUP=>1);
-make_path("$callbackRoot/event-s","$callbackRoot/event-n");
+make_path("$callbackRoot/event-s","$callbackRoot/event-n",
+  "$callbackRoot/event-e");
 $ITEM_DIR=$callbackRoot;$MAX_MONEY=999999999;
 sub PushLog {push @LOG,[@_];1;}
 sub WriteLog {push @LOG,[@_];1;}
@@ -38,9 +40,16 @@ sub GetPath {
       ($kind eq 'event-s'&&
         ($code eq 'getmoney'||$code eq 'getpop'||
          $code eq 'manbiki'||$code eq 'goutou'||$code eq 'loto'))||
-      ($kind eq 'event-n'&&exists($EVENT{$code}))
+      ($kind eq 'event-n'&&exists($EVENT{$code}))||
+      ($kind eq 'event-e'&&$code eq 'guildbattle')
     );
   return "$callbackRoot/$kind/$code.pl";
+}
+sub ReadGuild {$READ_GUILD++;1;}
+sub ReadGuildData {$READ_GUILD_DATA++;1;}
+sub SetTownData {
+  die 'original guildbattle unexpected town mutation' unless $_[0] eq 'dominion';
+  $DOMINION=$_[1];$SET_TOWN++;1;
 }
 sub GetMoneyString {return $_[0];}
 # The frozen callback runs as package event; the real game formatter is
@@ -78,6 +87,7 @@ my %support=map{($_=>1)}qw(getmoney getpop);
 my %instant=map{($_=>1)}qw(manbiki goutou);
 my %loto=map{($_=>1)}qw(loto);
 my %happy=map{($_=>1)}qw(happy);
+my %specialGuild=map{($_=>1)}qw(guildbattle);
 my @durableExtra=qw(plusup-tetu ken-sale);
 my %durableExtra=map{($_=>1)}@durableExtra;
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
@@ -186,6 +196,39 @@ for my $code(qw(manbiki goutou)){
     $body."\n}\n1;\n";
   close $w or die $!;
 }
+# The genuine guildbattle END callback comes from the frozen REBEL DSL.
+# It is dynamically required by the original inc-turn END branch, and its
+# ReadGuild/ReadGuildData/SetTownData interfaces are explicit IO stubs.
+{
+  my $rebelPath=File::Spec->catfile($FindBin::Bin,
+    '../../../custom/inc-rebel-data.cgi');
+  open my $reader,'<:encoding(UTF-8)',$rebelPath or die $!;
+  local $/;
+  my $rebelDsl=<$reader>;
+  close $reader;
+  my @blocks=split(/^\s*\@\@event[^\r\n]*\r?\n/mi,$rebelDsl);
+  shift @blocks;
+  for(@blocks){s/^\s*\@\@(event|END|ITEM|FUNC\w+)\b[\s\S]*$//mi;}
+  my @hits=grep(/^\s*code\s+guildbattle(?:\s|$)/m,@blocks);
+  die 'frozen guildbattle source missing' unless @hits==1;
+  my($body)=$hits[0]=~/
+    ^\s*endfunc\s+_local_\s*\r?\n
+    ([\s\S]*?)
+    ^[ \t]*_local_[ \t]*$
+  /mx;
+  die 'frozen guildbattle END callback changed' unless
+    defined($body)&&
+    index($body,'main::ReadGuild();')>=0&&
+    index($body,'main::ReadGuildData();')>=0&&
+    index($body,"main::SetTownData('dominion',")>=0&&
+    index($body,'return 1,')>=0;
+  my $out="$callbackRoot/event-e/guildbattle.pl";
+  open my $writer,'>:encoding(UTF-8)',$out or die $!;
+  print $writer "use utf8;\npackage event;\nsub _local_end {\n".
+    $body."\n}\n1;\n";
+  close $writer or die $!;
+  $event::GUILDIDX_name=0;
+}
 # True happy NOWFUNC: exact frozen DSL body compiled into the existing
 # event-n file, then required by the original inc-turn NOWFUNC loop.
 {
@@ -274,7 +317,7 @@ sub step {
   @ITEM=(undef,map{{%{$_}}}@baseItems);
   my @activeOrder=keys(%DTevent);
   for my $key(@activeOrder){
-    if($key eq 'happy'){next;}
+    if($key eq 'happy'||$specialGuild{$key}){next;}
     die "unreviewed active code $key" unless
       $wanted{$key}||$durableExtra{$key};
     my $executed=eval 'package main;use utf8;no strict;no warnings;'.
@@ -289,6 +332,27 @@ sub step {
   my $initial=$o{shop} or die 'single real callback shop needed';
   my $shop={%$initial,item=>[@{$initial->{item}}],
     showcase=>[@{$initial->{showcase}}],price=>[@{$initial->{price}}]};
+  my $guildInput=$o{guildContext};
+  %GUILD=();%GUILD_DATA=();$DOMINION='';
+  $READ_GUILD=0;$READ_GUILD_DATA=0;$SET_TOWN=0;
+  if($guildInput){
+    die 'explicit mixed guild context required' unless
+      ref($guildInput)eq 'HASH'&&
+      ref($guildInput->{guilds})eq 'ARRAY'&&
+      defined($guildInput->{dominion});
+    $DOMINION=$guildInput->{dominion};
+    for my $g(@{$guildInput->{guilds}}){
+      die 'original guild source row invalid' unless
+        ref($g)eq'HASH'&&$g->{id}&&defined($g->{name})&&
+        defined($g->{money});
+      $GUILD{$g->{id}}=[$g->{name}];
+      $GUILD_DATA{$g->{id}}={money=>$g->{money}};
+      $GUILD_DATA{$g->{id}}{guild}=$g->{guild} if exists $g->{guild};
+    }
+  }
+  # CGI process isolation: original END uses undef &$func but does not
+  # delete %INC. Each step is one independent source CGI request.
+  delete $INC{"$callbackRoot/event-e/guildbattle.pl"};
   my @startOrder=keys(%EVENT);
   die 'source original 17-key order unexpectedly unstable' unless
     join("\0",@startOrder)eq join("\0",@runtimeHashKeys);
@@ -404,6 +468,7 @@ sub step {
       eventHashOrderFixture=>\@startOrder,
       nowHashOrderFixture=>\@nowHashOrder,
       randomDraws=>\@samples,shop=>$initial,
+      ($guildInput?(guildContext=>$guildInput):()),
     },
     output=>{
       activeUntilSeconds=>\%state,
@@ -411,6 +476,16 @@ sub step {
       randomDrawRanges=>[@R4_MULTI_RANGES],
       drawsUsed=>scalar(@R4_MULTI_RANGES),
       dataReadItems=>\@current,shop=>$shop,
+      ($guildInput?(
+        guildContext=>{
+          dominion=>$DOMINION,
+          guilds=>[map{my $g=$_;my $data=$GUILD_DATA{$g->{id}};
+            +{id=>$g->{id},name=>$g->{name},money=>$data->{money},
+              (exists($data->{guild})?(guild=>$data->{guild}):())}
+          }@{$guildInput->{guilds}}],
+        },
+        guildEndCallbacks=>$SET_TOWN?['guildbattle']:[],
+      ):()),
     },
   };
 }
@@ -647,10 +722,49 @@ my $restarted=step(name=>'iron-and-sword-expire-retrigger',
   prior=>{%DTevent},shop=>$allActive->{output}{shop});
 push @durableCases,$restarted;
 
+
+# Mixed authentic 17-key hash: guildbattle END must coexist with ten
+# other durable events, full START gates and happy NOWFUNC. Guild cash/
+# dominion are explicit IO snapshots; no real filesystem or WorldState.
+my @guildCases;
+my @guildMembers=(
+  {id=>'alpha',name=>'金砂會',money=>1000000},
+  {id=>'beta',name=>'赤月會',money=>1500000},
+  {id=>'gamma',name=>'灰石會',money=>20000},
+);
+my $guildInput={dominion=>'alpha',guilds=>\@guildMembers};
+%DTevent=(%{$allStart->{output}{activeUntilSeconds}},
+  guildbattle=>1003600);
+my $guildExpire=step(
+  name=>'guildbattle-expiry-ten-durable-happy-now',
+  begin=>1003600,prior=>{%DTevent},
+  happyNowDraw=>500000,
+  guildContext=>$guildInput,shop=>$allStart->{output}{shop});
+push @guildCases,$guildExpire;
+%DTevent=(%{$allStart->{output}{activeUntilSeconds}},
+  guildbattle=>1007200);
+my $guildEquality=step(
+  name=>'guildbattle-equality-blocks-END-and-START',
+  begin=>1003600,prior=>{%DTevent},
+  happyNowDraw=>250000,
+  guildContext=>$guildInput,shop=>$allStart->{output}{shop});
+push @guildCases,$guildEquality;
+%DTevent=(guildbattle=>999999);
+my $guildOnly=step(name=>'guildbattle-expiry-with-other-start-gates',
+  begin=>1000000,prior=>{%DTevent},
+  guildContext=>$guildInput,shop=>$initialShop);
+push @guildCases,$guildOnly;
+%DTevent=();
+my $neverActive=step(name=>'guildbattle-zero-start-not-durable',
+  begin=>1000000,prior=>{},
+  guildContext=>$guildInput,shop=>$initialShop);
+push @guildCases,$neverActive;
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
   happyCases=>\@happyCases,durableCases=>\@durableCases,
+  guildCases=>\@guildCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });
