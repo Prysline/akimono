@@ -127,7 +127,7 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         ...(block.fields.need??[]).map(x=>({...x,kind:'need'})),
       ].sort((a,b)=>a.line-b.line)
         .map(x=>sourceAction(x,model,x.kind));
-      const created=block.fields.get.map(x=>sourceAction(x,model,'get'));
+      const created=(block.fields.get??[]).map(x=>sourceAction(x,model,'get'));
       const cost=first(block,'price')?
         sourceAmount(first(block,'price'),'price'):0;
       const requiredExperience=first(block,'needexp')?
