@@ -126,16 +126,20 @@ async t=>{
   const supplied=await s.state();
   const offer=supplied.marketOffers.find(x=>x.itemId===62);
   assert.equal(offer?.canBuy,true,'source PLUS must actually supply #62');
-  // Starting gold is 100000; the genuine #62 quote can exceed that.
-  // Earn the difference through the actual starter vouchers, #14 map USE
-  // and original source natural sales. No test balance/inventory injection.
-  const gift=await s.post('/api/use',{
+  // Starting gold is 100000; the genuine #62 quote exceeds that.
+  // B-41 only certifies source-purchased #14 maps for natural sales;
+  // a gift-voucher map is not silently upgraded to that sale provenance.
+  // Buy a real source #14 map, USE it and sell its swords before buying #62.
+  const mapOffer=supplied.marketOffers.find(x=>x.itemId===14);
+  assert.equal(mapOffer?.canBuy,true,'source PLUS must supply #14 map');
+  const boughtMap=await s.post('/api/buy',{
     expectedRevision:supplied.world.revision,
-    itemId:79,useId:0,requestedCount:1,
+    itemId:14,requestedCount:1,marketShelf:mapOffer.shelf,
+    expectedPrice:mapOffer.price,
   });
-  assert.equal(gift.code,'COMMITTED',JSON.stringify(gift));
+  assert.equal(boughtMap.code,'COMMITTED',JSON.stringify(boughtMap));
   const map=await s.post('/api/use',{
-    expectedRevision:gift.state.world.revision,
+    expectedRevision:boughtMap.state.world.revision,
     itemId:14,useId:0,requestedCount:1,
   });
   assert.equal(map.code,'COMMITTED',JSON.stringify(map));
@@ -145,10 +149,21 @@ async t=>{
     expectedRevision:map.state.world.revision,itemId:44,per:200,
   });
   assert.equal(showcase.code,'COMMITTED',JSON.stringify(showcase));
-  let earned=showcase.state;
+  let earned=showcase.state,saleItemId=44;
   for(let hour=0;hour<12;hour++){
     const live=earned.marketOffers.find(x=>x.itemId===62);
     if(live?.canBuy&&earned.shop.money>=live.price)break;
+    // The reviewed #14 source also produces #43; switch to that real
+    // sword if both #44 sales alone do not cover the quoted #62 price.
+    if(earned.shop.item[saleItemId-1]===0){
+      if(saleItemId!==44)break;
+      saleItemId=43;
+      const edited=await s.post('/api/showcase',{
+        expectedRevision:earned.world.revision,itemId:saleItemId,per:200,
+      });
+      assert.equal(edited.code,'COMMITTED',JSON.stringify(edited));
+      earned=edited.state;
+    }
     const step=await s.post('/api/advance-time',{
       expectedRevision:earned.world.revision,minutes:60,
     });
