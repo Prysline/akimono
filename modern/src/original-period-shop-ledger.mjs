@@ -7,6 +7,7 @@
 import {R4_DRAGON_BALANCE_SOURCE} from './original-r4-dragon-balance.mjs';
 import {R4_DIGNITY_SOURCE} from './original-r4-period-dignity-decay.mjs';
 import {R4_GUILD_FEE_SOURCE} from './original-r4-guild-period-fee.mjs';
+import {R4_TECH_LOSS_SOURCE} from './original-r4-post-period-tech-loss.mjs';
 export const B44_LEDGER_SOURCE='core-inc-period-single-shop-ledger-before-dignity';
 const fail=x=>{throw new RangeError('B-44 source-period ledger: '+x);};
 const check=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
@@ -82,7 +83,7 @@ function expMap(value){
  */
 export function projectOriginalPeriodShopLedger({
   shop,reviewed,limits,reviewedDragonSettlement=null,
-  reviewedDignity=null,reviewedGuild=null,
+  reviewedDignity=null,reviewedGuild=null,reviewedPostTech=null,
 }){
   if(reviewed?.source!==B44_LEDGER_SOURCE||reviewed.showcaseDailyCost!==0)
     fail('reviewed source required');
@@ -110,6 +111,14 @@ export function projectOriginalPeriodShopLedger({
     reviewedGuild.feeDivisor===1000;
   if(reviewedGuild!==null&&!guildAuthorized)
     fail('unreviewed source guild member fee review');
+  const techAuthorized=reviewedPostTech!==null&&
+    reviewedPostTech.source===R4_TECH_LOSS_SOURCE&&
+    reviewedPostTech.committable===false&&
+    reviewedPostTech.triggerExperience===4000&&
+    reviewedPostTech.drawRange===14000&&
+    reviewedPostTech.techniques?.length===4;
+  if(reviewedPostTech!==null&&!techAuthorized)
+    fail('unreviewed original high-EXP UpdateResetAfter');
   if(!shop||shop.status!==1||shop.showcasecount!==1||
      (!guildAuthorized&&shop.guild&&shop.guild!=='')||
      (!dragonAuthorized&&(
@@ -140,7 +149,7 @@ export function projectOriginalPeriodShopLedger({
      !Number.isSafeInteger(money-upkeep))
     fail('unsafe source arithmetic');
   const nextExp=Object.fromEntries(Object.entries(exp).flatMap(([id,v])=>{
-    if(v>1000)fail('unreviewed experience cap');
+    if(v>1000&&!techAuthorized)fail('unreviewed experience cap');
     const down=v-Math.trunc(v*60/1000)-5;
     return down>0?[[id,down]]:[];
   }));

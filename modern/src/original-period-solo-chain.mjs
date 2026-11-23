@@ -24,6 +24,8 @@ import {reviewR4DignityDecay,projectR4DignityDecay,
   from './original-r4-period-dignity-decay.mjs';
 import {reviewR4GuildFee,projectR4GuildFee,R4_GUILD_FEE_SOURCE}
   from './original-r4-guild-period-fee.mjs';
+import {reviewR4PostPeriodTechLoss,projectR4PostPeriodTechLoss,
+  R4_TECH_LOSS_SOURCE} from './original-r4-post-period-tech-loss.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -36,6 +38,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   originalAddItemSource,detailSource,readSource,adminSource,
   bootstrapMeta,compiledLimits,includeReviewedDragon=false,
   includeReviewedDignity=false,includeReviewedGuild=false,
+  includeReviewedPostTech=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -49,7 +52,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
   });
   if(typeof includeReviewedDragon!=='boolean'||
      typeof includeReviewedDignity!=='boolean'||
-     typeof includeReviewedGuild!=='boolean')
+     typeof includeReviewedGuild!=='boolean'||
+     typeof includeReviewedPostTech!=='boolean')
     bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
@@ -57,6 +61,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
     reviewR4DignityDecay({periodSource}):null;
   const guild=includeReviewedGuild?
     reviewR4GuildFee({periodSource}):null;
+  const postTech=includeReviewedPostTech?
+    reviewR4PostPeriodTechLoss({itemDsl,model,periodSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -90,7 +96,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
     bad('external update/dragon dependencies changed');
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
-    soloSort,topPrize,ledger,territory,dragon,dignity,guild,
+    soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
@@ -100,10 +106,10 @@ export function reviewOriginalSoloPeriodPhaseChain({
       ...(guild?['guild-fee-and-attack-defense-after-sale-history']:[]),
       ...(dignity?['dignity-decline-before-second-SortDT']:[]),
       'SortDT-after','unled-town',
-      'UpdateResetAfter-guard']),
+      postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:dragon||dignity||guild?
-      'reviewed source opt-in one-shop DragonBalance, dignity and/or guild dues with explicit external EditGuildMoney call only; no durable guild IO/stale close/events/backup, exp sum <=4000; noncommittable period phase chain':
+    scope:dragon||dignity||guild||postTech?
+      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues and/or high-EXP technology forgetting after period; external EditGuildMoney IO only recorded, no actual guild file, stale close/events/backup; noncommittable period phase chain':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -116,6 +122,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   reviewed,shop,town,dtPeople,
   awardDrawMillionths,territoryDrawMillionths,
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
+  postTechDraws=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -135,7 +142,8 @@ export function projectOriginalSoloPeriodPhaseChain({
      !(shop.exp===undefined||(
        shop.exp!==null&&typeof shop.exp==='object'&&!Array.isArray(shop.exp)&&
        Object.values(shop.exp).every(x=>Number.isSafeInteger(x)&&x>=0)&&
-       Object.values(shop.exp).reduce((a,b)=>a+b,0)<=4000))
+       (reviewed.postTech!==null||
+        Object.values(shop.exp).reduce((a,b)=>a+b,0)<=4000)))
     )
     bad('external guild, dragon, high EXP or post-period callback dependency');
   if(reviewed.dragon!==null&&(
@@ -158,6 +166,15 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('guild member source dues review required');
   if(reviewed.guild===null&&guildContext!==null)
     bad('unsupported original guild account IO in period chain');
+  if(reviewed.postTech!==null&&(
+     reviewed.postTech.source!==R4_TECH_LOSS_SOURCE||
+     reviewed.postTech.committable!==false||
+     reviewed.postTech.triggerExperience!==4000||
+     reviewed.postTech.drawRange!==14000||
+     reviewed.postTech.techniques?.length!==4))
+    bad('source-reviewed post-period technical-loss contract required');
+  if(reviewed.postTech===null&&postTechDraws!==null)
+    bad('unreviewed post-period technique RNG on WorldState');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -187,6 +204,7 @@ export function projectOriginalSoloPeriodPhaseChain({
     reviewedDragonSettlement:dragonSettlement,
     reviewedDignity:reviewed.dignity,
     reviewedGuild:reviewed.guild,
+    reviewedPostTech:reviewed.postTech,
     limits:reviewed.compiledLimits,
   });
   // In the frozen source guild fees follow saleyesterday assignment and
@@ -216,9 +234,16 @@ export function projectOriginalSoloPeriodPhaseChain({
     drawMillionths:territoryDrawMillionths,
     leaderShopExists:false,activeEventKeys:[],
   });
+  // Frozen UpdateResetAfter executes after the post-period SortDT and
+  // territory section. Lost items only affect the NEXT period's ranking.
+  const techLoss=reviewed.postTech?
+    projectR4PostPeriodTechLoss({
+      reviewed:reviewed.postTech,shop:afterSort.shop,
+      randomDraws:postTechDraws,
+    }):null;
   return Object.freeze({
     source:reviewed.source,
-    shop:afterSort.shop,
+    shop:techLoss?.shop??afterSort.shop,
     town:city.town,
     dtPeople:city.dtPeople,
     pointsBefore:beforeSort.shop.point,
@@ -238,6 +263,10 @@ export function projectOriginalSoloPeriodPhaseChain({
       guildContext:guildEffect.guild,
       guildMoneyEdits:guildEffect.editGuildMoneyCalls,
       guildSource:reviewed.guild.source,
+    }:{}),
+    ...(reviewed.postTech?{
+      postTechLoss:techLoss,
+      postTechSource:reviewed.postTech.source,
     }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
