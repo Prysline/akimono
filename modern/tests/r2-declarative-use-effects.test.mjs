@@ -159,7 +159,7 @@ function compare(rule,{job='',missingNeed=false,destroy=false}={}){
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,71);
+  assert.equal(offers.length,79);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -209,7 +209,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,71);
+  assert.equal(offers.length,79);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -326,8 +326,11 @@ test('R2 eight #20-#23 source iron/steel equipment USEs match frozen Perl',()=>{
       compare(rule);
     }
     for(const useId of [2,3]){
-      assert.equal(street.useItem.getRule(itemId,useId),null,
-        'advanced original lostbook forging callback still unreviewed');
+      const advanced=street.useItem.getRule(itemId,useId);
+      assert.equal(advanced?.afterCallback?.kind,'lostbook');
+      assert.equal(advanced?.afterCallback?.threshold,50);
+      compare(advanced);
+      compare(advanced,{destroy:true});
     }
   }
 });
@@ -367,5 +370,24 @@ test('R2 original potion unknown callback/param source drift fails closed',()=>{
     assert.notEqual(changed,sources.itemDsl);
     assert.throws(()=>createStandardStreetModule({...sources,itemDsl:changed}),
       /unsupported|drift|callback|source/i);
+  }
+});
+
+test('R2 #20-23 original advanced forging callbacks retain knowledge, EXP and source RNG',()=>{
+  for(const itemId of [20,21,22,23]){
+    const first=street.useItem.getRule(itemId,0);
+    const second=street.useItem.getRule(itemId,1);
+    assert.equal(first.needExperience,0);
+    assert.equal(second.needExperience,itemId===23?250:200);
+    for(const useId of [2,3]){
+      const rule=street.useItem.getRule(itemId,useId);
+      assert.equal(rule.afterCallback.kind,'lostbook');
+      assert.equal(rule.afterCallback.threshold,50);
+      assert.deepEqual(rule.uses.filter(x=>x.probabilityPermille===0)
+        .map(x=>x.itemId),[itemId===23?19:18]);
+      assert.equal(rule.needExperience,
+        itemId===23?(useId===2?500:700):(useId===2?400:600));
+      assert.equal(rule.experienceCallback.points,20);
+    }
   }
 });

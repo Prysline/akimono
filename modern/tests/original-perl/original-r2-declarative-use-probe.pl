@@ -31,8 +31,6 @@ die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
   20=>4,21=>4,22=>4,23=>4,37=>4,39=>19);
-die 'R2 unreviewed advanced iron/steel callback' if
-  $itemId>=20&&$itemId<=23&&$useId>1;
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -93,17 +91,20 @@ for my $i(0..$useId){
     die "R2 oracle unexpected callback/source field $raw"
       unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|okmsg|ngmsg|needexp|job|use|need|get|func|param)\s/i;
     if($i==$useId&&$raw=~/^\s*(?:func|param)\s/i){
-      die 'R2 source callback out of reviewed potion set'
-        unless $itemId==15&&($useId==1||$useId==3||$useId==4);
+      die 'R2 source callback outside reviewed potion/equipment set'
+        unless ($itemId==15&&($useId==1||$useId==3||$useId==4))||
+          ($itemId>=20&&$itemId<=23&&$useId>=2);
     }
     main::GetBuffer('use',$normalized);
   }
 }
 my $u=$main::g_use;
-my $sourcePotionCallback=($itemId==15&&($useId==1||$useId==3||$useId==4));
-my $expectedCallbackParam=$useId==4?50:25;
-if($sourcePotionCallback){
-  die 'R2 original potion callback source drift' unless
+my $sourceLostbookCallback=
+  ($itemId==15&&($useId==1||$useId==3||$useId==4))||
+  ($itemId>=20&&$itemId<=23&&$useId>=2);
+my $expectedCallbackParam=($itemId==15&&($useId==1||$useId==3))?25:50;
+if($sourceLostbookCallback){
+  die 'R2 original lostbook callback source drift' unless
     ($u->{func}//'')eq'lostbook'&&$u->{param1}==$expectedCallbackParam;
 }else{
   die 'R2 noncallback recipe grew original callback'
@@ -111,7 +112,7 @@ if($sourcePotionCallback){
 }
 die 'R2 compiled owner/index changed' unless
   $u->{itemno}==$itemId && $u->{no}==$useId && $u->{time}>0;
-if($sourcePotionCallback){
+if($sourceLostbookCallback){
   # Frozen lostbook references the real ITEM name while the Core callback
   # itself is executed by the original Perl UseItem phase.
   for my $src (@main::out_item){$main::ITEM[$src->{no}]={%$src};}
@@ -153,7 +154,7 @@ my $runtime={
   needpop=>0,needevent=>'',param1=>0+($u->{param1}//0),
   use=>\@materials,
   result=>{create=>\@created,message=>{resultok=>$u->{okmsg}},
-    ($sourcePotionCallback?(function=>'lostbook'):())},
+    ($sourceLostbookCallback?(function=>'lostbook'):())},
   arg=>{targetidx=>0},
 };
 # Source OutItemData emits this exact expression for each verified

@@ -1,7 +1,7 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
  * #39 dismantling/packing and source-gated #15/#16/#17 plus #20-#23 initial iron/steel manufacturing.
- * Reviewed source #15/1,3,4 lostbook callbacks use exact 25/50 permille.
+ * Reviewed #15 and #20-23 source lostbook callbacks use exact 25/50 permille.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
  */
@@ -12,10 +12,6 @@ const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
 const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
   [20,4],[21,4],[22,4],[23,4],
-]));
-const selectedSubset=Object.freeze(new Map([
-  [20,new Set([0,1])],[21,new Set([0,1])],
-  [22,new Set([0,1])],[23,new Set([0,1])],
 ]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
@@ -87,18 +83,12 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
     // of the SAME ITEM; time, exptime, job, use and get reset each USE.
     let inheritedExperience=0;
     for(const [useId,block] of uses.entries()){
-      // Unlike standalone USEs, the original compiler carries ITEM EXP
-      // through intervening callback-bearing USEs of the SAME ITEM.
-      if(selectedSubset.has(itemId)&&
-         !selectedSubset.get(itemId).has(useId)){
-        if(first(block,'exp')!==undefined)
-          inheritedExperience=sourceAmount(first(block,'exp'),'inherited EXP');
-        continue;
-      }
       for(const [field,rows] of Object.entries(block.fields)){
-        const isReviewedPotionCallback=itemId===15&&[1,3,4].includes(useId)&&
+        const reviewedLostbook=(itemId===15&&[1,3,4].includes(useId))||
+          ([20,21,22,23].includes(itemId)&&useId>=2);
+        const isReviewedCallbackField=reviewedLostbook&&
           (field==='func'||field==='param');
-        if((!accepted.has(field)&&!isReviewedPotionCallback)||
+        if((!accepted.has(field)&&!isReviewedCallbackField)||
            !['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
       }
@@ -125,8 +115,9 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       const requiredExperience=first(block,'needexp')?
         sourceAmount(first(block,'needexp'),'needexp'):0;
       const jobTimeModifier=jobsFor(block,define);
-      const sourceCallback=itemId===15&&[1,3,4].includes(useId);
-      const expectedParam=useId===4?50:25;
+      const sourceCallback=(itemId===15&&[1,3,4].includes(useId))||
+        ([20,21,22,23].includes(itemId)&&useId>=2);
+      const expectedParam=itemId===15&&[1,3].includes(useId)?25:50;
       if(sourceCallback&&
          (first(block,'func')!=='lostbook'||
           first(block,'param')!==String(expectedParam)))
@@ -170,6 +161,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==50)fail('original reviewed declarative USE total drift');
+  if(output.length!==58)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }
