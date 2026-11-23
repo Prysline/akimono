@@ -195,6 +195,9 @@ test('R4 rejected period attempts leave both actual B43 save generations untouch
   assert.equal(boot.ok,true);
   const first=store.save(boot.world,{expectedGeneration:0});
   assert.equal(first.generation,1);
+  const second=store.save(boot.world,{expectedGeneration:1});
+  assert.equal(second.generation,2,
+    'both independent B43 disk generations exist before the rejected rollover');
   const repo=createMemoryWorldAdapter(boot.world);
   const snapshotBefore=encodeMemorySnapshot(repo.read());
   const attempt=executeMemoryCommand({
@@ -205,7 +208,13 @@ test('R4 rejected period attempts leave both actual B43 save generations untouch
   assert.equal(attempt.ok,false);
   assert.equal(attempt.code,'SOURCE_BOUNDARY_REJECTED');
   assert.equal(encodeMemorySnapshot(repo.read()),snapshotBefore);
-  assert.equal(store.status().generation,1);
+  assert.equal(store.status().generation,2);
+  assert.throws(()=>store.save({
+    ...boot.world,period:{...boot.world.period,
+      settledCount:1,lastSettledBoundarySeconds:1026000},
+  },{expectedGeneration:2}),/unreviewed or settled v2 city/);
+  assert.equal(store.status().generation,2,
+    'invalid settlement cannot replace either disk generation');
   assert.equal(store.load().world.period.settledCount,0);
   assert.equal(store.load().world.nowSeconds,1025980);
   assert.equal(encodeMemorySnapshot(store.load().world),snapshotBefore);
