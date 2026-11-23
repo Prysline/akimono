@@ -3,7 +3,7 @@
 - R2 支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立。
 - R4 合併目標：`test/task02-baseline-on-s1`；僅透過獨立 **Draft PR #2** 進行預整合驗證，未合併。原有 Draft PR #1、R4 分支與 Notion 任務狀態不變。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
-- **原版宣告：79 ITEM／116 USE。** 本分支 `getRule`／`listUseOffers` 目前有 **95 項**（上一階段 90＋#13 打工 2＋#27～#29 單次節慶消耗 3）；其他 **21 項** 屬於「原版宣告存在但尚未接入」，不能標為原版不支援。逐筆詳見 `r2-use-completion-gap-inventory.md`。
+- **原版宣告：79 ITEM／116 USE。** 本分支 `getRule`／`listUseOffers` 目前有 **110 項**（上一階段 95＋#78 轉職 14＋#77 派對 1）；其他 **6 項** 屬於「原版宣告存在但尚未接入」，不能標為原版不支援。逐筆詳見 `r2-use-completion-gap-inventory.md`。
 
 ## 1. 已實作、正在驗收的實際玩家能力
 
@@ -82,6 +82,17 @@
 - #27/0 食用整隻烤火雞、#28/0 喝挑剔的朗姆酒、#29/0 穿時髦的靴子，原版皆 `arg nocount`；各消耗自己的原版一件物品，執行時間 `1h×ItemUseTimeRate(0.5)`、無 GET、無 EXP，保留「肚子真飽／感覺很好／獨占了所有人的視線」材料消耗文字，且非單次請求（requestedCount!=1）在執行前原子拒絕。
 - 凍結 `GetBuffer` + Perl `UseItem/MakeAmount/CheckWholeStore` 的三項差分與 DSL 變更 fail-closed、連續使用兩次拒絕測試位於 `r2-declarative-use-effects.test.mjs`。來源商品的市場取得、真 HTTP 新玩家與 B-43 合法存檔路徑尚未驗證，不因此放寬來源存檔白名單。
 
+### ITEM #78：十四項職業變更與熟練度移轉 USE
+
+- 原版 `轉職指南` 的 USE 0～13 已按原始 `param` 與 `_local_／_local_1` 綁定編譯成獨立 Registry 規則，全部要求持有指南 1 本、`arg nocount`、時間 `6h×ItemUseTimeRate(0.5)`，共用 CAS 在正常扣除／時間／市場檢查後執行原版轉職函式。前 13 種轉職依原版將指定 13 個商品熟練度清除，轉入目標熟練度且係數 0.5、上限 1000，並改變店舖職業。第 14 種解除職業，不進行熟練度轉移。
+- **關鍵相容性**：凍結 Perl 的跳過條件確為 `next if !$exp || $exps==$exp1;`，其中 `$exp1` 是目標商品當前的**熟練度數值**、不是商品編號；不修正這個原版行為。完整 `original-r2-career-use-probe.pl` 直接執行凍結 `GetBuffer`、`UseItem` 與 inline `_local_`；`r2-career-change-source.test.mjs` 覆蓋 14 項、熟練度為 0／1000、編號恰等於熟練度值、職業別名、日誌及單次 USE／未持有拒絕。
+- `r2-career-true-player-http.test.mjs` 另加入「市場正向 PLUS → 買轉職指南 → 真實轉成酪農家 → 禮券換牛 → 擠奶職業縮時」的玩家 HTTP 測試。此玩家測試以最新同 SHA CI 結果判定；轉職導致的職業與任意熟練度變化尚未有完整 B-43 來源證明，不能因此視為雙世代持久化已驗收。
+
+### ITEM #77：一項慶祝派對人氣回呼 USE
+
+- `#77/0` 消耗 1 組「慶祝用套組」，原版 `arg nocount`，宣告費用 0、執行時間 `4h×ItemUseTimeRate(0.5)`，保留材料消耗訊息；執行 frozen `@@FUNCITEM::popup`：`int(1000×(2−rank/5000))`、人氣上限 10000、兩筆原文 `WriteLog`，沒有憑空加入其他庫存，也沒有客戶端任意指定人氣值。
+- `original-r2-party-use-probe.pl` 直接編譯凍結 `GetBuffer`、真 Perl `UseItem` 與 `popup` 本體；`r2-party-popup-source.test.mjs` 比對不同初始人氣、上限、原版訊息與缺少套組／非法次數的 CAS 原子拒絕。**套組市場取得與 B-43 保存來源仍未驗收**，不可當成任意玩家現成物品。
+
 ## 3. 材料取得鏈（R2 新增來源驗證）
 
 - **玩家卡住的原因已定位**：31 項 Perl 差分使用「預先放入材料」的記憶體來源世界，不等同玩家從開店取得原料。原版前期原料 #1～#7 的 `PLUS -20m` 表示市場供貨扣減，不代表可由 PLUS 從零補貨。不能把市場上的 ITEM 定義或未執行的 USE 直接當成可取得材料。
@@ -92,7 +103,7 @@
 
 ## 4. 尚未完成與 R4 依賴
 
-- 其他 **21／116** 原版 USE 仍未接入。各筆按純資料、材料／庫存／製作、特殊回呼、職業／公會、EVENT、未審閱來源分流；不得因模型拒絕就視為原版禁止。
+- 其他 **6／116** 原版 USE 仍未接入（#62 廣告包 3 項＋#65 禁斷之書 3 項）。各筆按純資料、材料／庫存／製作、特殊回呼、職業／公會、EVENT、未審閱來源分流；不得因模型拒絕就視為原版禁止。
 - 高風險缺口是原版產生函式、職業變化、`LIMIT_EXP` 並列排序與事件狀態的完全差分；這些需要個別補真 Perl Oracle，再擴充共用 Registry，不能用手寫預期值冒充來源。
 - R4 負責完整時間切片、原版 EVENT/hash/RNG 語義、SortDT、36 小時期末決算；R2 不建立第二套 EVENT 引擎、不將未知 EVENT 設空。依賴 EVENT 的 USE 在明確介面接妥前繼續拒絕。
 - `modern/scripts/dev-local.mjs` 與 R4 兩條工作線都有修改；整合前應重新取得 R4 最新 HEAD 並以兩側功能保留方式處理。R2 支線 CI 通過只代表支線驗收，不代表最終整體合併驗收。
