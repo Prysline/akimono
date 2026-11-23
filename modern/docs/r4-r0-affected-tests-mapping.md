@@ -82,3 +82,9 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `src/original-r4-rebel-now.mjs`（新增）：以 82 行正文指紋鎖住原版叛軍／護衛軍／城鎮金錢和領主轉換，受控純函式；拒絕未來源審閱的軍隊、城市、狀態與 RNG。
 - `tests/original-perl/original-r4-rebel-now-probe.pl`、`.t`（新增）：真凍結 NOWFUNC 在 inc-turn 原文中 require 執行，八組分支＋Perl rand(100)>75 浮點界線；隔離全域 `@DT` 快照、記錄真 Log、ReadArmy/WriteArmy 及 RNG。未改動原始 Perl／DSL。
 - `tests/r4-source-rebel-now.test.mjs`（新增）：城市／店鋪／RIOT／ARMY／領主／訊息／亂數逐欄 Node ↔ 真 Perl 差分、多行程、失敗零變動；保留舊 R4 EVENT 與 B50 非提交期末，尚未是正式 R4 完整世界。
+
+## 2026-11-23｜R4 period RebelRobin／同片 NOWFUNC 來源對映
+
+- `src/original-r4-rebel-period-trigger.mjs` + `tests/original-perl/original-r4-rebel-period-trigger-probe.pl`／`.t` + `tests/r4-source-rebel-period-trigger.test.mjs`：原版 `period.cgi` 子程序與 3 天延長分支，城市／領主／RNG／日誌全欄差分；控制真實 rand 的 30% 浮點邊界。
+- `src/original-r4-rebel-period-to-now.mjs` + `tests/original-perl/original-r4-rebel-period-now-probe.pl`／`.t` + `tests/r4-source-rebel-period-now.test.mjs`：期末 source 先於 END／START／NOW，原版單事件雙片段同一 Perl 程序測試；檢查初次叛亂與當片效果、既有活動被鎮壓、原版 start=0 閘門亂數，以及來源輸入原子不可變。
+- 以上均無權繞過 `committable:false`。R4 17-key 外部活動整合、完整跨 36h 期末及 WorldState／CAS 皆未驗證。完整阻塞清冊新增 `docs/r4-exit-audit.md`。

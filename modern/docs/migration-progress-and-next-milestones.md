@@ -1,3 +1,5 @@
+**2026-11-23｜R4 續作最新來源驗收（仍未完成）：** 已把 B-59 鐵礦脈與 B-61 劍需求加入 17-key 真 Perl EVENT 混合，共十種持續 EVENT＋getmoney/getpop、manbiki/goutou、loto/happy 的共享亂數；額外完成 `guildbattle` 真 END 來源、`rebel` 82 行 NOWFUNC、期末 `RebelRobin` 及「期末觸發→同片 NOW」八案真 Perl 連續差分。最新來源提交 `38d5730dfd96d0995136174e8cb48f013818143e` Push/PR 雙 CI completed/success，Node 1070/1070、Perl 2098/2098（65 檔）。**這些仍是受控 `committable:false` 局部測試，完整 17-key 特殊事件混合、真跨 36h 期末、WorldState／HTTP／CAS／重啟均未結案；詳見 [R4 退出清冊](r4-exit-audit.md)。**
+
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
 
 **2026-11-23｜R4 九種 EVENT ITEM PARAM：真凍結編譯器 Oracle 已通過（來源局部，不是 R4 結案）。** 新增共用 `original-r4-event-item-param.mjs`，以 B-53 17 EVENT 已審閱編譯結果解析其中九種 ITEM PARAM；真 Perl 探針直接從凍結 `inc-makeitem.cgi::OutEventData` 生成並執行原版 `$ITEM[n]` 算式，Node/Perl 九 EVENT × 79 ITEM 逐欄對照通過。它只處理來源欄位純算式，不執行 EVENT 的開始／結束／NOWFUNC、原版 hash/群組/RNG 或正式 WorldState；R4 及 36h 期末／HTTP 閉環仍不結案。詳見 [R4 來源契約](r4-source-time-slices-contract.md)／[R0 測試映射](r4-r0-affected-tests-mapping.md)。

@@ -108,3 +108,9 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 - 純投影 `src/original-r4-rebel-now.mjs` 針對凍結 `custom/inc-rebel-data.cgi` 82 行 NOWFUNC 正文做嚴格指紋漂移核對，受控輸入含明示城鎮／RIOT／ARMY／店鋪及同一個已種入的 rebel EVENT。真 Perl `tests/original-perl/original-r4-rebel-now-probe.pl` 自 DSL 擷取原版 callback，由 `inc-turn.cgi` 原文 END→START→NOWFUNC 執行；ReadArmy、WriteArmy、GetMoneyString 為明確隔離的外部 IO 替身。
 - 直接比較鎮壓、武裝扣減、叛軍增援、護衛軍敗亡、店鋪或盜匪成為領主、資金分配與 `rand(100)>75` 嚴格邊界 75.0000／75.0001（必須比較 Perl `rand` 浮點，不能先整數化）及每次亂數範圍。Perl 原版未加花括號的 `$main::BAL_NAME...` 插值會將部分中文字併入變數名，測試以來源實際日誌為準而非預期應有語句。Perl 探針複製個別案例的 `@DT` 輸出，避免多案例共用 Perl 全域陣列造成假差分。
 - 這是外部已有 rebel 事件的**來源局部**範圍；完整 `period.cgi::RebelRobin` 生成事件、真軍隊檔案／Guild 狀態、17 鍵混合回呼、36h 期末、可提交 WorldState 和 HTTP 存檔重啟尚未完成，堅守 `committable:false` 與未審閱拒絕；R4 不結案。
+
+## 2026-11-23｜R4 rebel 期末 RebelRobin → 同片 EVENT NOW 的真 Perl 來源序列
+
+- `original-r4-rebel-period-trigger.mjs` 以完整凍結 `period.cgi::RebelRobin` 正文與原本「已有 rebel 即延長三日，否則呼叫 RebelRobin」片段來源審閱，Node ↔ `original-r4-rebel-period-trigger-probe.pl` 差分 7 組來源時序：無領主、已有叛亂、城市平穩、城市不安、30% 侵入抽樣 29.9999／30.0000 邊界，以及原版不檢查到期日而延長已存在叛亂的特殊行為。嚴格保留原版 `rand(2500)`、`rand(5000000)`、`rand(100)` 原浮點門檻，非 JS 預先整數化的概率。
+- `original-r4-rebel-period-to-now.mjs` 接合這段期末狀態與已驗證的 `rebel` NOWFUNC，並使用來源 `inc-turn.cgi` 的前置 SortDT／period require／END／START／NOW 的階段順序；`original-r4-rebel-period-now-probe.pl` 同一 Perl 行程真正執行凍結 period 片段和 EVENT NOW 回呼，再與 Node 逐欄比較城市、店鋪、RIOT／ARMY、持續狀態、日誌、rand(range) 序列。8 個來源情境含新叛亂當片軍力扣減、增援、既有事件延長後被 NOWFUNC 立刻鎮壓、零機率 START 仍消耗一次 rand(100000)。
+- 最終純投影一律 `committable:false`；只完成**一個原始 PERIOD 片段、單一 rebel EVENT**的可控重播，不包含真正 36h `inc-period.cgi` 所有階段、完整 17-key 混合、系統 RNG／Perl hash seed、外部軍隊／公會檔案、WorldState／CAS／HTTP 或保存重啟。提交 `38d5730dfd96d0995136174e8cb48f013818143e` 雙 CI 成功，Node 1070/1070、Perl 2098/2098（65 檔），但 **R4 仍不得退出**；退出項目見 `r4-exit-audit.md`。
