@@ -153,7 +153,7 @@ my $runtime={
   needpop=>0,needevent=>'',param1=>0+($u->{param1}//0),
   use=>\@materials,
   result=>{create=>\@created,message=>{resultok=>$u->{okmsg}},
-    ...($sourcePotionCallback?(function=>'lostbook'):())},
+    ($sourcePotionCallback?(function=>'lostbook'):())},
   arg=>{targetidx=>0},
 };
 # Source OutItemData emits this exact expression for each verified
