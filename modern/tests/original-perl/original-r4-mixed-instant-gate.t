@@ -32,6 +32,23 @@ if(ref($o)eq'HASH'){
     'source iron EVENT restarts after expiring');
   ok(exists($o->{durableCases}[3]{output}{activeUntilSeconds}{'ken-sale'}),
     'source sword EVENT restarts after expiring');
+  is(scalar(@{$o->{guildCases}}),4,
+    'four original full 17-key guildbattle END and ongoing cases');
+  my $guild=$o->{guildCases}[0]{output};
+  is($guild->{guildContext}{dominion},'beta',
+    'real frozen guildbattle END SetTownData selects unique richest guild');
+  is($guild->{guildEndCallbacks}[0],'guildbattle',
+    'actual original ENDFUNC invoked inside ten-durable mixed order');
+  ok(!exists($guild->{activeUntilSeconds}{guildbattle}),
+    'expired guildbattle removed while ten other durable events survive');
+  is(scalar(keys(%{$guild->{activeUntilSeconds}})),10,
+    'ten durable source events persist after guildbattle END');
+  is(scalar(grep{$_->[2]=~/赤月會/}@{$guild->{logs}}),1,
+    'real original guildbattle message interleaved in source event logs');
+  is($o->{guildCases}[1]{output}{guildContext}{dominion},'alpha',
+    'source strict equality prevents guildbattle callback on boundary');
+  is($o->{guildCases}[3]{output}{guildContext}{dominion},'alpha',
+    'zero START guildbattle never sets city dominion');
   my $fresh=$o->{happyCases}[0]{output};
   is(scalar(grep{$_->[2] eq '街上開始舉辦感謝祭了。'} @{$fresh->{logs}}),1,
     'original compiled happy START emits its literal source message');
