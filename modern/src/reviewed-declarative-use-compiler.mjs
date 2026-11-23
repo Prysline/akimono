@@ -12,12 +12,13 @@ const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
 const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
   [20,4],[21,4],[22,4],[23,4],[66,4],
+  [35,1],[36,1],
 ]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
 const profession=Object.freeze({
   '書屋':'book','武器屋':'weapon','防具屋':'armor','道具屋':'tool',
-  '藥屋':'drug',
+  '藥屋':'drug','酪農家':'cow',
 });
 const first=(b,k)=>b.fields[k]?.[0]?.value;
 const safe=(v,label,min=0)=>{
@@ -93,9 +94,13 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
            !['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
       }
+      const sourceConsumptionOnly=[35,36].includes(itemId);
       if(!first(block,'name')||!first(block,'time')||
          !(block.fields.use?.length)&&!(block.fields.need?.length)||
-         !(block.fields.get?.length))
+         (!sourceConsumptionOnly&&!(block.fields.get?.length))||
+         (sourceConsumptionOnly&&((block.fields.get?.length??0)!==0||
+          first(block,'price')!=='0'||uses.length!==1||
+          !['mino_yogurt','mino_cheese'].includes(first(item,'code')))))
         fail('incomplete source recipe '+itemId+'/'+useId);
       const time=Math.trunc(sourceAmount(first(block,'time'),'time')/2);
       const exptime=first(block,'exptime')?
@@ -164,6 +169,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==62)fail('original reviewed declarative USE total drift');
+  if(output.length!==64)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

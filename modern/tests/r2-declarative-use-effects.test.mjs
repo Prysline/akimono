@@ -161,7 +161,7 @@ function compare(rule,{job='',missingNeed=false,missingNeedId=null,
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,83);
+  assert.equal(offers.length,85);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -211,7 +211,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,83);
+  assert.equal(offers.length,85);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -431,5 +431,18 @@ test('R2 #66 source callback 200 permille or unknown func drift rejects',()=>{
     assert.notEqual(changed,sources.itemDsl);
     assert.throws(()=>createStandardStreetModule({...sources,itemDsl:changed}),
       /drift|unsupported|callback|source/i);
+  }
+});
+test('R2 #35/#36 source consumption USEs (no GET) match true frozen Perl',()=>{
+  for(const [itemId,itemConsumed] of [[35,35],[36,36]]){
+    const rule=street.useItem.getRule(itemId,0);
+    assert.equal(rule?.source,'original-declarative-use-dsl');
+    assert.deepEqual(rule.creates,[]);
+    assert.deepEqual(rule.uses.map(x=>[x.itemId,x.countPerUse]),
+      [[itemConsumed,1]]);
+    assert.equal(rule.money,0);
+    assert.equal(rule.experienceCallback,undefined);
+    compare(rule);
+    compare(rule,{job:'cow'});
   }
 });

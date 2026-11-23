@@ -27,10 +27,10 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|37|39|66)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|35|36|37|39|66)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
-  20=>4,21=>4,22=>4,23=>4,37=>4,39=>19,66=>4);
+  20=>4,21=>4,22=>4,23=>4,35=>1,36=>1,37=>4,39=>19,66=>4);
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -165,7 +165,7 @@ my $runtime={
 # dispatcher remains out of the live HTTP/R2 scope.
 if(($main::DT->{job}//'')ne''&&@{$u->{job}||[]}){
   my ($jobName,$modifier)=split(/\t/,$u->{job}[0]);
-  my %mapping=(書屋=>'book',武器屋=>'weapon',防具屋=>'armor',道具屋=>'tool',藥屋=>'drug');
+  my %mapping=(書屋=>'book',武器屋=>'weapon',防具屋=>'armor',道具屋=>'tool',藥屋=>'drug',酪農家=>'cow');
   my $code=$mapping{$jobName} or die 'R2 unsupported source job';
   die 'R2 unexpected job time modifier'
     unless $modifier eq "times/job_${code}_time_rate";
