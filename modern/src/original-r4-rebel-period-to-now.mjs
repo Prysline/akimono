@@ -27,7 +27,7 @@ export function reviewR4RebelPeriodToNow({
     '#イベント終了処理',
     '#イベント開始処理',
     'foreach my $key (keys(%EVENT))',
-    'foreach my $key (keys(%DTevent))',
+    'my $extfile=GetPath($ITEM_DIR,"event-n",$key);',
     '$temptimenow+=$timespan;',
   ];
   let i=-1;
