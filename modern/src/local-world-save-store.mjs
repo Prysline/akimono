@@ -158,6 +158,60 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         Number.isSafeInteger(shop.item?.[i])&&
         shop.item[i]>=0&&shop.item[i]<=cap)
     );
+    // R2 selected source medicine/leather/wood recipes. Only these eight
+    // callback-free USEs are authorized. Other potion USEs execute lostbook
+    // and deliberately remain unsupported by the live Registry.
+    const manufacturedSpecs=[
+      {itemId:15,useIds:[0,2],outputs:[[30,20],[32,20]]},
+      {itemId:16,useIds:[0,1],outputs:[[45,30],[51,32]]},
+      {itemId:17,useIds:[0,1,2,3],
+        outputs:[[40,20],[57,20],[46,20],[52,24]]},
+    ];
+    const manufacturedCounts={};
+    const manufacturedRuleProof=manufacturedSpecs.every(spec=>{
+      const raw=shop.exp?.[String(spec.itemId)]??0;
+      const runs=Number.isSafeInteger(raw)&&raw>=0&&raw<=1000&&
+        raw%20===0?raw/20:-1;
+      manufacturedCounts[spec.itemId]=runs;
+      return spec.useIds.every(id=>{
+        const rule=useItem?.getRule?.(spec.itemId,id);
+        return rule?.supported===true&&
+          rule?.source==='original-declarative-use-dsl'&&
+          rule.itemId===spec.itemId&&rule.useId===id&&
+          rule.experienceCallback?.points===20&&
+          !rule.beforeCallback&&!rule.afterCallback&&
+          rule.money===0&&
+          rule.uses.length>=1&&rule.creates.length===1&&
+          spec.outputs.some(([output,count])=>
+            rule.creates[0].itemId===output&&
+            rule.creates[0].countPerUse===count);
+      });
+    });
+    const manufactured15=manufacturedCounts[15];
+    const manufactured16=manufacturedCounts[16];
+    const manufactured17=manufacturedCounts[17];
+    // Gathered #1..#4 have source negative PLUS (no market minting from
+    // zero). Only bounded consumptions can justify manufacture proficiency.
+    // Bounds deliberately over-approximate unknown recipe mix, never
+    // manufacture goods that exceed the source's total possible yield.
+    const manufacturedInputProof=
+      manufactured15>=0&&manufactured16>=0&&manufactured17>=0&&
+      shop.item[0]+10*manufactured15<=80*gatherCount12&&
+      shop.item[1]+24*manufactured16<=40*gatherCount12&&
+      shop.item[2]+shop.item[3]+10*manufactured17<=80*gatherCount12;
+    // For products with no legal fresh-market PLUS, a recipe's entire
+    // surviving output requires at least one matching successful USE.
+    // Rounded-up surviving stock / maximum GET is minimum required USEs.
+    const minimumRuns=(rows)=>rows.reduce((sum,[id,max])=>
+      sum+Math.ceil(shop.item[id-1]/max),0);
+    const manufacturedOutputProof=
+      minimumRuns([[45,30],[51,32]])<=manufactured16&&
+      minimumRuns([[57,20],[46,20],[52,24]])<=manufactured17;
+    const manufacturedProof=manufacturedRuleProof&&manufacturedInputProof&&
+      manufacturedOutputProof&&
+      manufacturedSpecs.every(spec=>
+        manufacturedCounts[spec.itemId]===0||
+        shop.item[spec.itemId-1]>0);
     const knowledge=shop.item?.[18]??0;
     const trainedMagic=reviewedMagicTraining&&knowledge===1&&
       shop.item[36]===0&&shop.exp?.['37']===50;
@@ -216,17 +270,19 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         Number.isSafeInteger(value)&&value>=0&&value<=1000));
     const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
     const sourceExpValid=expShapeValid&&expTotal<=3600&&magicProof&&
-      gatheringProof&&
+      gatheringProof&&manufacturedProof&&
       (expRecord===undefined||
         (repeatableMap?
           expEntries.every(([id,value])=>
             id==='14'?value%20===0:
               id==='37'?trainedMagic&&value===50:
-                (id==='9'||id==='12')&&value%20===0&&value>0):
+                (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
+                  value%20===0&&value>0):
           expEntries.every(([id,value])=>
             id==='14'?value===20:
               id==='37'?trainedMagic&&value===50:
-                (id==='9'||id==='12')&&value%20===0&&value>0)));
+                (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
+                  value%20===0&&value>0)));
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
     // Registry may authorize additional item inventories and showcases.
     // Never accept arbitrary 79-slot extra stock merely because it is JSON.
