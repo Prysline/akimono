@@ -117,6 +117,6 @@ export function projectR4GuildbattleEnd({
     logs,readGuildCalls:expiry?1:0,readGuildDataCalls:expiry?1:0,
     setTownCalls:expiry?1:0,
     randomDrawRanges:occupied?[]:[100000],drawsUsed:expectedDraws,
-    zeroStartTransient:!occupied,
+    zeroStartTransient:!occupied,groupOccupied:true,
   });
 }

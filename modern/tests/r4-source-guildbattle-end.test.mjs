@@ -66,7 +66,7 @@ test('source original guildbattle ENDFUNC actually runs frozen Perl END/START an
     assert.equal(result.setTownCalls,output.setTownCalls,c.name);
     assert.deepEqual(result.randomDrawRanges,output.randomDrawRanges,c.name);
     assert.equal(result.drawsUsed,output.drawsUsed,c.name);
-    assert.equal(result.zeroStartTransient,output.groupOccupied,c.name);
+    assert.equal(result.groupOccupied,output.groupOccupied,c.name);
     assert.equal(result.committable,false);
     assert.equal(before,JSON.stringify(c.input),'projection pure');
   }
