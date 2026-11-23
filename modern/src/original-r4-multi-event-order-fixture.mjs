@@ -15,6 +15,10 @@ import {B58_LOTO_SOURCE,LOTO_RANGE,projectOriginalLotoStartfunc}
   from './original-b58-loto-startfunc.mjs';
 import {B60_HAPPY_SOURCE,projectOriginalHappyNow}
   from './original-b60-happy-event-nowfunc.mjs';
+import {B59_IRON_SOURCE,B59_IRON_CODE}
+  from './original-b59-iron-event-lifecycle.mjs';
+import {B61_SWORD_SOURCE,B61_SWORD_CODE}
+  from './original-b61-sword-demand-event.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -30,7 +34,8 @@ const sameKeys=(order,allowed)=>{
 export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven,
   turnSource,readSource,reviewedSupportCallbacks=null,
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
-  reviewedHappyEvent=null}){
+  reviewedHappyEvent=null,reviewedIronEvent=null,
+  reviewedSwordEvent=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -87,6 +92,25 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
       if(!turnSource.includes(marker))fail('source NOWFUNC drift '+marker);
     }
   }
+  for(const [reviewed,source,code,base,plus] of [
+    [reviewedIronEvent,B59_IRON_SOURCE,B59_IRON_CODE,43200,43200],
+    [reviewedSwordEvent,B61_SWORD_SOURCE,B61_SWORD_CODE,21600,86400],
+  ]){
+    if(reviewed===null)continue;
+    if(reviewed.source!==source||
+       reviewed.startProba!==100||
+       reviewed.baseTimeSeconds!==base||
+       reviewed.plusTimeSeconds!==plus||
+       reviewed.group!==compiledCatalog.compiled.find(e=>e.code===code)?.group||
+       reviewed.startMessage!==
+         (code===B59_IRON_CODE?'發現新的鐵礦脈':'對劍的需求似乎在增加')||
+       reviewed.endMessage!==
+         (code===B59_IRON_CODE?'新的鐵礦脈已經關閉了':'劍的需求已恢復正常水平')||
+       !Array.isArray(reviewedSeven.params.rules?.[code])||
+       reviewedSeven.params.rules[code].length!==
+         (code===B59_IRON_CODE?1:5))
+      fail('source-reviewed iron/sword EVENT duration and ITEM PARAM required');
+  }
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -110,9 +134,10 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     catalog:Object.freeze(compiledCatalog.compiled),
     seven:reviewedSeven,support:reviewedSupportCallbacks,
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
-    happy:reviewedHappyEvent,committable:false,
+    happy:reviewedHappyEvent,iron:reviewedIronEvent,
+    sword:reviewedSwordEvent,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
-    scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG and original hash order fixture; other callbacks, world save and period still unsupported'});
+    scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
 
 /**
@@ -137,9 +162,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
      !Array.isArray(items)||items.length!==79)
     fail('ITEM and active EVENT source fixture required');
   const keys=Object.keys(activeUntilSeconds);
-  if(keys.length>(reviewed.happy===null?7:8)||keys.some(code=>
+  if(keys.length>(7+(reviewed.happy!==null?1:0)+
+    (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0))||
+    keys.some(code=>
     !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
-      (code==='happy'&&reviewed.happy!==null))||
+      (code==='happy'&&reviewed.happy!==null)||
+      (code===B59_IRON_CODE&&reviewed.iron!==null)||
+      (code===B61_SWORD_CODE&&reviewed.sword!==null))||
     !Number.isSafeInteger(activeUntilSeconds[code])||
     activeUntilSeconds[code]<0))
     fail('unreviewed active EVENT state');
@@ -151,7 +180,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
-  if(!Array.isArray(randomDraws)||randomDraws.length>87||
+  if(!Array.isArray(randomDraws)||randomDraws.length>96||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
 
@@ -179,7 +208,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       delete next[code];
       expired.push(code);
       logs.push([2,0,code==='happy'?
-        reviewed.happy.endMessage:reviewed.seven.events[code].endMessage]);
+        reviewed.happy.endMessage:
+        code===B59_IRON_CODE?reviewed.iron.endMessage:
+        code===B61_SWORD_CODE?reviewed.sword.endMessage:
+        reviewed.seven.events[code].endMessage]);
     }else groups.add(event.group);
   }
   let used=0;
@@ -201,6 +233,15 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       next[code]=startSeconds+Math.trunc(draw(spanSeconds))+
         meta.baseTimeSeconds+Math.trunc(draw(meta.plusTimeSeconds));
       safe(next[code],'EVENT expiration overflow');
+      started.push(code);
+      logs.push([2,0,meta.startMessage]);
+      groups.add(e.group);
+    }else if((code===B59_IRON_CODE&&reviewed.iron!==null)||
+             (code===B61_SWORD_CODE&&reviewed.sword!==null)){
+      const meta=code===B59_IRON_CODE?reviewed.iron:reviewed.sword;
+      next[code]=startSeconds+Math.trunc(draw(spanSeconds))+
+        meta.baseTimeSeconds+Math.trunc(draw(meta.plusTimeSeconds));
+      safe(next[code],'original sourced ore/sword EVENT expiration overflow');
       started.push(code);
       logs.push([2,0,meta.startMessage]);
       groups.add(e.group);

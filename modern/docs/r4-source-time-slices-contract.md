@@ -92,3 +92,8 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 - 既有 B-60 `happy`（感謝祭）原版回呼審閱器整合到 R4 共用 17-key 閘門的選用審閱路徑：開始命中先消耗兩次原版持續時間 `rand(timespan)`／`rand(18000)`，經原版 `keys(%DTevent)` NOWFUNC 階段對同片新開始及延續的感謝祭執行 `rank+=int(rand(int(TIMESPAN/36)))`，最高 10000。到期後在 END 階段刪除，除非同片重新開始，否則不再消耗 NOWFUNC RNG。
 - Perl `original-r4-mixed-support-gate-probe.pl` 在既有凍結 `inc-turn.cgi` END／START 原文後接回真正 NOWFUNC 原文，暫存 `event-n/happy.pl` 來自原版 DSL 的真 `_local_` body。以同 Perl 行程新舊 `keys(%DTevent)` 實際排列作明示 fixture，四組情境覆蓋當片開始、下一片持續、到期不執行、到期重新開始，且與七種持續 EVENT、資助／人氣、偷搶機器人、彩券同 RNG／商店／日誌逐項差分。既有 B-60 單事件九案及此前 R4 測試保留。
 - `rebel`、`guildbattle` 等尚未整合的 NOWFUNC／ENDFUNC 外部狀態依賴繼續拒絕；`committable:false`，不假裝已復原原版 Perl seed/hash，未授權 WorldState/CAS、永久日誌、36h 決算、多片真經營。R4 尚未退出。
+
+## 2026-11-23｜R4 真 Perl 17-key EVENT × 鐵礦脈／劍需求＋感謝祭全混合（仍不可提交）
+
+- 把已審閱 B-59 `plusup-tetu`（鐵塊 #5 `plus=720`）與 B-61 `ken-sale`（#40～44 `popular/2`）接入原版 17-key Perl `keys(%EVENT)` 同行程差分，在 7 個宣告型 durable＋happy 同時存在時達成 10 個 durable EVENT；仍混合 getmoney/getpop、manbiki/goutou、loto 即時回呼。兩者僅當 DataRead 已有事件時才覆寫 ITEM，不把 START 當片的新事件倒灌當片商品。END 嚴格到期、START 兩筆持續時間 rand、日誌與原版 hash／RNG 順序逐欄比較。
+- Perl 仍使用凍結原文 `inc-turn.cgi` END／START／NOWFUNC，擷取真編譯器產生的 ITEM PARAM，新增四個多事件時間片（十種同時存在、下片 DataRead、生存期後結束、結束後重啟）；Node `r4-mixed-iron-sword-gate.test.mjs` 對 79 ITEM、商店、事件與 RNG 差分及來源 drift fail-closed。它**不是**實際可提交世界：來源外的 rebel／guildbattle、完整自然販售／PLUS／SortDT 跨期、Perl hash seed／持久化尚需整合，R4 不退出。

@@ -66,3 +66,7 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 
 - 更新 `src/original-r4-multi-event-order-fixture.mjs`：來源審閱 `happy` 持續時間、到期、同片 NOWFUNC、每有效片獨立 `rand(int(TIMESPAN/36))` 並與 STARTFUNC 共用 RNG；明示同 Perl 行程 `nowHashOrderFixture`，禁止使用 JS 物件遍歷假稱 Perl hash 原序。
 - 更新真 Perl `original-r4-mixed-support-gate-probe.pl`／`original-r4-mixed-instant-gate.t`，新增 Node `r4-mixed-happy-now-gate.test.mjs`，同世界比較八個同時生效 EVENT、79 ITEM、店鋪金錢／人氣／票券／機器人／日誌與 RNG 呼叫順序；保留 B-60 單事件及 B-58、R4 前輪完整回歸。未審閱事件 fail-closed 和不可正式提交界線不變。
+
+## 2026-11-23｜R4 鐵礦脈／劍需求多事件映射
+
+- `src/original-r4-multi-event-order-fixture.mjs` 加入已審閱 B-59/B-61 的 EVENT ITEM PARAM／START／END。原版 `original-r4-mixed-support-gate-probe.pl`、`original-r4-mixed-instant-gate.t` 擴大十個 durable EVENT 同時活動、當片／下片 ITEM、生存與重啟。新增 Node `r4-mixed-iron-sword-gate.test.mjs`，保留所有 B-59／B-61 獨立 Perl 案及 R4 happy/loto/instant 既有測試，不修改原版 source。其他事件 callback 和世界跨期仍是 fail-closed。

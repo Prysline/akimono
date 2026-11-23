@@ -78,6 +78,8 @@ my %support=map{($_=>1)}qw(getmoney getpop);
 my %instant=map{($_=>1)}qw(manbiki goutou);
 my %loto=map{($_=>1)}qw(loto);
 my %happy=map{($_=>1)}qw(happy);
+my @durableExtra=qw(plusup-tetu ken-sale);
+my %durableExtra=map{($_=>1)}@durableExtra;
 my @blocks=split(/^\s*\@\@EVENT[^\r\n]*\r?\n/mi,$dsl);
 shift @blocks;
 for(@blocks){s/^\s*\@\@(ITEM|USE|EVENT|DEFINE|END|FUNC[A-Z]+)\b[\s\S]*$//mi;}
@@ -89,7 +91,7 @@ my $paramSource=substr($compiler,$cstart,$cend-$cstart);
 my $ok=eval 'package main; use utf8; no strict; no warnings; '.
   "sub R4MultiParamCompiler{my \$event=shift;\n".$paramSource."\n}\n1;";
 die "original PARAM compiler executable failed: $@" unless $ok;
-for my $code(@targets){
+for my $code(@targets,@durableExtra){
   my @matches=grep(/^\s*code\s+\Q$code\E(?:\s|$)/m,@blocks);
   die "original declarative EVENT $code changed" unless @matches==1;
   my(%fields,@params);
@@ -273,7 +275,8 @@ sub step {
   my @activeOrder=keys(%DTevent);
   for my $key(@activeOrder){
     if($key eq 'happy'){next;}
-    die "unreviewed active code $key" unless $wanted{$key};
+    die "unreviewed active code $key" unless
+      $wanted{$key}||$durableExtra{$key};
     my $executed=eval 'package main;use utf8;no strict;no warnings;'.
        $generated{$key}.'1;';
     die "actual generated ITEM load failed: $@" unless $executed;
@@ -307,10 +310,22 @@ sub step {
       ($support{$code}&&$o{supportStarts}{$code})||
       ($instant{$code}&&($o{instantStarts}//{})->{$code})||
       ($loto{$code}&&($o{lotoStarts}//{})->{$code})||
-      ($happy{$code}&&($o{happyStarts}//{})->{$code});
+      ($happy{$code}&&($o{happyStarts}//{})->{$code})||
+      ($durableExtra{$code}&&($o{durableStarts}//{})->{$code});
     push @samples,$start?0:999999;
     if($start&&$wanted{$code}){
       push @samples,250000,500000;
+      $groups{$e->{group}}=1;
+    }elsif($start&&$durableExtra{$code}){
+      my($base,$plus)= $code eq 'plusup-tetu'?(43200,43200):(21600,86400);
+      die 'compiled original iron/sword duration or callbacks drift' unless
+        !$e->{startfunc}&&!$e->{endfunc}&&!$e->{func}&&
+        $e->{basetime}==$base&&$e->{plustime}==$plus&&
+        $e->{startproba}==100;
+      my $durations=($o{durableDurations}//{})->{$code}//[250000,500000];
+      die 'two source durable duration draws required' unless
+        ref($durations)eq'ARRAY'&&@$durations==2;
+      push @samples,@$durations;
       $groups{$e->{group}}=1;
     }elsif($start&&$happy{$code}){
       die 'compiled original happy START/NOW contract drift' unless
@@ -377,7 +392,8 @@ sub step {
   my $result=R4MultiOriginalEventSlice();
   die 'original multi-event RNG unused samples' if @R4_MULTI_DRAWS;
   my %state=%{$result->{state}};
-  for my $code(keys %state){die 'unsupported source EVENT persisted' unless $wanted{$code}||$happy{$code};}
+  for my $code(keys %state){die 'unsupported source EVENT persisted' unless
+    $wanted{$code}||$happy{$code}||$durableExtra{$code};}
   my @nowHashOrder=keys(%DTevent);
   return {
     name=>$o{name},
@@ -596,10 +612,45 @@ my $festivalReentry=step(name=>'happy-expired-and-restarts-now-same-slice',
   prior=>{%DTevent},shop=>$festivalActive->{output}{shop});
 push @happyCases,$festivalReentry;
 
+
+# Real source ITEM DataRead includes both additional durable ITEM PARAM:
+# #5 iron PLUS becomes 720, and swords #40-44 halve popular seconds.
+my @durableCases;
+%DTevent=();
+my @mixedStock=@lotoStock;$mixedStock[10]=3;
+my $mixedShop={%$lotoShop,item=>\@mixedStock,money=>100000,rank=>5000};
+my $allStart=step(name=>'ten-durable-plus-all-reviewed-instant',
+  begin=>1000000,wantedStarts=>{map{($_=>1)}@targets},
+  durableStarts=>{'plusup-tetu'=>1,'ken-sale'=>1},
+  happyStarts=>{happy=>1},happyNowDraw=>900000,
+  supportStarts=>{getmoney=>1,getpop=>1},
+  supportDraws=>{getmoney=>0,getpop=>0},
+  instantStarts=>{manbiki=>1,goutou=>1},
+  instantDraws=>{manbiki=>[0],goutou=>[0]},
+  lotoStarts=>{loto=>1},lotoDraws=>{loto=>[100,10000,100000]},
+  prior=>{},shop=>$mixedShop);
+push @durableCases,$allStart;
+%DTevent=%{$allStart->{output}{activeUntilSeconds}};
+my $allActive=step(name=>'ten-durable-overlays-next-DataRead',
+  begin=>1003600,happyNowDraw=>500000,
+  prior=>{%DTevent},shop=>$allStart->{output}{shop});
+push @durableCases,$allActive;
+%DTevent=%{$allActive->{output}{activeUntilSeconds}};
+my $someExpired=step(name=>'ten-durable-expire-after-clock-jump',
+  begin=>1150000,prior=>{%DTevent},shop=>$allActive->{output}{shop});
+push @durableCases,$someExpired;
+%DTevent=%{$allActive->{output}{activeUntilSeconds}};
+my $restarted=step(name=>'iron-and-sword-expire-retrigger',
+  begin=>1150000,durableStarts=>{'plusup-tetu'=>1,'ken-sale'=>1},
+  durableDurations=>{
+    'plusup-tetu'=>[0,0],'ken-sale'=>[250000,999999]},
+  prior=>{%DTevent},shop=>$allActive->{output}{shop});
+push @durableCases,$restarted;
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
-  happyCases=>\@happyCases,
+  happyCases=>\@happyCases,durableCases=>\@durableCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });

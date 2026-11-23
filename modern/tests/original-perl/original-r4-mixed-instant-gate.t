@@ -15,6 +15,22 @@ if(ref($o)eq'HASH'){
   is(scalar(@{$o->{theftCases}}),6,'six original source theft/robbery scenarios');
   is(scalar(@{$o->{lotoCases}}),4,'four original 17-key loto cases');
   is(scalar(@{$o->{happyCases}}),4,'four original 17-key happy START/END/NOWFUNC cases');
+  is(scalar(@{$o->{durableCases}}),4,'four original 17-key iron/sword lifetime and ITEM overlay cases');
+  my $durable=$o->{durableCases}[0]{output};
+  is(scalar(keys %{$durable->{activeUntilSeconds}}),10,
+    'ten real durable source EVENT coexist after START with instant callbacks');
+  is($o->{durableCases}[1]{output}{dataReadItems}[4]{plus},720,
+    'actual compiler iron PLUS #5 overlay on next DataRead');
+  is($o->{durableCases}[1]{output}{dataReadItems}[39]{popular},2500,
+    'actual compiler ken-sale divides synthetic #40 popular on next DataRead');
+  ok(!exists($o->{durableCases}[2]{output}{activeUntilSeconds}{'plusup-tetu'}),
+    'expired iron EVENT removed at END');
+  ok(!exists($o->{durableCases}[2]{output}{activeUntilSeconds}{'ken-sale'}),
+    'expired sword EVENT removed at END');
+  ok(exists($o->{durableCases}[3]{output}{activeUntilSeconds}{'plusup-tetu'}),
+    'source iron EVENT restarts after expiring');
+  ok(exists($o->{durableCases}[3]{output}{activeUntilSeconds}{'ken-sale'}),
+    'source sword EVENT restarts after expiring');
   my $fresh=$o->{happyCases}[0]{output};
   is(scalar(grep{$_->[2] eq '街上開始舉辦感謝祭了。'} @{$fresh->{logs}}),1,
     'original compiled happy START emits its literal source message');
