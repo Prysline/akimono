@@ -8,7 +8,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {encodeMemorySnapshot,validateMemoryWorld}
+  from '../src/game-core-contract.mjs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import path from 'node:path';
@@ -157,4 +160,23 @@ test('R2 #15/#16/#17 sourced books craft from true #12 gathering, persist twice'
   assert.equal(loaded2.state.shop.exp['17'],40);
   assert.equal(loaded2.state.shop.exp['15'],20);
   assert.equal(loaded2.state.shop.exp['16'],20);
+  // A forged newest generation with a valid digest and canonical world
+  // shape must not create more leather shields than the source's one USE.
+  // The other disk slot stays intact and remains recoverable.
+  await srv.stop();
+  const slot=join(directory,'world-a.json'); // generation 2: even slot A
+  const record=JSON.parse(await readFile(slot,'utf8'));
+  assert.equal(record.generation,2);
+  const forged=JSON.parse(record.world);
+  forged.shops[0].item[44]=100; // #45 > original one-run GET max 30
+  record.world=encodeMemorySnapshot(validateMemoryWorld(forged));
+  record.sha256=createHash('sha256').update(record.world,'utf8')
+    .digest('hex');
+  await writeFile(slot,JSON.stringify(record)+'\n');
+  srv=await boot(directory);servers.push(srv);
+  const recovered=await srv.post('/api/load');
+  assert.equal(recovered.code,'LOADED',JSON.stringify(recovered));
+  assert.deepEqual(recovered.state.world,checkpoint,
+    'valid checksum cannot bypass source manufacturing provenance');
+  assert.equal(recovered.state.save.recoveryWarning,true);
 });
