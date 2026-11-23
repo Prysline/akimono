@@ -208,7 +208,8 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
-  if((reviewed.guildbattle!==null&&(
+  if(((reviewed.guildbattle!==null&&
+       (own(activeUntilSeconds,'guildbattle')||guildContext!==null))&&(
       !guildContext||typeof guildContext!=='object'||
       Array.isArray(guildContext)||!Array.isArray(guildContext.guilds)||
       !(guildContext.dominion===null||typeof guildContext.dominion==='string')||
@@ -396,7 +397,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     // Capture actual original NOW foreach keys at GetPath dispatch. It can
     // include rebel even though that callback removes itself during NOW.
     if(!sameKeys(nowHashOrderFixture,Object.keys(next)))
-      fail('exact Perl pre-NOW EVENT hash traversal order required');
+      fail('exact Perl post-START active EVENT hash order (pre-NOW EVENT hash traversal) required');
     for(const code of nowHashOrderFixture){
       if(code==='happy'){
         const range=Math.trunc(Math.min(spanSeconds,
@@ -470,7 +471,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       lotoCallbacks:Object.freeze(lotoCallbacks),
       happyNowCallbacks:Object.freeze(happyNowCallbacks),
     }),
-    ...(reviewed.guildbattle===null?{}:{
+    ...(guildContext===null?{}:{
       guildContext:Object.freeze({
         dominion:nextGuild.dominion,
         guilds:Object.freeze(nextGuild.guilds.map(g=>Object.freeze({...g}))),
