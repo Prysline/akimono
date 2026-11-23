@@ -4,9 +4,9 @@
 
 ## 確認總數與缺口層級
 
-- 原版 ITEM **79** 筆，USE **116** 筆；現行 `getRule` 已接入 `79/0`～`79/4`、`14/0`，以及 #63（8 筆；既有實作，過去漏計）、#10（8 筆）、#37（4 筆）、#39（19 筆）、#12（4 筆）、#9（3 筆），以及 #15（5 筆）、#16（2 筆）、#17（4 筆）、#20～#23（16 筆）、#66（4 筆）、#26（2 筆，不含 inline /0）、#35／#36（各 1 筆），共 **87/116** 筆；其他 **29** 筆未接入。新增 31 筆已有 GameCore 共用效果交易與 Perl Oracle 差分，但本機雙世代存檔／完整玩家材料取得尚未驗收。
+- 原版 ITEM **79** 筆，USE **116** 筆；現行 `getRule` 已接入 `79/0`～`79/4`、`14/0`，以及 #63（8 筆；既有實作，過去漏計）、#10（8 筆）、#37（4 筆）、#39（19 筆）、#12（4 筆）、#9（3 筆），以及 #15（5 筆）、#16（2 筆）、#17（4 筆）、#20～#23（16 筆）、#66（4 筆）、＃26（3 筆，含 inline /0）、#25（2 筆）、#35／#36（各 1 筆），共 **90/116** 筆；其他 **26** 筆未接入。新增 31 筆已有 GameCore 共用效果交易與 Perl Oracle 差分，但本機雙世代存檔／完整玩家材料取得尚未驗收。
 - 靜態宣告特徵可重疊：無明示回呼／職業／EVENT／其他需要條件 **15** 筆；有回呼或 inline local func **56** 筆；職業條件／修正 **42** 筆；直接提到 EVENT 條件或 DTevent **1** 筆；公會 **0** 筆；其他熟練／人氣／分數門檻 **49** 筆。
-- **已完成演算法／來源驗證 ≠ 玩家功能已接入。** 79/0 是現有受控玩家操作。14/0 雖有此支線程式和 Oracle，必須在實際 CI 與重啟整合成功後才可判定完成。剩餘 29 筆目前均由 Registry 拒絕，不可標為「原版不支援」。
+- **已完成演算法／來源驗證 ≠ 玩家功能已接入。** 79/0 是現有受控玩家操作。14/0 雖有此支線程式和 Oracle，必須在實際 CI 與重啟整合成功後才可判定完成。剩餘 26 筆目前均由 Registry 拒絕，不可標為「原版不支援」。
 - 分類中的「否」只代表這份 USE 宣告未直接引用 EVENT，**不證明回呼內部不會讀 EVENT**；未審閱的 callback 均維持嚴格拒絕。
 
 ## 逐筆來源 × Registry 清冊
@@ -101,9 +101,9 @@
 | 65/0 | 「散播謠言」；耗材 1×禁斷之書；產物 無 | `custom/inc-item-data.cgi:2027` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；熟練或能力條件；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
 | 65/1 | 「偷竊」；耗材 1×禁斷之書；產物 無 | `custom/inc-item-data.cgi:2061` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；熟練或能力條件；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
 | 65/2 | 「散佈關於某行業的不良謠言」；耗材 1×禁斷之書；產物 無 | `custom/inc-item-data.cgi:2121` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；熟練或能力條件；完整回呼及 RNG 次序；EVENT 狀態介面 | 是（needevent／DTevent） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 25/0 | 「擠奶」；耗材 無；產物 無 | `custom/inc-item-data.cgi:2283` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；職業時間或資格修正；熟練或能力條件；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 25/1 | 「用力榨取乳汁」；耗材 無；產物 無 | `custom/inc-item-data.cgi:2316` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；職業時間或資格修正；熟練或能力條件；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
-| 26/0 | 「飲用」；耗材 1×米諾牛乳；產物 無 | `custom/inc-item-data.cgi:2341` | `useItem.getRule` 回傳 null → 未審閱來源 USE | USE DSL→Registry、材料／產物／時間／金錢與隨機規則來源差分；職業時間或資格修正；完整回呼及 RNG 次序 | 否（已知宣告；回呼仍須審閱） | 真 Perl UseItem／Node 同 RNG 逐欄差分＋HTTP/CAS/重啟 | 未接入 |
+| 25/0 | 「擠奶」；耗材 無；宣告 GET 無，原版 inline 回呼動態加入牛乳 | `custom/inc-item-data.cgi:2283` | 原版 `_local_`／`_local_1` 回呼來源審核，已由共用 `use-item` 執行；原版持有牛、牛乳、次數與時間門檻仍保留 | 原版動態 AddItem #26、每次牛隻死亡抽樣／UseItem、EXP 10、酪農縮時；僅禮券換牛路徑的牛乳／EXP 保守包絡可存檔 | 否（已知宣告；回呼仍須審閱） | `original-r2-dairy-inline-use-probe.pl` 真 Perl 函式 + `r2-dairy-inline-source.test.mjs` 差分；`r2-dairy-true-player-http.test.mjs` 玩家交換、擠奶、飲用、發酵及雙世代重啟 | Registry 已接入並有原版 Perl 差分與玩家 HTTP；B-43 僅驗證禮券牛→牛乳受限持久化，未知完整來源仍拒絕 |
+| 25/1 | 「用力榨取乳汁」；耗材 無；宣告 GET 無，原版 inline 回呼動態加入牛乳 | `custom/inc-item-data.cgi:2316` | 原版 `_local_`／`_local_1` 回呼來源審核，已由共用 `use-item` 執行；原版持有牛、牛乳、次數與時間門檻仍保留 | 原版動態 AddItem #26、每次牛隻死亡抽樣／UseItem、EXP 10、酪農縮時；僅禮券換牛路徑的牛乳／EXP 保守包絡可存檔 | 否（已知宣告；回呼仍須審閱） | `original-r2-dairy-inline-use-probe.pl` 真 Perl 函式 + `r2-dairy-inline-source.test.mjs` 差分；`r2-dairy-true-player-http.test.mjs` 玩家交換、擠奶、飲用、發酵及雙世代重啟 | Registry 已接入並有原版 Perl 差分與玩家 HTTP；B-43 僅驗證禮券牛→牛乳受限持久化，未知完整來源仍拒絕 |
+| 26/0 | 「飲用」；耗材 1×米諾牛乳；產物 無 | `custom/inc-item-data.cgi:2341` | 原版 `_local_`／`_local_1` 回呼來源審核，已由共用 `use-item` 執行；原版持有牛、牛乳、次數與時間門檻仍保留 | 原版飲奶三段人氣 0～10000 與日誌回呼；消耗牛乳、原版 RNG、職業縮時，且不憑空產生物品 | 否（已知宣告；回呼仍須審閱） | `original-r2-dairy-inline-use-probe.pl` 真 Perl 函式 + `r2-dairy-inline-source.test.mjs` 差分；`r2-dairy-true-player-http.test.mjs` 玩家交換、擠奶、飲用、發酵及雙世代重啟 | Registry 已接入並有原版 Perl 差分與玩家 HTTP；B-43 僅驗證禮券牛→牛乳受限持久化，未知完整來源仍拒絕 |
 | 26/1 | 「輕微發酵」；耗材 15×米諾牛乳；產物 2 米諾優格 | `custom/inc-item-data.cgi:2377` | 已由嚴格來源 DSL 編譯並接入共用 `use-item`；前置材料／知識／酪農資格不足仍拒絕 | 共用消耗／材料持有閘門、來源 GET（食用時為空）、酪農家縮時已接入；#26/0 inline 回呼未放行 | 否（已知宣告；回呼仍須審閱） | `r2-declarative-use-effects.test.mjs` 真 Perl/Node 差分；新玩家牛乳來源與存讀待驗 | Registry 已接入／差分測試已新增；獨立玩家雙世代存檔來源仍未完成 |
 | 26/2 | 「大量發酵」；耗材 15×米諾牛乳；產物 1 米諾起司 | `custom/inc-item-data.cgi:2388` | 已由嚴格來源 DSL 編譯並接入共用 `use-item`；前置材料／知識／酪農資格不足仍拒絕 | 共用消耗／材料持有閘門、來源 GET（食用時為空）、酪農家縮時已接入；#26/0 inline 回呼未放行 | 否（已知宣告；回呼仍須審閱） | `r2-declarative-use-effects.test.mjs` 真 Perl/Node 差分；新玩家牛乳來源與存讀待驗 | Registry 已接入／差分測試已新增；獨立玩家雙世代存檔來源仍未完成 |
 | 35/0 | 「食用」；耗材 1×米諾優格；產物 無 | `custom/inc-item-data.cgi:2411` | 已由嚴格來源 DSL 編譯並接入共用 `use-item`；前置材料／知識／酪農資格不足仍拒絕 | 共用消耗／材料持有閘門、來源 GET（食用時為空）、酪農家縮時已接入；#26/0 inline 回呼未放行 | 否（已知宣告；回呼仍須審閱） | `r2-declarative-use-effects.test.mjs` 真 Perl/Node 差分；新玩家牛乳來源與存讀待驗 | Registry 已接入／差分測試已新增；獨立玩家雙世代存檔來源仍未完成 |
