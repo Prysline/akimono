@@ -12,7 +12,7 @@ const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
 const groups=Object.freeze(new Map([
   [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
   [20,4],[21,4],[22,4],[23,4],[66,4],
-  [35,1],[36,1],
+  [35,1],[36,1],[26,3],
 ]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
@@ -80,10 +80,22 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       fail('source owner ITEM/limit '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
     if(uses.length!==expectedCount)fail('source USE count '+itemId);
+    if(itemId===26&&(
+      first(item,'limit')!=='2500/0'||first(item,'code')!=='mino_milk'||
+      first(uses[0],'func')!=='_local_'||
+      first(uses[0],'time')!=='3m'||
+      first(uses[0],'exp')!==undefined||
+      !uses[0].raw.includes('my $val=$count;')||
+      !uses[0].raw.includes('WriteLog(0,$DT->{id},$ret);')))
+      fail('unreviewed #26/0 inline function drift');
     // Frozen inc-makeitem.cgi::ClearBuffer(use) carries EXP across USEs
     // of the SAME ITEM; time, exptime, job, use and get reset each USE.
     let inheritedExperience=0;
     for(const [useId,block] of uses.entries()){
+      // #26/0 is the original inline milk-drinking rank callback. Its
+      // cumulative EXP is absent, so it cannot affect #26/1 and #26/2.
+      // Review it as a boundary, but never generate an executable rule.
+      if(itemId===26&&useId===0)continue;
       for(const [field,rows] of Object.entries(block.fields)){
         const reviewedLostbook=(itemId===15&&[1,3,4].includes(useId))||
           ([20,21,22,23].includes(itemId)&&useId>=2)||
@@ -169,6 +181,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==64)fail('original reviewed declarative USE total drift');
+  if(output.length!==66)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

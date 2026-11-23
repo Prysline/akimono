@@ -27,10 +27,10 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|35|36|37|39|66)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|20|21|22|23|26|35|36|37|39|66)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
 my %expected=(10=>8,15=>5,16=>2,17=>4,
-  20=>4,21=>4,22=>4,23=>4,35=>1,36=>1,37=>4,39=>19,66=>4);
+  20=>4,21=>4,22=>4,23=>4,26=>3,35=>1,36=>1,37=>4,39=>19,66=>4);
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -77,6 +77,14 @@ die 'R2 oracle ITEM owner drift' unless @matching==1;
 my @parts=split(/^\s*\@\@USE[^\n]*(?:\n|$)/mi,$matching[0]{text});
 die 'R2 oracle USE count drift' unless @parts==$expected{$itemId}+1;
 die 'R2 oracle USE index' if $useId >= $expected{$itemId};
+die 'R2 milk #26/0 inline rank callback remains out of scope'
+  if $itemId==26&&$useId==0;
+if($itemId==26){
+  die 'R2 #26 inline owner boundary drift' unless
+    $parts[1]=~/\bfunc\s+_local_/&&
+    $parts[1]=~/my \$val=\$count;/&&
+    $parts[1]=~/WriteLog\(0,\$DT->\{id\},\$ret\);/;
+}
 my($code)=$parts[0]=~/^\s*code\s+(\S+)/m;
 my($owner)=$parts[0]=~/^\s*no\s+(\d+)/m;
 die 'R2 oracle item code/number' unless $code && $owner==$itemId;
@@ -85,6 +93,10 @@ $main::g_item={code=>$code,no=>$itemId,scale=>'個'};
 $main::g_use={no=>-1,exptime=>0};
 for my $i(0..$useId){
   main::ClearBuffer('use');
+  # Source #26/0 is the separately reviewed inline rank callback, with
+  # no EXP inheritance. It advances original USE index only; do not run
+  # or compile the unreviewed inline Perl body into this recipe probe.
+  next if $itemId==26&&$i==0;
   for my $raw(split(/\r?\n/,$parts[$i+1])){
     my $normalized=OriginalGiftMapUseHarness::line_for_compiler($raw);
     next unless defined $normalized;
