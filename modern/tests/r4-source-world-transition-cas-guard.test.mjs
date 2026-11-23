@@ -293,7 +293,7 @@ test('R4 source-guarded direct CAS cannot forge settled world, city, unknown EVE
     {kind:'clock regression',nowSeconds:1025899,advanceSeconds:0},
   ];
   for(const entry of cases){
-    const {advanceSeconds=0,...fields}=entry;
+    const {kind,advanceSeconds=0,...fields}=entry;
     // An invalid time delta is rejected by the generic CAS before source
     // logic; all other cases must be vetoed by the source period reviewer.
     const result=repo.compareAndSwap({
