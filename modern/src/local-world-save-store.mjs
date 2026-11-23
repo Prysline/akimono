@@ -118,6 +118,46 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       magicTraining.creates[0].countPerUse===1&&
       magicTraining.creates[0].probabilityPermille===1000&&
       !magicTraining.beforeCallback&&!magicTraining.afterCallback;
+    // R2 seven source gathering USEs: retain a bounded voucher-map route.
+    // This validates reachability envelopes, NOT an arbitrary inventory seed.
+    // Materials #1-#7 have negative source PLUS and cannot be supplied from
+    // zero by simply invoking the market's PLUS substep.
+    const gatherExp9=shop.exp?.['9']??0;
+    const gatherExp12=shop.exp?.['12']??0;
+    const gatherCount9=Number.isSafeInteger(gatherExp9)&&gatherExp9>=0&&
+      gatherExp9<=1000&&gatherExp9%20===0?gatherExp9/20:-1;
+    const gatherCount12=Number.isSafeInteger(gatherExp12)&&gatherExp12>=0&&
+      gatherExp12<=1000&&gatherExp12%20===0?gatherExp12/20:-1;
+    const gatheringRulesReviewed=[
+      [9,3,[5,6,7]],[12,4,[1,2,3,4]],
+    ].every(([id,n,outputs])=>Array.from({length:n},(_,useId)=>{
+      const rule=useItem?.getRule?.(id,useId);
+      return rule?.supported===true&&rule.itemId===id&&
+        rule.useId===useId&&rule.source==='original-gather-lostbook-use-dsl'&&
+        rule.time===3600&&rule.exptime===900&&rule.money===0&&
+        rule.requiresOwnedItem===true&&rule.ownedMaximum===3&&
+        rule.afterCallback?.kind==='lostbook'&&
+        rule.afterCallback.threshold===10&&
+        rule.afterCallback.consumedCount===1&&
+        rule.experienceCallback?.points===20&&
+        rule.creates.map(x=>x.itemId).join(',')===outputs.join(',');
+    }).every(Boolean));
+    const gatheringRuns=(gatherCount9>=0&&gatherCount12>=0)?
+      gatherCount9+gatherCount12:-1;
+    const gatheringMaterialUpperBounds=[
+      80*gatherCount12,40*gatherCount12,40*gatherCount12,40*gatherCount12,
+      30*gatherCount9,20*gatherCount9,10*gatherCount9,
+    ];
+    const gatheringProof=gatheringRuns===0||Boolean(
+      gatheringRuns>0&&gatheringRulesReviewed&&
+      // Only a gift-map exchange is proven here. Market-purchased maps
+      // require separate provenance review, not automatic authorization.
+      (shop.item?.[78]??5)<=3&&
+      (shop.item?.[13]??0)+(shop.exp?.['14']??0)/20>=1&&
+      gatheringMaterialUpperBounds.every((cap,i)=>
+        Number.isSafeInteger(shop.item?.[i])&&
+        shop.item[i]>=0&&shop.item[i]<=cap)
+    );
     const knowledge=shop.item?.[18]??0;
     const trainedMagic=reviewedMagicTraining&&knowledge===1&&
       shop.item[36]===0&&shop.exp?.['37']===50;
@@ -140,8 +180,11 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       for(let n=0;n<=Math.floor(spent/recipe.cost);n++){
         const possible=recipe.created.every(itemId=>{
           const max=itemId===37?1:itemId===9||itemId===12?3:20;
-          return shop.item[itemId-1]+(itemId===37&&trainedMagic?1:0)>=
-            Math.min(n,max);
+          const usedMapAllowance=itemId===9?gatherCount9:
+            itemId===12?gatherCount12:0;
+          return shop.item[itemId-1]+
+            (itemId===37&&trainedMagic?1:0)+
+            Math.max(0,usedMapAllowance)>=Math.min(n,max);
         });
         if(possible&&plausibleVoucherConsumption(index+1,
            spent-n*recipe.cost))return true;
@@ -173,14 +216,17 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         Number.isSafeInteger(value)&&value>=0&&value<=1000));
     const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
     const sourceExpValid=expShapeValid&&expTotal<=3600&&magicProof&&
+      gatheringProof&&
       (expRecord===undefined||
         (repeatableMap?
           expEntries.every(([id,value])=>
             id==='14'?value%20===0:
-              id==='37'&&trainedMagic&&value===50):
+              id==='37'?trainedMagic&&value===50:
+                (id==='9'||id==='12')&&value%20===0&&value>0):
           expEntries.every(([id,value])=>
             id==='14'?value===20:
-              id==='37'&&trainedMagic&&value===50)));
+              id==='37'?trainedMagic&&value===50:
+                (id==='9'||id==='12')&&value%20===0&&value>0)));
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
     // Registry may authorize additional item inventories and showcases.
     // Never accept arbitrary 79-slot extra stock merely because it is JSON.
