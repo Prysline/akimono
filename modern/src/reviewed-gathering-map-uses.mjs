@@ -57,7 +57,7 @@ export function compileReviewedGatheringMapUses({itemDsl,model,limits}){
          first(block,'exptime')!=='30m'||first(block,'exp')!=='2%'||
          first(block,'func')!=='lostbook'||first(block,'param')!=='10'||
          block.fields.get?.length!==outputs.length||
-         (useId===0?first(block,'job')!=='山師 times/job_material_time_rate':
+         (useId===0?!/^山師\s+times\/job_material_time_rate$/.test(first(block,'job')??''):
            first(block,'job')!==undefined))
         fail('source gathering USE/callback drift '+itemId+'/'+useId);
       const rows=block.fields.get.map(x=>sourceOutput(x,model));
