@@ -188,7 +188,23 @@ export function projectSharedUseItem({world,command,useItem}){
     ...shop,item:stocks,money:original.money,
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
-  let inlineShowcase=null,inlineDairy=null;
+  let inlineShowcase=null,inlineDairy=null,inlineWork=null;
+  if(rule.inlineCallback?.kind==='book-work'){
+    if(rule.itemId!==13||rule.useId>1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unsupported work source callback');
+    inlineWork=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineWork||!Number.isSafeInteger(inlineWork.moneyAfter)||
+       inlineWork.moneyAfter<0||
+       inlineWork.moneyBefore!==nextShop.money||
+       inlineWork.earned!==(rule.useId===0?3000:10000)*original.count||
+       !Array.isArray(inlineWork.logCalls))
+      fail('original inline work projection mismatch');
+    nextShop.money=inlineWork.moneyAfter;
+    functionReturn=inlineWork.returned;
+  }
   if(rule.inlineCallback&&
      ['milk-cow','drink-milk'].includes(rule.inlineCallback.kind)){
     if(typeof useItem.runInlineCallback!=='function'||
@@ -268,7 +284,9 @@ export function projectSharedUseItem({world,command,useItem}){
           inlineDairy.addMessages[index-original.multiItem.added.length]:
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
-      ...(inlineDairy?{originalInlineLogCalls:inlineDairy.logCalls}:{}),
+      ...(inlineDairy||inlineWork?{
+        originalInlineLogCalls:(inlineDairy?.logCalls??inlineWork.logCalls),
+      }:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,
         showcaseCountAfter:inlineShowcase.showcaseCountAfter,
@@ -278,7 +296,8 @@ export function projectSharedUseItem({world,command,useItem}){
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
-        ...(inlineShowcase||inlineDairy?['source-inline-callback']:[]),
+        ...(inlineShowcase||inlineDairy||inlineWork?
+          ['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
       doubleRewardTriggered:doubled,mapDestroyed:destroyed,

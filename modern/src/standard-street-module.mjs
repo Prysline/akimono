@@ -66,6 +66,10 @@ import {PERIOD_WORLD_SCHEMA}
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
+import {compileReviewedBookWorkUses}
+  from './reviewed-book-work-uses.mjs';
+import {projectOriginalBookWorkCallback}
+  from './original-inline-work-showcase-model.mjs';
 import {compileReviewedDairyInlineUses}
   from './reviewed-dairy-inline-uses.mjs';
 import {projectOriginalDairyInlineCallback}
@@ -370,8 +374,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const dairyInlineUses=compileReviewedDairyInlineUses({
     itemDsl,model,limits:giftMap.limits,
   });
+  const bookWorkUses=compileReviewedBookWorkUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
+    ...bookWorkUses,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -440,6 +448,19 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original ITEM has no reviewed USE #'+useId;
     },
     runInlineCallback({rule,shop,count,random}){
+      if(bookWorkUses.includes(rule)){
+        const amount=rule.inlineCallback?.param;
+        if(rule.itemId!==13||
+           rule.inlineCallback?.kind!=='book-work'||
+           amount!==(rule.useId===0?3000:10000)||
+           !Number.isSafeInteger(count)||count<1)
+          bad('unreviewed source work callback');
+        return projectOriginalBookWorkCallback({
+          money:shop.money,param1:amount,count,
+          shopId:shop.id,shopName:shop.shopname,
+          moneyPrefix:'¥',moneySuffix:'',
+        });
+      }
       if(dairyInlineUses.includes(rule)){
         if(!['milk-cow','drink-milk'].includes(rule.inlineCallback?.kind))
           bad('unsupported dairy source callback');
@@ -592,7 +613,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
            Object.keys(eventState).length===0));
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
-        ...dairyInlineUses].filter(Boolean)
+        ...dairyInlineUses,...bookWorkUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -614,7 +635,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
             const providers=[giftUseRule,...giftUseVariants,
               swordUseRule,...declarativeUses,...gatheringUses,
-              ...dairyInlineUses].filter(provider=>
+              ...dairyInlineUses,...bookWorkUses].filter(provider=>
                 provider?.creates?.some(output=>
                   output.itemId===row.itemId&&output.countPerUse>0)||
                 (row.itemId===26&&provider?.itemId===25&&
