@@ -47,8 +47,9 @@ for my $i(0..$useId){
   for my $raw(split(/\r?\n/,$parts[$i+1])){
     my $normalized=OriginalGiftMapUseHarness::line_for_compiler($raw);
     next unless defined $normalized;
-    die 'R2 work unknown source field' unless
-      $raw=~/^\s*(?:time|job|scale|action|name|info|param|func)\s/i;
+    # The first frozen _local_ block contains raw Perl lines; only
+    # actual DSL fields go through GetBuffer, as in original compiler.
+    next unless $raw=~/^\s*(?:time|job|scale|action|name|info|param|func)\s/i;
     main::GetBuffer('use',$normalized);
   }
 }
