@@ -6,6 +6,7 @@
  */
 import {R4_DRAGON_BALANCE_SOURCE} from './original-r4-dragon-balance.mjs';
 import {R4_DIGNITY_SOURCE} from './original-r4-period-dignity-decay.mjs';
+import {R4_GUILD_FEE_SOURCE} from './original-r4-guild-period-fee.mjs';
 export const B44_LEDGER_SOURCE='core-inc-period-single-shop-ledger-before-dignity';
 const fail=x=>{throw new RangeError('B-44 source-period ledger: '+x);};
 const check=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
@@ -81,7 +82,7 @@ function expMap(value){
  */
 export function projectOriginalPeriodShopLedger({
   shop,reviewed,limits,reviewedDragonSettlement=null,
-  reviewedDignity=null,
+  reviewedDignity=null,reviewedGuild=null,
 }){
   if(reviewed?.source!==B44_LEDGER_SOURCE||reviewed.showcaseDailyCost!==0)
     fail('reviewed source required');
@@ -103,8 +104,14 @@ export function projectOriginalPeriodShopLedger({
     reviewedDignity.drawRange===100;
   if(reviewedDignity!==null&&!dignityAuthorized)
     fail('unreviewed source dignity review for original per-shop ledger');
+  const guildAuthorized=reviewedGuild!==null&&
+    reviewedGuild.source===R4_GUILD_FEE_SOURCE&&
+    reviewedGuild.committable===false&&
+    reviewedGuild.feeDivisor===1000;
+  if(reviewedGuild!==null&&!guildAuthorized)
+    fail('unreviewed source guild member fee review');
   if(!shop||shop.status!==1||shop.showcasecount!==1||
-     shop.guild&&shop.guild!==''||
+     (!guildAuthorized&&shop.guild&&shop.guild!=='')||
      (!dragonAuthorized&&(
        shop.dragon&&shop.dragon!==0||shop.drmoney&&shop.drmoney!==0))||
      (!dignityAuthorized&&shop.dignity&&shop.dignity!==0))

@@ -22,6 +22,8 @@ import {reviewR4DragonBalance,projectR4DragonBalance,
 import {reviewR4DignityDecay,projectR4DignityDecay,
   R4_DIGNITY_SOURCE}
   from './original-r4-period-dignity-decay.mjs';
+import {reviewR4GuildFee,projectR4GuildFee,R4_GUILD_FEE_SOURCE}
+  from './original-r4-guild-period-fee.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -33,7 +35,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   periodSource,configSource,itemDsl,model,compilerSource,
   originalAddItemSource,detailSource,readSource,adminSource,
   bootstrapMeta,compiledLimits,includeReviewedDragon=false,
-  includeReviewedDignity=false,
+  includeReviewedDignity=false,includeReviewedGuild=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -46,12 +48,15 @@ export function reviewOriginalSoloPeriodPhaseChain({
     periodSource,configSource,itemDsl,model,compilerSource,
   });
   if(typeof includeReviewedDragon!=='boolean'||
-     typeof includeReviewedDignity!=='boolean')
+     typeof includeReviewedDignity!=='boolean'||
+     typeof includeReviewedGuild!=='boolean')
     bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
   const dignity=includeReviewedDignity?
     reviewR4DignityDecay({periodSource}):null;
+  const guild=includeReviewedGuild?
+    reviewR4GuildFee({periodSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -85,19 +90,20 @@ export function reviewOriginalSoloPeriodPhaseChain({
     bad('external update/dragon dependencies changed');
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
-    soloSort,topPrize,ledger,territory,dragon,dignity,
+    soloSort,topPrize,ledger,territory,dragon,dignity,guild,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
       'UpdateResetBefore-and-TopGetItem',
       ...(dragon?['dragon-shop-ledger-before-history']:[]),
       'single-shop-ledger',
+      ...(guild?['guild-fee-and-attack-defense-after-sale-history']:[]),
       ...(dignity?['dignity-decline-before-second-SortDT']:[]),
       'SortDT-after','unled-town',
       'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:dragon||dignity?
-      'reviewed source opt-in single-shop dragon file IO/revenue and/or dignity rand(100) before second SortDT, no stale close/guild/events/backup, exp sum <=4000; noncommittable period phase chain':
+    scope:dragon||dignity||guild?
+      'reviewed source opt-in one-shop DragonBalance, dignity and/or guild dues with explicit external EditGuildMoney call only; no durable guild IO/stale close/events/backup, exp sum <=4000; noncommittable period phase chain':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -109,7 +115,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
 export function projectOriginalSoloPeriodPhaseChain({
   reviewed,shop,town,dtPeople,
   awardDrawMillionths,territoryDrawMillionths,
-  payoutText=null,dignityDrawMillionths=null,
+  payoutText=null,dignityDrawMillionths=null,guildContext=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -119,7 +125,7 @@ export function projectOriginalSoloPeriodPhaseChain({
      !Array.isArray(shop.showcase)||shop.showcase.length!==1||
      !Array.isArray(shop.price)||shop.price.length!==1||
      shop.showcasecount!==1||
-     !(shop.guild===undefined||shop.guild==='')||
+     (!reviewed.guild&&!(shop.guild===undefined||shop.guild===''))||
      (!reviewed.dragon&&![undefined,0].includes(shop.dragon))||
      (!reviewed.dignity&&![undefined,0].includes(shop.dignity))||
      (!reviewed.dragon&&![undefined,0].includes(shop.drmoney))||
@@ -145,6 +151,13 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('dignity source contract required');
   if(reviewed.dignity===null&&dignityDrawMillionths!==null)
     bad('dignity random draws cannot be provided without original source');
+  if(reviewed.guild!==null&&(
+      reviewed.guild.source!==R4_GUILD_FEE_SOURCE||
+      reviewed.guild.committable!==false||
+      reviewed.guild.feeDivisor!==1000))
+    bad('guild member source dues review required');
+  if(reviewed.guild===null&&guildContext!==null)
+    bad('unsupported original guild account IO in period chain');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -173,18 +186,29 @@ export function projectOriginalSoloPeriodPhaseChain({
     reviewed:reviewed.ledger,
     reviewedDragonSettlement:dragonSettlement,
     reviewedDignity:reviewed.dignity,
+    reviewedGuild:reviewed.guild,
     limits:reviewed.compiledLimits,
   });
+  // In the frozen source guild fees follow saleyesterday assignment and
+  // upkeep, then precede the last exp/dignity block and SortDT. Original
+  // guild treasury edits are still external calls, never fake writes.
+  const guildEffect=reviewed.guild?
+    projectR4GuildFee({
+      reviewed:reviewed.guild,shop:accounting.shop,
+      guild:guildContext,
+    }):null;
   const dignityEffect=reviewed.dignity?
     projectR4DignityDecay({
       reviewed:reviewed.dignity,
-      dignity:accounting.shop.dignity??0,
+      dignity:guildEffect?.shop.dignity??accounting.shop.dignity??0,
       randomDrawMillionths:dignityDrawMillionths,
     }):null;
   const afterSort=projectOriginalSoloSort({
     shop:dignityEffect?{
-      ...accounting.shop,dignity:dignityEffect.dignityAfter,
-    }:accounting.shop,reviewed:reviewed.soloSort,
+      ...(guildEffect?.shop??accounting.shop),
+      dignity:dignityEffect.dignityAfter,
+    }:(guildEffect?.shop??accounting.shop),
+    reviewed:reviewed.soloSort,
   });
   const city=projectOriginalPeriodTerritory({
     reviewed:reviewed.territory,town,dtPeople,
@@ -209,6 +233,11 @@ export function projectOriginalSoloPeriodPhaseChain({
     ...(reviewed.dignity?{
       dignityEffect,
       dignitySource:reviewed.dignity.source,
+    }:{}),
+    ...(reviewed.guild?{
+      guildContext:guildEffect.guild,
+      guildMoneyEdits:guildEffect.editGuildMoneyCalls,
+      guildSource:reviewed.guild.source,
     }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
