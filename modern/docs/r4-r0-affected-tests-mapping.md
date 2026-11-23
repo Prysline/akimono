@@ -97,3 +97,9 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - tests/r4-mixed-guildbattle-end-gate.test.mjs 與 r4-mixed-rebel-now-gate.test.mjs：對 END 到期、NOW 自刪、十種 durable 與 happy 共存、原版時間序、Perl 多行程 hash／RNG、79 ITEM、shop/town/guild/army 的逐欄差分及無審閱／無資料／亂數不足失敗零變動。
 
 本批只完成來源控制條件下的全 17-key 特殊事件共用測試，並未證成真外部 IO、可提交期末或 HTTP／重啟；完整 R4 仍未退出。
+
+## 2026-11-23｜R4 DragonBalance 真檔案與 B-50 兩期接入影響
+
+- src/original-r4-dragon-balance.mjs、tests/original-perl/original-r4-dragon-balance-probe.pl／.t、tests/r4-source-dragon-balance.test.mjs：直接執行凍結 DragonBalance 讀檔並 unlink 9 案；因 original chop 會截斷末行字元，需精確比對而非改為 chomp。
+- src/original-period-solo-chain.mjs、src/original-period-shop-ledger.mjs：新增明示 DragonBalance 來源審閱後的 B-50 opt-in，仍拒絕獨立 B44 假龍賽、陌生結算 receipt、未審閱店鋪或 period。保留既有 source B50 舊測試。
+- tests/original-perl/original-r4-period-dragon-chain-probe.pl／.t 與 tests/r4-period-dragon-same-world-chain.test.mjs：同一原始店鋪／城市連續兩個期末 pre-backup 前綴、真 drapay 檔案消耗、+500／-1000 跨期、維持費 17、SortDT／獎品／城市人口逐欄等價；WorldState 寫入及真備份未經驗收，R4 不退出。

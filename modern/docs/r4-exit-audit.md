@@ -7,7 +7,7 @@
 - 共用分支：`test/task02-baseline-on-s1`；PR #1 對 `migration/standard-street-s1` 保持 **Open／Draft／未合併**。僅修改 `modern/`，原版 Core、Perl、DSL、其他分支與 Notion 不動。
 - 已驗收的混合 17-key 原始 Perl fixture：七種來源宣告型持續事件 + `happy` + `plusup-tetu` + `ken-sale` 共 **十種 durable**；`getmoney/getpop`、`manbiki/goutou`、`loto` 為非持續 STARTFUNC，確實與當次 Perl `keys(%EVENT)`、`keys(%DTevent)` 亂數交錯。必要場景直接擷取真 `inc-makeitem.cgi` ITEM PARAM 原文，保留 DataRead 生效時間。
 - guildbattle END 和 rebel NOW 的原始 DSL 函式已從獨立測試接入**同一 17-key 原文 Perl EVENT 流程**，能與十種持續事件、happy 同時執行，並驗證 rebel NOW 自刪事件時的原始 Perl 遍歷、城鎮軍隊／公會領地及共同 RNG。外部檔案讀寫仍是明示 stub，財富同額／軍力同額等 Perl 不定序結果維持 fail-closed。RebelRobin 期末仍為局部子鏈。
-- `37fc981113c1df3ce1195279589dec9d47cf8098`：同一 HEAD Push Actions #45099952281、PR Actions #45099957238 皆 completed/success；Node **1076/1076**，原版 Perl **2114/2114**（65 個 .t）。
+- `352ba4878d6ad77691a41a86b3ea801da8077b1b`：同一 HEAD Push Actions #45101339762、PR Actions #45101346093 都為 completed/success；Node **1082/1082**，Perl **2145/2145**（67 個 .t）。含 R4 DragonBalance 真暫存檔 IO 與 B-50 連續兩期來源鏈。
 - R4 的新多事件 projector、特殊事件 projector、期末片段組合 **全部 `committable:false`**，未取得完整原版世界狀態來源／存檔與同步驗證前，不得放寬。
 
 ## R4 退出條件與缺口
@@ -16,7 +16,7 @@
 |---|---|---|
 | 17-key EVENT 原版開始／結束、群組、回呼及亂數 | **受控 17-key 來源差分已涵蓋**十種 durable、五種即時 STARTFUNC，且在同一凍結 Perl inc-turn END／START／NOW 中執行 rebel 與 guildbattle 真 DSL 回呼；透過 GetPath(event-n) 觀察 rebel 自刪前的 NOW key 遍歷。Node 比對 79 ITEM、商店、軍隊／城市／公會、日誌與共享 rand(range)。 | **仍欠正式 runtime**：ReadArmy／WriteArmy／ReadGuild／ReadGuildData／SetTownData 仍為受控 IO stub；樣本及 key 次序來自同一 Perl 行程，而非 JS 原生 seed 重現；全跨期與 WorldState 提交尚未驗證。 |
 | SortDT、販售、59 PLUS、EVENT 相互影響 | B-47 SortDT、R3 自然販售、B-56／B-59 時間片及九種 EVENT ITEM PARAM source probes | **尚缺**同一實際世界中連續販售→排行→PLUS→活動覆寫→結算對商品、商店、城市、稅額的整段來源差分 |
-| 36 小時時鐘切割與**完整**原版期末 | `src/original-r4-time-slices.mjs` 已核對 `inc-turn.cgi` 切割；B-50 單商店、單城市兩次純期末前綴；R4 RebelRobin 片段 | **尚缺**凍結 `period.cgi` 全部階段（含 DragonBalance、Guild、老店關閉、原始排名、重設、資產、軍隊與租稅）、跨多期與所有正負邊界的共同世界結果 |
+| 36 小時時鐘切割與**完整**原版期末 | `src/original-r4-time-slices.mjs` 已核對原版切割，B-50 有同店同城兩期前綴；R4 DragonBalance **真暫存收支檔**已接入 B-50 兩期，保留跨期 dragon／drmoney、維持費、獎品與城市。`period.cgi::RebelRobin` 已做原版局部驗證 | **尚缺**全期末其他未支援分支：公會財務、領主／軍隊與多店、舊店關閉、爵位 decay、技術遺忘、全部 EVENT、真備份與 session；不能從兩期 pre-backup 前綴外推可提交完整 WorldState。 |
 | 正式可提交事件與期末 WorldState | GameCore v2 的 `period` envelope、來源起始期狀態與事件 bootstrap、B-43 本機兩代存檔 | **尚缺**已結算期的來源驗證結構、事件與城市／公會／軍隊的 durable persistence、所有失敗原子回滾、期末 CAS commit 與兩代磁碟復原 |
 | HTTP 共同經營閉環與重啟 | 已有 R2/R3 HTTP、市場、USE、自然販售及儲存的受控回歸 | **尚缺**同一玩家／店鋪市場購買→USE→狀態顯示→多次營業→跨 36h 期末→持久事件日誌→save/restart 的真正端到端來源差分 |
 | 原版 hash 與外部讀寫依賴 | 真 Perl 行程返回實際 EVENT/DTevent order；測試明示 stub ReadArmy／WriteArmy、ReadGuild／ReadGuildData／SetTownData | **尚缺**真實外部介面與實際資料檔狀態、領主及公會決策的跨回合讀寫；測試 sandbox 的 IO 替身不能升格為產品行為 |

@@ -21,3 +21,9 @@ B-44～B-49 的主要侷限是把原版各功能獨立跑過。B-50 首次讓**�
 ## 下一個可操作的里程碑
 
 首要的開發順序不是新增更多單獨的原版公式測試，而是把 B-50 的原版單世界結算連續性移到**真 WorldState／Street Module／GameCore 期末轉場**，補上原版城市與活動需要保存的欄位、動態商品及事件回呼與亂數順序、完整期末檔案效果的合法替代方案。原版 Perl／Node／HTTP 對照必須涵蓋跨期前來源真買貨／真自然售出，跨界結算到下一期及落盤重啟後持續經營，且失敗、重試或斷電不能重複發獎或扣費。**只有此玩家路徑通過後，才進行使用者要求的一次集中人工驗收。**
+
+## 2026-11-23｜R4 已選擇性接入原版 DragonBalance（舊 B-50 預設仍嚴格拒絕）
+
+新來源 reviewer 與投影 original-r4-dragon-balance.mjs 直接使用凍結 `period.cgi::DragonBalance` 的真檔案／每店龍賽帳務；新原版 Perl `original-r4-period-dragon-chain-probe.pl` 執行 B-50 相同兩期期末備份前綴，但將 DragonBalance 原樣執行，使用暫存 drapay 收支檔第一期 +500、第二期 -1000；Node `r4-period-dragon-same-world-chain.test.mjs` 透過 includeReviewedDragon=true opt-in 按真正期末階段原序逐欄比較兩期全部店鋪、城市與獎勵。兩期合併後 drmoney 回到零，第二期 payyesterday=517（500 淨龍賽支出與 17 維持費）。既有 B-50 不選擇 opt-in 的所有 Dragon 拒絕與舊回歸完全保留。
+
+這不等於原版完整跨36小時可提交遊戲：公會會費、爵位、老店關閉、真正 file/session 備份及 WorldState／CAS 等仍未審閱，所有新投影標記 nonCommittable:true。

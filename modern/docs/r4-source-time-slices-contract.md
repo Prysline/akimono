@@ -122,3 +122,9 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 rebel NOWFUNC 可能在回呼內 delete 自己的 DTevent；驗證器因此在原版 GetPath(event-n) 派送時記錄**實際執行中的 NOW 鍵順序**，不使用回呼後的剩餘鍵偽裝遍歷。已審閱公會事件沒有活動時不必強制注入公會快照；有活動卻缺快照則嚴格拒絕。仍僅為控制型 fixture，外部軍隊／公會 IO stub、任意 Perl RNG seed、36h 全期末及 WorldState／CAS 都未完成；committable:false 不變。
 
 最後來源驗收 SHA 37fc981113c1df3ce1195279589dec9d47cf8098，Push #45099952281、PR #45099957238 success，Node 1076／1076、Perl 2114／2114（65 .t）。
+
+## 2026-11-23｜R4 真 DragonBalance 檔案副作用與兩個相連期末前綴（已差分，不可提交）
+
+- 新增 src/original-r4-dragon-balance.mjs：嚴格核對 frozen period.cgi 的 DragonBalance 原程式與原版每店龍賽收入／支出片段，保留 drapay 檔案讀取、逐列 chop、店鋪 id2idx、累計 dragon、unlink。9 組 source-only 原版 Perl 探針 original-r4-dragon-balance-probe.pl 使用真正 File::Temp 暫存檔案執行未改動的 DragonBalance，檢查多店正負收支、重複 ID、無檔、空檔、CRLF、未知店、最後一行缺換行的 chop 等價結果；Node test 對收支與日誌逐欄核對，外部顯示 formatter 僅明示 stub。沒有把未審閱任意記錄當作有效資料。
+- 新增 B-50 同店同城市來源 opt-in：original-period-solo-chain.mjs 只在明確 includeReviewedDragon=true 的來源審閱下，依原版 SortDT → DragonBalance 真讀取檔案 → UpdateResetBefore 頒獎 → 每店 dragon 轉現金與 saletoday／paytoday → 歷史帳務／維持費 → 後排序／城市結算原序，保留舊 B-50 零 Dragon 的拒絕與 ABI。original-r4-period-dragon-chain-probe.pl 直接執行 frozen period.cgi 的整段備份前期末前綴兩次，帶入真暫存檔第一期 +500、第二期 -1000，期間 dragon／drmoney 不重置，第二期扣款紀錄為負龍賽 500 加維持費 17 即 517。Node test r4-period-dragon-same-world-chain.test.mjs 同兩期逐欄比較整張店鋪、城市、人口、排序點數與獎品；禁止非法擴權、未知出入、意外來源欄位。純投影仍 nonCommittable:true。
+- Push #45101339762 與 PR #45101346093 同 SHA 352ba4878d6ad77691a41a86b3ea801da8077b1b 已完成 success，Node 1082/1082、Perl 2145/2145（67 .t）。上述驗收**僅是兩期完整原版備份前綴的受控單商店／單城市子範圍**，正式 36h、Guild、老店、爵位、真 file/session/WorldState/CAS/HTTP 仍未退出。
