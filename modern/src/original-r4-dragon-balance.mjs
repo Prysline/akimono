@@ -33,7 +33,8 @@ export function reviewR4DragonBalance({periodSource}){
     '$DT->{saletoday}+=$DT->{dragon} if ($DT->{dragon} > 0);',
     '$DT->{paytoday}-=$DT->{dragon} if ($DT->{dragon} < 0);',
   ])if(!shop.includes(token))fail('original shop ledger source drift '+token);
-  if(periodSource.indexOf('DragonBalance();')>=
+  if(periodSource.indexOf('DragonBalance();')<0||
+     periodSource.indexOf('DragonBalance();')>=
      periodSource.indexOf('#ドラゴンレース清算')||
      periodSource.indexOf('#ドラゴンレース清算')>=
      periodSource.indexOf('#前期の情報を保存'))

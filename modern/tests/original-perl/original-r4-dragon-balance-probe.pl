@@ -20,7 +20,8 @@ sub l{return $_[0];}
 sub PushLog{push @LOG,[@_];1;}
 my $original=File::Spec->catfile($FindBin::Bin,'period.cgi');
 open my $reader,'<:encoding(UTF-8)',$original or die $!;
-local $/;my $text=<$reader>;
+my $text;
+{local $/;$text=<$reader>;}
 close $reader;
 my $fnStart=index($text,"sub DragonBalance\n");
 die 'original full DragonBalance source not found' unless $fnStart>=0;
