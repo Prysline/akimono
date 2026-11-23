@@ -189,7 +189,23 @@ export function projectSharedUseItem({world,command,useItem}){
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
   let inlineShowcase=null,inlineDairy=null,inlineWork=null;
-  let inlineCareer=null;
+  let inlineCareer=null,inlineParty=null;
+  if(rule.inlineCallback?.kind==='party-popularity'){
+    if(rule.itemId!==77||rule.useId!==0||
+       !rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed party popup callback');
+    inlineParty=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineParty||!Number.isSafeInteger(inlineParty.rank)||
+       inlineParty.rank<0||inlineParty.rank>10000||
+       typeof inlineParty.returned!=='string'||
+       !Array.isArray(inlineParty.logCalls))
+      fail('source party popup result invalid');
+    nextShop.rank=inlineParty.rank;
+    functionReturn=inlineParty.returned;
+  }
   if(rule.inlineCallback?.kind==='career-change'){
     if(rule.itemId!==78||rule.useId<0||rule.useId>13||
        !rule.singleUseOnly||original.count!==1||
@@ -304,9 +320,10 @@ export function projectSharedUseItem({world,command,useItem}){
           inlineDairy.addMessages[index-original.multiItem.added.length]:
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
-      ...(inlineDairy||inlineWork||inlineCareer?{
-        originalInlineLogCalls:(inlineCareer?.logCalls??
-          inlineDairy?.logCalls??inlineWork.logCalls),
+      ...(inlineDairy||inlineWork||inlineCareer||inlineParty?{
+        originalInlineLogCalls:(inlineParty?.logCalls??
+          inlineCareer?.logCalls??inlineDairy?.logCalls??
+          inlineWork.logCalls),
       }:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,
@@ -317,7 +334,7 @@ export function projectSharedUseItem({world,command,useItem}){
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
-        ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer?
+        ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||inlineParty?
           ['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
