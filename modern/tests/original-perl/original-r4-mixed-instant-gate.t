@@ -32,6 +32,23 @@ if(ref($o)eq'HASH'){
     'source iron EVENT restarts after expiring');
   ok(exists($o->{durableCases}[3]{output}{activeUntilSeconds}{'ken-sale'}),
     'source sword EVENT restarts after expiring');
+  is(scalar(@{$o->{rebelCases}}),5,
+    'five real 17-key original rebel NOW interleaving scenarios');
+  is(scalar(@{$o->{rebelCases}[0]{output}{randomDrawRanges}}),
+    $o->{rebelCases}[0]{output}{drawsUsed},
+    'original all-event RNG ranges count each real NOWFUNC draw');
+  ok(exists($o->{rebelCases}[0]{output}{activeUntilSeconds}{rebel}),
+    'mixed source rebel persists after armed NOW execution');
+  ok(!exists($o->{rebelCases}[1]{output}{activeUntilSeconds}{rebel}),
+    'source rebel NOW deletes its EVENT while original hash traversal runs');
+  ok(scalar(grep{$_ eq 'rebel'}@{$o->{rebelCases}[1]{input}{nowHashOrderFixture}}),
+    'source actual pre-NOW Perl key list contains rebel before self-delete');
+  is($o->{rebelCases}[2]{output}{rebelContext}{armyById}{1},1800,
+    'source one-hour rioter military reduction inside 17-key EVENT');
+  is($o->{rebelCases}[3]{output}{guildContext}{dominion},'beta',
+    'source guildbattle END and rebel NOW coexist in same 17-key event turn');
+  is(scalar(@{$o->{rebelCases}[4]{output}{rebelNowCallbacks}}),0,
+    'expired rebel never dispatches NOW callback');
   is(scalar(@{$o->{guildCases}}),4,
     'four original full 17-key guildbattle END and ongoing cases');
   my $guild=$o->{guildCases}[0]{output};

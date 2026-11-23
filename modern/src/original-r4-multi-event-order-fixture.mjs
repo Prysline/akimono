@@ -463,7 +463,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     skippedByGroup:Object.freeze(skippedByGroup),
     logs:Object.freeze(logs.map(log=>Object.freeze(log))),
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
-    ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null?{}:{
+    ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null?{}:{
       shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),
       instantCallbacks:Object.freeze(instantCallbacks),
