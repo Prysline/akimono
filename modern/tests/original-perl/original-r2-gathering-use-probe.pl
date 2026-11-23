@@ -27,6 +27,13 @@ die 'R2 gathering only source maps #9/#12' unless
   defined($useId)&&$useId=~/^\d+$/;
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
+my $make=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
+my $getLocal=OriginalFullUseLostbookHarness::section(
+  $make,'GetLocalFunction');
+my $ok=eval "package main;use utf8;no strict;no warnings;\n".
+  $getLocal."\n1;";
+die "R2 original source GetLocalFunction failed: $@" unless $ok;
+sub main::GetLine { return "_local_\n"; }
 my $dsl=OriginalGiftMapUseHarness::original_dsl();
 my @chunks=split(/(?=^\@\@ITEM\b)/m,$dsl);
 my @matching=grep {
