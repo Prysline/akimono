@@ -258,8 +258,12 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
       shopStatus:true,random:()=>0.5,
     });
     const n=trial.multiItem?.randomDraws??0;
-    if(!trial.performed||(!n&&!rule.afterCallback))return [];
-    const needed=n+(rule.afterCallback?1:0);
+    if(!trial.performed)return [];
+    const inline=rule.inlineCallback?.kind;
+    const inlineDraws=inline==='milk-cow'?trial.count+1:
+      inline==='drink-milk'&&trial.count<10?1:0;
+    const needed=n+(rule.afterCallback?1:0)+inlineDraws;
+    if(needed===0)return [];
     return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
       ?Array(needed).fill(500000)
       :sourceCommandDraws({world,kind:'use-item',

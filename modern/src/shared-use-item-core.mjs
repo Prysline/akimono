@@ -181,16 +181,37 @@ export function projectSharedUseItem({world,command,useItem}){
     }
     functionReturn='';
   }
-  if(pointer!==draws.length)
-    fail('extra random samples beyond original call sequence');
-  const added=original.multiItem.added.map(x=>[x.itemId,x.amount]);
+  let added=original.multiItem.added.map(x=>[x.itemId,x.amount]);
   const discarded=original.multiItem.discarded.map(x=>[x.itemId,x.amount]);
   const nextShop={
     ...shop,item:stocks,money:original.money,
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
-  let inlineShowcase=null;
-  if(rule.inlineCallback){
+  let inlineShowcase=null,inlineDairy=null;
+  if(rule.inlineCallback&&
+     ['milk-cow','drink-milk'].includes(rule.inlineCallback.kind)){
+    if(typeof useItem.runInlineCallback!=='function'||
+       ![25,26].includes(rule.itemId))
+      fail('unreviewed dairy callback type');
+    inlineDairy=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineDairy||!Array.isArray(inlineDairy.items)||
+       inlineDairy.items.length!==rule.limits.length||
+       !Number.isSafeInteger(inlineDairy.rank)||
+       inlineDairy.rank<0||inlineDairy.rank>10000||
+       typeof inlineDairy.returned!=='string'||
+       !Array.isArray(inlineDairy.addItems)||
+       !Array.isArray(inlineDairy.useItems))
+      fail('source dairy inline result invalid');
+    nextShop.item=[...inlineDairy.items];
+    nextShop.rank=inlineDairy.rank;
+    for(const item of inlineDairy.addItems)added.push([...item]);
+    for(const item of inlineDairy.useItems)useItems.push([...item]);
+    for(const msg of inlineDairy.useMessages)useMsgs.push(msg);
+    functionReturn=inlineDairy.returned;
+  }
+  if(rule.inlineCallback?.kind==='showcase-resize'){
     if(rule.inlineCallback.kind!=='showcase-resize'||
       !rule.singleUseOnly||rule.itemId!==63||original.count!==1||
       typeof useItem.runInlineCallback!=='function')
@@ -208,6 +229,8 @@ export function projectSharedUseItem({world,command,useItem}){
     nextShop.price=[...inlineShowcase.prices];
     functionReturn=inlineShowcase.returned;
   }
+  if(pointer!==draws.length)
+    fail('extra random samples beyond original call sequence');
   let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
     const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
@@ -239,9 +262,12 @@ export function projectSharedUseItem({world,command,useItem}){
       useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
       originalAddItem:added,
-      originalAddMsg:added.map(([id])=>
-        rule.outputMessages?.[id]??null),
+      originalAddMsg:added.map(([id],index)=>
+        index>=original.multiItem.added.length&&inlineDairy?
+          inlineDairy.addMessages[index-original.multiItem.added.length]:
+          rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
+      ...(inlineDairy?{originalInlineLogCalls:inlineDairy.logCalls}:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,
         showcaseCountAfter:inlineShowcase.showcaseCountAfter,
@@ -251,7 +277,7 @@ export function projectSharedUseItem({world,command,useItem}){
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
-        ...(inlineShowcase?['source-inline-callback']:[]),
+        ...(inlineShowcase||inlineDairy?['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
       doubleRewardTriggered:doubled,mapDestroyed:destroyed,
@@ -259,7 +285,7 @@ export function projectSharedUseItem({world,command,useItem}){
       spentGift:useItems.find(([id])=>id===rule.itemId)?.[1]??0,
       gainedMaps:added,
       mapBefore:shop.item[rule.itemId-1],
-      mapAfter:stocks[rule.itemId-1],
+      mapAfter:nextShop.item[rule.itemId-1],
       sourceScope:rule.scope,
     },
   };

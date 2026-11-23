@@ -66,6 +66,10 @@ import {PERIOD_WORLD_SCHEMA}
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
+import {compileReviewedDairyInlineUses}
+  from './reviewed-dairy-inline-uses.mjs';
+import {projectOriginalDairyInlineCallback}
+  from './original-inline-dairy-callback-model.mjs';
 import {projectOriginalShowcaseResizeCallback}
   from './original-inline-work-showcase-model.mjs';
 import {
@@ -363,7 +367,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const showcaseResizeUses=compileReviewedShowcaseResizeUses({
     itemDsl,model,limits:giftMap.limits,
   });
-  const declarativeUseIndex=new Map([...declarativeUses,...gatheringUses].map(rule=>[
+  const dairyInlineUses=compileReviewedDairyInlineUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const declarativeUseIndex=new Map([
+    ...declarativeUses,...gatheringUses,...dairyInlineUses,
+  ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
   const giftUseRule=Object.freeze({
@@ -430,7 +439,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
-    runInlineCallback({rule,shop}){
+    runInlineCallback({rule,shop,count,random}){
+      if(dairyInlineUses.includes(rule)){
+        if(!['milk-cow','drink-milk'].includes(rule.inlineCallback?.kind))
+          bad('unsupported dairy source callback');
+        return projectOriginalDairyInlineCallback({
+          kind:rule.inlineCallback.kind,level:rule.inlineCallback.level,
+          shop:{...shop},count,random,limits:rule.limits,
+        });
+      }
       if(rule?.itemId!==63||rule.inlineCallback?.kind!=='showcase-resize'||
         !Number.isSafeInteger(rule.inlineCallback.newCount)||
         rule.inlineCallback.newCount<1||rule.inlineCallback.newCount>8||
@@ -574,7 +591,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
-        ...showcaseResizeUses,...declarativeUses,...gatheringUses].filter(Boolean)
+        ...showcaseResizeUses,...declarativeUses,...gatheringUses,
+        ...dairyInlineUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -595,7 +613,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             const replenishes=Boolean(buyRule&&
               /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
             const providers=[giftUseRule,...giftUseVariants,
-              swordUseRule,...declarativeUses,...gatheringUses].filter(provider=>
+              swordUseRule,...declarativeUses,...gatheringUses,
+              ...dairyInlineUses].filter(provider=>
                 provider?.creates?.some(output=>
                   output.itemId===row.itemId&&output.countPerUse>0));
             const availableProvider=providers.find(provider=>
@@ -684,6 +703,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             firstUseOnly:Boolean(rule.firstUseOnly),
             singleUseOnly:Boolean(rule.singleUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback)||
+               Boolean(rule.inlineCallback&&
+                 rule.inlineCallback.kind!=='showcase-resize')||
                [...rule.uses,...rule.creates].some(x=>
                  x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,
