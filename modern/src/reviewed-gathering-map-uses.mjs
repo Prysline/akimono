@@ -42,9 +42,9 @@ export function compileReviewedGatheringMapUses({itemDsl,model,limits}){
     [9,3,'book-metalsearch',[5,6,7]],
   ]){
     const item=parsed.blocks.find(b=>b.kind==='ITEM'&&first(b,'no')===String(itemId));
+    const modelItem=model.items.find(x=>x.id===itemId);
     if(!item||first(item,'code')!==code||first(item,'limit')!=='3/3'||
-       model.items[itemId-1]?.code!==code||
-       model.items[itemId-1]?.limitRaw!=='3/3')
+       modelItem?.code!==code||modelItem?.limitRaw!=='3/3')
       fail('source map owner/limit drift '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
     if(uses.length!==count)fail('source map USE count drift '+itemId);
@@ -80,7 +80,7 @@ export function compileReviewedGatheringMapUses({itemDsl,model,limits}){
         })}:{}),
         afterCallback:Object.freeze({
           kind:'lostbook',threshold:10,consumedCount:1,allowLoss:true,
-          message:model.items[itemId-1].name+'已經破爛到看不懂，就扔掉了。',
+          message:modelItem.name+'已經破爛到看不懂，就扔掉了。',
         }),
         experienceCallback:Object.freeze({kind:'gain-fixed-exp',points:20}),
         outputMessages,resultNg:first(block,'ngmsg')??null,
