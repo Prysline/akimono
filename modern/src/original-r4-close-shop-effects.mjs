@@ -59,7 +59,7 @@ export function reviewR4CloseShopEffects({writeSource,readSource,configSource}){
   const indexMatch=readSource.match(/@DTindexnamelist=\s*qw\(([\s\S]*?)\)\s*;/);
   if(!indexMatch)fail('original ordered shop archive index fields unavailable');
   const archiveFields=indexMatch[1].trim().split(/\s+/);
-  if(archiveFields.length!==31||
+  if(archiveFields.length!==32||
      archiveFields[0]!=='id'||archiveFields[1]!=='lastlogin'||
      archiveFields.at(-1)!=='icon'||archiveFields.at(-2)!=='job')
     fail('source ordered shop archive index drift');
@@ -89,7 +89,7 @@ export function projectR4CloseShopEffects({
      reviewed.externalUserOrArchiveIOCommitted!==false||
      reviewed.archiveFile!=='delete'||
      !Array.isArray(reviewed.archiveFields)||
-     reviewed.archiveFields.length!==31)
+     reviewed.archiveFields.length!==32)
     fail('source-reviewed original write.cgi CloseShop required');
   if(!safe(shopId)||shopId===0||
      typeof reason!=='string'||!reason||reason.includes('\n')||
@@ -115,6 +115,8 @@ export function projectR4CloseShopEffects({
          (typeof value==='string'||safe(value))))||
      reviewed.archiveFields.some(k=>shop[k]!==undefined&&
        typeof shop[k]!=='string'&&
+       !(k==='costtoday'&&typeof shop[k]==='number'&&
+         Number.isFinite(shop[k]))&&
        !Number.isSafeInteger(shop[k])))
     fail('exact original shop archive arrays and bounded hash serialization');
   const archiveScalar=reviewed.archiveFields.map(k=>String(shop[k]??'')).join(',');
