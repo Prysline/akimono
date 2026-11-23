@@ -27,3 +27,9 @@ B-44～B-49 的主要侷限是把原版各功能獨立跑過。B-50 首次讓**�
 新來源 reviewer 與投影 original-r4-dragon-balance.mjs 直接使用凍結 `period.cgi::DragonBalance` 的真檔案／每店龍賽帳務；新原版 Perl `original-r4-period-dragon-chain-probe.pl` 執行 B-50 相同兩期期末備份前綴，但將 DragonBalance 原樣執行，使用暫存 drapay 收支檔第一期 +500、第二期 -1000；Node `r4-period-dragon-same-world-chain.test.mjs` 透過 includeReviewedDragon=true opt-in 按真正期末階段原序逐欄比較兩期全部店鋪、城市與獎勵。兩期合併後 drmoney 回到零，第二期 payyesterday=517（500 淨龍賽支出與 17 維持費）。既有 B-50 不選擇 opt-in 的所有 Dragon 拒絕與舊回歸完全保留。
 
 這不等於原版完整跨36小時可提交遊戲：公會會費、爵位、老店關閉、真正 file/session 備份及 WorldState／CAS 等仍未審閱，所有新投影標記 nonCommittable:true。
+
+## 2026-11-23｜R4 新增同世界 Guild／爵位／UpdateResetAfter 技術遺忘 opt-in
+
+本節**取代前述歷史階段中「公會會費／爵位／高 EXP 技術遺忘仍未審閱」的描述**，但不改動舊 B-50 預設的嚴格拒絕。新 `original-r4-period-all-finance-source-probe.pl` 和 `original-r4-period-high-exp-tech-probe.pl` 用未改動的 `period.cgi` 備份前完整前綴連續結算同一間店鋪與城市；真 DragonBalance 暫存檔每期讀取／刪除，外部 `EditGuildMoney` 僅記錄呼叫，爵位 `rand(100)` 在來源位置抽樣，四技術在原版 `UpdateResetAfter` **於第二次 SortDT 和城市之後**按序擲 `rand(14000)`。第一期遺失 #18 和 #24，第二期承接庫存遺失 #19、保留 #38；獎品／城市／公會／龍賽不因這些操作變更來源階段順序。Node 每期整張商店／城市與原始 Perl 差分一致，保留非提交標記與未知來源拒絕。
+
+最後程式驗收 SHA `09a11a2ac73de26a8c76d777d768a4b79028211d`：Push #45122232062、PR #45122236936 雙成功，Node 1094／1094、Perl 2210／2210（71 .t）。這仍**不代表**完成原始跨 36 小時可存檔經營：多店、真公會檔案、老店關閉、原版完整 EVENT／時間切片、備份與 session、WorldState／CAS／HTTP 重啟尚未整合，見 [R4 退出清冊](r4-exit-audit.md)。
