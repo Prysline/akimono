@@ -173,6 +173,20 @@ async t=>{
   assert.equal(before.shops[0].item[61],0,
     'the target audit must not fabricate an advertising package');
   assert.equal(before.shops[1].item[61],0);
+  // The audit's two-shop world must not accidentally unlock other
+  // single-shop commands, even if their individual Registry rules exist.
+  for(const [uri,payload] of [
+    ['/api/use',{expectedRevision:before.revision,
+      itemId:79,useId:0,requestedCount:1}],
+    ['/api/discard',{expectedRevision:before.revision,
+      itemId:9,count:1}],
+    ['/api/advance-time',{expectedRevision:before.revision,minutes:1}],
+    ['/api/showcase',{expectedRevision:before.revision,
+      itemId:44,per:100}],
+  ]){
+    const denied=await rejected(s,uri,payload,409);
+    assert.equal(denied.code,'UNREVIEWED_TWO_SHOP_ACTION');
+  }
   for(const patch of [
     {targetShopId:1},{targetShopId:999},
     {targetShopId:'2'},
