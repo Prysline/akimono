@@ -164,7 +164,7 @@ test('R4 real closure source chain requires strict opt-in, bounded archive hash 
   }),/exact original shop archive arrays and bounded hash serialization/);
   assert.throws(()=>projectOriginalSoloPeriodPhaseChain({
     reviewed:realCloseContract,...row,postTechDraws:[0],
-  }),/original UpdateResetAfter has no shops after CloseShop/SortDT/);
+  }),/original UpdateResetAfter has no shops after CloseShop\/SortDT/);
   assert.throws(()=>projectOriginalSoloPeriodPhaseChain({
     reviewed:{...realCloseContract,
       actualClose:{...realCloseContract.actualClose,committable:true}},
