@@ -28,6 +28,10 @@ import {reviewR4PostPeriodTechLoss,projectR4PostPeriodTechLoss,
   R4_TECH_LOSS_SOURCE} from './original-r4-post-period-tech-loss.mjs';
 import {reviewR4PeriodShopExpiry,projectR4PeriodShopExpiry,
   R4_EXPIRED_SHOP_SOURCE} from './original-r4-period-shop-expiry.mjs';
+import {reviewR4CloseShopEffects,projectR4CloseShopEffects,
+  reviewR4ClosedShopPrune,projectR4ClosedShopPrune,
+  R4_CLOSE_SHOP_EFFECT_SOURCE,R4_CLOSED_STORE_PRUNE_SOURCE}
+  from './original-r4-close-shop-effects.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -37,10 +41,12 @@ const safe=(n,label,min=0)=>{
 };
 export function reviewOriginalSoloPeriodPhaseChain({
   periodSource,configSource,itemDsl,model,compilerSource,
+  writeSource=null,
   originalAddItemSource,detailSource,readSource,adminSource,
   bootstrapMeta,compiledLimits,includeReviewedDragon=false,
   includeReviewedDignity=false,includeReviewedGuild=false,
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
+  includeReviewedActualCloseShop=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -56,7 +62,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
      typeof includeReviewedDignity!=='boolean'||
      typeof includeReviewedGuild!=='boolean'||
      typeof includeReviewedPostTech!=='boolean'||
-     typeof includeReviewedShopExpiry!=='boolean')
+     typeof includeReviewedShopExpiry!=='boolean'||
+     typeof includeReviewedActualCloseShop!=='boolean')
     bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
@@ -68,6 +75,14 @@ export function reviewOriginalSoloPeriodPhaseChain({
     reviewR4PostPeriodTechLoss({itemDsl,model,periodSource}):null;
   const shopExpiry=includeReviewedShopExpiry?
     reviewR4PeriodShopExpiry({periodSource,configSource}):null;
+  if(includeReviewedActualCloseShop&&!shopExpiry)
+    bad('real CloseShop requires the source period owner-expiry gate');
+  const actualClose=includeReviewedActualCloseShop?
+    reviewR4CloseShopEffects({writeSource,readSource,configSource}):null;
+  const closedPrune=actualClose?
+    reviewR4ClosedShopPrune({
+      detailSource,writeSource,reviewedClose:actualClose,
+    }):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -102,21 +117,24 @@ export function reviewOriginalSoloPeriodPhaseChain({
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
     soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
-    shopExpiry,
+    shopExpiry,actualClose,closedPrune,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
       'UpdateResetBefore-and-TopGetItem',
-      ...(shopExpiry?['original-absent-owner-CloseShop-call-only']:[]),
+      ...(shopExpiry?[
+        actualClose?'actual-frozen-CloseShop-status-session-archive':
+          'original-absent-owner-CloseShop-call-only']:[]),
       ...(dragon?['dragon-shop-ledger-before-history']:[]),
       'single-shop-ledger',
       ...(guild?['guild-fee-and-attack-defense-after-sale-history']:[]),
       ...(dignity?['dignity-decline-before-second-SortDT']:[]),
-      'SortDT-after','unled-town',
+      actualClose?'SortDT-after-closed-shop-prune':'SortDT-after',
+      'unled-town',
       postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:dragon||dignity||guild||postTech||shopExpiry?
-      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues, high-EXP tech and/or absent-owner CloseShop call only; external CloseShop and EditGuildMoney IO only recorded, no actual deletion/guild file/events/backup; noncommittable period phase chain':
+    scope:dragon||dignity||guild||postTech||shopExpiry||actualClose?
+      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues, technology and/or true write.cgi CloseShop status mutation followed by SortDT removal; user/archive/guild IO only recorded, no atomic file/WorldState commit':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -130,6 +148,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   awardDrawMillionths,territoryDrawMillionths,
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
   postTechDraws=null,nowSeconds=null,
+  sessionFileNames=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -192,6 +211,14 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('unreviewed absent-owner time on original period');
   if(reviewed.shopExpiry!==null)
     safe(nowSeconds,'actual original period NOW_TIME');
+  if(reviewed.actualClose!==null&&(
+     reviewed.actualClose.source!==R4_CLOSE_SHOP_EFFECT_SOURCE||
+     reviewed.actualClose.committable!==false||
+     reviewed.closedPrune?.source!==R4_CLOSED_STORE_PRUNE_SOURCE||
+     reviewed.closedPrune.committable!==false))
+    bad('true frozen CloseShop and SortDT reviewer required');
+  if(reviewed.actualClose===null&&sessionFileNames!==null)
+    bad('unreviewed external CloseShop session inventory cannot be supplied');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -219,17 +246,31 @@ export function projectOriginalSoloPeriodPhaseChain({
     projectR4PeriodShopExpiry({
       reviewed:reviewed.shopExpiry,shop:award.shop,nowSeconds,
     }):null;
+  // True write.cgi CloseShop executes during the original per-shop loop,
+  // BEFORE dragon income and the historical ledger. Source SortDT removes
+  // the status=0 shop only after the financial and dignity stages.
+  // SetUserData and WriteErrorLog remain recorded external calls.
+  if(reviewed.actualClose!==null&&expiryEffect?.expiredOwner&&
+     !Array.isArray(sessionFileNames))
+    bad('real CloseShop requires explicit source session file inventory');
+  const actualCloseEffect=reviewed.actualClose&&expiryEffect?.expiredOwner?
+    projectR4CloseShopEffects({
+      reviewed:reviewed.actualClose,shopId:shop.id,
+      shop:award.shop,sessionFileNames,reason:'経営者不在',
+    }):null;
+  const shopAfterClose=actualCloseEffect?.shop??award.shop;
   const dragonSettlement=reviewed.dragon?
     projectR4DragonShopLedger({
-      reviewed:reviewed.dragon,shops:[award.shop],
+      reviewed:reviewed.dragon,shops:[shopAfterClose],
     }):null;
   const accounting=projectOriginalPeriodShopLedger({
-    shop:dragonSettlement?.shops[0]??award.shop,
+    shop:dragonSettlement?.shops[0]??shopAfterClose,
     reviewed:reviewed.ledger,
     reviewedDragonSettlement:dragonSettlement,
     reviewedDignity:reviewed.dignity,
     reviewedGuild:reviewed.guild,
     reviewedPostTech:reviewed.postTech,
+    reviewedActualClose:actualCloseEffect,
     limits:reviewed.compiledLimits,
   });
   // In the frozen source guild fees follow saleyesterday assignment and
@@ -246,13 +287,18 @@ export function projectOriginalSoloPeriodPhaseChain({
       dignity:guildEffect?.shop.dignity??accounting.shop.dignity??0,
       randomDrawMillionths:dignityDrawMillionths,
     }):null;
-  const afterSort=projectOriginalSoloSort({
-    shop:dignityEffect?{
-      ...(guildEffect?.shop??accounting.shop),
-      dignity:dignityEffect.dignityAfter,
-    }:(guildEffect?.shop??accounting.shop),
-    reviewed:reviewed.soloSort,
-  });
+  const beforeAfterSort=dignityEffect?{
+    ...(guildEffect?.shop??accounting.shop),
+    dignity:dignityEffect.dignityAfter,
+  }:(guildEffect?.shop??accounting.shop);
+  const closedSort=actualCloseEffect?
+    projectR4ClosedShopPrune({
+      reviewed:reviewed.closedPrune,closeEffect:actualCloseEffect,
+    }):null;
+  const afterSort=closedSort?{shop:null}:
+    projectOriginalSoloSort({
+      shop:beforeAfterSort,reviewed:reviewed.soloSort,
+    });
   const city=projectOriginalPeriodTerritory({
     reviewed:reviewed.territory,town,dtPeople,
     shopCount:1,taxIn:accounting.shop.taxyesterday,
@@ -261,7 +307,10 @@ export function projectOriginalSoloPeriodPhaseChain({
   });
   // Frozen UpdateResetAfter executes after the post-period SortDT and
   // territory section. Lost items only affect the NEXT period's ranking.
-  const techLoss=reviewed.postTech?
+  if(closedSort&&reviewed.postTech&&
+     (!Array.isArray(postTechDraws)||postTechDraws.length!==0))
+    bad('original UpdateResetAfter has no shops after CloseShop/SortDT');
+  const techLoss=reviewed.postTech&&!closedSort?
     projectR4PostPeriodTechLoss({
       reviewed:reviewed.postTech,shop:afterSort.shop,
       randomDraws:postTechDraws,
@@ -272,7 +321,13 @@ export function projectOriginalSoloPeriodPhaseChain({
     town:city.town,
     dtPeople:city.dtPeople,
     pointsBefore:beforeSort.shop.point,
-    pointsAfter:afterSort.shop.point,
+    pointsAfter:afterSort.shop?.point??null,
+    ...(closedSort?{
+      closedShop:beforeAfterSort,
+      activeShops:closedSort.activeShops,
+      actualCloseEffect,
+      closedSortSource:closedSort.source,
+    }:{}),
     prize:award.prize,
     maintenance:accounting.chargedMaintenance,
     ...(reviewed.dragon?{
