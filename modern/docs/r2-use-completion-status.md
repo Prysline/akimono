@@ -3,7 +3,7 @@
 - R2 支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立。
 - R4 合併目標：`test/task02-baseline-on-s1`；僅透過獨立 **Draft PR #2** 進行預整合驗證，未合併。原有 Draft PR #1、R4 分支與 Notion 任務狀態不變。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
-- **原版宣告：79 ITEM／116 USE。** 本分支 `getRule`／`listUseOffers` 目前有 **111 項**（上一階段 110＋#62/0 自家廣告 1）；其他 **5 項** 屬於「原版宣告存在但尚未接入」，不能標為原版不支援。逐筆詳見 `r2-use-completion-gap-inventory.md`。
+- **原版宣告：79 ITEM／116 USE。** 本分支 `getRule` 現有 **112 項**（原 111＋#62/1 跨店廣告的記憶體限定實作）；單店本機 HTTP 的 `listUseOffers` 仍維持 **111 項**，不提供 #62/1 目標選擇與儲存。其他 **4 項** 尚未註冊。`getRule` 存在不代表玩家 HTTP、授權或 B-43 多店持久化已驗收。詳見 `r2-use-completion-gap-inventory.md`。
 
 ## 1. 已實作、正在驗收的實際玩家能力
 
@@ -100,14 +100,14 @@
 - `original-r2-self-advertise-use-probe.pl` 真正執行凍結 `GetBuffer`、原版 `UseItem` 及 inline Perl；`r2-self-advertisement-source.test.mjs` 比對 0、249999、250000、999999 抽樣、不同人氣、EXP 上限、行腳商人時間、日誌與 CAS 失敗。HTTP 由伺服器供應 source-scoped 抽樣，**不接受玩家自行指定 RNG**。
 - 尚無「新玩家真正取得廣告包→完成廣告→雙世代 B-43」的全鏈驗收；原版 `plus=5d` 不等於保證市場立即有貨。現行 B-43 **不**准許單靠 #62 USE 增長的熟練度、任意廣告包與額外人氣來源，不能把 Registry 接入當成安全可持久化。
 
-### 留待下一階段：5 項跨世界回呼
+### #62/1 記憶體受控實作與剩餘 4 項跨世界回呼
 
-- `#62/1` 指定其他店舖作廣告：需經來源驗證的目標 ID、禁止指向自身、雙店舖資料與單次 CAS 連動，原版無額外 RNG。
+- `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，透過受控 `targetShopId` 解析同一個記憶體 WorldState 中的另一間店。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 對使用者扣廣告包和時間並提高目標人氣；原版無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 真 Perl 比對成功及拒絕路徑；最終同 SHA CI 仍待驗。**本機 HTTP 仍限制 shopId=1、禁止指定 target，B-43 仍限制單店，且尚無多店身分授權與玩家取得／重啟保存證明。這是記憶體功能，不是玩家完整放行。**
 - `#62/2` 商會廣告：需可信 guild 身分、商會名稱字典、同 guild 的全部店舖快照與原版逐店人氣投影，不可用空商會資料替代。
 - `#65/0` 謠言：需指定目標、`needpoint=20000`、原版 `rand(1000)<800`、對方 #62 熟練度與雙方人氣變化，需共同交易與日誌驗證。
 - `#65/1` 偷竊：需目標商品／陳列架、看門機器人、跨店金錢與 `saletoday/paytoday`、失敗賠償、`STATE.safety`、隨機與持有上限等所有原版分支；不得只模擬轉移商品。
 - `#65/2` 行業謠言：需目標店隨機陳列架、原版四類 `kill-*` 事件的啟動／衝突與 8 小時到期處理，必須與 R4 EVENT 時間切片整合。
-- 目前 R2 `use-item` 以「單店、無 guild、無未審閱 EVENT」為共用世界邊界。上述五項均維持 `getRule=null` 與原子拒絕；實作前需優先確認可信目標身分、R4 事件接點、多人 CAS／市場快照及 B-43 防偽來源，不擅自放寬共用白名單。
+- R2 共用 `use-item` 一般規則仍限定單店、無 guild、無未審閱 EVENT；僅 #62/1 允許 **恰好兩店的記憶體 CAS**，而非放開所有 USE 或玩家 HTTP。#62/2、#65/0～2 仍 `getRule=null`、原子拒絕；多店身分授權、HTTP、B-43 保存與 R4 EVENT 接點不得以本次記憶體測試代替。
 
 ## 3. 材料取得鏈（R2 新增來源驗證）
 
@@ -119,7 +119,7 @@
 
 ## 4. 尚未完成與 R4 依賴
 
-- 其他 **5／116** 原版 USE 仍未接入（#62 廣告包針對他店與商會的 2 項＋#65 禁斷之書 3 項）。各筆按純資料、材料／庫存／製作、特殊回呼、職業／公會、EVENT、未審閱來源分流；不得因模型拒絕就視為原版禁止。
+- 尚有 **4／116** 原版 USE 未註冊（#62/2 商會廣告＋#65/0～2 禁斷之書）；#62/1 僅接入記憶體雙店 USE，尚不支援本機 HTTP／多店儲存。不能將 112 項 Registry 計數等同 112 項完整玩家玩法。
 - 高風險缺口是原版產生函式、職業變化、`LIMIT_EXP` 並列排序與事件狀態的完全差分；這些需要個別補真 Perl Oracle，再擴充共用 Registry，不能用手寫預期值冒充來源。
 - R4 負責完整時間切片、原版 EVENT/hash/RNG 語義、SortDT、36 小時期末決算；R2 不建立第二套 EVENT 引擎、不將未知 EVENT 設空。依賴 EVENT 的 USE 在明確介面接妥前繼續拒絕。
 - `modern/scripts/dev-local.mjs` 與 R4 兩條工作線都有修改；整合前應重新取得 R4 最新 HEAD 並以兩側功能保留方式處理。R2 支線 CI 通過只代表支線驗收，不代表最終整體合併驗收。
