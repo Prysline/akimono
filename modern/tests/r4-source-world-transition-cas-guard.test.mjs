@@ -6,8 +6,8 @@ import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   createPeriodMemoryWorld,createMemoryWorld,
-  createMemoryWorldAdapter,applyGameCommand,executeMemoryCommand,
-  encodeMemorySnapshot,
+  createMemoryWorldAdapter,createSourceReviewedMemoryWorldAdapter,
+  applyGameCommand,executeMemoryCommand,encodeMemorySnapshot,
 } from '../src/game-core-contract.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
@@ -234,4 +234,143 @@ test('R4 v1 GameCore remains independent of opt-in Standard Street v2 period rev
   assert.equal(after.ok,true);
   assert.equal(after.world.nowSeconds,1026040);
   assert.equal(after.world.revision,1);
+});
+
+
+/**
+ * R4: real local HTTP runtime now uses the source-reviewed adapter, not
+ * generic createMemoryWorldAdapter. A direct caller must be unable to
+ * replace the Standard Street v2 clock/period, even when it avoids
+ * applyGameCommand and supplies a syntactically valid next revision.
+ */
+test('R4 source-guarded memory CAS permits reviewed same-period changes and refuses the exact 36h boundary',()=>{
+  const repo=createSourceReviewedMemoryWorldAdapter({
+    initialWorld:worldAt(1025900),streetModule:street,
+  });
+  const before=repo.read();
+  const first=repo.compareAndSwap({
+    expectedRevision:0,
+    nextWorld:{...before,revision:1,nowSeconds:1025960},
+    advanceSeconds:60,
+  });
+  assert.equal(first.ok,true);
+  assert.equal(first.code,'COMMITTED');
+  assert.equal(repo.read().revision,1);
+  const stable=encodeMemorySnapshot(repo.read());
+  const cross=repo.compareAndSwap({
+    expectedRevision:1,
+    nextWorld:{...repo.read(),revision:2,nowSeconds:1026020},
+    advanceSeconds:60,
+  });
+  assert.equal(cross.ok,false);
+  assert.equal(cross.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(cross.details.reason,/unreviewed 36h period settlement/);
+  assert.equal(encodeMemorySnapshot(repo.read()),stable);
+  const stale=repo.compareAndSwap({
+    expectedRevision:0,
+    nextWorld:{...before,revision:1,nowSeconds:1025960},
+    advanceSeconds:60,
+  });
+  assert.equal(stale.code,'REVISION_CONFLICT');
+  assert.equal(encodeMemorySnapshot(repo.read()),stable);
+});
+
+test('R4 source-guarded direct CAS cannot forge settled world, city, unknown EVENT or regressed clock',()=>{
+  const repo=createSourceReviewedMemoryWorldAdapter({
+    initialWorld:worldAt(1025900),streetModule:street,
+  });
+  const current=repo.read(),serialized=encodeMemorySnapshot(current);
+  const cases=[
+    {kind:'period-settlement',period:{
+      ...current.period,state:'settled',settledCount:1,
+      lastSettledBoundarySeconds:1026000,
+    }},
+    {kind:'city',period:{...current.period,dtPeople:800000}},
+    {kind:'unknown EVENT',period:{...current.period,eventState:{rebel:5000000}}},
+    {kind:'external army',period:{...current.period,town:{
+      ...current.period.town,army:100,
+    }}},
+    {kind:'clock regression',nowSeconds:1025899,advanceSeconds:0},
+  ];
+  for(const entry of cases){
+    const {advanceSeconds=0,...fields}=entry;
+    // An invalid time delta is rejected by the generic CAS before source
+    // logic; all other cases must be vetoed by the source period reviewer.
+    const result=repo.compareAndSwap({
+      expectedRevision:0,nextWorld:{...current,...fields,revision:1},
+      advanceSeconds,
+    });
+    assert.equal(result.ok,false,entry.kind);
+    assert.equal(result.code,
+      entry.kind==='clock regression'?'INVALID_TRANSITION':
+        'SOURCE_BOUNDARY_REJECTED',entry.kind);
+    assert.equal(encodeMemorySnapshot(repo.read()),serialized,entry.kind);
+  }
+  for(const invalid of [
+    {...current,period:{...current.period,settledCount:1}},
+    {...current,period:{...current.period,dtPeople:100}},
+    {...current,period:{...current.period,eventState:{rebel:2}}},
+  ])assert.throws(()=>createSourceReviewedMemoryWorldAdapter({
+    initialWorld:invalid,streetModule:street,
+  }),/source-reviewed v2 initial world invalid/);
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({
+    initialWorld:current,streetModule:{id:'standard-street'},
+  }),/source-reviewed v2 WorldState adapter/);
+});
+
+test('R4 protected CAS cannot be bypassed by another StreetModule approving its own forged 36h transition',()=>{
+  const repo=createSourceReviewedMemoryWorldAdapter({
+    initialWorld:worldAt(1025980),streetModule:street,
+  });
+  const before=encodeMemorySnapshot(repo.read());
+  const malicious={
+    ...mkModule(),
+    reviewPeriodTransition:()=>true,
+  };
+  const attempt=executeMemoryCommand({
+    repository:repo,streetModule:malicious,
+    command:{kind:'advance-source-time',expectedRevision:0,
+      minutes:1,randomDraws:[]},
+  });
+  assert.equal(attempt.ok,false);
+  assert.equal(attempt.code,'SOURCE_BOUNDARY_REJECTED',
+    'protected repository uses its originally reviewed StreetModule');
+  assert.match(attempt.details.reason,/unreviewed 36h period settlement/);
+  assert.equal(encodeMemorySnapshot(repo.read()),before);
+});
+
+test('R4 protected local HTTP-style repository keeps both real disk generations when direct CAS is rejected',async t=>{
+  const directory=await mkdtemp(join(tmpdir(),'akimono-r4-protected-'));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const store=createLocalWorldSaveStore({directory});
+  const created=worldAt(1025980);
+  const boot=applyGameCommand({
+    world:created,streetModule:street,
+    command:{kind:'initialize-source-market',expectedRevision:0},
+  });
+  assert.equal(boot.ok,true);
+  assert.equal(store.save(boot.world,{expectedGeneration:0}).generation,1);
+  assert.equal(store.save(boot.world,{expectedGeneration:1}).generation,2);
+  // Exactly the same constructor used for HTTP initialization/load.
+  const repo=createSourceReviewedMemoryWorldAdapter({
+    initialWorld:store.load().world,streetModule:street,
+  });
+  const snapshot=encodeMemorySnapshot(repo.read());
+  const attempted=repo.compareAndSwap({
+    expectedRevision:1,
+    nextWorld:{...repo.read(),revision:2,nowSeconds:1026040},
+    advanceSeconds:60,
+  });
+  assert.equal(attempted.ok,false);
+  assert.equal(attempted.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.equal(encodeMemorySnapshot(repo.read()),snapshot);
+  assert.equal(store.status().generation,2);
+  assert.equal(encodeMemorySnapshot(store.load().world),snapshot);
+  const forged={...repo.read(),revision:2,period:{
+    ...repo.read().period,settledCount:1,
+  }};
+  assert.throws(()=>store.save(forged,{expectedGeneration:2}),
+    /unreviewed or settled v2 city/);
+  assert.equal(store.status().generation,2);
+  assert.equal(encodeMemorySnapshot(store.load().world),snapshot);
 });
