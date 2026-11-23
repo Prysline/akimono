@@ -86,8 +86,8 @@ test('R4 same original shop and city run true DragonBalance file before award an
   assert.equal(oracle.cases[1].output.shop.dragon,-500);
   assert.equal(oracle.cases[1].output.shop.drmoney,0,
     'net two-period dragon income zero, not independently reset each period');
-  assert.equal(oracle.cases[1].output.shop.payyesterday,500,
-    'second negative source dragon is recorded in original period payment history');
+  assert.equal(oracle.cases[1].output.shop.payyesterday,517,
+    'original negative dragon plus 17 maintenance enters payment history');
 });
 test('R4 dragon same-world historical source results survive a new original Perl process',()=>{
   for(let i=0;i<2;i++)for(const row of dragonOracle().cases){

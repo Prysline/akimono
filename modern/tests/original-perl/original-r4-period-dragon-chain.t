@@ -23,8 +23,8 @@ if(ref($x)eq'HASH'){
     'first full period dragon accumulated financial return');
   is($two->{output}{shop}{drmoney},0,
     'second period retains and reverses prior dragon earnings');
-  is($two->{output}{shop}{payyesterday},500,
-    'second negative dragon payout updates period expense history');
+  is($two->{output}{shop}{payyesterday},517,
+    'original second negative dragon payout plus 17 upkeep updates expenses');
   ok($one->{output}{dragonPayoutFileConsumed},
     'original DragonBalance actually unlinked first temporary payout file');
   ok($two->{output}{dragonPayoutFileConsumed},
