@@ -106,7 +106,7 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 
 ## 2026-11-23｜R4 同世界兩期公會會費／爵位／高 EXP 技術遺忘映射
 
-- `src/original-r4-period-dignity-decay.mjs`、`src/original-r4-guild-period-fee.mjs`、`src/original-r4-post-period-tech-loss.mjs`：真 frozen source `period.cgi`／Standard Street DSL 的位置、公式、80%以下防禦餘額、不定序外部資料與四技術持有者按序 `rand(14000)`。Guild `EditGuildMoney` 只記錄 IO 呼叫，不誤算為可持久化金錢。
+- `src/original-r4-period-dignity-decay.mjs`、`src/original-r4-guild-period-fee.mjs`、`src/original-r4-post-period-tech-loss.mjs`：真 frozen source `period.cgi`／Standard Street DSL 的位置、公式、防禦先乘 9/10，再加會費除以 800、上限 1000、不定序外部資料與四技術持有者按序 `rand(14000)`。Guild `EditGuildMoney` 只記錄 IO 呼叫，不誤算為可持久化金錢。
 - `src/original-period-solo-chain.mjs`、`src/original-period-shop-ledger.mjs`：明示 `includeReviewedDignity`／`includeReviewedGuild`／`includeReviewedPostTech` opt-in，保持 `UpdateResetBefore` → 店鋪收益／歷史與維持費 → Guild → Dignity → SortDT → 城市 → `UpdateResetAfter` 的凍結程式順序。舊 B44／B50 預設拒絕高熟練度、外部公會與龍賽，WorldState 仍不可提交。
 - `tests/original-perl/original-r4-guild-period-fee-probe.pl`、`.t`、`tests/r4-source-guild-period-fee.test.mjs`：七個真原版資金／攻防情境與每個 `EditGuildMoney` 呼叫、來源改寫與非法會員防護。
 - `tests/original-perl/original-r4-period-dragon-dignity-probe.pl`、`original-r4-period-all-finance-source-probe.pl`、`original-r4-period-high-exp-tech-probe.pl`，各自搭配 `.t` 及同名 Node 來源差分：同一張真 Perl 店鋪與城市跨兩期保留高 EXP、四技術庫存、財務、城市／人口與共享 RNG；自動核對第二期因前期扣除商品而少用 `rand(14000)`，以及 Perl `WriteLog` 過濾不誤含頒獎訊息。原版 hash／Perl seed、真公會資料檔、Store CAS、backup/session、HTTP 正式跨期均不因此授權。
