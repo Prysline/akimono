@@ -1,7 +1,7 @@
 /**
  * #62/0 exact source self-advertising using frozen Perl GetBuffer,
  * original UseItem, and isolated inline callback for rank/EXP/logs.
- * #62/1 and /2 and #65 target/guild/event effects stay unregistered.
+ * #62/1 is separately reviewed for memory-only two-shop CAS; /2 and #65 stay unregistered.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
