@@ -70,6 +70,8 @@ import {compileReviewedSelfAdvertiseUse}
   from './reviewed-self-advertise-use.mjs';
 import {projectOriginalSelfAdvertisement}
   from './original-inline-self-advertise-model.mjs';
+import {compileReviewedTargetAdvertiseUse,projectOriginalTargetAdvertisement}
+  from './reviewed-target-advertise-use.mjs';
 import {compileReviewedPartyUse}
   from './reviewed-party-use.mjs';
 import {projectOriginalPartyPopup}
@@ -398,9 +400,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const selfAdvertiseUse=compileReviewedSelfAdvertiseUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
+    targetAdvertiseUse,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -468,7 +474,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
-    runInlineCallback({rule,shop,count,random}){
+    runInlineCallback({rule,shop,count,random,targetShop}){
+      if(rule===targetAdvertiseUse){
+        if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
+          bad('unreviewed original target advertisement');
+        return projectOriginalTargetAdvertisement({
+          rule,shop,target:targetShop,count,
+        });
+      }
       if(rule===selfAdvertiseUse){
         if(rule.inlineCallback?.kind!=='advertise-self'||count!==1)
           bad('unreviewed self-advertising callback');
@@ -532,7 +545,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           market.wholesale.length===giftMap.limits.length;
       return validateSourceSparseMarket(market)&&
         (rule?.marketCodec==='gift'||rule?.marketCodec==='source-sparse')&&
-        (rule.marketCodec!=='source-sparse'||world.shops.length===1);
+        (rule.marketCodec!=='source-sparse'||world.shops.length===1||
+          (rule===targetAdvertiseUse&&world.shops.length===2));
     },
     writeMarket({world,rule,original}){
       if(rule.marketCodec==='gift'){
