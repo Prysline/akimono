@@ -198,10 +198,11 @@ async t=>{
     expectedRevision:before.revision,itemId:62,useId:1,
     requestedCount:1,targetShopId:2,randomDraws:[0],
   },400);
-  await rejected(s,'/api/use',{
+  const unsupported=await rejected(s,'/api/use',{
     expectedRevision:before.revision,itemId:65,useId:1,
     requestedCount:1,targetShopId:2,
-  },403);
+  },409);
+  assert.equal(unsupported.code,'UNREVIEWED_TWO_SHOP_ACTION');
   // A valid authoritative target ID still cannot bypass original
   // ownership and unknown EVENT gates. The independent memory-only
   // frozen Perl oracle is the positive #62/1 comparison.
