@@ -17,6 +17,13 @@ die 'R2 original party only ITEM #77/0' unless
   ($in->{itemId}//0)==77&&($in->{useId}//-1)==0;
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
+my $compiler=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
+my $getLocal=OriginalFullUseLostbookHarness::section(
+  $compiler,'GetLocalFunction');
+my $localOk=eval "package main;use utf8;no strict;no warnings;\n".
+  $getLocal."\n1;";
+die "R2 frozen GetLocalFunction compile failure: $@" unless $localOk;
+sub main::GetLine { return "_local_\n"; }
 my $dsl=OriginalGiftMapUseHarness::original_dsl();
 my $sourceFunc=OriginalFullUseLostbookHarness::section($dsl,'popup');
 for my $token(
