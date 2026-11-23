@@ -6,15 +6,15 @@
 
 - 共用分支：`test/task02-baseline-on-s1`；PR #1 對 `migration/standard-street-s1` 保持 **Open／Draft／未合併**。僅修改 `modern/`，原版 Core、Perl、DSL、其他分支與 Notion 不動。
 - 已驗收的混合 17-key 原始 Perl fixture：七種來源宣告型持續事件 + `happy` + `plusup-tetu` + `ken-sale` 共 **十種 durable**；`getmoney/getpop`、`manbiki/goutou`、`loto` 為非持續 STARTFUNC，確實與當次 Perl `keys(%EVENT)`、`keys(%DTevent)` 亂數交錯。必要場景直接擷取真 `inc-makeitem.cgi` ITEM PARAM 原文，保留 DataRead 生效時間。
-- `guildbattle` END 以原版 DSL 函式和 inc-turn 真來源執行、唯一最高公會資金勝出；`rebel` 82 行 NOWFUNC、`period.cgi::RebelRobin` 及「期末建立→同片 NOWFUNC」的**局部來源**差分已通過，但外部軍隊與公會讀寫只採受控 stub；同資金／同軍力需原版 hash tie 時拒絕。
-- `38d5730dfd96d0995136174e8cb48f013818143e`：同一 HEAD Push Actions #45098217897、PR Actions #45098222556 均 `completed/success`；Node **1070/1070**，原版 Perl **2098/2098**（65 個 .t）。
+- guildbattle END 和 rebel NOW 的原始 DSL 函式已從獨立測試接入**同一 17-key 原文 Perl EVENT 流程**，能與十種持續事件、happy 同時執行，並驗證 rebel NOW 自刪事件時的原始 Perl 遍歷、城鎮軍隊／公會領地及共同 RNG。外部檔案讀寫仍是明示 stub，財富同額／軍力同額等 Perl 不定序結果維持 fail-closed。RebelRobin 期末仍為局部子鏈。
+- `37fc981113c1df3ce1195279589dec9d47cf8098`：同一 HEAD Push Actions #45099952281、PR Actions #45099957238 皆 completed/success；Node **1076/1076**，原版 Perl **2114/2114**（65 個 .t）。
 - R4 的新多事件 projector、特殊事件 projector、期末片段組合 **全部 `committable:false`**，未取得完整原版世界狀態來源／存檔與同步驗證前，不得放寬。
 
 ## R4 退出條件與缺口
 
 | 必須具備的來源／運作契約 | 已有可用證據 | 真正未完成的驗收條件 |
 |---|---|---|
-| 17-key EVENT 原版開始／結束、群組、回呼及亂數 | `src/original-r4-multi-event-order-fixture.mjs` 與真 Perl 17-key 同程序來源差分；`rebel`、`guildbattle` 特殊回呼分開驗證 | **尚缺**將 rebel、guildbattle 外部活動與十種 durable、五種即時回呼在同一真 Perl 17-key／NOWFUNC／END 遍歷完成全欄差分；尚無執行環境能原生重現任意 Perl hash seed／RNG 消耗 |
+| 17-key EVENT 原版開始／結束、群組、回呼及亂數 | **受控 17-key 來源差分已涵蓋**十種 durable、五種即時 STARTFUNC，且在同一凍結 Perl inc-turn END／START／NOW 中執行 rebel 與 guildbattle 真 DSL 回呼；透過 GetPath(event-n) 觀察 rebel 自刪前的 NOW key 遍歷。Node 比對 79 ITEM、商店、軍隊／城市／公會、日誌與共享 rand(range)。 | **仍欠正式 runtime**：ReadArmy／WriteArmy／ReadGuild／ReadGuildData／SetTownData 仍為受控 IO stub；樣本及 key 次序來自同一 Perl 行程，而非 JS 原生 seed 重現；全跨期與 WorldState 提交尚未驗證。 |
 | SortDT、販售、59 PLUS、EVENT 相互影響 | B-47 SortDT、R3 自然販售、B-56／B-59 時間片及九種 EVENT ITEM PARAM source probes | **尚缺**同一實際世界中連續販售→排行→PLUS→活動覆寫→結算對商品、商店、城市、稅額的整段來源差分 |
 | 36 小時時鐘切割與**完整**原版期末 | `src/original-r4-time-slices.mjs` 已核對 `inc-turn.cgi` 切割；B-50 單商店、單城市兩次純期末前綴；R4 RebelRobin 片段 | **尚缺**凍結 `period.cgi` 全部階段（含 DragonBalance、Guild、老店關閉、原始排名、重設、資產、軍隊與租稅）、跨多期與所有正負邊界的共同世界結果 |
 | 正式可提交事件與期末 WorldState | GameCore v2 的 `period` envelope、來源起始期狀態與事件 bootstrap、B-43 本機兩代存檔 | **尚缺**已結算期的來源驗證結構、事件與城市／公會／軍隊的 durable persistence、所有失敗原子回滾、期末 CAS commit 與兩代磁碟復原 |

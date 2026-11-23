@@ -88,3 +88,12 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `src/original-r4-rebel-period-trigger.mjs` + `tests/original-perl/original-r4-rebel-period-trigger-probe.pl`／`.t` + `tests/r4-source-rebel-period-trigger.test.mjs`：原版 `period.cgi` 子程序與 3 天延長分支，城市／領主／RNG／日誌全欄差分；控制真實 rand 的 30% 浮點邊界。
 - `src/original-r4-rebel-period-to-now.mjs` + `tests/original-perl/original-r4-rebel-period-now-probe.pl`／`.t` + `tests/r4-source-rebel-period-now.test.mjs`：期末 source 先於 END／START／NOW，原版單事件雙片段同一 Perl 程序測試；檢查初次叛亂與當片效果、既有活動被鎮壓、原版 start=0 閘門亂數，以及來源輸入原子不可變。
 - 以上均無權繞過 `committable:false`。R4 17-key 外部活動整合、完整跨 36h 期末及 WorldState／CAS 皆未驗證。完整阻塞清冊新增 `docs/r4-exit-audit.md`。
+
+## 2026-11-23｜R4 rebel／guildbattle 共用 17-key 原文 Perl 差分映射
+
+- src/original-r4-multi-event-order-fixture.mjs：整合已審閱 rebel NOW、guildbattle END，校核原版 START／END／NOW，於 NOW 自刪前依真 Perl 遍歷順序操作；未知活動、缺 IO 快照與亂數不匹配均 fail-closed。
+- src/original-r4-guildbattle-end.mjs：新增無虛構 gate RNG 的純 END callback，與既有單事件回呼共用來源結果；公會最高資金同額拒絕。
+- tests/original-perl/original-r4-mixed-support-gate-probe.pl 與 original-r4-mixed-instant-gate.t：凍結 DSL 的真 rebel／guildbattle callback 直接載入原始 17-key Perl 回合；在 event-n GetPath 捕捉 NOW 真遍歷，並監測受控軍隊／公會 IO。
+- tests/r4-mixed-guildbattle-end-gate.test.mjs 與 r4-mixed-rebel-now-gate.test.mjs：對 END 到期、NOW 自刪、十種 durable 與 happy 共存、原版時間序、Perl 多行程 hash／RNG、79 ITEM、shop/town/guild/army 的逐欄差分及無審閱／無資料／亂數不足失敗零變動。
+
+本批只完成來源控制條件下的全 17-key 特殊事件共用測試，並未證成真外部 IO、可提交期末或 HTTP／重啟；完整 R4 仍未退出。

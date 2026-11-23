@@ -1,3 +1,5 @@
+**2026-11-23｜R4 最新驗收（仍未完成）：** guildbattle END 與 rebel NOW 已接入同一凍結 Perl 17-key EVENT END／START／NOW，與十種 durable、五種 STARTFUNC、happy 共用真 hash／RNG；另記錄 NOW 回呼自刪前的真 Perl key order。來源提交 37fc981113c1df3ce1195279589dec9d47cf8098 雙 Actions 通過：Node 1076／1076、Perl 2114／2114（65 .t）。真正 36h 全期末、外部 IO、WorldState／CAS、HTTP 存檔／重啟未完成，見 [R4 退出清冊](r4-exit-audit.md)。
+
 **2026-11-23｜R4 續作最新來源驗收（仍未完成）：** 已把 B-59 鐵礦脈與 B-61 劍需求加入 17-key 真 Perl EVENT 混合，共十種持續 EVENT＋getmoney/getpop、manbiki/goutou、loto/happy 的共享亂數；額外完成 `guildbattle` 真 END 來源、`rebel` 82 行 NOWFUNC、期末 `RebelRobin` 及「期末觸發→同片 NOW」八案真 Perl 連續差分。最新來源提交 `38d5730dfd96d0995136174e8cb48f013818143e` Push/PR 雙 CI completed/success，Node 1070/1070、Perl 2098/2098（65 檔）。**這些仍是受控 `committable:false` 局部測試，完整 17-key 特殊事件混合、真跨 36h 期末、WorldState／HTTP／CAS／重啟均未結案；詳見 [R4 退出清冊](r4-exit-audit.md)。**
 
 # 《商人物語》移植進度與里程碑｜2026-11-22 共用引擎架構修正
