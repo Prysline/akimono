@@ -211,7 +211,12 @@ export function applyGameCommand({world,command,streetModule}){
  * Memory CAS boundary. Real local/server persistence, locks, authorization,
  * crash recovery and concurrent processes are NOT implemented by this adapter.
  */
-export function createMemoryWorldAdapter(initialWorld){
+export function createMemoryWorldAdapter(initialWorld,{
+  reviewPeriodTransition=null,
+}={}){
+  if(reviewPeriodTransition!==null&&
+     typeof reviewPeriodTransition!=='function')
+    reject('source period CAS reviewer must be a function');
   let current=snapshot(initialWorld);
   return Object.freeze({
     read(){return snapshot(current);},
@@ -228,9 +233,44 @@ export function createMemoryWorldAdapter(initialWorld){
          proposed.nowSeconds!==current.nowSeconds+advanceSeconds||
          proposed.revision!==current.revision+1)
         return answer(false,'INVALID_TRANSITION',snapshot(current));
+      // The ordinary memory adapter remains source-neutral. The opt-in
+      // source-guarded variant calls the SAME Standard Street reviewer
+      // inside compareAndSwap, so direct callers cannot skip the v2 gate.
+      // Do not use the command's potentially untrusted StreetModule here.
+      if(current.schema===PERIOD_WORLD_SCHEMA&&
+         reviewPeriodTransition!==null){
+        try{
+          if(reviewPeriodTransition({before:current,after:proposed})!==true)
+            reject('source-reviewed v2 period CAS transition missing');
+        }catch(error){
+          return answer(false,'SOURCE_BOUNDARY_REJECTED',snapshot(current),{
+            reason:error instanceof Error?error.message:
+              'source CAS period transition rejected',
+          });
+        }
+      }
       current=proposed;
       return answer(true,'COMMITTED',snapshot(current));
     },
+  });
+}
+/**
+ * R4 local Standard Street v2 repository: source approval is required both
+ * for normal GameCore commands AND direct compareAndSwap callers.
+ * The generic adapter above remains unchanged for old v1 and pure tests.
+ * This adapter is local/in-memory, not a distributed transaction manager.
+ */
+export function createSourceReviewedMemoryWorldAdapter({
+  initialWorld,streetModule,
+}){
+  const initial=snapshot(initialWorld);
+  if(initial.schema!==PERIOD_WORLD_SCHEMA||
+     streetModule?.id!==initial.streetId||
+     typeof streetModule.reviewPeriodTransition!=='function')
+    reject('source-reviewed v2 WorldState adapter and street required');
+  return createMemoryWorldAdapter(initial,{
+    reviewPeriodTransition:({before,after})=>
+      streetModule.reviewPeriodTransition({before,after}),
   });
 }
 export function executeMemoryCommand({repository,streetModule,command}){

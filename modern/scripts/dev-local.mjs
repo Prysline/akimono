@@ -15,7 +15,7 @@ import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
-import {createPeriodMemoryWorld,createMemoryWorldAdapter,
+import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -312,7 +312,9 @@ async function api(req,res,url){
       if(repo)return send(res,409,{ok:false,
         error:'目前世界已啟用；不能將磁碟世界覆蓋正在營業的記憶體世界',state:state()});
       const saved=saveStore.load();
-      repo=createMemoryWorldAdapter(saved.world);
+      repo=createSourceReviewedMemoryWorldAdapter({
+        initialWorld:saved.world,streetModule,
+      });
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
           recoveredPreviousGeneration:saved.recovered,
@@ -346,7 +348,9 @@ async function api(req,res,url){
       const w=createPeriodMemoryWorld({worldId:randomUUID(),
         streetId:streetModule.id,nowSeconds,
         period:createOriginalPeriodSeed(reviewedPeriodSeed)});
-      const staged=createMemoryWorldAdapter(w);
+      const staged=createSourceReviewedMemoryWorldAdapter({
+        initialWorld:w,streetModule,
+      });
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
