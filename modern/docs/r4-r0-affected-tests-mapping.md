@@ -117,3 +117,10 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `src/game-core-contract.mjs`：v2 的 `period`／時鐘變化必須於 CAS 之前得到 `StreetModule.reviewPeriodTransition` 許可；任何缺失／拒絕或明示非提交的來源純投影返回 `SOURCE_BOUNDARY_REJECTED`，不中斷 v1 泛用既有操作。
 - `src/standard-street-module.mjs`：以真 source text 審閱並接入新的 `reviewPeriodTransition`，不把未實作的 R4 `period-settlement` 暴露為玩家可用命令。
 - `tests/r4-source-world-transition-cas-guard.test.mjs`：原版時鐘跨界、城市／期數／事件假造、缺審閱器、舊 v1 保留、真記憶體 CAS 狀態不變，以及雙世代實際 B-43 save/load 不因拒絕而重寫。**此切片沒有正向 36h 結算，R4 仍不可退出。**
+
+## 2026-11-23｜R4 真本機 HTTP 來源 CAS 與過期店關店來源觸發
+
+- `src/game-core-contract.mjs`／`scripts/dev-local.mjs`：來源專用的 v2 Memory CAS adapter 在建立、load 與每次直接 CAS 時檢查原版合法初始期別、36h 時鐘及來源不支援的已結算狀態；泛用 adapter／舊 v1 保持原樣。
+- `tests/r4-source-world-transition-cas-guard.test.mjs`：新增直通 compareAndSwap 門檻、偽造審閱器／城市／事件／已結算世界拒絕、兩個實際 B-43 磁碟世代完整性；已知單 EVENT 也不許在零時間內被偽造。
+- `tests/r4-source-cas-http-save-restart.test.mjs`：真 HTTP 開店、供貨、買 #10 → 36h 期末拒絕 → save 兩代 → Node restart → load 世界完全一致及再度拒絕。不能把負向 E2E 當成完成正向 R4 退出。
+- `src/original-r4-period-shop-expiry.mjs`、`tests/original-perl/original-r4-period-shop-expiry-probe.pl`／`.t`、`tests/r4-source-period-shop-expiry.test.mjs`：九種真凍結 Perl 未登入逾期條件、`CloseShop` 外部呼叫及原始日誌完全對照；關店真正外部檔案更新仍禁止提交。

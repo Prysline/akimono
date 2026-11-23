@@ -39,3 +39,9 @@
 B-51 起始期別和 B-43 雙世代存檔已能持久化來源城市，但**不代表已授權結算**。新增 `original-r4-world-transition-gate.mjs` 經 Standard Street 的 `reviewPeriodTransition` 餵入 GameCore：當來源 v2 世界的時鐘或 `period` 變化，必須先取得原版 36 小時／+3 小時及 B-51／B-59～61 合法期別的審閱許可；跨界結算、假城市、`settledCount>0` 與 `nonCommittable` 來源片段在 CAS 前拒絕。
 
 這是**正式命令進入記憶體 CAS 前**的拒絕契約，並不等於通用 `createMemoryWorldAdapter.compareAndSwap` 已可安全處理任意自訂 caller，或原版真 Guild/Army/Session/Backup 文件副作用已轉成完整 durable 原子提交。現有 B-51 玩家介面仍不得提供假期末完成按鈕；B-43 磁碟仍按來源初始期別或現行三種單 EVENT 狀態嚴格拒絕非審核 settled world。
+
+## 2026-11-23｜R4 真本機 HTTP 已採用來源審閱版記憶體 CAS
+
+前述 v2 `period` 世界的正式本機使用介面現已改為 `createSourceReviewedMemoryWorldAdapter`，在建立及載入來源期別時驗證 schema／城市／單一已審閱 EVENT，在每次直接 `compareAndSwap` 時也用同一原版 36h／+3h 審閱器檢查，不能繞過 `applyGameCommand` 直接製造已結算城市或跨期時鐘。若無時間推進，即使是原版認得的單一 iron／happy／sword 事件，也不能憑空變更 EVENT 時程。通用記憶體適配器保留供舊 v1 與測試，**這不代表通用 compareAndSwap 已變成多程序安全交易**。
+
+新增 `tests/r4-source-cas-http-save-restart.test.mjs` 驗證真 HTTP 的期界**拒絕**、雙世代磁碟存檔、Node 重啟讀取與再次拒絕；玩家目前仍**不能完成正向期末**。原版過期店 `CloseShop` 只核對來源時間與呼叫，真關店資料檔處理、事件／公會／軍隊與正向結算後持久化未完成。
