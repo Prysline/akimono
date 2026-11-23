@@ -162,6 +162,15 @@ export function applyGameCommand({world,command,streetModule}){
   }
   if(!plain(applied)||!Array.isArray(applied.shops)||
      !plain(applied.receipt))reject('street result shape');
+  // R4 source-only projectors must not be accidentally repackaged as a
+  // GameCore action. Explicitly noncommittable effects cannot increment
+  // revision even when a trusted StreetModule returns a plausible shop.
+  if(applied.nonCommittable===true||applied.committable===false||
+     applied.receipt.nonCommittable===true||
+     applied.receipt.committable===false)
+    return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{
+      reason:'noncommittable source projection cannot enter GameCore CAS',
+    });
   if(original.schema===MEMORY_WORLD_SCHEMA&&Object.hasOwn(applied,'period'))
     reject('legacy world cannot silently acquire unvalidated period state');
   const after=snapshot({
