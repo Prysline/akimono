@@ -229,7 +229,7 @@ for my $r (@rounds){
         guildId=>$_->[0],amount=>0+$_->[1],
       }}@GUILD_IO_CALLS],
       techLogs=>[map{[@$_]}grep {
-        $_->[3]//'' =~ /失去了|遺忘了初心/
+        (($_->[3]//'') =~ /失去了|遺忘了初心/)
       }@TECH_LOGS],
       techLostItemIds=>[grep {
         $inputShop->{item}[$_-1]>$DT[0]{item}[$_-1]

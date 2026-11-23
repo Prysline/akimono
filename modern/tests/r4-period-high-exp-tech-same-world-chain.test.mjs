@@ -117,8 +117,9 @@ test('R4 four-tech source review enforces exact item order, threshold, bounded R
   assert.throws(()=>projectOriginalSoloPeriodPhaseChain({
     reviewed,...row,postTechDraws:row.postTechDraws.slice(0,2),
   }),/missing original post-period technique RNG sample/);
+  const second=oracle().cases[1].input;
   assert.throws(()=>projectOriginalSoloPeriodPhaseChain({
-    reviewed,...row,postTechDraws:[...row.postTechDraws,0],
+    reviewed,...second,postTechDraws:[...second.postTechDraws,0],
   }),/unused original technique RNG samples/);
   assert.throws(()=>projectOriginalSoloPeriodPhaseChain({
     reviewed,...row,postTechDraws:[...row.postTechDraws.slice(0,3),1000000],
