@@ -7,7 +7,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {validateMemoryWorld,encodeMemorySnapshot}
+  from '../src/game-core-contract.mjs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import path from 'node:path';
@@ -137,4 +140,23 @@ test('R2 real player cows, milk, yogurt, milk drinking and failing cheese NEED',
   assert.equal(denied.ok,false);
   assert.equal(denied.status,409);
   assert.deepEqual((await server.state()).world,beforeCheese.world);
+  // A valid SHA-256 only confirms disk bytes, not source player inventory.
+  // Counterfeit the latest generation with milk > the original maximum
+  // produced by six #25 USEs and the five source-gift cows.
+  await server.stop();
+  const filename=join(dir,'world-a.json'); // B-43 generation two
+  const record=JSON.parse(await readFile(filename,'utf8'));
+  assert.equal(record.generation,2);
+  const forged=JSON.parse(record.world);
+  forged.shops[0].item[25]=2000;
+  record.world=encodeMemorySnapshot(validateMemoryWorld(forged));
+  record.sha256=createHash('sha256').update(record.world,'utf8')
+    .digest('hex');
+  await writeFile(filename,JSON.stringify(record)+'\n');
+  server=await boot(dir);servers.push(server);
+  const recovered=await server.post('/api/load');
+  assert.equal(recovered.code,'LOADED',JSON.stringify(recovered));
+  assert.deepEqual(recovered.state.world,checkpoint1,
+    'counterfeit source milk must recover the previous real generation');
+  assert.equal(recovered.state.save.recoveryWarning,true);
 });
