@@ -48,7 +48,7 @@ const original=()=>JSON.parse(execFileSync('perl',
 test('actual frozen rebel NOWFUNC matches six original Perl city/riot/army branches',()=>{
   assert.equal(reviewed.source,R4_REBEL_NOW_SOURCE);
   const oracle=original();
-  assert.equal(oracle.cases.length,6);
+  assert.equal(oracle.cases.length,8);
   for(const row of oracle.cases){
     const before=JSON.stringify(row.input);
     const got=projectR4RebelNow({reviewed,...row.input});
@@ -58,6 +58,9 @@ test('actual frozen rebel NOWFUNC matches six original Perl city/riot/army branc
       'randomDrawRanges','drawsUsed','returnCode',
     ])assert.deepEqual(got[key],row.output[key],row.name+' source '+key);
     assert.equal(got.committable,false);
+    if(row.name.includes('boundary'))assert.equal(
+      got.town.robinb,row.output.town.robinb,
+      'original rand(100)>75 must compare raw float, not rounded integer');
     assert.equal(JSON.stringify(row.input),before,'input never changes');
   }
 });

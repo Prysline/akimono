@@ -92,7 +92,7 @@ export function projectR4RebelNow({
     if(used>=randomDraws.length)fail('source rebel RNG exhausted');
     const v=randomDraws[used++];
     if(!safe(v)||v>=1000000)fail('source rebel RNG sample invalid');
-    ranges.push(r);return Math.trunc(v*r/1000000);
+    ranges.push(r);return v*r/1000000;
   };
   let time=Math.trunc(spanSeconds/3);
   if(city.army+city.robina>15000)time*=2;
@@ -113,7 +113,7 @@ export function projectR4RebelNow({
     deleted=true;riot.clear();
     logs.push([2,0,'叛亂被護衛軍鎮壓了。']);
   }else{
-    amount+=draw(5);
+    amount+=Math.trunc(draw(5));
     if(city.robina){city.robina=Math.max(0,city.robina-amount);amount=0;}
     if(amount)city.army-=amount;
     if(city.army+city.robina<200){
@@ -136,13 +136,17 @@ export function projectR4RebelNow({
         logs.push([2,0,'首領 '+shop.name+'（'+shop.shopname+'）成為了新的領主。']);
         city.leader=winner;city.army=rebels;city.robinb=0;
       }else{
-        logs.push([2,0,'首領 '+balJob+balName+'成為了新的領主。']);
+        // Frozen Perl source interpolates $main::BAL_NAME成為了新的領主
+        // as ONE variable (undefined), not BAL_NAME followed by literal.
+        logs.push([2,0,'首領 '+balJob+'。']);
         city.leader=0;city.army=0;city.robina=10000;city.robinb=0;
         city.develop=5001;city.safety=5001;city.devem=0;city.safem=0;
         rate=0;const gift=Math.trunc(city.money/500)*10+10;
         city.money=0;
         for(const shop of shopsOut)shop.money+=gift;
-        logs.push([2,0,balJob+balName+'將城鎮資金'+gift+'分配給居民了。']);
+        // The same unbraced Perl variable interpolation swallows the
+        // "將城鎮資金" segment; preserve observed original log bytes.
+        logs.push([2,0,balJob+gift+'分配給居民了。']);
       }
     }
   }

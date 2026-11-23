@@ -131,7 +131,9 @@ sub run{
       activeUntilSeconds=>$res->{state}{rebel},
       eventPersisted=>exists($res->{state}{rebel})?
         JSON::PP::true:JSON::PP::false,
-      town=>$STATE,shops=>\@DT,
+      # Each oracle case is a distinct CGI invocation. Global @DT is
+      # replaced in later cases; snapshot the actual shop hashes NOW.
+      town=>{%$STATE},shops=>[map{{%$_}}@DT],
       riotIds=>[sort{$a<=>$b} keys(%RIOT)],
       armyById=>{%ARMY},taxRate=>$DTTaxrate,
       logs=>[map{[@$_]}@LOG],
@@ -161,6 +163,14 @@ my @cases=(
     town=>{%defaultTown,army=>100,robinb=>5000},
     shops=>\@defaultShops,riotIds=>[],armyById=>{},
     draws=>[0,500000],taxRate=>123),
+  run(name=>'bandit-reinforce-boundary-exact-75-not-greater',
+    town=>{%defaultTown,army=>12000,robina=>2000,robinb=>2500},
+    shops=>\@defaultShops,riotIds=>[],armyById=>{},
+    draws=>[750000,500000]),
+  run(name=>'bandit-reinforce-boundary-above-75',
+    town=>{%defaultTown,army=>12000,robina=>2000,robinb=>2500},
+    shops=>\@defaultShops,riotIds=>[],armyById=>{},
+    draws=>[750001,500000]),
   run(name=>'rebel-guard-army-over-15000-doubles-time',
     town=>{%defaultTown,army=>20000,robinb=>3000},
     shops=>\@defaultShops,riotIds=>[],armyById=>{},

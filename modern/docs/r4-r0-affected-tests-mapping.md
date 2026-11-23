@@ -76,3 +76,9 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `src/original-r4-guildbattle-end.mjs`（新增）：凍結 rebel DSL 的群戰結束正文、唯一公會最高資金、城市 dominion 更新與回傳訊息，拒絕 ties／不支援資料；不得以 JS 自訂排序替代 Perl keys/sort。
 - `tests/original-perl/original-r4-guildbattle-end-probe.pl`／`.t`（新增）：原文 Perl END／START＋編譯回呼，僅 stub ReadGuild／ReadGuildData／SetTownData，監控函式呼叫與原 RNG。
 - `tests/r4-source-guildbattle-end.test.mjs`（新增）：逐欄來源比對、獨立 Perl 行程、不變性與 fail-closed；未整合至正式單一 WorldState 或完整 36h 決算，原 R4 回歸與 R0/R1 邊界不變。
+
+## 2026-11-23｜R4 rebel 原版 NOWFUNC 來源差分映射
+
+- `src/original-r4-rebel-now.mjs`（新增）：以 82 行正文指紋鎖住原版叛軍／護衛軍／城鎮金錢和領主轉換，受控純函式；拒絕未來源審閱的軍隊、城市、狀態與 RNG。
+- `tests/original-perl/original-r4-rebel-now-probe.pl`、`.t`（新增）：真凍結 NOWFUNC 在 inc-turn 原文中 require 執行，八組分支＋Perl rand(100)>75 浮點界線；隔離全域 `@DT` 快照、記錄真 Log、ReadArmy/WriteArmy 及 RNG。未改動原始 Perl／DSL。
+- `tests/r4-source-rebel-now.test.mjs`（新增）：城市／店鋪／RIOT／ARMY／領主／訊息／亂數逐欄 Node ↔ 真 Perl 差分、多行程、失敗零變動；保留舊 R4 EVENT 與 B50 非提交期末，尚未是正式 R4 完整世界。

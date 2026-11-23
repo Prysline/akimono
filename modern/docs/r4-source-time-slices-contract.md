@@ -102,3 +102,9 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 
 - 新增純來源 `original-r4-guildbattle-end.mjs`，審閱凍結 `custom/inc-rebel-data.cgi` 的 `guildbattle`：START=0 且不保存事件；若已有活動在片段 END 嚴格到期，真正呼叫 `ReadGuild`／`ReadGuildData`、依各公會 money 降序取唯一最高者，`SetTownData('dominion',guildId)` 並將勝利訊息依原版順序寫入事件日誌。這是「外部已設置活動」受控模擬；不把原版不確定的同額公會排序硬猜為確定順序，該情形拒絕。
 - Perl `original-r4-guildbattle-end-probe.pl` 直接使用凍結 `inc-turn.cgi` END／START 區段與從原 DSL 無改動擷取的 `_local_` callback 正文，僅對會讀寫外部公會檔案的三個 IO 函式做明確 stub；五個來源情境由 Node 逐欄驗證到期／未到期、輸出領地、log、讀寫次數及 zero-start `rand(100000)`。它**不**等於已執行真公會檔案、真 `rebel` NOWFUNC、17-key 全局外部活動、期末或 WorldState/CAS，`committable:false`；R4 未結案。
+
+## 2026-11-23｜R4 原版 rebel NOWFUNC 82 行來源差分（單事件／不可提交）
+
+- 純投影 `src/original-r4-rebel-now.mjs` 針對凍結 `custom/inc-rebel-data.cgi` 82 行 NOWFUNC 正文做嚴格指紋漂移核對，受控輸入含明示城鎮／RIOT／ARMY／店鋪及同一個已種入的 rebel EVENT。真 Perl `tests/original-perl/original-r4-rebel-now-probe.pl` 自 DSL 擷取原版 callback，由 `inc-turn.cgi` 原文 END→START→NOWFUNC 執行；ReadArmy、WriteArmy、GetMoneyString 為明確隔離的外部 IO 替身。
+- 直接比較鎮壓、武裝扣減、叛軍增援、護衛軍敗亡、店鋪或盜匪成為領主、資金分配與 `rand(100)>75` 嚴格邊界 75.0000／75.0001（必須比較 Perl `rand` 浮點，不能先整數化）及每次亂數範圍。Perl 原版未加花括號的 `$main::BAL_NAME...` 插值會將部分中文字併入變數名，測試以來源實際日誌為準而非預期應有語句。Perl 探針複製個別案例的 `@DT` 輸出，避免多案例共用 Perl 全域陣列造成假差分。
+- 這是外部已有 rebel 事件的**來源局部**範圍；完整 `period.cgi::RebelRobin` 生成事件、真軍隊檔案／Guild 狀態、17 鍵混合回呼、36h 期末、可提交 WorldState 和 HTTP 存檔重啟尚未完成，堅守 `committable:false` 與未審閱拒絕；R4 不結案。
