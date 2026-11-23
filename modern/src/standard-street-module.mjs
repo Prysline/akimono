@@ -616,7 +616,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               swordUseRule,...declarativeUses,...gatheringUses,
               ...dairyInlineUses].filter(provider=>
                 provider?.creates?.some(output=>
-                  output.itemId===row.itemId&&output.countPerUse>0));
+                  output.itemId===row.itemId&&output.countPerUse>0)||
+                (row.itemId===26&&provider?.itemId===25&&
+                 provider.inlineCallback?.kind==='milk-cow'));
             const availableProvider=providers.find(provider=>
               provider.uses.every(input=>
                 (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&

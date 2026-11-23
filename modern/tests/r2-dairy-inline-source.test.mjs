@@ -146,3 +146,18 @@ test('R2 unknown dairy callback text fails closed',()=>{
       itemDsl:changed}),/R2 dairy inline source|drift|changed/i);
   }
 });
+test('R2 read-only milk acquisition hint points to source-reviewed cow callback',()=>{
+  const original=fresh();
+  const cowWorld=validateMemoryWorld({...original,shops:[{
+    ...original.shops[0],
+    item:original.shops[0].item.map((v,i)=>i===24?1:v),
+  }]});
+  const ferment=street.listUseOffers(cowWorld).find(x=>
+    x.itemId===26&&x.useId===1);
+  const milk=ferment.materialRoutes.find(x=>x.itemId===26);
+  assert.equal(milk.kind,'registered-use');
+  assert.deepEqual(milk.provider,{itemId:25,useId:0});
+  assert.ok(milk.providerCandidates.some(x=>x.itemId===25&&x.useId===1));
+  assert.equal(cowWorld.shops[0].item[25],0,
+    'source hint must not grant milk as an inventory side effect');
+});
