@@ -84,7 +84,7 @@ export function projectR4GuildbattleEndCallback({reviewed,guilds,dominion=null})
   });
   const max=Math.max(...copies.map(g=>g.money));
   const top=copies.filter(g=>g.money===max);
-  if(top.length!==1)fail('unreviewed Perl keys(%GUILD) sort money tie');
+  if(top.length!==1)fail('unreviewed Perl hash/sort money tie');
   const winner=top[0];
   return Object.freeze({
     winner:winner.id,dominion:winner.id,
