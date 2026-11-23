@@ -101,7 +101,9 @@ function compare(options={}){
   assert.equal(result.details.effectiveCount,oracle.result.count);
   assert.deepEqual(actor.item,oracle.result.stock);
   assert.deepEqual(target.item,oracle.result.targetStock);
-  assert.deepEqual(actor.exp,oracle.result.exp);
+  assert.deepEqual(actor.exp??{},oracle.result.exp);
+  assert.deepEqual(actor.exp,world.shops[0].exp,
+    'original #62/1 must not create a proficiency field');
   assert.equal(actor.rank,oracle.result.rank);
   assert.equal(target.rank,oracle.result.targetRank);
   assert.equal(actor.money,oracle.result.money);
