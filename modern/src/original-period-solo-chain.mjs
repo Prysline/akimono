@@ -19,6 +19,9 @@ import {reviewOriginalPeriodTerritory,projectOriginalPeriodTerritory}
 import {reviewR4DragonBalance,projectR4DragonBalance,
   projectR4DragonShopLedger,R4_DRAGON_BALANCE_SOURCE}
   from './original-r4-dragon-balance.mjs';
+import {reviewR4DignityDecay,projectR4DignityDecay,
+  R4_DIGNITY_SOURCE}
+  from './original-r4-period-dignity-decay.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -30,6 +33,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   periodSource,configSource,itemDsl,model,compilerSource,
   originalAddItemSource,detailSource,readSource,adminSource,
   bootstrapMeta,compiledLimits,includeReviewedDragon=false,
+  includeReviewedDignity=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -41,10 +45,13 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const ledger=reviewOriginalPeriodShopLedger({
     periodSource,configSource,itemDsl,model,compilerSource,
   });
-  if(typeof includeReviewedDragon!=='boolean')
-    bad('explicit original DragonBalance opt-in boolean required');
+  if(typeof includeReviewedDragon!=='boolean'||
+     typeof includeReviewedDignity!=='boolean')
+    bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
+  const dignity=includeReviewedDignity?
+    reviewR4DignityDecay({periodSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -78,17 +85,19 @@ export function reviewOriginalSoloPeriodPhaseChain({
     bad('external update/dragon dependencies changed');
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
-    soloSort,topPrize,ledger,territory,dragon,
+    soloSort,topPrize,ledger,territory,dragon,dignity,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
       'UpdateResetBefore-and-TopGetItem',
       ...(dragon?['dragon-shop-ledger-before-history']:[]),
-      'single-shop-ledger','SortDT-after','unled-town',
+      'single-shop-ledger',
+      ...(dignity?['dignity-decline-before-second-SortDT']:[]),
+      'SortDT-after','unled-town',
       'UpdateResetAfter-guard']),
     nonCommittable:true,
-    scope:dragon?
-      'reviewed single-shop original DragonBalance file IO then real shop payout before history, no stale close/guild/events/backup, exp sum <=4000; noncommittable period phase chain':
+    scope:dragon||dignity?
+      'reviewed source opt-in single-shop dragon file IO/revenue and/or dignity rand(100) before second SortDT, no stale close/guild/events/backup, exp sum <=4000; noncommittable period phase chain':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -100,7 +109,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
 export function projectOriginalSoloPeriodPhaseChain({
   reviewed,shop,town,dtPeople,
   awardDrawMillionths,territoryDrawMillionths,
-  payoutText=null,
+  payoutText=null,dignityDrawMillionths=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -112,7 +121,7 @@ export function projectOriginalSoloPeriodPhaseChain({
      shop.showcasecount!==1||
      !(shop.guild===undefined||shop.guild==='')||
      (!reviewed.dragon&&![undefined,0].includes(shop.dragon))||
-     ![undefined,0].includes(shop.dignity)||
+     (!reviewed.dignity&&![undefined,0].includes(shop.dignity))||
      (!reviewed.dragon&&![undefined,0].includes(shop.drmoney))||
      (reviewed.dragon&&
        (![undefined,'number'].includes(typeof shop.dragon)||
@@ -129,6 +138,13 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('original DragonBalance source contract required');
   if(reviewed.dragon===null&&payoutText!==null)
     bad('dragon payout file cannot be supplied without source review');
+  if(reviewed.dignity!==null&&(
+      reviewed.dignity.source!==R4_DIGNITY_SOURCE||
+      reviewed.dignity.committable!==false||
+      reviewed.dignity.drawRange!==100))
+    bad('dignity source contract required');
+  if(reviewed.dignity===null&&dignityDrawMillionths!==null)
+    bad('dignity random draws cannot be provided without original source');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -156,10 +172,19 @@ export function projectOriginalSoloPeriodPhaseChain({
     shop:dragonSettlement?.shops[0]??award.shop,
     reviewed:reviewed.ledger,
     reviewedDragonSettlement:dragonSettlement,
+    reviewedDignity:reviewed.dignity,
     limits:reviewed.compiledLimits,
   });
+  const dignityEffect=reviewed.dignity?
+    projectR4DignityDecay({
+      reviewed:reviewed.dignity,
+      dignity:accounting.shop.dignity??0,
+      randomDrawMillionths:dignityDrawMillionths,
+    }):null;
   const afterSort=projectOriginalSoloSort({
-    shop:accounting.shop,reviewed:reviewed.soloSort,
+    shop:dignityEffect?{
+      ...accounting.shop,dignity:dignityEffect.dignityAfter,
+    }:accounting.shop,reviewed:reviewed.soloSort,
   });
   const city=projectOriginalPeriodTerritory({
     reviewed:reviewed.territory,town,dtPeople,
@@ -180,6 +205,10 @@ export function projectOriginalSoloPeriodPhaseChain({
       dragonLogs:dragonSettlement.logs,
       dragonPayoutFileConsumed:payout.payoutFileConsumed,
       dragonSource:reviewed.dragon.source,
+    }:{}),
+    ...(reviewed.dignity?{
+      dignityEffect,
+      dignitySource:reviewed.dignity.source,
     }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
