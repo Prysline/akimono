@@ -8,6 +8,8 @@ import {R4_DRAGON_BALANCE_SOURCE} from './original-r4-dragon-balance.mjs';
 import {R4_DIGNITY_SOURCE} from './original-r4-period-dignity-decay.mjs';
 import {R4_GUILD_FEE_SOURCE} from './original-r4-guild-period-fee.mjs';
 import {R4_TECH_LOSS_SOURCE} from './original-r4-post-period-tech-loss.mjs';
+import {R4_CLOSE_SHOP_EFFECT_SOURCE}
+  from './original-r4-close-shop-effects.mjs';
 export const B44_LEDGER_SOURCE='core-inc-period-single-shop-ledger-before-dignity';
 const fail=x=>{throw new RangeError('B-44 source-period ledger: '+x);};
 const check=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
@@ -84,6 +86,7 @@ function expMap(value){
 export function projectOriginalPeriodShopLedger({
   shop,reviewed,limits,reviewedDragonSettlement=null,
   reviewedDignity=null,reviewedGuild=null,reviewedPostTech=null,
+  reviewedActualClose=null,
 }){
   if(reviewed?.source!==B44_LEDGER_SOURCE||reviewed.showcaseDailyCost!==0)
     fail('reviewed source required');
@@ -119,7 +122,17 @@ export function projectOriginalPeriodShopLedger({
     reviewedPostTech.techniques?.length===4;
   if(reviewedPostTech!==null&&!techAuthorized)
     fail('unreviewed original high-EXP UpdateResetAfter');
-  if(!shop||shop.status!==1||shop.showcasecount!==1||
+  const closedAuthorized=reviewedActualClose!==null&&
+    reviewedActualClose.source===R4_CLOSE_SHOP_EFFECT_SOURCE&&
+    reviewedActualClose.committable===false&&
+    reviewedActualClose.closed===true&&
+    reviewedActualClose.shop?.id===shop?.id&&
+    reviewedActualClose.shop?.status===0&&
+    shop?.status===0;
+  if(reviewedActualClose!==null&&!closedAuthorized)
+    fail('unreviewed or mismatched real original CloseShop state');
+  if(!shop||(!closedAuthorized&&shop.status!==1)||
+     shop.showcasecount!==1||
      (!guildAuthorized&&shop.guild&&shop.guild!=='')||
      (!dragonAuthorized&&(
        shop.dragon&&shop.dragon!==0||shop.drmoney&&shop.drmoney!==0))||
