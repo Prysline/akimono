@@ -1,6 +1,7 @@
 /**
  * Source-guarded declarative USE compiler: #10 writing, #37 training,
- * #39 dismantling/packing. These are the 31 original callback-free USEs.
+ * #39 dismantling/packing and source-gated #15/#16/#17 manufacture.
+ * The original callback-bearing #15/1,3,4 remain unsupported.
  * No Perl is executed in the live GameCore. A changed/unknown DSL field,
  * callback, job formula or item reference fails closed instead of running.
  */
@@ -8,11 +9,15 @@ import {parseDsl} from './parse-dsl.mjs';
 import {parseSourceNumber} from './standard-street-model.mjs';
 
 const fail=s=>{throw new RangeError('R2 declarative USE: '+s);};
-const groups=Object.freeze(new Map([[10,8],[37,4],[39,19]]));
+const groups=Object.freeze(new Map([
+  [10,8],[37,4],[39,19],[15,5],[16,2],[17,4],
+]));
+const selectedSubset=Object.freeze(new Map([[15,new Set([0,2])]]));
 const accepted=new Set(['time','exptime','exp','price','name','info',
   'scale','action','okmsg','ngmsg','needexp','job','use','need','get']);
 const profession=Object.freeze({
   '書屋':'book','武器屋':'weapon','防具屋':'armor','道具屋':'tool',
+  '藥屋':'drug',
 });
 const first=(b,k)=>b.fields[k]?.[0]?.value;
 const safe=(v,label,min=0)=>{
@@ -74,6 +79,14 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
     // of the SAME ITEM; time, exptime, job, use and get reset each USE.
     let inheritedExperience=0;
     for(const [useId,block] of uses.entries()){
+      // Unlike standalone USEs, the original compiler carries ITEM EXP
+      // through intervening callback-bearing USEs of the SAME ITEM.
+      if(selectedSubset.has(itemId)&&
+         !selectedSubset.get(itemId).has(useId)){
+        if(first(block,'exp')!==undefined)
+          inheritedExperience=sourceAmount(first(block,'exp'),'inherited EXP');
+        continue;
+      }
       for(const [field,rows] of Object.entries(block.fields)){
         if(!accepted.has(field)||!['use','need','get'].includes(field)&&rows.length!==1)
           fail('unsupported source USE field '+itemId+'/'+useId+':'+field);
@@ -127,6 +140,6 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
       }));
     }
   }
-  if(output.length!==31)fail('original declarative USE total drift');
+  if(output.length!==39)fail('original reviewed declarative USE total drift');
   return Object.freeze(output);
 }

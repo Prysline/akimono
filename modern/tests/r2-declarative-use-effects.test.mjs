@@ -149,7 +149,7 @@ function compare(rule,{job='',missingNeed=false}={}){
 }
 test('31 source recipes compile to reusable material, production and EXP effects',()=>{
   const offers=street.listUseOffers(createSourceWorld());
-  assert.equal(offers.length,52);
+  assert.equal(offers.length,60);
   assert.deepEqual(offers.slice(0,6).map(v=>[v.itemId,v.useId]),
     [[79,0],[79,1],[79,2],[79,3],[79,4],[14,0]]);
   let n=0;
@@ -199,7 +199,7 @@ test('effect plan or DSL drift cannot silently become a new executable USE',()=>
 test('R2 material routes distinguish owned, real market PLUS, registered upstream and missing player acquisition',()=>{
   const world=createSourceWorld();
   const offers=street.listUseOffers(world);
-  assert.equal(offers.length,52);
+  assert.equal(offers.length,60);
   const offer=(itemId,useId)=>offers.find(x=>x.itemId===itemId&&x.useId===useId);
   const source=(itemId,useId,materialId)=>offer(itemId,useId).materialRoutes
     .find(row=>row.itemId===materialId);
@@ -258,4 +258,31 @@ test('missing USE materials show source names instead of internal ITEM numbers',
   assert.equal(blacksmith.missingMaterialId,5,
     'numeric ITEM ID is available only for developer diagnostics');
   assert.doesNotMatch(blacksmith.reason,/#5/);
+});
+
+test('R2 selected eight source #15/#16/#17 manufacturing USEs match frozen Perl',()=>{
+  for(const [itemId,useIds] of [[15,[0,2]],[16,[0,1]],[17,[0,1,2,3]]]){
+    for(const useId of useIds){
+      const rule=street.useItem.getRule(itemId,useId);
+      assert.equal(rule?.source,'original-declarative-use-dsl');
+      assert.equal(rule?.beforeCallback,undefined);
+      assert.equal(rule?.afterCallback,undefined);
+      assert.deepEqual(readCommonUseEffectPlan(rule).creates,rule.creates);
+      compare(rule);
+    }
+  }
+  for(const useId of [1,3,4])
+    assert.equal(street.useItem.getRule(15,useId),null,
+      'original lostbook potion USE must remain unavailable until reviewed');
+});
+test('R2 #15/#16/#17 selected first-USE profession clocks match frozen Perl',()=>{
+  for(const [itemId,useId,job] of [
+    [15,0,'drug'],[16,0,'armor'],[17,0,'weapon'],[17,2,'armor'],
+  ])compare(street.useItem.getRule(itemId,useId),{job});
+});
+test('R2 source advanced Ether requires 20% real #15 proficiency',()=>{
+  const ether=street.useItem.getRule(15,2);
+  assert.equal(ether.needExperience,200);
+  assert.equal(ether.experienceCallback.points,20);
+  assert.equal(street.useItem.getRule(15,1),null);
 });

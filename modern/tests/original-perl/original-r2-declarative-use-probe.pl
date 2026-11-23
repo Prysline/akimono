@@ -27,9 +27,11 @@ BEGIN {
 my $input=JSON::PP->new->decode($ARGV[0]//'{}');
 my $itemId=$input->{itemId};
 my $useId=$input->{useId};
-die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|37|39)$/;
+die 'R2 oracle unknown ITEM' unless defined($itemId)&&$itemId=~/^(?:10|15|16|17|37|39)$/;
 die 'R2 oracle invalid USE' unless defined($useId)&&$useId=~/^\d+$/;
-my %expected=(10=>8,37=>4,39=>19);
+my %expected=(10=>8,15=>5,16=>2,17=>4,37=>4,39=>19);
+my %selected=(15=>{0=>1,2=>1});
+die 'R2 unreviewed potion callback' if $itemId==15&&!$selected{15}{$useId};
 
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
@@ -78,7 +80,9 @@ for my $i(0..$useId){
     my $normalized=OriginalGiftMapUseHarness::line_for_compiler($raw);
     next unless defined $normalized;
     die "R2 oracle unexpected callback/source field $raw"
-      unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|okmsg|ngmsg|needexp|job|use|need|get)\s/i;
+      unless $raw=~/^\s*(?:time|exptime|exp|price|name|info|scale|action|okmsg|ngmsg|needexp|job|use|need|get|func|param)\s/i;
+    die 'R2 currently selected USE grew an unreviewed callback'
+      if $i==$useId&&$raw=~/^\s*(?:func|param)\s/i;
     main::GetBuffer('use',$normalized);
   }
 }
@@ -128,7 +132,7 @@ my $runtime={
 # dispatcher remains out of the live HTTP/R2 scope.
 if(($main::DT->{job}//'')ne''&&@{$u->{job}||[]}){
   my ($jobName,$modifier)=split(/\t/,$u->{job}[0]);
-  my %mapping=(書屋=>'book',武器屋=>'weapon',防具屋=>'armor',道具屋=>'tool');
+  my %mapping=(書屋=>'book',武器屋=>'weapon',防具屋=>'armor',道具屋=>'tool',藥屋=>'drug');
   my $code=$mapping{$jobName} or die 'R2 unsupported source job';
   die 'R2 unexpected job time modifier'
     unless $modifier eq "times/job_${code}_time_rate";
