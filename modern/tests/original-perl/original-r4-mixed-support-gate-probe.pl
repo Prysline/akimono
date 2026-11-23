@@ -457,7 +457,8 @@ sub step {
   die 'original multi-event RNG unused samples' if @R4_MULTI_DRAWS;
   my %state=%{$result->{state}};
   for my $code(keys %state){die 'unsupported source EVENT persisted' unless
-    $wanted{$code}||$happy{$code}||$durableExtra{$code};}
+    $wanted{$code}||$happy{$code}||$durableExtra{$code}||
+    $specialGuild{$code};}
   my @nowHashOrder=keys(%DTevent);
   return {
     name=>$o{name},
