@@ -97,3 +97,8 @@ CI 功能驗證提交 26063432e10f289b255274bfbc0aa2188e36c557：Push run 450677
 
 - 把已審閱 B-59 `plusup-tetu`（鐵塊 #5 `plus=720`）與 B-61 `ken-sale`（#40～44 `popular/2`）接入原版 17-key Perl `keys(%EVENT)` 同行程差分，在 7 個宣告型 durable＋happy 同時存在時達成 10 個 durable EVENT；仍混合 getmoney/getpop、manbiki/goutou、loto 即時回呼。兩者僅當 DataRead 已有事件時才覆寫 ITEM，不把 START 當片的新事件倒灌當片商品。END 嚴格到期、START 兩筆持續時間 rand、日誌與原版 hash／RNG 順序逐欄比較。
 - Perl 仍使用凍結原文 `inc-turn.cgi` END／START／NOWFUNC，擷取真編譯器產生的 ITEM PARAM，新增四個多事件時間片（十種同時存在、下片 DataRead、生存期後結束、結束後重啟）；Node `r4-mixed-iron-sword-gate.test.mjs` 對 79 ITEM、商店、事件與 RNG 差分及來源 drift fail-closed。它**不是**實際可提交世界：來源外的 rebel／guildbattle、完整自然販售／PLUS／SortDT 跨期、Perl hash seed／持久化尚需整合，R4 不退出。
+
+## 2026-11-23｜R4 rebel DSL 的 guildbattle 真 ENDFUNC（來源局部；不可提交）
+
+- 新增純來源 `original-r4-guildbattle-end.mjs`，審閱凍結 `custom/inc-rebel-data.cgi` 的 `guildbattle`：START=0 且不保存事件；若已有活動在片段 END 嚴格到期，真正呼叫 `ReadGuild`／`ReadGuildData`、依各公會 money 降序取唯一最高者，`SetTownData('dominion',guildId)` 並將勝利訊息依原版順序寫入事件日誌。這是「外部已設置活動」受控模擬；不把原版不確定的同額公會排序硬猜為確定順序，該情形拒絕。
+- Perl `original-r4-guildbattle-end-probe.pl` 直接使用凍結 `inc-turn.cgi` END／START 區段與從原 DSL 無改動擷取的 `_local_` callback 正文，僅對會讀寫外部公會檔案的三個 IO 函式做明確 stub；五個來源情境由 Node 逐欄驗證到期／未到期、輸出領地、log、讀寫次數及 zero-start `rand(100000)`。它**不**等於已執行真公會檔案、真 `rebel` NOWFUNC、17-key 全局外部活動、期末或 WorldState/CAS，`committable:false`；R4 未結案。

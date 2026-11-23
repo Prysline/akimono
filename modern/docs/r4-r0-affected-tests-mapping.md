@@ -70,3 +70,9 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 ## 2026-11-23｜R4 鐵礦脈／劍需求多事件映射
 
 - `src/original-r4-multi-event-order-fixture.mjs` 加入已審閱 B-59/B-61 的 EVENT ITEM PARAM／START／END。原版 `original-r4-mixed-support-gate-probe.pl`、`original-r4-mixed-instant-gate.t` 擴大十個 durable EVENT 同時活動、當片／下片 ITEM、生存與重啟。新增 Node `r4-mixed-iron-sword-gate.test.mjs`，保留所有 B-59／B-61 獨立 Perl 案及 R4 happy/loto/instant 既有測試，不修改原版 source。其他事件 callback 和世界跨期仍是 fail-closed。
+
+## 2026-11-23｜R4 guildbattle 真 END 回呼映射
+
+- `src/original-r4-guildbattle-end.mjs`（新增）：凍結 rebel DSL 的群戰結束正文、唯一公會最高資金、城市 dominion 更新與回傳訊息，拒絕 ties／不支援資料；不得以 JS 自訂排序替代 Perl keys/sort。
+- `tests/original-perl/original-r4-guildbattle-end-probe.pl`／`.t`（新增）：原文 Perl END／START＋編譯回呼，僅 stub ReadGuild／ReadGuildData／SetTownData，監控函式呼叫與原 RNG。
+- `tests/r4-source-guildbattle-end.test.mjs`（新增）：逐欄來源比對、獨立 Perl 行程、不變性與 fail-closed；未整合至正式單一 WorldState 或完整 36h 決算，原 R4 回歸與 R0/R1 邊界不變。
