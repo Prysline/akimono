@@ -94,7 +94,7 @@ function fixture(rule,{job='',missingNeed=false,missingNeedId=null}={}){
     shopStatus:true,random:()=>0.5,
   });
   const randomDraws=[...Array(dry.multiItem?.randomDraws??0).fill(500000),
-    ...(rule.afterCallback?[500000]:[])];
+    ...(rule.afterCallback&&dry.performed?[500000]:[])];
   return {world,randomDraws};
 }
 function frozenPerl(rule,world,randomDraws){
