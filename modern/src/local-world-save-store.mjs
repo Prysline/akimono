@@ -173,7 +173,9 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       const runs=Number.isSafeInteger(raw)&&raw>=0&&raw<=1000&&
         raw%20===0?raw/20:-1;
       manufacturedCounts[spec.itemId]=runs;
-      return spec.useIds.every(id=>{
+      // Older B-43 worlds with zero manufactured EXP must remain loadable
+      // even without the opt-in USE registry; only executed recipes need it.
+      return runs===0||(runs>0&&spec.useIds.every(id=>{
         const rule=useItem?.getRule?.(spec.itemId,id);
         return rule?.supported===true&&
           rule?.source==='original-declarative-use-dsl'&&
@@ -185,7 +187,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
           spec.outputs.some(([output,count])=>
             rule.creates[0].itemId===output&&
             rule.creates[0].countPerUse===count);
-      });
+      }));
     });
     const manufactured15=manufacturedCounts[15];
     const manufactured16=manufacturedCounts[16];
