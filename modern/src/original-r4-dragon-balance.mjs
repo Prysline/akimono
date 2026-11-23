@@ -45,13 +45,16 @@ export function reviewR4DragonBalance({periodSource}){
     sourceScope:'frozen DragonBalance() file open/chop/split/id2idx/unlink then per-shop dragon revenue/payment; formatter and outer period IO not implemented',
   });
 }
-export function projectR4DragonBalance({reviewed,shops,payoutText}){
+export function projectR4DragonBalance({
+  reviewed,shops,payoutText,applyShopLedger=true,
+}){
   if(reviewed?.source!==R4_DRAGON_BALANCE_SOURCE||
      reviewed.committable!==false||
      !Array.isArray(shops)||!shops.length||shops.length>100||
      !(payoutText===null||typeof payoutText==='string'&&
        payoutText.length<=5000&&
-       /^(?:[1-9]\d*\t-?\d+\r?\n)*(?:[1-9]\d*\t-?\d+)?$/.test(payoutText)))
+       /^(?:[1-9]\d*\t-?\d+\r?\n)*(?:[1-9]\d*\t-?\d+)?$/.test(payoutText))||
+     typeof applyShopLedger!=='boolean')
     fail('source-reviewed original payout text and shops required');
   const ids=new Map(),next=shops.map((s,i)=>{
     if(!s||typeof s!=='object'||Array.isArray(s)||
@@ -78,26 +81,51 @@ export function projectR4DragonBalance({reviewed,shops,payoutText}){
       if(!int(next[idx].dragon))fail('original payout accumulation overflow');
     }
   }
-  const logs=[];
-  for(const shop of next){
-    const n=shop.dragon;
-    if(!n)continue;
-    // l() and GetMoneyString() are external localized formatters in frozen
-    // Perl. This controlled fixture uses their literal return values.
-    logs.push([0,shop.id,'ドラゴンレースの収支 '+String(n)]);
-    shop.money+=n;
-    shop.drmoney+=n;
-    if(n>0)shop.saletoday+=n;
-    if(n<0)shop.paytoday-=n;
-    if(!['money','drmoney','saletoday','paytoday'].every(k=>int(shop[k])))
-      fail('original dragon ledger arithmetic overflow');
-  }
+  const settled=applyShopLedger?
+    projectR4DragonShopLedger({reviewed,shops:next}):null;
   return Object.freeze({
     source:reviewed.source,committable:false,
     payoutFilePresent:payoutText!==null,
     payoutFileConsumed:payoutText!==null,
-    shops:Object.freeze(next.map(x=>Object.freeze(x))),
-    logs:Object.freeze(logs.map(x=>Object.freeze(x))),
+    payoutFileOnly:!applyShopLedger,
+    shops:settled?settled.shops:Object.freeze(next.map(x=>Object.freeze(x))),
+    logs:settled?settled.logs:Object.freeze([]),
     sourceScope:reviewed.sourceScope,
   });
 }
+
+/**
+ * Run the exact second source stage: per-shop dragon settlement after
+ * UpdateResetBefore, before ranking/history ledger. It does NOT read
+ * payout files and must not be called in lieu of DragonBalance().
+ */
+export function projectR4DragonShopLedger({reviewed,shops}){
+  if(reviewed?.source!==R4_DRAGON_BALANCE_SOURCE||
+     reviewed.committable!==false||!Array.isArray(shops)||
+     !shops.length||shops.length>100)
+    fail('source-reviewed original dragon shop settlement required');
+  const logs=[];
+  const next=shops.map(shop=>{
+    if(!shop||typeof shop!=='object'||Array.isArray(shop)||
+       !int(shop.id)||shop.id<1||
+       !['money','dragon','drmoney','saletoday','paytoday'].every(k=>int(shop[k])))
+      fail('source dragon shop money, history and id required');
+    const s={...shop},n=s.dragon;
+    if(n){
+      logs.push([0,s.id,'ドラゴンレースの収支 '+String(n)]);
+      s.money+=n;
+      s.drmoney+=n;
+      if(n>0)s.saletoday+=n;
+      if(n<0)s.paytoday-=n;
+      if(!['money','drmoney','saletoday','paytoday'].every(k=>int(s[k])))
+        fail('original dragon ledger arithmetic overflow');
+    }
+    return Object.freeze(s);
+  });
+  return Object.freeze({
+    source:reviewed.source,committable:false,
+    shops:Object.freeze(next),
+    logs:Object.freeze(logs.map(x=>Object.freeze(x))),
+  });
+}
+
