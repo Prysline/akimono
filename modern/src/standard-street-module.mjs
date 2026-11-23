@@ -20,6 +20,8 @@ import {compileReviewedGiftUseVariants}
   from './reviewed-gift-use-variants.mjs';
 import {compileReviewedDeclarativeUses}
   from './reviewed-declarative-use-compiler.mjs';
+import {compileReviewedGatheringMapUses}
+  from './reviewed-gathering-map-uses.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
   validateSourceSparseMarket,ORIGINAL_SPARSE_MARKET_SOURCE,
   traceOriginalSparseGiftWholesale}
@@ -355,10 +357,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const declarativeUses=compileReviewedDeclarativeUses({
     itemDsl,model,limits:giftMap.limits,
   });
+  const gatheringUses=compileReviewedGatheringMapUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const showcaseResizeUses=compileReviewedShowcaseResizeUses({
     itemDsl,model,limits:giftMap.limits,
   });
-  const declarativeUseIndex=new Map(declarativeUses.map(rule=>[
+  const declarativeUseIndex=new Map([...declarativeUses,...gatheringUses].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
   const giftUseRule=Object.freeze({
@@ -569,7 +574,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
-        ...showcaseResizeUses,...declarativeUses].filter(Boolean)
+        ...showcaseResizeUses,...declarativeUses,...gatheringUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -590,7 +595,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             const replenishes=Boolean(buyRule&&
               /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
             const providers=[giftUseRule,...giftUseVariants,
-              swordUseRule,...declarativeUses].filter(provider=>
+              swordUseRule,...declarativeUses,...gatheringUses].filter(provider=>
                 provider?.creates?.some(output=>
                   output.itemId===row.itemId&&output.countPerUse>0));
             const availableProvider=providers.find(provider=>

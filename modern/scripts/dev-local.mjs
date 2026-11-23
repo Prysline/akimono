@@ -231,8 +231,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
   if(!rule)return [];
   if(!rule.beforeCallback){
-    // Source callback-free recipes use the same bounded original preflight
-    // as GameCore to find the *effective* batch before sampling MakeAmount.
+    // Rules without a pre-callback use the bounded original preflight to
+    // sample MakeAmount, plus one more draw for a reviewed lostbook callback.
     // A dry-run with 0.5 samples changes no WorldState; all source random
     // branches consume a fixed count from the effective material quantities.
     const shopIndex=world.shops.findIndex(row=>row.id===1);
@@ -258,11 +258,12 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
       shopStatus:true,random:()=>0.5,
     });
     const n=trial.multiItem?.randomDraws??0;
-    if(!n)return [];
+    if(!trial.performed||(!n&&!rule.afterCallback))return [];
+    const needed=n+(rule.afterCallback?1:0);
     return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
-      ?Array(n).fill(500000)
+      ?Array(needed).fill(500000)
       :sourceCommandDraws({world,kind:'use-item',
-        args:{shopId:1,itemId,useId,requestedCount},count:n});
+        args:{shopId:1,itemId,useId,requestedCount},count:needed});
   }
   // #14 has no material USE list. The frozen UseItem preflight clips the
   // batch by money and remaining action time BEFORE MakeAmount, and the
