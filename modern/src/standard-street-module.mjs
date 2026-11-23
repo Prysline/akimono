@@ -66,6 +66,10 @@ import {PERIOD_WORLD_SCHEMA}
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
+import {compileReviewedCareerChangeUses}
+  from './reviewed-career-change-uses.mjs';
+import {projectOriginalCareerChange}
+  from './original-inline-career-change-model.mjs';
 import {compileReviewedBookWorkUses}
   from './reviewed-book-work-uses.mjs';
 import {projectOriginalBookWorkCallback}
@@ -377,9 +381,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const bookWorkUses=compileReviewedBookWorkUses({
     itemDsl,model,limits:giftMap.limits,
   });
+  const careerChangeUses=compileReviewedCareerChangeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
-    ...bookWorkUses,
+    ...bookWorkUses,...careerChangeUses,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -448,6 +455,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original ITEM has no reviewed USE #'+useId;
     },
     runInlineCallback({rule,shop,count,random}){
+      if(careerChangeUses.includes(rule)){
+        if(rule.inlineCallback?.kind!=='career-change'||count!==1)
+          bad('unreviewed career source callback');
+        return projectOriginalCareerChange({
+          rule,shop,
+          sourceItemNames:Array.from({length:79},(_,i)=>
+            model.items.find(x=>x.id===i+1)?.name),
+        });
+      }
       if(bookWorkUses.includes(rule)){
         const amount=rule.inlineCallback?.param;
         if(rule.itemId!==13||
@@ -613,7 +629,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
            Object.keys(eventState).length===0));
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
-        ...dairyInlineUses,...bookWorkUses].filter(Boolean)
+        ...dairyInlineUses,...bookWorkUses,...careerChangeUses].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -635,7 +651,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
             const providers=[giftUseRule,...giftUseVariants,
               swordUseRule,...declarativeUses,...gatheringUses,
-              ...dairyInlineUses,...bookWorkUses].filter(provider=>
+              ...dairyInlineUses,...bookWorkUses,
+              ...careerChangeUses].filter(provider=>
                 provider?.creates?.some(output=>
                   output.itemId===row.itemId&&output.countPerUse>0)||
                 (row.itemId===26&&provider?.itemId===25&&
