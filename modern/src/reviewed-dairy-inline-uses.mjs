@@ -90,7 +90,8 @@ export function compileReviewedDairyInlineUses({itemDsl,model,limits}){
     if(first(block,'time')!==expected.time||
        first(block,'name')!==expected.name||
        first(block,'price')!=='0'||
-       first(block,'job')!=='酪農家 times/job_cow_time_rate'||
+       first(block,'job')?.replace(/\s+/g,' ')!==
+         '酪農家 times/job_cow_time_rate'||
        first(block,'func')!==expected.func||
        first(block,'param')!==expected.param||
        first(block,'exp')!==expected.exp||
@@ -99,10 +100,12 @@ export function compileReviewedDairyInlineUses({itemDsl,model,limits}){
        (block.fields.need?.length??0)!==expected.needCount)
       fail('original dairy USE declaration drift '+itemId+'/'+useId);
     if(expected.needCount&&
-       first(block,'need')!=='1 米諾陶洛斯♀')
+       first(block,'need')?.replace(/\s+/g,' ')!==
+         '1 米諾陶洛斯♀')
       fail('source milking cow NEED changed');
     if(expected.useCount&&
-       first(block,'use')!=='1 米諾牛乳')
+       first(block,'use')?.replace(/\s+/g,' ')!==
+         '1 米諾牛乳')
       fail('source drinking milk USE changed');
     return Object.freeze({
       supported:true,itemId,useId,
