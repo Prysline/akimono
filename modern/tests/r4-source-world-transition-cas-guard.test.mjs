@@ -374,3 +374,29 @@ test('R4 protected local HTTP-style repository keeps both real disk generations 
   assert.equal(store.status().generation,2);
   assert.equal(encodeMemorySnapshot(store.load().world),snapshot);
 });
+
+
+test('R4 even a recognized single iron/happy/sword EVENT cannot be forged without any source time passage',()=>{
+  const initial=worldAt(1025900);
+  for(const code of ['plusup-tetu','happy','ken-sale']){
+    const repo=createSourceReviewedMemoryWorldAdapter({
+      initialWorld:initial,streetModule:street,
+    });
+    const before=encodeMemorySnapshot(repo.read());
+    const forged={
+      ...repo.read(),revision:1,
+      period:{...repo.read().period,eventState:{[code]:1027300}},
+    };
+    assert.equal(forged.nowSeconds,repo.read().nowSeconds);
+    const result=repo.compareAndSwap({
+      expectedRevision:0,nextWorld:forged,advanceSeconds:0,
+    });
+    assert.equal(result.ok,false,code);
+    assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED',code);
+    assert.match(result.details.reason,
+      /original EVENT schedule cannot change with zero time span/);
+    assert.equal(encodeMemorySnapshot(repo.read()),before,code);
+  }
+  // There is NO general proof of source hash order or a durable 17-key
+  // event runtime here. This test only proves the zero-duration veto.
+});
