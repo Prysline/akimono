@@ -1,12 +1,14 @@
 /**
  * R2 #62/1 optional local-only HTTP audit.
  * Normal player HTTP stays single-shop and has no target ID.
- * The audit uses actual source open-shop -> PLUS -> market-buy -> UseItem,
- * NOT a forged actor inventory. Two-shop B-43 save must fail closed.
+ * Uses real source PLUS/map buy/USE/sale and probes the R4 EVENT gate.
+ * Does not fabricate actor inventory/money to force a positive HTTP USE;
+ * positive two-shop #62/1 stays covered by the frozen-Perl memory oracle.
+ * Two-shop B-43 save must fail closed.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {spawn,execFileSync} from 'node:child_process';
+import {spawn} from 'node:child_process';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -65,21 +67,6 @@ async function rejected(srv,uri,payload,status){
   assert.deepEqual(after.save,before.save,'rejection must not mutate disk save');
   return r;
 }
-function oracle(world){
-  const [shop,target]=world.shops;
-  return JSON.parse(execFileSync('perl',[
-    'original-r2-target-advertise-use-probe.pl',JSON.stringify({
-      itemId:62,useId:1,stock:shop.item,targetStock:target.item,
-      rank:shop.rank,targetRank:target.rank,
-      job:shop.job??'',exp:shop.exp??{},
-      wholesale:world.market.wholesale,
-      money:shop.money,paytoday:shop.paytoday,time:shop.time,
-      nowSeconds:world.nowSeconds,
-      requestedCount:1,randomDraws:[],
-    }),
-  ],{cwd:join(root,'modern/tests/original-perl'),
-    encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024}));
-}
 test('R2 #62/1 target HTTP fields and test-only target creation are disabled by default',
 async t=>{
   const dir=await mkdtemp(join(tmpdir(),'akimono-r2-target-off-'));
@@ -99,7 +86,7 @@ async t=>{
   },403);
   assert.equal((await s.state()).world.shops.length,1);
 });
-test('R2 #62/1 genuine HTTP market purchase, source-created target, Perl diff, single CAS, no B-43 multi-shop persistence',
+test('R2 #62/1 HTTP source shop targeting and R4 EVENT/B43 barriers fail closed without fabricated funds',
 async t=>{
   const dir=await mkdtemp(join(tmpdir(),'akimono-r2-target-http-'));
   const servers=[];
@@ -126,7 +113,15 @@ async t=>{
   const supplied=await s.state();
   const offer=supplied.marketOffers.find(x=>x.itemId===62);
   assert.equal(offer?.canBuy,true,'source PLUS must actually supply #62');
-  // Starting gold is 100000; the genuine #62 quote exceeds that.
+  // The real source #62 quote exceeds starting money. It must refuse
+  // an unaffordable buy without inventing balance or inventory.
+  assert.equal(supplied.shop.money,100000);
+  assert.ok(offer.price>supplied.shop.money);
+  await rejected(s,'/api/buy',{
+    expectedRevision:supplied.world.revision,
+    itemId:62,requestedCount:1,
+    marketShelf:offer.shelf,expectedPrice:offer.price,
+  },409);
   // B-41 only certifies source-purchased #14 maps for natural sales;
   // a gift-voucher map is not silently upgraded to that sale provenance.
   // Buy a real source #14 map, USE it and sell its swords before buying #62.
@@ -149,42 +144,25 @@ async t=>{
     expectedRevision:map.state.world.revision,itemId:44,per:200,
   });
   assert.equal(showcase.code,'COMMITTED',JSON.stringify(showcase));
-  let earned=showcase.state,saleItemId=44;
-  for(let hour=0;hour<12;hour++){
-    const live=earned.marketOffers.find(x=>x.itemId===62);
-    if(live?.canBuy&&earned.shop.money>=live.price)break;
-    // The reviewed #14 source also produces #43; switch to that real
-    // sword if both #44 sales alone do not cover the quoted #62 price.
-    if(earned.shop.item[saleItemId-1]===0){
-      if(saleItemId!==44)break;
-      saleItemId=43;
-      const edited=await s.post('/api/showcase',{
-        expectedRevision:earned.world.revision,itemId:saleItemId,per:200,
-      });
-      assert.equal(edited.code,'COMMITTED',JSON.stringify(edited));
-      earned=edited.state;
-    }
-    const step=await s.post('/api/advance-time',{
-      expectedRevision:earned.world.revision,minutes:60,
-    });
-    assert.equal(step.code,'COMMITTED',JSON.stringify(step));
-    earned=step.state;
-  }
-  const affordable=earned.marketOffers.find(x=>x.itemId===62);
-  assert.equal(affordable?.canBuy,true,
-    'advertising package must remain available from source PLUS');
-  assert.ok(earned.shop.money>=affordable.price,
-    'only authentic source sales may fund the expensive original package');
-  const bought=await s.post('/api/buy',{
-    expectedRevision:earned.world.revision,
-    itemId:62,requestedCount:1,
-    marketShelf:affordable.shelf,expectedPrice:affordable.price,
+  // One B-41 time slice performs a real sword sale. A further slice
+  // is forbidden once R4 EVENT state becomes unknown (null). The local
+  // server cannot simply run additional sales to mint #62 buying money.
+  const firstSale=await s.post('/api/advance-time',{
+    expectedRevision:showcase.state.world.revision,minutes:60,
   });
-  assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
-  assert.equal(bought.state.world.shops[0].item[61],1,
-    'advertising package must come from market-buy');
+  assert.equal(firstSale.code,'COMMITTED',JSON.stringify(firstSale));
+  const earned=firstSale.state;
+  assert.ok(earned.shop.money>showcase.state.shop.money,
+    'source #44 sale credited actual money');
+  assert.ok(earned.shop.money<earned.marketOffers.find(x=>x.itemId===62).price,
+    'one certified source sale cannot fund #62');
+  assert.equal(earned.world.period.eventState,null,
+    'the next EVENT-dependent slice has no reviewed source overlay');
+  await rejected(s,'/api/advance-time',{
+    expectedRevision:earned.world.revision,minutes:60,
+  },400);
   const created=await s.post('/api/r2/open-target-shop',{
-    expectedRevision:bought.state.world.revision,
+    expectedRevision:earned.world.revision,
     ownerName:'目標商人',shopName:'目標廣告來源店',
   });
   assert.equal(created.code,'COMMITTED',JSON.stringify(created));
@@ -192,9 +170,9 @@ async t=>{
     {shopId:2,shopName:'目標廣告來源店'},
   ]);
   const before=created.state.world;
-  assert.equal(before.shops[0].item[61],1);
+  assert.equal(before.shops[0].item[61],0,
+    'the target audit must not fabricate an advertising package');
   assert.equal(before.shops[1].item[61],0);
-  const perl=oracle(before);
   for(const patch of [
     {targetShopId:1},{targetShopId:999},
     {targetShopId:'2'},
@@ -210,36 +188,21 @@ async t=>{
     expectedRevision:before.revision,itemId:65,useId:1,
     requestedCount:1,targetShopId:2,
   },403);
-  const executed=await s.post('/api/use',{
-    expectedRevision:before.revision,itemId:62,useId:1,
-    requestedCount:1,targetShopId:2,
-  });
-  assert.equal(executed.code,'COMMITTED',JSON.stringify(executed));
-  assert.equal(executed.details.targetShopId,2);
-  assert.equal(executed.state.world.revision,before.revision+1);
-  const [actor,target]=executed.state.world.shops;
-  assert.deepEqual(actor.item,perl.result.stock);
-  assert.deepEqual(target.item,perl.result.targetStock);
-  assert.equal(actor.time,perl.result.time);
-  assert.equal(actor.money,perl.result.money);
-  assert.equal(actor.paytoday,perl.result.paytoday);
-  assert.equal(actor.rank,perl.result.rank);
-  assert.equal(target.rank,perl.result.targetRank);
-  assert.deepEqual(actor.exp??{},perl.result.exp);
-  assert.deepEqual(executed.details.originalUseItem,perl.result.useitem);
-  assert.deepEqual(executed.details.originalInlineLogCalls,perl.result.logs);
-  assert.equal(executed.details.originalFunctionReturn,
-    perl.result.functionReturn);
-  assert.equal(executed.details.experienceGain,0);
-  assert.equal(executed.details.randomDrawsUsed,0);
-  assert.equal(perl.result.drawsUsed,0);
-  assert.deepEqual(perl.result.randomRanges,[]);
-  await rejected(s,'/api/use',{
+  // A valid authoritative target ID still cannot bypass original
+  // ownership and unknown EVENT gates. The independent memory-only
+  // frozen Perl oracle is the positive #62/1 comparison.
+  const blocked=await rejected(s,'/api/use',{
     expectedRevision:before.revision,itemId:62,useId:1,
     requestedCount:1,targetShopId:2,
   },409);
+  assert.equal(blocked.code,'SOURCE_BOUNDARY_REJECTED');
+  const stale=await rejected(s,'/api/use',{
+    expectedRevision:before.revision-1,itemId:62,useId:1,
+    requestedCount:1,targetShopId:2,
+  },409);
+  assert.equal(stale.code,'REVISION_CONFLICT');
   const refused=await rejected(s,'/api/save',{
-    expectedRevision:executed.state.world.revision,expectedGeneration:1,
+    expectedRevision:before.revision,expectedGeneration:1,
   },409);
   assert.equal(refused.code,'MULTI_SHOP_PERSISTENCE_UNREVIEWED');
   // Restart cannot load the multi-shop in-memory branch. The already saved
