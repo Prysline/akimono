@@ -214,6 +214,41 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       manufacturedSpecs.every(spec=>
         manufacturedCounts[spec.itemId]===0||
         shop.item[spec.itemId-1]>0);
+    // Bounded gift-cow source: initial #79/4 exchange, #25 milk EXP
+    // increments by 10 per effective use. The callback's maximum yield
+    // is level*effectiveCount*cows, level<=2. This only bounds a reachable
+    // state envelope; it is NOT a full transactional provenance journal.
+    // Cow death, market-bought cows, and yogurt/cheese persistence are not
+    // certified by this deliberately narrow path.
+    const dairyExp25=shop.exp?.['25']??0;
+    const dairyRuns=Number.isSafeInteger(dairyExp25)&&
+      dairyExp25>=0&&dairyExp25<=1000&&dairyExp25%10===0?
+        dairyExp25/10:-1;
+    const dairyGifts=5-(shop.item?.[78]??5);
+    const dairyRulesReviewed=[0,1].every(useId=>{
+      const rule=useItem?.getRule?.(25,useId);
+      return rule?.supported===true&&rule.itemId===25&&
+        rule.useId===useId&&
+        rule.source==='original-reviewed-dairy-inline-use'&&
+        rule.inlineCallback?.kind==='milk-cow'&&
+        rule.inlineCallback?.level===useId+1&&
+        rule.requiresOwnedItem===true&&rule.ownedMaximum===20&&
+        rule.money===0&&rule.time===3600&&rule.exptime===3600&&
+        rule.experienceCallback?.points===10&&
+        rule.creates?.length===0&&rule.uses?.length===1&&
+        rule.uses[0].itemId===25&&
+        rule.uses[0].countPerUse===1&&
+        rule.uses[0].probabilityPermille===0;
+    });
+    const dairyProof=dairyRuns===0?
+      (shop.item[25]??0)===0:
+      Boolean(dairyRuns>0&&dairyRulesReviewed&&
+        dairyGifts>=1&&dairyGifts<=5&&
+        Number.isSafeInteger(shop.item[24])&&
+        shop.item[24]>=1&&shop.item[24]<=dairyGifts&&
+        Number.isSafeInteger(shop.item[25])&&
+        shop.item[25]>=0&&
+        shop.item[25]<=Math.min(2500,dairyRuns*2*dairyGifts));
     const knowledge=shop.item?.[18]??0;
     const trainedMagic=reviewedMagicTraining&&knowledge===1&&
       shop.item[36]===0&&shop.exp?.['37']===50;
@@ -272,17 +307,19 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         Number.isSafeInteger(value)&&value>=0&&value<=1000));
     const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
     const sourceExpValid=expShapeValid&&expTotal<=3600&&magicProof&&
-      gatheringProof&&manufacturedProof&&
+      gatheringProof&&manufacturedProof&&dairyProof&&
       (expRecord===undefined||
         (repeatableMap?
           expEntries.every(([id,value])=>
             id==='14'?value%20===0:
               id==='37'?trainedMagic&&value===50:
+                id==='25'?value%10===0&&value>0:
                 (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
                   value%20===0&&value>0):
           expEntries.every(([id,value])=>
             id==='14'?value===20:
               id==='37'?trainedMagic&&value===50:
+                id==='25'?value%10===0&&value>0:
                 (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
                   value%20===0&&value>0)));
     // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
@@ -304,7 +341,7 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
        ![0,1].includes(shop.item[62])||!giftInventoryValid||
        shop.item.some((n,i)=>!
          [9,10,13,18,39,40,41,42,43,62,78].includes(i)&&
-         n!==0&&!extraStockValid(i,n))||
+         n!==0&&!(i===25&&dairyProof)&&!extraStockValid(i,n))||
        shop.item[13]>3||shop.item[39]>600||
        [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
        !sourceExpValid||
