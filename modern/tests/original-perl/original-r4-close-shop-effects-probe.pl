@@ -7,7 +7,7 @@ use File::Temp qw(tempdir);
 use Storable qw(dclone);
 use JSON::PP;
 binmode STDOUT,':raw';
-our (@DT,%id2idx,@DTindexnamelist,$LOG_DELETESHOP_FILE,
+our (@DT,%id2idx,%name2idx,@DTindexnamelist,$LOG_DELETESHOP_FILE,
      $SUBDATA_DIR,@SET_USER_CALLS,@ERROR_LOG_CALLS);
 sub source {
   my($name)=@_;
@@ -20,6 +20,7 @@ sub source {
 }
 my $write=source('write.cgi');
 my $read=source('inc-func.cgi');
+my $detail=source('core-detail.cgi');
 my $config=source('../../../_config.cgi');
 my $a=index($write,"sub CloseShop\n{");
 my $b=index($write,"\n}\n\n1;",$a);
@@ -53,6 +54,13 @@ sub WriteErrorLog{
 my $compiled=eval "package main;use utf8;no strict;no warnings;\n".
   $original."\n1;";
 die "frozen original CloseShop failed to compile: $@" unless $compiled;
+my($sort)=$detail=~/(^sub SortDT\n\{[\s\S]*?^\}\n)(?=\nsub GetRankMessage)/m;
+die 'frozen original SortDT callback source moved' unless $sort;
+my $sorted=eval "package main;use utf8;no strict;no warnings;\n".
+  "sub GetDTPoint{return 0;}\n".$sort."\n1;";
+die "frozen original SortDT failed to compile: $@" unless $sorted;
+die 'frozen original DataWrite skips inactive shop differently'
+  unless index($write,'next if !$DT->{status};')>=0;
 my @sessions=(
   '1-alpha.cgi','1-beta.cgi','10-alpha.cgi','1-.cgi',
   '1-a.txt','01-alpha.cgi','1-CAPS.CGI','2-keep.cgi',
@@ -89,6 +97,10 @@ sub run {
   my $names=remaining();
   CloseShop($opts{shopId},$opts{reason});
   my $after=@DT?dclone($DT[0]):undef;
+  SortDT();
+  my @active=map{dclone($_)}@DT;
+  my $lookup={%id2idx};
+  my $nameLookup={%name2idx};
   my $still=remaining();
   my %has=map{$_=>1}@$still;
   return {
@@ -104,6 +116,9 @@ sub run {
       writeErrorLogCalls=>dclone(\@ERROR_LOG_CALLS),
       deletedSessions=>[grep{!$has{$_}}@$names],
       remainingSessions=>$still,
+      activeShops=>\@active,
+      idToIndex=>$lookup,
+      nameToIndex=>$nameLookup,
     },
   };
 }
