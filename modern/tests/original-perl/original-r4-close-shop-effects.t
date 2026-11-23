@@ -37,5 +37,13 @@ if(ref($x)eq'HASH'){
     'original source CloseShop has no additional status precondition');
   is($already->{output}{shop}{money},0,
     'already inactive shop remains zero');
+  is(scalar(@{$close->{output}{activeShops}}),0,
+    'frozen original SortDT removes the actually closed shop');
+  is_deeply($close->{output}{idToIndex},{},
+    'source SortDT rebuilds id2idx without closed id');
+  is_deeply($close->{output}{nameToIndex},{},
+    'source SortDT rebuilds name2idx without closed name');
+  is(scalar(@{$already->{output}{activeShops}}),0,
+    'already inactive store also disappears in source SortDT');
 }
 done_testing();

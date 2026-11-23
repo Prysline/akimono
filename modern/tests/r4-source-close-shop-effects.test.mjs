@@ -6,13 +6,15 @@ import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   R4_CLOSE_SHOP_EFFECT_SOURCE,reviewR4CloseShopEffects,
-  projectR4CloseShopEffects,
+  projectR4CloseShopEffects,reviewR4ClosedShopPrune,
+  projectR4ClosedShopPrune,R4_CLOSED_STORE_PRUNE_SOURCE,
 } from '../src/original-r4-close-shop-effects.mjs';
 const root=resolve(fileURLToPath(new URL('../../',import.meta.url)));
-const [writeSource,readSource,configSource]=await Promise.all([
+const [writeSource,readSource,configSource,detailSource]=await Promise.all([
   readFile(join(root,'modern/tests/original-perl/write.cgi'),'utf8'),
   readFile(join(root,'modern/tests/original-perl/inc-func.cgi'),'utf8'),
   readFile(join(root,'_config.cgi'),'utf8'),
+  readFile(join(root,'modern/tests/original-perl/core-detail.cgi'),'utf8'),
 ]);
 const reviewed=reviewR4CloseShopEffects({
   writeSource,readSource,configSource,
@@ -109,4 +111,56 @@ test('R4 CloseShop source drift, ambiguous hash archive, filesystem traversal an
     reviewed:{...reviewed,externalUserOrArchiveIOCommitted:true},...row,
   }),/source-reviewed original write.cgi CloseShop required/);
   assert.equal(JSON.stringify(row),original);
+});
+
+
+test('R4 REAL frozen SortDT removes original closed shops and their indexes, while DataWrite status filter excludes them',()=>{
+  const prune=reviewR4ClosedShopPrune({
+    detailSource,writeSource,reviewedClose:reviewed,
+  });
+  assert.equal(prune.source,R4_CLOSED_STORE_PRUNE_SOURCE);
+  assert.equal(prune.actualDataWriteInvoked,false);
+  assert.equal(prune.committable,false);
+  const source=oracle();
+  for(const row of source.cases.filter(x=>x.output.closed)){
+    const closed=projectR4CloseShopEffects({
+      reviewed,...row.input,
+    });
+    const got=projectR4ClosedShopPrune({reviewed:prune,closeEffect:closed});
+    assert.deepEqual(got.activeShops,row.output.activeShops,row.name);
+    assert.deepEqual(got.idToIndex,row.output.idToIndex,row.name);
+    assert.deepEqual(got.nameToIndex,row.output.nameToIndex,row.name);
+    assert.deepEqual(got.dataWriteActiveShopRows,[],
+      'source DataWrite has no active rows after SortDT, but no real write claimed');
+    assert.equal(got.actualDataWriteInvoked,false);
+    assert.equal(got.committable,false);
+  }
+  assert.deepEqual(source.cases[0].output.activeShops,[]);
+  assert.deepEqual(source.cases[0].output.idToIndex,{});
+  assert.deepEqual(source.cases[2].output.activeShops,[]);
+});
+
+test('R4 closed-shop source SortDT and DataWrite filter drift or fake settled receipt fails closed',()=>{
+  const result=projectR4CloseShopEffects({
+    reviewed,...oracle().cases[0].input,
+  });
+  const prune=reviewR4ClosedShopPrune({
+    detailSource,writeSource,reviewedClose:reviewed,
+  });
+  assert.throws(()=>reviewR4ClosedShopPrune({
+    detailSource:detailSource.replace(
+      '@DT=grep($_->{status},@DT);','@DT=sort(@DT);'),
+    writeSource,reviewedClose:reviewed,
+  }),/original SortDT closed shop pruning source drift/);
+  assert.throws(()=>reviewR4ClosedShopPrune({
+    detailSource,writeSource:writeSource.replace(
+      'next if !$DT->{status};','next if !$DT->{money};'),
+    reviewedClose:reviewed,
+  }),/original DataWrite inactive shop filter source drift/);
+  assert.throws(()=>projectR4ClosedShopPrune({
+    reviewed:{...prune,actualDataWriteInvoked:true},closeEffect:result,
+  }),/source-reviewed closed shop result and SortDT exclusion/);
+  assert.throws(()=>projectR4ClosedShopPrune({
+    reviewed:prune,closeEffect:{...result,shop:{...result.shop,status:1}},
+  }),/source-reviewed closed shop result and SortDT exclusion/);
 });
