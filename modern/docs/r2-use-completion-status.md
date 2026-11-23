@@ -102,12 +102,12 @@
 
 ### #62/1 記憶體受控實作與剩餘 4 項跨世界回呼
 
-- `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，透過受控 `targetShopId` 解析同一個記憶體 WorldState 中的另一間店。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 對使用者扣廣告包和時間並提高目標人氣；原版無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 真 Perl 比對成功及拒絕路徑；最終同 SHA CI 仍待驗。**本機 HTTP 仍限制 shopId=1、禁止指定 target，B-43 仍限制單店，且尚無多店身分授權與玩家取得／重啟保存證明。這是記憶體功能，不是玩家完整放行。**
+- `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，以受控 `targetShopId` 解析同一記憶體 WorldState 中的另一間真實 `open-shop` 建立店舖。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 扣使用者的廣告包與時間並提高目標人氣；無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 已有凍結 Perl 差分。`modern/scripts/dev-local.mjs` 新增**預設關閉**的 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 本機驗證模式：`/api/r2/open-target-shop` 只可透過原本 `open-shop` 建立第二間店（固定 ID 2，未注入物品／EXP），`/api/use` 僅針對 #62/1 允許 `targetShopId`，實際操作店仍固定 ID 1；由伺服器來源世界解析目標並重新做共用 CAS，客戶端不得指定回呼或亂數。`r2-target-advertisement-local-http.test.mjs` 以來源 PLUS→真實 market-buy #62→建立第二店→凍結 Perl／HTTP 對照→非法目標與過期 revision 拒絕→雙店存檔拒絕／單店存檔重啟載入驗證；最新同 SHA CI 仍待確認。**此模式沒有多玩家身分驗證，也不能保存雙店世界；正常啟動時 HTTP 不接受 target，B-43 仍拒絕雙店。不可宣告正式玩家跨店廣告已放行。**
 - `#62/2` 商會廣告：需可信 guild 身分、商會名稱字典、同 guild 的全部店舖快照與原版逐店人氣投影，不可用空商會資料替代。
 - `#65/0` 謠言：需指定目標、`needpoint=20000`、原版 `rand(1000)<800`、對方 #62 熟練度與雙方人氣變化，需共同交易與日誌驗證。
 - `#65/1` 偷竊：需目標商品／陳列架、看門機器人、跨店金錢與 `saletoday/paytoday`、失敗賠償、`STATE.safety`、隨機與持有上限等所有原版分支；不得只模擬轉移商品。
 - `#65/2` 行業謠言：需目標店隨機陳列架、原版四類 `kill-*` 事件的啟動／衝突與 8 小時到期處理，必須與 R4 EVENT 時間切片整合。
-- R2 共用 `use-item` 一般規則仍限定單店、無 guild、無未審閱 EVENT；僅 #62/1 允許 **恰好兩店的記憶體 CAS**，而非放開所有 USE 或玩家 HTTP。#62/2、#65/0～2 仍 `getRule=null`、原子拒絕；多店身分授權、HTTP、B-43 保存與 R4 EVENT 接點不得以本次記憶體測試代替。
+- R2 共用 `use-item` 一般規則仍限定單店、無 guild、無未審閱 EVENT；僅 #62/1 允許**恰好兩店的記憶體 CAS**，並提供預設停用的本機 HTTP 驗證模式，**不代表正式多人玩家 HTTP 或跨店保存**。#62/2、#65/0～2 仍 `getRule=null`、原子拒絕；多店身分授權、B-43 持久化與 R4 EVENT 接點均未完成。
 
 ## 3. 材料取得鏈（R2 新增來源驗證）
 
