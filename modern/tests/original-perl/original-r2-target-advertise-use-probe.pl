@@ -66,7 +66,7 @@ for my $token(
     index($body,$token)>=0;
 }
 my $wrapped="package item;use utf8;no strict;no warnings;\n".
-  "sub r2_original_self_target advertising {eval(<<'_eval_code_');\n".
+  "sub r2_original_target_advertising {eval(<<'_eval_code_');\n".
   $body."\n_eval_code_\n}\n1;";
 my $inline=eval $wrapped;
 die "R2 target advertising Perl body compilation failed: $@" unless $inline;
@@ -102,7 +102,7 @@ $main::NOW_TIME=$in->{nowSeconds}//1000000;
 $main::MAX_STOCK_TIME=259200;
 $main::LIMIT_EXP=3600;
 $main::MAX_ITEM=79;
-$main::USER='r2-self-target advertising-oracle';
+$main::USER='r2-target-advertising-oracle';
 my $exp=$in->{exp}||{};
 $main::DT={
   id=>1,status=>1,job=>$in->{job}//'',point=>0,
@@ -125,7 +125,7 @@ my $runtime={
   exptime=>0+($u->{exptime}//0),money=>0,exp=>0+$u->{exp},
   needexp=>0,needjob=>'',needpoint=>0,needpop=>0,needevent=>'',
   use=>\@materials,
-  result=>{create=>[],function=>'r2_original_self_target advertising'},
+  result=>{create=>[],function=>'r2_original_target_advertising'},
   arg=>{targetidx=>1},
 };
 if(0&&($main::DT->{job}//'')eq'peddle'){
