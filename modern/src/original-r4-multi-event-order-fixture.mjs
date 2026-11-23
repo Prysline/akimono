@@ -21,6 +21,8 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE}
   from './original-b61-sword-demand-event.mjs';
 import {R4_GUILDBATTLE_END_SOURCE,projectR4GuildbattleEndCallback}
   from './original-r4-guildbattle-end.mjs';
+import {R4_REBEL_NOW_SOURCE,projectR4RebelNow}
+  from './original-r4-rebel-now.mjs';
 
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
@@ -37,7 +39,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   turnSource,readSource,reviewedSupportCallbacks=null,
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
   reviewedHappyEvent=null,reviewedIronEvent=null,
-  reviewedSwordEvent=null,reviewedGuildbattleEvent=null}){
+  reviewedSwordEvent=null,reviewedGuildbattleEvent=null,
+  reviewedRebelEvent=null}){
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -122,6 +125,15 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
        compiledCatalog.compiled.find(e=>e.code==='guildbattle')?.group||
      compiledCatalog.compiled.find(e=>e.code==='guildbattle')?.callbacks.end!=='_local_'))
     fail('source-reviewed guildbattle END and 17-key EVENT required');
+  if(reviewedRebelEvent!==null&&(
+     reviewedRebelEvent.source!==R4_REBEL_NOW_SOURCE||
+     reviewedRebelEvent.committable!==false||
+     reviewedRebelEvent.eventCode!=='rebel'||
+     reviewedRebelEvent.group!==
+       compiledCatalog.compiled.find(e=>e.code==='rebel')?.group||
+     compiledCatalog.compiled.find(e=>e.code==='rebel')?.startProba!==0||
+     compiledCatalog.compiled.find(e=>e.code==='rebel')?.callbacks.now!=='_local_'))
+    fail('source-reviewed rebel NOW and 17-key EVENT required');
   const catalogCodes=compiledCatalog.compiled.map(e=>e.code);
   if(new Set(catalogCodes).size!==17||
      compiledCatalog.compiled.filter(e=>e.startProba===0).length!==2)
@@ -147,7 +159,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
     happy:reviewedHappyEvent,iron:reviewedIronEvent,
     sword:reviewedSwordEvent,guildbattle:reviewedGuildbattleEvent,
-    committable:false,
+    rebel:reviewedRebelEvent,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
     scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
@@ -161,7 +173,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
 export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
-  guildContext=null}){
+  guildContext=null,rebelContext=null,rebelNowDrawCount=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -177,21 +189,22 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const keys=Object.keys(activeUntilSeconds);
   if(keys.length>(7+(reviewed.happy!==null?1:0)+
     (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0)+
-    (reviewed.guildbattle!==null?1:0))||
+    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0))||
     keys.some(code=>
     !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
       (code==='happy'&&reviewed.happy!==null)||
       (code===B59_IRON_CODE&&reviewed.iron!==null)||
       (code===B61_SWORD_CODE&&reviewed.sword!==null)||
-      (code==='guildbattle'&&reviewed.guildbattle!==null))||
+      (code==='guildbattle'&&reviewed.guildbattle!==null)||
+      (code==='rebel'&&reviewed.rebel!==null))||
     !Number.isSafeInteger(activeUntilSeconds[code])||
     activeUntilSeconds[code]<0))
     fail('unreviewed active EVENT state');
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
-  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&shop!==null)||
-     ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null||reviewed.happy!==null)&&
+  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null&&shop!==null)||
+     ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null||reviewed.happy!==null||reviewed.rebel!==null)&&
        (!shop||shop.id!==1||shop.status!==1||
         !Array.isArray(shop.item)||shop.item.length!==79)))
     fail('supported callback requires one real source shop');
@@ -202,7 +215,20 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       Object.keys(guildContext).sort().join(',')!=='dominion,guilds'))||
      (reviewed.guildbattle===null&&guildContext!==null))
     fail('explicit source guild snapshot required for mixed guildbattle');
-  if(!Array.isArray(randomDraws)||randomDraws.length>96||
+  if((reviewed.rebel!==null&&(
+      !rebelContext||typeof rebelContext!=='object'||
+      Array.isArray(rebelContext)||
+      Object.keys(rebelContext).sort().join(',')!==
+        'armyById,balJob,balName,riotIds,taxRate,town'||
+      !Array.isArray(rebelContext.riotIds)||
+      !rebelContext.town||typeof rebelContext.town!=='object'||
+      !rebelContext.armyById||typeof rebelContext.armyById!=='object'||
+      !Number.isInteger(rebelNowDrawCount)||
+      rebelNowDrawCount<0||rebelNowDrawCount>2))||
+     (reviewed.rebel===null&&
+       (rebelContext!==null||rebelNowDrawCount!==null)))
+    fail('explicit rebel army/city and bounded NOW RNG sample count required');
+  if(!Array.isArray(randomDraws)||randomDraws.length>100||
      randomDraws.some(x=>!unit(x)))
     fail('exact bounded original RNG sequence required');
 
@@ -214,18 +240,26 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   });
   for(const code of activeHashOrderFixture){
     // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
-    if(code==='happy'||code==='guildbattle')continue;
+    if(code==='happy'||code==='guildbattle'||code==='rebel')continue;
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
     instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[],
-    guildEndCallbacks=[];
+    guildEndCallbacks=[],rebelNowCallbacks=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
   let nextGuild=guildContext===null?null:{
     dominion:guildContext.dominion,
     guilds:guildContext.guilds.map(g=>({...g})),
+  };
+  let nextRebel=rebelContext===null?null:{
+    town:{...rebelContext.town},
+    riotIds:[...rebelContext.riotIds],
+    armyById:{...rebelContext.armyById},
+    taxRate:rebelContext.taxRate,
+    balJob:rebelContext.balJob,
+    balName:rebelContext.balName,
   };
   const groups=new Set();
   const end=startSeconds+spanSeconds;
@@ -242,7 +276,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         nextGuild={dominion:ended.dominion,guilds:ended.guildRecords};
         guildEndCallbacks.push(code);
         logs.push([2,0,ended.message]);
-      }else logs.push([2,0,code==='happy'?
+      }else if(code!=='rebel')logs.push([2,0,code==='happy'?
         reviewed.happy.endMessage:
         code===B59_IRON_CODE?reviewed.iron.endMessage:
         code===B61_SWORD_CODE?reviewed.sword.endMessage:
@@ -358,27 +392,67 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   // The frozen inc-turn NOWFUNC loop follows *all* END/START callbacks.
   // A newly started happy EVENT is included immediately, and an expired
   // happy EVENT runs only if restarted. No JS/DSL declaration order is used.
-  if(reviewed.happy!==null){
+  if(reviewed.happy!==null||reviewed.rebel!==null){
+    // Capture actual original NOW foreach keys at GetPath dispatch. It can
+    // include rebel even though that callback removes itself during NOW.
     if(!sameKeys(nowHashOrderFixture,Object.keys(next)))
-      fail('exact Perl post-START active EVENT hash order required');
+      fail('exact Perl pre-NOW EVENT hash traversal order required');
     for(const code of nowHashOrderFixture){
-      if(code!=='happy')continue;
-      const range=Math.trunc(Math.min(spanSeconds,
-        reviewed.happy.maxNowSpanSeconds)/36);
-      if(range<1)fail('source happy NOWFUNC rand(0) not reviewed');
-      const sample=randomDraws[used];
-      draw(range);
-      const callback=projectOriginalHappyNow({
-        reviewed:reviewed.happy,shop:nextShop,
-        timespanSeconds:spanSeconds,randomDraws:[sample],
-      });
-      if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
-         callback.randMax!==range)
-        fail('reviewed happy NOWFUNC contract violation');
-      nextShop=callback.shop;
-      happyNowCallbacks.push(code);
+      if(code==='happy'){
+        const range=Math.trunc(Math.min(spanSeconds,
+          reviewed.happy.maxNowSpanSeconds)/36);
+        if(range<1)fail('source happy NOWFUNC rand(0) not reviewed');
+        const sample=randomDraws[used];
+        draw(range);
+        const callback=projectOriginalHappyNow({
+          reviewed:reviewed.happy,shop:nextShop,
+          timespanSeconds:spanSeconds,randomDraws:[sample],
+        });
+        if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
+           callback.randMax!==range)
+          fail('reviewed happy NOWFUNC contract violation');
+        nextShop=callback.shop;
+        happyNowCallbacks.push(code);
+      }else if(code==='rebel'){
+        // Sample count only partitions the shared oracle RNG: the isolated
+        // source-reviewed rebel callback still verifies exact 0/1/2 draws.
+        if(!nextShop||typeof nextShop.name!=='string'||
+           !Number.isSafeInteger(nextShop.army))
+          fail('rebel NOW requires original named shop and army');
+        const samples=randomDraws.slice(used,used+rebelNowDrawCount);
+        const callback=projectR4RebelNow({
+          reviewed:reviewed.rebel,
+          startSeconds,spanSeconds,activeUntilSeconds:next.rebel,
+          town:nextRebel.town,
+          shops:[{id:nextShop.id,name:nextShop.name,
+            shopname:nextShop.shopname,money:nextShop.money,
+            army:nextShop.army}],
+          riotIds:nextRebel.riotIds,armyById:nextRebel.armyById,
+          taxRate:nextRebel.taxRate,balJob:nextRebel.balJob,
+          balName:nextRebel.balName,randomDraws:samples,
+        });
+        if(callback.drawsUsed!==samples.length||
+           callback.randomDrawRanges.length!==samples.length||
+           callback.returnCode!==0)
+          fail('original rebel NOW callback RNG and return mismatch');
+        for(const range of callback.randomDrawRanges)draw(range);
+        nextShop={...nextShop,money:callback.shops[0].money,
+          army:callback.shops[0].army};
+        nextRebel={...nextRebel,town:callback.town,
+          riotIds:callback.riotIds,armyById:callback.armyById,
+          taxRate:callback.taxRate};
+        if(callback.eventPersisted){
+          if(callback.activeUntilSeconds!==next.rebel)
+            fail('source rebel NOW unexpectedly changed event expiry');
+        }else delete next.rebel;
+        for(const log of callback.logs)logs.push([...log]);
+        rebelNowCallbacks.push(code);
+      }
     }
   }
+  if(reviewed.rebel!==null&&rebelNowCallbacks.length===0&&
+     rebelNowDrawCount!==0)
+    fail('unreviewed rebel NOW RNG without active event');
   if(used!==randomDraws.length)fail('unused original RNG samples');
   return Object.freeze({
     source:reviewed.source,committable:false,
@@ -402,6 +476,16 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         guilds:Object.freeze(nextGuild.guilds.map(g=>Object.freeze({...g}))),
       }),
       guildEndCallbacks:Object.freeze(guildEndCallbacks),
+    }),
+    ...(reviewed.rebel===null?{}:{
+      rebelContext:Object.freeze({
+        town:Object.freeze({...nextRebel.town}),
+        riotIds:Object.freeze([...nextRebel.riotIds]),
+        armyById:Object.freeze({...nextRebel.armyById}),
+        taxRate:nextRebel.taxRate,
+        balJob:nextRebel.balJob,balName:nextRebel.balName,
+      }),
+      rebelNowCallbacks:Object.freeze(rebelNowCallbacks),
     }),
     sourceScope:reviewed.scope,
   });
