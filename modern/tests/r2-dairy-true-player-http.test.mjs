@@ -66,8 +66,12 @@ async function use(server,itemId,useId,count=1){
 }
 test('R2 real player cows, milk, yogurt, milk drinking and failing cheese NEED',async t=>{
   const dir=await mkdtemp(join(tmpdir(),'akimono-r2-dairy-source-'));
-  const server=await boot(dir);
-  t.after(async()=>{await server.stop();await rm(dir,{recursive:true,force:true});});
+  const servers=[];
+  let server=await boot(dir);servers.push(server);
+  t.after(async()=>{
+    for(const srv of servers)await srv.stop();
+    await rm(dir,{recursive:true,force:true});
+  });
   assert.equal((await server.post('/api/initialize')).code,'COMMITTED');
   assert.equal((await server.post('/api/open-shop',{
     expectedRevision:1,ownerName:'原版酪農',shopName:'奶牛來源實測',
@@ -86,22 +90,45 @@ test('R2 real player cows, milk, yogurt, milk drinking and failing cheese NEED',
   assert.equal(first.result.state.shop.item[24],5);
   assert.equal(first.result.state.shop.exp['25'],30);
   assert.equal(first.result.details.randomDrawsUsed,4);
+  const saved1=await server.post('/api/save',{
+    expectedRevision:first.result.state.world.revision,
+    expectedGeneration:0,
+  });
+  assert.equal(saved1.code,'SAVED',JSON.stringify(saved1));
+  const checkpoint1=saved1.state.world;
+  await server.stop();
+  server=await boot(dir);servers.push(server);
+  const loaded1=await server.post('/api/load');
+  assert.equal(loaded1.code,'LOADED',JSON.stringify(loaded1));
+  assert.deepEqual(loaded1.state.world,checkpoint1);
   const second=await use(server,25,1,3);
   assert.equal(second.result.state.shop.item[25],24);
   assert.equal(second.result.state.shop.exp['25'],60);
   assert.equal(second.result.details.randomDrawsUsed,4);
+  const beforeDrink=await server.state();
+  const drinking=await use(server,26,0);
+  assert.equal(drinking.result.state.shop.item[25],23);
+  assert.equal(drinking.result.state.shop.rank,
+    Math.min(10000,beforeDrink.shop.rank+2));
+  assert.equal(drinking.result.details.randomDrawsUsed,1);
+  const saved2=await server.post('/api/save',{
+    expectedRevision:drinking.result.state.world.revision,
+    expectedGeneration:1,
+  });
+  assert.equal(saved2.code,'SAVED',JSON.stringify(saved2));
+  const checkpoint2=saved2.state.world;
+  await server.stop();
+  server=await boot(dir);servers.push(server);
+  const loaded2=await server.post('/api/load');
+  assert.equal(loaded2.code,'LOADED',JSON.stringify(loaded2));
+  assert.deepEqual(loaded2.state.world,checkpoint2);
+  assert.equal(loaded2.state.shop.exp['25'],60);
   const yogurt=await use(server,26,1);
-  assert.equal(yogurt.result.state.shop.item[25],9);
+  assert.equal(yogurt.result.state.shop.item[25],8);
   assert.equal(yogurt.result.state.shop.item[34],2);
   assert.equal(yogurt.result.details.randomDrawsUsed,0);
   const eaten=await use(server,35,0);
   assert.equal(eaten.result.state.shop.item[34],1);
-  const beforeDrink=await server.state();
-  const drinking=await use(server,26,0);
-  assert.equal(drinking.result.state.shop.item[25],8);
-  assert.equal(drinking.result.state.shop.rank,
-    Math.min(10000,beforeDrink.shop.rank+2));
-  assert.equal(drinking.result.details.randomDrawsUsed,1);
   const beforeCheese=await server.state();
   const denied=await server.post('/api/use',{
     expectedRevision:beforeCheese.world.revision,
