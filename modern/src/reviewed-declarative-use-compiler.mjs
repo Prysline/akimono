@@ -71,8 +71,9 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
   const output=[];
   for(const [itemId,expectedCount] of groups){
     const item=parsed.blocks.find(b=>b.kind==='ITEM'&&first(b,'no')===String(itemId));
-    if(!item||model.items.find(x=>x.id===itemId)?.code!==first(item,'code'))
-      fail('source owner ITEM '+itemId);
+    if(!item||model.items.find(x=>x.id===itemId)?.code!==first(item,'code')||
+       (selectedSubset.has(itemId)&&first(item,'limit')!=='40/1'))
+      fail('source owner ITEM/limit '+itemId);
     const uses=parsed.blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
     if(uses.length!==expectedCount)fail('source USE count '+itemId);
     // Frozen inc-makeitem.cgi::ClearBuffer(use) carries EXP across USEs
@@ -136,6 +137,9 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         limits,resultOk:first(block,'okmsg')??null,
         resultNg:first(block,'ngmsg')??null,
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
+        ...(selectedSubset.has(itemId)||itemId===16||itemId===17?{
+          requiresOwnedItem:true,ownedMaximum:40,
+        }:{}),
         effectPlan,scope:'original callback-free recipe; source MARKET, EXP and job clocks; save provenance separately gated',
       }));
     }

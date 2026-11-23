@@ -667,6 +667,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               '尚未審閱的公會效果':
             !validMarket?'來源市場尚未驗證':
             invalidExp?'熟練度紀錄不合法':
+            rule.requiresOwnedItem&&owned<1?'尚未持有使用此功能的商品':
             missing?'材料不足：'+
               (model.items.find(item=>item.id===missing.itemId)?.name??
                 '未知材料')+'需要 '+missing.count+' 件':

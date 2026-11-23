@@ -66,6 +66,7 @@ function fixture(rule,{job='',missingNeed=false}={}){
     stock[action.itemId-1]=Math.max(stock[action.itemId-1],
       action.countPerUse);
   }
+  if(rule.requiresOwnedItem)stock[rule.itemId-1]=1;
   if(missingNeed){
     const needed=rule.uses.find(x=>x.probabilityPermille===0);
     assert.ok(needed,'must select a NEED recipe');
@@ -285,4 +286,20 @@ test('R2 source advanced Ether requires 20% real #15 proficiency',()=>{
   assert.equal(ether.needExperience,200);
   assert.equal(ether.experienceCallback.points,20);
   assert.equal(street.useItem.getRule(15,1),null);
+});
+test('R2 manufacturing requires source-owned book, not merely gathered materials',()=>{
+  const rule=street.useItem.getRule(16,0);
+  assert.equal(rule.requiresOwnedItem,true);
+  const {world}=fixture(rule);
+  const unowned=validateMemoryWorld({...world,shops:[{
+    ...world.shops[0],item:world.shops[0].item.map((n,i)=>
+      i===15?0:n),
+  }]});
+  const repo=createMemoryWorldAdapter(unowned);
+  const before=encodeMemorySnapshot(repo.read());
+  const result=executeMemoryCommand({repository:repo,streetModule:street,
+    command:{kind:'use-item',expectedRevision:unowned.revision,
+      shopId:1,itemId:16,useId:0,requestedCount:1}});
+  assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
+  assert.equal(encodeMemorySnapshot(repo.read()),before);
 });
