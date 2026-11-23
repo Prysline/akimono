@@ -84,6 +84,9 @@ const saveStore=createLocalWorldSaveStore({
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
 });
+// Opt-in R2 memory-only audit. NOT player authentication or durable multi-shop.
+const targetAdvertisementMemoryAudit=
+  process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1';
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
 const send=(res,status,obj)=>{
@@ -145,6 +148,13 @@ function state(){
         };
       }),
     useOffers:streetModule.listUseOffers(world),
+    // Only source-created live shops, never client-supplied target records.
+    targetAdvertisementAudit:targetAdvertisementMemoryAudit?{
+      memoryOnly:true,authenticated:false,durable:false,
+      targets:world?.shops?.length===2&&world.shops[0]?.id===1?
+        world.shops.filter(shop=>shop.id!==1&&shop.status===1)
+          .map(shop=>({shopId:shop.id,shopName:shop.shopname})):[],
+    }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
@@ -377,6 +387,10 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/save': {
+      if(repo?.read().shops.length>1)
+        return send(res,409,{ok:false,
+          code:'MULTI_SHOP_PERSISTENCE_UNREVIEWED',
+          error:'多店來源保存尚未驗證，B-43 不接受雙店存檔',state:state()});
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化／載入世界才可存檔',state:state()});
       const world=repo.read();
@@ -422,6 +436,27 @@ async function api(req,res,url){
         shopId:1,ownerName,shopName});
       break;
     }
+    case '/api/r2/open-target-shop': {
+      // Auditing only: source open-shop for a second shop, not a second
+      // authenticated player. Disable by default; no injected inventory.
+      if(!targetAdvertisementMemoryAudit)
+        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
+          error:'雙店驗證模式未啟用',state:state()});
+      if(Object.keys(body).sort().join(',')!==
+         'expectedRevision,ownerName,shopName')
+        throw Error('雙店驗證只接受 expectedRevision、ownerName、shopName');
+      if(typeof body.ownerName!=='string'||
+         typeof body.shopName!=='string')
+        throw Error('第二間店的店主與店名必須是文字');
+      if(!repo||repo.read().shops.length!==1||
+         repo.read().shops[0]?.id!==1)
+        return send(res,409,{ok:false,code:'R2_AUDIT_REQUIRES_ONE_SHOP',
+          error:'只可在單店來源世界中開啟驗證目標店',state:state()});
+      result=commit({kind:'open-shop',
+        expectedRevision:ensureRevision(body),shopId:2,
+        ownerName:body.ownerName,shopName:body.shopName});
+      break;
+    }
     case '/api/supply': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body),timespanSeconds=
@@ -455,7 +490,13 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const targeted=Object.hasOwn(body,'targetShopId');
+      if(targeted&&(!targetAdvertisementMemoryAudit||
+           body.itemId!==62||body.useId!==1))
+        return send(res,403,{ok:false,code:'UNREVIEWED_HTTP_TARGET',
+          error:'僅記憶體驗證模式可指定原版 #62/1 目標店',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',
+        ...(targeted?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -463,13 +504,24 @@ async function api(req,res,url){
       const itemId=commandNumber(body.itemId,'itemId',1);
       const useId=commandNumber(body.useId,'useId');
       const requestedCount=commandNumber(body.requestedCount,'requestedCount',1);
+      const targetShopId=targeted?commandNumber(body.targetShopId,'targetShopId',1):null;
       const world=repo.read();
       if(world.revision!==expectedRevision)
         return send(res,409,{ok:false,code:'REVISION_CONFLICT',
           error:'REVISION_CONFLICT',state:state()});
+      if(targeted){
+        // Browser never chooses the acting shop. Resolve canonical target ID
+        // from this authoritative world; GameCore rechecks it within CAS.
+        if(world.shops.length!==2||world.shops[0]?.id!==1||
+           !world.shops.some(shop=>shop.id===targetShopId&&
+             shop.status===1&&shop.id!==1))
+          return send(res,409,{ok:false,code:'INVALID_SOURCE_TARGET',
+            error:'目標不在已開設的第二間來源店舖中',state:state()});
+      }
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
+        ...(targeted?{targetShopId}:{}),
         ...(randomDraws.length?{randomDraws}:{})});
       break;
     }
