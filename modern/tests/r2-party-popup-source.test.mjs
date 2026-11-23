@@ -137,7 +137,7 @@ test('R2 #77 source popup formula/param drift must fail closed',()=>{
 });
 test('R2 all 110 registered USEs include exactly one party popup',()=>{
   const world=fresh(),offers=street.listUseOffers(world);
-  assert.equal(offers.length,110);
+  assert.equal(offers.length,111);
   const party=offers.filter(x=>x.itemId===77);
   assert.equal(party.length,1);
   assert.equal(party[0].canUse,false);

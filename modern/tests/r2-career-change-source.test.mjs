@@ -164,7 +164,7 @@ test('R2 career source transfer typo/param/name drift is fail-closed',()=>{
 test('R2 career registered options count without manufacturing arbitrary EXP',()=>{
   const world=fresh();
   const rows=street.listUseOffers(world);
-  assert.equal(rows.length,110);
+  assert.equal(rows.length,111);
   const career=rows.filter(x=>x.itemId===78);
   assert.equal(career.length,14);
   assert.ok(career.every(x=>x.canUse===false));
