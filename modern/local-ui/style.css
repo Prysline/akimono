@@ -217,16 +217,23 @@ body.dev-mode .local-note{display:block}
   justify-content:center;gap:4px;max-width:100%;margin:14px auto 0
 }
 #tab-item .shelf-form fieldset{
-  flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:flex-end;
-  justify-content:center;gap:8px;
+  flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:center;gap:6px;
   width:fit-content;min-width:0;max-width:100%;
-  margin:0;padding:9px 12px
+  margin:0;padding:7px 9px
 }
-#tab-item .shelf-form label{max-width:100%}
-#tab-item #shelf-item{width:190px;max-width:100%}
-#tab-item #shelf-price-per{width:70px}
+#tab-item .shelf-form .shelf-inline-label{
+  display:inline;flex:0 0 auto;white-space:nowrap;font-size:12px
+}
+#tab-item #shelf-price-per{width:94px;max-width:100%}
 #tab-item .shelf-percent{display:inline-flex;align-items:center;gap:4px}
-#tab-item #set-showcase{align-self:flex-end}
+#tab-item #shelf-custom-ratio:not([hidden]){
+  display:inline-flex;align-items:center;gap:3px
+}
+#tab-item #shelf-custom-ratio[hidden]{display:none}
+#tab-item #shelf-price-custom{width:58px}
+#tab-item #shelf-price-direct{width:86px}
+#tab-item #set-showcase{flex:0 0 auto}
 #tab-item .source-use-section{
   width:fit-content;max-width:100%;margin:16px auto 0
 }
@@ -297,8 +304,13 @@ footer{margin-top:12px;font-size:10px}
 
 /* Per-source indexed showcase shelves and original bottom return positioning. */
 .back-row{display:flex;justify-content:center;margin:18px auto 6px;text-align:center}
-#tab-item #showcase-shelf{width:185px;max-width:100%;min-width:0}
-.discard-section{width:fit-content;max-width:100%;margin:16px auto 0;text-align:center;border-top:1px dotted #bbb;padding-top:6px}
+#tab-item #showcase-shelf{width:152px;max-width:100%;min-width:0}
+#tab-item #use-section[hidden]{display:none}
+.discard-section{width:fit-content;max-width:100%;margin:12px auto 0;text-align:center;border-top:1px dotted #bbb;padding-top:6px}
 .discard-section .sub-title{text-align:center}
-.discard-section .inline-form{justify-content:center}
+.discard-section .inline-form{justify-content:center;align-items:center}
+.discard-section .inline-form label{
+  display:inline-flex;flex-direction:row;align-items:center;gap:6px;
+  white-space:nowrap
+}
 .discard-section #discard-count{width:72px}
