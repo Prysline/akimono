@@ -101,6 +101,7 @@ for my $code(@order){
   die 'unknown source overlay' unless exists $generated{$code};
   eval "no strict;no warnings;".$generated{$code}."\n1;" or die $@;
 }
+$main::DTpeople=$input->{dtPeople} if exists $input->{dtPeople};
 @main::DT=($input->{shop});
 @main::DTwholestore=length($input->{csv})?map{length($_)?0+$_:undef}split(/,/,$input->{csv},-1):();
 @main::B35_DRAWS=@{$input->{draws}};

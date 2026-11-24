@@ -96,8 +96,8 @@ function reviewR3SourceSaleItems(itemDsl){
 // callback; full source acquisition is proven separately by GameCore/replay.
 const P3_TURN_IDS=Object.freeze([
   1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,22,23,24,
-  30,31,32,33,34,37,38,39,
-  ...Array.from({length:22},(_,i)=>40+i),63,66,67,68,69,70,78,79,
+  27,28,29,30,31,32,33,34,37,38,39,
+  ...Array.from({length:22},(_,i)=>40+i),63,64,66,67,68,69,70,78,79,
 ]);
 const P3_EXP_IDS=new Set([9,10,12,14,15,16,17,20,21,22,23,37,39,66]);
 function reviewP3TurnItems(items){
@@ -112,6 +112,12 @@ function reviewP3TurnItems(items){
     // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
     costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
     if(!Number.isSafeInteger(costs[id]))bad('P3 unsafe ITEM cost');
+    // The source rank-1 prizes may be held on the next slice. They do
+    // not become sale/USE rules merely by adding reviewed holding costs.
+    const prizeStock={27:['seven_face',0],28:['ramusyu',0],29:['boots',0],64:['defence-manbiki',5000]};
+    if(Object.hasOwn(prizeStock,id)&&
+       (one(b,'code')!==prizeStock[id][0]||costs[id]!==prizeStock[id][1]))
+      bad('source period prize holding drift #'+id);
     // Keep the sale scope restricted to reviewed finished equipment and #10.
     // Raw materials, skills, and books are supported as stock, not new shelves.
     if(id!==10&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
@@ -240,7 +246,9 @@ function projectSourcePreEventSaleSlice({
      reviewed.swordMapSource!==(reviewedB62Map?.source??null)||
      reviewed.swordOutcomesSource!==(reviewedB63Map?.source??null))
     bad('source durable event contracts mismatch');
-  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
+  // Source DataRead executes once per command, NOT once per time slice.
+  const overlayWorld=boundary?.dataReadWorld??world;
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
   if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
   if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -260,10 +268,10 @@ function projectSourcePreEventSaleSlice({
   // Legacy B-41 intentionally marks all unknown prior EVENT instances
   // NULL. Do not claim an iron modifier is active in that case, but do
   // preserve B-41's existing best-effort no-event non-equivalence behavior.
-  const activeKeys=world.schema===PERIOD_WORLD_SCHEMA&&
-    world.period?.eventState!==null&&
-    typeof world.period?.eventState==='object'?
-    Object.keys(world.period.eventState):[];
+  const activeKeys=overlayWorld.schema===PERIOD_WORLD_SCHEMA&&
+    overlayWorld.period?.eventState!==null&&
+    typeof overlayWorld.period?.eventState==='object'?
+    Object.keys(overlayWorld.period.eventState):[];
   const ironEventActive=activeKeys.includes('plusup-tetu');
   const happyEventActive=activeKeys.includes(B60_HAPPY_CODE);
   const swordDemandEventActive=activeKeys.includes(B61_SWORD_CODE);
@@ -358,9 +366,10 @@ function projectSourcePreEventSaleSlice({
   });
   if(originalSlices.effectiveSlices.length!==1||
      originalSlices.effectiveSlices[0].timespanSeconds!==span||
-     originalSlices.crossesSettlement!==(boundary!==null))
+     originalSlices.crossesSettlement!==(boundary?.dateupdate===1))
     bad('this interval crosses original period settlement; not yet supported');
   if(boundary!==null&&(!p3InventoryStage||!r4ReviewedSort||overlay===null||
+     ![0,1].includes(boundary.dateupdate)||
      boundary.reviewed?.source!==B50_INTEGRATED_SOURCE||
      boundary.reviewed.nonCommittable!==true))
     bad('reviewed B50 boundary candidate required');
@@ -373,6 +382,7 @@ function projectSourcePreEventSaleSlice({
   const natural=projectSharedNaturalSale({
     shop,rule,upkeepCosts,
     spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,
+    ...(boundary===null?{}:{population:world.period.dtPeople}),
   });
   const sold=natural.sold;
   const naturalDraws=natural.drawsUsed;
@@ -398,7 +408,9 @@ function projectSourcePreEventSaleSlice({
   // observes the command's final NOW_TIME, not the intermediate boundary.
   // Only a candidate can use this seam; no WorldState or disk commit.
   let settlement=null,periodDraws=0,plusWorld={...world,shops:[newShop]};
-  if(boundary!==null){
+  if(boundary!==null)plusWorld={...plusWorld,period:{...world.period,
+    eventState:overlayWorld.period.eventState}};
+  if(boundary?.dateupdate===1){
     const reviewedPeriod=boundary.reviewed;
     if(reviewedPeriod.dragon!==null||reviewedPeriod.guild!==null||
        reviewedPeriod.actualClose!==null||reviewedPeriod.periodBackup!==null||
@@ -458,7 +470,7 @@ function projectSourcePreEventSaleSlice({
       plusDraws:plus.receipt.drawsUsed,
       ...(r4ReviewedSort===null?{}:{originalSortApplied:true,originalSortPoint:newShop.point}),
       totalDraws:used+periodDraws+plus.receipt.drawsUsed,
-      ...(boundary===null?{}:{periodDraws,plusPopulation:plusWorld.period.dtPeople,dateupdate:1}),
+      ...(boundary===null?{}:{periodDraws,plusPopulation:plusWorld.period.dtPeople,dateupdate:boundary.dateupdate}),
       sourceScope:reviewed.sourceScope,
     },
   };
@@ -511,7 +523,31 @@ export function projectR4BoundaryPreEventCandidate({reviewedPeriod,...args}){
     bad('source settlement boundary required');
   const spanSeconds=plan.effectiveSlices[0].timespanSeconds;
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
-    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod});
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world});
+  return {...stage,plan,committable:false,worldStateWritten:false};
+}
+
+/** Residual slice of the SAME inc-turn command. The original DataRead
+ * snapshot is used only to calculate ITEM overlays; the real EVENT map
+ * and settled population are carried independently by the coordinator.
+ * This deliberately cannot be called as a public/legacy time action.
+ */
+export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,...args}){
+  const {world,reviewed,minutes}=args;
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
+     originWorld?.worldId!==world?.worldId||originWorld?.revision!==world?.revision)
+    bad('same source command identity required');
+  const commandNowSeconds=originWorld.nowSeconds+minutes*60;
+  const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,
+    lastSeconds:originWorld.nowSeconds,nowSeconds:commandNowSeconds});
+  if(!plan.crossesSettlement||plan.effectiveSlices.length!==2||
+     plan.effectiveSlices[1].dateupdate!==0||
+     world.nowSeconds!==originWorld.nowSeconds+plan.effectiveSlices[0].timespanSeconds||
+     world.period?.dtPeople<1||world.period?.eventState===null)
+    bad('exact second source slice required');
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
+    {spanSeconds:plan.effectiveSlices[1].timespanSeconds,commandNowSeconds,
+     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 

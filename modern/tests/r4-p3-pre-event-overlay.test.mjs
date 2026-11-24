@@ -353,3 +353,59 @@ test('R4 source boundary prefix runs settlement before dynamic-population PLUS w
     assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,minutes,draws.slice(0,121)),reviewedR4,reviewedDataRead,activeOrder:oracle.activeOrder}),/period settlement/);
   }
 });
+
+import {projectR4CrossPeriodCandidate} from '../src/original-r4-cross-period-candidate.mjs';
+test('R4 candidate preserves original DataRead overlay and native EVENT hash across both boundary slices',()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  world.nowSeconds=1025980;
+  world.period.eventState={'plusup-tetu':1025990,'happy':1030000};
+  world.shops[0].blocklogin='';
+  const before=JSON.stringify(world);
+  const result=projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
+    reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod});
+  assert.equal(result.committable,false);assert.equal(result.worldStateWritten,false);
+  assert.equal(result.nowSeconds,1026040);
+  assert.equal(result.period.settledCount,1);assert.equal(result.period.lastSettledBoundarySeconds,1026000);
+  assert.deepEqual(result.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+  assert.equal(result.evidence.plusSeconds[4],720);
+  const env={...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'};
+  const run=(script,input,argv=[])=>JSON.parse(execFileSync('perl',[script,...argv],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',env,input:JSON.stringify(input)
+  }));
+  const wire=Object.entries(world.period.eventState).flat().join(',');
+  const e=result.evidence.slices;
+  const events=run('original-r4-mixed-support-gate-probe.pl',{eventWire:wire,
+    slices:e.map(s=>({startSeconds:s.startSeconds,spanSeconds:s.spanSeconds,
+      shop:s.preEvent.shops[0],samples:s.eventSamples}))},['--cross-period-events']);
+  for(const [i,s] of e.entries()){
+    assert.deepEqual(events[i].activeOrder,s.activeOrder);
+    assert.deepEqual(events[i].eventOrder,s.eventOrder);
+    assert.deepEqual(events[i].nowOrder,s.nowOrder);
+    assert.deepEqual(events[i].eventState,s.eventState);
+    assert.deepEqual(events[i].ranges,s.eventDrawRanges);
+    assert.deepEqual(events[i].logs,s.eventLogs);
+    for(const [key,value] of Object.entries(s.shop)){
+      if(key==='costtoday'){assert.ok(Math.abs(value-events[i].shop[key])<1e-8);continue;}
+      assert.deepEqual(value,events[i].shop[key],key);
+    }
+  }
+  // The original DataRead overlay remains in effect AFTER the ore event
+  // expires in slice 1. Residual natural sale and PLUS see the new people.
+  const residual=run('original-r4-p3-pre-event-overlay-probe.pl',{
+    shop:e[0].shop,csv:e[0].preEvent.market.originalWholesaleCsv,
+    span:e[1].spanSeconds,draws:e[1].preEventDraws,eventWire:wire,
+    dtPeople:result.period.dtPeople});
+  assert.equal(residual.plus[4],720);
+  assert.deepEqual(e[1].preEvent.market.wholesale,residual.wholesale);
+  assert.equal(e[1].preEvent.market.originalWholesaleCsv,residual.csv);
+  assert.equal(e[1].preEvent.receipt.totalDraws,residual.used);
+  for(const [key,value] of Object.entries(e[1].preEvent.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-residual.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,residual.shop[key],key);
+  }
+  assert.equal(JSON.stringify(world),before);
+  assert.equal(e[0].eventDrawRanges.includes(0),true,'subminute happy consumes one source rand(0)');
+  assert.equal(execFileSync('perl',['-e','print int(rand(0))'],{encoding:'utf8'}),'0');
+  assert.deepEqual(result,projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
+    reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod}));
+});

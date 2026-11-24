@@ -605,6 +605,29 @@ if(@ARGV&&$ARGV[0] eq '--normal-turn'){
   });
   exit 0;
 }
+if(@ARGV&&$ARGV[0] eq '--cross-period-events'){
+  binmode STDIN,':raw';
+  my $in=JSON::PP->new->utf8->decode(<STDIN>);
+  %DTevent=split(/,/,$in->{eventWire});
+  die 'special EVENT not in candidate scope' if exists($DTevent{rebel})||exists($DTevent{guildbattle});
+  @ITEM=(undef,map{{%{$_}}}@baseItems);
+  $ITEM[64]{name}='看門機器人';
+  my @results;
+  for my $slice (@{$in->{slices}}){
+    my @prior=keys(%DTevent);
+    $temptimenow=$slice->{startSeconds};$timespan=$slice->{spanSeconds};$TIMESPAN=$timespan;
+    @DT=($slice->{shop});%id2idx=($DT[0]{id}=>0);
+    @R4_MULTI_DRAWS=@{$slice->{samples}};
+    @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
+    R4MultiOriginalEventSlice();
+    die 'original intra-command EVENT RNG unused' if @R4_MULTI_DRAWS;
+    push @results,{activeOrder=>[@prior],eventOrder=>[@runtimeHashKeys],nowOrder=>[@R4_NOW_KEYS],
+      shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
+      logs=>[@LOG],ranges=>[@R4_MULTI_RANGES]};
+  }
+  print JSON::PP->new->canonical->utf8->encode(\@results);
+  exit 0;
+}
 my @cases;
 # Seven sustained EVENTs and both support callbacks start in the same
 # original 17-key gate. Only support STARTFUNC returns zero.
