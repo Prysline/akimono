@@ -175,7 +175,8 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
-  reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null}){
+  reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
+  randomDrawProvider=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -234,8 +235,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
      (resolveNowOrder!==null&&nowHashOrderFixture!==null))
     fail('invalid EVENT draw/order adapter');
-  if(!Array.isArray(randomDraws)||randomDraws.length>100||
-     randomDraws.some(x=>!unit(x)&&!(exactTicketDraws&&ticket(x))))
+  if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||reviewed.rebel!==null||reviewed.guildbattle!==null))
+    fail('provider requires exact normal-event RNG and no external special callbacks');
+  if(randomDrawProvider===null&&(!Array.isArray(randomDraws)||randomDraws.length>100||
+     randomDraws.some(x=>!unit(x)&&!(exactTicketDraws&&ticket(x)))))
     fail('exact bounded original RNG sequence required');
 
   // The original DataRead loop loads prior active per-event generated ITEM
@@ -290,9 +293,19 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     }else groups.add(event.group);
   }
   let used=0;
+  const consumed=[];
+  const peek=(range)=>{
+    if(used>=100)fail('original RNG exhausted');
+    if(randomDrawProvider===null){
+      if(used>=randomDraws.length)fail('original RNG exhausted');
+      return randomDraws[used];
+    }
+    return randomDrawProvider(used,range);
+  };
   const draw=(range)=>{
-    if(used>=randomDraws.length)fail('original RNG exhausted');
-    const sample=randomDraws[used++];
+    const sample=peek(range);
+    used++;
+    consumed.push(sample);
     ranges.push(range);
     if(exactTicketDraws&&range===LOTO_RANGE){
       if(!ticket(sample))fail('expected exact source lottery result');
@@ -339,7 +352,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        reviewed.support!==null){
       // The frozen source STARTFUNC returns 0: it consumes one rand(1000),
       // logs a message on hit, and reserves neither group nor DTevent.
-      const sample=randomDraws[used];
+      const sample=peek(1000);
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
         reviewed:reviewed.support,eventCode:code,shop:nextShop,
@@ -356,13 +369,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       // Actual frozen source: each callback scans the reviewed one shop;
       // first rand(1000) decides hit, and robot-protected manbiki consumes
       // a SECOND rand(1000). If source STARTFUNC returns 0, do not hold group.
-      const firstSample=randomDraws[used];
+      const firstSample=peek(1000);
       const firstValue=draw(1000);
       const takesRobotDraw=code==='manbiki'&&
         firstValue<=400&&nextShop?.item?.[63]>0;
       const samples=[firstSample];
       if(takesRobotDraw){
-        samples.push(randomDraws[used]);
+        samples.push(peek(1000));
         draw(1000);
       }
       const callback=projectOriginalInstantEventCallback({
@@ -416,7 +429,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         const range=Math.trunc(Math.min(spanSeconds,
           reviewed.happy.maxNowSpanSeconds)/36);
         if(range<1)fail('source happy NOWFUNC rand(0) not reviewed');
-        const sample=randomDraws[used];
+        const sample=peek(range);
         draw(range);
         const callback=projectOriginalHappyNow({
           reviewed:reviewed.happy,shop:nextShop,
@@ -467,7 +480,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(reviewed.rebel!==null&&rebelNowCallbacks.length===0&&
      rebelNowDrawCount!==0)
     fail('unreviewed rebel NOW RNG without active event');
-  if(used!==randomDraws.length)fail('unused original RNG samples');
+  if(randomDrawProvider===null&&used!==randomDraws.length)fail('unused original RNG samples');
   return Object.freeze({
     source:reviewed.source,committable:false,
     dataReadItems:Object.freeze(current.map(item=>Object.freeze(item))),
@@ -477,6 +490,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     skippedByGroup:Object.freeze(skippedByGroup),
     logs:Object.freeze(logs.map(log=>Object.freeze(log))),
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
+    ...(randomDrawProvider===null?{}:{consumedSamples:Object.freeze(consumed)}),
     ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null?{}:{
       shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),

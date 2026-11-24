@@ -38,6 +38,7 @@ export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleRev
     popular:saleReview.p3TurnItems.rules[i+1]?.popularSeconds??0,
     point:saleReview.p3TurnItems.rules[i+1]?.point??0,
     plus:plusReview.plusSeconds[i]}));
+  const baseItems=Object.freeze(items.map(item=>Object.freeze({...item})));
   for(const code of activeOrder){
     if(code==='happy')continue;
     if(reviewed.params.rules[code].some(r=>!['popular','point','plus'].includes(r.field)))fail('unreviewed field overlay');
@@ -46,7 +47,7 @@ export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleRev
   const saleRules=Object.fromEntries(Object.entries(saleReview.p3TurnItems.rules).map(([id,r])=>[id,Object.freeze({...r,popularSeconds:items[id-1].popular,point:items[id-1].point})]));
   const plusSeconds=items.map(x=>x.plus);
   if(plusSeconds.filter(Boolean).length!==59||plusSeconds.some(n=>!Number.isSafeInteger(n))||Object.values(saleRules).some(r=>!Number.isSafeInteger(r.popularSeconds)||r.popularSeconds<1||!Number.isSafeInteger(r.point)||r.point<0))fail('unreviewed derived ITEM values');
-  const o=Object.freeze({saleRules:Object.freeze(saleRules),plusSeconds:Object.freeze(plusSeconds),activeOrder:Object.freeze([...activeOrder]),committable:false});overlays.add(o);return o;
+  const o=Object.freeze({baseItems,saleRules:Object.freeze(saleRules),plusSeconds:Object.freeze(plusSeconds),activeOrder:Object.freeze([...activeOrder]),committable:false});overlays.add(o);return o;
 }
 export function reviewedR4OverlayPlus(overlay,world,reviewed){
   if(!overlays.has(overlay)||overlay.committable!==false||!world?.period?.eventState||overlay.activeOrder.length!==Object.keys(world.period.eventState).length||overlay.activeOrder.some(k=>!Object.hasOwn(world.period.eventState,k))||reviewed.plusSeconds.length!==79)fail('source DataRead overlay required');
