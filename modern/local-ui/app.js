@@ -6,6 +6,7 @@ let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
+let lastPricingItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -135,21 +136,28 @@ function renderItemInfo(s){
   for(let index=0;index<shelfCount;index++){
     const option=document.createElement('option');
     option.value=String(index);
+    const listed=shop.showcase[index]>0?
+      '｜'+money(shop.price[index]):'';
     option.textContent='架'+(index+1)+'（'+
-      showcaseSlotDescription(s,index)+'）';
+      showcaseSlotDescription(s,index)+listed+'）';
     shelfPicker.append(option);
   }
   if(selectedShelfIndex>=shelfCount)selectedShelfIndex=0;
   shelfPicker.value=String(selectedShelfIndex);
+  shelfPicker.title=shelfPicker.selectedOptions[0]?.textContent??'';
+  if(lastPricingItemId!==selectedItemId){
+    lastPricingItemId=selectedItemId;
+    $('shelf-price-per').value='100';
+    $('shelf-price-custom').value='100';
+    syncShelfCustomRatio();
+    syncShelfCalculatedPrice();
+  }
   text('showcase-time-cost',
     Number.isSafeInteger(s.showcaseEditTimeSeconds)?
       conciseTimeText(s.showcaseEditTimeSeconds):'—');
   // This page already represents the chosen item. The one shelf picker
   // shows occupancy; clearing a shelf is handled in the shop overview.
   const offer=(s.showcaseOffers??[]).find(x=>x.itemId===selectedItemId);
-  shelfSelect.value=offer?.canShow?
-    (newlyOpened?String(offer.itemId):
-      previous===0?'0':String(offer.itemId)):'0';
   const canEdit=Boolean(item&&shop&&
     (offer||shop.showcase?.includes(selectedItemId)));
   $('showcase-form').hidden=!canEdit;
@@ -167,12 +175,10 @@ function renderItemInfo(s){
   const useList=$('use-offers');
   useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
-  if(!useOffers.length){
-    const li=document.createElement('li');
-    li.textContent='此商品目前沒有可執行的使用或製作方式';
-    useList.append(li);
-    return;
-  }
+  // Only hide products with no source USE at all. Disabled or
+  // material-blocked USEs still show their original eligibility reasons.
+  $('use-section').hidden=useOffers.length===0;
+  if(!useOffers.length)return;
   for(const row of useOffers){
     const li=document.createElement('li');
     const timeSuffix=Number.isSafeInteger(row.timePerUseSeconds)?
@@ -592,6 +598,7 @@ $('reset-world').addEventListener('click',async()=>{
     }
     selectedItemId=null;
     selectedUseId=null;
+    lastPricingItemId=null;
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
@@ -633,7 +640,32 @@ $('showcase-shelves').addEventListener('click',async event=>{
 });
 $('showcase-shelf').addEventListener('change',()=>{
   selectedShelfIndex=Number($('showcase-shelf').value);
+  $('showcase-shelf').title=$('showcase-shelf').selectedOptions[0]?.textContent??'';
 });
+function selectedShelfRatio(){
+  const selector=$('shelf-price-per').value;
+  const raw=selector==='custom'?
+    $('shelf-price-custom').value:selector;
+  if(!/^[0-9]+$/.test(raw))return null;
+  const n=Number(raw);
+  return Number.isSafeInteger(n)&&n>=1&&n<=200?n:null;
+}
+function syncShelfCustomRatio(){
+  $('shelf-custom-ratio').hidden=$('shelf-price-per').value!=='custom';
+}
+function syncShelfCalculatedPrice(){
+  const base=catalogItem(snapshot,selectedItemId)?.basePrice;
+  const ratio=selectedShelfRatio();
+  const actual=Number.isSafeInteger(base)&&base>0&&ratio!==null?
+    Math.trunc(base*ratio/100):null;
+  $('shelf-price-direct').value=Number.isSafeInteger(actual)&&actual>0?
+    String(actual):'';
+}
+$('shelf-price-per').addEventListener('change',()=>{
+  syncShelfCustomRatio();
+  syncShelfCalculatedPrice();
+});
+$('shelf-price-custom').addEventListener('input',syncShelfCalculatedPrice);
 $('discard-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const itemId=selectedItemId;
@@ -658,9 +690,22 @@ $('showcase-form').addEventListener('submit',async event=>{
     feedback('此商品目前不可陳列。',null,true);
     return;
   }
+  const ratio=selectedShelfRatio();
+  const listedRaw=$('shelf-price-direct').value;
+  const listedPrice=Number(listedRaw);
+  const base=catalogItem(snapshot,itemId)?.basePrice;
+  if(ratio===null||!/^\\d+$/.test(listedRaw)||
+     !Number.isSafeInteger(listedPrice)||listedPrice<1||
+     !Number.isSafeInteger(base)||base<1){
+    feedback('請輸入 1～200 的整數比例，以及有效的整數售價。',null,true);
+    return;
+  }
+  const computed=Math.trunc(base*ratio/100);
+  const priceOverride=listedPrice===computed?0:listedPrice;
   await call('/api/showcase',{
     expectedRevision:snapshot?.world?.revision,
-    itemId,per:Number($('shelf-price-per').value),
+    itemId,per:ratio,
+    ...(priceOverride?{priceOverride}:{}),
     shelf:Number($('showcase-shelf').value),
   },'陳列：'+(catalogItem(snapshot,itemId)?.name??'商品'));
 });
