@@ -93,7 +93,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
   assert.equal(rule.owned,2);
  }
  const wrong=await api('/api/showcase',{
-  expectedRevision:state.world.revision,itemId:41,priceOverride:1,
+  expectedRevision:state.world.revision,itemId:41,priceOverride:1000000000,
  });
  assert.equal(wrong.ok,false);
  assert.equal(wrong.state.world.revision,state.world.revision);
@@ -237,9 +237,9 @@ test('R3 player-facing 150% source sale uses original GetSaleTax, CAS and durabl
  assert.equal(invalid.state.world.revision,bought.state.world.revision);
  const bypass=await api('/api/showcase',{
   expectedRevision:bought.state.world.revision,itemId:10,
-  priceOverride:7500,
+  priceOverride:1000000000,
  });
- assert.equal(bypass.ok,false,'arbitrary price override is not sourced percent');
+ assert.equal(bypass.ok,false,'direct price above frozen MaxMoney must be refused');
  const displayed=await api('/api/showcase',{
   expectedRevision:bought.state.world.revision,itemId:10,per:150,
  });
