@@ -49,7 +49,7 @@ test('P3 source #66/3 from genuine cross-period player, three skills, earned EXP
   }
   for(const id of [18,19,24])assert.equal(p.stock(id),1);
   assert.ok(p.state.world.period.settledCount>0,'real 36h settlement was required');
-  let first=null, destroyed=false;
+  let first=null, destroyed=false, callbackObserved=false,salesObserved=0;
   // Randomness is server-owned. No selected UUID, reroll, fixture RNG or
   // state edit. Bound attempts and fail if no actual destruction occurs.
   for(let attempt=0;attempt<32&&!destroyed;attempt++){
@@ -77,14 +77,23 @@ test('P3 source #66/3 from genuine cross-period player, three skills, earned EXP
     assert.equal(p.stock(66),before.item[65]-(destroyed?1:0));
     t.diagnostic('P3 #66/3 actual source EXP '+before.exp['66']+'→'+p.exp(66)+', lostbook='+destroyed+', period='+p.state.world.period.settledCount);
     await p.list(70);
-    // #70 is one-copy; genuinely sell before another manufacture.
+    // #70 is one-copy; genuinely sell before another manufacture. Each
+    // time receipt comes from the same source-reviewed natural sale/ITEM
+    // stage. Do not infer a FUNCTURN gain from a net rank change (EVENT
+    // and natural-sale popularity can independently change rank).
     for(let n=0;p.stock(70)>0;n++){
       assert.ok(n<144,'source #70 sale budget');
-      await p.tick(60);
+      const r=await p.tick(60);
+      if(r.details.itemTurnAffectedSlices>0)callbackObserved=true;
+      salesObserved+=r.details.naturalSaleCount;
     }
     assert.equal(p.stock(70),0);
+    assert.ok(salesObserved>=attempt+1,'actual necklace sale receipt');
   }
   assert.ok(destroyed,'real server-owned lostbook outcome observed');
+  // It may sell immediately or be at the 100% popularity cap, so a
+  // positive callback is conditional, not a fabricated mandatory gain.
+  t.diagnostic('P3 #70 natural sales '+salesObserved+', positive FUNCTURN observed='+callbackObserved);
   assert.ok(first);
   const second=await p.saveAndRestart(1);
   assert.equal(second.shops[0].item[65],0);

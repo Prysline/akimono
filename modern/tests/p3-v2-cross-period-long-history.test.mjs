@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
+function tDiagnostic(p,receipt){
+  // Receipt remains independently checked by CAS/history, and this test
+  // checks the source accounting against the pre-command live player.
+  assert.ok(p.state.world.period.disk.live['play.cgi'].bytes.length>0);
+  assert.ok(receipt.prize.itemId>0);
+}
 async function crossOnce(p){
   const target=p.state.world.period.settledCount+1;
   for(let n=0;n<37;n++){
@@ -13,6 +19,31 @@ async function crossOnce(p){
       assert.equal(period.disk.generations[0]['play.cgi'].bytes,before.period.disk.live['play.cgi'].bytes);
       assert.equal(period.disk.live['lasttime.cgi'].mtime,p.state.world.nowSeconds);
       assert.ok(r.details.sourceTrace.slices.some(s=>s.dateupdate===1));
+      const receipt=r.details.settlementReceipt,old=before.shops[0],shop=p.state.shop;
+      assert.ok(receipt,'same source settlement receipt');
+      const decayed=Object.fromEntries(Object.entries(old.exp??{}).map(([id,n])=>[id,n-Math.trunc(n*60/1000)-5]).filter(([,n])=>n>0));
+      assert.deepEqual(receipt.expAfterLedger,decayed);
+      assert.deepEqual(shop.exp,decayed);
+      assert.equal(shop.rankingcount,(old.rankingcount??0)+1);
+      assert.equal(receipt.rankingCount,shop.rankingcount);
+      assert.equal(shop.rankingyesterday,1);
+      assert.equal(shop.saletoday>=0,true);
+      assert.equal(shop.saleyesterday,receipt.saleBeforeLedger);
+      assert.equal(shop.payyesterday,receipt.payBeforeLedger);
+      assert.equal(shop.taxyesterday,receipt.taxBeforeLedger);
+      assert.equal(shop.costyesterday,receipt.maintenance);
+      assert.equal(receipt.cashAfterLedger,receipt.cashBeforeLedger-receipt.maintenance);
+      assert.equal(shop.profitstock,Math.trunc(((old.profitstock??0)*3+shop.saleyesterday-shop.payyesterday)/4));
+      assert.equal(receipt.cityTaxIn,shop.taxyesterday);
+      assert.equal(period.town.in,shop.taxyesterday);
+      const yesterday={...old.itemtoday};
+      if(receipt.naturalSaleCount)yesterday[receipt.soldItemId]=(yesterday[receipt.soldItemId]??0)+receipt.naturalSaleCount;
+      assert.deepEqual(shop.itemyesterday,yesterday);
+      const prize=receipt.prize;
+      assert.equal(prize.stockAfter-prize.stockBefore,prize.granted);
+      assert.equal(prize.granted+prize.discarded,prize.wanted);
+      assert.notEqual(period.dtPeople,before.period.dtPeople);
+      tDiagnostic(p,receipt);
       return;
     }
   }

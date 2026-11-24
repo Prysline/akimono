@@ -199,11 +199,11 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店','來源審閱的完整非跨期時間推進',
+    capabilities:['建立來源世界','原版開店',reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
-      '單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
+      reviewedCrossPeriod?'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
     disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
     reviewedCrossPeriod,
     reviewedTimeMode:true,
