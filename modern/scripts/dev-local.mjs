@@ -501,9 +501,12 @@ async function api(req,res,url){
         return send(res,409,{ok:false,code:'R2_PREFLIGHT_REQUIRES_ONE_SHOP',
           error:'原版市場買入只允許來源單店世界',state:state()});
       const offer=world.market?streetModule.quoteMarketOffer(world,62):null;
-      const available=offer?.canBuy===true&&
-        Number.isSafeInteger(offer.price)&&offer.price>0&&
-        Number.isSafeInteger(offer.shelf)&&offer.shelf>=0;
+      // An on-shelf quote can still be unbuyable under the original EVENT
+      // gate. Project anyway, so the shared core reports that precise gate.
+      const available=Number.isSafeInteger(offer?.marketStock)&&
+        offer.marketStock>0&&
+        Number.isSafeInteger(offer?.price)&&offer.price>0&&
+        Number.isSafeInteger(offer?.shelf)&&offer.shelf>=0;
       const projected=available?applyGameCommand({world,streetModule,
         command:{kind:'market-buy',expectedRevision,shopId:1,
           itemId:62,requestedCount:1,marketShelf:offer.shelf,
@@ -515,6 +518,7 @@ async function api(req,res,url){
           memoryOnly:true,authenticated:false,committed:false,
           persisted:false,authoritativeBuyApproval:false,
           sourceOfferAvailable:available,
+          sourceAdvertisedCanBuy:offer?.canBuy===true,
           sourceQuote:available?{
             unitPrice:offer.price,marketShelf:offer.shelf,
             marketStock:offer.marketStock,
