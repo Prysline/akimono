@@ -9,7 +9,7 @@
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
-import {isSourceShowcasePercentPrice}
+import {isSourceShowcasePercentPrice,isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
 import {reviewR3ItemCallbackStage,projectR3ItemCallbackStage}
   from './r3-reviewed-item-callback-stage.mjs';
@@ -29,6 +29,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
   from './original-r4-time-slices.mjs';
+import {projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
@@ -86,8 +87,61 @@ function reviewR3SourceSaleItems(itemDsl){
   }
   return Object.freeze({
     rules:Object.freeze(rules),costs:Object.freeze(costs),
+    p3TurnItems:reviewP3TurnItems(items),
   });
 }
+// P3 upstream and manufacture stock, NOT an acquisition whitelist. Every
+// held ITEM still needs its compiled holding limit, cost, and reviewed
+// callback; full source acquisition is proven separately by GameCore/replay.
+const P3_TURN_IDS=Object.freeze([
+  1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,22,23,24,
+  30,31,32,33,34,37,38,39,
+  ...Array.from({length:22},(_,i)=>40+i),63,66,67,68,69,70,78,79,
+]);
+const P3_EXP_IDS=new Set([9,10,12,14,15,16,17,20,21,22,23,37,39,66]);
+function reviewP3TurnItems(items){
+  const one=(b,k)=>b?.fields[k]?.length===1?b.fields[k][0].value:null;
+  const costs={},rules={};
+  for(const id of P3_TURN_IDS){
+    const b=items.get(id),price=one(b,'price'),cost=one(b,'cost');
+    if(!b||price===null||!/^\d+$/.test(price)||
+       (cost!==null&&!/^\d+$/.test(cost))||
+       (id!==70&&['funct','functurn','funcs','funcsale'].some(k=>b.fields[k]?.length)))
+      bad('P3 unreviewed ITEM upkeep/callback #'+id);
+    // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
+    costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
+    if(!Number.isSafeInteger(costs[id]))bad('P3 unsafe ITEM cost');
+    // Keep the sale scope restricted to reviewed finished equipment and #10.
+    // Raw materials, skills, and books are supported as stock, not new shelves.
+    if(id!==10&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
+    const pop=one(b,'pop'),point=one(b,'point'),type=one(b,'type');
+    const match=/^([1-9]\d*)(m|h|d)$/.exec(pop??'');
+    if(!match||!type||Number(price)<=0||
+       (point!==null&&!/^\d+%$/.test(point)))bad('P3 unreviewed ITEM sale #'+id);
+    const seconds=Number(match[1])*({m:60,h:3600,d:86400}[match[2]]);
+    rules[id]=Object.freeze({itemId:id,itemType:type,unitPrice:Number(price),
+      popularSeconds:seconds,point:point===null?Math.trunc(seconds*100/24/36):
+        Number(point.slice(0,-1))*10,cost:costs[id],source:b.file+':'+b.startLine});
+  }
+  return Object.freeze({costs:Object.freeze(costs),rules:Object.freeze(rules)});
+}
+function validateP3Inventory(shop,compiled,reviewed){
+  if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79||
+     !reviewed.p3TurnItems||shop.showcasecount!==1||
+     shop.item.some((n,i)=>n!==0&&(!Object.hasOwn(reviewed.p3TurnItems.costs,i+1)||
+       !Number.isSafeInteger(compiled.limits[i]?.limit)||n>compiled.limits[i].limit))||
+     !['','drug','tool','weapon','armor','material','book','peddle'].includes(shop.job??''))
+    bad('P3 source holding cap, career or single shelf');
+  const exp=shop.exp??{};
+  if(typeof exp!=='object'||Array.isArray(exp)||
+     Object.entries(exp).some(([id,n])=>String(Number(id))!==id||
+       !P3_EXP_IDS.has(Number(id))||!Number.isSafeInteger(n)||n<0||n>1000)||
+     Object.values(exp).reduce((a,b)=>a+b,0)>3600)
+    bad('P3 original ITEM EXP or LIMIT_EXP');
+  // This stage checks a shape only: never infer acquisition, skill provenance,
+  // EXP transfers, or an authorized complete WorldState from a valid shape.
+}
+
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   itemDsl,rebelDsl,turnSource,configSource,reviewedMarket11=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null,
@@ -143,7 +197,7 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   const turnSlices=reviewOriginalR4TimeSlices({turnSource,configSource});
   return Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
-    saleRules:r3.rules,upkeepCosts:r3.costs,itemCallbacks,turnSlices,
+    saleRules:r3.rules,upkeepCosts:r3.costs,p3TurnItems:r3.p3TurnItems,itemCallbacks,turnSlices,
     swordOutcomesSource:reviewedB63Map?.source??null,
     swordMapSource:reviewedB62Map?.source??null,
     swordEventSource:reviewedB61Sword?.source??null,
@@ -160,6 +214,8 @@ function projectSourcePreEventSaleSlice({
   reviewedB59Iron=null,reviewedB60Happy=null,
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
+  p3InventoryStage=false,reviewedNayuta=null,
+  r4DataRead=null,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -171,7 +227,7 @@ function projectSourcePreEventSaleSlice({
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('exact shared original random samples must be integer millionths');
   if(!validateSourceSparseMarket(world?.market)||
-    world.market.sourceWriteShape!=='whole-store-79'||
+    (!p3InventoryStage&&world.market.sourceWriteShape!=='whole-store-79')||
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
   if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
@@ -180,7 +236,9 @@ function projectSourcePreEventSaleSlice({
      reviewed.swordMapSource!==(reviewedB62Map?.source??null)||
      reviewed.swordOutcomesSource!==(reviewedB63Map?.source??null))
     bad('source durable event contracts mismatch');
-  if(world.schema===PERIOD_WORLD_SCHEMA&&
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
+  if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
+  if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
      !isReviewedB59EventPeriod({
        period:world.period,reviewed:reviewedB59Iron,
@@ -220,10 +278,15 @@ function projectSourcePreEventSaleSlice({
       population:world.period.dtPeople,saleSpeed:12,
     }):null;
   const shop=world.shops[0];
+  if(p3InventoryStage&&(world.schema!==PERIOD_WORLD_SCHEMA||world.period.eventState===null||
+     (overlay===null&&(!validateOriginalPeriodSeed(world.period)||activeKeys.length||reviewedEventTimeSlice))))
+    bad('P3 pre-EVENT projection requires known bootstrap and no active EVENT unless R4 DataRead reviewed');
+  const saleRules=p3InventoryStage?reviewed.p3TurnItems.rules:reviewed.saleRules;
+  const upkeepCosts=p3InventoryStage?reviewed.p3TurnItems.costs:reviewed.upkeepCosts;
   if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
     shop.showcase?.length!==1||shop.price?.length!==1||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
-    shop.item[62]!==1||shop.item[78]!==5||
+    shop.item[62]!==1||(!p3InventoryStage&&(shop.item[78]!==5||
     shop.item.some((n,i)=>!(reviewedB63Map?
       [9,10,13,39,40,41,42,43,62,78]:reviewedB62Map?
       [9,10,13,39,62,78]:reviewed.ticketSourceReviewed?
@@ -242,22 +305,25 @@ function projectSourcePreEventSaleSlice({
     // retaining the fixed-only modulus when B62 is reviewed would
     // reject a real original map BUY -> USE -> sword sale sequence.
     (!reviewedB62Map&&
-      shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0)||
+      shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0)))||
+    !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||
     !Number.isSafeInteger(shop.money)||shop.money<0||
     !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000||
     !Number.isSafeInteger(shop.trush??0)|| (shop.trush??0)<0||
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
     !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
     !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||
-    !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
-      [0,10,40]:[0,10]).includes(shop.showcase[0])||
+    (p3InventoryStage?shop.showcase[0]!==0&&!Object.hasOwn(saleRules,shop.showcase[0]):
+      !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
+      [0,10,40]:[0,10]).includes(shop.showcase[0]))||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
     (shop.showcase[0]!==0&&
-      !isSourceShowcasePercentPrice(
-        reviewed.saleRules?.[shop.showcase[0]]?.unitPrice,
+      !(p3InventoryStage?isSourceShowcaseListedPrice:isSourceShowcasePercentPrice)(
+        saleRules?.[shop.showcase[0]]?.unitPrice,
         shop.price[0]))||
     ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
+  if(p3InventoryStage)validateP3Inventory(shop,compiled,reviewed);
   // New R3 sword sales may not interpret B-41 unknown EVENT as empty.
   // Preserve historical R2 #10 behavior, but reject later sword turns
   // until the original lifecycle has been source-reviewed.
@@ -292,12 +358,12 @@ function projectSourcePreEventSaleSlice({
     bad('this interval crosses original period settlement; not yet supported');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
-  const rule=shop.showcase[0]?reviewed.saleRules[shop.showcase[0]]:null;
-  const popularOverride=rule&&swordDemandEventActive&&
+  const rule=shop.showcase[0]?(overlay?.saleRules??saleRules)[shop.showcase[0]]:null;
+  const popularOverride=overlay===null&&rule&&swordDemandEventActive&&
     rule.itemId>=40&&rule.itemId<=44?
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
-    shop,rule,upkeepCosts:reviewed.upkeepCosts,
+    shop,rule,upkeepCosts,
     spanSeconds:span,randomDraws,popularOverride,
   });
   const sold=natural.sold;
@@ -306,6 +372,7 @@ function projectSourcePreEventSaleSlice({
   const itemCallbackStage=projectR3ItemCallbackStage({
     reviewed:reviewed.itemCallbacks,shop:natural.shop,spanSeconds:span,
     randomDraws:randomDraws.slice(naturalDraws),
+    ...(p3InventoryStage?{reviewedNayuta}:{}),
   });
   // Projected shop state belongs to WorldState, never inside the receipt.
   // Copying a fractional maintenance cost through the receipt violates the
@@ -326,6 +393,7 @@ function projectSourcePreEventSaleSlice({
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
     reviewedB59Iron,ironEventActive,
     reviewedEventTimeSlice,
+    ...(overlay===null?{}:{r4DataReadOverlay:overlay}),
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
@@ -372,13 +440,28 @@ export function projectR3PreEventTurn(args){
   return stage;
 }
 
+/** P3's original narrow pre-EVENT handoff (not a time command). */
+export function projectP3PreEventTurn(args){
+  return projectR3PreEventTurn({...args,p3InventoryStage:true,
+    reviewedEventTimeSlice:false,r4ReviewedSort:null,r4DataRead:null});
+}
+
+/** R4 continuation of the same reviewed inventory/natural-sale engine.
+ * The caller must finish all EVENT phases before claiming a WorldState.
+ */
+export function projectR4InventoryPreEventTurn(args){
+  const stage=projectR3PreEventTurn({...args,p3InventoryStage:true,
+    reviewedEventTimeSlice:true});
+  return {...stage,committable:false,receipt:{...stage.receipt,r4Committable:false}};
+}
+
 /**
  * Legacy B-41 HTTP command. This is intentionally NOT a full source turn:
  * R4 EVENT isn't run, so the saved EVENT successor becomes UNKNOWN, not {}.
  * Keep old narrow regression behavior until the R4 event engine replaces it.
  */
 export function projectB41Sale(args){
-  const stage=projectSourcePreEventSaleSlice(args);
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:false,r4DataRead:null});
   return {
     ...stage,
     ...(args.world?.schema===PERIOD_WORLD_SCHEMA?{

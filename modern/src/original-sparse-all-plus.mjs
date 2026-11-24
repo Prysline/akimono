@@ -8,6 +8,7 @@ import {ORIGINAL_SPARSE_MARKET_SOURCE,validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {reviewOriginalSparseMultiPlus} from './original-sparse-multi-plus.mjs';
 import {B59_IRON_SOURCE} from './original-b59-iron-event-lifecycle.mjs';
+import {reviewedR4OverlayPlus} from './original-r4-pre-event-item-overlay.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 
 export const ALL_PLUS_SOURCE='core-b37-all-59-plus-original-sequence';
@@ -61,7 +62,7 @@ export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
   reviewedB39Span8640=false,
   reviewedB59Iron=null,ironEventActive=false,
-  reviewedEventTimeSlice=false,r4PeriodPopulation=false,
+  reviewedEventTimeSlice=false,r4PeriodPopulation=false,r4DataReadOverlay=null,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -124,6 +125,7 @@ export function projectOriginalSparseAllPlus({
     bad('R4 dynamic population requires source-period numeric state');
   const sourcePopulation=r4PeriodPopulation?
     world.period.dtPeople:reviewed.population;
+  const derivedPlus=r4DataReadOverlay===null?null:reviewedR4OverlayPlus(r4DataReadOverlay,world,reviewed);
   const shop=world.shops[0];
   if(!Array.isArray(shop?.item)||shop.item.length!==79||
     shop.item.some(v=>!Number.isSafeInteger(v)||v<0))
@@ -140,7 +142,7 @@ export function projectOriginalSparseAllPlus({
     // Original DataRead loads the active plusup-tetu EVENT file before
     // inc-turn. Its generated ITEM #5 plus=720 overrides the compiled
     // -20m for this entire timespan, even if the EVENT expires later.
-    const plus=ironEventActive&&i===4?720:reviewed.plusSeconds[i];
+    const plus=derivedPlus!==null?derivedPlus[i]:ironEventActive&&i===4?720:reviewed.plusSeconds[i];
     if(plus===0)continue;
     const start=used;
     let add=timespanSeconds/Math.abs(plus)*sourcePopulation/
