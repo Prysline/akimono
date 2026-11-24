@@ -15,14 +15,20 @@ import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
-import {beginCareerProof,appendCareerCommand,requiresReviewedHistory}
+import {beginCareerProof,appendCareerCommand,requiresReviewedHistory,isCareerReplayCommand}
   from '../src/reviewed-career-save-replay.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
-  applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
+  applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
+import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
+import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
+const reviewedTimeMode=process.env.AKIMONO_REVIEWED_NORMAL_TIME==='1';
+if(reviewedTimeMode&&(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'))
+  throw Error('reviewed normal time cannot use fixture RNG or multi-shop audit');
+const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
@@ -61,9 +67,10 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
+  enableReviewedNormalTime:reviewedTimeMode,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
-  'market-buy','use-item','edit-showcase','advance-source-time']
+  'market-buy','use-item','edit-showcase',reviewedTimeMode?'advance-reviewed-world-time':'advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('R2-E runtime source-review capabilities missing');
 if(!streetModule.reviewedB63Map)
@@ -86,7 +93,7 @@ function createInitialWorld({worldId,nowSeconds}){
 }
 // The player never supplies this history or RNG; only committed local commands
 // are recorded. Unsupported actions invalidate the proof, not the old save.
-let repo=null,careerProof=null,careerRequired=false;
+let repo=null,careerProof=null,careerRequired=false,liveGeneration=0;
 function verifyCareerDraws(world,command){
   if(command.kind==='reviewed-sparse-all-plus'){
     const expected=sampleOriginalPlus(world,command.timespanSeconds);
@@ -98,11 +105,29 @@ function verifyCareerDraws(world,command){
   }
   return !Object.hasOwn(command,'randomDraws');
 }
+// Reviewed time mode uses the existing P3 ordinary command policy, never
+// the R4-only narrow registry or PLUS-only supply history. Legacy saves
+// remain available in legacy mode; migration requires separate proof.
+const isOrdinaryCommand=command=>isCareerReplayCommand(command)&&command.kind!=='reviewed-sparse-all-plus';
+const verifyOrdinaryDraws=verifyCareerDraws;
+const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
+const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
+const checkpointStore=reviewedTimeMode?createReviewedHistoryCheckpointStore({
+  directory:saveDirectory,...fingerprintReviewedCheckpointRuntime({
+    sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
+    sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
+      originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
+      originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
+      originalPeriodSource,originalUseSource,originalItemHelperSource],
+  }),
+}):null;
 const saveStore=createLocalWorldSaveStore({
-  directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
+  directory:saveDirectory,
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
-  careerReplay:{streetModule,createInitialWorld,verifyDraws:verifyCareerDraws},
+  ...(reviewedTimeMode?{historyReplay:{requireProof:true,checkpointStore,
+    verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})}}:
+    {careerReplay:{streetModule,createInitialWorld,verifyDraws:verifyCareerDraws}}),
 });
 // Opt-in R2 memory-only audit. NOT player authentication or durable multi-shop.
 const targetAdvertisementMemoryAudit=
@@ -204,7 +229,7 @@ function state(){
       readiness:targetAdvertisementReadiness(world,marketOffers),
     }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(careerRequired&&world?.shops?.[0]?.showcasecount===1?
+    showcaseOffers:Object.values((reviewedTimeMode||careerRequired)&&world?.shops?.[0]?.showcasecount===1?
        streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
@@ -222,13 +247,16 @@ function state(){
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
       '原版自然販售片段／時間（多架／EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
+    reviewedTimeMode,
+    historyCommands:careerProof?.commands.length??null,
+    historyCheckpointRevision:careerProof?.checkpoint?.revision??null,
     memoryOnly:!save.available,
     diskSaveAvailable:true,
     sourceCityState:world?.period?.town??null,
     sourcePeriodMetadata:world?.period?{
       state:world.period.state,dtPeople:world.period.dtPeople,
       settledCount:world.period.settledCount,
-      activeEventsKnownEmpty:world.period.eventState!==null,
+      activeEventsKnownEmpty:reviewedTimeMode?world.period.eventState!==null&&Object.keys(world.period.eventState).length===0:world.period.eventState!==null,
     }:null,
     eventDefinitionStatus:{
       declared:streetModule.reviewedEventCatalog.declaredCount,
@@ -241,6 +269,23 @@ function state(){
 function commit(command){
   if(!repo) return {ok:false,code:'WORLD_NOT_INITIALIZED',
     details:{reason:'請先初始化來源世界'}};
+  if(reviewedTimeMode){
+    const before=repo.read();
+    const preview=applyGameCommand({world:before,streetModule,command});
+    if(!preview.ok)return preview;
+    let nextProof;
+    try{
+      nextProof=appendReviewedWorldHistory({proof:careerProof,before,command,result:preview,isOrdinaryCommand,verifyOrdinaryDraws,
+        continuation:{...historyPolicy,checkpointStore,generation:liveGeneration}});
+      saveStore.preflight(preview.world,{expectedGeneration:liveGeneration,careerProof:nextProof});
+    }catch(error){return {ok:false,code:'HISTORY_REJECTED',details:{reason:error.message}};}
+    const result=executeMemoryCommand({repository:repo,streetModule,command});
+    if(result.ok){
+      if(encodeMemorySnapshot(result.world)!==encodeMemorySnapshot(preview.world))throw Error('reviewed CAS replay mismatch');
+      careerProof=nextProof;
+    }
+    return result;
+  }
   const result=executeMemoryCommand({repository:repo,streetModule,command});
   if(result.ok){
     if(requiresReviewedHistory(command))careerRequired=true;
@@ -436,7 +481,7 @@ async function api(req,res,url){
           error:'世界或存檔已更新，請重新確認後再重置',state:state()});
       const cleared=saveStore.clear({expectedGeneration});
       // Only discard live memory AFTER both disk slots are successfully cleared.
-      repo=null;careerProof=null;careerRequired=false;
+      repo=null;careerProof=null;careerRequired=false;liveGeneration=0;
       return send(res,200,{ok:true,code:'RESET',
         details:{action:'reset-local-test-world',
           deletedSlots:cleared.deletedSlots,generation:cleared.generation},
@@ -449,8 +494,9 @@ async function api(req,res,url){
       repo=createSourceReviewedMemoryWorldAdapter({
         initialWorld:saved.world,streetModule,
       });
-      careerRequired=Boolean(saved.careerProof);
+      careerRequired=reviewedTimeMode||Boolean(saved.careerProof);
       careerProof=saved.careerProof??beginCareerProof(saved.world,'legacy');
+      liveGeneration=saved.generation;
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
           recoveredPreviousGeneration:saved.recovered,
@@ -475,11 +521,12 @@ async function api(req,res,url){
         return send(res,409,{ok:false,code:'CAREER_HISTORY_UNREVIEWED',
           error:'需要來源歷史的操作超出已審閱保存範圍，保留上一有效存檔',state:state()});
       const saved=saveStore.save(world,{expectedGeneration,
-        ...(careerRequired?{careerProof}:{})});
+        ...((reviewedTimeMode||careerRequired)?{careerProof}:{})});
+      liveGeneration=saved.generation;
       // Ordinary checkpoints remain backwards compatible. If a previously
       // untracked action was accepted by legacy B-43, begin at that checked
       // checkpoint rather than inventing a missing command history.
-      if(!careerRequired&&careerProof?.anchorKind!=='fresh')
+      if(!reviewedTimeMode&&!careerRequired&&careerProof?.anchorKind!=='fresh')
         careerProof=beginCareerProof(world,'legacy');
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
@@ -503,8 +550,8 @@ async function api(req,res,url){
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
-      repo=staged;careerRequired=false;
-      careerProof=beginCareerProof(applied.world,'fresh');
+      repo=staged;careerRequired=reviewedTimeMode;
+      careerProof=reviewedTimeMode?beginReviewedWorldHistory(applied.world):beginCareerProof(applied.world,'fresh');
       result=applied;
       break;
     }
@@ -640,6 +687,7 @@ async function api(req,res,url){
       break;
     }
     case '/api/supply': {
+      if(reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time requires complete turn, not PLUS-only supply',state:state()});
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body),timespanSeconds=
         commandNumber(body.timespanSeconds,'timespanSeconds',1);
@@ -721,7 +769,7 @@ async function api(req,res,url){
     case '/api/showcase': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
-      const p3Shelf=careerRequired&&repo.read().shops[0]?.showcasecount===1;
+      const p3Shelf=(reviewedTimeMode||careerRequired)&&repo.read().shops[0]?.showcasecount===1;
       const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
         streetModule.reviewedB41?.saleRules?.[itemId])??null;
       if(itemId!==0&&!sourceRule)
@@ -750,7 +798,14 @@ async function api(req,res,url){
         itemId,per,priceOverride});
       break;
     }
+    case '/api/advance-reviewed-time': {
+      if(!reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time mode is disabled',state:state()});
+      if(!exactKeys(body,'expectedRevision,minutes'))throw Error('reviewed time accepts only expectedRevision and minutes');
+      result=commit({kind:'advance-reviewed-world-time',expectedRevision:ensureRevision(body),minutes:commandNumber(body.minutes,'minutes',1)});
+      break;
+    }
     case '/api/advance-time': {
+      if(reviewedTimeMode)return send(res,409,{ok:false,error:'legacy time is disabled in reviewed mode',state:state()});
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body);
       const minutes=commandNumber(body.minutes,'minutes',1);
