@@ -1,7 +1,7 @@
 # R2 原版商品 USE／製作補完狀態（平行支線）
 
-- R2 支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立。
-- R4 合併目標：`test/task02-baseline-on-s1`；僅透過獨立 **Draft PR #2** 進行預整合驗證，未合併。原有 Draft PR #1、R4 分支與 Notion 任務狀態不變。
+- R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。本次後續診斷分支：`work/r2-target-ad-readiness-20261124`。
+- PR #2 原本目標 `test/task02-baseline-on-s1` 是 **R4 Draft PR #1 的來源分支**；為避免更動 R4，PR #2 已改指向上述獨立整合分支並成功合併。原有 Draft PR #1、R4 來源分支與 `main` 均未改動；**這不是合入主線或完成 R4 整合**。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
 - **原版宣告：79 ITEM／116 USE。** 本分支 `getRule` 現有 **112 項**（原 111＋#62/1 跨店廣告的記憶體限定實作）；單店本機 HTTP 的 `listUseOffers` 仍維持 **111 項**，不提供 #62/1 目標選擇與儲存。其他 **4 項** 尚未註冊。`getRule` 存在不代表玩家 HTTP、授權或 B-43 多店持久化已驗收。詳見 `r2-use-completion-gap-inventory.md`。
 
@@ -93,7 +93,7 @@
 - `#77/0` 消耗 1 組「慶祝用套組」，原版 `arg nocount`，宣告費用 0、執行時間 `4h×ItemUseTimeRate(0.5)`，保留材料消耗訊息；執行 frozen `@@FUNCITEM::popup`：`int(1000×(2−rank/5000))`、人氣上限 10000、兩筆原文 `WriteLog`，沒有憑空加入其他庫存，也沒有客戶端任意指定人氣值。
 - `original-r2-party-use-probe.pl` 直接編譯凍結 `GetBuffer`、真 Perl `UseItem` 與 `popup` 本體；`r2-party-popup-source.test.mjs` 比對不同初始人氣、上限、原版訊息與缺少套組／非法次數的 CAS 原子拒絕。**套組市場取得與 B-43 保存來源仍未驗收**，不可當成任意玩家現成物品。
 
-### ITEM #62/0：一項自家廣告 USE（#62/1-2 不放行）
+### ITEM #62/0：自家廣告 USE（#62/1 僅記憶體；#62/2 未註冊）
 
 - 凍結 `custom/inc-item-data.cgi` 的 ITEM #62 USE #0「推出自己商店的廣告」現以 source-pinned Registry + GameCore CAS 接入，必須持有廣告包 1 件且單次使用（`nocount`），執行時間 `10h×ItemUseTimeRate(0.5)`；行腳商人使用原版 `job_peddle_time_rate=1.5`，每次增加該 USE 原版 `exp 10%`（100 點）。
 - 來源 inline `_local_` 在扣除時間、道具與市場檢查之後消耗 **一次** `rand(1000)`：`<250`（250‰）為反效果，人氣減去 `int(500×(2−rank/5000))` 且下限為 1000；否則人氣增加同一數值，上限 10000。兩分支均保留原版兩筆 `WriteLog`。不因成功就產生任何商品、費用或目標店舖效果。
@@ -102,7 +102,9 @@
 
 ### #62/1 記憶體受控實作與剩餘 4 項跨世界回呼
 
-- `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，以受控 `targetShopId` 解析同一記憶體 WorldState 中的另一間真實 `open-shop` 建立店舖。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 扣使用者的廣告包與時間並提高目標人氣；無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 已有凍結 Perl 差分。`modern/scripts/dev-local.mjs` 新增**預設關閉**的 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 本機驗證模式：`/api/r2/open-target-shop` 只可透過原本 `open-shop` 建立第二間店（固定 ID 2，未注入物品／EXP），`/api/use` 僅針對 #62/1 允許 `targetShopId`，實際操作店仍固定 ID 1；第二店建立後，市場購買、供貨、時間快轉、一般 USE、展示架與丟棄等原單店指令都被拒絕，只允許受控 #62/1 嘗試；由伺服器來源世界解析目標並重新做共用 CAS，客戶端不得指定回呼或亂數。`r2-target-advertisement-local-http.test.mjs` 以真來源 PLUS→市場購入 #14 地圖→真 `use-item` 製劍→B-41 自然販售，驗證該測試情境的 #62 動態報價 **121951** 超過起始金額 **100000**，缺錢購買維持拒絕；首次販售後 `period.eventState=null`，下一次販售時間片也因尚無完整 R4 EVENT 來源而被拒絕，**不憑空補錢或廣告包，也不假稱 HTTP 成功用了 #62/1**。另驗證第二店來源建立、非法目標／過期 revision／未持有包裹原子拒絕、雙店 B-43 存檔拒絕與既有單店存檔重啟載入；正向 #62/1 Perl／Node 差分仍由記憶體兩店測試提供。最新同 SHA CI 待核定。**此模式沒有多玩家身分驗證，也不能保存雙店世界；正常啟動時 HTTP 不接受 target，B-43 仍拒絕雙店。不可宣告正式玩家跨店廣告已放行。**
+- **2026-11-24 後續唯讀驗證**：當 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 時，`/api/state.targetAdvertisementAudit.readiness` 顯示來源 #62 動態市場單價、當前現金與現金差額、廣告包是否持有、EVENT 狀態是否已失去來源確認、雙店是否禁止 B-43 存檔。市場 `canBuy` 不等於玩家能負擔或成功執行交易；所有資訊僅供診斷，`evidenceOnly=true`、`authoritativeUseApproval=false`、`authenticated=false`。關閉模式時仍回傳 `targetAdvertisementAudit=null`，沒有增加任意玩家身分、RNG、商品或金錢。
+
+- `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，以受控 `targetShopId` 解析同一記憶體 WorldState 中的另一間真實 `open-shop` 建立店舖。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 扣使用者的廣告包與時間並提高目標人氣；無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 已有凍結 Perl 差分。`modern/scripts/dev-local.mjs` 新增**預設關閉**的 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 本機驗證模式：`/api/r2/open-target-shop` 只可透過原本 `open-shop` 建立第二間店（固定 ID 2，未注入物品／EXP），`/api/use` 僅針對 #62/1 允許 `targetShopId`，實際操作店仍固定 ID 1；第二店建立後，市場購買、供貨、時間快轉、一般 USE、展示架與丟棄等原單店指令都被拒絕，只允許受控 #62/1 嘗試；由伺服器來源世界解析目標並重新做共用 CAS，客戶端不得指定回呼或亂數。`r2-target-advertisement-local-http.test.mjs` 以真來源 PLUS→市場購入 #14 地圖→真 `use-item` 製劍→B-41 自然販售，驗證該測試情境的 #62 動態報價 **121951** 超過起始金額 **100000**，缺錢購買維持拒絕；首次販售後 `period.eventState=null`，下一次販售時間片也因尚無完整 R4 EVENT 來源而被拒絕，**不憑空補錢或廣告包，也不假稱 HTTP 成功用了 #62/1**。另驗證第二店來源建立、非法目標／過期 revision／未持有包裹原子拒絕、雙店 B-43 存檔拒絕與既有單店存檔重啟載入；正向 #62/1 Perl／Node 差分仍由記憶體兩店測試提供。原 PR #2 最終同 SHA 1,198／1,198 CI 通過。**此模式沒有多玩家身分驗證，也不能保存雙店世界；正常啟動時 HTTP 不接受 target，B-43 仍拒絕雙店。不可宣告正式玩家跨店廣告已放行。**
 - `#62/2` 商會廣告：需可信 guild 身分、商會名稱字典、同 guild 的全部店舖快照與原版逐店人氣投影，不可用空商會資料替代。
 - `#65/0` 謠言：需指定目標、`needpoint=20000`、原版 `rand(1000)<800`、對方 #62 熟練度與雙方人氣變化，需共同交易與日誌驗證。
 - `#65/1` 偷竊：需目標商品／陳列架、看門機器人、跨店金錢與 `saletoday/paytoday`、失敗賠償、`STATE.safety`、隨機與持有上限等所有原版分支；不得只模擬轉移商品。
@@ -119,10 +121,10 @@
 
 ## 4. 尚未完成與 R4 依賴
 
-- 尚有 **4／116** 原版 USE 未註冊（#62/2 商會廣告＋#65/0～2 禁斷之書）；#62/1 僅接入記憶體雙店 USE，尚不支援本機 HTTP／多店儲存。不能將 112 項 Registry 計數等同 112 項完整玩家玩法。
+- 尚有 **4／116** 原版 USE 未註冊（#62/2 商會廣告＋#65/0～2 禁斷之書）；#62/1 僅接入記憶體雙店 USE，以及預設關閉的本機 HTTP 稽核入口，**未提供受授權多人 HTTP 或雙店保存**。不能將 112 項 Registry 計數等同 112 項完整玩家玩法。
 - 高風險缺口是原版產生函式、職業變化、`LIMIT_EXP` 並列排序與事件狀態的完全差分；這些需要個別補真 Perl Oracle，再擴充共用 Registry，不能用手寫預期值冒充來源。
 - R4 負責完整時間切片、原版 EVENT/hash/RNG 語義、SortDT、36 小時期末決算；R2 不建立第二套 EVENT 引擎、不將未知 EVENT 設空。依賴 EVENT 的 USE 在明確介面接妥前繼續拒絕。
-- `modern/scripts/dev-local.mjs` 與 R4 兩條工作線都有修改；整合前應重新取得 R4 最新 HEAD 並以兩側功能保留方式處理。R2 支線 CI 通過只代表支線驗收，不代表最終整體合併驗收。
+- `modern/scripts/dev-local.mjs` 與 R4 工作線均有既有變動；目前僅在獨立整合分支保留兩側歷史，原 R4 PR #1 與 `main` 未更新。未來若要將整合分支合回 R4 或主線，仍須再次檢查兩側來源語義與同 SHA CI；R2 支線測試通過不代表最終遊戲功能驗收。
 
 ## 5. 驗證標準
 
