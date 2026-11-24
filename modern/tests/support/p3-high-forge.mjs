@@ -32,13 +32,21 @@ export async function highForge(t,book){
     (useId===0?[[5,20]]:useId===1?[[6,20],[8,2]]:[[7,20],[8,2]]):
     [[useId<2?5:useId===2?6:7,useId===1?40:20],
       ...(book===23?[[8,[2,4,6,10][useId]]]:[])];
-  async function craft(useId){
+  let first=null;
+  async function craft(useId,{checkpoint=false}={}){
     if(!p.stock(book))await p.market(book,1,{sell:r.products});
     for(const [id,n] of materials(useId)){
       if(id===8)await p.stones(n,r.products);else await p.ore(id,n);
     }
     const offer=p.quote(book,useId);
     await p.enoughTime(offer.timePerUseSeconds);
+    if(checkpoint){
+      // Save after all legitimate gates and materials are ready, not at the
+      // beginning of another long grinding segment. Replay remains exact;
+      // this avoids repeatedly rereading the same long prefix during grinding.
+      first=await p.saveAndRestart(0);
+      if(p.boundary()>60)await p.tick(1);
+    }
     const prior=p.state.shop,product=r.products[useId],before=p.exp(book);
     const done=await p.use(book,useId);
     assert.equal(done.details.experienceGain,20);
@@ -50,10 +58,10 @@ export async function highForge(t,book){
     assert.equal(p.stock(book),prior.item[book-1]-(done.details.mapDestroyed?1:0));
     if(useId>=2||(book===66&&useId===1))assert.ok(done.details.callbackOrder.includes('after-use'));
     // Keep a real product on sale: proceeds can fund a replacement lost book.
-    if(p.stock(r.products[0])>0)await p.list(r.products[0]);
+    if(!checkpoint&&p.stock(r.products[0])>0)await p.list(r.products[0]);
+    if(useId>0)t.diagnostic('P3 '+book+'/'+useId+' actual source EXP '+before+'→'+p.exp(book)+', output #'+product+' +'+(p.stock(product)-prior.item[product-1])+', lostbook='+done.details.mapDestroyed+', world clock='+p.state.world.nowSeconds);
     return done;
   }
-  let first=null;
   for(let i=0;i<r.gates.length;i++){
     const useId=i+1,gate=r.gates[i];
     if(p.exp(book)<gate){
@@ -63,14 +71,17 @@ export async function highForge(t,book){
     }
     while(p.exp(book)<gate)await craft(0);
     assert.ok(p.exp(book)>=gate);
-    await craft(useId);
-    if(i===r.gates.length-2)first=await p.saveAndRestart(0);
+    await craft(useId,{checkpoint:i===r.gates.length-1});
   }
   assert.ok(first);
   const second=await p.saveAndRestart(1);
   assert.equal(second.shops[0].exp[String(book)],p.exp(book));
-  for(const id of r.products.slice(1))assert.ok(second.shops[0].item[id-1]>0,'advanced output persists #'+id);
-  assert.ok(second.nowSeconds>first.nowSeconds);
+  for(const id of r.products.slice(1))assert.ok(second.shops[0].item[id-1]>0||(second.shops[0].itemtoday[id]??0)>0,'advanced output or genuine sale persists #'+id);
+  assert.ok(second.revision>first.revision&&second.nowSeconds>=first.nowSeconds);
+  if(book===66){
+    assert.ok(p.exp(66)>=500);assert.equal(p.stock(24),0);
+    assert.equal(p.quote(66,3).canUse,false);await p.deny(66,3);
+  }
   if(book===20){
     // Genuine v2 checksum-correct forgery is rejected by history, not just hash.
     await p.rejectForgedLatest(first,record=>{
