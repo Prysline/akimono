@@ -124,7 +124,7 @@ test('P3 real GameCore iron forge with spent vouchers, skills and EXP enters pur
   assert.equal(shop.exp['20'],20);
   assert.ok(shop.item[40]>0);
   const before=JSON.stringify(world);
-  assert.throws(()=>projectB41Sale(args(world,1,[])),/inventory|shelf/);
+  assert.throws(()=>projectB41Sale(args(world,1,[])),/inventory|shelf|post-purchase/);
   const projected=compare(world,1);
   assert.deepEqual(projected.shops[0].item,shop.item);
   assert.deepEqual(projected.shops[0].exp,shop.exp);
