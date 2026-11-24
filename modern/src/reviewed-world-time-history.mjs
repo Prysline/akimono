@@ -1,7 +1,8 @@
 /** Shared bounded world-time history for B-43 / P3.
  * Ordinary command/recipe policy is injected by its owning street, never
  * copied here. Fresh anchors are regenerated; legacy anchors require an
- * explicit source validator. No arbitrary mid-history checkpoint.
+ * explicit source validator. A continuation requires a verified prefix and
+ * server-authenticated checkpoint; never a new arbitrary fresh anchor.
  */
 import {createHash} from 'node:crypto';
 import {applyGameCommand,executeMemoryCommand,encodeMemorySnapshot,decodeMemorySnapshot,createSourceReviewedMemoryWorldAdapter} from './game-core-contract.mjs';
@@ -70,7 +71,8 @@ export function replayReviewedTimeHistoryEntry({repository,streetModule,entry}){
   return result.world;
 }
 function withinBounds(proof){
-  if(!exact(proof,'anchorKind,anchor,commands')||!['fresh','legacy'].includes(proof.anchorKind)||
+  const checkpoint=proof?.anchorKind==='checkpoint';
+  if(!exact(proof,checkpoint?'anchorKind,anchor,commands,checkpoint':'anchorKind,anchor,commands')||!['fresh','legacy','checkpoint'].includes(proof.anchorKind)||
      typeof proof.anchor!=='string'||Buffer.byteLength(proof.anchor)>200000||
      !Array.isArray(proof.commands)||proof.commands.length>MAX_REVIEWED_HISTORY_COMMANDS||
      Buffer.byteLength(JSON.stringify(proof))>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('bounded source history exhausted or invalid');
@@ -79,7 +81,7 @@ export function beginReviewedWorldHistory(world,anchorKind='fresh'){
   const proof={anchorKind,anchor:encodeMemorySnapshot(world),commands:[]};
   withinBounds(proof);return proof;
 }
-export function appendReviewedWorldHistory({proof,before,command,result,isOrdinaryCommand,verifyOrdinaryDraws}){
+export function appendReviewedWorldHistory({proof,before,command,result,isOrdinaryCommand,verifyOrdinaryDraws,continuation=null}){
   withinBounds(proof);
   if(!result?.ok||result.world.revision!==before.revision+1||command.expectedRevision!==before.revision||result.world.worldId!==before.worldId)
     fail('successful next source revision required');
@@ -87,10 +89,18 @@ export function appendReviewedWorldHistory({proof,before,command,result,isOrdina
     makeReviewedTimeHistoryEntry({before,command,result}):
     (isOrdinaryCommand(command)&&verifyOrdinaryDraws(before,command)&&result.world.nowSeconds===before.nowSeconds?
       structuredClone(command):fail('ordinary source command/draw or clock not reviewed'));
-  const next={...proof,commands:[...proof.commands,entry]};
+  let next={...proof,commands:[...proof.commands,entry]};
+  if(continuation&&(next.commands.length>MAX_REVIEWED_HISTORY_COMMANDS||Buffer.byteLength(JSON.stringify(next))>MAX_REVIEWED_HISTORY_WIRE_BYTES)){
+    const {checkpointStore,generation,...policy}=continuation;
+    if(!checkpointStore||!proof.commands.length)fail('checkpoint continuation unavailable');
+    // Full source replay of the entire retained segment BEFORE any signature.
+    verifyReviewedWorldHistory({world:before,proof,...policy,isOrdinaryCommand,verifyOrdinaryDraws,checkpointStore});
+    const compact=checkpointStore.sealVerified({world:before,anchor:encodeMemorySnapshot(before),proof,generation});
+    next={...compact,commands:[entry]};
+  }
   withinBounds(next);return next;
 }
-export function verifyReviewedWorldHistory({world,proof,streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws,validateLegacyAnchor=null}){
+export function verifyReviewedWorldHistory({world,proof,streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws,validateLegacyAnchor=null,checkpointStore=null,generation=null}){
   withinBounds(proof);
   if(streetModule.reviewedNormalTime!==true||streetModule.validateReviewedWorldTimeState(world)!==true)fail('reviewed runtime state required');
   const anchor=decodeMemorySnapshot(proof.anchor);
@@ -110,8 +120,11 @@ export function verifyReviewedWorldHistory({world,proof,streetModule,createIniti
     const seed=createSourceReviewedMemoryWorldAdapter({initialWorld:createInitialWorld({worldId:anchor.worldId,nowSeconds:anchor.nowSeconds}),streetModule});
     const initialized=executeMemoryCommand({repository:seed,streetModule,command:{kind:'initialize-source-market',expectedRevision:0}});
     if(!initialized.ok||encodeMemorySnapshot(initialized.world)!==proof.anchor)fail('fresh source anchor mismatch');
-  }else{
+  }else if(proof.anchorKind==='legacy'){
     if(typeof validateLegacyAnchor!=='function'||validateLegacyAnchor(anchor)!==true)fail('unreviewed legacy anchor');
+  }else{
+    if(!checkpointStore)fail('authenticated checkpoint verifier required');
+    checkpointStore.openPrefix(proof,generation);
   }
   const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:anchor,streetModule});
   for(const entry of proof.commands){
@@ -126,10 +139,23 @@ export function verifyReviewedWorldHistory({world,proof,streetModule,createIniti
   if(encodeMemorySnapshot(repository.read())!==encodeMemorySnapshot(world))fail('full replayed WorldState differs from saved checkpoint');
   return world;
 }
-export function reviewedHistoryLineageCompatible(older,newer){
+export function reviewedHistoryLineageCompatible(older,newer,checkpointStore=null){
   if(!older.proof&&!newer.proof)return true;
   if(!newer.proof||older.world.worldId!==newer.world.worldId||older.world.revision>newer.world.revision)return false;
-  if(older.proof)return older.proof.anchorKind===newer.proof.anchorKind&&older.proof.anchor===newer.proof.anchor&&
-    JSON.stringify(older.proof.commands)===JSON.stringify(newer.proof.commands.slice(0,older.proof.commands.length));
-  return newer.proof.anchorKind==='legacy'&&newer.proof.anchor===encodeMemorySnapshot(older.world);
+  // Both candidate slots have already been source verified. For a compacted
+  // prefix, follow authenticated retained segments only as far as necessary.
+  // Each step strictly decreases revision; never trust a free-standing hash.
+  try{
+    let proof=newer.proof;
+    while(proof){
+      if(older.proof){
+        if(older.proof.anchorKind===proof.anchorKind&&older.proof.anchor===proof.anchor&&
+           JSON.stringify(older.proof.checkpoint??null)===JSON.stringify(proof.checkpoint??null))
+          return JSON.stringify(older.proof.commands)===JSON.stringify(proof.commands.slice(0,older.proof.commands.length));
+      }else if(proof.anchorKind==='legacy'&&proof.anchor===encodeMemorySnapshot(older.world))return true;
+      if(proof.anchorKind!=='checkpoint'||!checkpointStore)return false;
+      proof=checkpointStore.openPrefix(proof);
+    }
+  }catch{return false;}
+  return false;
 }

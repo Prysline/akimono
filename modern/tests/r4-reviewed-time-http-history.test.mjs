@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile,mkdir,readdir,rename} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -59,4 +59,87 @@ test('reviewed HTTP clock fails closed across 36h with no changed history or wor
   let state=ok(await server.post('/api/initialize'));state=ok(await server.post('/api/open-shop',{expectedRevision:state.world.revision,ownerName:'來源',shopName:'期界'}));
   const rejected=await server.post('/api/advance-reviewed-time',{expectedRevision:state.world.revision,minutes:1});
   assert.equal(rejected.ok,false);assert.deepEqual(rejected.state.world,state.world);assert.equal(rejected.state.historyCommands,state.historyCommands);
+});
+
+test('reviewed HTTP history continues beyond 128 legal operations, authenticates checkpoint and recovers both generations',async t=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'akimono-r4-checkpoint-'));
+  t.after(()=>rm(dir,{recursive:true,force:true}));
+  let server=await boot(dir,'900000');t.after(()=>server.stop());
+  const post=(p,x)=>server.post(p,x);
+  let state=ok(await post('/api/initialize'));
+  state=ok(await post('/api/open-shop',{expectedRevision:state.world.revision,ownerName:'來源店主',shopName:'長期經營'}));
+  state=ok(await post('/api/use',{expectedRevision:state.world.revision,itemId:79,useId:0,requestedCount:1}));
+  const edit=async()=>{state=ok(await post('/api/showcase',{expectedRevision:state.world.revision,itemId:0,per:100}));};
+  const time=async()=>{state=ok(await post('/api/advance-reviewed-time',{expectedRevision:state.world.revision,minutes:60}));};
+  // Real source showcase edits cost 600 seconds each; genuine normal time
+  // provides the additional time. No injected assets/fixture RNG/PLUS.
+  for(let i=0;i<11;i++){await time();for(let j=0;j<10;j++)await edit();}
+  while(state.historyCommands<128)await edit();
+  assert.equal(state.historyCheckpointRevision,null);
+  state=ok(await post('/api/save',{expectedRevision:state.world.revision,expectedGeneration:0}),'SAVED');
+  const first=state.world;
+  // Failure to create the private checkpoint directory must not commit.
+  const authDir=path.join(dir,'reviewed-history-v1');
+  await writeFile(authDir,'not a directory');
+  let rejected=await post('/api/showcase',{expectedRevision:first.revision,itemId:0,per:100});
+  assert.equal(rejected.ok,false);assert.deepEqual(rejected.state.world,first);
+  assert.equal(rejected.state.historyCommands,128);
+  await rm(authDir);
+  await edit();
+  assert.equal(state.historyCheckpointRevision,first.revision);
+  assert.equal(state.historyCommands,1);
+  await time();await edit();
+  state=ok(await post('/api/save',{expectedRevision:state.world.revision,expectedGeneration:1}),'SAVED');
+  const second=state.world;
+  const slot=path.join(dir,'world-a.json'),key=path.join(authDir,'key');
+  const good=await readFile(slot,'utf8'),keyBytes=await readFile(key);
+  assert.equal(keyBytes.length,32);
+  const record=JSON.parse(good),proof=JSON.parse(record.careerProof);
+  assert.equal(proof.anchorKind,'checkpoint');assert.equal(proof.checkpoint.generation,1);
+  assert.equal(proof.checkpoint.revision,first.revision);
+  const prefix=path.join(authDir,'prefix-'+proof.checkpoint.prefixSha256+'.json');
+  const prefixWire=await readFile(prefix,'utf8');
+  assert.equal(JSON.parse(prefixWire).commands.length,128);
+  assert.equal(createHash('sha256').update(prefixWire).digest('hex'),proof.checkpoint.prefixSha256);
+  await server.stop();server=await boot(dir,'900000');
+  state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,second);
+  await edit();
+  state=ok(await post('/api/save',{expectedRevision:state.world.revision,expectedGeneration:2}),'SAVED');
+  const third=state.world;
+  await server.stop();server=await boot(dir,'900000');
+  state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,third);
+  await server.stop();
+  // Both signed generations now exist. Forged latest falls back to second.
+  const newest=path.join(dir,'world-b.json'),latest=await readFile(newest,'utf8');
+  for(const mutate of [
+    r=>{const p=JSON.parse(r.careerProof);p.checkpoint.revision++;r.careerProof=JSON.stringify(p);},
+    r=>{const p=JSON.parse(r.careerProof);p.checkpoint.originSha256='0'.repeat(64);r.careerProof=JSON.stringify(p);},
+    r=>{r.generation+=2;},
+    r=>{delete r.checkpointAuth;},
+  ]){
+    const bad=JSON.parse(latest);mutate(bad);
+    bad.sha256=createHash('sha256').update(JSON.stringify([bad.world,bad.careerProof])).digest('hex');
+    await writeFile(newest,JSON.stringify(bad)+'\n');
+    server=await boot(dir,'900000');const recovered=await post('/api/load');
+    assert.equal(recovered.details.recoveredPreviousGeneration,true);
+    assert.deepEqual(ok(recovered,'LOADED').world,second);
+    await server.stop();
+  }
+  await writeFile(newest,latest);
+  // Both authenticated slots must be rejected with the wrong/missing key or
+  // a damaged retained segment; restoring the originals permits exact load.
+  for(const damage of ['wrong-key','missing-key','prefix']){
+    if(damage==='wrong-key')await writeFile(key,Buffer.alloc(32,0));
+    if(damage==='missing-key')await rename(key,key+'.held');
+    if(damage==='prefix')await writeFile(prefix,'damaged');
+    server=await boot(dir,'900000');
+    const denied=await post('/api/load');assert.equal(denied.ok,false);
+    assert.equal((await post('/api/initialize')).ok,false);
+    await server.stop();
+    if(damage==='wrong-key')await writeFile(key,keyBytes);
+    if(damage==='missing-key')await rename(key+'.held',key);
+    if(damage==='prefix')await writeFile(prefix,prefixWire);
+  }
+  server=await boot(dir,'900000');
+  state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,third);
 });

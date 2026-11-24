@@ -146,14 +146,14 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function verifiedCheckpoint(raw,marketBuyRegistry,useItem,historyReplay,proof){
+function verifiedCheckpoint(raw,marketBuyRegistry,useItem,historyReplay,proof,generation=null){
   if(proof===null){
     if(historyReplay?.requireProof===true)fail('source command history required in reviewed time mode');
     return reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
   }
   if(typeof historyReplay?.verify!=='function')fail('source history verifier unavailable');
   const world=validateMemoryWorld(raw);
-  const verified=historyReplay.verify({world,proof});
+  const verified=historyReplay.verify({world,proof,generation});
   if(encodeMemorySnapshot(verified)!==encodeMemorySnapshot(world))fail('source history returned a different world');
   return world;
 }
@@ -171,9 +171,10 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,historyReplay){
       fail('save record too long');
     const record=JSON.parse(serialized);
     const hasProof=record!==null&&typeof record==='object'&&Object.hasOwn(record,'careerProof');
+    const hasAuth=hasProof&&Object.hasOwn(record,'checkpointAuth');
     if(record===null||typeof record!=='object'||Array.isArray(record)||
        Object.keys(record).sort().join(',')!==(hasProof?
-         'careerProof,format,generation,sha256,world':'format,generation,sha256,world')||
+         (hasAuth?'careerProof,checkpointAuth,format,generation,sha256,world':'careerProof,format,generation,sha256,world'):'format,generation,sha256,world')||
        record.format!==LOCAL_SAVE_FORMAT||
        !Number.isSafeInteger(record.generation)||record.generation<1||
        (record.generation%2)!==slot||
@@ -186,8 +187,13 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,historyReplay){
     if(recordDigest(record.world,proofText)!==record.sha256)fail('save content hash mismatch');
     const proof=hasProof?JSON.parse(proofText):null;
     if(hasProof&&(!proof||JSON.stringify(proof)!==proofText))fail('noncanonical source history');
+    if(hasAuth!==(proof?.anchorKind==='checkpoint'))fail('checkpoint envelope authentication required');
+    if(hasAuth){
+      if(!historyReplay?.checkpointStore)fail('checkpoint key verifier unavailable');
+      historyReplay.checkpointStore.verifyRecord(record);
+    }
     const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
-      marketBuyRegistry,useItem,historyReplay,proof);
+      marketBuyRegistry,useItem,historyReplay,proof,record.generation);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
@@ -216,7 +222,7 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
     if(valid.length===2&&(valid[0].proof||valid[1].proof)&&
-       !reviewedHistoryLineageCompatible(valid[1],valid[0])){
+       !reviewedHistoryLineageCompatible(valid[1],valid[0],historyReplay?.checkpointStore)){
       const rejected=valid.shift();
       corrupt.push({kind:'corrupt',slot:rejected.slot,reason:'source history lineage mismatch'});
     }
@@ -242,9 +248,34 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       ...(latest.proof===null?{}:{careerProof:structuredClone(latest.proof)}),
     });
   }
+  // Same canonical wire and exact capacity check used before memory CAS.
+  // This does not publish a new disk generation or bypass source replay.
+  function prepareRecord(world,{generation,careerProof=null}){
+    safeInt(generation,'next save generation',1);
+    const proofText=careerProof===null?null:JSON.stringify(careerProof);
+    if(proofText!==null&&Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('source history too large');
+    const encoded=encodeMemorySnapshot(world);
+    const envelope={
+      format:LOCAL_SAVE_FORMAT,generation,sha256:recordDigest(encoded,proofText),world:encoded,
+      ...(proofText===null?{}:{careerProof:proofText}),
+    };
+    if(careerProof?.anchorKind==='checkpoint'){
+      if(!historyReplay?.checkpointStore)fail('checkpoint authenticator unavailable');
+      historyReplay.checkpointStore.openPrefix(careerProof,generation);
+      envelope.checkpointAuth=historyReplay.checkpointStore.recordAuth(envelope);
+    }
+    const record=JSON.stringify(envelope)+'\n';
+    if(encoded.length>2000000||Buffer.byteLength(record)>MAX_BYTES)fail('save too large');
+    return {encoded,proofText,record};
+  }
+  function preflight(world,{expectedGeneration,careerProof=null}){
+    safeInt(expectedGeneration,'expected save generation');
+    prepareRecord(world,{generation:expectedGeneration+1,careerProof});
+    return true;
+  }
   function save(raw,{expectedGeneration,careerProof=null}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,historyReplay,careerProof);
+    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,historyReplay,careerProof,expectedGeneration+1);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
@@ -257,17 +288,9 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     if(previous&&previous.world.revision>world.revision)
       fail('不能以較舊的 WorldState 覆寫新版存檔');
     if(careerProof?.anchorKind==='legacy'&&(!previous||(!previous.proof&&careerProof.anchor!==encodeMemorySnapshot(previous.world))))fail('legacy history requires prior validated checkpoint');
-    if(previous&&(previous.proof||careerProof)&&!reviewedHistoryLineageCompatible(previous,{world,proof:careerProof}))fail('source history prefix or anchor mismatch');
-    const proofText=careerProof===null?null:JSON.stringify(careerProof);
-    if(proofText!==null&&Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('source history too large');
+    if(previous&&(previous.proof||careerProof)&&!reviewedHistoryLineageCompatible(previous,{world,proof:careerProof},historyReplay?.checkpointStore))fail('source history prefix or anchor mismatch');
     const nextGen=safeInt(generation+1,'next save generation',1);
-    const encoded=encodeMemorySnapshot(world);
-    const record=JSON.stringify({
-      format:LOCAL_SAVE_FORMAT,generation:nextGen,
-      sha256:recordDigest(encoded,proofText),world:encoded,
-      ...(proofText===null?{}:{careerProof:proofText}),
-    })+'\n';
-    if(Buffer.byteLength(record)>MAX_BYTES)fail('save too large');
+    const {encoded,proofText,record}=prepareRecord(world,{generation:nextGen,careerProof});
     ensureFolder(dir);
     const slot=nextGen%2;
     const dest=sourceFile(dir,slotNames[slot]);
@@ -334,5 +357,5 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       generation:0,
     });
   }
-  return Object.freeze({status,load,save,clear});
+  return Object.freeze({status,load,save,clear,preflight});
 }

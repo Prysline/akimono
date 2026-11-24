@@ -26,12 +26,16 @@ Core command：`{kind:'advance-reviewed-world-time',expectedRevision:<整數>,mi
 
 `local-world-save-store.mjs` 新增可選 `historyReplay:{requireProof,verify}`，同一 B-43 v1 雙槽 fsync/rename、generation/世界 lineage、canonical wire 與 hash，proof 位於 careerProof 字串，digest 為 SHA256(JSON.stringify([world,careerProof]))。無 proof 舊模式 wire 不變；新 opt-in 要求 verified proof。舊世代可回復；不得以 rehash 的偽造 trace 代替來源 replay。非密碼學帳號認證。
 
-## 128 命令與長期 checkpoint 設計（尚未實作）
+## 128 命令與長期 checkpoint（候選實作，CI 待核對）
 
-保留 128 commands、500000 UTF-8 bytes proof、200000 bytes anchor、原 B-43 檔案 2200000 bytes。任一超限在 commit 前拒絕；不能任意清除歷史或接受中間世界。128 不是長期無限營業的解法，P3 長鏈可能不足。下一版應採受來源驗證的 bounded continuation：先完整 replay 前段，checkpoint 綁定 canonical world、原始 anchor digest、完整前段 proof digest、generation/revision、world identity、來源版本/亂數策略/Perl fingerprint；由僅伺服端持有、跨重啟的獨立認證密鑰驗證，不能僅以可重算 SHA256 自證。前段保留可審計驗證證據，雙槽寫入/recovery 與舊 lineage 同步驗證，故障、錯 key、舊版本、偽造前段、換來源或 generation 不一致均 fail closed。此處只是設計，不允許目前用 checkpoint 跳過 replay；需獨立實作及測試。
+保留 128 commands／500000 UTF-8 bytes proof／200000 bytes anchor／2200000 bytes B-43 envelope。HTTP 下一命令若需續接，先由共用 verifier 完整重播現有段，將原 proof 原樣留存於私有 reviewed-history-v1/prefix-<SHA256>.json，才以 HMAC-SHA256 認證 checkpoint。新 proof 使用 anchorKind:checkpoint，anchor 為已驗證的 canonical WorldState；checkpoint 綁定世界／街道／revision／建立時的已載入或已保存 generation／原始 anchor digest／完整前段 proof digest／來源及 runtime fingerprint／Perl interpreter／兩項 RNG/hash policy。B-43 checkpoint envelope 另認證實際外層 generation、world、careerProof。未續接的 v1 wire 不變。
+
+密鑰本機隨機 32 bytes、獨占建立、fsync，POSIX 私有權限；不由 HTTP 提供。缺失、錯誤、來源或 runtime drift、損毀前段拒絕，不以重新計算普通 SHA 取代來源驗證。現行信任模型為可信任本機伺服端帳號、不可信任存檔內容；有權讀密鑰或改程式的帳號不在此模型內。保留前段磁碟證據，雙槽比較需要時沿認證前段向後追蹤；正常 replay 只重新執行當前有界命令段。checkpoint 與下一命令的完整 envelope preflight 在記憶體 CAS 前完成；仍由玩家顯式 save 發布雙槽世代，不改未儲存世界的既有語意。舊 checkpoint 遇程式版本變更需獨立審閱遷移，不默許相容。保留歷史檔案，不做自動清理。Windows 目錄 fsync 沿既有平台界線。
+
+新增長期 HTTP 回歸候選：合法 USE、正常時間、來源展示架操作跨 128、續接失敗原子拒絕、雙世代保存、重啟、再保存、篡改 checkpoint/外層 generation、錯誤或缺失密鑰及前段損毀。尚需以本候選最終同 SHA 真 CI 確認；不是 P3 二十配方或跨期結案。
 
 ## 證據與交接門檻
 
 已確認同一 SHA 142155fdbf63529164010bfc25c3682e5b956a8a，Push #45406982700 / PR #45406997838 成功，Node 1176、Perl 2489。真 Perl 先 pre-EVENT 再同 seed 的 EVENT probe，比對 Node 相同輸入/亂數/順序/後繼；混合 P3 stock/EXP fixture 不是玩家合法取得證明。CAS 及 B-43 envelope 後續 2f5b07169646bc420214090c2cad94a0de5cc33a Push #45407938366 / PR #45407949961 成功；新 HTTP 測試 `r4-reviewed-time-http-history.test.mjs` 在 943b46eee6b74e66c3ea43c0ce1e4e328b15578a 加入，需對最終 SHA 實際 CI 驗證，不以測試檔存在當通過。
 
-固定交接：選共同基底、分析 commit 與 import/測試/來源相依閉包；若必要與無關改動混合，獨立 branch 重建最小閉包，不 rewrite R4 或改 P3。重新跑完整 JS、原版 Perl、來源審閱及 persistence；文件列確切 base SHA、head SHA、相依 commits、檔案、CI logs。版本一經驗收不再覆寫，後續修正另發。尚未完成合法 P3 acquisition 的自身整合驗收、128 上限之續接實作與最小閉包獨立 CI 以前，不標示固定交接已發行。R4 原本期末外部副作用的成果保留，並行續作。
+固定交接：選共同基底、分析 commit 與 import/測試/來源相依閉包；若必要與無關改動混合，獨立 branch 重建最小閉包，不 rewrite R4 或改 P3。重新跑完整 JS、原版 Perl、來源審閱及 persistence；文件列確切 base SHA、head SHA、相依 commits、檔案、CI logs。版本一經驗收不再覆寫，後續修正另發。尚未完成合法 P3 acquisition 的自身整合驗收、128 上限續接之驗收與最小閉包獨立 CI 以前，不標示固定交接已發行。R4 原本期末外部副作用的成果保留，並行續作。

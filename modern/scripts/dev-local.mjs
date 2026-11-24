@@ -19,6 +19,7 @@ import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
+import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
 const reviewedTimeMode=process.env.AKIMONO_REVIEWED_NORMAL_TIME==='1';
 if(reviewedTimeMode&&process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1')
   throw Error('reviewed normal time cannot use fixture RNG');
@@ -82,6 +83,7 @@ const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
 
 let repo=null;
 let careerProof=null;
+let liveGeneration=0;
 const createInitialWorld=({worldId,nowSeconds})=>createPeriodMemoryWorld({worldId,streetId:streetModule.id,nowSeconds,period:createOriginalPeriodSeed(reviewedPeriodSeed)});
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
 function isOrdinaryCommand(cmd){
@@ -102,11 +104,21 @@ function verifyOrdinaryDraws(world,cmd){
   return draws.length?JSON.stringify(draws)===JSON.stringify(cmd.randomDraws):!Object.hasOwn(cmd,'randomDraws');
 }
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
+const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
+const checkpointStore=reviewedTimeMode?createReviewedHistoryCheckpointStore({
+  directory:saveDirectory,...fingerprintReviewedCheckpointRuntime({
+    sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
+    sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
+      originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
+      originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
+      originalPeriodSource,originalUseSource,originalItemHelperSource],
+  }),
+}):null;
 const saveStore=createLocalWorldSaveStore({
-  directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
+  directory:saveDirectory,
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
-  ...(reviewedTimeMode?{historyReplay:{requireProof:true,verify:({world,proof})=>verifyReviewedWorldHistory({world,proof,...historyPolicy})}}:{}),
+  ...(reviewedTimeMode?{historyReplay:{requireProof:true,checkpointStore,verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})}}:{}),
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
@@ -187,6 +199,7 @@ function state(){
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     reviewedTimeMode,
     historyCommands:careerProof?.commands.length??null,
+    historyCheckpointRevision:careerProof?.checkpoint?.revision??null,
     memoryOnly:!save.available,
     diskSaveAvailable:true,
     sourceCityState:world?.period?.town??null,
@@ -211,7 +224,11 @@ function commit(command){
   const preview=applyGameCommand({world:before,streetModule,command});
   if(!preview.ok)return preview;
   let nextProof;
-  try{nextProof=appendReviewedWorldHistory({proof:careerProof,before,command,result:preview,isOrdinaryCommand,verifyOrdinaryDraws});}
+  try{
+    nextProof=appendReviewedWorldHistory({proof:careerProof,before,command,result:preview,isOrdinaryCommand,verifyOrdinaryDraws,
+      continuation:{...historyPolicy,checkpointStore,generation:liveGeneration}});
+    saveStore.preflight(preview.world,{expectedGeneration:liveGeneration,careerProof:nextProof});
+  }
   catch(error){return {ok:false,code:'HISTORY_REJECTED',details:{reason:error.message}};}
   const result=executeMemoryCommand({repository:repo,streetModule,command});
   if(result.ok){
@@ -343,7 +360,7 @@ async function api(req,res,url){
           error:'世界或存檔已更新，請重新確認後再重置',state:state()});
       const cleared=saveStore.clear({expectedGeneration});
       // Only discard live memory AFTER both disk slots are successfully cleared.
-      repo=null;careerProof=null;
+      repo=null;careerProof=null;liveGeneration=0;
       return send(res,200,{ok:true,code:'RESET',
         details:{action:'reset-local-test-world',
           deletedSlots:cleared.deletedSlots,generation:cleared.generation},
@@ -356,7 +373,7 @@ async function api(req,res,url){
       repo=createSourceReviewedMemoryWorldAdapter({
         initialWorld:saved.world,streetModule,
       });
-      careerProof=saved.careerProof??null;
+      careerProof=saved.careerProof??null;liveGeneration=saved.generation;
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
           recoveredPreviousGeneration:saved.recovered,
@@ -372,6 +389,7 @@ async function api(req,res,url){
       const expectedGeneration=commandNumber(body.expectedGeneration,
         'expectedGeneration');
       const saved=saveStore.save(world,{expectedGeneration,...(reviewedTimeMode?{careerProof}:{})});
+      liveGeneration=saved.generation;
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
           revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
