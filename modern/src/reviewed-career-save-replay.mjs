@@ -30,6 +30,7 @@ const recipes=new Map([
   [23,[0,1,2,3]],[66,[0,1,2,3]],
 ]);
 const buyIds=[8,9,10,12,14,15,16,17,20,21,22,23,30,32,37,66,78];
+const showcaseIds=[0,10,...Array.from({length:22},(_,i)=>40+i),67,68,69,70];
 // Do not require an unrelated career change to prove genuine P3 manufacture.
 // Magic training alone retains the older B-43 envelope; blacksmith training
 // and forging need complete source history even without #78.
@@ -48,6 +49,9 @@ export function isCareerReplayCommand(c){
   if(c.kind==='reviewed-sparse-all-plus')return exact(c,[...core,'timespanSeconds','randomDraws'])&&
     [60,600,3600].includes(c.timespanSeconds)&&Array.isArray(c.randomDraws)&&
     c.randomDraws.length>=59&&c.randomDraws.length<=118&&c.randomDraws.every(n=>int(n,0,999999));
+  if(c.kind==='edit-showcase')return exact(c,[...core,'shopId','shelf','itemId','per','priceOverride'])&&
+    c.shopId===1&&c.shelf===0&&showcaseIds.includes(c.itemId)&&int(c.per,1,200)&&
+    int(c.priceOverride,0,999999999);
   if(c.kind==='market-buy')return exact(c,[...core,'shopId','itemId',
     'requestedCount','marketShelf','expectedPrice'])&&c.shopId===1&&
     buyIds.includes(c.itemId)&&int(c.requestedCount,1,40)&&
