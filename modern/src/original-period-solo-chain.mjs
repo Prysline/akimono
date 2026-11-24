@@ -32,6 +32,9 @@ import {reviewR4CloseShopEffects,projectR4CloseShopEffects,
   reviewR4ClosedShopPrune,projectR4ClosedShopPrune,
   R4_CLOSE_SHOP_EFFECT_SOURCE,R4_CLOSED_STORE_PRUNE_SOURCE}
   from './original-r4-close-shop-effects.mjs';
+import {reviewR4PeriodBackupTail,projectR4PeriodBackupTail,
+  R4_PERIOD_BACKUP_SOURCE}
+  from './original-r4-period-backup-tail.mjs';
 
 export const B50_INTEGRATED_SOURCE='core-original-solo-period-phase-chain-no-world-commit';
 const bad=x=>{throw new RangeError('B-50 same-state original period: '+x);};
@@ -47,6 +50,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   includeReviewedDignity=false,includeReviewedGuild=false,
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
   includeReviewedActualCloseShop=false,
+  includeReviewedPeriodBackup=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -63,7 +67,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
      typeof includeReviewedGuild!=='boolean'||
      typeof includeReviewedPostTech!=='boolean'||
      typeof includeReviewedShopExpiry!=='boolean'||
-     typeof includeReviewedActualCloseShop!=='boolean')
+     typeof includeReviewedActualCloseShop!=='boolean'||
+     typeof includeReviewedPeriodBackup!=='boolean')
     bad('explicit original source period feature opt-in boolean required');
   const dragon=includeReviewedDragon?
     reviewR4DragonBalance({periodSource}):null;
@@ -83,6 +88,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
     reviewR4ClosedShopPrune({
       detailSource,writeSource,reviewedClose:actualClose,
     }):null;
+  const periodBackup=includeReviewedPeriodBackup?
+    reviewR4PeriodBackupTail({periodSource,configSource}):null;
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,
   });
@@ -117,7 +124,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   return Object.freeze({
     source:B50_INTEGRATED_SOURCE,
     soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
-    shopExpiry,actualClose,closedPrune,
+    shopExpiry,actualClose,closedPrune,periodBackup,
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
@@ -131,10 +138,11 @@ export function reviewOriginalSoloPeriodPhaseChain({
       ...(dignity?['dignity-decline-before-second-SortDT']:[]),
       actualClose?'SortDT-after-closed-shop-prune':'SortDT-after',
       'unled-town',
-      postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard']),
+      postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard',
+      ...(periodBackup?['original-period-backup-session-source-tail']:[])]),
     nonCommittable:true,
-    scope:dragon||dignity||guild||postTech||shopExpiry||actualClose?
-      'reviewed source opt-in one-shop DragonBalance, dignity, guild dues, technology and/or true write.cgi CloseShop status mutation followed by SortDT removal; user/archive/guild IO only recorded, no atomic file/WorldState commit':
+    scope:dragon||dignity||guild||postTech||shopExpiry||actualClose||periodBackup?
+      'reviewed source opt-in single-shop original finances, actual CloseShop/SortDT pruning and/or frozen backup/session source tail; isolated Perl files verified but user/archive/guild IO only recorded, no atomic WorldState commit':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
 }
@@ -148,7 +156,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   awardDrawMillionths,territoryDrawMillionths,
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
   postTechDraws=null,nowSeconds=null,
-  sessionFileNames=null,
+  sessionFileNames=null,periodBackupState=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -219,6 +227,20 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('true frozen CloseShop and SortDT reviewer required');
   if(reviewed.actualClose===null&&sessionFileNames!==null)
     bad('unreviewed external CloseShop session inventory cannot be supplied');
+  if(reviewed.periodBackup!==null&&(
+     reviewed.periodBackup.source!==R4_PERIOD_BACKUP_SOURCE||
+     reviewed.periodBackup.committable!==false||
+     reviewed.periodBackup.actualFileIOCommitted!==false))
+    bad('original frozen period backup reviewer required');
+  if(reviewed.periodBackup===null&&periodBackupState!==null)
+    bad('unreviewed backup or session files supplied to period chain');
+  if(reviewed.periodBackup!==null&&(
+     !periodBackupState||typeof periodBackupState!=='object'||
+     Array.isArray(periodBackupState)))
+    bad('original full backup/session disk snapshot required');
+  if(reviewed.periodBackup!==null&&nowSeconds!==null&&
+     periodBackupState.nowSeconds!==nowSeconds)
+    bad('original source backup NOW_TIME must match period NOW_TIME');
   safe(shop.foundation,'original shop foundation');
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
@@ -315,6 +337,13 @@ export function projectOriginalSoloPeriodPhaseChain({
       reviewed:reviewed.postTech,shop:afterSort.shop,
       randomDraws:postTechDraws,
     }):null;
+  // Original backup/session tail happens AFTER UpdateResetAfter. The
+  // genuine three-directory file operations are exercised in a separate
+  // frozen Perl tempfile oracle, but this projection NEVER writes disk.
+  const periodBackupEffect=reviewed.periodBackup?
+    projectR4PeriodBackupTail({
+      reviewed:reviewed.periodBackup,...periodBackupState,
+    }):null;
   return Object.freeze({
     source:reviewed.source,
     shop:techLoss?.shop??afterSort.shop,
@@ -351,6 +380,10 @@ export function projectOriginalSoloPeriodPhaseChain({
     ...(reviewed.shopExpiry?{
       shopExpiry:expiryEffect,
       shopExpirySource:reviewed.shopExpiry.source,
+    }:{}),
+    ...(reviewed.periodBackup?{
+      periodBackup:periodBackupEffect,
+      periodBackupSource:reviewed.periodBackup.source,
     }:{}),
     phases:reviewed.phases,
     nonCommittable:true,
