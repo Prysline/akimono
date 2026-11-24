@@ -441,3 +441,84 @@ test('R3 true #63 two-shelf expansion, source #14 swords, two actual listings an
  assert.equal(twice.state.save.generation,2);
  assert.deepEqual(twice.state.shop.price,[1200,2251]);
 });
+
+test('R3 original #63 four shelves -> real #14 market BUY/USE swords -> original full multi-shelf first sale and B43 restart',async t=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-four-shelves-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ let server=await boot(directory);t.after(async()=>await server.stop());
+ let api=(path,payload={})=>server.post(path,payload);
+ assert.equal((await api('/api/initialize')).code,'COMMITTED');
+ const opened=await api('/api/open-shop',{
+   expectedRevision:1,ownerName:'四架原版店主',shopName:'四架合法自然販售',
+ });
+ assert.equal(opened.code,'COMMITTED');
+ const expanded=await api('/api/use',{
+   expectedRevision:opened.state.world.revision,
+   itemId:63,useId:3,requestedCount:1,
+ });
+ assert.equal(expanded.code,'COMMITTED',JSON.stringify(expanded));
+ assert.equal(expanded.state.shop.showcasecount,4);
+ assert.equal(expanded.state.shop.item[62],0,'initial rack tool consumed once');
+ assert.equal(expanded.state.shop.money,60000);
+ const supply=await api('/api/supply',{
+   expectedRevision:expanded.state.world.revision,timespanSeconds:3600,
+ });
+ assert.equal(supply.code,'COMMITTED',JSON.stringify(supply));
+ const map=supply.state.marketOffers.find(x=>x.itemId===14);
+ assert.equal(map?.canBuy,true,'original PLUS must supply the sword map');
+ const bought=await api('/api/buy',{
+   expectedRevision:supply.state.world.revision,itemId:14,
+   marketShelf:map.shelf,expectedPrice:map.price,requestedCount:1,
+ });
+ assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
+ const made=await api('/api/use',{
+   expectedRevision:bought.state.world.revision,
+   itemId:14,useId:0,requestedCount:1,
+ });
+ assert.equal(made.code,'COMMITTED',JSON.stringify(made));
+ assert.ok(made.state.shop.item[39]>0&&made.state.shop.item[40]>0);
+ let state=made.state;
+ for(const [shelf,itemId,price] of [
+   [0,40,1200],[1,41,1500],[2,40,1801],[3,41,2251]
+ ]){
+   const changed=await api('/api/showcase',{
+     expectedRevision:state.world.revision,shelf,
+     itemId,per:100,priceOverride:price,
+   });
+   assert.equal(changed.code,'COMMITTED',JSON.stringify(changed));
+   state=changed.state;
+ }
+ assert.deepEqual(state.shop.showcase,[40,41,40,41]);
+ assert.deepEqual(state.shop.price,[1200,1500,1801,2251]);
+ const turned=await api('/api/advance-time',{
+   expectedRevision:state.world.revision,minutes:30,
+ });
+ assert.equal(turned.code,'COMMITTED',JSON.stringify(turned));
+ assert.equal(turned.state.shop.showcasecount,4);
+ assert.ok(turned.details.naturalSaleCount>=0);
+ assert.ok(Object.hasOwn(turned.details,'soldByItem'));
+ assert.equal(turned.state.world.period.eventState,null);
+ const blocked=await api('/api/advance-time',{
+   expectedRevision:turned.state.world.revision,minutes:30,
+ });
+ assert.equal(blocked.ok,false);
+ assert.deepEqual(blocked.state.world,turned.state.world);
+ const first=await api('/api/save',{
+   expectedRevision:turned.state.world.revision,expectedGeneration:0,
+ });
+ assert.equal(first.code,'SAVED',JSON.stringify(first));
+ await server.stop();server=await boot(directory);
+ api=(p,b={})=>server.post(p,b);
+ const loaded=await api('/api/load');
+ assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+ assert.deepEqual(loaded.state.world,turned.state.world);
+ const second=await api('/api/save',{
+   expectedRevision:loaded.state.world.revision,expectedGeneration:1,
+ });
+ assert.equal(second.code,'SAVED',JSON.stringify(second));
+ await server.stop();server=await boot(directory);
+ const again=await server.post('/api/load');
+ assert.equal(again.code,'LOADED',JSON.stringify(again));
+ assert.equal(again.state.save.generation,2);
+ assert.deepEqual(again.state.shop.price,[1200,1500,1801,2251]);
+});
