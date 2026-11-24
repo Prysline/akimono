@@ -364,9 +364,10 @@ for(const sourceRow of twoShelfOracle.cases){
       assert.equal(actual[key],sourceRow[key],
         'original source '+key+' '+sourceRow.name);
     assert.ok(Math.abs(actual.costtoday-sourceRow.costtoday)<1e-9);
-    assert.ok(computed.drawsUsed<=sourceRow.drawsUsed);
-    assert.deepEqual(sourceRow.consumedSamples.slice(0,computed.drawsUsed),
-      sourceRow.consumedSamples.slice(0,computed.drawsUsed));
+    assert.equal(computed.drawsUsed,sourceRow.naturalDrawsUsed,
+      'exact frozen inc-turn natural draws must match before 59 PLUS');
+    assert.ok(sourceRow.drawsUsed>=computed.drawsUsed,
+      'original PLUS source shares the remaining random stream');
   });
 }
 test('two-shelf shared natural sale refuses unreviewed third shelf, unknown ITEM and EVENT override',()=>{
