@@ -361,7 +361,7 @@ test('R4 candidate preserves original DataRead overlay and native EVENT hash acr
   const {repository}=fresh(true),world=structuredClone(repository.read());
   world.nowSeconds=1025980;
   world.period.eventState={'plusup-tetu':1025990,'happy':1030000};
-  world.shops[0].blocklogin='';
+  world.shops[0].blocklogin='';world.shops[0].dignity=0;
   const before=JSON.stringify(world);
   const result=projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
     reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod});
@@ -437,7 +437,7 @@ test('R4 boundary source tax history becomes exact town income before PLUS, with
   const {repository}=fresh(true),world=structuredClone(repository.read());
   world.nowSeconds=1025940;
   // Source ledger fixture, not a claim that this sum was acquired by HTTP.
-  world.shops[0].blocklogin='';world.shops[0].taxtoday=321;
+  world.shops[0].blocklogin='';world.shops[0].dignity=0;world.shops[0].taxtoday=321;
   world.shops[0].saletoday=1000;
   const before=JSON.stringify(world);
   const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
