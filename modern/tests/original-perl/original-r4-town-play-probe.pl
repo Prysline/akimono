@@ -87,10 +87,10 @@ die 'ReadConfig source moved' unless $readConfig;
 eval "no strict;no warnings;$readConfig\n1;" or die $@;
 my $dsl=readSource('../../../custom/inc-rebel-data.cgi');
 my $eventStart=index($dsl,"code\t\tguildbattle");
-my $a=index($dsl,"endfunc\t_local_",$eventStart);
-my $b=index($dsl,"\n\t\t\t_local_",$a);
-die 'guildbattle source moved' unless $a>=0&&$b>$a;
-my $body=substr($dsl,$a+length("endfunc\t_local_"),$b-$a-length("endfunc\t_local_"));
+my $eventBodyStart=index($dsl,"endfunc\t_local_",$eventStart);
+my $eventBodyEnd=index($dsl,"\n\t\t\t_local_",$eventBodyStart);
+die 'guildbattle source moved' unless $eventBodyStart>=0&&$eventBodyEnd>$eventBodyStart;
+my $body=substr($dsl,$eventBodyStart+length("endfunc\t_local_"),$eventBodyEnd-$eventBodyStart-length("endfunc\t_local_"));
 eval "package event;no strict;no warnings;use utf8;sub TownGuildEnd{\n$body\n}1;" or die $@;
 sub putFile {
   my($file,$content)=@_;
