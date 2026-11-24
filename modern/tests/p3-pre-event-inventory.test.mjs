@@ -1,14 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createPeriodMemoryWorld,createMemoryWorldAdapter,
   executeMemoryCommand,applyGameCommand} from '../src/game-core-contract.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
@@ -38,7 +36,7 @@ const source=Object.fromEntries(await Promise.all(locations.map(
  async ([k,p])=>[k,await readFile(path.join(root,p),'utf8')])));
 const street=createStandardStreetModule(source);
 
-function fresh(){
+function fresh(fullMarket=false){
   const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
     periodSource:source.originalPeriodSource,
     adminSource:source.originalAdminInitSource,
@@ -70,6 +68,12 @@ function fresh(){
   command('initialize-source-market');
   command('open-shop',{shopId:1,ownerName:'來源工匠',shopName:'來源鍛造店'});
   command('reviewed-sparse-all-plus',{timespanSeconds:3600},Array(118).fill(0));
+  if(fullMarket){
+    const offer=street.quoteMarketOffer(repository.read(),10);
+    assert.ok(offer.canBuy);
+    command('market-buy',{shopId:1,itemId:10,requestedCount:1,
+      marketShelf:offer.shelf,expectedPrice:offer.price});
+  }
   return {repository,command};
 }
 function args(world,minutes,randomDraws){
@@ -128,7 +132,7 @@ test('P3 real GameCore iron forge with spent vouchers, skills and EXP enters pur
   assert.equal(world.nowSeconds,1000000);
 });
 test('P3 mixed-stock oracle: every reviewed manufacture product and source costs; stocked Nayuta dispatch',()=>{
-  const {repository}=fresh();
+  const {repository}=fresh(true);
   // Explicit arithmetic/differential fixture only, never a player world/save.
   const world=structuredClone(repository.read()),shop=world.shops[0];
   for(const id of Object.keys(street.reviewedB41.p3TurnItems.costs).map(Number))
@@ -145,7 +149,7 @@ test('P3 mixed-stock oracle: every reviewed manufacture product and source costs
   }
 });
 test('P3 pure handoff rejects overflow, unknown stock, EXP overflow, unknown EVENT, 36h boundary and extra shelves',()=>{
-  const {repository}=fresh();
+  const {repository}=fresh(true);
   const world=structuredClone(repository.read());
   const badCases=[
     [w=>{w.shops[0].item[17]=2;},/holding cap/],
