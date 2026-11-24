@@ -113,6 +113,32 @@ function sourceShopPoint(shop){
   const point=Math.trunc(rank*winFactor*profit);
   return Number.isSafeInteger(point)?point:null;
 }
+// Read-only evidence for opt-in local #62/1 audit. Market canBuy means
+// source-stock/registry availability, NOT sufficient player cash or complete
+// authority to USE; never advertise a positive player-readiness verdict.
+function targetAdvertisementReadiness(world,marketOffers){
+  const actor=world?.shops.find(shop=>shop.id===1)??null;
+  const quote=marketOffers.find(offer=>offer.itemId===62)??null;
+  const sourcePrice=Number.isSafeInteger(quote?.price)&&quote.price>0?
+    quote.price:null;
+  const cash=Number.isSafeInteger(actor?.money)&&actor.money>=0?
+    actor.money:null;
+  return {
+    evidenceOnly:true,authoritativeUseApproval:false,
+    actorShopId:actor?.id??null,authenticated:false,
+    packageOwned:actor?.item?.[61]??null,
+    sourceQuote:sourcePrice===null?null:{
+      itemId:62,unitPrice:sourcePrice,
+      marketStock:quote.marketStock,
+      sourceListed:quote.canBuy===true,
+      cashShortfall:cash===null?null:Math.max(0,sourcePrice-cash),
+    },
+    cash:cash,
+    eventStateKnowledge:world?.period?.eventState===null?
+      'unreviewed':world?'source-known':'no-world',
+    twoShopDiskSaveRejected:(world?.shops.length??0)>1,
+  };
+}
 function state(){
   const world=repo?.read()??null;
   const save=saveStore.status();
@@ -120,6 +146,7 @@ function state(){
   const shift=streetModule.reviewedB41.clockShiftSeconds;
   const nextSettlementAtSeconds=world?
     (Math.floor((world.nowSeconds+shift)/period)+1)*period-shift:null;
+  const marketOffers=world?.market?streetModule.listMarketOffers(world):[];
   return {
     world,
     save,
@@ -132,7 +159,7 @@ function state(){
       point:sourceShopPoint(world?.shops?.[0]??null),
       rankPosition:null,
     },
-    marketOffers:world?.market?streetModule.listMarketOffers(world):[],
+    marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -154,6 +181,7 @@ function state(){
       targets:world?.shops?.length===2&&world.shops[0]?.id===1?
         world.shops.filter(shop=>shop.id!==1&&shop.status===1)
           .map(shop=>({shopId:shop.id,shopName:shop.shopname})):[],
+      readiness:targetAdvertisementReadiness(world,marketOffers),
     }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
