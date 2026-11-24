@@ -316,3 +316,73 @@ for(const original of integratedOriginal.cases){
    plus.receipt.drawsUsed,original.drawsUsed);
  });
 }
+
+const twoShelfOracle=JSON.parse(execFileSync('perl',
+  ['original-r3-multi-shelf-sale-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+test('original frozen inc-turn two-shelf source oracle includes eight distinct source stock and order cases',()=>{
+  assert.equal(twoShelfOracle.cases.length,8);
+  assert.deepEqual(twoShelfOracle.cases.map(x=>x.name),[
+    'same-item-different-direct-prices','two-swords-different-items',
+    'mixed-book-and-sword','first-shelf-empty','second-shelf-empty',
+    'same-item-one-stock','two-empty-shelves','reverse-shelf-order',
+  ]);
+});
+for(const sourceRow of twoShelfOracle.cases){
+  test('R3 two-shelf source Perl natural market and RNG: '+sourceRow.name,()=>{
+    const item=Array(79).fill(0);
+    for(const [id,stock] of Object.entries(sourceRow.startingStocks))
+      item[Number(id)-1]=stock;
+    item[62]=0;item[78]=5;
+    const shop={
+      id:1,status:1,rank:5010,money:80000,paytoday:20000,
+      item,showcasecount:2,showcase:[...sourceRow.shown],
+      price:[...sourceRow.prices],trush:0,saletoday:0,
+      taxtoday:0,costtoday:0,itemtoday:{},itemyesterday:{},taxmode:0,
+    };
+    const unchanged=JSON.stringify(shop);
+    const computed=projectSharedNaturalSale({
+      shop,rule:null,saleRules:street.reviewedB41.saleRules,
+      upkeepCosts:street.reviewedB41.upkeepCosts,
+      spanSeconds:1800,randomDraws:sourceRow.consumedSamples,
+    });
+    assert.equal(JSON.stringify(shop),unchanged,'source projector must be pure');
+    const actual=computed.shop;
+    for(const id of [10,40,41]){
+      assert.equal(actual.item[id-1],sourceRow.stockAfter[id],
+        'post-sale ITEM '+id);
+      assert.equal(actual.itemtoday[id]??0,sourceRow.soldByItem[id],
+        'source sale ITEM '+id);
+      assert.equal(actual._sale_count_[id]?.count??0,
+        sourceRow.saleRecordCounts[id],'original shared sale log ITEM '+id);
+      assert.equal(actual._sale_count_[id]?.price??0,
+        sourceRow.saleRecordGross[id],'original gross log ITEM '+id);
+    }
+    for(const key of ['money','rank','temprank','trush',
+      'saletoday','taxtoday'])
+      assert.equal(actual[key],sourceRow[key],
+        'original source '+key+' '+sourceRow.name);
+    assert.ok(Math.abs(actual.costtoday-sourceRow.costtoday)<1e-9);
+    assert.equal(computed.drawsUsed,sourceRow.naturalDrawsUsed,
+      'exact frozen inc-turn natural draws must match before 59 PLUS');
+    assert.ok(sourceRow.drawsUsed>=computed.drawsUsed,
+      'original PLUS source shares the remaining random stream');
+  });
+}
+test('two-shelf shared natural sale refuses unreviewed third shelf, unknown ITEM and EVENT override',()=>{
+  const item=Array(79).fill(0);item[39]=10;item[78]=5;
+  const shop={item,rank:5010,money:80000,showcasecount:2,
+    showcase:[40,40],price:[1200,1200],
+    trush:0,saletoday:0,taxtoday:0,costtoday:0,itemtoday:{}};
+  const base={shop,rule:null,saleRules:street.reviewedB41.saleRules,
+    upkeepCosts:street.reviewedB41.upkeepCosts,
+    spanSeconds:1800,randomDraws:Array(121).fill(0)};
+  for(const delta of [
+    {shop:{...shop,showcasecount:3,showcase:[40,40,40],price:[1200,1200,1200]}},
+    {shop:{...shop,showcase:[40,999]}},
+    {popularOverride:5400},
+    {saleRules:{}},
+  ])assert.throws(()=>projectSharedNaturalSale({...base,...delta}),
+      /R3 shared natural-sale/);
+});

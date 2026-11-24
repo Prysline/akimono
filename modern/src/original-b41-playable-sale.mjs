@@ -59,6 +59,7 @@ function reviewR3SourceSaleItems(itemDsl){
     const b=items.get(id);
     if(!b||one(b,'price')!==price||one(b,'pop')!==pop||
        one(b,'point')!==point||one(b,'cost')!==cost||
+       one(b,'type')!==(id===10?'道具':'劍')||
        ['funct','functurn','funcs','funcsale','funcb'].some(k=>
          b.fields[k]?.length))
       bad('R3 ITEM or callback source drift: #'+id);
@@ -66,7 +67,8 @@ function reviewR3SourceSaleItems(itemDsl){
     if(!match)bad('unsupported source POP time');
     const seconds=Number(match[1])*({m:60,h:3600,d:86400}[match[2]]);
     rules[id]=Object.freeze({
-      itemId:id,unitPrice:Number(price),popularSeconds:seconds,
+      itemId:id,itemType:one(b,'type'),
+      unitPrice:Number(price),popularSeconds:seconds,
       point:point===null?Math.trunc(seconds*100/24/36):
         Number(point.slice(0,-1))*10,
       cost:cost===null?Math.trunc(Number(price)/10):Number(cost),
@@ -220,10 +222,13 @@ function projectSourcePreEventSaleSlice({
       population:world.period.dtPeople,saleSpeed:12,
     }):null;
   const shop=world.shops[0];
-  if(shop?.id!==shopId||shop.status!==1||shop.showcasecount!==1||
-    shop.showcase?.length!==1||shop.price?.length!==1||
+  if(shop?.id!==shopId||shop.status!==1||
+    ![1,2].includes(shop.showcasecount)||
+    shop.showcase?.length!==shop.showcasecount||
+    shop.price?.length!==shop.showcasecount||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
-    shop.item[62]!==1||shop.item[78]!==5||
+    (shop.showcasecount===1?shop.item[62]!==1:shop.item[62]!==0)||
+    shop.item[78]!==5||
     shop.item.some((n,i)=>!(reviewedB63Map?
       [9,10,13,39,40,41,42,43,62,78]:reviewedB62Map?
       [9,10,13,39,62,78]:reviewed.ticketSourceReviewed?
@@ -249,13 +254,12 @@ function projectSourcePreEventSaleSlice({
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
     !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
     !Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||
-    !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
-      [0,10,40]:[0,10]).includes(shop.showcase[0])||
-    (shop.showcase[0]===0&&shop.price[0]!==0)||
-    (shop.showcase[0]!==0&&
-      !isSourceShowcaseListedPrice(
-        reviewed.saleRules?.[shop.showcase[0]]?.unitPrice,
-        shop.price[0]))||
+    shop.showcase.some((itemId,shelf)=>
+      !(reviewedB63Map?[0,10,40,41,42,43,44]:reviewedB62Map?
+        [0,10,40]:[0,10]).includes(itemId)||
+      (itemId===0?shop.price[shelf]!==0:
+        !isSourceShowcaseListedPrice(
+          reviewed.saleRules?.[itemId]?.unitPrice,shop.price[shelf])))||
     ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
   // New R3 sword sales may not interpret B-41 unknown EVENT as empty.
@@ -263,8 +267,9 @@ function projectSourcePreEventSaleSlice({
   // until the original lifecycle has been source-reviewed.
   if(world.schema===PERIOD_WORLD_SCHEMA &&
      world.period?.eventState===null &&
-     shop.showcase[0]>=40&&shop.showcase[0]<=44)
-    bad('R3 sword natural sale blocked: EVENT state unknown; reviewed lifecycle required');
+     (shop.showcasecount===2||
+       shop.showcase.some(id=>id>=40&&id<=44)))
+    bad('R3 multi-shelf or sword sale blocked: EVENT state unknown; reviewed lifecycle required');
   const activeItemId=shop.showcase[0]||10;
   const beforeStock=shop.item[activeItemId-1];
   if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
@@ -292,12 +297,16 @@ function projectSourcePreEventSaleSlice({
     bad('this interval crosses original period settlement; not yet supported');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
-  const rule=shop.showcase[0]?reviewed.saleRules[shop.showcase[0]]:null;
+  if(shop.showcasecount===2&&activeKeys.length)
+    bad('two-shelf active EVENT overlay not source-reviewed');
+  const rule=shop.showcasecount===1&&shop.showcase[0]?
+    reviewed.saleRules[shop.showcase[0]]:null;
   const popularOverride=rule&&swordDemandEventActive&&
     rule.itemId>=40&&rule.itemId<=44?
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
-    shop,rule,upkeepCosts:reviewed.upkeepCosts,
+    shop,rule,saleRules:shop.showcasecount===2?reviewed.saleRules:null,
+    upkeepCosts:reviewed.upkeepCosts,
     spanSeconds:span,randomDraws,popularOverride,
   });
   const sold=natural.sold;
@@ -336,6 +345,7 @@ function projectSourcePreEventSaleSlice({
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
+      ...(shop.showcasecount===2?{soldByItem:natural.soldByItem}:{}),
       soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,
