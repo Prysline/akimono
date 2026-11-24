@@ -321,23 +321,29 @@ const twoShelfOracle=JSON.parse(execFileSync('perl',
   ['original-r3-multi-shelf-sale-probe.pl'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
   }));
-test('original frozen inc-turn two-shelf source oracle includes eight distinct source stock and order cases',()=>{
-  assert.equal(twoShelfOracle.cases.length,8);
+test('original frozen inc-turn source oracle spans two through eight shelves',()=>{
+  assert.equal(twoShelfOracle.cases.length,16);
   assert.deepEqual(twoShelfOracle.cases.map(x=>x.name),[
     'same-item-different-direct-prices','two-swords-different-items',
     'mixed-book-and-sword','first-shelf-empty','second-shelf-empty',
     'same-item-one-stock','two-empty-shelves','reverse-shelf-order',
+    'three-shelves-shared-stock','four-shelves-mixed-duplicate',
+    'four-shelves-empty-middle','five-shelves-shared-one-stock',
+    'six-shelves-sword-mix','seven-shelves-with-gaps',
+    'eight-shelves-shared-stock','eight-shelves-all-empty',
   ]);
 });
 for(const sourceRow of twoShelfOracle.cases){
-  test('R3 two-shelf source Perl natural market and RNG: '+sourceRow.name,()=>{
+  test('R3 2..8 shelf source Perl natural market and RNG: '+sourceRow.name,()=>{
     const item=Array(79).fill(0);
     for(const [id,stock] of Object.entries(sourceRow.startingStocks))
       item[Number(id)-1]=stock;
     item[62]=0;item[78]=5;
     const shop={
-      id:1,status:1,rank:5010,money:80000,paytoday:20000,
-      item,showcasecount:2,showcase:[...sourceRow.shown],
+      id:1,status:1,rank:5010,
+      money:100000-10000*sourceRow.shown.length,
+      paytoday:10000*sourceRow.shown.length,
+      item,showcasecount:sourceRow.shown.length,showcase:[...sourceRow.shown],
       price:[...sourceRow.prices],trush:0,saletoday:0,
       taxtoday:0,costtoday:0,itemtoday:{},itemyesterday:{},taxmode:0,
     };
@@ -370,7 +376,7 @@ for(const sourceRow of twoShelfOracle.cases){
       'original PLUS source shares the remaining random stream');
   });
 }
-test('two-shelf shared natural sale refuses unreviewed third shelf, unknown ITEM and EVENT override',()=>{
+test('original indexed natural sale refuses unsupported ninth shelf, unknown ITEM and EVENT override',()=>{
   const item=Array(79).fill(0);item[39]=10;item[78]=5;
   const shop={item,rank:5010,money:80000,showcasecount:2,
     showcase:[40,40],price:[1200,1200],
@@ -379,7 +385,8 @@ test('two-shelf shared natural sale refuses unreviewed third shelf, unknown ITEM
     upkeepCosts:street.reviewedB41.upkeepCosts,
     spanSeconds:1800,randomDraws:Array(121).fill(0)};
   for(const delta of [
-    {shop:{...shop,showcasecount:3,showcase:[40,40,40],price:[1200,1200,1200]}},
+    {shop:{...shop,showcasecount:9,
+      showcase:Array(9).fill(40),price:Array(9).fill(1200)}},
     {shop:{...shop,showcase:[40,999]}},
     {popularOverride:5400},
     {saleRules:{}},

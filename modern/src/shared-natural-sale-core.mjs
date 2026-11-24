@@ -1,5 +1,5 @@
 /** R3 shared frozen inc-turn natural-sale arithmetic.
- * Works on exactly one or two source-reviewed shelves of one source shop.
+ * Works on one to eight source-reviewed shelves of one source shop.
  * Source ITEM metadata and exact RNG samples are supplied by the StreetModule.
  * Callbacks, 59 PLUS, EVENT and settlement remain in their original stages.
  */
@@ -13,7 +13,7 @@ const int=(v,s,min=0)=>{
  * The first shelf uses fourth-power demand; the second uses third-power
  * demand. Multiple shelves of the SAME ITEM share a demand denominator,
  * doubled source market-stock entries and one inventory pool.
- * Source multiplayer, >2 shelves and live EVENT overlays are not reviewed.
+ * Source multiplayer, >8 shelves and live EVENT overlays are not reviewed.
  */
 export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
@@ -26,16 +26,16 @@ export function projectSharedNaturalSale({
   if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||
      !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
      shop.showcase.length!==shop.price.length||
-     ![1,2].includes(shop.showcase.length)||
-     (shop.showcase.length===2&&shop.showcasecount!==2)||
+     shop.showcase.length<1||shop.showcase.length>8||
+     (shop.showcase.length>1&&shop.showcasecount!==shop.showcase.length)||
      !upkeepCosts||typeof upkeepCosts!=='object'||
      !Array.isArray(randomDraws)||randomDraws.length>121||
      randomDraws.some(n=>!Number.isSafeInteger(n)||n<0||n>=1000000))
     fail('invalid source shop or draws');
   const shelfCount=shop.showcase.length;
-  if(shelfCount===2&&(rule!==null||!saleRules||
+  if(shelfCount>1&&(rule!==null||!saleRules||
      typeof saleRules!=='object'||popularOverride!==null))
-    fail('two-shelf source rules or EVENT overlay not reviewed');
+    fail('multi-shelf source rules or EVENT overlay not reviewed');
 
   const active=[],market=new Map(),displayedTypes=new Set();
   const sourceRule=id=>shelfCount===1?rule:saleRules?.[id]??null;
@@ -55,7 +55,7 @@ export function projectSharedNaturalSale({
     if(shelfCount===1&&rule?.itemId!==id)
       fail('single original shelf rule mismatch');
     const type=r.itemType??(shelfCount===1?'single-reviewed':'');
-    if(!type)fail('two-shelf source ITEM type not reviewed');
+    if(!type)fail('multi-shelf source ITEM type not reviewed');
     displayedTypes.add(type);
     const stock=int(shop.item[id-1],'source showcased stock');
     if(stock===0)continue;
