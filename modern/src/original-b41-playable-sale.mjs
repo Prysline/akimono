@@ -59,7 +59,7 @@ function reviewR3SourceSaleItems(itemDsl){
     const b=items.get(id);
     if(!b||one(b,'price')!==price||one(b,'pop')!==pop||
        one(b,'point')!==point||one(b,'cost')!==cost||
-       one(b,'type')!==(id===10?'本':'劍')||
+       one(b,'type')!==(id===10?'道具':'劍')||
        ['funct','functurn','funcs','funcsale','funcb'].some(k=>
          b.fields[k]?.length))
       bad('R3 ITEM or callback source drift: #'+id);
