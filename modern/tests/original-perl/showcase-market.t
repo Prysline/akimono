@@ -85,6 +85,20 @@ like(execute_original_showcase(),qr/__OUT_SKIN_CAPTURED__/,
      'B-03-F: 指定售價能完成操作');
 is($DT->{price}[0],175,'B-03-G: prc=175 覆蓋百分比定價');
 
+reset_showcase(2,10,0);
+$Q{per}=137;
+like(execute_original_showcase(),qr/__OUT_SKIN_CAPTURED__/,
+     'B-03-P: 原版 137% 比例同樣完成陳列');
+is($DT->{price}[0],137,
+   'B-03-Q: 凍結 sc-s.cgi 由標準價格 100 計算 137% 為整數 137');
+
+reset_showcase(2,10,175);
+$Q{per}=137;
+like(execute_original_showcase(),qr/__OUT_SKIN_CAPTURED__/,
+     'B-03-R: 原版在 137% 與自填價格並存時可正常陳列');
+is($DT->{price}[0],175,
+   'B-03-S: 原版 prc 有值時優先使用直接售價而非 137%');
+
 reset_showcase(0,10,0);
 like(execute_original_showcase(),qr/GAME_ERROR:.*在庫無し/,
      'B-03-H: 沒有庫存商品時拒絕陳列');
