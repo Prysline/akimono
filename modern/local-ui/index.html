@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>商人物語｜標準街・本機測試</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="site-heading">
+      <div class="heading-top"><span>商人物語 Standard Street</span><button id="dev-toggle" type="button" aria-pressed="false" title="顯示或隱藏目前頁面的測試工具">開發工具：關</button></div>
+      <h1>商人物語 <span class="town-name">標準街</span></h1>
+      <nav class="menu-main" aria-label="原版主選單">
+        <button type="button" data-group="self" class="selected" aria-pressed="true">【自店】</button>
+        <button type="button" data-group="trade" aria-pressed="false">【交易】</button>
+        <button type="button" data-group="info" aria-pressed="false">【情報】</button>
+        <button type="button" data-group="facility" aria-pressed="false">【施設】</button>
+        <button type="button" data-group="social" aria-pressed="false">【交流】</button>
+      </nav>
+      <nav class="menu-sub" aria-label="原版次選單">
+        <span class="sub-caption">選單 &gt;</span>
+        <span class="subgroup" data-subgroup="self">
+          <button type="button" data-tab="shop" class="selected" aria-current="page">［店內］</button>
+          <button type="button" data-tab="stock">［倉庫］</button>
+          <button type="button" disabled title="尚未實作">［掃除］</button>
+          <button type="button" data-tab="balance">［收支］</button>
+          <button type="button" disabled title="尚未實作">［手續］</button>
+        </span>
+        <span class="subgroup" data-subgroup="trade" hidden>
+          <button type="button" data-tab="market">［市場］</button>
+          <button type="button" disabled title="尚未實作">［商店街］</button>
+          <button type="button" disabled title="尚未實作">［委託所］</button>
+          <button type="button" disabled title="尚未實作">［宮殿］</button>
+        </span>
+        <span class="subgroup" data-subgroup="info" hidden>
+          <button type="button" disabled>［風景］</button>
+          <button type="button" disabled>［新聞］</button>
+          <button type="button" disabled>［圖書館］</button>
+        </span>
+        <span class="subgroup" data-subgroup="facility" hidden>
+          <button type="button" disabled>［領主邸］</button>
+          <button type="button" disabled>［公會］</button>
+          <button type="button" disabled>［競技場］</button>
+          <button type="button" disabled>［傭兵所］</button>
+          <button type="button" disabled>［住宅地］</button>
+        </span>
+        <span class="subgroup" data-subgroup="social" hidden>
+          <button type="button" disabled>［郵局］</button>
+          <button type="button" disabled>［宅配］</button>
+          <button type="button" disabled>［留言板］</button>
+          <button type="button" disabled>［私訊］</button>
+        </span>
+      </nav>
+      <div class="location-line"><span id="menu-location">自店 &gt; 店內</span><span id="settlement-status">下次決算：未開放</span></div>
+    </header>
+
+    <section id="status-summary" class="status-section" aria-label="店家簡要資訊" hidden>
+      <div class="status-scroll">
+        <table class="status-table"><tbody><tr>
+          <th scope="row">RANK</th><td id="rank">—</td>
+          <th scope="row">店名</th><td id="store-name">—</td>
+          <th scope="row">點數</th><td id="shop-points">—</td>
+          <th scope="row">資金</th><td><strong id="money">—</strong></td>
+          <th scope="row">行動時間</th><td id="time">—</td>
+        </tr></tbody></table>
+      </div>
+    </section>
+
+    <div id="local-mode-note" class="local-note" role="note">目前為單機測試：存檔需手動儲存。</div>
+
+    <details id="setup" class="setup section" open>
+      <summary>建立商店</summary>
+      <div class="setup-content">
+        <button id="initialize" class="primary" type="button">① 初始化世界</button>
+        <form id="open-shop" class="inline-form">
+          <label>店主 <input id="owner" maxlength="100" required placeholder="店主名稱"></label>
+          <label>店名 <input id="shop-name" maxlength="100" required placeholder="商店名稱"></label>
+          <button class="primary" type="submit">② 開店</button>
+        </form>
+      </div>
+    </details>
+
+    <section class="section feedback" role="status" aria-live="polite">
+      <p id="feedback">請先建立商店，或載入本機存檔。</p>
+      <details id="receipt-details" class="dev-panel" data-dev-panel hidden>
+        <summary>查看操作收據與版本差異</summary>
+        <pre id="receipt" hidden></pre>
+      </details>
+    </section>
+    <section id="tab-shop" class="section pane">
+      <h2 class="section-title">● <span id="shop-title">店內</span></h2>
+      <h3 class="sub-title">店家資訊</h3>
+      <div class="table-scroll"><table class="shop-info-table"><tbody>
+        <tr><td rowspan="5" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
+        <tr><th scope="row">店主</th><td id="owner-name">—</td></tr>
+        <tr><th scope="row">資金</th><td id="shop-info-money">—</td></tr>
+        <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
+        <tr><th scope="row">人氣</th><td id="shop-info-popularity">—</td></tr>
+      </tbody></table></div>
+      <h3 class="sub-title">展示架</h3>
+      <div class="table-scroll"><table class="shelf-table">
+        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th></tr></thead>
+        <tbody><tr>
+          <td>第 1 架</td><td id="showcase">目前空架</td>
+          <td id="shop-shelf-price">—</td><td id="shop-shelf-base-price">—</td>
+          <td id="shop-shelf-stock">—</td><td id="shop-shelf-today">—</td><td id="shop-shelf-yesterday">—</td>
+        </tr></tbody>
+      </table></div>
+      <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
+        <th scope="row">本期售額</th><td id="shop-sales">—</td>
+        <th scope="row">本期支出</th><td id="shop-paid">—</td>
+      </tr></tbody></table>
+      <details class="dev-panel" data-dev-panel>
+        <summary>開發測試｜時間快轉</summary>
+        <p class="help-text">只用於驗證自然販售與來源市場供貨；不代表正式遊戲的自動時間流逝。</p>
+        <div class="quick-time" aria-label="常用快轉時間">
+          <button type="button" data-minutes="1" class="secondary">1 分鐘</button>
+          <button type="button" data-minutes="10" class="secondary">10 分鐘</button>
+          <button type="button" data-minutes="30" class="secondary">30 分鐘</button>
+          <button type="button" data-minutes="60" class="secondary">1 小時</button>
+        </div>
+        <form id="advance-time-form" class="inline-form">
+          <label>自填分鐘 <input id="advance-minutes" type="number" min="1" max="60" step="1" value="30" required></label>
+          <button class="primary" type="submit">快轉指定時間</button>
+        </form>
+      </details>
+      <details class="dev-panel" data-dev-panel>
+        <summary>開發診斷｜世界、事件與存檔</summary>
+        <dl class="debug-data">
+          <dt>世界 ID</dt><dd><output id="world-id">尚未建立</output></dd>
+          <dt>版本 revision</dt><dd><output id="revision">—</output></dd>
+          <dt>存檔世代</dt><dd id="save-generation">—</dd>
+          <dt>遊戲時間</dt><dd><output id="now">—</output></dd>
+          <dt>城市資料</dt><dd id="city-seed">—</dd>
+          <dt>完成決算期數</dt><dd id="period-count">—</dd>
+          <dt>事件資訊</dt><dd id="event-state">—</dd>
+          <dt>市場來源</dt><dd id="market-source">—</dd>
+          <dt>本機重置</dt><dd><button type="button" class="secondary" id="reset-world" disabled>刪除店家／重置測試世界</button></dd>
+        </dl>
+        <p class="muted">重置會刪除目前世界及兩份存檔，且需要再次確認。這不是原版正式的關店／重新出發功能。</p>
+      </details>
+    </section>
+
+    <section id="tab-market" class="section pane" hidden>
+      <h2 class="section-title">● 市場</h2>
+      <p class="page-intro">市場目前有貨的商品如下。購買後，可在「倉庫」查看實際持有數量。</p>
+      <details class="supply-details dev-panel" data-dev-panel>
+        <summary>開發測試：原版市場供貨子步驟</summary>
+        <div class="supply">
+          <p>執行已核對的 59 項 PLUS＋CheckWholeStore，僅測試來源供貨，不推進世界時鐘。</p>
+          <label>來源片段
+            <select id="supply-seconds">
+              <option value="60">60 秒</option>
+              <option value="600">600 秒</option>
+              <option value="3600">3600 秒</option>
+            </select>
+          </label>
+          <button id="supply" class="secondary" type="button">執行供貨</button>
+        </div>
+      </details>
+      <div class="table-scroll">
+        <table class="market-table">
+          <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
+          <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
+        </table>
+      </div>
+      <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
+
+    </section>
+
+    <section id="tab-stock" class="section pane" hidden>
+      <h2 class="section-title">● 倉庫</h2>
+      <p class="page-intro">點選商品名稱可查看明細、設定展示架或使用商品。</p>
+      <h3 class="sub-title">保管倉庫</h3>
+      <div class="table-scroll"><table class="warehouse-table">
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>持有數量</th></tr></thead>
+        <tbody id="storage-inventory"><tr><td colspan="4">目前沒有保管商品</td></tr></tbody>
+      </table></div>
+      <h3 class="sub-title">販售倉庫</h3>
+      <div class="table-scroll"><table class="warehouse-table">
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>數量／上限</th><th>陳列</th></tr></thead>
+        <tbody id="inventory"><tr><td colspan="5">目前沒有販售商品</td></tr></tbody>
+      </table></div>
+      <p class="muted">熟練、行情與供需等尚未完成的數值暫不顯示。</p>
+    </section>
+
+    <section id="tab-item" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
+      <h2 class="section-title">商品明細</h2>
+      <h3 id="item-detail-name" class="sub-title">請從倉庫選擇商品</h3>
+      <table class="item-detail-table"><tbody>
+        <tr><th scope="row">持有數量</th><td id="item-detail-owned">—</td></tr>
+        <tr><th scope="row">標準價格</th><td id="item-detail-price">—</td></tr>
+        <tr><th scope="row">分類</th><td id="item-detail-type">—</td></tr>
+        <tr><th scope="row">維持費</th><td id="item-detail-cost">—</td></tr>
+        <tr><th scope="row">說明</th><td id="item-detail-info">—</td></tr>
+        <tr><th scope="row">持有上限</th><td id="item-detail-limit">—</td></tr>
+        <tr><th scope="row">展示架</th><td id="item-detail-shelf">—</td></tr>
+      </tbody></table>
+      <form id="showcase-form" class="shelf-form">
+        <fieldset>
+          <legend>展示架設定｜第 1 架</legend>
+          <label>商品
+            <select id="shelf-item"><option value="0">清空展示架</option></select>
+          </label>
+          <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
+          <button id="set-showcase" class="primary" type="submit">設定展示架</button>
+        </fieldset>
+        <p class="shelf-time-note">調整或清空展示架均消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
+      </form>
+      <div id="use-section" class="source-use-section">
+        <h3 class="sub-title">商品使用／製作</h3>
+        <ul id="use-offers" class="use-action-list">
+          <li>此商品暫無可執行的使用或製作方式</li>
+        </ul>
+        <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
+      </div>
+    </section>
+
+    <section id="tab-use" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
+      <h2 class="section-title">商品使用／製作</h2>
+      <h3 class="sub-title" id="use-detail-name">選擇操作</h3>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">商品</th><td id="use-detail-item">—</td></tr>
+        <tr><th scope="row">目前持有</th><td id="use-detail-owned">—</td></tr>
+        <tr><th scope="row">所需材料（每次）</th><td id="use-detail-materials">—</td></tr>
+        <tr><th scope="row">費用（每次）</th><td id="use-detail-money">—</td></tr>
+        <tr><th scope="row">時間（每次）</th><td id="use-detail-time">—</td></tr>
+        <tr><th scope="row">操作限制</th><td id="use-detail-limit">—</td></tr>
+      </tbody></table>
+      <form id="use-action-form" class="use-action-form" hidden>
+        <label for="use-count">執行次數</label>
+        <input id="use-count" type="number" min="1" step="1" value="1" required>
+        <button type="submit" id="perform-use" class="primary">執行操作</button>
+      </form>
+      <p class="muted use-eligibility" id="use-detail-note" role="status"></p>
+    </section>
+
+    <section id="tab-use-result" class="section pane" hidden>
+      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
+      <h2 class="section-title">操作結果</h2>
+      <h3 class="sub-title" id="use-result-name">—</h3>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">實際次數</th><td id="use-result-count">—</td></tr>
+        <tr><th scope="row">實際費用</th><td id="use-result-money">—</td></tr>
+        <tr><th scope="row">消耗時間</th><td id="use-result-time">—</td></tr>
+        <tr><th scope="row">消耗商品</th><td id="use-result-consumed">—</td></tr>
+        <tr><th scope="row">獲得商品</th><td id="use-result-acquired">—</td></tr>
+      </tbody></table>
+      <p id="use-result-message" class="use-result-message" role="status"></p>
+    </section>
+
+    <section id="tab-balance" class="section pane" hidden>
+      <h2 class="section-title">● 收支／店舖資訊</h2>
+      <table class="balance-table"><tbody>
+        <tr><th scope="row">店名</th><td id="balance-name">—</td><th scope="row">店主</th><td id="balance-owner">—</td></tr>
+        <tr><th scope="row">資金</th><td id="balance-money">—</td><th scope="row">行動時間</th><td id="balance-time">—</td></tr>
+        <tr><th scope="row">人氣</th><td id="balance-popularity">—</td><th scope="row">創業時間</th><td id="balance-founded">—</td></tr>
+        <tr><th scope="row">本期營業額</th><td id="sales">—</td><th scope="row">本期支出</th><td id="paid">—</td></tr>
+        <tr><th scope="row">本期維持費（累計）</th><td id="balance-cost">—</td><th scope="row">本期稅額</th><td id="balance-tax">—</td></tr>
+        <tr><th scope="row">前期營業額</th><td id="balance-prev-sales">—</td><th scope="row">前期支出</th><td id="balance-prev-paid">—</td></tr>
+      </tbody></table>
+      <p class="muted" id="balance-note">其他店舖資訊尚未開放。</p>
+    </section>
+
+    <section id="tab-pending" class="section pane" hidden>
+      <h2 id="pending-title" class="section-title">尚未實作</h2>
+      <p class="help-text">保留原版選單位置，這個分類的功能尚未連接到新版 Core，不能操作。</p>
+    </section>
+
+    <details id="save-section" class="save-details" aria-label="本機存讀檔">
+      <summary>本機存檔／載入</summary>
+      <div class="inline-form">
+        <button type="button" class="secondary" id="save-world" disabled>儲存</button>
+        <button type="button" class="secondary" id="load-world" disabled>載入</button>
+        <span id="save-status" aria-live="polite">尚未儲存</span>
+      </div>
+    </details>
+
+    <footer>商人物語・標準街｜單機測試版本；未完成的功能不會模擬正式交易。</footer>
+  </main>
+</body>
+</html>

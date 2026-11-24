@@ -1,0 +1,56 @@
+# B-50｜同一間商店／同一座城市，原版期末前半段連續兩期對照
+
+## 2026-11-24｜R4 B-50 期末主檔、備份、封存及日誌共同子鏈
+
+新增 [B-50 期末真檔案整合契約](./r4-b50-period-disk-contract.md)。真原版單店 B50 一/兩期全段期末、DragonBalance、CloseShop+真 archive、三代 backup/session 清理、每期 MakeGuildFile、transient guild reset、最終 WriteGuildData→DataWrite/DataFilesBackup→RenewLog→四檔共同 commit→DataRead；Node 由 live 讀取、真實 stage/recover、原版 log/mtime/失敗差分及 ready 摘要拒絕不完整 stage。屬明示空 EVENT、固定受控 RNG/每期 NOW_TIME 與隔離檔案，非全 inc-turn、正式 WorldState 或跨期授權。舊 36h fail-closed、eventState:null、R2/R3 保留。下一主線是既有自然販售/ITEM/SortDT/59 PLUS/完整 17 EVENT 與期末檔案同一來源連續整合，之後才正式 CAS/HTTP/save/restart。以最終同 SHA 雙 CI 為驗收依據。
+
+## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
+
+新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
+
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
+## 2026-11-24｜與原版 DataWrite 真檔案子集合的接合界線
+
+本輪在 modern/src/original-r4-data-write-files.mjs 建立凍結原版 play.cgi 32 欄＋7 子段的受審核編碼與隔離真 OS 寫入，modern/tests/original-perl/original-r4-data-write-files-probe.pl 以同一磁碟檔真正跨兩期 DataWrite/commit/DataRead；Node 逐位元組比對並驗證 rename 失敗與 marker 恢復。**這不是 B-50 期末純投影自動擁有的欄位**：projectOriginalSoloPeriodPhaseChain 缺完整原版持久化來源快照及 guildbal/army/log 同步檔，不能自訂填空把其 nonCommittable:true 結果送入該 writer 當成正式交易。新 tests/r4-source-b50-archive-disk-chain.test.mjs 已將此 B-50 第二期原版真 CloseShop effect 接往 Node 實際 log/delete.cgi，對照原版 CloseShop payload。**只代表封存單一副作用接合**，不等於完整 32 欄主檔＋guildbal＋army＋Session 共同提交。下一步仍須同一 file-set 和世界世代的安全持久化。詳見 [外部副作用對映](r4-external-file-effects-contract.md)。B-50 本身未被升級為可提交。
+
+
+> 工作分支：\`test/task02-baseline-on-s1\`。**僅為固定原版期末程式的整合來源證據，尚不可提交玩家 WorldState、尚未開放36小時跨期。** 不得以這份測試代替真實的原版 \`inc-turn.cgi\` 全部事件、商品回呼、備份及持續營業。
+
+## 本次真正前進的部分
+
+B-44～B-49 的主要侷限是把原版各功能獨立跑過。B-50 首次讓**同一筆原始商店資料及同一筆城市資料連續經過兩次真實期末前半段**，並且讓 Node 使用同一批輸入逐欄核對，不是拼接各份不同樣本的測試結果。
+
+- [實際原版 Perl 同狀態兩期探針](../tests/original-perl/original-b50-period-chain-probe.pl) 在每次開始先真執行固定 Core \`GetDTPoint/SortDT\`，隨後動態擷取、原樣執行原版 \`period.cgi\` 從清算公會日帳至 \`UpdateResetAfter\` 結束的**整個原始程式前綴**；使用真正的 Standard Street \`UpdateResetBefore\`／\`UpdateTodayPrize\`／\`UpdateResetAfter\` 及原始 Core \`AddItem\` 和 \`RebelRobin\` 守衛。
+- 原版獎品、商品持有限量、期末收支、熟練度、排行榜兩次排序、城市人口治安及守軍軍費都使用**同一個 $DT[0]、$STATE 及 $DTpeople**，第二期接續第一期的庫存、維持費及城市數值。
+- 探針使用原版79商品 DSL 上限；原始 \`@@ITEM\` 與 \`no\` 行可能有行尾註解，解析必須保留第10號「書本寫作工具」，不得因註解漏掉來源商品。獎品第一輪選禮物卷5枚、第二輪選看門機器人1架，原版 \`AddItem\` 容量與商品量連續累計，商品、維持費與城市人口都不能在兩期之間重置。
+- [Node 同狀態純投射](../src/original-period-solo-chain.mjs) 依照來源經過：期前 \`SortDT\` → 冠軍次數／獎品 → 單店帳務與成本 → 期後 \`SortDT\` → 無領主城市人口／治安／軍費。其來源審閱門檻另外核對固定 \`period.cgi\` 的 **\`UpdateResetAfter\` 原版後置熟練度技術檢查**。目前只容許熟練度總和不超過4000的情境（該回呼不進入刪除技術道具分支），不假裝技術遺忘規則已處理。
+- [Node 測試](../tests/b50-period-same-state-chain.test.mjs) 將每期**整張商店與整張城市**逐欄和 Perl 實際輸出比較（不是少量挑選欄位），第二期從上一期原始輸出接續；同時證明「不提交玩家世界」及碰到公會、龍賽、來源期限／異常欄位、過高熟練度等未審核分支會拒絕。[Perl 斷言](../tests/original-perl/original-b50-period-chain.t) 確認兩期來源效果及資料連續性。
+
+## 來源準確性與限制
+
+測試固定商店是在真來源當期銷售／支出及書本商品 #10 的經營狀態下驗證；未使用 B-43 玩家存檔來直接跨期，也未調用 \`/api/advance-time\` 超出原版36小時邊界。原版程式原樣執行的部分結束於備份／session 的外部檔案副作用之前；**DragonBalance 只允許沒有待支付龍賽、領主叛亂早退、空公會、沒有活躍事件、沒有關閉店鋪、技術遺忘回呼不觸發**。這些是測試**明確未處理**的來源分支，不能解讀成原版不存在。若原始來源改變任何被審核的程式順序，Node 應拒絕投射而非隱藏差異。
+
+本次仍**不**支援：完整 \`inc-turn.cgi\` 自然販售到期界切段、全部來源商品 \`FUNCTURN/FUNCSALE\`、所有 \`%EVENT\` 的實際回呼及亂數次序、多店競賽、公會／龍賽收益、原版完整期末後的磁碟備份與 session、真實跨期的 GameCore CAS 及 B-43 儲存重啟後在新一期繼續經營。因此**繁中瀏覽器仍必須拒絕跨36小時**，直到所有必要依賴在同一個合法世界狀態按原版順序成功執行、入盤後可重啟續營。
+
+## 下一個可操作的里程碑
+
+首要的開發順序不是新增更多單獨的原版公式測試，而是把 B-50 的原版單世界結算連續性移到**真 WorldState／Street Module／GameCore 期末轉場**，補上原版城市與活動需要保存的欄位、動態商品及事件回呼與亂數順序、完整期末檔案效果的合法替代方案。原版 Perl／Node／HTTP 對照必須涵蓋跨期前來源真買貨／真自然售出，跨界結算到下一期及落盤重啟後持續經營，且失敗、重試或斷電不能重複發獎或扣費。**只有此玩家路徑通過後，才進行使用者要求的一次集中人工驗收。**
+
+## 2026-11-23｜R4 已選擇性接入原版 DragonBalance（舊 B-50 預設仍嚴格拒絕）
+
+新來源 reviewer 與投影 original-r4-dragon-balance.mjs 直接使用凍結 `period.cgi::DragonBalance` 的真檔案／每店龍賽帳務；新原版 Perl `original-r4-period-dragon-chain-probe.pl` 執行 B-50 相同兩期期末備份前綴，但將 DragonBalance 原樣執行，使用暫存 drapay 收支檔第一期 +500、第二期 -1000；Node `r4-period-dragon-same-world-chain.test.mjs` 透過 includeReviewedDragon=true opt-in 按真正期末階段原序逐欄比較兩期全部店鋪、城市與獎勵。兩期合併後 drmoney 回到零，第二期 payyesterday=517（500 淨龍賽支出與 17 維持費）。既有 B-50 不選擇 opt-in 的所有 Dragon 拒絕與舊回歸完全保留。
+
+這不等於原版完整跨36小時可提交遊戲：公會會費、爵位、老店關閉、真正 file/session 備份及 WorldState／CAS 等仍未審閱，所有新投影標記 nonCommittable:true。
+
+## 2026-11-23｜R4 新增同世界 Guild／爵位／UpdateResetAfter 技術遺忘 opt-in
+
+本節**取代前述歷史階段中「公會會費／爵位／高 EXP 技術遺忘仍未審閱」的描述**，但不改動舊 B-50 預設的嚴格拒絕。新 `original-r4-period-all-finance-source-probe.pl` 和 `original-r4-period-high-exp-tech-probe.pl` 用未改動的 `period.cgi` 備份前完整前綴連續結算同一間店鋪與城市；真 DragonBalance 暫存檔每期讀取／刪除，外部 `EditGuildMoney` 僅記錄呼叫，爵位 `rand(100)` 在來源位置抽樣，四技術在原版 `UpdateResetAfter` **於第二次 SortDT 和城市之後**按序擲 `rand(14000)`。第一期遺失 #18 和 #24，第二期承接庫存遺失 #19、保留 #38；獎品／城市／公會／龍賽不因這些操作變更來源階段順序。Node 每期整張商店／城市與原始 Perl 差分一致，保留非提交標記與未知來源拒絕。
+
+最後程式驗收 SHA `09a11a2ac73de26a8c76d777d768a4b79028211d`：Push #45122232062、PR #45122236936 雙成功，Node 1094／1094、Perl 2210／2210（71 .t）。這仍**不代表**完成原始跨 36 小時可存檔經營：多店、真公會檔案、老店關閉、原版完整 EVENT／時間切片、備份與 session、WorldState／CAS／HTTP 重啟尚未整合，見 [R4 退出清冊](r4-exit-audit.md)。
+
+## 2026-11-24｜同狀態真正關店與原版備份尾段的新增來源接續
+
+原先文內「未審閱真正 CloseShop 與備份／Session」僅指早期 B-50，非最新狀態。後續已在 `src/original-r4-close-shop-effects.mjs` 真正驗證 `write.cgi::CloseShop` 的內存變更、封存字串、暫存登入檔 unlink，及後續 SortDT 停業店鋪排除。新 `includeReviewedPeriodBackup` 對應 `src/original-r4-period-backup-tail.mjs`，並透過同一 Perl 行程的 `original-r4-period-full-tail-close-probe.pl` 連續執行兩期的真原版前綴和備份尾段，在暫存磁碟真輪替三代 backup 與清理七日 Session。外部 Guild／使用者／封存資料檔仍由 stub 記錄，純投影仍不能提交 `WorldState`。
