@@ -66,7 +66,9 @@ const sameKeys=(a,b)=>JSON.stringify(Object.keys(a).sort())===JSON.stringify(Obj
 export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],shops=[]}){
   review(reviewed);const root=await rootFor(directory);
   const common=await dir(path.join(root,'common')),stage=await dir(path.join(root,'stage'));
-  if(await exists(path.join(root,'commit.cgi'))||(await readdir(stage)).length)fail('pending files require recovery');
+  const pending=await readdir(stage);
+  const hasPeriodDefinition=path.basename(root).startsWith('akimono-r4-period-disk-')&&Array.isArray(periods)&&periods.length>0&&pending.length===1&&pending[0]==='guild.cgi';
+  if(await exists(path.join(root,'commit.cgi'))||(pending.length&&!hasPeriodDefinition))fail('pending files require recovery');
   const old=parseGuildDefinition(await regular(path.join(root,'guild.cgi')));
   const ledger=(periods.length?parseGuildEventLedgers:parseGuildLedgers)(await regular(path.join(root,'guildbal.cgi')));
   if(!sameKeys(old,ledger))fail('live guild and ledger mismatch');
@@ -98,7 +100,8 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
   // MakeGuildFile does not reload %GUILD. WriteGuildData still uses old keys.
   const defBytes=prefix+Object.entries(definitions).map(([id,g])=>"'"+id+"'=>['"+g.shortname+"',"+g.dealrate+","+g.feerate+",],").join('')+');1;';
   const balBytes=Object.keys(old).map(id=>[id,...keys.flatMap(k=>[k,ledger[id][k]])].join('\t')+'\n').join('');
-  await writeFile(path.join(stage,'guild.cgi'),defBytes,{flag:'wx'});
+  if(hasPeriodDefinition){if(await regular(path.join(stage,'guild.cgi'))!==defBytes)fail('period definition changed before final ledger');}
+  else await writeFile(path.join(stage,'guild.cgi'),defBytes,{flag:'wx'});
   await writeFile(path.join(stage,'guildbal.cgi'),balBytes,{flag:'wx'});
   return {definitions,ledger,shops:updated,removed,added,logCalls,committable:false,worldStateWritten:false};
 }
@@ -162,4 +165,24 @@ export function serializeGuildEventLedgers(ledgers){
     rows.push([id,...keys.flatMap(k=>[k,row[k]]),...(Object.hasOwn(row,'guild')?['guild',id]:[])].join('\t')+'\n');
   }
   return rows.join('');
+}
+
+/** Exact stable one-guild MakeGuildFile subset, called after each period tail.
+ * Rewrites only stage; actual WriteGuildData waits for the final turn tail.
+ */
+export async function stageStablePeriodGuildDefinition({reviewed,directory}){
+  review(reviewed);const root=await rootFor(directory);
+  if(!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('period sandbox required');
+  if(await exists(path.join(root,'commit.cgi')))fail('pending commit requires recovery');
+  const old=parseGuildDefinition(await regular(path.join(root,'guild.cgi')));
+  const ids=Object.keys(old),common=await dir(path.join(root,'common')),stage=await dir(path.join(root,'stage'));
+  if(ids.length!==1||ids[0]!=='guild_a'||(await readdir(common)).filter(n=>n.endsWith('.pl')).join(',')!=='guild_a.pl')fail('stable B50 guild required');
+  const g=parseGuildConfig(await regular(path.join(common,'guild_a.pl')));
+  if(JSON.stringify(g)!==JSON.stringify(old.guild_a))fail('stable definition required');
+  if((await readdir(stage)).some(n=>n!=='guild.cgi'))fail('unexpected period stage');
+  const bytes=prefix+"'guild_a'=>['"+g.shortname+"',"+g.dealrate+","+g.feerate+",],);1;";
+  const dest=path.join(stage,'guild.cgi'),prior=await exists(dest);
+  if(prior&&!prior.isFile())fail('regular stage definition required');
+  await writeFile(dest,bytes,{flag:prior?'w':'wx'});
+  return {bytes,committable:false};
 }
