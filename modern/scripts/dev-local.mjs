@@ -15,6 +15,8 @@ import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {beginCareerProof,appendCareerCommand}
+  from '../src/reviewed-career-save-replay.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
@@ -78,11 +80,29 @@ const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
   reviewedB41:streetModule.reviewedB41,
 });
 
-let repo=null;
+function createInitialWorld({worldId,nowSeconds}){
+  return createPeriodMemoryWorld({worldId,streetId:streetModule.id,nowSeconds,
+    period:createOriginalPeriodSeed(reviewedPeriodSeed)});
+}
+// The player never supplies this history or RNG; only committed local commands
+// are recorded. Unsupported actions invalidate the proof, not the old save.
+let repo=null,careerProof=null,careerRequired=false;
+function verifyCareerDraws(world,command){
+  if(command.kind==='reviewed-sparse-all-plus'){
+    const expected=sampleOriginalPlus(world,command.timespanSeconds);
+    return JSON.stringify(expected.randomDraws)===JSON.stringify(command.randomDraws);
+  }
+  if(command.kind==='use-item'){
+    const expected=sampleSourceUse(world,command);
+    return JSON.stringify(expected)===JSON.stringify(command.randomDraws??[]);
+  }
+  return !Object.hasOwn(command,'randomDraws');
+}
 const saveStore=createLocalWorldSaveStore({
   directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
+  careerReplay:{streetModule,createInitialWorld,verifyDraws:verifyCareerDraws},
 });
 // Opt-in R2 memory-only audit. NOT player authentication or durable multi-shop.
 const targetAdvertisementMemoryAudit=
@@ -220,7 +240,12 @@ function state(){
 function commit(command){
   if(!repo) return {ok:false,code:'WORLD_NOT_INITIALIZED',
     details:{reason:'請先初始化來源世界'}};
-  return executeMemoryCommand({repository:repo,streetModule,command});
+  const result=executeMemoryCommand({repository:repo,streetModule,command});
+  if(result.ok){
+    if(command.kind==='use-item'&&command.itemId===78)careerRequired=true;
+    careerProof=appendCareerCommand(careerProof,command);
+  }
+  return result;
 }
 async function jsonBody(req){
   let text='';
@@ -410,7 +435,7 @@ async function api(req,res,url){
           error:'世界或存檔已更新，請重新確認後再重置',state:state()});
       const cleared=saveStore.clear({expectedGeneration});
       // Only discard live memory AFTER both disk slots are successfully cleared.
-      repo=null;
+      repo=null;careerProof=null;careerRequired=false;
       return send(res,200,{ok:true,code:'RESET',
         details:{action:'reset-local-test-world',
           deletedSlots:cleared.deletedSlots,generation:cleared.generation},
@@ -423,6 +448,8 @@ async function api(req,res,url){
       repo=createSourceReviewedMemoryWorldAdapter({
         initialWorld:saved.world,streetModule,
       });
+      careerRequired=Boolean(saved.careerProof);
+      careerProof=saved.careerProof??beginCareerProof(saved.world,'legacy');
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
           recoveredPreviousGeneration:saved.recovered,
@@ -430,6 +457,8 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/save': {
+      if(Object.keys(body).sort().join(',')!=='expectedGeneration,expectedRevision')
+        throw Error('存檔只接受世界版本及存檔世代，不接受外部命令歷史');
       if(repo?.read().shops.length>1)
         return send(res,409,{ok:false,
           code:'MULTI_SHOP_PERSISTENCE_UNREVIEWED',
@@ -441,7 +470,16 @@ async function api(req,res,url){
         return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
       const expectedGeneration=commandNumber(body.expectedGeneration,
         'expectedGeneration');
-      const saved=saveStore.save(world,{expectedGeneration});
+      if(careerRequired&&!careerProof)
+        return send(res,409,{ok:false,code:'CAREER_HISTORY_UNREVIEWED',
+          error:'轉職後的操作超出已審閱保存範圍，保留上一有效存檔',state:state()});
+      const saved=saveStore.save(world,{expectedGeneration,
+        ...(careerRequired?{careerProof}:{})});
+      // Ordinary checkpoints remain backwards compatible. If a previously
+      // untracked action was accepted by legacy B-43, begin at that checked
+      // checkpoint rather than inventing a missing command history.
+      if(!careerRequired&&careerProof?.anchorKind!=='fresh')
+        careerProof=beginCareerProof(world,'legacy');
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
           revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
@@ -457,16 +495,15 @@ async function api(req,res,url){
       const nowSeconds=process.env.AKIMONO_E2E_FIXED_NOW===undefined?
          Math.floor(Date.now()/1000):commandNumber(
            Number(process.env.AKIMONO_E2E_FIXED_NOW),'AKIMONO_E2E_FIXED_NOW',1);
-      const w=createPeriodMemoryWorld({worldId:randomUUID(),
-        streetId:streetModule.id,nowSeconds,
-        period:createOriginalPeriodSeed(reviewedPeriodSeed)});
+      const w=createInitialWorld({worldId:randomUUID(),nowSeconds});
       const staged=createSourceReviewedMemoryWorldAdapter({
         initialWorld:w,streetModule,
       });
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
-      repo=staged;
+      repo=staged;careerRequired=false;
+      careerProof=beginCareerProof(applied.world,'fresh');
       result=applied;
       break;
     }

@@ -86,7 +86,7 @@
 
 - 原版 `轉職指南` 的 USE 0～13 已按原始 `param` 與 `_local_／_local_1` 綁定編譯成獨立 Registry 規則，全部要求持有指南 1 本、`arg nocount`、時間 `6h×ItemUseTimeRate(0.5)`，共用 CAS 在正常扣除／時間／市場檢查後執行原版轉職函式。前 13 種轉職依原版將指定 13 個商品熟練度清除，轉入目標熟練度且係數 0.5、上限 1000，並改變店舖職業。第 14 種解除職業，不進行熟練度轉移。
 - **關鍵相容性**：凍結 Perl 的跳過條件確為 `next if !$exp || $exps==$exp1;`，其中 `$exp1` 是目標商品當前的**熟練度數值**、不是商品編號；不修正這個原版行為。完整 `original-r2-career-use-probe.pl` 直接執行凍結 `GetBuffer`、`UseItem` 與 inline `_local_`；`r2-career-change-source.test.mjs` 覆蓋 14 項、熟練度為 0／1000、編號恰等於熟練度值、職業別名、日誌及單次 USE／未持有拒絕。
-- `r2-career-true-player-http.test.mjs` 另加入「市場正向 PLUS → 買轉職指南 → 真實轉成酪農家 → 禮券換牛 → 擠奶職業縮時」的玩家 HTTP 測試。此玩家測試以最新同 SHA CI 結果判定；轉職導致的職業與任意熟練度變化尚未有完整 B-43 來源證明，不能因此視為雙世代持久化已驗收。
+- `r2-career-true-player-http.test.mjs` 已建立市場正向 PLUS → 真購書 → 轉酪農家 → 禮券換牛 → 擠奶職業縮時。P2 的 `reviewed-career-save-replay.mjs` 與 B-43 新增有界真命令歷史，避免以轉職後 EXP 錯推過去產量：保存及載入重播原版初始化／已驗證舊檔錨點、真 GameCore CAS 及伺服器 RNG，逐欄比對完整世界；雙世代同一歷史前綴，舊無職業存檔維持相容。`p2-career-persistence-http.test.mjs` 覆蓋十三項轉職、解除職業、真 EXP 轉移、保留原庫存、兩次 Node 重啟及後續製作、舊檔接續、偽造 job／EXP／商品／歷史／RNG／校驗拒絕。只承認 `p2-career-persistence-source-review.md` 內明示白名單，非密碼學簽章；未審閱操作、R4 EVENT、跨期及多人仍 fail-closed。最終驗收以 PR #10 同 HEAD 全量 Actions 結果為準。
 
 ### ITEM #77：一項慶祝派對人氣回呼 USE
 
