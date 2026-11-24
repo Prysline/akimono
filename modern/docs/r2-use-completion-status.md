@@ -136,5 +136,11 @@
 ## P3 第一階段（Draft PR #11，尚未完成驗收）
 
 - `p3-forging-accessory-source-review.md` 記錄二十項 USE 與 #37 修行、#9 採礦、#8 魔石及製作書來源。共用歷史重播保留 P2 wire 格式、128 筆上限及完整世界比對，新增 #37/0、#37/1、#79/3、基礎四種鍛造和必要市場購買的白名單；不要求無職業鍛造玩家先轉職。
-- `p3-forging-persistence-http.test.mjs` 已新增 #20/0、#21/0、#22/0、#23/0 真玩家取得、製作、B-43 雙世代重啟及拒絕偽造測試；須由 PR #11 確切 HEAD 的 CI 證實，不以測試存在宣告通過。
+- `p3-forging-persistence-http.test.mjs` 已新增 #20/0、#21/0、#22/0、#23/0 真玩家取得、製作、B-43 雙世代重啟及拒絕偽造測試；PR #11 HEAD `8055fa7223879f0712abccb029e3768c6a1294b3` 的 Actions 45387644572 實際日誌證實四項新增玩家測試通過，JS 1234/1234、Perl 2286/2286；後續提交需重新核對同 SHA。
 - 其餘十六項仍缺合法玩家／持久化證明；進階熟練度、雙技能、#24 修行門檻、實際時間推進及未審閱 EVENT 不得繞過。現有 PLUS 供貨子步驟不是完整時間推進。尚未驗收 P3 轉職及 lostbook 持久化；不擴張 #39 或進入 P4。
+
+### P3 後續：職業與時間阻塞
+
+- `f017a8408af723b868a0127fb6fc06d6a6a74bed` 增加 #23/0 真實採礦 40 EXP → #37/1 → #78/7 移轉 20 EXP 至鐵杖書 → 武器屋兩次製作（原版時間 1776、1752 秒）→ B-43 雙代重啟；另增加獨立合法重播但歷史分叉、proof wire 及整檔大小負向測試。這些是新增待 CI 驗證的測試，不等同已通過。
+- 阻塞已查到實作位置：`original-b41-playable-sale.mjs::projectSourcePreEventSaleSlice` 僅許可 #10/#40–44 等少數持有與 EXP，並要求五張初始禮券；`projectB41Sale` 將後繼 EVENT 設為 null；`standard-street-module.mjs` 的 `advance-source-time-reviewed-events` 是內部 B-56 診斷入口，尚無正式 HTTP 授權或 B-43 全 EVENT 歷史。`original-r4-world-transition-gate.mjs` 在 36h 決算前拒絕 CAS，不能由 P3 另設時鐘或繞過。P3 雙技能已需 12 小時而新店也只有 12 小時；#24 需四次前置修行再執行一次，僅修行即需 30 小時，尚未計採集及鍛造。
+- 所以維持進階及 #66 replay 白名單拒絕，不能以 /api/supply 反覆供貨冒充原版時間推進。待 R4 提供具來源證明、實際玩家時間推進且持久化的介面後，P3 才能補剩餘 16 USE 與製作書 lostbook 的玩家存檔證明；未合併 PR #11，不開始 P4。
