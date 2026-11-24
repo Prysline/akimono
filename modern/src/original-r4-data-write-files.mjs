@@ -69,8 +69,13 @@ const scalar = (value,label) => {
   return str;
 };
 const integer = (value,label,min=0) => {
-  if (!Number.isSafeInteger(value) || value < min) fail(label+' must be a safe integer');
-  return value;
+  // Frozen DataRead splits CSV into decimal strings, while first-period
+  // in-memory computations may keep real Perl integers. Accept only exact
+  // canonical nonnegative decimal spelling; reject floats and coercion.
+  const n=typeof value==='string' && /^(?:0|[1-9][0-9]*)$/.test(value)
+    ? Number(value) : value;
+  if (!Number.isSafeInteger(n) || n < min) fail(label+' must be a safe integer');
+  return n;
 };
 const arrayWire = (a,label,size) => {
   if (!Array.isArray(a) || (size !== undefined && a.length !== size)) {
