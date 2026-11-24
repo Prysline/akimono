@@ -173,6 +173,23 @@ for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]])
     let step=await restartLoad(s,dir,servers);s=step.s;
     assert.deepEqual(step.loaded.state.world,first);
     await craft();
+    if(book===21){
+      const before=await s.state();
+      assert.ok(before.showcaseOffers.some(o=>o.itemId===47&&o.owned>0));
+      const listed=await s.post('/api/showcase',{
+        expectedRevision:before.world.revision,itemId:47,shelf:0,
+        priceOverride:1234,
+      });
+      assert.equal(listed.code,'COMMITTED',JSON.stringify(listed));
+      assert.equal(listed.state.shop.showcase[0],47);
+      assert.equal(listed.state.shop.price[0],1234);
+      assert.equal(listed.state.shop.time-before.shop.time,600);
+      const rejected=await s.post('/api/advance-time',{
+        expectedRevision:listed.state.world.revision,minutes:1,
+      });
+      assert.equal(rejected.ok,false);
+      assert.deepEqual((await s.state()).world,listed.state.world);
+    }
     const second=await save(s,1);
     step=await restartLoad(s,dir,servers);s=step.s;
     assert.deepEqual(step.loaded.state.world,second);
