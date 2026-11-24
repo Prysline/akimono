@@ -192,7 +192,7 @@ for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]])
     assert.equal(proof.commands.some(c=>c.itemId===78),false);
     if(book!==20)return;
     for(const variant of ['skill','product','exp','job','book','material',
-      'rng','command','capacity','missing-proof','corrupt']){
+      'rng','command','capacity','missing-proof','corrupt','proof-wire-size','file-size','prefix']){
       const forged=JSON.parse(good);
       const world=JSON.parse(forged.world);
       const history=JSON.parse(forged.careerProof);
@@ -212,9 +212,33 @@ for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]])
       forged.world=encodeMemorySnapshot(validateMemoryWorld(world));
       forged.careerProof=JSON.stringify(history);
       if(variant==='missing-proof')delete forged.careerProof;
+      if(variant==='proof-wire-size')forged.careerProof+=' '.repeat(500001);
+      if(variant==='prefix'){
+        // A second independently replayable branch of the SAME fresh anchor.
+        // Changing both the open-shop command and resulting shop name must
+        // still be rejected when the older genuine lineage is present.
+        history.commands.find(c=>c.kind==='open-shop').shopName='不同歷史店舖';
+        world.shops[0].shopname='不同歷史店舖';
+        forged.world=encodeMemorySnapshot(validateMemoryWorld(world));
+        forged.careerProof=JSON.stringify(history);
+      }
       rehash(forged);
       if(variant==='corrupt')forged.sha256='0'.repeat(64);
-      await writeFile(slot,JSON.stringify(forged)+'\n');
+      await writeFile(slot,JSON.stringify(forged)+'\n'+
+        (variant==='file-size'?' '.repeat(2200001):''));
+      if(variant==='prefix'){
+        const older=join(dir,'world-b.json');
+        const originalOlder=await readFile(older,'utf8');
+        await rm(older);
+        try{
+          const isolated=await boot(dir);servers.push(isolated);
+          const replayed=await isolated.post('/api/load');
+          assert.equal(replayed.code,'LOADED',JSON.stringify(replayed));
+          assert.equal(replayed.state.save.generation,2);
+          assert.equal(replayed.state.world.shops[0].shopname,'不同歷史店舖');
+          await isolated.stop();
+        }finally{await writeFile(older,originalOlder);}
+      }
       s=await boot(dir);servers.push(s);
       const recovered=await s.post('/api/load');
       assert.equal(recovered.code,'LOADED',variant+': '+JSON.stringify(recovered));
@@ -224,3 +248,68 @@ for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]])
     }
   });
 }
+
+test('P3 #23/0 earned mining EXP transfers to weapon career; two trained crafts and restarts',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-p3-career-staff-'));
+  const servers=[];
+  t.after(async()=>{for(const server of servers)await server.stop();
+    await rm(dir,{recursive:true,force:true});});
+  let s=await boot(dir);servers.push(s);
+  await open(s);
+  await use(s,79,0);
+  const mine=await use(s,9,0,2);
+  assert.equal(mine.details.effectiveCount,2);
+  assert.equal(mine.state.shop.exp['9'],40);
+  assert.ok(mine.state.shop.item[4]>=40);
+  await supply(s);await buy(s,23);await buy(s,78);
+  await use(s,79,3);
+  let ready=false;
+  for(let i=0;i<16;i++){
+    const state=await s.state();
+    if((state.marketOffers.find(x=>x.itemId===8)?.marketStock??0)>=34){
+      ready=true;break;
+    }
+    await supply(s);
+  }
+  assert.equal(ready,true);
+  await buy(s,8,34);
+  const trained=await use(s,37,1);
+  assert.equal(trained.state.shop.exp['37'],50);
+  assert.equal(trained.state.shop.item[18],1);
+  const career=await use(s,78,7);
+  assert.equal(career.state.shop.job,'weapon');
+  assert.equal(career.state.shop.exp['23'],20);
+  assert.equal(career.state.shop.exp['9']??0,0);
+  assert.equal(career.state.shop.exp['37'],50);
+  assert.equal(career.state.shop.item[77],0);
+  const craft=async(exp,seconds)=>{
+    const before=await s.state();
+    const done=await use(s,23,0);
+    assert.equal(done.details.effectiveCount,1);
+    assert.equal(done.details.experienceGain,20);
+    assert.equal(done.state.shop.exp['23'],exp);
+    assert.equal(done.state.shop.time-before.shop.time,seconds);
+    assert.equal(done.state.shop.item[18],1);
+    assert.equal(done.state.shop.item[22],1);
+    assert.equal(done.state.shop.item[4],before.shop.item[4]-20);
+    assert.equal(done.state.shop.item[7],before.shop.item[7]-2);
+    assert.ok(done.state.shop.item[57]>before.shop.item[57]);
+    assert.equal(done.state.shop.money,before.shop.money);
+    assert.equal(done.state.shop.job,'weapon');
+  };
+  await craft(40,1776);
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  await craft(60,1752);
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.save.generation,2);
+  // No artificial time, inventory, or EXP grant makes the next USE legal.
+  await denied(s,{itemId:23,useId:1});
+  await denied(s,{itemId:23,useId:0,randomDraws:[0]},400);
+  const proof=JSON.parse(JSON.parse(await readFile(join(dir,'world-a.json'),'utf8')).careerProof);
+  assert.ok(proof.commands.some(c=>c.itemId===78&&c.useId===7));
+  assert.ok(proof.commands.some(c=>c.itemId===37&&c.useId===1));
+});
