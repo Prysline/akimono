@@ -39,7 +39,11 @@ open my $p,'-|',$^X,"$FindBin::Bin/original-r4-event-item-param-probe.pl" or die
 my $raw=<$p>;close $p or die 'original overlay compiler failed';
 my $compiled=JSON::PP->new->utf8->decode($raw);
 my %generated=map {$_->{eventCode}=>$_->{generatedSource}} @{$compiled->{cases}};
-%main::DTevent=%{$input->{events}};
+if(exists $input->{eventWire}) {
+  %main::DTevent=split(/,/,$input->{eventWire});
+}else {
+  %main::DTevent=%{$input->{events}};
+}
 my @order=keys %main::DTevent;
 for my $code(@order){
   next if $code eq 'happy';

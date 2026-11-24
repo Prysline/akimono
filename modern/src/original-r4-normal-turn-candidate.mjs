@@ -32,7 +32,7 @@ export function projectR4NormalTurnCandidate({world,minutes,street,reviewedR4,re
   for(let n=0;n<=121;n++){
     try{pre=projectR4SortedInventoryPreEventTurn({...args,randomDraws:samples});break;}
     catch(e){
-      if(!/missing.*(draw|sample)|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
+      if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
       if(n===121)fail('pre-EVENT draw budget exhausted');
       samples.push(tape.unit(n));
     }

@@ -169,3 +169,79 @@ test('R4 actual legal market buy/open source state works and legacy P3/R3 guards
   const crossing=structuredClone(world);crossing.nowSeconds=1025980;
   assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(crossing,1,samples),reviewedR4,reviewedDataRead,activeOrder:[]}),/period settlement/);
 });
+
+
+// Candidate composition: no HTTP/CAS/persistence authority. Source oracle
+// receives only the exact sampled tape from the server-owned policy.
+import {reviewR4HashPolicy} from '../src/original-r4-perl-hash-replay.mjs';
+import {reviewOriginalR4DeclarativeEventCycle} from '../src/original-r4-declarative-event-cycle.mjs';
+import {reviewOriginalR4MultiEventFixture} from '../src/original-r4-multi-event-order-fixture.mjs';
+import {projectR4NormalTurnCandidate} from '../src/original-r4-normal-turn-candidate.mjs';
+const hashReview=reviewR4HashPolicy({
+  itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,compilerSource:source.originalCompilerSource,
+  turnSource:source.originalTurnSource,readSource:source.originalDataReadSource,writeSource:source.originalDataWriteSource});
+const seven=reviewOriginalR4DeclarativeEventCycle({
+  compiledCatalog:street.reviewedEventCatalog,reviewedParams:reviewedDataRead.params,
+  itemDsl:source.itemDsl,turnSource:source.originalTurnSource,readSource:source.originalDataReadSource});
+const eventReview=reviewOriginalR4MultiEventFixture({
+  compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:source.originalTurnSource,
+  readSource:source.originalDataReadSource,reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,
+  reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
+  reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
+  reviewedSwordEvent:street.reviewedB61Sword});
+const project=(world,minutes)=>projectR4NormalTurnCandidate({world,minutes,street,reviewedR4,reviewedDataRead,reviewedHash:hashReview,reviewedEvents:eventReview});
+const wire=state=>Object.entries(state).flat().join(',');
+function compareNormal(world,minutes){
+  const candidate=project(world,minutes),e=candidate.evidence;
+  const env={...process.env,PERL_HASH_SEED:e.seed,PERL_PERTURB_KEYS:'0'};
+  const run=(script,input,argv=[])=>JSON.parse(execFileSync('perl',[script,...argv],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',env,input:JSON.stringify(input)
+  }));
+  const pre=run('original-r4-p3-pre-event-overlay-probe.pl',{
+    shop:world.shops[0],csv:world.market.originalWholesaleCsv,span:minutes*60,
+    draws:e.preEventDraws,events:world.period.eventState,eventWire:wire(world.period.eventState)});
+  assert.deepEqual(pre.activeOrder,e.activeOrder);
+  assert.equal(pre.used,e.preEventDraws.length);
+  assert.deepEqual(candidate.market.wholesale,pre.wholesale);
+  assert.equal(candidate.market.originalWholesaleCsv,pre.csv);
+  const after=run('original-r4-mixed-support-gate-probe.pl',{
+    shop:pre.shop,eventWire:wire(world.period.eventState),startSeconds:world.nowSeconds,
+    spanSeconds:minutes*60,samples:e.eventSamples},['--normal-turn']);
+  assert.deepEqual(after.activeOrder,e.activeOrder);
+  assert.deepEqual(after.eventOrder,e.eventOrder);
+  assert.deepEqual(after.nowOrder,e.nowOrder);
+  assert.deepEqual(after.ranges,e.eventDrawRanges);
+  assert.deepEqual(after.logs,e.logs);
+  assert.equal(wire(candidate.period.eventState),after.eventWire);
+  assert.deepEqual(candidate.period.eventState,after.eventState);
+  for(const [key,value] of Object.entries(candidate.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-after.shop[key])<1e-8);continue;}
+    if(key==='exp'&&value===undefined)continue;
+    assert.deepEqual(value,after.shop[key],key);
+  }
+  assert.equal(candidate.committable,false);
+  assert.deepEqual(candidate,project(world,minutes),'same world/command is restart replayable');
+  return candidate;
+}
+test('R4 normal turn candidate shares one deterministic trace and actual Perl pre-EVENT and EVENT successor across source world',()=>{
+  const {repository}=fresh(true);let world=structuredClone(repository.read());
+  const initial=structuredClone(world);
+  const first=compareNormal(world,1);
+  assert.deepEqual(world,initial);
+  world={...world,shops:first.shops,market:first.market,period:first.period,nowSeconds:first.nowSeconds,revision:world.revision+1};
+  compareNormal(world,60);
+  assert.throws(()=>project({...world,nowSeconds:1025980},1),/period settlement/);
+  assert.throws(()=>project({...world,period:{...world.period,eventState:null}},1),/known/);
+});
+test('R4 candidate executes normal EVENT callbacks on reviewed P3-shaped stock, not initial-only B55 inventory',()=>{
+  const {repository}=fresh(true);let world=structuredClone(repository.read());
+  const shop=world.shops[0];shop.item[46]=40;shop.item[10]=10;shop.item[17]=1;shop.item[19]=1;
+  shop.exp={'20':200,'37':300};shop.job='tool';
+  shop.showcase=[47];shop.price=[street.reviewedB41.p3TurnItems.rules[47].unitPrice];
+  // Deterministic source-seed coverage, not an acquisition or player command.
+  // Active happy and ore expire or persist while every normal gate is run.
+  world.period.eventState={'happy':1000001,'plusup-tetu':1007200};
+  const actual=compareNormal(world,60);
+  assert.equal(actual.shops[0].job,'tool');
+  assert.deepEqual(actual.shops[0].exp,shop.exp);
+});
