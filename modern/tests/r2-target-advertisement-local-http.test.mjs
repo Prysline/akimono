@@ -81,10 +81,74 @@ async t=>{
   await rejected(s,'/api/r2/open-target-shop',{
     expectedRevision:2,ownerName:'無效',shopName:'無效',
   },403);
+  const disabled=await rejected(s,'/api/r2/target-advertisement-preflight',{
+    expectedRevision:2,targetShopId:2,
+  },403);
+  assert.equal(disabled.code,'R2_AUDIT_DISABLED');
   await rejected(s,'/api/use',{
     expectedRevision:2,itemId:62,useId:1,requestedCount:1,targetShopId:2,
   },403);
   assert.equal((await s.state()).world.shops.length,1);
+});
+test('R2 #62/1 preflight uses true GameCore source projection but does not commit or authorize any player USE',
+async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-r2-preflight-'));
+  const s=await boot(dir,true);
+  t.after(async()=>{await s.stop();await rm(dir,{recursive:true,force:true});});
+  assert.equal((await s.post('/api/initialize')).code,'COMMITTED');
+  assert.equal((await s.post('/api/open-shop',{
+    expectedRevision:1,ownerName:'廣告測試人',shopName:'來源操作店',
+  })).code,'COMMITTED');
+  assert.equal((await s.post('/api/supply',{
+    expectedRevision:2,timespanSeconds:3600,
+  })).code,'COMMITTED');
+  const opened=await s.post('/api/r2/open-target-shop',{
+    expectedRevision:3,ownerName:'原版目標',shopName:'合法來源目標',
+  });
+  assert.equal(opened.code,'COMMITTED',JSON.stringify(opened));
+  const before=await s.state(),revision=before.world.revision;
+  assert.equal(before.world.shops[0].item[61],0,
+    'no arbitrary advertising package may be granted to simulate success');
+  assert.deepEqual(before.world.period.eventState,{},
+    'source event state is still known empty before time advances');
+  for(const [payload,status,code] of [
+    [{expectedRevision:revision,targetShopId:1},409,'INVALID_SOURCE_TARGET'],
+    [{expectedRevision:revision,targetShopId:999},409,'INVALID_SOURCE_TARGET'],
+    [{expectedRevision:revision-1,targetShopId:2},409,'REVISION_CONFLICT'],
+  ]){
+    const blocked=await rejected(s,'/api/r2/target-advertisement-preflight',
+      payload,status);
+    assert.equal(blocked.code,code);
+  }
+  for(const extraFields of [
+    {shopId:1},{itemId:62},{useId:1},{randomDraws:[]},
+    {money:99999999},{targetShopId:'2'},
+  ]){
+    const bad=await rejected(s,'/api/r2/target-advertisement-preflight',{
+      expectedRevision:revision,targetShopId:2,...extraFields,
+    },400);
+    assert.equal(bad.ok,false);
+  }
+  const projected=await s.post('/api/r2/target-advertisement-preflight',{
+    expectedRevision:revision,targetShopId:2,
+  });
+  assert.equal(projected.status,200,JSON.stringify(projected));
+  assert.equal(projected.code,'R2_PREFLIGHT_CHECKED');
+  assert.equal(projected.details.sourceRevision,revision);
+  assert.equal(projected.details.targetShopId,2);
+  assert.equal(projected.details.memoryOnly,true);
+  assert.equal(projected.details.authenticated,false);
+  assert.equal(projected.details.committed,false);
+  assert.equal(projected.details.persisted,false);
+  assert.equal(projected.details.authoritativeUseApproval,false);
+  assert.equal(projected.details.sourceProjectionSucceeded,false);
+  assert.equal(projected.details.sourceProjectionCode,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(projected.details.sourceRejectionReason,/source USE item not owned/);
+  assert.equal(Object.hasOwn(projected.details,'projectedTargetRank'),false);
+  assert.deepEqual(projected.state.world,before.world);
+  assert.deepEqual(projected.state.save,before.save);
+  assert.deepEqual(await s.state(),before,
+    'even a successful preflight HTTP response must not mutate WorldState');
 });
 test('R2 #62/1 HTTP source shop targeting and R4 EVENT/B43 barriers fail closed without fabricated funds',
 async t=>{
@@ -199,6 +263,17 @@ async t=>{
   assert.equal(before.shops[0].item[61],0,
     'the target audit must not fabricate an advertising package');
   assert.equal(before.shops[1].item[61],0);
+  const prev=await s.state();
+  const projected=await s.post('/api/r2/target-advertisement-preflight',{
+    expectedRevision:before.revision,targetShopId:2,
+  });
+  assert.equal(projected.code,'R2_PREFLIGHT_CHECKED',JSON.stringify(projected));
+  assert.equal(projected.details.sourceProjectionSucceeded,false);
+  assert.equal(projected.details.sourceProjectionCode,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(projected.details.sourceRejectionReason,
+    /unreviewed source EVENT/);
+  assert.deepEqual(await s.state(),prev,
+    'unreviewed EVENT preflight must also leave world and save unchanged');
   // The audit's two-shop world must not accidentally unlock other
   // single-shop commands, even if their individual Registry rules exist.
   for(const [uri,payload] of [
