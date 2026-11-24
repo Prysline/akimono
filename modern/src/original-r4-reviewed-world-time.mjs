@@ -52,6 +52,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     if(world?.schema!==PERIOD_WORLD_SCHEMA||world.streetId!==street.id||world.events!==null||world.shops.length>1)fail('reviewed local one-shop v2 world required');
     const period=disk?independentCandidateWorld(world).period:world.period;
     if(disk){
+      if(world.revision===0&&(world.market!==null||world.shops.length!==0||period.settledCount!==0||world.period.disk!==undefined))fail('revision zero requires fresh source seed');
       if(period.settledCount>0&&world.period.state!==R4_SETTLED_STATE)fail('committed settlement state required');
       if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);

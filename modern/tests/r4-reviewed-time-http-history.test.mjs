@@ -177,6 +177,9 @@ test('R4 independent HTTP crosses real period, resumes commerce, persists source
   assert.equal(disk.live['lasttime.cgi'].mtime,1026040);
   assert.notEqual(state.world.period.dtPeople,first.period.dtPeople);
   await advance(60);
+  const giftBefore=state.shop.item[78];
+  state=ok(await post('/api/use',{expectedRevision:state.world.revision,itemId:79,useId:0,requestedCount:1}));
+  assert.equal(state.shop.item[78],giftBefore-2);
   const offer=state.marketOffers.find(x=>x.itemId===10&&x.canBuy);
   assert.ok(offer,'normal time provides source item #10');
   state=ok(await post('/api/buy',{expectedRevision:state.world.revision,itemId:10,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price}));

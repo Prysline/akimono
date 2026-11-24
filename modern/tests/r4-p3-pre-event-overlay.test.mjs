@@ -655,6 +655,8 @@ test('R4 reviewed CAS settles two consecutive source boundaries from legal openi
   const first=repository.read();
   assert.equal(first.period.settledCount,1);
   assert.equal(first.period.disk.generations[0]['play.cgi'].bytes,initial.period.disk.live['play.cgi'].bytes);
+  const forgedZero={...structuredClone(first),revision:0};
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forgedZero,streetModule:crossStreet}),/revision zero/);
   const forged=structuredClone(first);forged.period.disk.live['log0.cgi'].bytes+='forged\n';
   assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forged,streetModule:crossStreet}),/provenance/);
   const rejected=applyGameCommand({world:forged,streetModule:crossStreet,command:{kind:'advance-reviewed-world-time',expectedRevision:forged.revision,minutes:1}});
