@@ -14,6 +14,13 @@ BEGIN {
   *CORE::GLOBAL::rand=sub (;$) {
     die 'R4 multi-event original RNG exhausted' unless @main::R4_MULTI_DRAWS;
     my $sample=shift @main::R4_MULTI_DRAWS;
+    if(ref($sample) eq 'HASH'){
+      die 'wrong typed source lottery result' unless
+        $_[0]==6096454 && $sample->{range}==6096454 &&
+        $sample->{result}=~/^\d+$/ && $sample->{result}<6096454;
+      push @main::R4_MULTI_RANGES,0+$_[0];
+      return 0+$sample->{result};
+    }
     die 'unsafe original RNG fixture' unless
       defined($sample)&&$sample=~/^\d+$/&&$sample<1000000;
     my $range=0+($_[0]//1);
@@ -573,6 +580,30 @@ sub step {
       ):()),
     },
   };
+}
+# Optional actual source normal-turn oracle: no fabricated event starts.
+# Caller supplies the pre-EVENT shop from the separate frozen stage probe,
+# the source CSV wire, and the exact consumed RNG for this command.
+if(@ARGV&&$ARGV[0] eq '--normal-turn'){
+  binmode STDIN,':raw';
+  my $in=JSON::PP->new->utf8->decode(<STDIN>);
+  $temptimenow=$in->{startSeconds};$timespan=$in->{spanSeconds};$TIMESPAN=$timespan;
+  %DTevent=split(/,/,$in->{eventWire});
+  my @prior=keys(%DTevent);
+  die 'special EVENT not in candidate scope' if exists($DTevent{rebel})||exists($DTevent{guildbattle});
+  @ITEM=(undef,map{{%{$_}}}@baseItems);
+  $ITEM[64]{name}='看門機器人';
+  @DT=($in->{shop});%id2idx=($DT[0]{id}=>0);
+  @R4_MULTI_DRAWS=@{$in->{samples}};
+  @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
+  my $r=R4MultiOriginalEventSlice();
+  die 'original normal-turn RNG unused' if @R4_MULTI_DRAWS;
+  print JSON::PP->new->canonical->utf8->encode({
+    activeOrder=>\@prior,eventOrder=>\@runtimeHashKeys,nowOrder=>\@R4_NOW_KEYS,
+    shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
+    logs=>\@LOG,ranges=>\@R4_MULTI_RANGES,
+  });
+  exit 0;
 }
 my @cases;
 # Seven sustained EVENTs and both support callbacks start in the same

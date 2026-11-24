@@ -220,7 +220,7 @@ export function createMemoryWorldAdapter(initialWorld,{
   let current=snapshot(initialWorld);
   return Object.freeze({
     read(){return snapshot(current);},
-    compareAndSwap({expectedRevision,nextWorld,advanceSeconds=0}){
+    compareAndSwap({expectedRevision,nextWorld,advanceSeconds=0,command=null}){
       integer(expectedRevision,'adapter revision');
       integer(advanceSeconds,'source-authorized time advance');
       if(current.revision!==expectedRevision)
@@ -240,7 +240,7 @@ export function createMemoryWorldAdapter(initialWorld,{
       if(current.schema===PERIOD_WORLD_SCHEMA&&
          reviewPeriodTransition!==null){
         try{
-          if(reviewPeriodTransition({before:current,after:proposed})!==true)
+          if(reviewPeriodTransition({before:current,after:proposed,command})!==true)
             reject('source-reviewed v2 period CAS transition missing');
         }catch(error){
           return answer(false,'SOURCE_BOUNDARY_REJECTED',snapshot(current),{
@@ -276,7 +276,7 @@ export function createSourceReviewedMemoryWorldAdapter({
   try{
     if(streetModule.reviewPeriodTransition({
       before:initial,
-      after:{...initial,revision:initial.revision+1},
+      after:{...initial,revision:initial.revision+1},initial:true,
     })!==true)
       reject('source-reviewed v2 initial world approval missing');
   }catch(error){
@@ -284,8 +284,8 @@ export function createSourceReviewedMemoryWorldAdapter({
       (error instanceof Error?error.message:'source reviewer rejected'));
   }
   return createMemoryWorldAdapter(initial,{
-    reviewPeriodTransition:({before,after})=>
-      streetModule.reviewPeriodTransition({before,after}),
+    reviewPeriodTransition:({before,after,command})=>
+      streetModule.reviewPeriodTransition({before,after,command}),
   });
 }
 export function executeMemoryCommand({repository,streetModule,command}){
@@ -295,9 +295,9 @@ export function executeMemoryCommand({repository,streetModule,command}){
   const proposed=applyGameCommand({world:repository.read(),command,streetModule});
   if(!proposed.ok)return proposed;
   const committed=repository.compareAndSwap({
-    expectedRevision:command.expectedRevision,nextWorld:proposed.world,
+    expectedRevision:command.expectedRevision,nextWorld:proposed.world,command,
     advanceSeconds:['advance-source-time',
-      'advance-source-time-reviewed-events'].includes(command.kind)?
+      'advance-source-time-reviewed-events','advance-reviewed-world-time'].includes(command.kind)?
       command.minutes*60:0,
   });
   if(!committed.ok)return committed;
