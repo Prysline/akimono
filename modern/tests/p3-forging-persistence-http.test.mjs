@@ -19,7 +19,6 @@ async function boot(directory,{reviewedTime=false,now='1000000'}={}){
     cwd:join(root,'modern'),env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:reviewedTime?'0':'1',
-      AKIMONO_REVIEWED_NORMAL_TIME:reviewedTime?'1':'0',
     },stdio:['ignore','pipe','pipe'],
   });
   let stderr='';
@@ -468,4 +467,140 @@ test('P3 reviewed nonsettling time: legitimate dual skills, iron accessory and t
   assert.ok(proof.commands.some(x=>x.kind==='use-item'&&x.itemId===37&&x.useId===1));
   assert.ok(proof.commands.some(x=>x.kind==='use-item'&&x.itemId===66&&x.useId===0));
   await denied(s,{itemId:66,useId:1});
+});
+
+/** Source-only helpers for v2 player tests. No fixture supply or injected assets. */
+function reviewedPlayer(s){
+  let ticks=0;
+  const time=async()=>{
+    const before=await s.state();
+    assert.ok(++ticks<=34,'nonsettling time budget exhausted');
+    assert.ok(before.secondsUntilSettlement>3600,'no crossing 36h');
+    const result=await s.post('/api/advance-reviewed-time',{expectedRevision:before.world.revision,minutes:60});
+    assert.equal(result.code,'COMMITTED',JSON.stringify(result));
+    assert.equal(result.state.world.nowSeconds,before.world.nowSeconds+3600);
+    return result.state;
+  };
+  const ensureTime=async seconds=>{
+    for(;;){const state=await s.state();if(state.world.nowSeconds-state.shop.time>=seconds)return state;await time();}
+  };
+  const market=async(id,count=1)=>{
+    for(;;){
+      const state=await s.state();
+      const offer=state.marketOffers.find(x=>x.itemId===id);
+      if(offer?.canBuy&&offer.marketStock>=count){await ensureTime(1800);return buy(s,id,count);}
+      await time();
+    }
+  };
+  const herbs=async count=>{
+    while((await s.state()).shop.item[0]<count){
+      if((await s.state()).shop.item[11]===0)await market(12);
+      await ensureTime(3600);await use(s,12,0);
+    }
+  };
+  const brew=async useId=>{
+    if((await s.state()).shop.item[14]===0)await market(15);
+    if(useId===0||useId===2)await herbs(useId===0?10:20);
+    await ensureTime(1800);return use(s,15,useId);
+  };
+  return {time,ensureTime,market,herbs,brew};
+}
+
+test('v2 sole player path: P1 advanced medicine, source EXP, real time and two generations',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-v2-p1-'));
+  const servers=[];t.after(async()=>{for(const server of servers)await server.stop();await rm(dir,{recursive:true,force:true});});
+  const options={reviewedTime:true,now:'900000'};
+  let s=await boot(dir,options);servers.push(s);await open(s);
+  let player=reviewedPlayer(s);
+  await use(s,79,0);
+  await player.herbs(160);
+  await player.market(15);
+  await denied(s,{itemId:15,useId:1});
+  for(let i=0;i<10;i++)await player.brew(0);
+  const high=await player.brew(1);
+  assert.equal(high.state.shop.exp['15'],220);
+  assert.ok(high.state.shop.item[30]>0);
+  await player.time();
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  player=reviewedPlayer(s);
+  while((await s.state()).shop.exp['15']<600){
+    if((await s.state()).shop.item[29]<10)await player.brew(0);
+    else await player.brew(1);
+  }
+  while((await s.state()).shop.item[31]<20)await player.brew(2);
+  while((await s.state()).shop.item[32]<10){
+    if((await s.state()).shop.item[31]<10)await player.brew(2);
+    await player.brew(3);
+  }
+  while((await s.state()).shop.item[30]<10){
+    if((await s.state()).shop.item[29]<10)await player.brew(0);
+    await player.brew(1);
+  }
+  const before=await s.state();
+  const elixir=await player.brew(4);
+  assert.equal(elixir.state.shop.item[33],before.shop.item[33]+5);
+  assert.equal(elixir.state.shop.item[30],before.shop.item[30]-10);
+  assert.equal(elixir.state.shop.item[32],before.shop.item[32]-10);
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  const record=JSON.parse(await readFile(join(dir,'world-a.json'),'utf8'));
+  assert.equal(record.format,'akimono.local-world-save.v2');
+  assert.ok(JSON.parse(record.careerProof).commands.some(x=>x.kind==='use-item'&&x.itemId===15&&x.useId===4));
+});
+
+test('v2 sole player path: P2 source career transfer and dairy survive normal time and two restarts',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-v2-p2-'));
+  const servers=[];t.after(async()=>{for(const server of servers)await server.stop();await rm(dir,{recursive:true,force:true});});
+  const options={reviewedTime:true,now:'900000'};
+  let s=await boot(dir,options);servers.push(s);await open(s);
+  let player=reviewedPlayer(s);
+  await use(s,79,0);
+  await player.herbs(10);
+  await player.market(15);
+  const medicine=await player.brew(0);
+  await player.market(78);
+  await player.ensureTime(10800);
+  const changed=await use(s,78,11);
+  assert.equal(changed.state.shop.job,'cow');
+  assert.ok(changed.state.shop.exp['25']>0);
+  assert.equal(changed.state.shop.item[29],medicine.state.shop.item[29]);
+  await use(s,79,4);
+  await player.ensureTime(3600);
+  const milk=await use(s,25,0);
+  assert.ok(milk.state.shop.item[25]>0);
+  await player.time();
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  player=reviewedPlayer(s);
+  await player.market(78);await player.ensureTime(10800);
+  const drug=await use(s,78,0);
+  assert.equal(drug.state.shop.job,'drug');
+  assert.ok(drug.state.shop.exp['15']>0);
+  await player.brew(0);await player.time();
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.shop.job,'drug');
+});
+
+test('v2 player refuses old development v1 records without silently migrating or overwriting',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-v2-no-migration-'));
+  const servers=[];t.after(async()=>{for(const server of servers)await server.stop();await rm(dir,{recursive:true,force:true});});
+  let s=await boot(dir);servers.push(s);await open(s);await save(s,0);await s.stop();
+  const slot=join(dir,'world-b.json'),original=await readFile(slot,'utf8');
+  assert.equal(JSON.parse(original).format,'akimono.local-world-save.v1');
+  const options={reviewedTime:true,now:'900000'};
+  s=await boot(dir,options);servers.push(s);
+  assert.equal((await s.state()).save.unreadable,true);
+  assert.equal((await s.post('/api/load')).ok,false);
+  assert.equal((await s.post('/api/initialize')).ok,false);
+  assert.equal(await readFile(slot,'utf8'),original);
+  const reset=await s.post('/api/reset',{confirm:'RESET_LOCAL_TEST_WORLD',expectedRevision:null,expectedWorldId:null,expectedGeneration:0});
+  assert.equal(reset.code,'RESET');
+  await open(s);await save(s,0);
+  assert.equal(JSON.parse(await readFile(slot,'utf8')).format,'akimono.local-world-save.v2');
 });
