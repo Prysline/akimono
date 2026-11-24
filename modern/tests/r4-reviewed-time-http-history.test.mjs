@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 async function boot(directory,now='1000000'){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_NORMAL_TIME:'1'},stdio:['ignore','pipe','pipe']});
+  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:'0'},stdio:['ignore','pipe','pipe']});
   let err='';child.stderr.on('data',x=>err+=x);
   const url=await new Promise((resolve,reject)=>{
     const timer=setTimeout(()=>{child.kill();reject(Error('boot timeout '+err));},15000);
@@ -48,7 +48,7 @@ test('reviewed normal HTTP time, legal gift USE, two save generations, restart r
   const latest=path.join(dir,'world-a.json'),record=JSON.parse(await readFile(latest,'utf8'));
   const proof=JSON.parse(record.careerProof);const entry=proof.commands.find(x=>x.kind==='advance-reviewed-world-time');
   assert.ok(entry.trace.eventSamples.length>0);entry.trace.eventSamples[0]=(entry.trace.eventSamples[0]+1)%1000000;
-  record.careerProof=JSON.stringify(proof);record.sha256=createHash('sha256').update(JSON.stringify([record.world,record.careerProof])).digest('hex');
+  record.careerProof=JSON.stringify(proof);record.sha256=createHash('sha256').update(JSON.stringify([record.format,record.generation,record.world,record.careerProof])).digest('hex');
   await writeFile(latest,JSON.stringify(record)+'\n');
   server=await boot(dir);const recovered=await post('/api/load');state=ok(recovered,'LOADED');
   assert.equal(recovered.details.recoveredPreviousGeneration,true);assert.deepEqual(state.world,first);
@@ -118,7 +118,7 @@ test('reviewed HTTP history continues beyond 128 legal operations, authenticates
     r=>{delete r.checkpointAuth;},
   ]){
     const bad=JSON.parse(latest);mutate(bad);
-    bad.sha256=createHash('sha256').update(JSON.stringify([bad.world,bad.careerProof])).digest('hex');
+    bad.sha256=createHash('sha256').update(JSON.stringify([bad.format,bad.generation,bad.world,bad.careerProof])).digest('hex');
     await writeFile(newest,JSON.stringify(bad)+'\n');
     server=await boot(dir,'900000');const recovered=await post('/api/load');
     assert.equal(recovered.details.recoveredPreviousGeneration,true);

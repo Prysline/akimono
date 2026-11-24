@@ -92,16 +92,15 @@ function createInitialWorld({worldId,nowSeconds}){
 // The player never supplies this history or RNG; only committed local commands
 // are recorded. Unsupported actions are rejected before CAS.
 let repo=null,careerProof=null,liveGeneration=0;
-function verifyCareerDraws(world,command){
+function verifyOrdinaryDraws(world,command){
   if(command.kind==='use-item'){
     const expected=sampleSourceUse(world,command);
-    return JSON.stringify(expected)===JSON.stringify(command.randomDraws??[]);
+    return expected.length?JSON.stringify(expected)===JSON.stringify(command.randomDraws):!Object.hasOwn(command,'randomDraws');
   }
   return !Object.hasOwn(command,'randomDraws');
 }
 // Single source-history player runtime. Old development records are not migrated.
 const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule);
-const verifyOrdinaryDraws=verifyCareerDraws;
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
 const checkpointStore=createReviewedHistoryCheckpointStore({
@@ -259,8 +258,7 @@ function ensureRevision(payload){
   return commandNumber(payload.expectedRevision,'expectedRevision');
 }
 // HTTP NEVER accepts randomDraws from a player. These source-reviewed
-// samples are command/revision-scoped; deterministic E2E cases match the
-// original frozen Perl probes and are selected ONLY by a local test env var.
+// samples are server-owned and command/revision-scoped; fixture RNG is rejected.
 function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
   if(!rule)return [];

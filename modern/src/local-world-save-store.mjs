@@ -19,7 +19,7 @@ function safeInt(value,label,min=0){
   return value;
 }
 const digest=text=>createHash('sha256').update(text,'utf8').digest('hex');
-const recordDigest=(world,proof)=>digest(proof===null?world:JSON.stringify([world,proof]));
+const recordDigest=(generation,world,proof)=>digest(JSON.stringify([LOCAL_SAVE_FORMAT,generation,world,proof]));
 function verifiedCheckpoint(raw,historyReplay,proof,generation){
   if(!proof||!['fresh','checkpoint'].includes(proof.anchorKind))fail('新版存檔必須有完整來源歷史；舊開發存檔不支援遷移');
   const world=validateMemoryWorld(raw);
@@ -48,6 +48,7 @@ function readSlot(dir,slot,historyReplay){
     if(Buffer.byteLength(serialized,'utf8')>MAX_BYTES)
       fail('save record too long');
     const record=JSON.parse(serialized);
+    if(record?.format==='akimono.local-world-save.v1')fail('舊開發存檔 v1 已淘汰；不自動遷移或覆寫');
     const hasProof=record!==null&&typeof record==='object'&&
       Object.hasOwn(record,'careerProof');
     const hasAuth=hasProof&&Object.hasOwn(record,'checkpointAuth');
@@ -63,7 +64,7 @@ function readSlot(dir,slot,historyReplay){
     const proofText=hasProof?record.careerProof:null;
     if(hasProof&&(typeof proofText!=='string'||Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES))
       fail('invalid career proof wire');
-    if(recordDigest(record.world,proofText)!==record.sha256)
+    if(recordDigest(record.generation,record.world,proofText)!==record.sha256)
       fail('save content hash mismatch');
     const proof=hasProof?JSON.parse(proofText):null;
     if(hasProof&&(proof===null||JSON.stringify(proof)!==proofText))
@@ -117,12 +118,15 @@ export function createLocalWorldSaveStore({directory,historyReplay}){
       available:Boolean(latest),generation:latest?.generation??0,
       recoveryWarning:corrupt.length>0,
       unreadable:!latest&&corrupt.length>0,
+      format:LOCAL_SAVE_FORMAT,
+      obsoleteDevelopmentSave:corrupt.some(row=>row.reason?.includes('舊開發存檔 v1')),
+
     });
   }
   function load(){
     const {latest,corrupt}=scan();
     if(!latest)fail(corrupt.length?
-      '存檔損毀，沒有可驗證的備援世代（拒絕偽造世界）':
+      (corrupt.some(row=>row.reason?.includes('舊開發存檔 v1'))?'舊開發存檔 v1 已淘汰；請使用獨立存檔目錄或明確重置':'存檔損毀，沒有可驗證的備援世代（拒絕偽造世界）'):
       '沒有可載入的存檔');
     return Object.freeze({
       world:latest.world,generation:latest.generation,
@@ -137,7 +141,7 @@ export function createLocalWorldSaveStore({directory,historyReplay}){
     const proofText=careerProof===null?null:JSON.stringify(careerProof);
     if(proofText!==null&&Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('career history too large');
     const envelope={format:LOCAL_SAVE_FORMAT,generation,
-      sha256:recordDigest(encoded,proofText),world:encoded,
+      sha256:recordDigest(generation,encoded,proofText),world:encoded,
       ...(proofText===null?{}:{careerProof:proofText})};
     if(careerProof?.anchorKind==='checkpoint'){
       if(!historyReplay?.checkpointStore)fail('checkpoint authenticator unavailable');
