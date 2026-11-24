@@ -47,7 +47,7 @@ my %sha=(
  'pinned-gd-m.cgi'=>'b18dd3166709e270e5cb2d525ce404bca80551ca',
  'pinned-inc-gd-entry.cgi'=>'f28cdcc1778534cbf1c84195df7ab749519be5a6',
  'pinned-gd-e.cgi'=>'5580c540934d04316ea4f37f9ea80aa213f2d628',
- 'pinned-user.cgi'=>'8e817c535d4cd17e68d65f0e2f67846a344b5094',
+ 'pinned-membership-user.cgi'=>'8e817c535d4cd17e68d65f0e2f67846a344b5094',
  'pinned-custom.cgi'=>'93d7f77df648df0c46e5dca4763afd3d2c48654b',
  'pinned-colock.cgi'=>'99ff12db08135879e1a570cef1424f6dd5bec151',
  '../../../custom/inc-palace.cgi'=>'d8ccf91ccb8978c2de542d5a19db59ca168ec47e');
@@ -159,7 +159,7 @@ ok(run('gd-e',edit=>'fire',id=>2,guild=>'leave'),'expulsion handler during battl
 is($b->{guild},'','expulsion clears membership');
 ok(!exists($b->{user}{_so_e}),'expulsion clears title');
 $DT=$b;$b->{guild}='red';$b->{user}{_so_e}='member';
-ok(run('user',mode=>'guild',guild=>'leave'),'voluntary leave handler during battle (isolated fixture)');
+ok(run('membership-user',mode=>'guild',guild=>'leave'),'voluntary leave handler during battle (isolated fixture)');
 is($b->{guild},'','voluntary leave clears membership');
 ok(!exists($b->{user}{_so_e}),'voluntary leave clears title');
 done_testing();
