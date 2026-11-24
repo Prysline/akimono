@@ -449,7 +449,7 @@ function projectSourcePreEventSaleSlice({
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
-    ...(boundary===null?{}:{settlement}),
+    ...(boundary===null?{}:{settlement,...(settlement?{periodLogInput:{shop:newShop,town:world.period.town}}:{})}),
     // R3 only projects the pre-EVENT source stages. Do not write period:
     // the consumer must choose the original EVENT stage (R4) or explicitly
     // mark unknown state in the legacy B-41 player compatibility wrapper.

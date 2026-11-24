@@ -28,9 +28,10 @@ function row(time,mode,id,msg){
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
  * identity fixtures as the original probe, not real localization/currency.
  */
-export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds}){
+export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false}){
   check(reviewed);
-  if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||shop.taxtoday!==0)fail('reviewed B50 state required');
+  if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
+     (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||result.actualCloseEffect||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
   const count=shop.rankingcount+1,p=result.prize,head='本次優勝';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
   const calls=[
@@ -41,9 +42,9 @@ export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds}){
   ];
   if(p.discarded)calls.push([0,shop.id,'但是由於超過了最大持有數量，'+p.discarded+scale+'被丟棄了']);
   if(result.actualCloseEffect)calls.push([1,0,shop.shopname+'が経営者不在のため閉店しました。']);
-  calls.push(...result.dragonLogs);
+  calls.push(...(result.dragonLogs??[]));
   if(town.army+town.robina<10000)calls.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
-  if(town.money-result.town.out<0)calls.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
+  if(town.money+(independentPeriod?shop.taxtoday:0)-result.town.out<0)calls.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
   for(const x of result.postTechLoss?.logs??[])calls.push([x[0],x[1],x[3]]);
   return calls.map(c=>row(nowSeconds,...c));
 }
@@ -67,4 +68,23 @@ export async function renewPeriodLogDisk({reviewed,directory,rows,nowSeconds}){
   }else bytes+=new TextDecoder('utf-8',{fatal:true}).decode(await readFile(s0));
   await writeFile(path.join(stage,'log0.cgi'),bytes,{flag:'wx'});
   return {bytes,rotated,committable:false};
+}
+
+/** Exact chronological calls in a single source command, then unshift as
+ * the original PushLog does. No historical locale/hash equivalence. */
+export function projectCrossPeriodLogRows({reviewed,candidate}){
+  check(reviewed);
+  if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||candidate.evidence.slices[0]?.dateupdate!==1)fail('cross-period candidate required');
+  const calls=[];
+  for(const slice of candidate.evidence.slices){
+    if(slice.dateupdate===1){
+      const {periodLogInput,settlement}=slice.preEvent;
+      calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true}));
+    }
+    for(const call of slice.eventLogs){
+      if(!Array.isArray(call)||![3,4,5].includes(call.length))fail('unreviewed EVENT log call');
+      calls.push(row(candidate.nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]));
+    }
+  }
+  return calls.reverse();
 }

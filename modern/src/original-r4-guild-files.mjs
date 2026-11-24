@@ -63,11 +63,11 @@ export function parseGuildConfig(text){
   return {shortname:name(fields.shortname),dealrate:value(fields.dealrate),feerate:value(fields.feerate)};
 }
 const sameKeys=(a,b)=>JSON.stringify(Object.keys(a).sort())===JSON.stringify(Object.keys(b).sort());
-export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],shops=[]}){
+export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],shops=[],independentPeriod=false}){
   review(reviewed);const root=await rootFor(directory);
   const common=await dir(path.join(root,'common')),stage=await dir(path.join(root,'stage'));
   const pending=await readdir(stage);
-  const hasPeriodDefinition=path.basename(root).startsWith('akimono-r4-period-disk-')&&Array.isArray(periods)&&periods.length>0&&pending.length===1&&pending[0]==='guild.cgi';
+  const hasPeriodDefinition=path.basename(root).startsWith('akimono-r4-period-disk-')&&Array.isArray(periods)&&(periods.length>0||independentPeriod===true)&&pending.length===1&&pending[0]==='guild.cgi';
   if(await exists(path.join(root,'commit.cgi'))||(pending.length&&!hasPeriodDefinition))fail('pending files require recovery');
   const old=parseGuildDefinition(await regular(path.join(root,'guild.cgi')));
   const ledger=(periods.length?parseGuildEventLedgers:parseGuildLedgers)(await regular(path.join(root,'guildbal.cgi')));
@@ -77,7 +77,8 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
     if(!/^[A-Za-z][A-Za-z0-9_]*\.pl$/.test(file)||!code(file.slice(0,-3)))fail('unreviewed common entry');
     definitions[file.slice(0,-3)]=parseGuildConfig(await regular(path.join(common,file)));
   }
-  if(!Array.isArray(edits)||!Array.isArray(periods)||!Array.isArray(shops)||edits.length&&periods.length)fail('explicit edits or periods required');
+  if(!Array.isArray(edits)||!Array.isArray(periods)||!Array.isArray(shops)||edits.length&&periods.length||typeof independentPeriod!=='boolean')fail('explicit edits or periods required');
+  if(independentPeriod&&(!hasPeriodDefinition||Object.keys(old).length||Object.keys(ledger).length||Object.keys(definitions).length||edits.length||periods.length))fail('independent empty guild period only');
   // A period replay is limited to the existing B-50 single-member source chain.
   for(const p of periods){
     if(Object.keys(ledger).length!==1||!Object.hasOwn(ledger,p.id)||p.inputGuild?.feeRate!==old[p.id].feerate||p.outputGuild?.feeRate!==old[p.id].feerate)fail('unreviewed period context');
@@ -184,5 +185,17 @@ export async function stageStablePeriodGuildDefinition({reviewed,directory}){
   const dest=path.join(stage,'guild.cgi'),prior=await exists(dest);
   if(prior&&!prior.isFile())fail('regular stage definition required');
   await writeFile(dest,bytes,{flag:prior?'w':'wx'});
+  return {bytes,committable:false};
+}
+
+/** Source MakeGuildFile at the boundary in an explicitly empty guild town. */
+export async function stageIndependentPeriodGuildDefinition({reviewed,directory}){
+  review(reviewed);const root=await rootFor(directory),stage=await dir(path.join(root,'stage'));
+  if(await exists(path.join(root,'commit.cgi'))||(await readdir(stage)).length||
+     Object.keys(parseGuildDefinition(await regular(path.join(root,'guild.cgi')))).length||
+     Object.keys(parseGuildLedgers(await regular(path.join(root,'guildbal.cgi')))).length||
+     (await readdir(await dir(path.join(root,'common')))).length)fail('independent empty guild period required');
+  const bytes=prefix+');1;';
+  await writeFile(path.join(stage,'guild.cgi'),bytes,{flag:'wx'});
   return {bytes,committable:false};
 }

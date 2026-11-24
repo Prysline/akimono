@@ -59,7 +59,7 @@ function readEvents(line){
 }
 function sparseWire(world){
   const p=parseWorldWholesaleLine(world.wholesaleCsv,79);
-  if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||world.wholesale.some((v,i)=>v!==p.stock[i]))fail('sparse wholesale numeric view mismatch');
+  if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||p.stock.some((v,i)=>v!==world.wholesale[i]))fail('sparse wholesale numeric view mismatch');
   return p.originalCsv;
 }
 export function reviewPeriodPlay(sources,{crossPeriod=false}={}){
