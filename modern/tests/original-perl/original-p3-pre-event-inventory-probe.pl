@@ -38,5 +38,5 @@ no warnings 'uninitialized';
 print encode_json({
   shop=>$main::DT[0],wholesale=>\@whole,defined=>\@defined,
   csv=>join(',',@main::DTwholestore),used=>$main::B35_USED,
-  consumed=>[ @main::B35_DRAWS[0..$main::B35_USED-1] ],
+  consumed=>[ @{$input->{draws}}[0..$main::B35_USED-1] ],
 });
