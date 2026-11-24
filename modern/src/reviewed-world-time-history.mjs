@@ -7,8 +7,8 @@
 import {createHash} from 'node:crypto';
 import {applyGameCommand,executeMemoryCommand,encodeMemorySnapshot,decodeMemorySnapshot,createSourceReviewedMemoryWorldAdapter} from './game-core-contract.mjs';
 import {isReviewedWorldTimeCommand,REVIEWED_WORLD_TIME_COMMAND} from './original-r4-reviewed-world-time.mjs';
-import {R4_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
-import {R4_TIME_DRAW_POLICY} from './r4-time-command-draws.mjs';
+import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
+import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
 export const MAX_REVIEWED_HISTORY_COMMANDS=128;
 export const MAX_REVIEWED_HISTORY_WIRE_BYTES=500000;
@@ -22,6 +22,11 @@ const unit=n=>integer(n,0,999999);
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
 function traceFrom(result){
   const t=result?.details?.sourceTrace;
+  if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY){
+    const trace={drawPolicy:t.drawPolicy,hashPolicy:t.hashPolicy,seed:t.seed,interpreter:t.interpreter,
+      slices:t.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples.map((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?n?.result:n),effectsSha256:digest(JSON.stringify(s.logs))})),afterSha256:digest(encodeMemorySnapshot(result.world))};
+    if(!validTrace(trace))fail('invalid crossing source trace');return trace;
+  }
   if(!t||!Array.isArray(t.eventSamples)||!Array.isArray(t.eventDrawRanges)||t.eventSamples.length!==t.eventDrawRanges.length)fail('missing source time trace');
   // Retain actual order and all RNG results compactly. Lottery entries are
   // typed by their matching range rather than repeating a JSON object.
@@ -36,6 +41,7 @@ function traceFrom(result){
   return trace;
 }
 function validTrace(t){
+  if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY)return exact(t,'drawPolicy,hashPolicy,seed,interpreter,slices,afterSha256')&&t.hashPolicy===R4_COMMAND_HASH_POLICY&&typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&typeof t.interpreter==='string'&&t.interpreter.length>=1&&t.interpreter.length<=120&&sha(t.afterSha256)&&arr(t.slices,1,2,(s)=>exact(s,'dateupdate,spanSeconds,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,effectsSha256')&&[0,1].includes(s.dateupdate)&&integer(s.spanSeconds,1,3600)&&codes(s.activeOrder)&&codes(s.eventOrder)&&s.eventOrder.length===17&&codes(s.nowOrder)&&s.activeOrder.every(x=>s.eventOrder.includes(x))&&s.nowOrder.every(x=>s.eventOrder.includes(x))&&arr(s.preEventDraws,0,125,unit)&&arr(s.eventDrawRanges,0,100,n=>integer(n,0,LOTO_RANGE))&&Array.isArray(s.eventSamples)&&s.eventSamples.length===s.eventDrawRanges.length&&s.eventSamples.every((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&sha(s.effectsSha256))&&(t.slices.length===1||t.slices[0].dateupdate===1&&t.slices[1].dateupdate===0);
   return exact(t,'drawPolicy,hashPolicy,seed,interpreter,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,afterSha256,effectsSha256')&&
     t.drawPolicy===R4_TIME_DRAW_POLICY&&t.hashPolicy===R4_HASH_POLICY&&
     typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&
@@ -50,7 +56,7 @@ function validTrace(t){
 export function isReviewedTimeHistoryEntry(entry){
   if(!exact(entry,'kind,expectedRevision,minutes,trace'))return false;
   const {trace,...command}=entry;
-  return isReviewedWorldTimeCommand(command)&&validTrace(trace);
+  return isReviewedWorldTimeCommand(command)&&validTrace(trace)&&(!trace.slices||trace.slices.reduce((n,s)=>n+s.spanSeconds,0)===command.minutes*60);
 }
 export function makeReviewedTimeHistoryEntry({before,command,result}){
   if(!isReviewedWorldTimeCommand(command)||command.expectedRevision!==before.revision||!result?.ok||
@@ -123,6 +129,7 @@ export function verifyReviewedWorldHistory({world,proof,streetModule,createIniti
   }else{
     if(!checkpointStore)fail('authenticated checkpoint verifier required');
     checkpointStore.openPrefix(proof,generation);
+    if(streetModule.reviewedCrossPeriod===true)streetModule.authorizeVerifiedCheckpoint({world:anchor,proof,checkpointStore,generation});
   }
   const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:anchor,streetModule});
   for(const entry of proof.commands){

@@ -326,22 +326,23 @@ function showState(s){
   $('reset-world').disabled=!w&&!save.available&&!save.unreadable;
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
   const left=s.secondsUntilSettlement;
-  text('settlement-status',w?'決算功能尚未開放':'');
+  text('settlement-status',w?(s.reviewedCrossPeriod?'獨立單店跨期決算已啟用':'決算功能尚未開放'):'');
+  text('local-mode-note',s.reviewedCrossPeriod?'單機獨立店鋪：跨期決算已啟用，存檔需手動儲存。':'目前為單機測試：存檔需手動儲存；尚未開放跨期決算。');
   const periodState=w?.period??null;
   text('city-seed',periodState?
-    '初始人口 '+periodState.dtPeople.toLocaleString('zh-TW')+
+    (periodState.settledCount?'結算後人口 ':'初始人口 ')+periodState.dtPeople.toLocaleString('zh-TW')+
     '（發展 '+periodState.town.develop+'／治安 '+periodState.town.safety+'）':
     (w?'舊版世界（無期別城市資料）':'—'));
   text('period-count',periodState?
-    periodState.settledCount+' 期（跨期尚未開放）':'—');
+    periodState.settledCount+(s.reviewedCrossPeriod?' 期':' 期（跨期尚未開放）'):'—');
   const evDefs=s.eventDefinitionStatus;
   const eventDefinitionLabel=evDefs?
     '原版 '+evDefs.declared+' 個事件宣告，'+
-      evDefs.compilerIncluded+' 個由編譯器納入；效果尚未移植。':'';
+      evDefs.compilerIncluded+' 個由編譯器納入；'+(s.reviewedTimeMode?'已啟用審閱的獨立店鋪 EVENT。':'效果尚未移植。'):'';
   text('event-state',(!periodState?'舊版世界／尚未取得事件資料':
     periodState.eventState===null?
       '未知：時間推進後尚未實作原版 EVENT 回呼':
-      '來源新建世界：目前事件清單為空（尚未開始事件時間片）')+
+      Object.keys(periodState.eventState).length?'目前 EVENT：'+Object.keys(periodState.eventState).join('、'):'目前已知 EVENT 清單為空')+
     (eventDefinitionLabel?' '+eventDefinitionLabel:''));
   text('store-name',shop?.shopname??'未開店');
   text('owner-name',shop?.name??'—');

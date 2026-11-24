@@ -176,7 +176,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null}){
+  randomDrawProvider=null,reviewedSubminute=false}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -232,7 +232,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
      (reviewed.rebel===null&&
        (rebelContext!==null||rebelNowDrawCount!==null)))
     fail('explicit rebel army/city and bounded NOW RNG sample count required');
-  if(typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
+  if(typeof reviewedSubminute!=='boolean'||typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
      (resolveNowOrder!==null&&nowHashOrderFixture!==null))
     fail('invalid EVENT draw/order adapter');
   if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||reviewed.rebel!==null||reviewed.guildbattle!==null))
@@ -428,12 +428,12 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       if(code==='happy'){
         const range=Math.trunc(Math.min(spanSeconds,
           reviewed.happy.maxNowSpanSeconds)/36);
-        if(range<1)fail('source happy NOWFUNC rand(0) not reviewed');
+        if(range<1&&!reviewedSubminute)fail('source happy NOWFUNC rand(0) not reviewed');
         const sample=peek(range);
         draw(range);
         const callback=projectOriginalHappyNow({
           reviewed:reviewed.happy,shop:nextShop,
-          timespanSeconds:spanSeconds,randomDraws:[sample],
+          timespanSeconds:spanSeconds,randomDraws:[sample],reviewedSubminute,
         });
         if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
            callback.randMax!==range)

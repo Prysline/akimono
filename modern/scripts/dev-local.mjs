@@ -24,6 +24,9 @@ import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
 
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
 import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
+import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
+// Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
+const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -39,6 +42,7 @@ const [
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
+  originalNewSource,originalCustomSource,originalLogSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -56,6 +60,7 @@ const [
   'modern/tests/original-perl/period.cgi',
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
+  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -65,7 +70,8 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  enableReviewedNormalTime:true,
+  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -104,17 +110,18 @@ const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule)
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
 const checkpointStore=createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,...fingerprintReviewedCheckpointRuntime({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource],
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource],
   }),
 });
+const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
 const saveStore=createLocalWorldSaveStore({
   directory:saveDirectory,
-  historyReplay:{checkpointStore,
+  historyReplay:{checkpointStore,periodDiskStore,
     verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})},
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
@@ -197,7 +204,8 @@ function state(){
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
       '單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
-    disabled:['跨期決算','完整原版所有商品回呼','多人'],
+    disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
+    reviewedCrossPeriod,
     reviewedTimeMode:true,
     historyCommands:careerProof?.commands.length??null,
     historyCheckpointRevision:careerProof?.checkpoint?.revision??null,
@@ -409,8 +417,10 @@ async function api(req,res,url){
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
+      const initialProof=beginReviewedWorldHistory(applied.world);
+      if(reviewedCrossPeriod)saveStore.preflight(applied.world,{expectedGeneration:0,careerProof:initialProof});
       repo=staged;
-      careerProof=beginReviewedWorldHistory(applied.world);
+      careerProof=initialProof;
       result=applied;
       break;
     }

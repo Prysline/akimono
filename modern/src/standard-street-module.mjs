@@ -1,3 +1,4 @@
+import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
@@ -173,14 +174,16 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
   originalUseSource=null,originalItemHelperSource=null,
-  enableReviewedNormalTime=false,
+  originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
+  enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
-  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource};
+  if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
+  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
-  const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world});
+  const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   if(model.maxMoney!==SOURCE_STANDARD_STREET_MAX_MONEY)
     bad('original MaxMoney declaration changed; review direct price cap');
@@ -1041,5 +1044,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview}):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod}):base;
 }

@@ -31,6 +31,7 @@ import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
   from './original-r4-time-slices.mjs';
 import {projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {projectOriginalSoloPeriodPhaseChain,B50_INTEGRATED_SOURCE} from './original-period-solo-chain.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
@@ -98,8 +99,8 @@ function reviewR3SourceSaleItems(itemDsl){
 // callback; full source acquisition is proven separately by GameCore/replay.
 const P3_TURN_IDS=Object.freeze([
   1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,22,23,24,
-  25,26,30,31,32,33,34,35,36,37,38,39,
-  ...Array.from({length:22},(_,i)=>40+i),63,66,67,68,69,70,78,79,
+  25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,
+  ...Array.from({length:22},(_,i)=>40+i),63,64,66,67,68,69,70,78,79,
 ]);
 const P3_EXP_IDS=new Set([9,10,12,14,15,16,17,20,21,22,23,25,37,39,66]);
 function reviewP3TurnItems(items){
@@ -114,6 +115,12 @@ function reviewP3TurnItems(items){
     // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
     costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
     if(!Number.isSafeInteger(costs[id]))bad('P3 unsafe ITEM cost');
+    // The source rank-1 prizes may be held on the next slice. They do
+    // not become sale/USE rules merely by adding reviewed holding costs.
+    const prizeStock={27:['seven_face',0],28:['ramusyu',0],29:['boots',0],64:['defence-manbiki',5000]};
+    if(Object.hasOwn(prizeStock,id)&&
+       (one(b,'code')!==prizeStock[id][0]||costs[id]!==prizeStock[id][1]))
+      bad('source period prize holding drift #'+id);
     // Include already-reviewed P1/P2 medicine and dairy alongside P3 goods.
     // Raw materials, skills, and books are supported as stock, not new shelves.
     if(id!==10&&id!==25&&id!==26&&!(id>=30&&id<=36)&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
@@ -220,14 +227,16 @@ function projectSourcePreEventSaleSlice({
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
   r4DataRead=null,
-}){
+},boundary=null){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
   safe(shopId,'shopId',1);
   safe(minutes,'minutes',1);
   if(minutes>reviewed.maxMinutes)bad('one local source slice cannot exceed 60 minutes');
-  const span=safe(minutes*60,'timespan');
-  if(!Array.isArray(randomDraws)||randomDraws.length>121||
+  // The private boundary candidate is the only path allowed to request
+  // an exact sub-minute source slice. Public/legacy callers still use minutes.
+  const span=safe(boundary===null?minutes*60:boundary.spanSeconds,'timespan',1);
+  if(!Array.isArray(randomDraws)||randomDraws.length>(boundary===null?121:125)||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('exact shared original random samples must be integer millionths');
   if(!validateSourceSparseMarket(world?.market)||
@@ -240,7 +249,9 @@ function projectSourcePreEventSaleSlice({
      reviewed.swordMapSource!==(reviewedB62Map?.source??null)||
      reviewed.swordOutcomesSource!==(reviewedB63Map?.source??null))
     bad('source durable event contracts mismatch');
-  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
+  // Source DataRead executes once per command, NOT once per time slice.
+  const overlayWorld=boundary?.dataReadWorld??world;
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,candidateSettled:boundary?.candidateSettled===true});
   if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
   if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -260,10 +271,10 @@ function projectSourcePreEventSaleSlice({
   // Legacy B-41 intentionally marks all unknown prior EVENT instances
   // NULL. Do not claim an iron modifier is active in that case, but do
   // preserve B-41's existing best-effort no-event non-equivalence behavior.
-  const activeKeys=world.schema===PERIOD_WORLD_SCHEMA&&
-    world.period?.eventState!==null&&
-    typeof world.period?.eventState==='object'?
-    Object.keys(world.period.eventState):[];
+  const activeKeys=overlayWorld.schema===PERIOD_WORLD_SCHEMA&&
+    overlayWorld.period?.eventState!==null&&
+    typeof overlayWorld.period?.eventState==='object'?
+    Object.keys(overlayWorld.period.eventState):[];
   const ironEventActive=activeKeys.includes('plusup-tetu');
   const happyEventActive=activeKeys.includes(B60_HAPPY_CODE);
   const swordDemandEventActive=activeKeys.includes(B61_SWORD_CODE);
@@ -280,6 +291,7 @@ function projectSourcePreEventSaleSlice({
       reviewed:reviewedB61Sword,timespanSeconds:span,
       activeAtDataRead:swordDemandEventActive,
       population:world.period.dtPeople,saleSpeed:12,
+      reviewedDynamicPopulation:boundary!==null,
     }):null;
   const shop=world.shops[0];
   if(p3InventoryStage&&(world.schema!==PERIOD_WORLD_SCHEMA||
@@ -361,10 +373,15 @@ function projectSourcePreEventSaleSlice({
     reviewed:reviewed.turnSlices,
     lastSeconds:world.nowSeconds,nowSeconds:nextTime,
   });
-  if(originalSlices.crossesSettlement||
-     originalSlices.effectiveSlices.length!==1||
-     originalSlices.effectiveSlices[0].timespanSeconds!==span)
+  if(originalSlices.effectiveSlices.length!==1||
+     originalSlices.effectiveSlices[0].timespanSeconds!==span||
+     originalSlices.crossesSettlement!==(boundary?.dateupdate===1))
     bad('this interval crosses original period settlement; not yet supported');
+  if(boundary!==null&&(!p3InventoryStage||!r4ReviewedSort||overlay===null||
+     ![0,1].includes(boundary.dateupdate)||
+     boundary.reviewed?.source!==B50_INTEGRATED_SOURCE||
+     boundary.reviewed.nonCommittable!==true))
+    bad('reviewed B50 boundary candidate required');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
   if(shop.showcasecount>1&&activeKeys.length)
@@ -377,7 +394,8 @@ function projectSourcePreEventSaleSlice({
   const natural=projectSharedNaturalSale({
     shop,rule,saleRules:shop.showcasecount>1?saleRules:null,
     upkeepCosts,
-    spanSeconds:span,randomDraws,popularOverride,
+    spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,
+    ...(boundary===null?{}:{population:world.period.dtPeople}),
   });
   const sold=natural.sold;
   const naturalDraws=natural.drawsUsed;
@@ -399,17 +417,51 @@ function projectSourcePreEventSaleSlice({
     bad('reviewed R4 SortDT requires original period world');
   const newShop=r4ReviewedSort===null?nextShop:
     projectOriginalSoloSort({shop:nextShop,reviewed:r4ReviewedSort}).shop;
+  // The original period runs between SortDT and the 59 PLUS loop. It
+  // observes the command's final NOW_TIME, not the intermediate boundary.
+  // Only a candidate can use this seam; no WorldState or disk commit.
+  let settlement=null,periodDraws=0,plusWorld={...world,shops:[newShop]};
+  if(boundary!==null)plusWorld={...plusWorld,period:{...world.period,
+    eventState:overlayWorld.period.eventState}};
+  if(boundary?.dateupdate===1){
+    const reviewedPeriod=boundary.reviewed;
+    if(reviewedPeriod.dragon!==null||reviewedPeriod.guild!==null||
+       reviewedPeriod.actualClose!==null||reviewedPeriod.periodBackup!==null||
+       reviewedPeriod.postTech!==null||reviewedPeriod.dignity===null||
+       reviewedPeriod.shopExpiry===null||
+       ![undefined,''].includes(newShop.guild)||
+       (newShop.dragon??0)!==0||(newShop.drmoney??0)!==0||
+       (newShop.taxtoday!==0&&reviewedPeriod.territory?.reviewedSaleTax!==true))
+      bad('boundary candidate only supports independent reviewed-tax no-external-effect source prefix');
+    const dignity=(newShop.dignity??0)!==0;
+    periodDraws=3+(dignity?1:0);
+    if(randomDraws.length<used+periodDraws)bad('missing original period random samples');
+    const draws=randomDraws.slice(used,used+periodDraws);
+    settlement=projectOriginalSoloPeriodPhaseChain({
+      reviewed:reviewedPeriod,shop:newShop,town:world.period.town,dtPeople:world.period.dtPeople,
+      awardDrawMillionths:draws[0],
+      dignityDrawMillionths:dignity?draws[1]:null,
+      territoryDrawMillionths:draws.slice(dignity?2:1),
+      nowSeconds:boundary.commandNowSeconds,
+    });
+    if(settlement.shopExpiry?.expiredOwner||!settlement.shop||settlement.nonCommittable!==true)
+      bad('source closure requires external archive/session transaction');
+    plusWorld={...world,shops:[settlement.shop],period:{...world.period,
+      town:settlement.town,dtPeople:settlement.dtPeople}};
+  }
   const money=newShop.money,saleToday=newShop.saletoday;
   const rank=newShop.rank,items=newShop.item;
   const plus=projectOriginalSparseAllPlus({
-    world:{...world,shops:[newShop]},reviewed:reviewedAllPlus,
-    compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
+    world:plusWorld,reviewed:reviewedAllPlus,
+    compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used+periodDraws),
+    ...(boundary===null?{}:{r4PeriodPopulation:true}),
     reviewedB59Iron,ironEventActive,
     reviewedEventTimeSlice,
     ...(overlay===null?{}:{r4DataReadOverlay:overlay}),
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
+    ...(boundary===null?{}:{settlement,...(settlement?{periodLogInput:{shop:newShop,town:world.period.town}}:{})}),
     // R3 only projects the pre-EVENT source stages. Do not write period:
     // the consumer must choose the original EVENT stage (R4) or explicitly
     // mark unknown state in the legacy B-41 player compatibility wrapper.
@@ -431,7 +483,8 @@ function projectSourcePreEventSaleSlice({
       naturalDraws,callbackDraws,itemCallbackStage:callbackReceipt,
       plusDraws:plus.receipt.drawsUsed,
       ...(r4ReviewedSort===null?{}:{originalSortApplied:true,originalSortPoint:newShop.point}),
-      totalDraws:used+plus.receipt.drawsUsed,
+      totalDraws:used+periodDraws+plus.receipt.drawsUsed,
+      ...(boundary===null?{}:{periodDraws,plusPopulation:plusWorld.period.dtPeople,dateupdate:boundary.dateupdate}),
       sourceScope:reviewed.sourceScope,
     },
   };
@@ -465,6 +518,61 @@ export function projectR4InventoryPreEventTurn(args){
   const stage=projectR3PreEventTurn({...args,p3InventoryStage:true,
     reviewedEventTimeSlice:true});
   return {...stage,committable:false,receipt:{...stage.receipt,r4Committable:false}};
+}
+
+/** Source-only first boundary slice, derived from the exact original
+ * @timespan plan. The remaining command slices, EVENT and disk effects
+ * MUST still be handled by a future coordinator. No public time authority.
+ */
+export function projectR4BoundaryPreEventCandidate({reviewedPeriod,candidateSettled=false,...args}){
+  const {world,reviewed,minutes}=args;
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
+     !Number.isSafeInteger(world?.nowSeconds))bad('bounded source command window');
+  const commandNowSeconds=world.nowSeconds+minutes*60;
+  const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,
+    lastSeconds:world.nowSeconds,nowSeconds:commandNowSeconds});
+  if(!plan.crossesSettlement||plan.effectiveSlices[0]?.dateupdate!==1)
+    bad('source settlement boundary required');
+  const spanSeconds=plan.effectiveSlices[0].timespanSeconds;
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world,candidateSettled});
+  return {...stage,plan,committable:false,worldStateWritten:false};
+}
+
+/** Residual slice of the SAME inc-turn command. The original DataRead
+ * snapshot is used only to calculate ITEM overlays; the real EVENT map
+ * and settled population are carried independently by the coordinator.
+ * This deliberately cannot be called as a public/legacy time action.
+ */
+export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,candidateSettled=false,...args}){
+  const {world,reviewed,minutes}=args;
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
+     originWorld?.worldId!==world?.worldId||originWorld?.revision!==world?.revision)
+    bad('same source command identity required');
+  const commandNowSeconds=originWorld.nowSeconds+minutes*60;
+  const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,
+    lastSeconds:originWorld.nowSeconds,nowSeconds:commandNowSeconds});
+  if(!plan.crossesSettlement||plan.effectiveSlices.length!==2||
+     plan.effectiveSlices[1].dateupdate!==0||
+     world.nowSeconds!==originWorld.nowSeconds+plan.effectiveSlices[0].timespanSeconds||
+     world.period?.dtPeople<1||world.period?.eventState===null)
+    bad('exact second source slice required');
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
+    {spanSeconds:plan.effectiveSlices[1].timespanSeconds,commandNowSeconds,
+     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld,candidateSettled});
+  return {...stage,plan,committable:false,worldStateWritten:false};
+}
+
+/** Candidate-only first command after a settlement; no extra boundary. */
+export function projectR4PostSettlementPreEventCandidate({reviewedPeriod,...args}){
+  const {world,reviewed,minutes}=args;
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||world.period?.state!=='source-cross-period-candidate-not-committed')bad('source settled candidate required');
+  const spanSeconds=minutes*60,commandNowSeconds=world.nowSeconds+spanSeconds;
+  const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:commandNowSeconds});
+  if(plan.crossesSettlement||plan.effectiveSlices.length!==1)bad('noncrossing candidate continuation required');
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:world,candidateSettled:true});
+  return {...stage,plan,committable:false,worldStateWritten:false};
 }
 
 /**

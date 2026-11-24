@@ -21,16 +21,23 @@ export function reviewR4PreEventItemOverlay(sources){
   if(!readSource.includes('foreach(keys(%DTevent)){require(GetPath($ITEM_DIR,"event",$_));}'))fail('DataRead order drift');
   const r=Object.freeze({catalog,params,committable:false});reviews.add(r);return r;
 }
-export function validateR4PreEventPeriod({reviewed,period,activeOrder}){
-  if(!reviews.has(reviewed)||!period||!period.eventState||typeof period.eventState!=='object'||Array.isArray(period.eventState)||!validateOriginalPeriodSeed({...period,eventState:{}}))fail('known source nonsettled city and EVENT required');
+// Candidate-only city shape. It conveys no runtime authorization; the
+// continuation coordinator keeps its own private source lineage.
+function isCandidateSettledPeriod(p){
+  const keys=['source','state','periodSeconds','clockShiftSeconds','settledCount','lastSettledBoundarySeconds','dtPeople','town','eventState'];
+  const fields=['leader','money','in','out','develop','devem','safety','safem','army','robina','robinb','people'];
+  return p?.source==='standard-street-original-period-bootstrap.v1'&&p.state==='source-cross-period-candidate-not-committed'&&Object.keys(p).length===keys.length&&keys.every(k=>Object.hasOwn(p,k))&&p.periodSeconds===129600&&p.clockShiftSeconds===10800&&Number.isSafeInteger(p.settledCount)&&p.settledCount>0&&Number.isSafeInteger(p.lastSettledBoundarySeconds)&&p.lastSettledBoundarySeconds>=0&&(p.lastSettledBoundarySeconds+10800)%129600===0&&Number.isSafeInteger(p.dtPeople)&&p.dtPeople>0&&p.town&&Object.keys(p.town).length===fields.length&&fields.every(k=>Number.isSafeInteger(p.town[k])&&p.town[k]>=0)&&p.town.leader===0&&p.town.people>0;
+}
+export function validateR4PreEventPeriod({reviewed,period,activeOrder,candidateSettled=false}){
+  if(!reviews.has(reviewed)||!period||!period.eventState||typeof period.eventState!=='object'||Array.isArray(period.eventState)||(!validateOriginalPeriodSeed({...period,eventState:{}})&&!(candidateSettled===true&&isCandidateSettledPeriod(period))))fail('known source nonsettled city and EVENT required');
   const keys=Object.keys(period.eventState);
   if(!Array.isArray(activeOrder)||activeOrder.length!==keys.length||new Set(activeOrder).size!==keys.length||activeOrder.some(k=>!Object.hasOwn(period.eventState,k)||!durable.includes(k)||!Number.isSafeInteger(period.eventState[k])||period.eventState[k]<0))fail('complete reviewed active EVENT order required');
   const groups=activeOrder.map(code=>reviewed.catalog.compiled.find(e=>e.code===code)?.group);
   if(groups.some(g=>!g)||new Set(groups).size!==groups.length)fail('conflicting source EVENT groups');
   return true;
 }
-export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleReview,plusReview}){
-  validateR4PreEventPeriod({reviewed,period:world?.period,activeOrder});
+export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleReview,plusReview,candidateSettled=false}){
+  validateR4PreEventPeriod({reviewed,period:world?.period,activeOrder,candidateSettled});
   if(world.schema!=='akimono.memory-world.v2'||world.events!==null||!saleReview?.p3TurnItems||plusReview?.plusSeconds?.length!==79)fail('source-reviewed P3 inventory and all PLUS required');
   // Only fields consumed by this common stage. Other source price fields
   // cannot be silently defaulted; current nine overlays only use these three.
@@ -58,11 +65,11 @@ export function reviewedR4OverlayPlus(overlay,world,reviewed){
  * reviewed normal EVENT overlays. No empty-map substitution or unknown
  * state acceptance. Source-supported recipe/market checks still run.
  */
-export function validateR4OrdinaryEventContext({reviewed,world}){
+export function validateR4OrdinaryEventContext({reviewed,world,candidateSettled=false}){
   try{
     if(world?.schema!=='akimono.memory-world.v2'||world.events!==null||world.streetId!=='standard-street'||world.shops?.length!==1)return false;
     const order=Object.keys(world.period.eventState);
-    validateR4PreEventPeriod({reviewed,period:world.period,activeOrder:order});
+    validateR4PreEventPeriod({reviewed,period:world.period,activeOrder:order,candidateSettled});
     return order.every(code=>code==='happy'||reviewed.params.rules[code].every(r=>['popular','point','plus'].includes(r.field)));
   }catch{return false}
 }

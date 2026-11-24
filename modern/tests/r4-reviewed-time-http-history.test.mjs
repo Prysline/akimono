@@ -7,8 +7,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-async function boot(directory,now='1000000'){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:'0'},stdio:['ignore','pipe','pipe']});
+async function boot(directory,now='1000000',cross=false){
+  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:cross?'1':'0'},stdio:['ignore','pipe','pipe']});
   let err='';child.stderr.on('data',x=>err+=x);
   const url=await new Promise((resolve,reject)=>{
     const timer=setTimeout(()=>{child.kill();reject(Error('boot timeout '+err));},15000);
@@ -144,4 +144,68 @@ test('reviewed HTTP history continues beyond 128 legal operations, authenticates
   }
   server=await boot(dir,'900000');
   state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,third);
+});
+
+test('R4 independent HTTP crosses real period, resumes commerce, persists source files and recovers an older slot',async t=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'akimono-r4-cross-history-'));
+  t.after(()=>rm(dir,{recursive:true,force:true}));
+  let server=await boot(dir,'1022380',true);t.after(()=>server.stop());
+  const post=(p,x)=>server.post(p,x);
+  let state=ok(await post('/api/initialize'));
+  assert.equal(state.reviewedCrossPeriod,true);
+  state=ok(await post('/api/open-shop',{expectedRevision:state.world.revision,ownerName:'來源店主',shopName:'跨期商店'}));
+  const advance=async minutes=>{const r=await post('/api/advance-reviewed-time',{expectedRevision:state.world.revision,minutes});state=ok(r);return r;};
+  await advance(60);
+  const before=state.world;
+  assert.equal(before.nowSeconds,1025980);assert.equal(before.period.settledCount,0);
+  state=ok(await post('/api/save',{expectedRevision:before.revision,expectedGeneration:0}),'SAVED');
+  const first=state.world;
+  const rootFiles=path.join(dir,'reviewed-period-files-v1');
+  // A real filesystem obstruction must reject the crossing before memory CAS.
+  await rename(rootFiles,rootFiles+'.held');
+  await writeFile(rootFiles,'not a directory');
+  const denied=await post('/api/advance-reviewed-time',{expectedRevision:first.revision,minutes:1});
+  assert.equal(denied.ok,false);assert.deepEqual(denied.state.world,first);
+  await rm(rootFiles);await rename(rootFiles+'.held',rootFiles);
+  const r=await advance(1);
+  assert.equal(state.world.nowSeconds,1026040);
+  assert.equal(state.world.period.settledCount,1);
+  assert.equal(state.world.period.lastSettledBoundarySeconds,1026000);
+  assert.deepEqual(r.details.sourceTrace.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+  const disk=state.world.period.disk;
+  assert.equal(disk.generations[0]['play.cgi'].bytes,first.period.disk.live['play.cgi'].bytes);
+  assert.equal(disk.live['lasttime.cgi'].mtime,1026040);
+  assert.notEqual(state.world.period.dtPeople,first.period.dtPeople);
+  await advance(60);
+  const giftBefore=state.shop.item[78];
+  state=ok(await post('/api/use',{expectedRevision:state.world.revision,itemId:79,useId:0,requestedCount:1}));
+  assert.equal(state.shop.item[78],giftBefore-2);
+  const offer=state.marketOffers.find(x=>x.itemId===10&&x.canBuy);
+  assert.ok(offer,'normal time provides source item #10');
+  state=ok(await post('/api/buy',{expectedRevision:state.world.revision,itemId:10,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price}));
+  state=ok(await post('/api/showcase',{expectedRevision:state.world.revision,itemId:10,per:100}));
+  await advance(60);
+  assert.equal(state.world.period.settledCount,1);
+  state=ok(await post('/api/save',{expectedRevision:state.world.revision,expectedGeneration:1}),'SAVED');
+  const second=state.world;
+  const digest=createHash('sha256').update(JSON.stringify(second.period.disk)).digest('hex');
+  const play=path.join(rootFiles,digest,'play.cgi');
+  assert.equal(await readFile(play,'utf8'),second.period.disk.live['play.cgi'].bytes);
+  assert.equal(await readFile(path.join(rootFiles,digest,'backup1','play.cgi'),'utf8'),first.period.disk.live['play.cgi'].bytes);
+  await server.stop();server=await boot(dir,'1022380',true);
+  state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,second);
+  await advance(1);
+  await server.stop();
+  const slot=path.join(dir,'world-a.json'),good=await readFile(slot,'utf8');
+  const record=JSON.parse(good),proof=JSON.parse(record.careerProof);
+  const crossing=proof.commands.find(c=>c.trace?.slices?.[0].dateupdate===1);
+  assert.ok(crossing);crossing.trace.slices[0].preEventDraws[0]=(crossing.trace.slices[0].preEventDraws[0]+1)%1000000;
+  record.careerProof=JSON.stringify(proof);record.sha256=createHash('sha256').update(JSON.stringify([record.format,record.generation,record.world,record.careerProof])).digest('hex');
+  await writeFile(slot,JSON.stringify(record)+'\n');
+  server=await boot(dir,'1022380',true);
+  let recovered=await post('/api/load');assert.equal(recovered.details.recoveredPreviousGeneration,true);assert.deepEqual(ok(recovered,'LOADED').world,first);
+  await server.stop();await writeFile(slot,good);
+  await writeFile(play,'tampered source play');
+  server=await boot(dir,'1022380',true);
+  recovered=await post('/api/load');assert.equal(recovered.details.recoveredPreviousGeneration,true);assert.deepEqual(ok(recovered,'LOADED').world,first);
 });

@@ -1,12 +1,12 @@
 # P3 cross-period integration intake / pre-crossing baseline
 
-Status: **preparation only, not R4 acceptance or P3 exit**. No crossing implementation is imported by this commit.
+Status: **integration candidate, not P3 exit**. R4 formally approved the exact fixed dependency SHA during the intake. This branch now incorporates the fixed dependency closure, reconciled shared files, and a v2-only opt-in crossing candidate; CI remains the verification gate.
 
 - P3 parent: `1126acc5bb2e89a45a917fcc6e4e1b81bdcb555d` (PR #13, PR CI 45472802522; 1267 JS / 2286 Perl).
 - P3 original PR #11: `087efeb9427739bf1c2217be463b44e522a77437`, R2 base `8c6911b4e6a20e60950f83518b56f34a0720ddf1`.
 - R4 read-only accepted source: `d2dccdacb83925b6f0121bd7311f92be2e18d2da` (Push 45474510079 and PR 45474525418; 1187 JS / 2489 Perl).
 - Old nonsettling handoff: `dffe18a60edc9f3ff9826342fcae4f9e7bc7959a`; do not mistake for crossing.
-- P3-prepared candidate PR #14: `eeb96e45d9fe1a1ab5b206872d0ad90f3e807c8b`, independent PR CI 45476330181 success, actual log 1179 JS / 2452 Perl (85 files), source verification success; true R4 crossing HTTP test passed. Candidate has not been formally published/approved by the R4 window. No R4 publication found in branch/PR list or latest PR #1 acceptance note at intake. Await R4 fixed SHA/manifest/acceptance before consuming.
+- P3-prepared candidate PR #14: `eeb96e45d9fe1a1ab5b206872d0ad90f3e807c8b`, independent PR CI 45476330181 success, actual log 1179 JS / 2452 Perl (85 files), source verification success; true R4 crossing HTTP test passed. R4 formal publication: https://github.com/Prysline/akimono/pull/14#issuecomment-7143234504 (same SHA; green independent CI; no merge).
 - The new integration branch is descended from PR #13 rather than PR #11 directly, preserving the already verified single v2 player and normal-time handoff. No merge or edits to #1/#11/#12/#13/#14, main or migration. All tracked changes under modern/.
 
 ## Exact blob comparison (read-only)
@@ -59,3 +59,7 @@ Candidate delta vs old handoff: 80 added/changed paths; overlapping P3/candidate
 ## Gate to next stage
 
 On R4 publication, validate the released manifest vs accepted source blobs, independent CI, ancestry and changed paths, then reconcile only necessary hunks. Positive tests still required: #66/3 with all three skills and EXP >=500, actual source time and cross-period sale; two real settlements and restart/second generation; positive lostbook persistence from server RNG, source-file tamper and failure rollback, authenticated multi-checkpoint history across settlements, P1/P2 and all 20 recipe regression. No claim that these passed here. No merges.
+
+## First integration candidate
+
+R4 fixed manifest selected, not merged. All 10 overlapping paths reconciled; P3 shared-use and pricing remain unchanged. Ordinary multishelf source wire uses explicitly reviewed DataWrite join/DataRead split of both arrays, 1–8 ordinary shelves only; time still validates single shelf. Crossing is opt-in `AKIMONO_REVIEWED_CROSS_PERIOD=1` on the same P3 v2 authority and requires fresh save directory; existing normal-only runtime remains, not v1. Retain original disk file and history limits. The new source and HTTP tests are candidates until same SHA CI passes. Existing legacy files must not be silently migrated; no full P3 closeout claim.

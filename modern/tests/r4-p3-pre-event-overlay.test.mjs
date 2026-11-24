@@ -293,3 +293,387 @@ test('R4 reviewed normal-time opt-in uses exact GameCore CAS replay, not a fixtu
   assert.equal(continued.world.nowSeconds,gift.world.nowSeconds+3600);
   assert.equal(continued.world.shops[0].time,gift.world.shops[0].time);
 });
+
+ 
+// Source-only boundary composition: actual frozen period prefix executes
+// between SortDT and PLUS, with one uninterrupted source draw tape.
+// No runtime commit, EVENT successor or disk effects are claimed here.
+import {projectR4BoundaryPreEventCandidate} from '../src/original-b41-playable-sale.mjs';
+import {reviewOriginalSoloPeriodPhaseChain} from '../src/original-period-solo-chain.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
+const boundarySources={
+  periodSource:source.originalPeriodSource,configSource:source.originalConfigSource,
+  itemDsl:source.itemDsl,model:loadStandardStreetModel(source.itemDsl,source.rebelDsl),
+  compilerSource:source.originalCompilerSource,originalAddItemSource:source.originalUseSource,
+  detailSource:source.originalDetailSource,readSource:source.originalDataReadSource,
+  adminSource:source.originalAdminInitSource,
+  bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
+  compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),
+  includeReviewedDignity:true,includeReviewedShopExpiry:true,
+};
+const reviewedBoundaryPeriod=reviewOriginalSoloPeriodPhaseChain(boundarySources);
+const reviewedTaxPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true});
+test('R4 source boundary prefix runs settlement before dynamic-population PLUS with exact residual seconds',()=>{
+  for(const [start,minutes,span,active,dignity] of [
+    [1025940,1,60,{},0],
+    [1025980,1,20,{'plusup-tetu':1030000},12],
+  ]){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=start;world.period.eventState=active;
+    // Original play wire materializes an empty blocklogin column; the
+    // modern initial shop projection has not yet acquired that field.
+    // Explicit source fixture only, not a live-history acquisition proof.
+    world.shops[0].blocklogin='';
+    world.shops[0].dignity=dignity;
+    const before=JSON.stringify(world);
+    const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
+    const oracle=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+      input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        span,draws,events:active,settlement:{town:world.period.town,
+          dtPeople:world.period.dtPeople,commandNowSeconds:start+minutes*60}}),
+    }));
+    const input={...args(world,minutes,oracle.consumed),reviewedPeriod:reviewedBoundaryPeriod,
+      r4ReviewedSort:reviewedR4.sort,r4DataRead:{reviewed:reviewedDataRead,activeOrder:oracle.activeOrder}};
+    const got=projectR4BoundaryPreEventCandidate(input);
+    assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
+    assert.equal(got.nowSeconds,1026000);assert.equal(got.plan.nowAfter,start+minutes*60);
+    assert.equal(got.plan.effectiveSlices[0].timespanSeconds,span);
+    assert.equal(got.receipt.periodDraws,dignity?4:3);
+    assert.equal(got.receipt.totalDraws,oracle.used);
+    assert.equal(got.receipt.plusPopulation,oracle.dtPeople);
+    assert.notEqual(oracle.dtPeople,world.period.dtPeople);
+    assert.deepEqual(got.settlement.town,oracle.town);
+    assert.deepEqual(got.market.wholesale,oracle.wholesale);
+    assert.equal(got.market.originalWholesaleCsv,oracle.csv);
+    for(const [key,value] of Object.entries(got.shops[0])){
+      if(key==='costtoday'){assert.ok(Math.abs(value-oracle.shop[key])<1e-8);continue;}
+      assert.deepEqual(value,oracle.shop[key],key);
+    }
+    assert.equal(JSON.stringify(world),before);
+    assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,randomDraws:oracle.consumed.slice(0,-1)}),/missing/);
+    assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,minutes,draws.slice(0,121)),reviewedR4,reviewedDataRead,activeOrder:oracle.activeOrder}),/period settlement/);
+  }
+});
+
+import {projectR4CrossPeriodCandidate,continueR4CrossPeriodCandidate} from '../src/original-r4-cross-period-candidate.mjs';
+test('R4 candidate preserves original DataRead overlay and native EVENT hash across both boundary slices',()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  world.nowSeconds=1025980;
+  world.period.eventState={'plusup-tetu':1025990,'happy':1030000};
+  world.shops[0].blocklogin='';world.shops[0].dignity=0;
+  const before=JSON.stringify(world);
+  const result=projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
+    reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod});
+  assert.equal(result.committable,false);assert.equal(result.worldStateWritten,false);
+  assert.equal(result.nowSeconds,1026040);
+  assert.equal(result.period.settledCount,1);assert.equal(result.period.lastSettledBoundarySeconds,1026000);
+  assert.deepEqual(result.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+  assert.equal(result.evidence.plusSeconds[4],720);
+  const env={...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'};
+  const run=(script,input,argv=[])=>JSON.parse(execFileSync('perl',[script,...argv],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',env,input:JSON.stringify(input)
+  }));
+  const wire=Object.entries(world.period.eventState).flat().join(',');
+  const e=result.evidence.slices;
+  const actual=run('original-r4-mixed-support-gate-probe.pl',{
+    eventWire:wire,startSeconds:world.nowSeconds,shop:world.shops[0],
+    csv:world.market.originalWholesaleCsv,
+    settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:result.nowSeconds},
+    slices:e.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+    samples:e.flatMap(s=>[...s.preEventDraws,...s.eventSamples]),
+  },['--cross-period-turn']);
+  assert.equal(actual.nowSeconds,result.nowSeconds);
+  assert.deepEqual(actual.dataReadOrder,result.evidence.dataReadOrder);
+  const events=actual.slices;
+  for(const [i,s] of e.entries()){
+    const pre=events[i].preEvent;
+    assert.equal(pre.preEventDrawCount,s.preEventDraws.length);
+    assert.deepEqual(pre.wholesale,s.preEvent.market.wholesale);
+    assert.equal(pre.csv,s.preEvent.market.originalWholesaleCsv);
+    assert.deepEqual(pre.plus,result.evidence.plusSeconds);
+    assert.equal(pre.dtPeople,result.period.dtPeople);
+    assert.deepEqual(pre.town,result.period.town);
+    for(const [key,value] of Object.entries(s.preEvent.shops[0])){
+      if(key==='costtoday'){assert.ok(Math.abs(value-pre.shop[key])<1e-8);continue;}
+      assert.deepEqual(value,pre.shop[key],key+' pre-EVENT slice '+i);
+    }
+  }
+  for(const [i,s] of e.entries()){
+    assert.deepEqual(events[i].activeOrder,s.activeOrder);
+    assert.deepEqual(events[i].eventOrder,s.eventOrder);
+    assert.deepEqual(events[i].nowOrder,s.nowOrder);
+    assert.deepEqual(events[i].eventState,s.eventState);
+    assert.deepEqual(events[i].ranges,s.eventDrawRanges);
+    assert.deepEqual(events[i].logs,s.eventLogs);
+    for(const [key,value] of Object.entries(s.shop)){
+      if(key==='costtoday'){assert.ok(Math.abs(value-events[i].shop[key])<1e-8);continue;}
+      assert.deepEqual(value,events[i].shop[key],key);
+    }
+  }
+  // The original DataRead overlay remains in effect AFTER the ore event
+  // expires in slice 1. Residual natural sale and PLUS see the new people.
+  const residual=run('original-r4-p3-pre-event-overlay-probe.pl',{
+    shop:e[0].shop,csv:e[0].preEvent.market.originalWholesaleCsv,
+    span:e[1].spanSeconds,draws:e[1].preEventDraws,eventWire:wire,
+    dtPeople:result.period.dtPeople});
+  assert.equal(residual.plus[4],720);
+  assert.deepEqual(e[1].preEvent.market.wholesale,residual.wholesale);
+  assert.equal(e[1].preEvent.market.originalWholesaleCsv,residual.csv);
+  assert.equal(e[1].preEvent.receipt.totalDraws,residual.used);
+  for(const [key,value] of Object.entries(e[1].preEvent.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-residual.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,residual.shop[key],key);
+  }
+  assert.equal(JSON.stringify(world),before);
+  assert.equal(e[0].eventDrawRanges.includes(0),true,'subminute happy consumes one source rand(0)');
+  assert.equal(execFileSync('perl',['-e','print int(rand(0))'],{encoding:'utf8'}),'0');
+  assert.deepEqual(result,projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
+    reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod}));
+  // A new command reloads the final EVENT wire, not the expired overlay.
+  const next=continueR4CrossPeriodCandidate({previous:result,minutes:1});
+  assert.equal(next.nowSeconds,result.nowSeconds+60);
+  assert.equal(next.period.settledCount,1);
+  assert.equal(next.period.dtPeople,result.period.dtPeople);
+  assert.deepEqual(next.period.town,result.period.town);
+  const n=next.evidence.slices[0];
+  assert.equal(n.dateupdate,0);
+  assert.equal(n.preEvent.receipt.plusPopulation,result.period.dtPeople);
+  const restarted=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+    env:{...process.env,PERL_HASH_SEED:next.evidence.seed,PERL_PERTURB_KEYS:'0'},
+    input:JSON.stringify({postSettlement:true,eventWire:Object.entries(result.period.eventState).flat().join(','),
+      startSeconds:result.nowSeconds,shop:result.shops[0],csv:result.market.originalWholesaleCsv,
+      settlement:{town:result.period.town,dtPeople:result.period.dtPeople,commandNowSeconds:next.nowSeconds},
+      slices:[{spanSeconds:60,dateupdate:0}],samples:[...n.preEventDraws,...n.eventSamples]})
+  })).slices[0];
+  assert.deepEqual(restarted.preEvent.wholesale,next.market.wholesale);
+  assert.equal(restarted.preEvent.csv,next.market.originalWholesaleCsv);
+  assert.deepEqual(restarted.eventState,next.period.eventState);
+  assert.deepEqual(restarted.ranges,n.eventDrawRanges);
+  for(const [key,value] of Object.entries(next.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-restarted.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,restarted.shop[key],key);
+  }
+  assert.throws(()=>continueR4CrossPeriodCandidate({previous:structuredClone(result),minutes:1}),/lineage/);
+  assert.throws(()=>project({...world,period:result.period,shops:result.shops,market:result.market,nowSeconds:result.nowSeconds},1),/known/);
+  const expected=structuredClone(next);
+  result.shops[0]={...result.shops[0],money:result.shops[0].money+12345};
+  assert.deepEqual(continueR4CrossPeriodCandidate({previous:result,minutes:1}),expected,'public candidate mutation cannot alter private lineage');
+});
+
+
+test('R4 boundary source tax history becomes exact town income before PLUS, without weakening the old zero-tax scope',()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  world.nowSeconds=1025940;
+  // Source ledger fixture, not a claim that this sum was acquired by HTTP.
+  world.shops[0].blocklogin='';world.shops[0].dignity=0;world.shops[0].taxtoday=321;
+  world.shops[0].saletoday=1000;
+  const before=JSON.stringify(world);
+  const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
+  const oracle=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+    input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+      span:60,draws,events:{},settlement:{town:world.period.town,
+        dtPeople:world.period.dtPeople,commandNowSeconds:1026000}}),
+  }));
+  const input={...args(world,1,oracle.consumed),reviewedPeriod:reviewedTaxPeriod,
+    r4ReviewedSort:reviewedR4.sort,r4DataRead:{reviewed:reviewedDataRead,activeOrder:oracle.activeOrder}};
+  const got=projectR4BoundaryPreEventCandidate(input);
+  assert.equal(got.committable,false);
+  assert.equal(got.shops[0].taxyesterday,321);assert.equal(got.shops[0].taxtoday,0);
+  assert.equal(got.settlement.town.in,321);assert.equal(got.settlement.town.money,321);
+  assert.deepEqual(got.settlement.town,oracle.town);
+  assert.deepEqual(got.market.wholesale,oracle.wholesale);
+  assert.equal(got.market.originalWholesaleCsv,oracle.csv);
+  for(const [key,value] of Object.entries(got.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-oracle.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,oracle.shop[key],key);
+  }
+  assert.equal(JSON.stringify(world),before);
+  assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,reviewedPeriod:reviewedBoundaryPeriod}),/reviewed-tax/);
+});
+
+import {writeFile,mkdir,mkdtemp,rm,utimes,readdir,stat} from 'node:fs/promises';
+import os from 'node:os';
+import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay,readPeriodPlay} from '../src/original-r4-period-play-file.mjs';
+import {reviewTownFiles} from '../src/original-r4-town-files.mjs';
+import {reviewBackupDisk} from '../src/original-r4-backup-disk.mjs';
+import {reviewPeriodLog} from '../src/original-r4-period-log-disk.mjs';
+import {reviewGuildFiles} from '../src/original-r4-guild-files.mjs';
+import {reviewExternalFiles} from '../src/original-r4-external-files-sandbox.mjs';
+import {stageR4CrossPeriodDisk} from '../src/original-r4-cross-period-disk.mjs';
+import {commitB50PeriodDisk} from '../src/original-r4-b50-period-disk.mjs';
+const perlDir=path.join(root,'modern/tests/original-perl');
+const readPerl=n=>readFile(path.join(perlDir,n),'utf8');
+const diskGuildSources=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write','turn','period'].map(async k=>[k,await readPerl(k==='turn'?'inc-turn.cgi':['write','period'].includes(k)?k+'.cgi':'pinned-'+k+'.cgi')])));
+const diskReviews={
+  play:reviewPeriodPlay({writeSource:source.originalDataWriteSource,incFuncSource:source.originalDataReadSource,detailSource:source.originalDetailSource,configSource:source.originalConfigSource},{crossPeriod:true}),
+  town:reviewTownFiles({custom:await readPerl('pinned-custom.cgi'),read:source.originalDataReadSource,write:source.originalDataWriteSource}),
+  backup:reviewBackupDisk({period:source.originalPeriodSource,write:source.originalDataWriteSource,config:source.originalConfigSource}),
+  log:reviewPeriodLog({log:await readPerl('pinned-log.cgi'),period:source.originalPeriodSource,dsl:source.itemDsl,config:source.originalConfigSource}),
+  guild:reviewGuildFiles(diskGuildSources),
+  external:reviewExternalFiles({write:source.originalDataWriteSource,guild:diskGuildSources.guild,turn:source.originalTurnSource})
+};
+test('R4 actual crossing and residual EVENT feed four-file source commit, backup generations, sessions and original DataRead',async()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  world.nowSeconds=1025980;
+  world.period.eventState={'plusup-tetu':1025990,'happy':1030000};
+  // Explicit source disk fixture, NOT player acquisition or production login.
+  Object.assign(world.shops[0],{pass:'',comment:'',remoteaddr:'',dignity:0,rankingcount:0,
+    profitstock:0,taxmode:0,drmoney:0,trush:0,guild:'',blocklogin:'',nocheckip:'',
+    job:'weapon',exp:{14:20,37:200},user:{first:'a',second:'b'},
+    itemtoday:{10:1,40:2},itemyesterday:{41:1,42:2},saletoday:1000,taxtoday:321});
+  const initial={lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,
+    state:world.period.town,town:{},events:world.period.eventState,wholesale:world.market.wholesale,
+    wholesaleCsv:world.market.originalWholesaleCsv,shops:world.shops};
+  const codec={reviewed:diskReviews.play,townReview:diskReviews.town};
+  const initialPlay=serializePeriodPlay({...codec,world:initial});
+  const commandArgs={world,minutes:1,street,reviewedR4,reviewedDataRead,reviewedHash:hashReview,
+    reviewedEvents:eventReview,reviewedPeriod:reviewedTaxPeriod};
+  const result=projectR4CrossPeriodCandidate(commandArgs);
+  const e=result.evidence.slices;
+  const sourceDisk=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+    cwd:perlDir,encoding:'utf8',maxBuffer:8*1024*1024,
+    env:{...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'},
+    input:JSON.stringify({eventWire:wire(world.period.eventState),startSeconds:world.nowSeconds,shop:world.shops[0],
+      csv:world.market.originalWholesaleCsv,settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:result.nowSeconds},
+      slices:e.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+      samples:e.flatMap(s=>[...s.preEventDraws,...s.eventSamples]),disk:{initialPlay,nextid:100}})
+  })).disk;
+  assert.ok(sourceDisk);
+  const directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-period-disk-'));
+  const put=(n,v)=>writeFile(path.join(directory,n),v);
+  const get=n=>readFile(path.join(directory,n),'utf8');
+  const backupNames=['log0.cgi','log1.cgi','log2.cgi','guildbal.cgi','play.cgi'];
+  try{
+    for(const n of ['stage','backup','backup1','backup2','backup3','common','session'])await mkdir(path.join(directory,n));
+    await put('play.cgi',initialPlay);
+    await put('guild.cgi',"use utf8;\n$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;%GUILD=();1;");
+    await put('guildbal.cgi','');await put('lasttime.cgi','clock');
+    for(let i=0;i<3;i++)await put('log'+i+'.cgi','live-'+i+'\n');
+    for(const g of ['',1,2,3])for(const n of backupNames)await put('backup'+g+'/'+n,'prior-'+g+'/'+n+'\n');
+    await utimes(path.join(directory,'backup/play.cgi'),world.nowSeconds-7200,world.nowSeconds-7200);
+    await utimes(path.join(directory,'log1.cgi'),world.nowSeconds-129600,world.nowSeconds-129600);
+    for(const n of ['old.cgi','edge.cgi','keep.txt']){
+      await put('session/'+n,'source session');
+      const time=result.nowSeconds-604800-(n==='old.cgi'?1:0);
+      await utimes(path.join(directory,'session',n),time,time);
+    }
+    const wrong=structuredClone(world);wrong.shops[0].money++;
+    await assert.rejects(stageR4CrossPeriodDisk({directory,reviews:diskReviews,commandArgs:{...commandArgs,world:wrong}}),/differs from live/);
+    await assert.rejects(stat(path.join(directory,'period-attempt')),{code:'ENOENT'});
+    // Independently compare the actual runtime disk projection with the
+    // same frozen Perl result, rather than only testing the isolated writer.
+    const {createIndependentDiskProjection,R4_INDEPENDENT_DISK}=await import('../src/original-r4-independent-world-disk.mjs');
+    const projection=createIndependentDiskProjection({sources:{itemDsl:source.itemDsl,
+      writeSource:source.originalDataWriteSource,readSource:source.originalDataReadSource,
+      detailSource:source.originalDetailSource,configSource:source.originalConfigSource,
+      periodSource:source.originalPeriodSource,newSource:await readPerl('new.cgi'),
+      customSource:await readPerl('pinned-custom.cgi'),logSource:await readPerl('pinned-log.cgi')},sort:reviewedR4.sort,street});
+    const liveFiles={};
+    for(const n of [...backupNames,'guild.cgi','lasttime.cgi'])
+      liveFiles[n]={bytes:n==='lasttime.cgi'?'':await get(n),mtime:n==='log1.cgi'?world.nowSeconds-129600:world.nowSeconds};
+    const runtimeBefore={...world,period:{...world.period,disk:{source:R4_INDEPENDENT_DISK,live:liveFiles,
+      backup:Object.fromEntries(backupNames.map(n=>[n,{bytes:liveFiles[n].bytes,mtime:world.nowSeconds-7200}])),
+      generations:[null,null,null]}}};
+    projection.validate(runtimeBefore);
+    const finalized=projection.finalize({before:runtimeBefore,command:{kind:'advance-reviewed-world-time'},
+      applied:{shops:result.shops,market:result.market,period:result.period,nowSeconds:result.nowSeconds,receipt:{}},
+      logRows:projection.crossLogs(result)});
+    const projected=finalized.period.disk;
+    for(const n of ['guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])
+      assert.equal(projected.live[n].bytes,sourceDisk.live[n],'runtime '+n);
+    for(const n of backupNames){
+      assert.equal(projected.generations[0][n].bytes,sourceDisk.generations[0][n],'runtime newest backup '+n);
+      assert.equal(projected.backup[n].bytes,sourceDisk.backup[n],'runtime regular backup '+n);
+    }
+    const runtimePlay=parsePeriodPlay({...codec,bytes:projected.live['play.cgi'].bytes});
+    const actualPlay=parsePeriodPlay({...codec,bytes:sourceDisk.live['play.cgi']});
+    assert.ok(Math.abs(runtimePlay.shops[0].costtoday-actualPlay.shops[0].costtoday)<1e-8);
+    runtimePlay.shops[0].costtoday=actualPlay.shops[0].costtoday;
+    assert.deepEqual(runtimePlay,actualPlay);
+    assert.equal(projected.live['lasttime.cgi'].mtime,sourceDisk.lasttimeMtime);
+    const stage=await stageR4CrossPeriodDisk({directory,reviews:diskReviews,commandArgs});
+    assert.equal(stage.committable,false);assert.equal(stage.worldStateWritten,false);
+    const parse=bytes=>parsePeriodPlay({...codec,bytes});
+    const node=parse(stage.play.bytes),perl=parse(sourceDisk.stage['play.cgi']);
+    const cost=node.shops[0].costtoday;
+    assert.ok(Math.abs(cost-perl.shops[0].costtoday)<1e-8);
+    node.shops[0].costtoday=perl.shops[0].costtoday;
+    assert.deepEqual(node,perl);
+    assert.equal(stage.play.bytes.split('\n')[3],sourceDisk.stage['play.cgi'].split('\n')[3],'actual native EVENT wire order');
+    assert.equal(node.people,sourceDisk.reloaded.people);
+    assert.equal(node.lasttime,sourceDisk.reloaded.lasttime);
+    assert.equal(node.wholesaleCsv,sourceDisk.reloaded.csv);
+    assert.deepEqual(node.state,sourceDisk.reloaded.state);
+    assert.deepEqual(node.events,sourceDisk.reloaded.events);
+    for(const k of ['item','exp','itemtoday','itemyesterday','user'])assert.deepEqual(node.shops[0][k],sourceDisk.reloaded[k]);
+    for(const n of ['guild.cgi','guildbal.cgi','log0.cgi'])assert.equal(await get('stage/'+n),sourceDisk.stage[n],n);
+    for(const [i,g] of sourceDisk.generations.entries())for(const n of backupNames)assert.equal(await get('backup'+(i+1)+'/'+n),g[n]);
+    for(const n of backupNames)assert.equal(await get('backup/'+n),sourceDisk.backup[n]);
+    assert.equal(Math.floor((await stat(path.join(directory,'lasttime.cgi'))).mtimeMs/1000),sourceDisk.lasttimeMtime);
+    assert.deepEqual((await readdir(path.join(directory,'session'))).sort(),sourceDisk.sessions);
+    assert.deepEqual(sourceDisk.sessions,['edge.cgi','keep.txt']);
+    assert.equal(await get('play.cgi'),initialPlay);
+    // Failure during the last rename must preserve the verified stage and
+    // cannot redo the period, rotate backups or consume another prize.
+    const live=path.join(directory,'play.cgi');await rm(live);await mkdir(live);
+    await assert.rejects(commitB50PeriodDisk({directory,reviewed:diskReviews.external}));
+    await assert.rejects(stageR4CrossPeriodDisk({directory,reviews:diskReviews,commandArgs}),/prior attempt/);
+    await assert.rejects(readPeriodPlay({...codec,directory}),/pending commit/);
+    await rm(live,{recursive:true});
+    await commitB50PeriodDisk({directory,reviewed:diskReviews.external,recover:true});
+    const loaded=await readPeriodPlay({...codec,directory});
+    assert.equal(loaded.shops[0].costtoday,cost);
+    loaded.shops[0].costtoday=perl.shops[0].costtoday;
+    assert.deepEqual(loaded,perl);
+    for(const n of ['guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])assert.equal(await get(n),sourceDisk.live[n]);
+    for(const [i,g] of sourceDisk.generations.entries())for(const n of backupNames)assert.equal(await get('backup'+(i+1)+'/'+n),g[n]);
+    assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+    await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
+  }finally{await rm(directory,{recursive:true,force:true});}
+});
+
+test('R4 reviewed CAS settles two consecutive source boundaries from legal opening and rejects fabricated settled initial state',async()=>{
+  const crossStreet=createStandardStreetModule({...source,originalNewSource:await readPerl('new.cgi'),
+    originalCustomSource:await readPerl('pinned-custom.cgi'),originalLogSource:await readPerl('pinned-log.cgi'),
+    enableReviewedNormalTime:true,enableReviewedCrossPeriod:true});
+  const seed=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:source.originalPeriodSource,adminSource:source.originalAdminInitSource,
+    readSource:source.originalDataReadSource,writeSource:source.originalDataWriteSource,reviewedB41:crossStreet.reviewedB41}));
+  const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+    worldId:'r4-real-two-periods',streetId:crossStreet.id,nowSeconds:1025980,period:seed}),streetModule:crossStreet});
+  function command(kind,fields={}){
+    const result=executeMemoryCommand({repository,streetModule:crossStreet,command:{kind,expectedRevision:repository.read().revision,...fields}});
+    assert.equal(result.ok,true,JSON.stringify(result.details));return result;
+  }
+  command('initialize-source-market');
+  command('open-shop',{shopId:1,ownerName:'跨期來源',shopName:'連續結算'});
+  const initial=repository.read();
+  command('advance-reviewed-world-time',{minutes:1});
+  const first=repository.read();
+  assert.equal(first.period.settledCount,1);
+  assert.equal(first.period.disk.generations[0]['play.cgi'].bytes,initial.period.disk.live['play.cgi'].bytes);
+  const forgedZero={...structuredClone(first),revision:0};
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forgedZero,streetModule:crossStreet}),/revision zero/);
+  const forged=structuredClone(first);forged.period.disk.live['log0.cgi'].bytes+='forged\n';
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forged,streetModule:crossStreet}),/provenance/);
+  const rejected=applyGameCommand({world:forged,streetModule:crossStreet,command:{kind:'advance-reviewed-world-time',expectedRevision:forged.revision,minutes:1}});
+  assert.equal(rejected.ok,false);
+  let beforeSecond;
+  for(let i=0;i<36;i++){
+    beforeSecond=repository.read();
+    command('advance-reviewed-world-time',{minutes:60});
+  }
+  const second=repository.read();
+  assert.equal(second.nowSeconds,1155640);
+  assert.equal(second.period.settledCount,2);
+  assert.equal(second.period.lastSettledBoundarySeconds,1155600);
+  assert.equal(second.period.disk.generations[0]['play.cgi'].bytes,beforeSecond.period.disk.live['play.cgi'].bytes);
+  assert.equal(second.period.disk.generations[1]['play.cgi'].bytes,initial.period.disk.live['play.cgi'].bytes);
+  assert.notEqual(second.period.dtPeople,first.period.dtPeople);
+  assert.ok(second.shops[0].rankingcount>=2);
+  const final=command('advance-reviewed-world-time',{minutes:1});
+  assert.equal(final.world.period.settledCount,2);
+});
