@@ -694,7 +694,7 @@ $('showcase-form').addEventListener('submit',async event=>{
   const listedRaw=$('shelf-price-direct').value;
   const listedPrice=Number(listedRaw);
   const base=catalogItem(snapshot,itemId)?.basePrice;
-  if(ratio===null||!/^\\d+$/.test(listedRaw)||
+  if(ratio===null||!/^[0-9]+$/.test(listedRaw)||
      !Number.isSafeInteger(listedPrice)||listedPrice<1||
      !Number.isSafeInteger(base)||base<1){
     feedback('請輸入 1～200 的整數比例，以及有效的整數售價。',null,true);
