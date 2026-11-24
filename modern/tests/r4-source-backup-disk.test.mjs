@@ -60,3 +60,14 @@ test('rotation rejects missing live input and unfinished work directory without 
   assert.deepEqual(await snapshot(path.join(directory,'backup1'),Object.keys(row.activeFiles)),row.backupGenerations[0]);
   assert.throws(()=>reviewBackupDisk({period:period+' ',write,config}),/source drift/);
 }));
+
+test('original blocked backup_work silently leaves stale generations; Node refuses replay before changing files',()=>sandbox(async directory=>{
+  const actual=run('original-r4-backup-rotation-failure-probe.pl');
+  assert.deepEqual(actual,{work:'old-_work-play\n',gen1:'live-play\n',gen2:'old-2-play\n',gen3:'old-3-play\n'});
+  const names=['log0','log1','log2','guildbal','play'];
+  await seed(directory,Object.fromEntries(names.map(k=>[k,'live-'+k+'\n'])));
+  for(const n of [1,2,3,'_work'])await seed(path.join(directory,'backup'+n),Object.fromEntries(names.map(k=>[k,'old-'+n+'-'+k+'\n'])));
+  await mkdir(path.join(directory,'session'));
+  await assert.rejects(rotatePeriodBackupDisk({reviewed,directory,nowSeconds:1000000}),/unfinished rotation/);
+  for(const n of [1,2,3,'_work'])assert.equal(await readFile(path.join(directory,'backup'+n,'play.cgi'),'utf8'),'old-'+n+'-play\n');
+}));

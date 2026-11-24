@@ -9,11 +9,13 @@ import {appendR4CloseShopArchiveSandbox} from './original-r4-close-shop-archive-
 import {rotatePeriodBackupDisk,dataWriteBackupDisk} from './original-r4-backup-disk.mjs';
 import {projectB50PeriodLogRows,renewPeriodLogDisk} from './original-r4-period-log-disk.mjs';
 import {commitExternalFiles} from './original-r4-external-files-sandbox.mjs';
+import {createHash} from 'node:crypto';
 import {readFile,writeFile,lstat,realpath,readdir,unlink} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 const fail=m=>{throw new RangeError('R4 B50 disk: '+m)};
 const expectedFiles=['guild.cgi','guildbal.cgi','log0.cgi','play.cgi'];
+const digest=async p=>{if(!(await lstat(p)).isFile())fail('regular receipt file required');return createHash('sha256').update(await readFile(p)).digest('hex')};
 async function rootFor(directory){
   const root=await realpath(directory);
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('isolated period sandbox required');
@@ -36,8 +38,13 @@ async function expirySnapshot(dir){
   return out;
 }
 export async function stageB50PeriodDisk({directory,reviews,periods,logContext}){
-  const root=await rootFor(directory),attempt=path.join(root,'period-attempt');
-  if(await exists(attempt)||await exists(path.join(root,'commit.cgi')))fail('prior attempt requires explicit recovery; do not replay external effects');
+  const root=await rootFor(directory),attempt=path.join(root,'period-attempt'),ready=path.join(root,'period-ready');
+  if(await exists(attempt)||await exists(ready)||await exists(path.join(root,'commit.cgi')))fail('prior attempt requires explicit recovery; do not replay external effects');
+  const context={};
+  for(const k of ['scriptName','remoteAddress','remoteHost','trueIp','user']){
+    if(typeof logContext?.[k]!=='string'||/[\r\n\t]/.test(logContext[k]))fail('explicit archive context '+k);
+    context[k]=logContext[k];
+  }
   const args={directory:root,reviewed:reviews.play,townReview:reviews.town};
   const initial=await readPeriodPlay(args);
   if(initial.shops.length!==1||!Array.isArray(periods)||![1,2].includes(periods.length))fail('one active shop and one/two explicit B50 periods required');
@@ -70,7 +77,7 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
     const calls=projectB50PeriodLogRows({reviewed:reviews.log,shop,town,result,nowSeconds:p.nowSeconds});
     logRows=[...calls].reverse().concat(logRows);
     if(result.actualCloseEffect){
-      await appendR4CloseShopArchiveSandbox({reviewed:reviews.archive,effect:result.actualCloseEffect,sandboxDirectory:root,nowSeconds:p.nowSeconds,...logContext});
+      await appendR4CloseShopArchiveSandbox({reviewed:reviews.archive,effect:result.actualCloseEffect,sandboxDirectory:root,nowSeconds:p.nowSeconds,...context});
       for(const n of result.actualCloseEffect.deletedSessions)await unlink(path.join(subdata,n));
     }
     const {guild:transient,...base}=ledger;
@@ -92,13 +99,25 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
   const world={...initial,lasttime:now,people,state:town,shops:shop?[shop]:[]};
   const play=await stagePeriodPlay({...args,world});
   const log=await renewPeriodLogDisk({reviewed:reviews.log,directory:root,rows:logRows,nowSeconds:now});
+  const receipt=Object.fromEntries(await Promise.all(expectedFiles.map(async n=>[n,await digest(path.join(stage,n))])));
+  await writeFile(ready,JSON.stringify(receipt)+'\n',{flag:'wx'});
   return {steps,guild,backup,play,log,world,committable:false,worldStateWritten:false};
 }
 export async function commitB50PeriodDisk({directory,reviewed,recover=false}){
-  const root=await rootFor(directory),attempt=path.join(root,'period-attempt'),marker=path.join(root,'commit.cgi');
+  const root=await rootFor(directory),attempt=path.join(root,'period-attempt'),marker=path.join(root,'commit.cgi'),ready=path.join(root,'period-ready'),stage=await realDir(path.join(root,'stage'));
   if(!(await lstat(attempt)).isFile())fail('period attempt required');
-  if(typeof recover!=='boolean'||recover&&!await exists(marker))fail('marker required for recovery');
+  const markerStat=await exists(marker);
+  if(typeof recover!=='boolean'||Boolean(markerStat)!==recover)fail('explicit recovery mode must match marker');
+  if(!await exists(ready))fail('incomplete stage: no ready receipt');
+  const receipt=JSON.parse(await regular(ready));
+  if(!receipt||Object.getPrototypeOf(receipt)!==Object.prototype||Object.keys(receipt).sort().join(',')!==[...expectedFiles].sort().join(',')||Object.values(receipt).some(x=>typeof x!=='string'||!/^[a-f0-9]{64}$/.test(x)))fail('invalid ready receipt');
+  const pending=await readdir(stage);
+  if(pending.some(n=>!expectedFiles.includes(n))||!recover&&pending.length!==expectedFiles.length)fail('incomplete stage or unknown file');
+  for(const n of expectedFiles){
+    const p=path.join(pending.includes(n)?stage:root,n);
+    if(await digest(p)!==receipt[n])fail('staged or moved file differs from ready receipt '+n);
+  }
   const result=await commitExternalFiles({reviewed,directory:root,expectedFiles,abort:recover});
-  await unlink(attempt);
+  await unlink(ready);await unlink(attempt);
   return result;
 }

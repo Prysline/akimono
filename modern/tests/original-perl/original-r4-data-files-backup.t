@@ -15,4 +15,8 @@ is($missing->{after}{log2},$missing->{live}{log2},'copy continues after missing 
 ok(!defined($bad->{after}{log1}),'invalid destination remains directory');
 is($bad->{after}{log2},$bad->{live}{log2},'copy continues after destination failure');
 for my $r(@{$o->{cases}}){is($r->{clock},$r->{lasttime},$r->{mode}.' actual lasttime mtime')}
+open my $r,'-|',$^X,"$FindBin::Bin/original-r4-backup-rotation-failure-probe.pl" or die $!;
+binmode $r,':raw';my $json=<$r>;close $r or die 'rotation failure probe failed';
+my $blocked=JSON::PP->new->utf8->decode($json);
+is_deeply($blocked,{work=>"old-_work-play\n",gen1=>"live-play\n",gen2=>"old-2-play\n",gen3=>"old-3-play\n"},'original unchecked rotation can leave stale generations and work directory');
 done_testing();

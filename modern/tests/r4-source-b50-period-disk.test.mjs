@@ -144,6 +144,7 @@ for(const first of [true,false])test('B50 actual source '+(first?'one period act
   assert.equal(Object.hasOwn(parseGuildLedgers(o.finalLedger).guild_a,'guild'),false,'period removes transient guild field');
   for(const [k,v] of Object.entries(o.finalLogs))assert.equal(await readFile(path.join(directory,k+'.cgi'),'utf8'),v);
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+  await assert.rejects(stat(path.join(directory,'period-ready')),{code:'ENOENT'});
   await assert.rejects(stat(path.join(directory,'period-attempt')),{code:'ENOENT'});
 }));
 test('B50 actual staged files recover after fourth rename failure without redoing archive or rotations',()=>fixture(false,async ctx=>{
@@ -190,4 +191,24 @@ test('actual original B50 source commit injected third rename failure recovers r
   assert.ok(o.archive.includes(o.cases[1].output.closeArchived));
   assert.equal(o.finalLogs.log1,o.initialLogs.log0);
   assert.equal(o.finalLogs.log2,o.initialLogs.log1);
+});
+
+test('B50 ready receipt detects changed stage or already moved file; no marker or recovery success on mismatch',()=>fixture(false,async ctx=>{
+  const {directory,o}=ctx;await assertStages(ctx);
+  const args={directory,reviewed:reviews.external},stage=path.join(directory,'stage','play.cgi'),live=path.join(directory,'play.cgi');
+  const bytes=await readFile(stage);
+  await writeFile(stage,Buffer.concat([bytes,Buffer.from('changed')]));
+  await assert.rejects(commitB50PeriodDisk(args),/differs from ready receipt/);
+  await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
+  await writeFile(stage,bytes);
+  await rm(live);await mkdir(live);
+  await assert.rejects(commitB50PeriodDisk(args));
+  const moved=path.join(directory,'guildbal.cgi'),ledger=await readFile(moved);
+  await writeFile(moved,Buffer.concat([ledger,Buffer.from('changed')]));
+  await rm(live,{recursive:true});
+  await assert.rejects(commitB50PeriodDisk({...args,recover:true}),/differs from ready receipt/);
+  assert.equal(await readFile(path.join(directory,'commit.cgi'),'utf8'),'');
+  await writeFile(moved,ledger);
+  await commitB50PeriodDisk({...args,recover:true});
+  equalPlay(await readFile(live,'utf8'),o.finalPlay);
 });
