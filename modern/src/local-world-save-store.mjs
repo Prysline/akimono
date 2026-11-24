@@ -402,6 +402,17 @@ function verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,proof){
   return verifyCareerProof({world,proof,...careerReplay,
     validateLegacyAnchor:anchor=>reviewedPlayableWorld(anchor,marketBuyRegistry,useItem)});
 }
+function careerLineageCompatible(older,newer){
+  if(!older.proof&&!newer.proof)return true;
+  if(older.world.worldId!==newer.world.worldId||
+     older.world.revision>newer.world.revision||!newer.proof)return false;
+  if(older.proof)return newer.proof.anchor===older.proof.anchor&&
+    newer.proof.anchorKind===older.proof.anchorKind&&
+    JSON.stringify(newer.proof.commands.slice(0,older.proof.commands.length))===
+      JSON.stringify(older.proof.commands);
+  return newer.proof.anchorKind!=='legacy'||
+    newer.proof.anchor===encodeMemorySnapshot(older.world);
+}
 function sourceFile(dir,name){
   return path.join(dir,name);
 }
@@ -470,6 +481,12 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
+    // A newer checksum-valid slot must not drop or replace a still-valid
+    // older career history. Preserve the older source checkpoint instead.
+    if(valid.length===2&&!careerLineageCompatible(valid[1],valid[0])){
+      const rejected=valid.shift();
+      corrupt.push({kind:'corrupt',slot:rejected.slot,reason:'career lineage mismatch'});
+    }
     const latest=valid[0]??null;
     return {latest,corrupt};
   }
@@ -506,12 +523,12 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       fail('已存在不同世界存檔，禁止用新世界覆寫');
     if(previous&&previous.world.revision>world.revision)
       fail('不能以較舊的 WorldState 覆寫新版存檔');
-    // Once validated, the source history cannot be discarded or replaced.
-    if(previous?.proof&&careerProof===null)fail('career history cannot be discarded');
-    if(previous?.proof&&(careerProof.anchor!==previous.proof.anchor||
-       careerProof.anchorKind!==previous.proof.anchorKind||
-       JSON.stringify(careerProof.commands.slice(0,previous.proof.commands.length))!==
-         JSON.stringify(previous.proof.commands)))fail('career history prefix mismatch');
+    // Do not trust a newly supplied legacy anchor unless it is the latest
+    // checked checkpoint. Subsequent generations must preserve its history.
+    if(careerProof?.anchorKind==='legacy'&&!previous)
+      fail('legacy career history requires an existing validated checkpoint');
+    if(previous&&!careerLineageCompatible(previous,{world,proof:careerProof}))
+      fail('career history prefix or legacy anchor mismatch');
     const nextGen=safeInt(generation+1,'next save generation',1);
     const encoded=encodeMemorySnapshot(world);
     const proofText=careerProof===null?null:JSON.stringify(careerProof);
