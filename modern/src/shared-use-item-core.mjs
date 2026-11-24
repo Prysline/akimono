@@ -53,7 +53,8 @@ export function projectSharedUseItem({world,command,useItem}){
   if(!world.market||!Array.isArray(world.market.wholesale)||
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
-  if(world.events!==null||!emptyEventState(world)||
+  if(world.events!==null||(!emptyEventState(world)&&
+     useItem.validateEventState?.({world,rule})!==true)||
      !useItem.validateWorld({world,rule}))
     fail('unreviewed source EVENT/market/world overlay');
   if(!Array.isArray(world.shops)||!world.shops.length||

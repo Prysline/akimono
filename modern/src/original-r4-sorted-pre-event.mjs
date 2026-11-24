@@ -1,7 +1,7 @@
 /**
  * R4-B: source-reviewed SortDT before all 59 PLUS. No period/EVENT commit.
  */
-import {projectR3PreEventTurn} from './original-b41-playable-sale.mjs';
+import {projectR3PreEventTurn,projectR4InventoryPreEventTurn} from './original-b41-playable-sale.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewOriginalSoloSort,B47_SOLO_RANK_SOURCE}
   from './original-period-solo-sort.mjs';
@@ -43,4 +43,14 @@ export function projectR4SortedPreEventTurn({reviewedR4,...args}){
     ...result.receipt,action:'r4-sorted-pre-event',
     r4SortSource:reviewedR4.source,r4Committable:false,
     sourceScope:reviewedR4.scope}};
+}
+
+/** Shared P3-compatible inventory continuation, explicitly noncommittable.
+ * Same SortDT placement as the R3 route, with reviewed DataRead overlays.
+ */
+export function projectR4SortedInventoryPreEventTurn({reviewedR4,reviewedDataRead,activeOrder,...args}){
+  if(reviewedR4?.source!==R4_SORTED_PRE_EVENT_SOURCE||reviewedR4.committable!==false||reviewedR4.sort?.source!==B47_SOLO_RANK_SOURCE)fail('source-reviewed SortDT required');
+  const result=projectR4InventoryPreEventTurn({...args,r4ReviewedSort:reviewedR4.sort,r4DataRead:{reviewed:reviewedDataRead,activeOrder}});
+  if(result.receipt.originalSortApplied!==true||Object.hasOwn(result,'period')||result.committable!==false)fail('incomplete common pre-EVENT projection');
+  return result;
 }
