@@ -15,8 +15,7 @@ import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
-import {beginCareerProof,appendCareerCommand,requiresReviewedHistory,isCareerReplayCommand}
-  from '../src/reviewed-career-save-replay.mjs';
+import {isReviewedOrdinaryCommand} from '../src/reviewed-ordinary-command-policy.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
@@ -25,9 +24,8 @@ import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
 
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
 import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
-const reviewedTimeMode=process.env.AKIMONO_REVIEWED_NORMAL_TIME==='1';
-if(reviewedTimeMode&&(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'))
-  throw Error('reviewed normal time cannot use fixture RNG or multi-shop audit');
+if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
+  throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
@@ -67,10 +65,10 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  enableReviewedNormalTime:reviewedTimeMode,
+  enableReviewedNormalTime:true,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
-  'market-buy','use-item','edit-showcase',reviewedTimeMode?'advance-reviewed-world-time':'advance-source-time']
+  'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('R2-E runtime source-review capabilities missing');
 if(!streetModule.reviewedB63Map)
@@ -93,12 +91,8 @@ function createInitialWorld({worldId,nowSeconds}){
 }
 // The player never supplies this history or RNG; only committed local commands
 // are recorded. Unsupported actions invalidate the proof, not the old save.
-let repo=null,careerProof=null,careerRequired=false,liveGeneration=0;
+let repo=null,careerProof=null,liveGeneration=0;
 function verifyCareerDraws(world,command){
-  if(command.kind==='reviewed-sparse-all-plus'){
-    const expected=sampleOriginalPlus(world,command.timespanSeconds);
-    return JSON.stringify(expected.randomDraws)===JSON.stringify(command.randomDraws);
-  }
   if(command.kind==='use-item'){
     const expected=sampleSourceUse(world,command);
     return JSON.stringify(expected)===JSON.stringify(command.randomDraws??[]);
@@ -108,11 +102,11 @@ function verifyCareerDraws(world,command){
 // Reviewed time mode uses the existing P3 ordinary command policy, never
 // the R4-only narrow registry or PLUS-only supply history. Legacy saves
 // remain available in legacy mode; migration requires separate proof.
-const isOrdinaryCommand=command=>isCareerReplayCommand(command)&&command.kind!=='reviewed-sparse-all-plus';
+const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule);
 const verifyOrdinaryDraws=verifyCareerDraws;
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
-const checkpointStore=reviewedTimeMode?createReviewedHistoryCheckpointStore({
+const checkpointStore=createReviewedHistoryCheckpointStore({
   directory:saveDirectory,...fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
@@ -120,18 +114,12 @@ const checkpointStore=reviewedTimeMode?createReviewedHistoryCheckpointStore({
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource],
   }),
-}):null;
+});
 const saveStore=createLocalWorldSaveStore({
   directory:saveDirectory,
-  marketBuyRegistry:streetModule.marketBuyRegistry,
-  useItem:streetModule.useItem,
-  ...(reviewedTimeMode?{historyReplay:{requireProof:true,checkpointStore,
-    verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})}}:
-    {careerReplay:{streetModule,createInitialWorld,verifyDraws:verifyCareerDraws}}),
+  historyReplay:{checkpointStore,
+    verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})},
 });
-// Opt-in R2 memory-only audit. NOT player authentication or durable multi-shop.
-const targetAdvertisementMemoryAudit=
-  process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1';
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
 const send=(res,status,obj)=>{
@@ -157,32 +145,6 @@ function sourceShopPoint(shop){
   if(profit<1)profit=1/(2-profit);
   const point=Math.trunc(rank*winFactor*profit);
   return Number.isSafeInteger(point)?point:null;
-}
-// Read-only evidence for opt-in local #62/1 audit. Market canBuy means
-// source-stock/registry availability, NOT sufficient player cash or complete
-// authority to USE; never advertise a positive player-readiness verdict.
-function targetAdvertisementReadiness(world,marketOffers){
-  const actor=world?.shops.find(shop=>shop.id===1)??null;
-  const quote=marketOffers.find(offer=>offer.itemId===62)??null;
-  const sourcePrice=Number.isSafeInteger(quote?.price)&&quote.price>0?
-    quote.price:null;
-  const cash=Number.isSafeInteger(actor?.money)&&actor.money>=0?
-    actor.money:null;
-  return {
-    evidenceOnly:true,authoritativeUseApproval:false,
-    actorShopId:actor?.id??null,authenticated:false,
-    packageOwned:actor?.item?.[61]??null,
-    sourceQuote:sourcePrice===null?null:{
-      itemId:62,unitPrice:sourcePrice,
-      marketStock:quote.marketStock,
-      sourceListed:quote.canBuy===true,
-      cashShortfall:cash===null?null:Math.max(0,sourcePrice-cash),
-    },
-    cash:cash,
-    eventStateKnowledge:world?.period?.eventState===null?
-      'unreviewed':world?'source-known':'no-world',
-    twoShopDiskSaveRejected:(world?.shops.length??0)>1,
-  };
 }
 function state(){
   const world=repo?.read()??null;
@@ -220,16 +182,8 @@ function state(){
         };
       }),
     useOffers:streetModule.listUseOffers(world),
-    // Only source-created live shops, never client-supplied target records.
-    targetAdvertisementAudit:targetAdvertisementMemoryAudit?{
-      memoryOnly:true,authenticated:false,durable:false,
-      targets:world?.shops?.length===2&&world.shops[0]?.id===1?
-        world.shops.filter(shop=>shop.id!==1&&shop.status===1)
-          .map(shop=>({shopId:shop.id,shopName:shop.shopname})):[],
-      readiness:targetAdvertisementReadiness(world,marketOffers),
-    }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values((reviewedTimeMode||careerRequired)&&world?.shops?.[0]?.showcasecount===1?
+    showcaseOffers:Object.values(world?.shops?.[0]?.showcasecount===1?
        streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
@@ -241,13 +195,13 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
+    capabilities:['建立來源世界','原版開店','來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
-      '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價，時間推進待接合',
+      '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
-      '原版自然販售片段／時間（多架／EVENT 待審閱）'],
+      '單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
-    reviewedTimeMode,
+    reviewedTimeMode:true,
     historyCommands:careerProof?.commands.length??null,
     historyCheckpointRevision:careerProof?.checkpoint?.revision??null,
     memoryOnly:!save.available,
@@ -256,7 +210,7 @@ function state(){
     sourcePeriodMetadata:world?.period?{
       state:world.period.state,dtPeople:world.period.dtPeople,
       settledCount:world.period.settledCount,
-      activeEventsKnownEmpty:reviewedTimeMode?world.period.eventState!==null&&Object.keys(world.period.eventState).length===0:world.period.eventState!==null,
+      activeEventsKnownEmpty:world.period.eventState!==null&&Object.keys(world.period.eventState).length===0,
     }:null,
     eventDefinitionStatus:{
       declared:streetModule.reviewedEventCatalog.declaredCount,
@@ -269,7 +223,7 @@ function state(){
 function commit(command){
   if(!repo) return {ok:false,code:'WORLD_NOT_INITIALIZED',
     details:{reason:'請先初始化來源世界'}};
-  if(reviewedTimeMode){
+  {
     const before=repo.read();
     const preview=applyGameCommand({world:before,streetModule,command});
     if(!preview.ok)return preview;
@@ -286,12 +240,6 @@ function commit(command){
     }
     return result;
   }
-  const result=executeMemoryCommand({repository:repo,streetModule,command});
-  if(result.ok){
-    if(requiresReviewedHistory(command))careerRequired=true;
-    careerProof=appendCareerCommand(careerProof,command);
-  }
-  return result;
 }
 async function jsonBody(req){
   let text='';
@@ -311,27 +259,6 @@ function commandNumber(value,key,min=0){
 }
 function ensureRevision(payload){
   return commandNumber(payload.expectedRevision,'expectedRevision');
-}
-function sampleOriginalPlus(world,timespanSeconds){
-  // Reviewed B-37 accepts integer-millionth external rand draws only.
-  // Each of 59 PLUS directives takes 1 or 2 random draws in source order.
-  // Determine the exact consumed prefix with a NON-COMMITTING GameCore probe.
-  const pool=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
-    ?Array(118).fill(0)
-    :sourceCommandDraws({world,kind:'reviewed-sparse-all-plus',
-      args:{timespanSeconds},count:118});
-  for(let n=59;n<=118;n++){
-    const command={kind:'reviewed-sparse-all-plus',
-      expectedRevision:world.revision,timespanSeconds,
-      randomDraws:pool.slice(0,n)};
-    const probe=applyGameCommand({world,command,streetModule});
-    if(probe.ok)return command;
-    if(probe.code==='SOURCE_BOUNDARY_REJECTED' &&
-       /missing original random draw|unused source random samples/.test(
-         probe.details?.reason??''))continue;
-    throw Error('來源供貨拒絕：'+(probe.details?.reason??probe.code));
-  }
-  throw Error('無法配對原版 PLUS 隨機抽樣消耗次序');
 }
 // HTTP NEVER accepts randomDraws from a player. These source-reviewed
 // samples are command/revision-scoped; deterministic E2E cases match the
@@ -374,9 +301,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
-    return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
-      ?Array(needed).fill(500000)
-      :sourceCommandDraws({world,kind:'use-item',
+    return sourceCommandDraws({world,kind:'use-item',
         args:{shopId:1,itemId,useId,requestedCount},count:needed});
   }
   // #14 has no material USE list. The frozen UseItem preflight clips the
@@ -391,49 +316,10 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     Math.floor(shop.money/rule.money),
     Math.floor((world.nowSeconds-shop.time)/time)));
   const batchGaussian=count>=2;
-  const testMode=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1';
-  let draws;
-  if(testMode){
-    const scenario=process.env.AKIMONO_E2E_USE_SCENARIO??'mixed';
-    const ordinary=Array.from({length:5},
-      ()=>[0,0,...Array(8).fill(999999)]).flat();
-    const gaussian=Array(10).fill(0);
-    const cases={
-      mixed:[999999,...(batchGaussian?gaussian:ordinary),999999],
-      'mixed-loss':[999999,...(batchGaussian?gaussian:ordinary),0],
-      'zero-loss':[999999,...(batchGaussian?gaussian:
-        Array(50).fill(999999)),0],
-      doubled:[0,...gaussian,999999],
-      'doubled-loss':[0,...gaussian,0],
-      boundary:[100000,...gaussian,100000],
-    };
-    draws=cases[scenario];
-    if(!draws)throw Error('不支援的來源 E2E 亂數測試情境');
-  }else{
-    draws=sourceCommandDraws({world,kind:'use-item',
-      args:{shopId:1,itemId,useId,requestedCount},count:52});
-  }
+  const draws=sourceCommandDraws({world,kind:'use-item',
+    args:{shopId:1,itemId,useId,requestedCount},count:52});
   // One funcb, then five MakeAmount calls, then one lostbook.
   return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
-}
-function sampleSourceTime(world,minutes){
-  // One source stream: natural sales, ITEM FUNCTURN/FUNCSALE, then 59 PLUS.
-  // The no-stock #70 callback consumes rand(1) at a 1-minute interval.
-  const pool=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
-    ?[500000,...Array(120).fill(0)]
-    :sourceCommandDraws({world,kind:'advance-source-time',
-      args:{shopId:1,minutes},count:121});
-  for(let n=59;n<=121;n++){
-    const command={kind:'advance-source-time',expectedRevision:world.revision,
-      shopId:1,minutes,randomDraws:pool.slice(0,n)};
-    const probe=applyGameCommand({world,command,streetModule});
-    if(probe.ok)return command;
-    if(probe.code==='SOURCE_BOUNDARY_REJECTED' &&
-       /missing natural\/PLUS source draw|missing original random draw|unused source random samples/.test(
-         probe.details?.reason??''))continue;
-    throw Error('原版時間片遭拒絕：'+(probe.details?.reason??probe.code));
-  }
-  throw Error('原版自然販售與供貨共用亂數串流未能完整配對');
 }
 async function api(req,res,url){
   if(req.method==='GET'&&url.pathname==='/api/state'){
@@ -443,19 +329,6 @@ async function api(req,res,url){
   if(req.headers.origin && req.headers.origin!==`http://127.0.0.1:${server.address().port}`)
     return send(res,403,{ok:false,error:'僅允許相同來源的本機請求'});
   const body=await jsonBody(req);
-  // Opening a second shop is an isolated memory audit, not permission to
-  // run arbitrary single-shop player commands against a two-shop world.
-  const inTwoShopAudit=targetAdvertisementMemoryAudit&&
-    repo?.read().shops.length===2;
-  const reviewedTargetUse=inTwoShopAudit&&
-    url.pathname==='/api/use'&&body.itemId===62&&body.useId===1&&
-    Object.hasOwn(body,'targetShopId');
-  if(inTwoShopAudit&&!reviewedTargetUse&&
-     ['/api/use','/api/buy','/api/supply','/api/discard',
-       '/api/showcase','/api/advance-time'].includes(url.pathname))
-    return send(res,409,{ok:false,code:'UNREVIEWED_TWO_SHOP_ACTION',
-      error:'雙店驗證只允許原版 #62/1，共用單店玩法不得在多店中執行',
-      state:state()});
   let result;
   switch(url.pathname){
     case '/api/reset': {
@@ -481,7 +354,7 @@ async function api(req,res,url){
           error:'世界或存檔已更新，請重新確認後再重置',state:state()});
       const cleared=saveStore.clear({expectedGeneration});
       // Only discard live memory AFTER both disk slots are successfully cleared.
-      repo=null;careerProof=null;careerRequired=false;liveGeneration=0;
+      repo=null;careerProof=null;liveGeneration=0;
       return send(res,200,{ok:true,code:'RESET',
         details:{action:'reset-local-test-world',
           deletedSlots:cleared.deletedSlots,generation:cleared.generation},
@@ -494,8 +367,7 @@ async function api(req,res,url){
       repo=createSourceReviewedMemoryWorldAdapter({
         initialWorld:saved.world,streetModule,
       });
-      careerRequired=reviewedTimeMode||Boolean(saved.careerProof);
-      careerProof=saved.careerProof??beginCareerProof(saved.world,'legacy');
+      careerProof=saved.careerProof;
       liveGeneration=saved.generation;
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
@@ -517,17 +389,8 @@ async function api(req,res,url){
         return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
       const expectedGeneration=commandNumber(body.expectedGeneration,
         'expectedGeneration');
-      if(careerRequired&&!careerProof)
-        return send(res,409,{ok:false,code:'CAREER_HISTORY_UNREVIEWED',
-          error:'需要來源歷史的操作超出已審閱保存範圍，保留上一有效存檔',state:state()});
-      const saved=saveStore.save(world,{expectedGeneration,
-        ...((reviewedTimeMode||careerRequired)?{careerProof}:{})});
+      const saved=saveStore.save(world,{expectedGeneration,careerProof});
       liveGeneration=saved.generation;
-      // Ordinary checkpoints remain backwards compatible. If a previously
-      // untracked action was accepted by legacy B-43, begin at that checked
-      // checkpoint rather than inventing a missing command history.
-      if(!reviewedTimeMode&&!careerRequired&&careerProof?.anchorKind!=='fresh')
-        careerProof=beginCareerProof(world,'legacy');
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
           revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
@@ -550,8 +413,8 @@ async function api(req,res,url){
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
-      repo=staged;careerRequired=reviewedTimeMode;
-      careerProof=reviewedTimeMode?beginReviewedWorldHistory(applied.world):beginCareerProof(applied.world,'fresh');
+      repo=staged;
+      careerProof=beginReviewedWorldHistory(applied.world);
       result=applied;
       break;
     }
@@ -566,141 +429,12 @@ async function api(req,res,url){
         shopId:1,ownerName,shopName});
       break;
     }
-    case '/api/r2/advertisement-package-market-preflight': {
-      // Read-only original #62 market-buy proposal. Both the shelf and the
-      // exact wholesale quote come from this server's source WorldState,
-      // never from the HTTP caller. No CAS, stock, money, or time mutation.
-      if(!targetAdvertisementMemoryAudit)
-        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
-          error:'原版廣告包市場稽核未啟用',state:state()});
-      if(Object.keys(body).sort().join(',')!=='expectedRevision')
-        throw Error('廣告包購買稽核只接受 expectedRevision；價格、架位、金錢與商品皆由來源世界決定');
-      const expectedRevision=ensureRevision(body);
-      if(!repo)return send(res,409,{ok:false,code:'WORLD_NOT_INITIALIZED',
-        error:'沒有來源世界',state:state()});
-      const world=repo.read();
-      if(expectedRevision!==world.revision)
-        return send(res,409,{ok:false,code:'REVISION_CONFLICT',
-          error:'REVISION_CONFLICT',state:state()});
-      if(world.shops.length!==1||world.shops[0]?.id!==1)
-        return send(res,409,{ok:false,code:'R2_PREFLIGHT_REQUIRES_ONE_SHOP',
-          error:'原版市場買入只允許來源單店世界',state:state()});
-      const offer=world.market?streetModule.quoteMarketOffer(world,62):null;
-      // An on-shelf quote can still be unbuyable under the original EVENT
-      // gate. Project anyway, so the shared core reports that precise gate.
-      const available=Number.isSafeInteger(offer?.marketStock)&&
-        offer.marketStock>0&&
-        Number.isSafeInteger(offer?.price)&&offer.price>0&&
-        Number.isSafeInteger(offer?.shelf)&&offer.shelf>=0;
-      const projected=available?applyGameCommand({world,streetModule,
-        command:{kind:'market-buy',expectedRevision,shopId:1,
-          itemId:62,requestedCount:1,marketShelf:offer.shelf,
-          expectedPrice:offer.price}}):null;
-      return send(res,200,{ok:true,code:'R2_MARKET_PREFLIGHT_CHECKED',
-        details:{
-          action:'r2-advertisement-package-source-market-preflight',
-          sourceRevision:expectedRevision,itemId:62,
-          memoryOnly:true,authenticated:false,committed:false,
-          persisted:false,authoritativeBuyApproval:false,
-          sourceOfferAvailable:available,
-          sourceAdvertisedCanBuy:offer?.canBuy===true,
-          sourceQuote:available?{
-            unitPrice:offer.price,marketShelf:offer.shelf,
-            marketStock:offer.marketStock,
-          }:null,
-          sourceProjectionSucceeded:projected?.ok??false,
-          sourceProjectionCode:projected?.code??
-            'SOURCE_MARKET_OFFER_UNAVAILABLE',
-          sourceRejectionReason:projected?
-            (projected.ok?null:
-              (projected.details?.reason??projected.code)):
-            'source ITEM #62 wholesale offer is not currently available',
-          ...(projected?.ok?{
-            projectedPackageStock:projected.world.shops[0].item[61],
-            projectedMoney:projected.world.shops[0].money,
-          }:{}),
-        },
-        state:state()});
-    }
-    case '/api/r2/target-advertisement-preflight': {
-      // Non-committing, opt-in R2 diagnostic. Execute the same GameCore
-      // source transaction projector without publishing its proposed world.
-      // Not auth, an inventory grant, or a player USE authorization.
-      if(!targetAdvertisementMemoryAudit)
-        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
-          error:'原版跨店廣告稽核未啟用',state:state()});
-      if(Object.keys(body).sort().join(',')!==
-           'expectedRevision,targetShopId')
-        throw Error('稽核只接受 expectedRevision、targetShopId；不得提供亂數、角色、資金或回呼');
-      const expectedRevision=ensureRevision(body);
-      const targetShopId=commandNumber(body.targetShopId,'targetShopId',1);
-      if(!repo)return send(res,409,{ok:false,code:'WORLD_NOT_INITIALIZED',
-        error:'沒有來源世界',state:state()});
-      const world=repo.read();
-      if(expectedRevision!==world.revision)
-        return send(res,409,{ok:false,code:'REVISION_CONFLICT',
-          error:'REVISION_CONFLICT',state:state()});
-      if(world.shops.length!==2||world.shops[0]?.id!==1||
-         !world.shops.some(shop=>shop.id===targetShopId&&
-           shop.status===1&&shop.id!==1))
-        return send(res,409,{ok:false,code:'INVALID_SOURCE_TARGET',
-          error:'目標必須是來源世界中的另一間有效店舖',state:state()});
-      const projected=applyGameCommand({world,streetModule,
-        command:{kind:'use-item',expectedRevision,shopId:1,
-          itemId:62,useId:1,requestedCount:1,targetShopId}});
-      return send(res,200,{ok:true,code:'R2_PREFLIGHT_CHECKED',
-        details:{
-          action:'r2-target-advertisement-source-preflight',
-          targetShopId,sourceRevision:expectedRevision,
-          memoryOnly:true,authenticated:false,committed:false,
-          persisted:false,authoritativeUseApproval:false,
-          sourceProjectionSucceeded:projected.ok,
-          sourceProjectionCode:projected.code,
-          sourceRejectionReason:projected.ok?null:
-            (projected.details?.reason??projected.code),
-          ...(projected.ok?{
-            projectedTargetRank:projected.world.shops.find(
-              shop=>shop.id===targetShopId)?.rank??null,
-          }:{}),
-        },
-        state:state()});
-    }
-    case '/api/r2/open-target-shop': {
-      // Auditing only: source open-shop for a second shop, not a second
-      // authenticated player. Disable by default; no injected inventory.
-      if(!targetAdvertisementMemoryAudit)
-        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
-          error:'雙店驗證模式未啟用',state:state()});
-      if(Object.keys(body).sort().join(',')!==
-         'expectedRevision,ownerName,shopName')
-        throw Error('雙店驗證只接受 expectedRevision、ownerName、shopName');
-      if(typeof body.ownerName!=='string'||
-         typeof body.shopName!=='string')
-        throw Error('第二間店的店主與店名必須是文字');
-      if(!repo||repo.read().shops.length!==1||
-         repo.read().shops[0]?.id!==1)
-        return send(res,409,{ok:false,code:'R2_AUDIT_REQUIRES_ONE_SHOP',
-          error:'只可在單店來源世界中開啟驗證目標店',state:state()});
-      result=commit({kind:'open-shop',
-        expectedRevision:ensureRevision(body),shopId:2,
-        ownerName:body.ownerName,shopName:body.shopName});
-      break;
-    }
-    case '/api/supply': {
-      if(reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time requires complete turn, not PLUS-only supply',state:state()});
-      if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
-      const revision=ensureRevision(body),timespanSeconds=
-        commandNumber(body.timespanSeconds,'timespanSeconds',1);
-      if(![60,600,3600].includes(timespanSeconds))
-        throw Error('供貨子步驟只支援來源驗證的 60／600／3600 秒');
-      const before=repo.read();
-      if(before.revision!==revision)
-        return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
-      if(before.shops.length!==1)throw Error('先開店，再執行來源供貨');
-      const command=sampleOriginalPlus(before,timespanSeconds);
-      result=commit(command);
-      break;
-    }
+    case '/api/r2/advertisement-package-market-preflight':
+    case '/api/r2/target-advertisement-preflight':
+    case '/api/r2/open-target-shop':
+      return send(res,403,{ok:false,error:'僅歷史測試稽核支援多店，不是正式玩家指令',state:state()});
+    case '/api/supply':
+      return send(res,409,{ok:false,error:'只支援完整世界時間推進，不允許單獨供貨',state:state()});
     case '/api/buy': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const fields=['expectedRevision','itemId','requestedCount',
@@ -720,13 +454,8 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      const targeted=Object.hasOwn(body,'targetShopId');
-      if(targeted&&(!targetAdvertisementMemoryAudit||
-           body.itemId!==62||body.useId!==1))
-        return send(res,403,{ok:false,code:'UNREVIEWED_HTTP_TARGET',
-          error:'僅記憶體驗證模式可指定原版 #62/1 目標店',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount',
-        ...(targeted?['targetShopId']:[])];
+      if(Object.hasOwn(body,'targetShopId'))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount'];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -734,24 +463,13 @@ async function api(req,res,url){
       const itemId=commandNumber(body.itemId,'itemId',1);
       const useId=commandNumber(body.useId,'useId');
       const requestedCount=commandNumber(body.requestedCount,'requestedCount',1);
-      const targetShopId=targeted?commandNumber(body.targetShopId,'targetShopId',1):null;
       const world=repo.read();
       if(world.revision!==expectedRevision)
         return send(res,409,{ok:false,code:'REVISION_CONFLICT',
           error:'REVISION_CONFLICT',state:state()});
-      if(targeted){
-        // Browser never chooses the acting shop. Resolve canonical target ID
-        // from this authoritative world; GameCore rechecks it within CAS.
-        if(world.shops.length!==2||world.shops[0]?.id!==1||
-           !world.shops.some(shop=>shop.id===targetShopId&&
-             shop.status===1&&shop.id!==1))
-          return send(res,409,{ok:false,code:'INVALID_SOURCE_TARGET',
-            error:'目標不在已開設的第二間來源店舖中',state:state()});
-      }
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
-        ...(targeted?{targetShopId}:{}),
         ...(randomDraws.length?{randomDraws}:{})});
       break;
     }
@@ -769,7 +487,7 @@ async function api(req,res,url){
     case '/api/showcase': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
-      const p3Shelf=(reviewedTimeMode||careerRequired)&&repo.read().shops[0]?.showcasecount===1;
+      const p3Shelf=repo.read().shops[0]?.showcasecount===1;
       const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
         streetModule.reviewedB41?.saleRules?.[itemId])??null;
       if(itemId!==0&&!sourceRule)
@@ -799,24 +517,12 @@ async function api(req,res,url){
       break;
     }
     case '/api/advance-reviewed-time': {
-      if(!reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time mode is disabled',state:state()});
       if(!exactKeys(body,'expectedRevision,minutes'))throw Error('reviewed time accepts only expectedRevision and minutes');
       result=commit({kind:'advance-reviewed-world-time',expectedRevision:ensureRevision(body),minutes:commandNumber(body.minutes,'minutes',1)});
       break;
     }
-    case '/api/advance-time': {
-      if(reviewedTimeMode)return send(res,409,{ok:false,error:'legacy time is disabled in reviewed mode',state:state()});
-      if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
-      const revision=ensureRevision(body);
-      const minutes=commandNumber(body.minutes,'minutes',1);
-      if(minutes>60)throw Error('每次可快轉 1 至 60 分鐘，避免跳過未實作週期');
-      const before=repo.read();
-      if(before.revision!==revision)
-        return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
-      if(before.shops.length!==1)throw Error('請先完成來源開店');
-      result=commit(sampleSourceTime(before,minutes));
-      break;
-    }
+    case '/api/advance-time':
+      return send(res,409,{ok:false,error:'舊時間指令已淘汰，請使用 /api/advance-reviewed-time',state:state()});
     default:return send(res,404,{ok:false,error:'API 不存在'});
   }
   return send(res,result.ok?200:409,{

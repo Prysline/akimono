@@ -9,25 +9,8 @@ import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {validateMemoryWorld,encodeMemorySnapshot,decodeMemorySnapshot,
-  PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
-import {validateOriginalPeriodSeed}
-  from './original-period-world-seed.mjs';
-import {B59_IRON_SOURCE,isReviewedB59EventPeriod}
-  from './original-b59-iron-event-lifecycle.mjs';
-import {B60_HAPPY_SOURCE,isReviewedB60HappyPeriod}
-  from './original-b60-happy-event-nowfunc.mjs';
-import {B61_SWORD_SOURCE,isReviewedB61SwordPeriod}
-  from './original-b61-sword-demand-event.mjs';
-import {validateSourceSparseMarket}
-  from './original-admin-world-bootstrap.mjs';
-import {isSourceShowcaseListedPrice}
-  from './shared-showcase-price.mjs';
-import {proveReviewedMedicineSave}
-  from './reviewed-medicine-save-proof.mjs';
-import {verifyCareerProof}
-  from './reviewed-career-save-replay.mjs';
-
-export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v1';
+  } from './game-core-contract.mjs';
+export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v2';
 const MAX_BYTES=2200000;
 const slotNames=['world-a.json','world-b.json'];
 const fail=message=>{throw new RangeError('B-43 local save: '+message);};
@@ -35,393 +18,14 @@ function safeInt(value,label,min=0){
   if(!Number.isSafeInteger(value)||value<min)fail(label);
   return value;
 }
-function sourceRegistryRule(registry,index){
-  const r=registry?.getRule?.(index+1);
-  return r?.itemId===index+1&&r?.shopIndex===index&&
-    r?.wholesaleIndex===index&&Number.isSafeInteger(r.stockLimit)&&
-    r.stockLimit>0&&Number.isSafeInteger(r.unitPrice)&&r.unitPrice>0?
-    r:null;
-}
-function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
-  const w=validateMemoryWorld(raw);
-  // Local save is a structural checkpoint, not an EVENT compiler. Only
-  // the source-reviewed single active iron EVENT may extend the original
-  // seed envelope; all unknown/multiple/invalid instances still fail.
-  if(w.schema===PERIOD_WORLD_SCHEMA&&
-     !validateOriginalPeriodSeed(w.period)&&
-     !isReviewedB59EventPeriod({
-       period:w.period,nowSeconds:w.nowSeconds,
-       reviewed:{source:B59_IRON_SOURCE},
-     })&&
-     !isReviewedB60HappyPeriod({
-       period:w.period,nowSeconds:w.nowSeconds,
-       reviewed:{source:B60_HAPPY_SOURCE},
-     })&&
-     !isReviewedB61SwordPeriod({
-       period:w.period,nowSeconds:w.nowSeconds,
-       reviewed:{source:B61_SWORD_SOURCE},
-     }))
-    fail('unreviewed or settled v2 city/period source state');
-  if(w.streetId!=='standard-street'||w.events!==null||w.shops.length>1||
-     !validateSourceSparseMarket(w.market))
-    fail('only source-initialized single-shop Standard Street world is loadable');
-  if(w.shops.length){
-    const shop=w.shops[0];
-    // The legacy EXP envelope cannot establish a career assignment.
-    if(shop.job!==undefined&&shop.job!=='')fail('career history required');
-    // R2-E opt-in source-certified gift exchange: original starting grant 5
-    // minus exactly 2 per successful #79 USE. Unreviewed snapshots do NOT
-    // get permissive voucher inventory just by supplying a JSON array.
-    const gift=useItem?.getRule?.(79,0);
-    const reviewedGift=gift?.supported===true&&gift.itemId===79&&
-      gift.useId===0&&gift.money===0&&gift.time===1800&&
-      gift.uses?.length===1&&gift.uses[0].itemId===79&&
-      gift.uses[0].countPerUse===2&&
-      gift.uses[0].probabilityPermille===1000&&
-      gift.creates?.length===3&&
-      gift.creates.map(row=>row.itemId).join(',')==='12,9,14'&&
-      gift.creates.every(row=>row.countPerUse===1&&
-        row.probabilityPermille===1000)&&
-      !gift.beforeCallback&&!gift.afterCallback;
-    const reviewedVariants=[
-      [1,5,[15,16,17]],[2,10,[20,21,22,23]],
-      [3,2,[37]],[4,1,[25]],
-    ].every(([useId,needed,created])=>{
-      const rule=useItem?.getRule?.(79,useId);
-      return rule?.supported===true&&rule.time===1800&&rule.money===0&&
-        rule.itemId===79&&rule.useId===useId&&
-        rule.uses?.length===1&&rule.uses[0].itemId===79&&
-        rule.uses[0].countPerUse===needed&&
-        rule.uses[0].probabilityPermille===1000&&
-        rule.creates?.map(x=>x.itemId).join(',')===created.join(',')&&
-        rule.creates.every(x=>x.countPerUse===1&&
-          x.probabilityPermille===1000)&&
-        !rule.beforeCallback&&!rule.afterCallback;
-    });
-    // Each source-certified voucher exchange consumes 1/2/5/10 vouchers.
-    // Validate a feasible combination of source recipes, not a one-use
-    // fixture. Proven outputs are non-consumable in the current bounded
-    // playable scope, except #14 map (lostbook), so map proof uses #9/#12.
-    // R2 source-certified reachable training chain:
-    // fresh grant #79/3 (2 vouchers) -> one #37 kit -> #37/1 consumes
-    // exactly one kit and 30 market-bought #8 stones, creates #19 knowledge,
-    // and grants 50 EXP. Do not authorize arbitrary output/EXP inventories.
-    const magicTraining=useItem?.getRule?.(37,1);
-    const reviewedMagicTraining=magicTraining?.supported===true&&
-      magicTraining.source==='original-declarative-use-dsl'&&
-      magicTraining.itemId===37&&magicTraining.useId===1&&
-      magicTraining.time===21600&&magicTraining.money===0&&
-      magicTraining.needExperience===0&&
-      magicTraining.experienceCallback?.points===50&&
-      magicTraining.uses?.length===2&&
-      magicTraining.uses[0].itemId===37&&
-      magicTraining.uses[0].countPerUse===1&&
-      magicTraining.uses[0].probabilityPermille===1000&&
-      magicTraining.uses[1].itemId===8&&
-      magicTraining.uses[1].countPerUse===30&&
-      magicTraining.uses[1].probabilityPermille===1000&&
-      magicTraining.creates?.length===1&&
-      magicTraining.creates[0].itemId===19&&
-      magicTraining.creates[0].countPerUse===1&&
-      magicTraining.creates[0].probabilityPermille===1000&&
-      !magicTraining.beforeCallback&&!magicTraining.afterCallback;
-    // R2 seven source gathering USEs: retain a bounded voucher-map route.
-    // This validates reachability envelopes, NOT an arbitrary inventory seed.
-    // Materials #1-#7 have negative source PLUS and cannot be supplied from
-    // zero by simply invoking the market's PLUS substep.
-    const gatherExp9=shop.exp?.['9']??0;
-    const gatherExp12=shop.exp?.['12']??0;
-    const gatherCount9=Number.isSafeInteger(gatherExp9)&&gatherExp9>=0&&
-      gatherExp9<=1000&&gatherExp9%20===0?gatherExp9/20:-1;
-    const gatherCount12=Number.isSafeInteger(gatherExp12)&&gatherExp12>=0&&
-      gatherExp12<=1000&&gatherExp12%20===0?gatherExp12/20:-1;
-    const gatheringRulesReviewed=[
-      [9,3,[5,6,7]],[12,4,[1,2,3,4]],
-    ].every(([id,n,outputs])=>Array.from({length:n},(_,useId)=>{
-      const rule=useItem?.getRule?.(id,useId);
-      return rule?.supported===true&&rule.itemId===id&&
-        rule.useId===useId&&rule.source==='original-gather-lostbook-use-dsl'&&
-        rule.time===3600&&rule.exptime===900&&rule.money===0&&
-        rule.requiresOwnedItem===true&&rule.ownedMaximum===3&&
-        rule.afterCallback?.kind==='lostbook'&&
-        rule.afterCallback.threshold===10&&
-        rule.afterCallback.consumedCount===1&&
-        rule.experienceCallback?.points===20&&
-        rule.creates.map(x=>x.itemId).join(',')===outputs.join(',');
-    }).every(Boolean));
-    const gatheringRuns=(gatherCount9>=0&&gatherCount12>=0)?
-      gatherCount9+gatherCount12:-1;
-    const gatheringMaterialUpperBounds=[
-      80*gatherCount12,40*gatherCount12,40*gatherCount12,40*gatherCount12,
-      30*gatherCount9,20*gatherCount9,10*gatherCount9,
-    ];
-    const gatheringProof=gatheringRuns===0||Boolean(
-      gatheringRuns>0&&gatheringRulesReviewed&&
-      // Only a gift-map exchange is proven here. Market-purchased maps
-      // require separate provenance review, not automatic authorization.
-      (shop.item?.[78]??5)<=3&&
-      (shop.item?.[13]??0)+(shop.exp?.['14']??0)/20>=1&&
-      gatheringMaterialUpperBounds.every((cap,i)=>
-        Number.isSafeInteger(shop.item?.[i])&&
-        shop.item[i]>=0&&shop.item[i]<=cap)
-    );
-    // R2 medicine/leather/wood recipes retain narrow source-based stock bounds.
-    // Advanced #15 callbacks and variable ingredients are separately pinned
-    // in proveReviewedMedicineSave; other recipes are not auto-authorized.
-    const manufacturedSpecs=[
-      {itemId:15,useIds:[0,2],outputs:[[30,20],[32,20]]},
-      {itemId:16,useIds:[0,1],outputs:[[45,30],[51,32]]},
-      {itemId:17,useIds:[0,1,2,3],
-        outputs:[[40,20],[57,20],[46,20],[52,24]]},
-    ];
-    const manufacturedCounts={};
-    const manufacturedRuleProof=manufacturedSpecs.every(spec=>{
-      const raw=shop.exp?.[String(spec.itemId)]??0;
-      const runs=Number.isSafeInteger(raw)&&raw>=0&&raw<=1000&&
-        raw%20===0?raw/20:-1;
-      manufacturedCounts[spec.itemId]=runs;
-      // Older B-43 worlds with zero manufactured EXP must remain loadable
-      // even without the opt-in USE registry; only executed recipes need it.
-      return runs===0||(runs>0&&spec.useIds.every(id=>{
-        const rule=useItem?.getRule?.(spec.itemId,id);
-        return rule?.supported===true&&
-          rule?.source==='original-declarative-use-dsl'&&
-          rule.itemId===spec.itemId&&rule.useId===id&&
-          rule.experienceCallback?.points===20&&
-          !rule.beforeCallback&&!rule.afterCallback&&
-          rule.money===0&&
-          rule.uses.length>=1&&rule.creates.length===1&&
-          spec.outputs.some(([output,count])=>
-            rule.creates[0].itemId===output&&
-            rule.creates[0].countPerUse===count);
-      }));
-    });
-    const manufactured15=manufacturedCounts[15];
-    const manufactured16=manufacturedCounts[16];
-    const manufactured17=manufacturedCounts[17];
-    const medicineProof=proveReviewedMedicineSave({shop,useItem,gatherCount12});
-    // Gathered #1..#4 have source negative PLUS (no market minting from
-    // zero). #15 consumes different ingredients in each USE, including
-    // previously manufactured products; its bound is checked separately.
-    const manufacturedInputProof=
-      manufactured15>=0&&manufactured16>=0&&manufactured17>=0&&
-      medicineProof.valid&&
-      shop.item[1]+24*manufactured16<=40*gatherCount12&&
-      shop.item[2]+shop.item[3]+10*manufactured17<=80*gatherCount12;
-    // For products with no legal fresh-market PLUS, a recipe's entire
-    // surviving output requires at least one matching successful USE.
-    // Rounded-up surviving stock / maximum GET is minimum required USEs.
-    const minimumRuns=(rows)=>rows.reduce((sum,[id,max])=>
-      sum+Math.ceil(shop.item[id-1]/max),0);
-    const manufacturedOutputProof=
-      minimumRuns([[45,30],[51,32]])<=manufactured16&&
-      minimumRuns([[57,20],[46,20],[52,24]])<=manufactured17;
-    const manufacturedProof=manufacturedRuleProof&&manufacturedInputProof&&
-      manufacturedOutputProof&&
-      manufacturedSpecs.every(spec=>
-        manufacturedCounts[spec.itemId]===0||
-        (shop.item[spec.itemId-1]>0||
-           (spec.itemId===15&&medicineProof.lostBookPossible)));
-    // Bounded gift-cow source: initial #79/4 exchange, #25 milk EXP
-    // increments by 10 per effective use. The callback's maximum yield
-    // is level*effectiveCount*cows, level<=2. This only bounds a reachable
-    // state envelope; it is NOT a full transactional provenance journal.
-    // Cow death, market-bought cows, and yogurt/cheese persistence are not
-    // certified by this deliberately narrow path.
-    const dairyExp25=shop.exp?.['25']??0;
-    const dairyRuns=Number.isSafeInteger(dairyExp25)&&
-      dairyExp25>=0&&dairyExp25<=1000&&dairyExp25%10===0?
-        dairyExp25/10:-1;
-    const dairyGifts=5-(shop.item?.[78]??5);
-    const dairyRulesReviewed=[0,1].every(useId=>{
-      const rule=useItem?.getRule?.(25,useId);
-      return rule?.supported===true&&rule.itemId===25&&
-        rule.useId===useId&&
-        rule.source==='original-reviewed-dairy-inline-use'&&
-        rule.inlineCallback?.kind==='milk-cow'&&
-        rule.inlineCallback?.level===useId+1&&
-        rule.requiresOwnedItem===true&&rule.ownedMaximum===20&&
-        rule.money===0&&rule.time===3600&&rule.exptime===3600&&
-        rule.experienceCallback?.points===10&&
-        rule.creates?.length===0&&rule.uses?.length===1&&
-        rule.uses[0].itemId===25&&
-        rule.uses[0].countPerUse===1&&
-        rule.uses[0].probabilityPermille===0;
-    });
-    const dairyProof=dairyRuns===0?
-      (shop.item[25]??0)===0:
-      Boolean(dairyRuns>0&&dairyRulesReviewed&&
-        dairyGifts>=1&&dairyGifts<=5&&
-        Number.isSafeInteger(shop.item[24])&&
-        shop.item[24]>=1&&shop.item[24]<=dairyGifts&&
-        Number.isSafeInteger(shop.item[25])&&
-        shop.item[25]>=0&&
-        shop.item[25]<=Math.min(2500,dairyRuns*2*dairyGifts));
-    const knowledge=shop.item?.[18]??0;
-    const trainedMagic=reviewedMagicTraining&&knowledge===1&&
-      shop.item[36]===0&&shop.exp?.['37']===50;
-    // Only one consumed gift kit is certified. Further training, direct
-    // market-acquired kits, or other #37 USEs need their own source proof.
-    const magicProof=(knowledge===0&&shop.exp?.['37']===undefined)||
-      trainedMagic;
-    const vouchers=shop.item?.[78];
-    const totalSpent=5-vouchers;
-    const recipeProof=[
-      {cost:2,created:[9,12]},
-      {cost:5,created:[15,16,17]},
-      {cost:10,created:[20,21,22,23]},
-      {cost:2,created:[37]},
-      {cost:1,created:[25]},
-    ];
-    function plausibleVoucherConsumption(index,spent){
-      if(index===recipeProof.length)return spent===0;
-      const recipe=recipeProof[index];
-      for(let n=0;n<=Math.floor(spent/recipe.cost);n++){
-        const possible=recipe.created.every(itemId=>{
-          const max=itemId===37?1:itemId===9||itemId===12?3:20;
-          const usedMapAllowance=itemId===9?gatherCount9:
-            itemId===12?gatherCount12:0;
-          return shop.item[itemId-1]+
-            (itemId===37&&trainedMagic?1:0)+
-            Math.max(0,usedMapAllowance)>=Math.min(n,max);
-        });
-        if(possible&&plausibleVoucherConsumption(index+1,
-           spent-n*recipe.cost))return true;
-      }
-      return false;
-    }
-    const giftInventoryValid=Number.isSafeInteger(vouchers)&&
-      vouchers>=0&&vouchers<=5&&
-      (!trainedMagic||vouchers<=3)&&
-      (vouchers===5||Boolean(reviewedGift&&
-        (reviewedVariants?
-          plausibleVoucherConsumption(0,totalSpent):
-          totalSpent%2===0&&totalSpent>=2&&totalSpent<=4&&
-          shop.item[8]>=totalSpent/2&&shop.item[11]>=totalSpent/2)));
-    const mapRule=useItem?.getRule?.(14,0);
-    const repeatableMap=mapRule?.supported===true&&
-      mapRule.itemId===14&&mapRule.useId===0&&
-      mapRule.money===12000&&mapRule.time===7200&&
-      mapRule.exptime===3600&&mapRule.experienceCallback?.points===20&&
-      mapRule.afterCallback?.kind==='lostbook'&&
-      mapRule.beforeCallback?.kind==='double-create'&&
-      !mapRule.firstUseOnly;
-    const expRecord=shop.exp;
-    const expEntries=expRecord&&typeof expRecord==='object'&&
-      !Array.isArray(expRecord)?Object.entries(expRecord):null;
-    const expShapeValid=expRecord===undefined||Boolean(expEntries&&
-      expEntries.every(([id,value])=>
-        /^[1-9]\d*$/.test(id)&&Number(id)<=79&&
-        Number.isSafeInteger(value)&&value>=0&&value<=1000));
-    const expTotal=expEntries?.reduce((sum,[,value])=>sum+value,0)??0;
-    const sourceExpValid=expShapeValid&&expTotal<=3600&&magicProof&&
-      gatheringProof&&manufacturedProof&&dairyProof&&
-      (expRecord===undefined||
-        (repeatableMap?
-          expEntries.every(([id,value])=>
-            id==='14'?value%20===0:
-              id==='37'?trainedMagic&&value===50:
-                id==='25'?value%10===0&&value>0:
-                (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
-                  value%20===0&&value>0):
-          expEntries.every(([id,value])=>
-            id==='14'?value===20:
-              id==='37'?trainedMagic&&value===50:
-                id==='25'?value%10===0&&value>0:
-                (id==='9'||id==='12'||id==='15'||id==='16'||id==='17')&&
-                  value%20===0&&value>0)));
-    // B-43 default remains unchanged. Only a supplied SOURCE-COMPILED
-    // Registry may authorize additional item inventories and showcases.
-    // Never accept arbitrary 79-slot extra stock merely because it is JSON.
-    const extraStockValid=(index,count)=>{
-      const r=sourceRegistryRule(marketBuyRegistry,index);
-      return r!==null&&count<=r.stockLimit;
-    };
-    const extraShowcaseValid=()=>{
-      const id=shop.showcase?.[0];
-      const r=Number.isSafeInteger(id)&&id>0?
-        sourceRegistryRule(marketBuyRegistry,id-1):null;
-      return r!==null&&shop.item[id-1]>0&&
-        isSourceShowcaseListedPrice(r.unitPrice,shop.price?.[0]);
-    };
-    if(shop.id!==1||shop.status!==1||
-       !Array.isArray(shop.item)||shop.item.length!==79||
-       shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
-       ![0,1].includes(shop.item[62])||!giftInventoryValid||
-       shop.item.some((n,i)=>!
-         [9,10,13,18,39,40,41,42,43,62,78].includes(i)&&
-         n!==0&&!(i===25&&dairyProof)&&!extraStockValid(i,n))||
-       shop.item[13]>3||shop.item[39]>600||
-       [500,300,100,75].some((limit,i)=>shop.item[40+i]>limit)||
-       !sourceExpValid||
-       shop.item[10]>50||
-       !Number.isSafeInteger(shop.showcasecount)||
-       shop.showcasecount<1||shop.showcasecount>8||
-       !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
-       shop.showcase.length!==shop.showcasecount||
-       shop.price.length!==shop.showcasecount||
-       (shop.showcasecount>1&&
-         (shop.item[62]!==0||shop.paytoday<shop.showcasecount*10000))||
-       shop.showcase.some((id,shelf)=>{
-         if(!Number.isSafeInteger(id)||id<0||id>79)return true;
-         if(id===0)return shop.price[shelf]!==0;
-         if(!Number.isSafeInteger(shop.price[shelf])||shop.price[shelf]<0||
-           !Number.isSafeInteger(shop.item[id-1])||shop.item[id-1]<0)
-           return true;
-         const reviewed={10:5000,40:1200,41:1500,42:3200,
-           43:8000,44:12000};
-         const entry=reviewed[id];
-         if(entry!==undefined)
-           return !isSourceShowcaseListedPrice(entry,shop.price[shelf]);
-         const r=sourceRegistryRule(marketBuyRegistry,id-1);
-         return r===null||
-           !isSourceShowcaseListedPrice(r.unitPrice,shop.price[shelf]);
-       })||
-       !Number.isSafeInteger(shop.money)||shop.money<0||
-       !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||
-       !Number.isSafeInteger(shop.saletoday)||shop.saletoday<0||
-       !Number.isFinite(shop.costtoday)||shop.costtoday<0||
-       !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000||
-       !Number.isSafeInteger(shop.time)||!Number.isSafeInteger(shop.item[9])||
-       shop.item[9]>20||
-       !['itemtoday','itemyesterday'].every(field=>{
-         const m=shop[field];
-         return m!==null&&typeof m==='object'&&!Array.isArray(m)&&
-           Object.keys(m).every(k=>['10','40','41','42','43','44'].includes(k)&&
-             Number.isSafeInteger(m[k])&&m[k]>=0);
-       }))
-      fail('saved shop is outside reviewed source #10/#40-44 world');
-  }
-  return w;
-}
 const digest=text=>createHash('sha256').update(text,'utf8').digest('hex');
 const recordDigest=(world,proof)=>digest(proof===null?world:JSON.stringify([world,proof]));
-function verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,proof,historyReplay=null,generation=null){
-  if(proof===null){
-    if(historyReplay?.requireProof===true)fail('source command history required in reviewed time mode');
-    return reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
-  }
-  if(historyReplay!==null){
-    const world=validateMemoryWorld(raw);
-    const verified=historyReplay.verify({world,proof,generation});
-    if(encodeMemorySnapshot(verified)!==encodeMemorySnapshot(world))fail('source history returned a different world');
-    return world;
-  }
-  if(!careerReplay)fail('career replay source unavailable');
+function verifiedCheckpoint(raw,historyReplay,proof,generation){
+  if(!proof||!['fresh','checkpoint'].includes(proof.anchorKind))fail('新版存檔必須有完整來源歷史；舊開發存檔不支援遷移');
   const world=validateMemoryWorld(raw);
-  return verifyCareerProof({world,proof,...careerReplay,
-    validateLegacyAnchor:anchor=>reviewedPlayableWorld(anchor,marketBuyRegistry,useItem)});
-}
-function careerLineageCompatible(older,newer){
-  if(!older.proof&&!newer.proof)return true;
-  if(older.world.worldId!==newer.world.worldId||
-     older.world.revision>newer.world.revision||!newer.proof)return false;
-  if(older.proof)return newer.proof.anchor===older.proof.anchor&&
-    newer.proof.anchorKind===older.proof.anchorKind&&
-    JSON.stringify(newer.proof.commands.slice(0,older.proof.commands.length))===
-      JSON.stringify(older.proof.commands);
-  return newer.proof.anchorKind!=='legacy'||
-    newer.proof.anchor===encodeMemorySnapshot(older.world);
+  const verified=historyReplay.verify({world,proof,generation});
+  if(encodeMemorySnapshot(verified)!==encodeMemorySnapshot(world))fail('source history returned a different world');
+  return world;
 }
 function sourceFile(dir,name){
   return path.join(dir,name);
@@ -432,7 +36,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay){
+function readSlot(dir,slot,historyReplay){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -447,7 +51,7 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay)
     const hasProof=record!==null&&typeof record==='object'&&
       Object.hasOwn(record,'careerProof');
     const hasAuth=hasProof&&Object.hasOwn(record,'checkpointAuth');
-    if(record===null||typeof record!=='object'||Array.isArray(record)||
+    if(!hasProof||record===null||typeof record!=='object'||Array.isArray(record)||
        Object.keys(record).sort().join(',')!==
          (hasProof?(hasAuth?'careerProof,checkpointAuth,format,generation,sha256,world':'careerProof,format,generation,sha256,world'):'format,generation,sha256,world')||
        record.format!==LOCAL_SAVE_FORMAT||
@@ -457,7 +61,7 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay)
        typeof record.world!=='string'||record.world.length>2000000)
       fail('invalid save record schema or generation');
     const proofText=hasProof?record.careerProof:null;
-    if(hasProof&&(typeof proofText!=='string'||(historyReplay?Buffer.byteLength(proofText,'utf8'):proofText.length)>MAX_REVIEWED_HISTORY_WIRE_BYTES))
+    if(hasProof&&(typeof proofText!=='string'||Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES))
       fail('invalid career proof wire');
     if(recordDigest(record.world,proofText)!==record.sha256)
       fail('save content hash mismatch');
@@ -470,7 +74,7 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay)
       historyReplay.checkpointStore.verifyRecord(record);
     }
     const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
-      marketBuyRegistry,useItem,careerReplay,proof,historyReplay,record.generation);
+      historyReplay,proof,record.generation);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
@@ -482,11 +86,10 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay)
     if(fd!==undefined)fs.closeSync(fd);
   }
 }
-export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
-  useItem=null,careerReplay=null,historyReplay=null}){
+export function createLocalWorldSaveStore({directory,historyReplay}){
   if(typeof directory!=='string'||!directory.trim())fail('save directory');
-  if(historyReplay!==null&&(typeof historyReplay.verify!=='function'||typeof historyReplay.requireProof!=='boolean'||careerReplay!==null))fail('source history verifier contract');
-  const compatible=(older,newer)=>historyReplay?reviewedHistoryLineageCompatible(older,newer,historyReplay.checkpointStore):careerLineageCompatible(older,newer);
+  if(typeof historyReplay?.verify!=='function'||!historyReplay.checkpointStore)fail('source history verifier and checkpoint store required');
+  const compatible=(older,newer)=>reviewedHistoryLineageCompatible(older,newer,historyReplay.checkpointStore);
   const dir=path.resolve(directory);
   function scan(){
     if(fs.existsSync(dir)){
@@ -494,8 +97,8 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0,marketBuyRegistry,useItem,careerReplay,historyReplay),
-      readSlot(dir,1,marketBuyRegistry,useItem,careerReplay,historyReplay)];
+    const rows=[readSlot(dir,0,historyReplay),
+      readSlot(dir,1,historyReplay)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
@@ -529,9 +132,10 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
   }
   function prepareRecord(world,{generation,careerProof=null}){
     safeInt(generation,'next save generation',1);
+    if(!careerProof||!['fresh','checkpoint'].includes(careerProof.anchorKind))fail('新版存檔必須有完整來源歷史');
     const encoded=encodeMemorySnapshot(world);
     const proofText=careerProof===null?null:JSON.stringify(careerProof);
-    if(proofText!==null&&(historyReplay?Buffer.byteLength(proofText,'utf8'):proofText.length)>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('career history too large');
+    if(proofText!==null&&Buffer.byteLength(proofText,'utf8')>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('career history too large');
     const envelope={format:LOCAL_SAVE_FORMAT,generation,
       sha256:recordDigest(encoded,proofText),world:encoded,
       ...(proofText===null?{}:{careerProof:proofText})};
@@ -551,7 +155,7 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
   }
   function save(raw,{expectedGeneration,careerProof=null}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,careerProof,historyReplay,expectedGeneration+1);
+    const world=verifiedCheckpoint(raw,historyReplay,careerProof,expectedGeneration+1);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
@@ -563,10 +167,6 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       fail('已存在不同世界存檔，禁止用新世界覆寫');
     if(previous&&previous.world.revision>world.revision)
       fail('不能以較舊的 WorldState 覆寫新版存檔');
-    // Do not trust a newly supplied legacy anchor unless it is the latest
-    // checked checkpoint. Subsequent generations must preserve its history.
-    if(careerProof?.anchorKind==='legacy'&&!previous)
-      fail('legacy career history requires an existing validated checkpoint');
     if(previous&&!compatible(previous,{world,proof:careerProof}))
       fail('career history prefix or legacy anchor mismatch');
     const nextGen=safeInt(generation+1,'next save generation',1);

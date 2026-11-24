@@ -20,7 +20,7 @@ export function isReviewedWorldTimeCommand(command){
     Number.isSafeInteger(command.minutes)&&command.minutes>=1&&command.minutes<=60;
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
-const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','reviewed-sparse-all-plus'];
+const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
 export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
@@ -40,13 +40,29 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     }else if(!validateSourceSparseMarket(world.market))fail('reviewed market');
     for(const shop of world.shops){
       if(shop.id!==1||shop.status!==1||![undefined,null,0,'',false].includes(shop.guild))fail('single independent active shop required');
-      validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41);
+      // Ordinary commerce/save scope is not the much narrower normal-turn
+      // projection scope. No unreviewed time passage is granted here.
+      const limits=street.reviewedGiftMapUse.limits;
+      if(!Array.isArray(shop.item)||shop.item.length!==79||
+         shop.item.some((n,i)=>!Number.isSafeInteger(n)||n<0||
+           !Number.isSafeInteger(limits[i]?.limit)||n>limits[i].limit)||
+         !Number.isSafeInteger(shop.showcasecount)||shop.showcasecount<1||shop.showcasecount>8||
+         shop.showcase?.length!==shop.showcasecount||shop.price?.length!==shop.showcasecount||
+         !['','drug','tool','weapon','armor','material','book','peddle','cow'].includes(shop.job??''))
+        fail('ordinary source stock, career or shelf shape');
+      const exp=shop.exp??{};
+      if(typeof exp!=='object'||Array.isArray(exp)||Object.entries(exp).some(([id,n])=>
+        !/^[1-9][0-9]*$/.test(id)||Number(id)>79||
+        !Number.isSafeInteger(n)||n<0||n>1000)||Object.values(exp).reduce((a,b)=>a+b,0)>3600)
+        fail('ordinary source EXP bounds');
     }
     return true;
   }
   function propose(world,command){
     if(!isReviewedWorldTimeCommand(command)||command.expectedRevision!==world.revision)fail('exact reviewed time command and revision');
     validate(world);
+    if(world.shops.length!==1)fail('reviewed time requires one shop');
+    validateP3Inventory(world.shops[0],street.reviewedGiftMapUse,street.reviewedB41);
     const candidate=projectR4NormalTurnCandidate({world,minutes:command.minutes,street,
       reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events});
     if(candidate.source!==R4_NORMAL_TURN_PROJECTION||candidate.committable!==false||
@@ -57,6 +73,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     // Separate reviewed command adapter owns the complete successor and
     // exact CAS recheck. Never pass a partial noncommittable proposal to Core.
     validate({...world,shops,market,period,nowSeconds,revision:world.revision+1});
+    validateP3Inventory(shops[0],street.reviewedGiftMapUse,street.reviewedB41);
     const {preEventReceipt,...trace}=evidence;
     return {shops,market,period,nowSeconds,receipt:{
       action:REVIEWED_WORLD_TIME_COMMAND,source:R4_NORMAL_TURN_PROJECTION,

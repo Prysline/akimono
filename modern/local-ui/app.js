@@ -467,12 +467,13 @@ function showState(s){
   if(!shop)$('setup').open=true;
   $('initialize').disabled=Boolean(w);
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
-  $('supply').disabled=!shop;
+  $('supply').disabled=!shop||snapshot?.reviewedTimeMode===true;
+  if(snapshot?.reviewedTimeMode===true)$('supply').closest('details').hidden=true;
   // Available actions are rendered in the selected original-style item page.
   // Frozen R3 handles one source store, with 1..8 genuine indexed shelves.
   // Multi-shelf following any unknown EVENT is not authorized.
   const sourceSaleSupported=Boolean(shop&&
-    shop.showcasecount>=1&&shop.showcasecount<=8&&
+    shop.showcasecount>=1&&shop.showcasecount<=(snapshot?.reviewedTimeMode===true?1:8)&&
     (shop.showcasecount===1||w?.period?.eventState!==null));
   for(const control of document.querySelectorAll('.quick-time button'))
     control.disabled=!sourceSaleSupported;
@@ -715,7 +716,7 @@ $('showcase-form').addEventListener('submit',async event=>{
   },'陳列：'+(catalogItem(snapshot,itemId)?.name??'商品'));
 });
 async function advance(minutes){
-  await call('/api/advance-time',{
+  await call(snapshot?.reviewedTimeMode===true?'/api/advance-reviewed-time':'/api/advance-time',{
     expectedRevision:snapshot?.world?.revision,minutes,
   },'原版自然販售／快轉 '+minutes+' 分鐘');
 }
