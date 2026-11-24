@@ -240,3 +240,39 @@ test('P2 all thirteen source career choices and release are obtainable and savea
     assert.equal(reset.code,'RESET',JSON.stringify(reset));
   }
 });
+
+test('P2 existing P1-format checkpoint can enter career proof without rewriting old history',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-p2-legacy-'));
+  const servers=[];
+  t.after(async()=>{for(const s of servers)await s.stop();
+    await rm(dir,{recursive:true,force:true});});
+  let s=await boot(dir);servers.push(s);
+  await open(s);await use(s,79,0);await use(s,12,0);
+  await supply(s);await buy(s,15);await use(s,15,0);
+  const first=await save(s,0);
+  const legacy=JSON.parse(await readFile(join(dir,'world-b.json'),'utf8'));
+  assert.equal(Object.hasOwn(legacy,'careerProof'),false);
+  let step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  await buy(s,78);
+  const changed=await use(s,78,0);
+  assert.deepEqual(changed.state.shop.exp,{'15':40});
+  assert.equal(changed.state.shop.job,'drug');
+  await use(s,15,0);
+  const before=await s.state();
+  const forgedRequest=await s.post('/api/save',{
+    expectedRevision:before.world.revision,expectedGeneration:1,
+    careerProof:{anchorKind:'fresh',commands:[]},
+  });
+  assert.equal(forgedRequest.status,400);
+  assert.deepEqual((await s.state()).world,before.world);
+  const second=await save(s,1);
+  const current=JSON.parse(await readFile(join(dir,'world-a.json'),'utf8'));
+  const proof=JSON.parse(current.careerProof);
+  assert.equal(proof.anchorKind,'legacy');
+  assert.equal(proof.anchor,legacy.world);
+  step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.shop.exp['15'],60);
+  assert.equal(step.loaded.state.shop.job,'drug');
+});
