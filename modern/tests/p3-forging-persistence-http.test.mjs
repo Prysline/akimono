@@ -312,3 +312,41 @@ test('P3 #23/0 earned mining EXP transfers to weapon career; trained craft after
   assert.ok(proof.commands.some(c=>c.itemId===78&&c.useId===7));
   assert.ok(proof.commands.some(c=>c.itemId===37&&c.useId===1));
 });
+
+test('P3 real accessory book purchase and single-skill checkpoint persist; dual NEED and EXP remain enforced',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-p3-accessory-gates-'));
+  const servers=[];
+  t.after(async()=>{for(const server of servers)await server.stop();
+    await rm(dir,{recursive:true,force:true});});
+  let s=await boot(dir);servers.push(s);
+  await open(s);
+  await denied(s,{itemId:66,useId:0});
+  await denied(s,{itemId:79,useId:2}); // ten vouchers required, new shop only five
+  await supply(s);await buy(s,66);
+  await denied(s,{itemId:66,useId:0});
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  await use(s,79,3);
+  let ready=false;
+  for(let i=0;i<16;i++){
+    if(((await s.state()).marketOffers.find(x=>x.itemId===8)?.marketStock??0)>=30){
+      ready=true;break;
+    }
+    await supply(s);
+  }
+  assert.equal(ready,true);
+  await buy(s,8,30);
+  await use(s,37,1);
+  for(let i=0;i<4;i++)await denied(s,{itemId:66,useId:i});
+  await denied(s,{itemId:37,useId:2});
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.shop.item[65],1);
+  assert.equal(step.loaded.state.shop.item[18],1);
+  assert.equal(step.loaded.state.shop.item[17],0);
+  assert.equal(step.loaded.state.shop.exp['37'],50);
+  assert.equal(step.loaded.state.save.generation,2);
+  for(let i=0;i<4;i++)await denied(s,{itemId:66,useId:i});
+});
