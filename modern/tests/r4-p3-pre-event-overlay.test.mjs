@@ -458,7 +458,7 @@ test('R4 candidate preserves original DataRead overlay and native EVENT hash acr
   assert.throws(()=>continueR4CrossPeriodCandidate({previous:structuredClone(result),minutes:1}),/lineage/);
   assert.throws(()=>project({...world,period:result.period,shops:result.shops,market:result.market,nowSeconds:result.nowSeconds},1),/known/);
   const expected=structuredClone(next);
-  result.shops[0].money+=12345;
+  result.shops[0]={...result.shops[0],money:result.shops[0].money+12345};
   assert.deepEqual(continueR4CrossPeriodCandidate({previous:result,minutes:1}),expected,'public candidate mutation cannot alter private lineage');
 });
 
