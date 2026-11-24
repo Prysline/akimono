@@ -228,7 +228,7 @@ function projectSourcePreEventSaleSlice({
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('exact shared original random samples must be integer millionths');
   if(!validateSourceSparseMarket(world?.market)||
-    world.market.sourceWriteShape!=='whole-store-79'||
+    (!p3InventoryStage&&world.market.sourceWriteShape!=='whole-store-79')||
     world.events!==null||world.shops?.length!==1)
     bad('real post-purchase source wholesale world required');
   if(reviewed.ironEventSource!==(reviewedB59Iron?.source??null)||
