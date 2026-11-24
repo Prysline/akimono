@@ -42,7 +42,7 @@ sub bootstrap {
   my $part=natural_source();
   my $program="package main; no strict; no warnings; use utf8;\n".
     "sub B38SourceNaturalPlus { my (\$timespan)=\@_; \$TIMESPAN=\$timespan;\n".
-    $part."\nB35SourceStep(\$timespan);\nreturn 1; }\n1;\n";
+    $part."\n\$B38_NATURAL_DRAWS_USED=\$B35_USED;\nB35SourceStep(\$timespan);\nreturn 1; }\n1;\n";
   my $ok=eval $program;
   die "B-38 original sales + PLUS did not compile: $@" unless $ok;
   $READY=1;
