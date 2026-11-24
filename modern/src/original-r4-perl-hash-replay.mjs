@@ -30,7 +30,7 @@ const perlProgram=[
   'my @prior=keys(%DTevent);my @all=keys(%EVENT);',
   'for my $code (@{$in->{expired}}){delete $DTevent{$code};}',
   'for my $row (@{$in->{started}}){$DTevent{$row->[0]}=$row->[1];}',
-  'print encode_json({version=>"$^V",arch=>$Config{archname},prior=>\@prior,all=>\@all,now=>[keys(%DTevent)]});'
+  'print encode_json({version=>"$^V",arch=>$Config{archname},prior=>[@prior],all=>[@all],now=>[keys(%DTevent)]});'
 ].join('\n');
 const integer=x=>Number.isSafeInteger(x)&&x>=0;
 const keysEqual=(a,b)=>Array.isArray(a)&&a.length===b.length&&new Set(a).size===b.length&&a.every(k=>b.includes(k));
