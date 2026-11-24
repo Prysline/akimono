@@ -56,6 +56,7 @@ import {reviewTownFiles} from '../src/original-r4-town-files.mjs';
 import {reviewGuildFiles,parseGuildEventLedgers,parseGuildLedgers,parseGuildDefinition} from '../src/original-r4-guild-files.mjs';
 import {reviewBackupDisk} from '../src/original-r4-backup-disk.mjs';
 import {reviewExternalFiles} from '../src/original-r4-external-files-sandbox.mjs';
+import {reviewPeriodLog} from '../src/original-r4-period-log-disk.mjs';
 import {stageB50PeriodDisk,commitB50PeriodDisk} from '../src/original-r4-b50-period-disk.mjs';
 const perl=path.join(root,'modern/tests/original-perl');
 const read=n=>readFile(path.join(perl,n),'utf8');
@@ -65,8 +66,9 @@ const reviews={period:reviewed,archive:archiveReviewed,
   town:reviewTownFiles({custom:await read('pinned-custom.cgi'),read:sources.readSource,write:sources.writeSource}),
   guild:reviewGuildFiles(guildSources),
   backup:reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource}),
+  log:reviewPeriodLog({log:await read('pinned-log.cgi'),period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource}),
   external:reviewExternalFiles({write:sources.writeSource,guild:guildSources.guild,turn:guildSources.turn})};
-const oracle=first=>JSON.parse(execFileSync('perl',['original-r4-b50-period-disk-probe.pl',...(first?['--first-only']:[])],{cwd:perl,encoding:'utf8',maxBuffer:8*1024*1024}));
+const oracle=first=>JSON.parse(execFileSync('perl',['original-r4-b50-period-disk-probe.pl',...(first==='failure'?['--fail-rename']:first?['--first-only']:[])],{cwd:perl,encoding:'utf8',maxBuffer:8*1024*1024}));
 const wire=bytes=>parsePeriodPlay({reviewed:reviews.play,townReview:reviews.town,bytes});
 const serialize=world=>serializePeriodPlay({reviewed:reviews.play,townReview:reviews.town,world});
 const equalPlay=(actual,expected)=>assert.deepEqual(wire(actual),wire(expected));
@@ -75,6 +77,7 @@ async function fixture(first,fn){
   const o=oracle(first),directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-period-disk-'));
   try{
     await seed(directory,{...o.initialLogs,play:o.initialPlay,guildbal:o.initialLedger,guild:o.initialDefinition,lasttime:'clock'});
+    await utimes(path.join(directory,'log1.cgi'),o.initialWorld.lasttime,o.initialWorld.lasttime);
     await seed(path.join(directory,'backup'),o.initialBackup);
     await utimes(path.join(directory,'backup','play.cgi'),o.initialWorld.lasttime,o.initialWorld.lasttime);
     await utimes(path.join(directory,'lasttime.cgi'),o.initialWorld.lasttime,o.initialWorld.lasttime);
@@ -102,6 +105,7 @@ async function assertStages({o,directory,args}){
     assert.deepEqual(step.result.guildContext,r.output.guildContext);
     assert.deepEqual(step.ledger,r.ledgerAfter);
     assert.equal(step.definition,r.definitionStage);
+    assert.deepEqual(step.logRows,r.logRows,'exact original chronological PushLog/WriteLog accumulation');
     assert.deepEqual(step.generations,r.generations,'actual period '+i+' backup of LIVE files');
     assert.deepEqual(step.expiry,r.expiry);
     assert.deepEqual(step.subdata,[...r.output.closeRemainingSessions].sort());
@@ -113,6 +117,12 @@ async function assertStages({o,directory,args}){
   assert.equal(await readFile(path.join(directory,'play.cgi'),'utf8'),o.initialPlay);
   assert.equal(await readFile(path.join(directory,'guildbal.cgi'),'utf8'),o.initialLedger);
   assert.equal(got.backup.copied,true);
+  assert.equal(got.log.rotated,o.cases.length===2);
+  assert.equal(await readFile(path.join(directory,'stage','log0.cgi'),'utf8'),o.staged.log0);
+  for(const [k,v] of Object.entries(o.beforeCommitLogs)){
+    if(v===null)await assert.rejects(readFile(path.join(directory,k+'.cgi')),{code:'ENOENT'});
+    else assert.equal(await readFile(path.join(directory,k+'.cgi'),'utf8'),v);
+  }
   for(const [k,v] of Object.entries(o.finalBackup))assert.equal(await readFile(path.join(directory,'backup',k+'.cgi'),'utf8'),v);
   assert.equal(Math.floor((await stat(path.join(directory,'lasttime.cgi'))).mtimeMs/1000),o.lasttimeMtime);
   if(o.archive===null)await assert.rejects(readFile(path.join(directory,'log','delete.cgi')),{code:'ENOENT'});
@@ -132,10 +142,11 @@ for(const first of [true,false])test('B50 actual source '+(first?'one period act
   assert.deepEqual(parseGuildLedgers(await readFile(path.join(directory,'guildbal.cgi'),'utf8')),parseGuildLedgers(o.finalLedger));
   assert.deepEqual(parseGuildLedgers(o.finalLedger).guild_a,o.reloadedLedger);
   assert.equal(Object.hasOwn(parseGuildLedgers(o.finalLedger).guild_a,'guild'),false,'period removes transient guild field');
+  for(const [k,v] of Object.entries(o.finalLogs))assert.equal(await readFile(path.join(directory,k+'.cgi'),'utf8'),v);
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
   await assert.rejects(stat(path.join(directory,'period-attempt')),{code:'ENOENT'});
 }));
-test('B50 actual staged files recover after third rename failure without redoing archive or rotations',()=>fixture(false,async ctx=>{
+test('B50 actual staged files recover after fourth rename failure without redoing archive or rotations',()=>fixture(false,async ctx=>{
   const {directory,o,args}=ctx;await assertStages(ctx);
   const live=path.join(directory,'play.cgi');await rm(live);await mkdir(live);
   await assert.rejects(commitB50PeriodDisk({directory,reviewed:reviews.external}));
@@ -146,6 +157,7 @@ test('B50 actual staged files recover after third rename failure without redoing
   assert.equal((await commitB50PeriodDisk({directory,reviewed:reviews.external,recover:true})).mode,'recover');
   equalPlay(await readFile(live,'utf8'),o.finalPlay);
   assert.equal(await readFile(path.join(directory,'log','delete.cgi'),'utf8'),o.archive);
+  for(const [k,v] of Object.entries(o.finalLogs))assert.equal(await readFile(path.join(directory,k+'.cgi'),'utf8'),v);
   for(const [i,files] of o.cases.at(-1).generations.entries())for(const [k,v] of Object.entries(files))assert.equal(await readFile(path.join(directory,'backup'+(i+1),k+'.cgi'),'utf8'),v);
 }));
 test('B50 failure before marker retains explicit attempt, incomplete stage cannot masquerade as success',()=>fixture(false,async({directory,args,o})=>{
@@ -164,4 +176,18 @@ test('B50 wire rejects unknown EVENT, absent index field and unreviewed multi-ke
   assert.throws(()=>serialize({...world,shops:[{...world.shops[0],pass:undefined}]}),/invalid text/);
   assert.throws(()=>serialize({...world,shops:[{...world.shops[0],exp:{1:1,2:2}}]}),/one-key/);
   assert.throws(()=>wire(o.initialPlay.replace(/\n\/\/\n/,'\n//\nextra\n')),/unreviewed play layout/);
+});
+
+test('actual original B50 source commit injected third rename failure recovers remaining files without replay',()=>{
+  const o=oracle('failure');
+  assert.equal(o.failure.marker,true);
+  assert.equal(o.failure.pending.length,2);
+  equalPlay(o.staged.play,o.finalPlay);
+  assert.equal(o.staged.guildbal,o.finalLedger);
+  assert.equal(o.staged.guild,o.finalDefinition);
+  assert.equal(o.staged.log0,o.finalLogs.log0);
+  equalPlay(serialize(o.reloaded),o.finalPlay);
+  assert.ok(o.archive.includes(o.cases[1].output.closeArchived));
+  assert.equal(o.finalLogs.log1,o.initialLogs.log0);
+  assert.equal(o.finalLogs.log2,o.initialLogs.log1);
 });
