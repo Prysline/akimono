@@ -98,12 +98,12 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
   await checkedDenial(srv,{itemId:15,useId:4,requestedCount:1});
   const gift=await use(srv,79,0);
   assert.equal(gift.state.shop.item[78],3);
-  for(let i=0;i<5;i++){
+  for(let i=0;i<3;i++){
     const gathered=await use(srv,12,0);
     assert.equal(gathered.details.mapDestroyed,false);
   }
   const afterGather=await srv.state();
-  assert.ok(afterGather.shop.item[0]>=320,
+  assert.ok(afterGather.shop.item[0]>=160,
     'source #12 gathered enough real herbs for advanced potion chain');
   const supplied=await srv.post('/api/supply',{
     expectedRevision:afterGather.world.revision,timespanSeconds:3600,
@@ -141,10 +141,14 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
   assert.deepEqual(loaded.state.world,first);
   assert.equal(loaded.state.shop.exp['15'],220);
   assert.equal(loaded.state.shop.item[30],high.state.shop.item[30]);
-  for(let i=0;i<18;i++)await use(srv,15,0);
+  // Two more healing batches and two ether batches supply the raw outputs.
+  // Advanced healing batches fill the 30-USE training gate without minting
+  // unnecessary herbs or bypassing the 12-hour original action clock.
+  for(let i=0;i<2;i++)await use(srv,15,0);
   for(let i=0;i<2;i++)await use(srv,15,2);
+  for(let i=0;i<15;i++)await use(srv,15,1);
   const eligible=await srv.state();
-  assert.equal(eligible.shop.exp['15'],620);
+  assert.equal(eligible.shop.exp['15'],600);
   assert.ok(eligible.shop.item[31]>=20,'source ether crafted, not injected');
   for(let i=0;i<2;i++)await use(srv,15,3);
   const beforeElixir=await srv.state();
@@ -155,7 +159,7 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
     beforeElixir.shop.item[30],'high medicine is consumed');
   assert.ok(erikusa.state.shop.item[32]<
     beforeElixir.shop.item[32],'high ether is consumed');
-  assert.equal(erikusa.state.shop.exp['15'],680);
+  assert.equal(erikusa.state.shop.exp['15'],660);
   const second=await save(srv,1);
   await srv.stop();
   srv=await boot(directory);servers.push(srv);
@@ -163,7 +167,7 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
   assert.equal(loaded2.code,'LOADED',JSON.stringify(loaded2));
   assert.deepEqual(loaded2.state.world,second);
   assert.equal(loaded2.state.shop.item[33],erikusa.state.shop.item[33]);
-  assert.equal(loaded2.state.shop.exp['15'],680);
+  assert.equal(loaded2.state.shop.exp['15'],660);
   assert.equal(loaded2.state.shop.money,erikusa.state.shop.money);
   assert.equal(loaded2.state.shop.time,erikusa.state.shop.time);
 
