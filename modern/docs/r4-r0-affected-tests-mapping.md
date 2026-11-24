@@ -124,3 +124,10 @@ R0／R1 全量仍未完成；R4 真 EVENT 啟動／結束／NOWFUNC、期末合�
 - `tests/r4-source-world-transition-cas-guard.test.mjs`：新增直通 compareAndSwap 門檻、偽造審閱器／城市／事件／已結算世界拒絕、兩個實際 B-43 磁碟世代完整性；已知單 EVENT 也不許在零時間內被偽造。
 - `tests/r4-source-cas-http-save-restart.test.mjs`：真 HTTP 開店、供貨、買 #10 → 36h 期末拒絕 → save 兩代 → Node restart → load 世界完全一致及再度拒絕。不能把負向 E2E 當成完成正向 R4 退出。
 - `src/original-r4-period-shop-expiry.mjs`、`tests/original-perl/original-r4-period-shop-expiry-probe.pl`／`.t`、`tests/r4-source-period-shop-expiry.test.mjs`：九種真凍結 Perl 未登入逾期條件、`CloseShop` 外部呼叫及原始日誌完全對照；關店真正外部檔案更新仍禁止提交。
+
+## 2026-11-24｜原版 CloseShop 實效＋真備份／Session 尾段測試對映
+
+- `src/original-r4-close-shop-effects.mjs`、`tests/original-perl/original-r4-close-shop-effects-probe.pl`：真原版 CloseShop 封存來源欄位、受控暫存 Session 刪除、status=0 後原版 SortDT 排除和 DataWrite inactive 過濾；外部 SetUserData／WriteErrorLog 只記錄呼叫。
+- `tests/original-perl/original-r4-period-real-close-chain-probe.pl`：單一原版 Perl 行程連續兩期，第二期確實關店並保留來源龍賽、公會及城市結算；Node `r4-period-real-close-source-chain.test.mjs` 同狀態比對。
+- `src/original-r4-period-backup-tail.mjs`、`tests/original-perl/original-r4-period-backup-tail-probe.pl`／`.t`、`tests/r4-source-period-backup-tail.test.mjs`：原版三代目錄真 rename、五檔 UTF-8 寫入、mtime 嚴格 Session 過期及外部 MakeGuildFile 呼叫差分。不得推論真玩家資料檔 CAS／Backup 成功。
+- `src/original-period-solo-chain.mjs`、`tests/original-perl/original-r4-period-full-tail-close-probe.pl`／`.t`、`tests/r4-period-full-tail-close-chain.test.mjs`：明示來源 opt-in 後，單一 Perl 行程兩期期末原始前綴 + 真備份尾段，逐欄比對商店關閉、城鎮、外部 Guild 呼叫、三代備份及 Session；`nonCommittable:true`、正常 GameCore 期末仍 fail-closed。

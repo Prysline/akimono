@@ -33,3 +33,7 @@ B-44～B-49 的主要侷限是把原版各功能獨立跑過。B-50 首次讓**�
 本節**取代前述歷史階段中「公會會費／爵位／高 EXP 技術遺忘仍未審閱」的描述**，但不改動舊 B-50 預設的嚴格拒絕。新 `original-r4-period-all-finance-source-probe.pl` 和 `original-r4-period-high-exp-tech-probe.pl` 用未改動的 `period.cgi` 備份前完整前綴連續結算同一間店鋪與城市；真 DragonBalance 暫存檔每期讀取／刪除，外部 `EditGuildMoney` 僅記錄呼叫，爵位 `rand(100)` 在來源位置抽樣，四技術在原版 `UpdateResetAfter` **於第二次 SortDT 和城市之後**按序擲 `rand(14000)`。第一期遺失 #18 和 #24，第二期承接庫存遺失 #19、保留 #38；獎品／城市／公會／龍賽不因這些操作變更來源階段順序。Node 每期整張商店／城市與原始 Perl 差分一致，保留非提交標記與未知來源拒絕。
 
 最後程式驗收 SHA `09a11a2ac73de26a8c76d777d768a4b79028211d`：Push #45122232062、PR #45122236936 雙成功，Node 1094／1094、Perl 2210／2210（71 .t）。這仍**不代表**完成原始跨 36 小時可存檔經營：多店、真公會檔案、老店關閉、原版完整 EVENT／時間切片、備份與 session、WorldState／CAS／HTTP 重啟尚未整合，見 [R4 退出清冊](r4-exit-audit.md)。
+
+## 2026-11-24｜同狀態真正關店與原版備份尾段的新增來源接續
+
+原先文內「未審閱真正 CloseShop 與備份／Session」僅指早期 B-50，非最新狀態。後續已在 `src/original-r4-close-shop-effects.mjs` 真正驗證 `write.cgi::CloseShop` 的內存變更、封存字串、暫存登入檔 unlink，及後續 SortDT 停業店鋪排除。新 `includeReviewedPeriodBackup` 對應 `src/original-r4-period-backup-tail.mjs`，並透過同一 Perl 行程的 `original-r4-period-full-tail-close-probe.pl` 連續執行兩期的真原版前綴和備份尾段，在暫存磁碟真輪替三代 backup 與清理七日 Session。外部 Guild／使用者／封存資料檔仍由 stub 記錄，純投影仍不能提交 `WorldState`。
