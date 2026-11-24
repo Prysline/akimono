@@ -29,3 +29,12 @@
 - **驗收約束**：所有提交都需由同一 HEAD 的 Push／PR Actions `completed/success` 證明；PR #1 保持 Open／Draft／未合併，未修改 Notion。
 
 PR #1 必須始終 Open／Draft／未合併，基底 `migration/standard-street-s1`；只修改 `test/task02-baseline-on-s1` 分支中的 `modern/`。本檔是狀態證據，不變更 Notion 正式任務。
+
+## 2026-11-24｜雙展示架來源增量（獨立 PR #7，不能當作完整 R4）
+
+在已合併的單架原版直接售價／B-43 存檔與玩家 UI PR #6 之上，新增對**單一商店、恰好兩架**的 R3 原版自然販售增量。來源必須由原版 ITEM #63 `use-item` 真正消耗初始擴建工具，不能把來源單架世界的 `showcasecount` 直接偽造成兩架；多店與第三架以上仍拒絕。
+
+- 由凍結 `inc-turn.cgi` 原文取得兩架進行順序：第一架需求指數 4、第二架指數 3；同商品在兩架時共用一次 ITEM `buypeoplebase` 分母、原版 `market.cgi::GetMarketStatus` 需求與價格、來源庫存、`_sale_count_`；無條件人氣下降按兩架計算，商品維持費對有上架庫存仍按原版 1/10。
+- `original-r3-multi-shelf-sale-probe.pl` 直接執行凍結 Perl 原始自然販售 + 59 PLUS，包含兩架同商品不同直接 G 售價、兩種劍、跨商品類型、首尾空架、共用僅一件庫存、雙空架、交換架位八類 source oracle。`r3-shared-natural-sale.test.mjs` 與同一共用計算器逐欄檢查 RNG 消耗、現金、稅、人氣、商品與原始臨時銷售計數。
+- 真 HTTP 證明：開店→原版 #63/1 擴建 2 架→PLUS→真 #14 地圖市場購買與 USE 造劍→兩個索引架位上架（包含直接價格）→原版第一次 B-41 自然販售→拒絕未知 EVENT 第二時間片→B-43 兩代保存與 Node 重啟載入。只有相同提交 CI 成功後才可稱雙架受控來源驗收成立。
+- 本增量**不**處理三至八架、多玩家／跨店自然販售、完整 `SortDT`、17-key EVENT／RNG 或 36h 期末；任何一次已發生但尚未審閱 EVENT 的時間片後繼仍 `null`、不得補空 `{}`。原 R4 PR #1、main、凍結 Core／DSL／Perl 不修改。
