@@ -78,12 +78,13 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       return street.apply({world,command});
     },
     reviewPeriodTransition({before,after,command=null,initial=false}){
-      validate(before);validate(after);
+      validate(before);
       if(before.worldId!==after.worldId||before.streetId!==after.streetId||after.revision!==before.revision+1)fail('identity/revision transition');
       if(initial){
         if(command!==null||!same({...before,revision:after.revision},after))fail('initial validation must not alter source state');
         return true;
       }
+      validate(after);
       if(command?.kind===REVIEWED_WORLD_TIME_COMMAND){
         const p=propose(before,command);
         const expected={...before,shops:p.shops,market:p.market,period:p.period,nowSeconds:p.nowSeconds,revision:before.revision+1};

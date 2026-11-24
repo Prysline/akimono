@@ -766,5 +766,6 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       }
       bad('unreviewed Standard Street action '+command.kind);
     },
-  })  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview}):base;
+  });
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview}):base;
 }

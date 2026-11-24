@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createPeriodMemoryWorld,createMemoryWorldAdapter,
-  executeMemoryCommand,applyGameCommand} from '../src/game-core-contract.mjs';
+  executeMemoryCommand,applyGameCommand,createSourceReviewedMemoryWorldAdapter} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
@@ -244,4 +244,52 @@ test('R4 candidate executes normal EVENT callbacks on reviewed P3-shaped stock, 
   const actual=compareNormal(world,60);
   assert.equal(actual.shops[0].job,'tool');
   assert.deepEqual(actual.shops[0].exp,shop.exp);
+});
+
+test('R4 reviewed normal-time opt-in uses exact GameCore CAS replay, not a fixture or editable clock',()=>{
+  const reviewedStreet=createStandardStreetModule({...source,enableReviewedNormalTime:true});
+  const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:source.originalPeriodSource,adminSource:source.originalAdminInitSource,
+    readSource:source.originalDataReadSource,writeSource:source.originalDataWriteSource,reviewedB41:reviewedStreet.reviewedB41}));
+  const repository=createSourceReviewedMemoryWorldAdapter({
+    initialWorld:createPeriodMemoryWorld({worldId:'r4-normal-legal',streetId:'standard-street',nowSeconds:1000000,period}),
+    streetModule:reviewedStreet});
+  const commit=(kind,args={})=>{
+    const result=executeMemoryCommand({repository,streetModule:reviewedStreet,command:{kind,expectedRevision:repository.read().revision,...args}});
+    assert.equal(result.ok,true,JSON.stringify(result.details));return result;
+  };
+  commit('initialize-source-market');
+  commit('open-shop',{shopId:1,ownerName:'合法店主',shopName:'合法商店'});
+  const before=repository.read();
+  const time=commit('advance-reviewed-world-time',{minutes:60});
+  assert.equal(time.world.nowSeconds,before.nowSeconds+3600);
+  assert.equal(time.world.revision,before.revision+1);
+  assert.notEqual(time.world.period.eventState,null);
+  assert.equal(time.details.sourceTrace.eventOrder.length,17);
+  assert.equal(time.details.sourceTrace.eventSamples.length,time.details.sourceTrace.eventDrawRanges.length);
+  const current=repository.read();
+  const next=applyGameCommand({world:current,streetModule:reviewedStreet,
+    command:{kind:'advance-reviewed-world-time',expectedRevision:current.revision,minutes:1}});
+  assert.equal(next.ok,true,JSON.stringify(next.details));
+  const forged=structuredClone(next.world);forged.shops[0].money++;
+  assert.equal(repository.compareAndSwap({expectedRevision:current.revision,nextWorld:forged,advanceSeconds:60,
+    command:{kind:'advance-reviewed-world-time',expectedRevision:current.revision,minutes:1}}).ok,false);
+  assert.equal(repository.compareAndSwap({expectedRevision:current.revision,nextWorld:next.world,advanceSeconds:60}).ok,false);
+  assert.deepEqual(repository.read(),current);
+  for(const fields of [{randomDraws:[0]},{nowSeconds:1001000},{eventState:{}},{minutes:0}]){
+    assert.equal(executeMemoryCommand({repository,streetModule:reviewedStreet,
+      command:{kind:'advance-reviewed-world-time',expectedRevision:current.revision,minutes:1,...fields}}).ok,false);
+  }
+  assert.deepEqual(repository.read(),current);
+  assert.equal(executeMemoryCommand({repository,streetModule:reviewedStreet,
+    command:{kind:'advance-reviewed-world-time',expectedRevision:current.revision-1,minutes:1}}).code,'REVISION_CONFLICT');
+  assert.equal(executeMemoryCommand({repository,streetModule:reviewedStreet,
+    command:{kind:'advance-source-time',expectedRevision:current.revision,shopId:1,minutes:1,randomDraws:[]}}).ok,false);
+  assert.equal(repository.compareAndSwap({expectedRevision:current.revision,nextWorld:{...current,revision:current.revision+1,nowSeconds:current.nowSeconds+60},advanceSeconds:60}).ok,false);
+  const gift=commit('use-item',{shopId:1,itemId:79,useId:0,requestedCount:1});
+  assert.equal(gift.world.nowSeconds,current.nowSeconds);
+  assert.ok(gift.world.shops[0].item[78]<current.shops[0].item[78]);
+  const continued=commit('advance-reviewed-world-time',{minutes:60});
+  assert.equal(continued.world.nowSeconds,gift.world.nowSeconds+3600);
+  assert.equal(continued.world.shops[0].time,gift.world.shops[0].time);
 });
