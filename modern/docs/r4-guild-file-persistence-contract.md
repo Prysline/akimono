@@ -9,7 +9,7 @@
 - ReadGuild 讀 COMMON_DIR 合法 .pl 並排序，ReadConfig 去除 # 後註解、將 < > " 跳脫。GetString 產生 Perl 字串；本 adapter 僅接受無單引號、反斜線、控制分隔符的已審閱名稱，不猜測原版特殊跳脫。
 - ReadGuildData 清除記憶體後讀 guildbal.cgi UTF-8 TSV；EditGuildMoney 正額加 in、負額絕對值加 out，money 加原額。WriteGuildData 按當前 %GUILD 鍵輸出暫存帳本。原版 period 開頭每期重設 in/out 並刪 guild 臨時欄；負資金刪 .pl 分支尚未整合，本受限 B-50 adapter 拒絕負資金起始狀態。
 - MakeGuildFile 生成 executable guild.cgi；刪除公會會清會員 guild 與 user._so_e、記錄滅亡訊息，新公會記錄成立。**並不 reload %GUILD**，因此同次 WriteGuildData 仍使用舊鍵。測試刻意覆蓋 old 消失、beta 新增的帳本/定義差異；重啟若兩者鍵不一致，Node 拒絕猜測新公會資金。
-- 原版所有時間片完成後才 WriteGuildData / DataWrite / RenewLog / DataCommitOrAbort。期末可生成暫存 guild.cgi；inc-turn 末 mtime 條件亦可生成。本輪明示調用 MakeGuildFile，不宣稱已整合 mtime 判斷或全部 inc-turn。
+- 原版所有時間片完成後才 WriteGuildData / DataWrite / RenewLog / DataCommitOrAbort。期末可生成暫存 guild.cgi；inc-turn 末 mtime 條件亦可生成。本輪明示調用 MakeGuildFile，另新增真 mtime 判斷隔離差分；尚未整合全部 inc-turn。
 - Perl hash 與 readdir 順序非固定；只比對解碼後公會與帳本資料、確定的日誌，以及失敗恢復不變量；Node 固定 sandbox 檔名順序不是 Perl hash/order 等價。
 
 ## 可重現測試
@@ -24,3 +24,7 @@
 - 受控公會檔工作包的正向及錯誤路徑已加入程式及回歸。僅固定欄 money/in/out/atk/def、受控定義欄 shortname/dealrate/feerate、合法 ASCII code；未宣稱所有歷史公會設定、零/缺欄、負資金刪檔、未初始化新公會或多會員期間費用完整可提交。
 - 原版部分寫入不是跨檔原子性；沒有 fsync 或真跨程序鎖。正式資料/主 play/army/封存/Session/備份尚未共同接合；B-50 仍 nonCommittable。不可將 eventState:null 當空事件，36h fail-closed 保留。
 - 下一窗口：army.cgi / SetTownData 真來源與 B-50 EVENT/期末的同一世界檔案接合，繼而完整 DataWrite 主檔、DataFilesBackup 失敗恢復及多檔 WorldState/CAS/HTTP 真跨期重啟；R4/R5/R0/R1 全量均未結案。
+
+## 原版錯誤與新版安全界線
+
+新增 original-r4-guild-file-edge-probe.pl/.t：真 ReadGuildData 缺檔可空表、損毀 TSV 可部分讀入、非法 rate 可直接輸出至 Perl 定義；Node 嚴格拒絕。原版 period 負資金會 unlink 公會 .pl、重設 in/out、刪 transient guild 欄，但已載入 GUILD_DETAIL 仍可生成舊定義，直到下一次 ReadGuild 才消失。此為已觀察的真來源邊界，Node 不模擬負資金刪檔。原 inc-turn mtime block 真 File::Temp 的 older/equal/newer 三案與 Node guildRebuildNeeded 差分；缺 generated 檔的原版隱式 coercion 不開放。

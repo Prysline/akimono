@@ -4,7 +4,7 @@ import {readFile,writeFile,rename,unlink,readdir,realpath,lstat,mkdir} from 'nod
 import path from 'node:path';
 import os from 'node:os';
 import {parseGuildLedger,applyGuildPeriod} from './original-r4-guild-ledger-file.mjs';
-const pins=Object.freeze({guildsub:'4dee1edeeedf3b482b8786111e1e5d626095f8d5',config:'010e43766c1b78c7572cbc0aded2daf03dc07a1e',sub:'33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25',guild:'6593aa8a3ae4a1695c2418f12a3776f0053454ac',write:'203f33b37511e838800a45b84183af98fcf46e4c'});
+const pins=Object.freeze({guildsub:'4dee1edeeedf3b482b8786111e1e5d626095f8d5',config:'010e43766c1b78c7572cbc0aded2daf03dc07a1e',sub:'33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25',guild:'6593aa8a3ae4a1695c2418f12a3776f0053454ac',write:'203f33b37511e838800a45b84183af98fcf46e4c',turn:'b8a4980275f475a952846a8d6072fad45f8dff50',period:'6183e88e9dd69a16606a1064c8084e9a1411dbd5'});
 const fail=m=>{throw new RangeError('R4 guild files: '+m)};
 const reviews=new WeakSet();
 const code=s=>typeof s==='string'&&/^[A-Za-z][A-Za-z0-9_]*$/.test(s)&&!['constructor','prototype'].includes(s);
@@ -114,4 +114,21 @@ export async function commitGuildFiles({reviewed,directory,abort=false}){
   // Deterministic sandbox order only; original readdir order is not guaranteed.
   for(const n of fileNames.filter(n=>pending.includes(n)))await rename(path.join(stage,n),path.join(root,n));
   await unlink(marker);return {mode:abort?'recover':'commit',committable:false};
+}
+
+/** Original inc-turn end mtime comparison, not a full inc-turn executor.
+ * Missing/symlink/unknown files fail closed instead of Perl's warning/coercion.
+ */
+export async function guildRebuildNeeded({reviewed,directory}){
+  review(reviewed);
+  const root=await rootFor(directory),common=await dir(path.join(root,'common'));
+  const generated=await lstat(path.join(root,'guild.cgi'));
+  if(!generated.isFile())fail('regular generated file required');
+  let latest=0;
+  for(const n of await readdir(common)){
+    if(!/^[A-Za-z][A-Za-z0-9_]*\.pl$/.test(n)||!code(n.slice(0,-3)))fail('unreviewed common entry');
+    const s=await lstat(path.join(common,n));if(!s.isFile())fail('regular definition required');
+    latest=Math.max(latest,Math.floor(s.mtimeMs/1000));
+  }
+  return Math.floor(generated.mtimeMs/1000)<latest;
 }

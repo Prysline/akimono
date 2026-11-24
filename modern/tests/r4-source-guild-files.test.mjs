@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile,writeFile,mkdir,mkdtemp,rm,readdir,rename} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,mkdtemp,rm,readdir,rename,utimes} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {reviewGuildFiles,stageGuildFiles,commitGuildFiles,parseGuildDefinition,parseGuildLedgers} from '../src/original-r4-guild-files.mjs';
+import {reviewGuildFiles,stageGuildFiles,commitGuildFiles,parseGuildDefinition,parseGuildLedgers,guildRebuildNeeded} from '../src/original-r4-guild-files.mjs';
 const perl=path.join(path.dirname(fileURLToPath(import.meta.url)),'original-perl');
-const sources=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write'].map(async k=>[k,await readFile(path.join(perl,(k==='write'?'':'pinned-')+k+'.cgi'),'utf8')])));
+const sources=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write','turn','period'].map(async k=>[k,await readFile(path.join(perl,(k==='turn'?'inc-turn.cgi':(['write','period'].includes(k)?k+'.cgi':'pinned-'+k+'.cgi'))),'utf8')])));
 const reviewed=reviewGuildFiles(sources);
 const oracle=(mode)=>JSON.parse(execFileSync('perl',['original-r4-guild-files-probe.pl',...(mode?[mode]:[])],{cwd:perl,encoding:'utf8'}));
 async function fixture(fn,mode){
@@ -82,3 +82,33 @@ test('unchanged membership permits multi-guild real reload and next independent 
   assert.deepEqual(parseGuildLedgers(await readFile(path.join(directory,'guildbal.cgi'),'utf8')),parseGuildLedgers(o.second.bytes));
   assert.deepEqual(parseGuildDefinition(await readFile(path.join(directory,'guild.cgi'),'utf8')),parseGuildDefinition(o.second.definition));
 },'--stable'));
+
+test('actual source missing/malformed/negative ledger behavior is observed; safe Node refuses instead of copying unsafe coercion',async()=>fixture(async({o,directory,args})=>{
+  const edge=JSON.parse(execFileSync('perl',['original-r4-guild-file-edge-probe.pl'],{cwd:perl,encoding:'utf8'}));
+  assert.equal(edge.missingCount,0);
+  assert.equal(edge.malformedMoney,12);
+  assert.equal(edge.malformedInDefined,0);
+  assert.throws(()=>parseGuildLedgers(edge.malformed),/shape/);
+  assert.match(edge.invalidGenerated,/,nope,60,/);
+  await writeFile(path.join(directory,'common','alpha.pl'),edge.invalid);
+  await assert.rejects(stageGuildFiles(args),/unreviewed guild rate/);
+  assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+  assert.equal(edge.removed,true);assert.equal(edge.tempGone,true);
+  assert.ok(parseGuildDefinition(edge.staleDefinition).alpha);
+  assert.deepEqual(parseGuildDefinition(edge.afterReload),{});
+  assert.equal(edge.negativeAfter.money,-1);
+  assert.equal(await readFile(path.join(directory,'guildbal.cgi'),'utf8'),o.initialBal);
+}));
+test('actual original inc-turn mtime block and Node agree on older/equal/newer real files',async()=>fixture(async({directory,args})=>{
+  const edge=JSON.parse(execFileSync('perl',['original-r4-guild-file-edge-probe.pl'],{cwd:perl,encoding:'utf8'}));
+  const common=path.join(directory,'common');
+  await rm(path.join(common,'beta.pl'));
+  const def=path.join(directory,'guild.cgi'),config=path.join(common,'alpha.pl');
+  await utimes(def,100,100);
+  for(const {mtime,rebuild} of edge.mtime){
+    await utimes(config,mtime,mtime);
+    assert.equal(await guildRebuildNeeded(args),rebuild);
+  }
+  await rm(def);
+  await assert.rejects(guildRebuildNeeded(args),{code:'ENOENT'});
+}));

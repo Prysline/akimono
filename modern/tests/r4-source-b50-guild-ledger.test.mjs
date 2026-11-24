@@ -81,7 +81,7 @@ test('guild ledger rejects drift, duplicate keys and incomplete rows',()=>{
 
 test('B50 two periods in one isolated source turn keep live ledger unchanged until final guild commit',async()=>{
   const oracle=JSON.parse(execFileSync('perl',['original-r4-b50-guild-ledger-probe.pl','--one-turn'],{cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'}));
-  const files=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write'].map(async k=>[k,await readFile(path.join(root,'modern/tests/original-perl',(k==='write'?'':'pinned-')+k+'.cgi'),'utf8')])));
+  const files=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write','turn','period'].map(async k=>[k,await readFile(path.join(root,'modern/tests/original-perl',(k==='turn'?'inc-turn.cgi':(['write','period'].includes(k)?k+'.cgi':'pinned-'+k+'.cgi'))),'utf8')])));
   const fileReview=reviewGuildFiles(files);
   const directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-guild-'));
   try{
