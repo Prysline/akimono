@@ -419,8 +419,8 @@ function projectSourcePreEventSaleSlice({
        reviewedPeriod.shopExpiry===null||
        ![undefined,''].includes(newShop.guild)||
        (newShop.dragon??0)!==0||(newShop.drmoney??0)!==0||
-       newShop.taxtoday!==0)
-      bad('boundary candidate only supports independent zero-tax no-external-effect source prefix');
+       (newShop.taxtoday!==0&&reviewedPeriod.territory?.reviewedSaleTax!==true))
+      bad('boundary candidate only supports independent reviewed-tax no-external-effect source prefix');
     const dignity=(newShop.dignity??0)!==0;
     periodDraws=3+(dignity?1:0);
     if(randomDraws.length<used+periodDraws)bad('missing original period random samples');

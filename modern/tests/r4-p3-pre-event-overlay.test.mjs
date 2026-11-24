@@ -301,7 +301,7 @@ test('R4 reviewed normal-time opt-in uses exact GameCore CAS replay, not a fixtu
 import {projectR4BoundaryPreEventCandidate} from '../src/original-b41-playable-sale.mjs';
 import {reviewOriginalSoloPeriodPhaseChain} from '../src/original-period-solo-chain.mjs';
 import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
-const reviewedBoundaryPeriod=reviewOriginalSoloPeriodPhaseChain({
+const boundarySources={
   periodSource:source.originalPeriodSource,configSource:source.originalConfigSource,
   itemDsl:source.itemDsl,model:loadStandardStreetModel(source.itemDsl,source.rebelDsl),
   compilerSource:source.originalCompilerSource,originalAddItemSource:source.originalUseSource,
@@ -310,7 +310,9 @@ const reviewedBoundaryPeriod=reviewOriginalSoloPeriodPhaseChain({
   bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
   compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),
   includeReviewedDignity:true,includeReviewedShopExpiry:true,
-});
+};
+const reviewedBoundaryPeriod=reviewOriginalSoloPeriodPhaseChain(boundarySources);
+const reviewedTaxPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true});
 test('R4 source boundary prefix runs settlement before dynamic-population PLUS with exact residual seconds',()=>{
   for(const [start,minutes,span,active,dignity] of [
     [1025940,1,60,{},0],
@@ -408,4 +410,36 @@ test('R4 candidate preserves original DataRead overlay and native EVENT hash acr
   assert.equal(execFileSync('perl',['-e','print int(rand(0))'],{encoding:'utf8'}),'0');
   assert.deepEqual(result,projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
     reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod}));
+});
+
+
+test('R4 boundary source tax history becomes exact town income before PLUS, without weakening the old zero-tax scope',()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  world.nowSeconds=1025940;
+  // Source ledger fixture, not a claim that this sum was acquired by HTTP.
+  world.shops[0].blocklogin='';world.shops[0].taxtoday=321;
+  world.shops[0].saletoday=1000;
+  const before=JSON.stringify(world);
+  const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
+  const oracle=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+    input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+      span:60,draws,events:{},settlement:{town:world.period.town,
+        dtPeople:world.period.dtPeople,commandNowSeconds:1026000}}),
+  }));
+  const input={...args(world,1,oracle.consumed),reviewedPeriod:reviewedTaxPeriod,
+    r4ReviewedSort:reviewedR4.sort,r4DataRead:{reviewed:reviewedDataRead,activeOrder:oracle.activeOrder}};
+  const got=projectR4BoundaryPreEventCandidate(input);
+  assert.equal(got.committable,false);
+  assert.equal(got.shops[0].taxyesterday,321);assert.equal(got.shops[0].taxtoday,0);
+  assert.equal(got.settlement.town.in,321);assert.equal(got.settlement.town.money,321);
+  assert.deepEqual(got.settlement.town,oracle.town);
+  assert.deepEqual(got.market.wholesale,oracle.wholesale);
+  assert.equal(got.market.originalWholesaleCsv,oracle.csv);
+  for(const [key,value] of Object.entries(got.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-oracle.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,oracle.shop[key],key);
+  }
+  assert.equal(JSON.stringify(world),before);
+  assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,reviewedPeriod:reviewedBoundaryPeriod}),/reviewed-tax/);
 });

@@ -50,7 +50,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   includeReviewedDignity=false,includeReviewedGuild=false,
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
   includeReviewedActualCloseShop=false,
-  includeReviewedPeriodBackup=false,
+  includeReviewedPeriodBackup=false,includeReviewedSaleTax=false,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -91,7 +91,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const periodBackup=includeReviewedPeriodBackup?
     reviewR4PeriodBackupTail({periodSource,configSource}):null;
   const territory=reviewOriginalPeriodTerritory({
-    periodSource,adminSource,readSource,bootstrapMeta,
+    periodSource,adminSource,readSource,bootstrapMeta,includeReviewedSaleTax,
   });
   const markers=[
     '$DT[0]->{rankingcount}++;',
