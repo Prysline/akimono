@@ -1,0 +1,316 @@
+/*
+ * B-40 Standard Skin visual pass. Source: fixed sindex.html, smain.html,
+ * custom/inc-menu.cgi. Original image assets are NOT copied.
+ */
+:root{
+  font-family:Arial,"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  color:#606060;background:#fff;font-size:15px;
+  --link:#737eaa;--line:#d5d5dd;--row:#fcfbff;
+  --highlight:#d9ff99;--note:#fff789;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;line-height:1.45}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;color:#aaa!important;opacity:.85}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
+  outline:2px solid #687bb1;outline-offset:2px
+}
+/* Keep the page frame stable across short/long screens.
+ * On narrow viewports the floor shrinks to 100%, avoiding page-wide overflow. */
+.shell{width:fit-content;min-width:min(100%,640px);max-width:min(100%,640px);margin:8px auto 25px;padding:0 8px}
+.site-heading{position:relative;text-align:center;border-bottom:1px solid #999;padding-bottom:2px}
+.heading-top{position:absolute;top:0;right:0;display:flex;align-items:center;
+  font-size:11px;color:#999;padding:0}
+.heading-top>span{display:none}
+.site-heading h1{font-size:20px;font-weight:700;color:#777;margin:0 0 2px;
+  line-height:1.2;padding:0 82px}
+.town-name{font-size:13px;background:var(--highlight);color:#606060;
+  padding:1px 5px;vertical-align:middle;font-weight:400}
+.menu-main{display:flex;justify-content:center;flex-wrap:wrap;gap:0 7px}
+.menu-main button,.menu-sub button{
+  appearance:none;border:0;background:none;color:var(--link);
+  font-weight:bold;padding:1px 2px;line-height:1.2;text-decoration:none
+}
+.menu-main button:hover:not(:disabled),.menu-sub button:hover:not(:disabled){
+  text-decoration:underline;color:#4d5f98
+}
+.menu-main button.selected{color:#595f7a;background:var(--highlight)}
+.menu-sub{display:flex;align-items:flex-start;justify-content:center;
+  flex-wrap:wrap;gap:1px;margin-top:0;font-size:12px;min-height:0}
+.menu-sub .sub-caption{color:#888;padding:1px 0}
+.subgroup{display:flex;flex-wrap:wrap;justify-content:center;gap:0}
+.menu-sub button{font-weight:400;white-space:nowrap}
+.menu-sub button.selected{background:var(--note);color:#606060;font-weight:700}
+.location-line{display:flex;justify-content:space-between;flex-wrap:wrap;
+  gap:4px;margin:1px 0 0;color:#888;font-size:11px;line-height:1.2;text-align:left}
+#settlement-status{display:none}
+body.dev-mode #settlement-status{display:inline}
+.notice{margin:4px 0 5px;padding:4px 8px;background:#fffde9;
+  border:1px solid #e8e2b4;font-size:12px}
+.notice strong{color:#6f6b43}
+.section{border:1px solid var(--line);background:#fff;margin:7px 0;padding:9px}
+.section-title{margin:-9px -9px 7px;padding:4px 8px;
+  font-size:15px;font-weight:400;color:#505050;background:var(--highlight);
+  border-bottom:1px solid #c5df9b}
+.section-title::before{content:"■ ";font-size:10px;vertical-align:1px;color:#859467}
+.section p,.help-text{margin:8px 0;font-size:13px}
+.help-text{color:#777}
+.setup{padding:0}
+.setup summary{list-style:revert;cursor:pointer;font-size:13px;font-weight:bold;
+  padding:5px 8px;color:#606060;background:#f2f2f6}
+.setup-content{display:flex;align-items:end;flex-wrap:wrap;gap:8px;
+  padding:8px}
+.inline-form{display:flex;align-items:end;flex-wrap:wrap;gap:10px}
+.inline-form label,.supply label,.disabled-feature label{
+  display:flex;flex-direction:column;gap:4px;font-size:12px
+}
+input,select{border:1px solid #85858f;border-radius:0;background:#fff;
+  color:#303030;padding:5px 6px;min-height:31px;max-width:100%}
+input[type=number]{width:68px}
+button.primary,button.secondary,.disabled-feature button{
+  border:1px solid #80808b;border-radius:0;color:#575e79;background:#f7f7fc;
+  box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #e0e0e7;
+  padding:5px 10px;min-height:31px;font-size:13px;font-weight:bold
+}
+button.primary:hover:not(:disabled),button.secondary:hover:not(:disabled){
+  background:#fffbd8
+}
+.status-section{margin:3px 0 5px}
+/* Tables use their content width; sparse data must not stretch into blank columns. */
+table{width:max-content;max-width:100%;margin-inline:auto;border-collapse:separate;border-spacing:1px;
+  background:#ccc;font-size:13px;text-align:left}
+td,th{background:var(--row);padding:3px 4px;vertical-align:middle;overflow-wrap:anywhere}
+th{color:#606060;font-weight:700}
+thead th{background:#e8e8ef;text-align:center;font-weight:normal}
+.status-table th{width:1%;white-space:nowrap;background:#e8e8ef}
+.status-table td{width:auto}
+.status-table strong{color:#424242}
+.game-columns{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:9px}
+.game-columns>div{min-width:0;max-width:100%}
+.sub-title{margin:1px 0 7px;font-size:14px;font-weight:normal}
+.sub-title::before{content:"◆ ";color:#9090a9;font-size:10px}
+.game-columns th{background:#e8e8ef;font-weight:normal;white-space:nowrap}
+.game-columns td{text-align:right}
+.muted{font-size:12px!important;color:#999}
+/* Wide source rows scroll only when required; never force empty horizontal space. */
+.table-scroll{max-width:100%;overflow-x:auto}
+.market-table{width:max-content;max-width:none;white-space:nowrap}
+.market-table td:not(:first-child){text-align:center}
+.market-actions{display:flex;align-items:center;gap:4px}
+.market-table input[type=number]{width:45px;min-height:24px;padding:2px 3px}
+.market-table button{white-space:nowrap;min-height:24px;padding:2px 5px}
+.item-no{font-size:11px;color:#999;margin-left:6px}
+.supply-details,.debug-details{margin:12px 0;border:1px dotted #bcbcc6;
+  padding:7px 9px;font-size:12px}
+.supply-details summary,.debug-details summary{cursor:pointer;color:var(--link)}
+.supply{display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding-top:5px}
+.supply p{width:100%;margin:4px 0 0}
+.disabled-feature{margin:12px 0 0;display:flex;gap:10px;align-items:end;
+  flex-wrap:wrap;border:1px dotted #c4c4cc;padding:10px}
+.disabled-feature legend{font-size:12px;color:#888}
+.feedback{border-left:3px solid #a8be82}
+.feedback.error{border-left-color:#bb817d}
+.feedback p{font-size:13px;margin:7px 0}
+.feedback.error p{color:#985552}
+.debug-details pre{white-space:pre-wrap;overflow-wrap:anywhere;
+  overflow-x:auto;background:#f7f7fa;border:1px solid #e8e8ee;padding:10px;
+  font-size:11px;color:#565666}
+.debug-data{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 14px;
+  margin:8px 0 0;font-size:12px}
+.debug-data dt{color:#888}
+.debug-data dd{margin:0;overflow-wrap:anywhere}
+footer{text-align:center;border-top:1px solid #ddd;padding-top:9px;
+  margin:18px 0 30px;color:#aaa;font-size:11px}
+@media(max-width:640px){
+  .shell{margin:8px auto;padding:0 8px}
+  .heading-top{font-size:10px}
+  .site-heading h1{font-size:19px}
+  .location-line{font-size:11px}
+  .section{padding:9px}
+  .section-title{margin:-9px -9px 10px}
+  .game-columns{flex-direction:column;gap:8px}
+  td,th{padding:3px 4px}
+  .market-table{font-size:12px}
+  .market-table input[type=number]{width:42px}
+  .market-table button{padding:2px 4px}
+  .setup-content,.inline-form{gap:7px}
+}
+
+/* B-41 source-backed shelf and time controls, same original Standard Skin */
+.time-control{margin-top:10px;border-top:1px dotted #ddd;padding-top:8px}
+.quick-time{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 8px}
+.quick-time button{min-height:30px}
+.shelf-form{margin-top:10px}
+.shelf-form fieldset{border:1px dotted #c4c4cc;display:flex;flex-wrap:wrap;align-items:end;gap:10px;padding:10px}
+.shelf-form legend{color:#777;font-size:12px}
+.shelf-form label,.time-control label{display:flex;flex-direction:column;gap:4px;font-size:12px}
+
+/* Original-style player page layout. All developer controls stay in context. */
+.heading-top #dev-toggle{
+  color:#80808b;background:none;border:1px solid #d8d8de;
+  font-size:11px;padding:1px 5px;min-height:22px
+}
+.heading-top #dev-toggle[aria-pressed=true]{background:var(--note);color:#515151}
+.local-note{display:none;color:#888;font-size:11px;text-align:center;margin:2px auto}
+body.dev-mode .local-note{display:block}
+.save-details{margin:9px auto 3px;border-top:1px dotted #d2d2d9;
+  padding:5px 2px;color:#888;font-size:12px}
+.save-details summary{width:fit-content;margin:0 auto;cursor:pointer;
+  color:var(--link);font-size:12px}
+.save-details .inline-form{align-items:center;justify-content:center;
+  gap:5px;margin:6px 0 0}
+.save-details button{padding:1px 6px;min-height:23px;font-size:12px}
+#save-status{font-size:11px;color:#888}
+.status-section{margin:2px auto}
+.status-scroll{max-width:100%;overflow-x:auto}
+.status-table{width:max-content;max-width:none;font-size:12px;white-space:nowrap}
+.status-table th,.status-table td{padding:2px 4px;min-width:0}
+.status-table th{font-weight:normal;white-space:nowrap}
+.status-table #store-name{max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.page-intro{color:#666;font-size:12px!important;margin:4px 0 8px!important}
+/* Compact original-style store overview: keep tables centered and scroll
+ * only their own contents when seven shelf columns exceed the viewport. */
+#tab-shop .sub-title{width:fit-content;max-width:100%;margin:8px auto 5px}
+#tab-shop .table-scroll{max-width:100%;overflow-x:auto}
+#tab-shop .shop-info-table,#tab-shop .shelf-table{
+  width:max-content;max-width:none;font-size:12px;white-space:nowrap
+}
+.shop-info-table th,.shop-turnover-table th{
+  background:#e8e8ef;font-weight:normal;white-space:nowrap
+}
+.shop-info-table td{white-space:nowrap}
+.shop-icon-cell{background:#fff;vertical-align:middle;padding:5px 7px}
+.portrait-placeholder{display:grid;place-items:center;background:#f4f3f7;
+  width:46px;height:46px;border:1px solid #c8c8d0;color:#888;font-size:19px}
+#tab-shop .shelf-table th{background:#e8e8ef;font-weight:normal}
+#tab-shop .shelf-table td:not(:nth-child(2)){text-align:center}
+#tab-shop .shelf-table td:nth-child(2){text-align:left}
+.shop-turnover-table{width:max-content;max-width:100%;
+  margin:8px auto 6px;font-size:12px}
+.shop-turnover-table th,.shop-turnover-table td{padding:2px 5px}
+.text-link{appearance:none;background:transparent;border:0;color:var(--link);
+  padding:0 1px;text-decoration:none;font-size:13px;font-weight:bold;cursor:pointer}
+.text-link:hover:not(:disabled){text-decoration:underline;color:#4d5f98}
+.text-link:focus-visible{outline:2px solid #687bb1;outline-offset:2px}
+.shelf-table,.warehouse-table,.balance-table,.item-detail-table{width:max-content;max-width:100%}
+.shelf-table th,.item-detail-table th,.balance-table th{background:#e8e8ef;font-weight:normal}
+.shelf-table{margin-bottom:6px}
+
+.warehouse-table{max-width:none;white-space:nowrap}
+.warehouse-table th{background:#e8e8ef;font-weight:normal}
+.warehouse-table td:not(:first-child){text-align:center}
+.item-link{font-weight:700;white-space:nowrap}
+#tab-stock .sub-title{margin-top:11px}
+#tab-stock .table-scroll + .sub-title{margin-top:17px}
+.back-row{margin:0 0 8px}
+.item-detail-table{margin:8px auto 13px}
+/* Keep the product name, facts, shelf controls and use section on
+ * the same visual centreline. Do not stretch the shelf fieldset
+ * across the entire 640px page frame. */
+#tab-item #item-detail-name{
+  width:fit-content;max-width:100%;margin:10px auto 8px;text-align:center
+}
+#tab-item .shelf-form{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;max-width:100%;margin:14px auto 0
+}
+#tab-item .shelf-form fieldset{
+  flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:center;gap:6px;
+  width:fit-content;min-width:0;max-width:100%;
+  margin:0;padding:7px 9px
+}
+#tab-item .shelf-form .shelf-inline-label{
+  display:inline;flex:0 0 auto;white-space:nowrap;font-size:12px
+}
+#tab-item #shelf-price-per{width:94px;max-width:100%}
+#tab-item .shelf-percent{display:inline-flex;align-items:center;gap:4px}
+#tab-item #shelf-custom-ratio:not([hidden]){
+  display:inline-flex;align-items:center;gap:3px
+}
+#tab-item #shelf-custom-ratio[hidden]{display:none}
+#tab-item #shelf-price-custom{width:58px}
+#tab-item #shelf-price-direct{width:86px}
+#tab-item #set-showcase{flex:0 0 auto}
+#tab-item .source-use-section{
+  width:fit-content;max-width:100%;margin:16px auto 0
+}
+#tab-item .source-use-section>.sub-title{text-align:center}
+#tab-item .source-use-section>.use-action-list{max-width:100%}
+.balance-table{margin-top:9px}
+.balance-table td{min-width:70px}
+.balance-table th{white-space:nowrap}
+.dev-panel{display:none}
+body.dev-mode .dev-panel:not([hidden]){display:block}
+details.dev-panel{margin:10px auto 6px;border:1px dotted #bcbcc6;
+  padding:5px 8px;font-size:12px;max-width:100%}
+details.dev-panel summary{color:#737eaa;cursor:pointer}
+details.dev-panel[open]{background:#fbfbfd}
+.dev-panel .debug-data{max-width:100%}
+.dev-panel .debug-data dd{max-width:420px}
+.feedback{margin:3px auto;padding:2px 6px;max-width:100%;border-left:3px solid #a8be82}
+.feedback p{margin:1px 0;font-size:12px}
+.feedback.error{border-left-color:#bb817d}
+.source-use-section{margin-top:12px}
+.source-use-section .sub-title{margin-bottom:6px}
+.use-action-list{
+  list-style:none;width:fit-content;max-width:100%;margin:6px auto 4px;
+  padding:0;text-align:left;font-size:13px
+}
+.use-action-list li{margin:4px 0;overflow-wrap:anywhere}
+.use-action-list li::before{content:"◆";font-size:10px;color:#9090a9;margin-right:4px}
+.use-action-link{white-space:normal;text-align:left}
+.use-unavailable{color:#888}
+.use-detail-table{width:max-content;max-width:100%;margin:9px auto 12px}
+.use-detail-table th{background:#e8e8ef;font-weight:normal;white-space:nowrap}
+.use-detail-table td{max-width:375px;white-space:normal;overflow-wrap:anywhere}
+#tab-use .sub-title,#tab-use-result .sub-title{
+  width:fit-content;max-width:100%;margin:9px auto;text-align:center
+}
+.use-action-form{display:flex;justify-content:center;align-items:center;
+  flex-wrap:wrap;gap:8px;margin:10px auto;max-width:100%}
+.use-action-form input{width:65px}
+.use-eligibility,.use-result-message{text-align:center;margin:9px auto}
+.shelf-time-note{font-size:12px!important;color:#888;
+  text-align:center;margin:0 auto 2px!important}
+footer{margin-top:12px;font-size:10px}
+@media(max-width:640px){
+  .status-table td{min-width:0}
+  .balance-table{font-size:12px}
+  .balance-table th,.balance-table td{min-width:0}
+  .shop-identity{gap:6px}
+  .table-scroll{max-width:100%;overflow-x:auto}
+}
+
+/* On narrow screens keep the title clear of the top-right developer toggle. */
+@media(max-width:420px){
+  .site-heading h1{padding:0 75px 0 0;text-align:left;font-size:18px}
+  .town-name{font-size:12px}
+}
+
+/* Shelf removal and original-style USE quantity shortcut controls. */
+.shelf-action-link{font-weight:normal;white-space:nowrap}
+.shelf-action-link:disabled{opacity:.55;cursor:default}
+.shelf-remove-note{text-align:center;font-size:11px!important;color:#888;margin:4px auto 7px!important}
+.use-action-form select{min-width:78px;max-width:165px;min-height:28px;padding:2px 4px}
+.use-action-form input{width:72px;min-height:28px;padding:2px 4px}
+
+/* Action time is essential player information; only raw diagnostics are gated. */
+.action-time{display:block;color:#777;font-size:11px;white-space:nowrap;margin-top:3px}
+.use-estimated-time{text-align:center;font-size:12px!important;color:#606060;margin:3px auto 4px!important}
+.dev-raw-value{font-size:11px;color:#999;font-weight:normal;white-space:nowrap}
+
+/* Per-source indexed showcase shelves and original bottom return positioning. */
+.back-row{display:flex;justify-content:center;margin:18px auto 6px;text-align:center}
+#tab-item #showcase-shelf{width:152px;max-width:100%;min-width:0}
+#tab-item #use-section[hidden]{display:none}
+.discard-section{width:fit-content;max-width:100%;margin:12px auto 0;text-align:center;border-top:1px dotted #bbb;padding-top:6px}
+.discard-section .sub-title{text-align:center}
+.discard-section .inline-form{justify-content:center;align-items:center}
+.discard-section .inline-form label{
+  display:inline-flex;flex-direction:row;align-items:center;gap:6px;
+  white-space:nowrap
+}
+.discard-section #discard-count{width:72px}

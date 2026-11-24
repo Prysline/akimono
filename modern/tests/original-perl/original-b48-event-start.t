@@ -1,0 +1,30 @@
+use strict;
+use warnings;
+use utf8;
+use Test::More;
+use JSON::PP qw(decode_json);
+use FindBin;
+use File::Spec;
+my $file=File::Spec->catfile($FindBin::Bin,'original-b48-event-start-probe.pl');
+my $result=qx{perl "$file"};
+is($?,0,'B-48 original inc-turn EVENT start region actually executes');
+my $json=eval{decode_json($result)};
+ok(!$@&&ref($json)eq'HASH','event source JSON decodes');
+if(ref($json)eq'HASH'){
+  is(scalar @{$json->{cases}},5,'all five controlled original EVENT gate paths');
+  my($zero,$miss,$hit,$blocked,$timed)=map {$_->{output}} @{$json->{cases}};
+  ok($zero->{entered},'original startproba 0 enters after rand gate');
+  is($zero->{randomDrawsUsed},1,'zero-probability still consumes initial rand');
+  is($zero->{activeCount},0,'no-duration source EVENT does not create DTevent');
+  ok(!$miss->{entered},'positive probability can miss');
+  is($miss->{randomDrawsUsed},1,'miss consumes only trial');
+  ok($hit->{entered},'positive probability enters with low trial rand');
+  is($hit->{randomDrawsUsed},3,'duration branch consumes exact 3 samples');
+  is($hit->{expiresAt},1003828,'source start 1000000 + 48 + 3600 + 180');
+  ok(!$blocked->{entered},'occupied source group skips repeated start');
+  is($blocked->{randomDrawsUsed},0,'occupied group consumes no random samples');
+  ok($timed->{entered},'zero chance still enters for timed event');
+  is($timed->{randomDrawsUsed},3,'timed zero-probability consumes timing samples');
+  is($timed->{expiresAt},1000120,'original 1000000 + rand(120)=60 + base60 + rand(0)=0');
+}
+done_testing();
