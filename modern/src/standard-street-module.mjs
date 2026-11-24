@@ -774,13 +774,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
               (available>=input.countPerUse?maximum:0):
               Math.min(maximum,Math.floor(available/input.countPerUse));
           },rule.requiresOwnedItem&&owned<1?0:Number.MAX_SAFE_INTEGER):0;
-          const policyMaximum=rule.firstUseOnly||rule.singleUseOnly?
+          const sourceGate=rule.firstUseOnly&&exp!==0?'僅限首次使用':
+            exp<(rule.needExperience??0)?'熟練度不足：需要 '+((rule.needExperience??0)/10)+'%':
+            rule.needJob&&(shop?.job??'')!==rule.needJob?'職業條件不足':
+            (shop?.point??0)<(rule.needPoint??0)?'點數不足':
+            (shop?.rank??0)<(rule.needPopularity??0)?'人氣不足':null;
+          const policyMaximum=sourceGate?0:rule.firstUseOnly||rule.singleUseOnly?
             1:Number.MAX_SAFE_INTEGER;
           const constraints=[
             {label:'材料最大',maximum:materialsMaximum},
             {label:'時間最大',maximum:timeMaximum},
             {label:'資金最大',maximum:moneyMaximum},
-            {label:'僅限首次',maximum:policyMaximum},
+            {label:sourceGate??'使用次數限制',maximum:policyMaximum},
           ];
           const maxUseCount=Math.max(0,Math.min(
             ...constraints.map(limit=>limit.maximum)));
@@ -794,6 +799,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             !validMarket?'來源市場尚未驗證':
             invalidExp?'熟練度紀錄不合法':
             rule.requiresOwnedItem&&owned<1?'尚未持有使用此功能的商品':
+            sourceGate?sourceGate:
             missing?'材料不足：'+
               (model.items.find(item=>item.id===missing.itemId)?.name??
                 '未知材料')+'需要 '+missing.count+' 件':
@@ -805,7 +811,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             itemName:sourceName,useName:rule.name,
             owned,materials,materialRoutes,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
-            proficiency:exp,maxUseCount,maxUseCountReason,
+            proficiency:exp,requiredProficiency:rule.needExperience??0,maxUseCount,maxUseCountReason,
             missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
             singleUseOnly:Boolean(rule.singleUseOnly),
