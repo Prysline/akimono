@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,rm,readFile,writeFile,mkdir,readdir,rename} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,writeFile,rename} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -128,17 +128,19 @@ test('reviewed HTTP history continues beyond 128 legal operations, authenticates
   await writeFile(newest,latest);
   // Both authenticated slots must be rejected with the wrong/missing key or
   // a damaged retained segment; restoring the originals permits exact load.
-  for(const damage of ['wrong-key','missing-key','prefix']){
+  for(const damage of ['wrong-key','missing-key','prefix','missing-prefix']){
     if(damage==='wrong-key')await writeFile(key,Buffer.alloc(32,0));
     if(damage==='missing-key')await rename(key,key+'.held');
     if(damage==='prefix')await writeFile(prefix,'damaged');
+    if(damage==='missing-prefix')await rename(prefix,prefix+'.held');
     server=await boot(dir,'900000');
-    const denied=await post('/api/load');assert.equal(denied.ok,false);
-    assert.equal((await post('/api/initialize')).ok,false);
+    const denied=await post('/api/load');assert.equal(denied.ok,false,damage);
+    assert.equal((await post('/api/initialize')).ok,false,damage+' must not create a new world');
     await server.stop();
     if(damage==='wrong-key')await writeFile(key,keyBytes);
     if(damage==='missing-key')await rename(key+'.held',key);
     if(damage==='prefix')await writeFile(prefix,prefixWire);
+    if(damage==='missing-prefix')await rename(prefix+'.held',prefix);
   }
   server=await boot(dir,'900000');
   state=ok(await post('/api/load'),'LOADED');assert.deepEqual(state.world,third);

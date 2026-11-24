@@ -199,7 +199,9 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,historyReplay){
       fail('non-canonical WorldState JSON');
     return {kind:'ok',slot,generation:record.generation,world,proof};
   }catch(error){
-    if(error?.code==='ENOENT')return {kind:'missing',slot};
+    // Only a missing SLOT is absent. ENOENT from its history verifier
+    // (missing key or retained prefix) means a corrupt existing record.
+    if(fd===undefined&&error?.code==='ENOENT')return {kind:'missing',slot};
     return {kind:'corrupt',slot,reason:error.message};
   }finally{
     if(fd!==undefined)fs.closeSync(fd);
