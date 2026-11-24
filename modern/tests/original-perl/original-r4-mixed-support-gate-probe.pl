@@ -627,7 +627,7 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   for my $i(0..$#{$in->{slices}}){
     my $slice=$in->{slices}[$i];
     my $span=$slice->{spanSeconds};
-    die 'positive source slice required' unless $span>0&&$span<=3600&&$slice->{dateupdate}==($i==0?1:0);
+    die 'positive source slice required' unless $span>0&&$span<=3600&&$slice->{dateupdate}==($i==0&&(!$in->{postSettlement})?1:0);
     my @prior=keys(%DTevent);
     @R4_MULTI_RANGES=();@LOG=();
     my $before=scalar(@R4_MULTI_DRAWS);

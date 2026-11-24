@@ -356,7 +356,7 @@ test('R4 source boundary prefix runs settlement before dynamic-population PLUS w
   }
 });
 
-import {projectR4CrossPeriodCandidate} from '../src/original-r4-cross-period-candidate.mjs';
+import {projectR4CrossPeriodCandidate,continueR4CrossPeriodCandidate} from '../src/original-r4-cross-period-candidate.mjs';
 test('R4 candidate preserves original DataRead overlay and native EVENT hash across both boundary slices',()=>{
   const {repository}=fresh(true),world=structuredClone(repository.read());
   world.nowSeconds=1025980;
@@ -430,6 +430,36 @@ test('R4 candidate preserves original DataRead overlay and native EVENT hash acr
   assert.equal(execFileSync('perl',['-e','print int(rand(0))'],{encoding:'utf8'}),'0');
   assert.deepEqual(result,projectR4CrossPeriodCandidate({world,minutes:1,street,reviewedR4,reviewedDataRead,
     reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod:reviewedBoundaryPeriod}));
+  // A new command reloads the final EVENT wire, not the expired overlay.
+  const next=continueR4CrossPeriodCandidate({previous:result,minutes:1});
+  assert.equal(next.nowSeconds,result.nowSeconds+60);
+  assert.equal(next.period.settledCount,1);
+  assert.equal(next.period.dtPeople,result.period.dtPeople);
+  assert.deepEqual(next.period.town,result.period.town);
+  const n=next.evidence.slices[0];
+  assert.equal(n.dateupdate,0);
+  assert.equal(n.preEvent.receipt.plusPopulation,result.period.dtPeople);
+  const restarted=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+    env:{...process.env,PERL_HASH_SEED:next.evidence.seed,PERL_PERTURB_KEYS:'0'},
+    input:JSON.stringify({postSettlement:true,eventWire:Object.entries(result.period.eventState).flat().join(','),
+      startSeconds:result.nowSeconds,shop:result.shops[0],csv:result.market.originalWholesaleCsv,
+      settlement:{town:result.period.town,dtPeople:result.period.dtPeople,commandNowSeconds:next.nowSeconds},
+      slices:[{spanSeconds:60,dateupdate:0}],samples:[...n.preEventDraws,...n.eventSamples]})
+  })).slices[0];
+  assert.deepEqual(restarted.preEvent.wholesale,next.market.wholesale);
+  assert.equal(restarted.preEvent.csv,next.market.originalWholesaleCsv);
+  assert.deepEqual(restarted.eventState,next.period.eventState);
+  assert.deepEqual(restarted.ranges,n.eventDrawRanges);
+  for(const [key,value] of Object.entries(next.shops[0])){
+    if(key==='costtoday'){assert.ok(Math.abs(value-restarted.shop[key])<1e-8);continue;}
+    assert.deepEqual(value,restarted.shop[key],key);
+  }
+  assert.throws(()=>continueR4CrossPeriodCandidate({previous:structuredClone(result),minutes:1}),/lineage/);
+  assert.throws(()=>project({...world,period:result.period,shops:result.shops,market:result.market,nowSeconds:result.nowSeconds},1),/known/);
+  const expected=structuredClone(next);
+  result.shops[0].money+=12345;
+  assert.deepEqual(continueR4CrossPeriodCandidate({previous:result,minutes:1}),expected,'public candidate mutation cannot alter private lineage');
 });
 
 

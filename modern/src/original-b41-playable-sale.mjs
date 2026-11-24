@@ -248,7 +248,7 @@ function projectSourcePreEventSaleSlice({
     bad('source durable event contracts mismatch');
   // Source DataRead executes once per command, NOT once per time slice.
   const overlayWorld=boundary?.dataReadWorld??world;
-  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,candidateSettled:boundary?.candidateSettled===true});
   if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
   if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -513,7 +513,7 @@ export function projectR4InventoryPreEventTurn(args){
  * @timespan plan. The remaining command slices, EVENT and disk effects
  * MUST still be handled by a future coordinator. No public time authority.
  */
-export function projectR4BoundaryPreEventCandidate({reviewedPeriod,...args}){
+export function projectR4BoundaryPreEventCandidate({reviewedPeriod,candidateSettled=false,...args}){
   const {world,reviewed,minutes}=args;
   if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
      !Number.isSafeInteger(world?.nowSeconds))bad('bounded source command window');
@@ -524,7 +524,7 @@ export function projectR4BoundaryPreEventCandidate({reviewedPeriod,...args}){
     bad('source settlement boundary required');
   const spanSeconds=plan.effectiveSlices[0].timespanSeconds;
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
-    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world});
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world,candidateSettled});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 
@@ -533,7 +533,7 @@ export function projectR4BoundaryPreEventCandidate({reviewedPeriod,...args}){
  * and settled population are carried independently by the coordinator.
  * This deliberately cannot be called as a public/legacy time action.
  */
-export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,...args}){
+export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,candidateSettled=false,...args}){
   const {world,reviewed,minutes}=args;
   if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
      originWorld?.worldId!==world?.worldId||originWorld?.revision!==world?.revision)
@@ -548,7 +548,19 @@ export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,.
     bad('exact second source slice required');
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
     {spanSeconds:plan.effectiveSlices[1].timespanSeconds,commandNowSeconds,
-     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld});
+     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld,candidateSettled});
+  return {...stage,plan,committable:false,worldStateWritten:false};
+}
+
+/** Candidate-only first command after a settlement; no extra boundary. */
+export function projectR4PostSettlementPreEventCandidate({reviewedPeriod,...args}){
+  const {world,reviewed,minutes}=args;
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||world.period?.state!=='source-cross-period-candidate-not-committed')bad('source settled candidate required');
+  const spanSeconds=minutes*60,commandNowSeconds=world.nowSeconds+spanSeconds;
+  const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:commandNowSeconds});
+  if(plan.crossesSettlement||plan.effectiveSlices.length!==1)bad('noncrossing candidate continuation required');
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:world,candidateSettled:true});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 
