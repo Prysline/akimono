@@ -112,7 +112,7 @@ sub putFile{
 sub getFile{
   my($file)=@_;
   open my $fd,'<:encoding(UTF-8)',$file or die $!;
-  my $s;{local $/;$s=<$fd;}close $fd;return $s;
+  my $s;{local $/;$s=<$fd>;}close $fd;return $s;
 }
 sub backupSnapshots {
   my @snapshots;
