@@ -128,8 +128,8 @@ export function verifyReviewedWorldHistory({world,proof,streetModule,createIniti
     if(!initialized.ok||encodeMemorySnapshot(initialized.world)!==proof.anchor)fail('fresh source anchor mismatch');
   }else{
     if(!checkpointStore)fail('authenticated checkpoint verifier required');
-    checkpointStore.openPrefix(proof,generation);
     if(streetModule.reviewedCrossPeriod===true)streetModule.authorizeVerifiedCheckpoint({world:anchor,proof,checkpointStore,generation});
+    else checkpointStore.verifyChain(proof,generation);
   }
   const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:anchor,streetModule});
   for(const entry of proof.commands){

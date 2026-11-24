@@ -131,7 +131,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     validateReviewedWorldTimeState:validate,
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
       if(!isReviewedHistoryCheckpointStore(checkpointStore)||proof.anchor!==encodeMemorySnapshot(world))fail('authenticated checkpoint anchor required');
-      checkpointStore.openPrefix(proof,generation);validate(world);remember(world);
+      checkpointStore.verifyChain(proof,generation);validate(world);remember(world);
     }}:{}),
     apply({world,command}){
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return propose(world,command);

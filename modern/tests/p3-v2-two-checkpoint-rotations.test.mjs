@@ -57,6 +57,7 @@ test('P3 v2 earned craft and more than 256 ordinary HTTP commands survive two ch
   t.diagnostic('P3 nonsettling genuine craft + 260 legal discards; checkpoint revisions '+rotations.join(', ')+'; two exact v2 restart generations');
   // Negative case only: a checksum-correct forged latest product count
   // cannot replace the authentic history; the previous slot must recover.
+  await p.rejectDamagedOldestPrefix(second);
   await p.rejectForgedLatest(first,record=>{
     const world=JSON.parse(record.world);
     world.shops[0].item[40]++;

@@ -140,6 +140,29 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
     assert.equal(state.save.format,'akimono.local-world-save.v2');
     return snapshot;
   }
+  async function rejectDamagedOldestPrefix(expected){
+    const record=JSON.parse(await readFile(join(directory,'world-a.json'),'utf8'));
+    let proof=JSON.parse(record.careerProof),segments=[];
+    while(proof.anchorKind==='checkpoint'){
+      const filename=join(directory,'reviewed-history-v1','prefix-'+proof.checkpoint.prefixSha256+'.json');
+      const wire=await readFile(filename,'utf8');
+      segments.push({filename,wire});proof=JSON.parse(wire);
+    }
+    assert.ok(segments.length>=2,'two retained segments required');
+    const {filename,wire}=segments.at(-1);
+    await writeFile(filename,'damaged earlier retained prefix');
+    try{
+      // A live status read must recheck disk dependencies even if the slot
+      // bytes are unchanged and its most recent prefix is intact.
+      const status=await(await fetch(url+'/api/state')).json();
+      assert.equal(status.save.unreadable,true);
+      await stop();await boot();
+      const denied=await post('/api/load');assert.equal(denied.ok,false);
+      assert.equal((await post('/api/initialize')).ok,false);
+    }finally{await stop();await writeFile(filename,wire);}
+    await boot();ok(await post('/api/load'),'LOADED');
+    assert.deepEqual(state.world,expected);
+  }
   async function rejectForgedLatest(first,mutate){
     const slot=join(directory,'world-a.json');
     await stop();
@@ -156,5 +179,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectForgedLatest,post};
+  return {get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectForgedLatest,post};
 }

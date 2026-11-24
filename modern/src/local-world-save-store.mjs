@@ -36,7 +36,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot,historyReplay){
+function readSlot(dir,slot,historyReplay,verifiedSlots,reuseVerifiedReplay=false){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -74,14 +74,22 @@ function readSlot(dir,slot,historyReplay){
       if(!historyReplay?.checkpointStore)fail('checkpoint key verifier unavailable');
       historyReplay.checkpointStore.verifyRecord(record);
     }
-    const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
+    // Only status() may reuse an exact, previously replayed envelope.
+    // Key, full retained lineage and materialized files are still checked on
+    // every read. load/save/clear always run the actual source replayer.
+    const prior=verifiedSlots[slot];
+    const hit=reuseVerifiedReplay&&prior?.serialized===serialized;
+    if(hit&&hasAuth)historyReplay.checkpointStore.verifyChain(proof,record.generation);
+    const world=hit?prior.world:verifiedCheckpoint(decodeMemorySnapshot(record.world),
       historyReplay,proof,record.generation);
     if(historyReplay?.periodDiskStore)historyReplay.periodDiskStore.verify(world);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
+    verifiedSlots[slot]={serialized,world};
     return {kind:'ok',slot,generation:record.generation,world,proof};
   }catch(error){
+    verifiedSlots[slot]=null;
     if(fd===undefined&&error?.code==='ENOENT')return {kind:'missing',slot};
     return {kind:'corrupt',slot,reason:error.message};
   }finally{
@@ -93,14 +101,16 @@ export function createLocalWorldSaveStore({directory,historyReplay}){
   if(typeof historyReplay?.verify!=='function'||!historyReplay.checkpointStore)fail('source history verifier and checkpoint store required');
   const compatible=(older,newer)=>reviewedHistoryLineageCompatible(older,newer,historyReplay.checkpointStore);
   const dir=path.resolve(directory);
-  function scan(){
+  // Bounded to the two physical slots. Not an authorization cache.
+  const verifiedSlots=[null,null];
+  function scan(reuseVerifiedReplay=false){
     if(fs.existsSync(dir)){
       const st=fs.lstatSync(dir);
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0,historyReplay),
-      readSlot(dir,1,historyReplay)];
+    const rows=[readSlot(dir,0,historyReplay,verifiedSlots,reuseVerifiedReplay),
+      readSlot(dir,1,historyReplay,verifiedSlots,reuseVerifiedReplay)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
@@ -114,7 +124,7 @@ export function createLocalWorldSaveStore({directory,historyReplay}){
     return {latest,corrupt};
   }
   function status(){
-    const {latest,corrupt}=scan();
+    const {latest,corrupt}=scan(true);
     return Object.freeze({
       available:Boolean(latest),generation:latest?.generation??0,
       recoveryWarning:corrupt.length>0,
@@ -146,7 +156,7 @@ export function createLocalWorldSaveStore({directory,historyReplay}){
       ...(proofText===null?{}:{careerProof:proofText})};
     if(careerProof?.anchorKind==='checkpoint'){
       if(!historyReplay?.checkpointStore)fail('checkpoint authenticator unavailable');
-      historyReplay.checkpointStore.openPrefix(careerProof,generation);
+      historyReplay.checkpointStore.verifyChain(careerProof,generation);
       envelope.checkpointAuth=historyReplay.checkpointStore.recordAuth(envelope);
     }
     const record=JSON.stringify(envelope)+'\n';

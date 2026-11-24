@@ -137,6 +137,25 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
     if(origin!==p.originSha256)fail('retained original anchor lineage');
     return prior;
   }
+  // Every retained segment remains part of the authenticated lineage. A
+  // valid newest HMAC cannot hide a lost or damaged earlier prefix. Walk
+  // decreasing revisions iteratively; do not replay already signed commands.
+  function verifyChain(proof,generation=null){
+    let cursor=proof,ceiling=generation;
+    while(cursor.anchorKind==='checkpoint'){
+      const prior=openPrefix(cursor,ceiling);
+      if(prior.anchorKind==='checkpoint'){
+        // Multiple rotations may occur before the next explicit save.
+        if(prior.checkpoint?.generation>cursor.checkpoint.generation)fail('retained checkpoint generation order');
+      }else if(prior.anchorKind!=='fresh')fail('retained chain must originate at a fresh anchor');
+      ceiling=null;
+      cursor=prior;
+    }
+    if(cursor.anchorKind!=='fresh'||!exact(cursor,'anchorKind,anchor,commands'))fail('retained fresh origin shape');
+    const origin=JSON.parse(cursor.anchor);
+    if(origin.revision!==1||!Array.isArray(origin.shops)||origin.shops.length!==0)fail('retained fresh origin state');
+    return true;
+  }
   // Only the shared history replayer calls this AFTER source verification.
   // Archive exactly the validated predecessor wire, never a guessed state.
   function sealVerified({world,anchor,proof,generation}){
@@ -151,7 +170,7 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
       generation,originSha256,prefixSha256,worldSha256:sha(anchor),sourceFingerprint,interpreter,
       hashPolicy,drawPolicy};
     const next={anchorKind:'checkpoint',anchor,commands:[],checkpoint:{...body,mac:hmac(signingKey,FORMAT,body)}};
-    openPrefix(next);
+    verifyChain(next);
     return next;
   }
   // Sign the actual outer B-43 generation as well as the checkpoint's
@@ -162,5 +181,5 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
   function verifyRecord(record){
     if(!equalMac(record.checkpointAuth,recordAuth(record)))fail('checkpoint save authentication failed');
   }
-  const store=Object.freeze({sealVerified,openPrefix,recordAuth,verifyRecord});authenticatedStores.add(store);return store;
+  const store=Object.freeze({sealVerified,openPrefix,verifyChain,recordAuth,verifyRecord});authenticatedStores.add(store);return store;
 }
