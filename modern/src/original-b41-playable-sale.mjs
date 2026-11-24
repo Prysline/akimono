@@ -267,8 +267,9 @@ function projectSourcePreEventSaleSlice({
   // until the original lifecycle has been source-reviewed.
   if(world.schema===PERIOD_WORLD_SCHEMA &&
      world.period?.eventState===null &&
-     shop.showcase[0]>=40&&shop.showcase[0]<=44)
-    bad('R3 sword natural sale blocked: EVENT state unknown; reviewed lifecycle required');
+     (shop.showcasecount===2||
+       shop.showcase.some(id=>id>=40&&id<=44)))
+    bad('R3 multi-shelf or sword sale blocked: EVENT state unknown; reviewed lifecycle required');
   const activeItemId=shop.showcase[0]||10;
   const beforeStock=shop.item[activeItemId-1];
   if(shop.item[9]>20)bad('original #10 carrying limit exceeded');
