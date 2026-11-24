@@ -5,7 +5,7 @@
  * the existing B-50-compatible CloseShop source projector.
  */
 import {createHash} from 'node:crypto';
-import {realpath, stat,rename,appendFile} from 'node:fs/promises';
+import {realpath, stat,lstat,rename,appendFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {R4_CLOSE_SHOP_EFFECT_SOURCE} from './original-r4-close-shop-effects.mjs';
@@ -51,7 +51,7 @@ async function sandboxRoot(directory) {
   if(typeof directory!=='string')fail('explicit sandbox directory required');
   const root=await realpath(directory);
   if(path.dirname(root)!==await realpath(os.tmpdir())||
-     !path.basename(root).startsWith('akimono-r4-archive-'))
+     !['akimono-r4-archive-','akimono-r4-period-disk-'].some(p=>path.basename(root).startsWith(p)))
     fail('only a fresh isolated temporary sandbox is supported');
   return root;
 }
@@ -71,6 +71,8 @@ export async function appendR4CloseShopArchiveSandbox({
   const logDir=path.join(root,'log');
   const live=path.join(logDir,'delete.cgi');
   const old=path.join(logDir,'delete-old.cgi');
+  if(!(await lstat(logDir)).isDirectory())fail('real log directory required');
+  for(const p of [live,old]){try{if(!(await lstat(p)).isFile())fail('regular log file required')}catch(e){if(e.code!=='ENOENT')throw e}}
   let rotated=false;
   let size=0;
   try {size=(await stat(live)).size;}

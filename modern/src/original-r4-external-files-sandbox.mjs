@@ -5,7 +5,7 @@ import {serializeGuildEventLedgers,parseGuildEventLedgers} from './original-r4-g
 import path from 'node:path';
 import os from 'node:os';
 const pins={write:'203f33b37511e838800a45b84183af98fcf46e4c',guild:'6593aa8a3ae4a1695c2418f12a3776f0053454ac',turn:'b8a4980275f475a952846a8d6072fad45f8dff50'};
-const files=['army.cgi','guildbal.cgi','play.cgi'];
+const files=['army.cgi','guild.cgi','guildbal.cgi','play.cgi'];
 const reviews=new WeakSet();
 const fail=m=>{throw new RangeError('R4 external sandbox: '+m)};
 export function reviewExternalFiles(sources){
@@ -15,7 +15,7 @@ export function reviewExternalFiles(sources){
 async function rootFor(reviewed,directory){
   if(!reviews.has(reviewed))fail('source review required');
   const root=await realpath(directory);
-  if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-external-'))fail('isolated external sandbox required');
+  if(path.dirname(root)!==await realpath(os.tmpdir())||!['akimono-r4-external-','akimono-r4-period-disk-'].some(p=>path.basename(root).startsWith(p)))fail('isolated external sandbox required');
   return root;
 }
 async function exists(p){try{return await lstat(p)}catch(e){if(e.code==='ENOENT')return null;throw e}}

@@ -21,7 +21,7 @@ export function reviewGuildFiles(sources){
 function review(r){if(!reviews.has(r))fail('source review required')}
 async function rootFor(directory){
   const root=await realpath(directory);
-  if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-guild-'))fail('isolated sandbox required');
+  if(path.dirname(root)!==await realpath(os.tmpdir())||!['akimono-r4-guild-','akimono-r4-period-disk-'].some(p=>path.basename(root).startsWith(p)))fail('isolated sandbox required');
   return root;
 }
 async function regular(file){if(!(await lstat(file)).isFile())fail('regular file required');return new TextDecoder('utf-8',{fatal:true}).decode(await readFile(file))}
@@ -68,7 +68,7 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
   const common=await dir(path.join(root,'common')),stage=await dir(path.join(root,'stage'));
   if(await exists(path.join(root,'commit.cgi'))||(await readdir(stage)).length)fail('pending files require recovery');
   const old=parseGuildDefinition(await regular(path.join(root,'guild.cgi')));
-  const ledger=parseGuildLedgers(await regular(path.join(root,'guildbal.cgi')));
+  const ledger=(periods.length?parseGuildEventLedgers:parseGuildLedgers)(await regular(path.join(root,'guildbal.cgi')));
   if(!sameKeys(old,ledger))fail('live guild and ledger mismatch');
   const definitions={};
   for(const file of (await readdir(common)).sort()){
@@ -79,6 +79,7 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
   // A period replay is limited to the existing B-50 single-member source chain.
   for(const p of periods){
     if(Object.keys(ledger).length!==1||!Object.hasOwn(ledger,p.id)||p.inputGuild?.feeRate!==old[p.id].feerate||p.outputGuild?.feeRate!==old[p.id].feerate)fail('unreviewed period context');
+    if(Object.hasOwn(ledger[p.id],'guild'))delete ledger[p.id].guild; // original period reset
     ledger[p.id]=applyGuildPeriod({id:p.id,inputGuild:p.inputGuild,outputGuild:p.outputGuild,edits:p.edits,data:ledger[p.id]});
   }
   for(const {guildId,amount} of edits){
