@@ -264,3 +264,27 @@ test('bottom return controls and discard stay in the player workflow',()=>{
   assert.match(script,/call\('\/api\/discard'/);
   assert.match(css,/\.back-row\{display:flex;justify-content:center/);
 });
+
+test('compact original showcase editor retains each occupied shelf and syncs custom integer prices',()=>{
+  const form=html.match(/<form id="showcase-form"[\s\S]*?<\/form>/)?.[0]??'';
+  assert.match(form,/id="showcase-shelf"/);
+  assert.doesNotMatch(form,/id="shelf-item"/);
+  assert.match(form,/標準價格的/);
+  for(const p of ['50','60','70','80','90','110','120'])
+    assert.match(form,new RegExp('<option value="'+p+'">'+p+'%<\/option>'));
+  assert.match(form,/<option value="100" selected>相等<\/option>/);
+  assert.match(form,/<option value="custom">自訂比例<\/option>/);
+  assert.match(form,/id="shelf-price-custom"/);
+  assert.match(form,/id="shelf-price-direct"/);
+  assert.match(script,/function syncShelfCustomRatio\(\)/);
+  assert.match(script,/function syncShelfCalculatedPrice\(\)/);
+  assert.match(script,/Math\.trunc\(base\*ratio\/100\)/);
+  assert.match(script,/showcaseSlotDescription\(s,index\)\+listed/);
+  assert.match(script,/listedPrice===computed\?0:listedPrice/);
+  const render=script.match(/function renderItemInfo\(s\)\{[\s\S]*?\n\$\('use-offers'\)/)?.[0]??'';
+  assert.doesNotMatch(render,/\bshelfSelect\b|\bnewlyOpened\b/);
+  assert.match(script, /\$\('use-section'\)\.hidden=useOffers\.length===0/);
+  assert.match(css,/#tab-item \.shelf-form fieldset\{[\s\S]*?flex-wrap:wrap/);
+  assert.match(css,/#tab-item #showcase-shelf\{width:152px/);
+  assert.match(css,/\.discard-section \.inline-form label\{[\s\S]*?flex-direction:row/);
+});

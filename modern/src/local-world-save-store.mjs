@@ -19,7 +19,7 @@ import {B61_SWORD_SOURCE,isReviewedB61SwordPeriod}
   from './original-b61-sword-demand-event.mjs';
 import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
-import {isSourceShowcasePercentPrice}
+import {isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
 
 export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v1';
@@ -333,7 +333,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       const id=shop.showcase?.[0];
       const r=Number.isSafeInteger(id)&&id>0?
         sourceRegistryRule(marketBuyRegistry,id-1):null;
-      return r!==null&&shop.item[id-1]>0&&shop.price?.[0]===r.unitPrice;
+      return r!==null&&shop.item[id-1]>0&&
+        isSourceShowcaseListedPrice(r.unitPrice,shop.price?.[0]);
     };
     if(shop.id!==1||shop.status!==1||
        !Array.isArray(shop.item)||shop.item.length!==79||
@@ -363,9 +364,10 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
            43:8000,44:12000};
          const entry=reviewed[id];
          if(entry!==undefined)
-           return !isSourceShowcasePercentPrice(entry,shop.price[shelf]);
+           return !isSourceShowcaseListedPrice(entry,shop.price[shelf]);
          const r=sourceRegistryRule(marketBuyRegistry,id-1);
-         return r===null||shop.price[shelf]!==r.unitPrice;
+         return r===null||
+           !isSourceShowcaseListedPrice(r.unitPrice,shop.price[shelf]);
        })||
        !Number.isSafeInteger(shop.money)||shop.money<0||
        !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||

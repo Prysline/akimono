@@ -93,7 +93,7 @@ test('R3 original #14 USE swords -> real zh-Hant HTTP shared sale -> CAS two-slo
   assert.equal(rule.owned,2);
  }
  const wrong=await api('/api/showcase',{
-  expectedRevision:state.world.revision,itemId:41,priceOverride:1,
+  expectedRevision:state.world.revision,itemId:41,priceOverride:1000000000,
  });
  assert.equal(wrong.ok,false);
  assert.equal(wrong.state.world.revision,state.world.revision);
@@ -237,9 +237,9 @@ test('R3 player-facing 150% source sale uses original GetSaleTax, CAS and durabl
  assert.equal(invalid.state.world.revision,bought.state.world.revision);
  const bypass=await api('/api/showcase',{
   expectedRevision:bought.state.world.revision,itemId:10,
-  priceOverride:7500,
+  priceOverride:1000000000,
  });
- assert.equal(bypass.ok,false,'arbitrary price override is not sourced percent');
+ assert.equal(bypass.ok,false,'direct price above frozen MaxMoney must be refused');
  const displayed=await api('/api/showcase',{
   expectedRevision:bought.state.world.revision,itemId:10,per:150,
  });
@@ -272,4 +272,85 @@ test('R3 player-facing 150% source sale uses original GetSaleTax, CAS and durabl
  assert.equal(loaded.state.shop.price[0],7500);
  assert.equal(loaded.state.shop.taxtoday,tax);
  assertActualMarketShelf(loaded.state);
+});
+
+test('original direct 7501 G shelf price overrides 137% then sells through shared R3 and survives two B-43 generations',async t=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-direct-price-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ let server=await boot(directory);
+ t.after(async()=>await server.stop());
+ let api=(endpoint,payload={})=>server.post(endpoint,payload);
+ assert.equal((await api('/api/initialize')).code,'COMMITTED');
+ assert.equal((await api('/api/open-shop',{
+   expectedRevision:1,ownerName:'直接售價原版',shopName:'定價來源驗證',
+ })).code,'COMMITTED');
+ const supplied=await api('/api/supply',{
+   expectedRevision:2,timespanSeconds:3600,
+ });
+ assert.equal(supplied.code,'COMMITTED',JSON.stringify(supplied));
+ const offer=supplied.state.marketOffers.find(x=>x.itemId===10);
+ assert.ok(offer?.canBuy);
+ const bought=await api('/api/buy',{
+   expectedRevision:3,itemId:10,requestedCount:2,
+   marketShelf:offer.shelf,expectedPrice:offer.price,
+ });
+ assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
+ const percent=await api('/api/showcase',{
+   expectedRevision:bought.state.world.revision,
+   itemId:10,per:137,
+ });
+ assert.equal(percent.code,'COMMITTED',JSON.stringify(percent));
+ assert.equal(percent.state.shop.price[0],6850,'source integer percentage calculation');
+ const direct=await api('/api/showcase',{
+   expectedRevision:percent.state.world.revision,
+   itemId:10,per:137,priceOverride:7501,
+ });
+ assert.equal(direct.code,'COMMITTED',JSON.stringify(direct));
+ assert.equal(direct.state.shop.price[0],7501,
+   'source sc-s.cgi prc takes priority over original percentage');
+ const invalid=await api('/api/showcase',{
+   expectedRevision:direct.state.world.revision,
+   itemId:10,per:137,priceOverride:1000000000,
+ });
+ assert.equal(invalid.ok,false,'source MaxMoney cannot be exceeded');
+ assert.deepEqual(invalid.state.world,direct.state.world,
+   'over-price edit must not change GameCore WorldState');
+ const nonInteger=await api('/api/showcase',{
+   expectedRevision:direct.state.world.revision,
+   itemId:10,per:137.5,priceOverride:7501,
+ });
+ assert.equal(nonInteger.ok,false);
+ assert.deepEqual(nonInteger.state.world,direct.state.world);
+ const sold=await api('/api/advance-time',{
+   expectedRevision:direct.state.world.revision,minutes:30,
+ });
+ assert.equal(sold.code,'COMMITTED',JSON.stringify(sold));
+ assert.ok(sold.details.naturalSaleCount>0,
+   'source R3 deterministic time must actually sell at custom 7501 G');
+ const gross=sold.details.naturalSaleCount*7501;
+ const tax=Math.trunc(gross*3/100);
+ assert.equal(sold.state.shop.saletoday,gross);
+ assert.equal(sold.state.shop.taxtoday,tax);
+ assert.equal(sold.state.shop.money,bought.state.shop.money+gross-tax);
+ assert.equal(sold.state.shop.price[0],7501);
+ const save1=await api('/api/save',{
+   expectedRevision:sold.state.world.revision,expectedGeneration:0,
+ });
+ assert.equal(save1.code,'SAVED',JSON.stringify(save1));
+ await server.stop();
+ server=await boot(directory);
+ api=(endpoint,payload={})=>server.post(endpoint,payload);
+ const loaded=await api('/api/load');
+ assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+ assert.deepEqual(loaded.state.world,sold.state.world);
+ const save2=await api('/api/save',{
+   expectedRevision:loaded.state.world.revision,expectedGeneration:1,
+ });
+ assert.equal(save2.code,'SAVED',JSON.stringify(save2));
+ await server.stop();
+ server=await boot(directory);
+ const verified=await server.post('/api/load');
+ assert.equal(verified.code,'LOADED',JSON.stringify(verified));
+ assert.equal(verified.state.save.generation,2);
+ assert.equal(verified.state.shop.price[0],7501);
 });

@@ -65,6 +65,8 @@ import {reviewOriginalB63SwordMapOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
+import {SOURCE_STANDARD_STREET_MAX_MONEY}
+  from './shared-showcase-price.mjs';
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
@@ -173,6 +175,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
+  if(model.maxMoney!==SOURCE_STANDARD_STREET_MAX_MONEY)
+    bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
   const sources=[originalAdminInitSource,originalDataReadSource,originalDataWriteSource];
@@ -637,6 +641,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     metadata,
     // Read-only value parsed from source @@DEFINE TimeEditShowcase (10m).
     showcaseEditTimeSeconds:model.showcaseEditTime,
+    sourceMaxShowcasePrice:model.maxMoney,
     catalog,
     reviewedGiftMapUse:giftMap,
     reviewedBootstrap,

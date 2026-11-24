@@ -201,10 +201,29 @@
       <form id="showcase-form" class="shelf-form">
         <fieldset>
           <legend>展示架設定</legend>
-          <label>展示
-            <select id="showcase-shelf" aria-label="選擇展示架（括號內為目前商品）"><option value="0">架1（空架）</option></select>
-          </label>
-          <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
+          <label for="showcase-shelf" class="shelf-inline-label">架號</label>
+          <select id="showcase-shelf" aria-label="選擇展示架（括號內為目前商品）"><option value="0">架1（空架）</option></select>
+          <label for="shelf-price-per" class="shelf-inline-label">標準價格的</label>
+          <span class="shelf-percent">
+            <select id="shelf-price-per" aria-label="標準價格比例">
+              <option value="50">50%</option>
+              <option value="60">60%</option>
+              <option value="70">70%</option>
+              <option value="80">80%</option>
+              <option value="90">90%</option>
+              <option value="100" selected>相等</option>
+              <option value="110">110%</option>
+              <option value="120">120%</option>
+              <option value="custom">自訂比例</option>
+            </select>
+            <span id="shelf-custom-ratio" hidden>
+              <input id="shelf-price-custom" type="number" min="1" max="200" step="1" value="100" aria-label="自訂標準價格比例">
+              <span>%</span>
+            </span>
+          </span>
+          <span class="shelf-inline-label">或</span>
+          <input id="shelf-price-direct" type="number" min="1" step="1" required aria-label="直接售價（G）">
+          <span class="shelf-inline-label">G</span>
           <button id="set-showcase" class="primary" type="submit">陳列</button>
         </fieldset>
         <p class="shelf-time-note">調整展示架消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
@@ -219,10 +238,9 @@
         </form>
         <p id="discard-note" class="muted">丟棄不消耗行動時間；丟棄後無法復原。</p>
       </div>
-      <div id="use-section" class="source-use-section">
+      <div id="use-section" class="source-use-section" hidden>
         <h3 class="sub-title">商品使用／製作</h3>
         <ul id="use-offers" class="use-action-list">
-          <li>此商品暫無可執行的使用或製作方式</li>
         </ul>
         <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
       </div>

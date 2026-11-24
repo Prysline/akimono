@@ -686,25 +686,28 @@ async function api(req,res,url){
       const sourceRule=streetModule.reviewedB41?.saleRules?.[itemId]??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
-      const fields=Object.keys(body).sort().join(',');
-      if(fields!=='expectedRevision,itemId,per'&&
-         fields!=='expectedRevision,itemId,per,shelf'&&
-         fields!=='expectedRevision,itemId,priceOverride'&&
-         fields!=='expectedRevision,itemId,priceOverride,shelf')
-        throw Error('僅允許原版販售比例、指定架號或相容原價欄位');
-      const fromPercent=Object.hasOwn(body,'per');
-      const per=fromPercent?commandNumber(body.per,'per',1):100;
+      const keys=Object.keys(body);
+      if(keys.some(key=>!['expectedRevision','itemId','per',
+        'priceOverride','shelf'].includes(key))||
+         !Object.hasOwn(body,'expectedRevision')||
+         !Object.hasOwn(body,'itemId')||
+         (!Object.hasOwn(body,'per')&&
+           !Object.hasOwn(body,'priceOverride')))
+        throw Error('展示架僅接受原版比例 per、直接售價 priceOverride 與架號 shelf');
+      const per=Object.hasOwn(body,'per')?
+        commandNumber(body.per,'per',1):100;
       if(per>200)throw Error('原版展示架比例限制 1–200%');
-      const sourcePrice=sourceRule?.unitPrice??0;
-      if(!fromPercent&&body.priceOverride!==sourcePrice)
-        throw Error('相容 priceOverride 只接受來源原價');
+      const priceOverride=Object.hasOwn(body,'priceOverride')?
+        commandNumber(body.priceOverride,'priceOverride',1):0;
+      if(priceOverride>streetModule.sourceMaxShowcasePrice)
+        throw Error('直接售價超出原版 MaxMoney 上限');
       const shelf=Object.hasOwn(body,'shelf')?
         commandNumber(body.shelf,'shelf'):0;
       if(shelf>=(repo.read().shops[0]?.showcasecount??0))
         throw Error('展示架不存在，請先使用擴建工具');
       result=commit({kind:'edit-showcase',
         expectedRevision:ensureRevision(body),shopId:1,shelf,
-        itemId,per,priceOverride:fromPercent?0:sourcePrice});
+        itemId,per,priceOverride});
       break;
     }
     case '/api/advance-time': {

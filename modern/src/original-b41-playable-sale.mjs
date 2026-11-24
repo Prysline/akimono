@@ -9,7 +9,7 @@
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
-import {isSourceShowcasePercentPrice}
+import {isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
 import {reviewR3ItemCallbackStage,projectR3ItemCallbackStage}
   from './r3-reviewed-item-callback-stage.mjs';
@@ -253,7 +253,7 @@ function projectSourcePreEventSaleSlice({
       [0,10,40]:[0,10]).includes(shop.showcase[0])||
     (shop.showcase[0]===0&&shop.price[0]!==0)||
     (shop.showcase[0]!==0&&
-      !isSourceShowcasePercentPrice(
+      !isSourceShowcaseListedPrice(
         reviewed.saleRules?.[shop.showcase[0]]?.unitPrice,
         shop.price[0]))||
     ![undefined,0].includes(shop.taxmode))
