@@ -211,4 +211,4 @@ test('B50 ready receipt detects changed stage or already moved file; no marker o
   await writeFile(moved,ledger);
   await commitB50PeriodDisk({...args,recover:true});
   equalPlay(await readFile(live,'utf8'),o.finalPlay);
-});
+}));
