@@ -1,0 +1,107 @@
+/** Reviewed independent local world file projection.
+ * B43 publishes a complete immutable file generation, not four live renames.
+ * No original account/session, dragon or guild membership is manufactured.
+ */
+import {createHash} from 'node:crypto';
+import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r4-period-play-file.mjs';
+import {reviewTownFiles} from './original-r4-town-files.mjs';
+import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
+import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
+import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
+export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
+const CANDIDATE='source-cross-period-candidate-not-committed';
+const fail=s=>{throw new RangeError('R4 independent disk: '+s)};
+const exact=(x,k)=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).sort().join(',')===k.split(',').sort().join(',');
+const safe=n=>Number.isSafeInteger(n)&&n>=0;
+const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const backups=['log0.cgi','log1.cgi','log2.cgi','guildbal.cgi','play.cgi'];
+const guild="use utf8;\n$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;%GUILD=();1;";
+export function independentCandidateWorld(world){
+  const {disk,...period}=world.period;
+  return {...world,period:{...period,state:period.state===R4_SETTLED_STATE?CANDIDATE:period.state}};
+}
+function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
+export function createIndependentDiskProjection({sources,sort,street}){
+  if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
+  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true}),
+    townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
+  reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
+  const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
+  function wire(world){
+    if(!world.market||world.period.eventState===null)fail('known source market and events required');
+    return serializePeriodPlay({...codec,world:{lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,
+      state:world.period.town,town:{},events:world.period.eventState,wholesale:world.market.wholesale,wholesaleCsv:world.market.originalWholesaleCsv,shops:world.shops}});
+  }
+  const entry=(bytes,mtime)=>({bytes,mtime});
+  const capture=live=>Object.fromEntries(backups.map(n=>[n,live[n]]));
+  function validateFiles(files,names,now){
+    if(!exact(files,names.join(',')))fail('exact independent file set');
+    for(const f of Object.values(files))if(!exact(f,'bytes,mtime')||typeof f.bytes!=='string'||!safe(f.mtime)||f.mtime>now||Buffer.byteLength(f.bytes)>160000)fail('bounded source file');
+  }
+  function validate(world){
+    const d=world.period.disk;
+    if(world.revision===0&&world.market===null){if(d!==undefined)fail('fresh world has no disk');return true;}
+    if(!exact(d,'source,live,backup,generations')||d.source!==R4_INDEPENDENT_DISK||!Array.isArray(d.generations)||d.generations.length!==3)fail('independent disk envelope required');
+    validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi'],world.nowSeconds);
+    if(d.live['play.cgi'].bytes!==wire(world)||d.live['lasttime.cgi'].mtime!==world.nowSeconds||d.live['lasttime.cgi'].bytes!==''||d.live['guildbal.cgi'].bytes!==''||d.live['guild.cgi'].bytes!==guild)fail('live source bytes differ from world');
+    parsePeriodPlay({...codec,bytes:d.live['play.cgi'].bytes});
+    for(const f of [d.backup,...d.generations])if(f!==null){validateFiles(f,backups,world.nowSeconds);parsePeriodPlay({...codec,bytes:f['play.cgi'].bytes});}
+    if(Buffer.byteLength(JSON.stringify(d))>150000)fail('independent source file history capacity');
+    return true;
+  }
+  function finalize({before,command,applied,logRows=[]}){
+    const now=applied.nowSeconds??before.nowSeconds;
+    const raw=applied.period??before.period;
+    const {disk:unused,...period}=raw;
+    if(period.state===CANDIDATE)period.state=R4_SETTLED_STATE;
+    const shops=applied.shops.map(s=>{
+      let next={...s};
+      if(command.kind==='open-shop'){
+        // Local single account has no original login/password/IP/session.
+        // Only original unset fields are normalized on source-backed creation.
+        next={pass:'',comment:'',remoteaddr:'',guild:'',blocklogin:'',nocheckip:'',job:'',
+          rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
+      }
+      if(['edit-showcase','market-buy','use-item'].includes(command.kind))next.lastlogin=now;
+      return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
+    });
+    const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
+    const play=wire(after),old=before.period.disk;
+    const newRows=[...logRows];
+    // Local ordinary operation messages are explicit adapter logs, not a
+    // claim of historical locale / original login / CGI formatting parity.
+    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
+    if(['edit-showcase','market-buy','use-item'].includes(command.kind))
+      newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
+    if(newRows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('bounded log rows');
+    let d;
+    if(!old){
+      if(command.kind!=='initialize-source-market'||before.revision!==0)fail('only fresh source initialization');
+      const live=Object.fromEntries(backups.map(n=>[n,entry(n==='play.cgi'?play:'',now)]));
+      live['guild.cgi']=entry(guild,now);live['lasttime.cgi']=entry('',now);
+      d={source:R4_INDEPENDENT_DISK,live,backup:capture(live),generations:[null,null,null]};
+    }else{
+      const crossings=period.settledCount-before.period.settledCount;
+      if(![0,1].includes(crossings))fail('one source boundary per command');
+      const live={...old.live};
+      // period.cgi copies the prior LIVE files, not the new settled play.
+      const generations=crossings?[capture(old.live),...old.generations.slice(0,2)]:old.generations;
+      // DataWrite checks the original backup play mtime, before RenewLog.
+      const copy=old.backup['play.cgi'].mtime<now-3600;
+      const backup=copy?Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])):old.backup;
+      if(crossings){live['guild.cgi']=entry(guild,now);live['guildbal.cgi']=entry('',now);}
+      live['play.cgi']=entry(play,now);live['lasttime.cgi']=entry('',now);
+      if(newRows.length){
+        if(old.live['log1.cgi'].mtime<now-129600){live['log2.cgi']=old.live['log1.cgi'];live['log1.cgi']=old.live['log0.cgi'];live['log0.cgi']=entry(newRows.join(''),now);}
+        else live['log0.cgi']=entry(newRows.join('')+old.live['log0.cgi'].bytes,now);
+      }
+      d={source:R4_INDEPENDENT_DISK,live,backup,generations};
+    }
+    const next={...applied,shops,period:{...period,disk:d}};
+    validate({...after,period:next.period});
+    return next;
+  }
+  return Object.freeze({validate,finalize,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+    normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
+}

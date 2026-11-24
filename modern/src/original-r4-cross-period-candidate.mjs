@@ -16,6 +16,12 @@ const lineage=new WeakMap();
 export function projectR4CrossPeriodCandidate(args){
   return projectCandidate(args,false);
 }
+// A pure successor may also be reprojected by the trusted CAS reviewer from
+// its source-validated settled world. This export grants NO commit authority.
+export function projectR4SettledPeriodCandidate(args){
+  if(args.world?.period?.state!=='source-cross-period-candidate-not-committed')fail('settled candidate input required');
+  return projectCandidate(args,true);
+}
 // Only the exact returned object can continue. Its mutable public payload
 // is never trusted as input: use the private cloned source successor.
 export function continueR4CrossPeriodCandidate({previous,minutes}){

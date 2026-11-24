@@ -72,9 +72,16 @@ export async function renewPeriodLogDisk({reviewed,directory,rows,nowSeconds}){
 
 /** Exact chronological calls in a single source command, then unshift as
  * the original PushLog does. No historical locale/hash equivalence. */
+export function projectReviewedEventLogRows({reviewed,logs,nowSeconds}){
+  check(reviewed);
+  return logs.map(call=>{
+    if(!Array.isArray(call)||![3,4,5].includes(call.length))fail('unreviewed EVENT log call');
+    return row(nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]);
+  }).reverse();
+}
 export function projectCrossPeriodLogRows({reviewed,candidate}){
   check(reviewed);
-  if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||candidate.evidence.slices[0]?.dateupdate!==1)fail('cross-period candidate required');
+  if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
   const calls=[];
   for(const slice of candidate.evidence.slices){
     if(slice.dateupdate===1){
