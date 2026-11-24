@@ -16,8 +16,12 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
-  applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
+  applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
+import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
+const reviewedTimeMode=process.env.AKIMONO_REVIEWED_NORMAL_TIME==='1';
+if(reviewedTimeMode&&process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1')
+  throw Error('reviewed normal time cannot use fixture RNG');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
@@ -56,9 +60,10 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
+  enableReviewedNormalTime:reviewedTimeMode,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
-  'market-buy','use-item','edit-showcase','advance-source-time']
+  'market-buy','use-item','edit-showcase',reviewedTimeMode?'advance-reviewed-world-time':'advance-source-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('R2-E runtime source-review capabilities missing');
 if(!streetModule.reviewedB63Map)
@@ -76,10 +81,32 @@ const reviewedPeriodSeed=reviewOriginalPeriodBootstrap({
 });
 
 let repo=null;
+let careerProof=null;
+const createInitialWorld=({worldId,nowSeconds})=>createPeriodMemoryWorld({worldId,streetId:streetModule.id,nowSeconds,period:createOriginalPeriodSeed(reviewedPeriodSeed)});
+const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
+function isOrdinaryCommand(cmd){
+  if(!cmd||typeof cmd!=='object'||cmd.shopId!==1)return false;
+  const common='kind,expectedRevision,shopId,';
+  switch(cmd.kind){
+    case 'open-shop': return exactKeys(cmd,common+'ownerName,shopName');
+    case 'market-buy': return exactKeys(cmd,common+'itemId,requestedCount,marketShelf,expectedPrice');
+    case 'edit-showcase': return exactKeys(cmd,common+'shelf,itemId,per,priceOverride');
+    case 'use-item': return Boolean(streetModule.useItem.getRule(cmd.itemId,cmd.useId))&&
+      exactKeys(cmd,common+'itemId,useId,requestedCount'+(Object.hasOwn(cmd,'randomDraws')?',randomDraws':''));
+    default:return false;
+  }
+}
+function verifyOrdinaryDraws(world,cmd){
+  if(cmd.kind!=='use-item')return !Object.hasOwn(cmd,'randomDraws');
+  const draws=sampleSourceUse(world,cmd);
+  return draws.length?JSON.stringify(draws)===JSON.stringify(cmd.randomDraws):!Object.hasOwn(cmd,'randomDraws');
+}
+const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveStore=createLocalWorldSaveStore({
   directory:process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data'),
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
+  ...(reviewedTimeMode?{historyReplay:{requireProof:true,verify:({world,proof})=>verifyReviewedWorldHistory({world,proof,...historyPolicy})}}:{}),
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
@@ -158,13 +185,15 @@ function state(){
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
+    reviewedTimeMode,
+    historyCommands:careerProof?.commands.length??null,
     memoryOnly:!save.available,
     diskSaveAvailable:true,
     sourceCityState:world?.period?.town??null,
     sourcePeriodMetadata:world?.period?{
       state:world.period.state,dtPeople:world.period.dtPeople,
       settledCount:world.period.settledCount,
-      activeEventsKnownEmpty:world.period.eventState!==null,
+      activeEventsKnownEmpty:reviewedTimeMode?world.period.eventState!==null&&Object.keys(world.period.eventState).length===0:world.period.eventState!==null,
     }:null,
     eventDefinitionStatus:{
       declared:streetModule.reviewedEventCatalog.declaredCount,
@@ -177,7 +206,19 @@ function state(){
 function commit(command){
   if(!repo) return {ok:false,code:'WORLD_NOT_INITIALIZED',
     details:{reason:'請先初始化來源世界'}};
-  return executeMemoryCommand({repository:repo,streetModule,command});
+  if(!reviewedTimeMode)return executeMemoryCommand({repository:repo,streetModule,command});
+  const before=repo.read();
+  const preview=applyGameCommand({world:before,streetModule,command});
+  if(!preview.ok)return preview;
+  let nextProof;
+  try{nextProof=appendReviewedWorldHistory({proof:careerProof,before,command,result:preview,isOrdinaryCommand,verifyOrdinaryDraws});}
+  catch(error){return {ok:false,code:'HISTORY_REJECTED',details:{reason:error.message}};}
+  const result=executeMemoryCommand({repository:repo,streetModule,command});
+  if(result.ok){
+    if(encodeMemorySnapshot(result.world)!==encodeMemorySnapshot(preview.world))throw Error('reviewed CAS replay mismatch');
+    careerProof=nextProof;
+  }
+  return result;
 }
 async function jsonBody(req){
   let text='';
@@ -302,7 +343,7 @@ async function api(req,res,url){
           error:'世界或存檔已更新，請重新確認後再重置',state:state()});
       const cleared=saveStore.clear({expectedGeneration});
       // Only discard live memory AFTER both disk slots are successfully cleared.
-      repo=null;
+      repo=null;careerProof=null;
       return send(res,200,{ok:true,code:'RESET',
         details:{action:'reset-local-test-world',
           deletedSlots:cleared.deletedSlots,generation:cleared.generation},
@@ -315,6 +356,7 @@ async function api(req,res,url){
       repo=createSourceReviewedMemoryWorldAdapter({
         initialWorld:saved.world,streetModule,
       });
+      careerProof=saved.careerProof??null;
       return send(res,200,{ok:true,code:'LOADED',
         details:{action:'load-world',generation:saved.generation,
           recoveredPreviousGeneration:saved.recovered,
@@ -329,7 +371,7 @@ async function api(req,res,url){
         return send(res,409,{ok:false,error:'REVISION_CONFLICT',state:state()});
       const expectedGeneration=commandNumber(body.expectedGeneration,
         'expectedGeneration');
-      const saved=saveStore.save(world,{expectedGeneration});
+      const saved=saveStore.save(world,{expectedGeneration,...(reviewedTimeMode?{careerProof}:{})});
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
           revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
@@ -355,6 +397,7 @@ async function api(req,res,url){
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
       repo=staged;
+      if(reviewedTimeMode)careerProof=beginReviewedWorldHistory(applied.world);
       result=applied;
       break;
     }
@@ -370,6 +413,7 @@ async function api(req,res,url){
       break;
     }
     case '/api/supply': {
+      if(reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time requires complete turn, not PLUS-only supply',state:state()});
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body),timespanSeconds=
         commandNumber(body.timespanSeconds,'timespanSeconds',1);
@@ -441,7 +485,14 @@ async function api(req,res,url){
         itemId,per,priceOverride:fromPercent?0:sourcePrice});
       break;
     }
+    case '/api/advance-reviewed-time': {
+      if(!reviewedTimeMode)return send(res,409,{ok:false,error:'reviewed time mode is disabled',state:state()});
+      if(!exactKeys(body,'expectedRevision,minutes'))throw Error('reviewed time accepts only expectedRevision and minutes');
+      result=commit({kind:'advance-reviewed-world-time',expectedRevision:ensureRevision(body),minutes:commandNumber(body.minutes,'minutes',1)});
+      break;
+    }
     case '/api/advance-time': {
+      if(reviewedTimeMode)return send(res,409,{ok:false,error:'legacy time is disabled in reviewed mode',state:state()});
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body);
       const minutes=commandNumber(body.minutes,'minutes',1);
