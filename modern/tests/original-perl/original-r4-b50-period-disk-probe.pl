@@ -44,8 +44,8 @@ sub l{
   $v=~s/%([1-9]\d*)/defined($args[$1-1])?$args[$1-1]:''/gex;
   return $v;
 }
-sub WriteLog{push @TECH_LOGS,[@_];return 1}
-sub PushLog{push @CLOSE_PUSH_LOGS,[@_];return 1}
+sub WriteLog{push @TECH_LOGS,[@_];return OriginalWriteLog(@_)}
+sub PushLog{push @CLOSE_PUSH_LOGS,[@_];return OriginalPushLog(@_)}
 sub SetUserData{
   push @CLOSE_CALLS,0+$_[0]{id};
   return OriginalSetUserData(@_);
@@ -55,16 +55,18 @@ sub WriteErrorLog{
   return OriginalWriteErrorLog(@_);
 }
 our ($GUILDBAL_FILE,$GUILD_FILE,$TEMP_DIR,$DATA_DIR,$COMMIT_FILE,$FILE_EXT,$GUILDIDX_name,$GUILDIDX_dealrate,%GUILD_DETAIL,
- $BACKUP_DIR,$BACKUP,$DIR_PERMISSION,@BACKUP_FILES,$SESSION_DIR,$LOG_DIR,$LOG_SIZE_MAX,$USER,
+ $BACKUP_DIR,$BACKUP,$DIR_PERMISSION,@BACKUP_FILES,$SESSION_DIR,$LOG_DIR,$LOG_SIZE_MAX,$USER,$LOG_EXPIRE_TIME,@LOG,
  $DTlasttime,$DTnextid,$DTblockip,$DTState,$DTtown,@DTwholestore,@STATEnamelist,%name2pass,$DATA_FILE,$LASTTIME_FILE,$BACKUP_TIME,$MAX_MONEY,$LOCKED);
 my $firstOnly=(@ARGV&&$ARGV[0] eq '--first-only');
+my $failMode=(@ARGV&&$ARGV[0] eq '--fail-rename');
+my $failRename=0;my $renameCalls=0;
 my $ledgerRoot=tempdir('akimono-r4-period-disk-perl-XXXX',TMPDIR=>1,CLEANUP=>1);
 $DATA_DIR=$ledgerRoot;$TEMP_DIR="$ledgerRoot/stage";$COMMON_DIR="$ledgerRoot/common";
 $SUBDATA_DIR="$ledgerRoot/subdata";$SESSION_DIR="$ledgerRoot/session";$LOG_DIR="$ledgerRoot/log";$BACKUP_DIR="$ledgerRoot/backup";
 make_path($TEMP_DIR,$COMMON_DIR,$SUBDATA_DIR,$SESSION_DIR,$LOG_DIR,$BACKUP_DIR);
 $FILE_EXT='.cgi';$GUILDBAL_FILE='guildbal';$GUILD_FILE='guild';$COMMIT_FILE='commit';$DATA_FILE='play';$LASTTIME_FILE='lasttime';
 $BACKUP=3;$DIR_PERMISSION=0777;@BACKUP_FILES=qw(log0 log1 log2 guildbal play);
-$BACKUP_TIME=3600;$MAX_MONEY=1000000000;$LOCKED='';$LOG_SIZE_MAX=30000;
+$BACKUP_TIME=3600;$LOG_EXPIRE_TIME=129600;$MAX_MONEY=1000000000;$LOCKED='';$LOG_SIZE_MAX=30000;
 $USER='source-user';$ENV{SCRIPT_NAME}='/town/inc-turn.cgi';$ENV{REMOTE_ADDR}='203.0.113.15';$ENV{REMOTE_HOST}='source-host.invalid';
 sub GetTrueIP{return '198.51.100.17'}
 my @SESSION_NAMES=('1-one.cgi','1-two.cgi','1-.cgi',
@@ -87,7 +89,7 @@ sub RecordedEditGuildMoney {
   return OriginalEditGuildMoney(@_);
 }
 sub OpenAndCheck {open(OUT,'>:encoding(UTF-8)',$_[0]) or die $!}
-sub RenameAndCheck {rename($_[0],$_[1]) or die $!}
+sub RenameAndCheck {$renameCalls++;die 'injected final rename failure' if $failRename==$renameCalls;rename($_[0],$_[1]) or die $!}
 my $pathSource=source('inc-func.cgi');
 my($getPath)=$pathSource=~/(^sub GetPath\n\{[\s\S]*?^\}\n)/m;
 die 'GetPath missing' unless $getPath;
@@ -122,6 +124,13 @@ for my $pair(['pinned-user.cgi','SetUserData'],['pinned-error.cgi','WriteErrorLo
   eval "no strict;no warnings;$fn\n1;" or die $@;
 }
 eval 'no strict;no warnings;'.source('pinned-custom.cgi') or die $@;
+my $logSource=source('pinned-log.cgi');
+for my $fnName(qw(PushLog WriteLog RenewLog)){
+  my($fn)=$logSource=~/(^sub $fnName\n\{[\s\S]*?^\}\n)/m;
+  die 'log source function missing' unless $fn;
+  $fn=~s/sub $fnName\b/sub Original$fnName/ unless $fnName eq 'RenewLog';
+  eval "no strict;no warnings;$fn\n1;" or die $@;
+}
 sub OutError{die "original source OutError: $_[0]"}
 sub copyJSON{JSON::PP->new->utf8->decode(JSON::PP->new->canonical->utf8->encode($_[0]))}
 sub wireWorld{return copyJSON({lasttime=>0+$DTlasttime,people=>0+$DTpeople,nextid=>0+$DTnextid,blockip=>"$DTblockip",taxRate=>0+$DTTaxrate,state=>$STATE,wholesale=>\@DTwholestore,events=>\%DTevent,town=>$DTtown,shops=>\@DT})}
@@ -277,6 +286,7 @@ $NOW_TIME=870400;$DTlasttime=870400;$DTnextid=2;$DTblockip='';@DTwholestore=(0)x
 SetTownData('dominion','guild_a');SetTownData('notice',"原始,100%\n");
 putGuildFile(GetPath('lasttime'),'clock');
 for my $n(qw(log0 log1 log2)){putGuildFile(GetPath($n),"live-$n\n")}
+utime($NOW_TIME,$NOW_TIME,GetPath("log1")) or die $!;
 for my $g('',1,2,3){my $dir=$BACKUP_DIR.$g;make_path($dir);for my $n(@BACKUP_FILES){putGuildFile(GetPath($dir,$n),"prior-$g/$n\n")}}
 utime($NOW_TIME,$NOW_TIME,GetPath($BACKUP_DIR,'play')) or die $!;
 for my $s(['old.cgi',395199],['edge.cgi',395200],['fresh.cgi',900000],['.cgi',0],['note.txt',0]){
@@ -343,7 +353,7 @@ for my $r (@rounds){
   die 'period tail did not generate guild stage' unless -f GetPath($TEMP_DIR,$GUILD_FILE);
   push @results,{
     ledgerBefore=>$ledgerBefore,ledgerAfter=>ledgerSnapshot(),ledgerBytes=>$ledgerBytes,
-    generations=>generations(),expiry=>expiryFiles(),definitionStage=>getGuildFile(GetPath($TEMP_DIR,$GUILD_FILE)),
+    logRows=>[@LOG],generations=>generations(),expiry=>expiryFiles(),definitionStage=>getGuildFile(GetPath($TEMP_DIR,$GUILD_FILE)),
     input=>{
       shop=>$inputShop,town=>$inputTown,dtPeople=>$inputPeople,
       awardDrawMillionths=>$r->{award},
@@ -397,12 +407,24 @@ for my $r (@rounds){
 }
 $DTlasttime=$NOW_TIME;
 my $finalWorld=wireWorld();
-WriteGuildData();DataWrite();
-my $staged={play=>getGuildFile(GetPath($TEMP_DIR,'play')),guildbal=>getGuildFile(GetPath($TEMP_DIR,$GUILDBAL_FILE)),guild=>getGuildFile(GetPath($TEMP_DIR,$GUILD_FILE))};
+WriteGuildData();DataWrite();RenewLog();
+my $staged={play=>getGuildFile(GetPath($TEMP_DIR,'play')),guildbal=>getGuildFile(GetPath($TEMP_DIR,$GUILDBAL_FILE)),guild=>getGuildFile(GetPath($TEMP_DIR,$GUILD_FILE)),log0=>getGuildFile(GetPath($TEMP_DIR,'log0'))};
 my $finalBackup=backupFiles($BACKUP_DIR);
 my $lasttimeMtime=0+(stat(GetPath('lasttime')))[9];
 my $archive=-f GetPath($LOG_DIR,'delete')?getGuildFile(GetPath($LOG_DIR,'delete')):undef;
-DataCommitOrAbort(0);
+my $beforeCommitLogs={map{$_=>(-f GetPath($_)?getGuildFile(GetPath($_)):undef)}qw(log0 log1 log2)};
+my $failure;
+if($failMode){
+  $renameCalls=0;$failRename=3;
+  my $ok=eval{DataCommitOrAbort(0);1};
+  die 'expected partial original commit' if $ok||!-f GetPath($COMMIT_FILE);
+  opendir my $d,$TEMP_DIR or die $!;my @pending=sort grep {/\.cgi$/}readdir $d;closedir $d;
+  die 'unexpected partial staged count' unless @pending==2;
+  $failure={pending=>\@pending,marker=>JSON::PP::true};
+  $failRename=0;DataCommitOrAbort(1);
+  die 'marker not cleared' if -e GetPath($COMMIT_FILE);
+}else{DataCommitOrAbort(0)}
+my $finalLogs={map{$_=>getGuildFile(GetPath($_))}qw(log0 log1 log2)};
 my $finalLedger=getGuildFile(GetPath($GUILDBAL_FILE));
 my $finalPlay=getGuildFile(GetPath('play'));
 # Reset process-owned data before actual source DataRead; no fixture reload.
@@ -412,6 +434,7 @@ my $reloaded=wireWorld();
 my $reloadedLedger=ledgerSnapshot();
 print JSON::PP->new->canonical->utf8->encode({
   initialWorld=>$initialWorld,initialPlay=>$initialPlay,initialBackup=>$initialBackup,initialGenerations=>$initialGenerations,initialExpiry=>$initialExpiry,initialLogs=>$initialLogs,
+  beforeCommitLogs=>$beforeCommitLogs,finalLogs=>$finalLogs,failure=>$failure,
   finalWorld=>$finalWorld,finalPlay=>$finalPlay,staged=>$staged,finalBackup=>$finalBackup,lasttimeMtime=>$lasttimeMtime,archive=>$archive,reloaded=>$reloaded,reloadedLedger=>$reloadedLedger,
   logContext=>{scriptName=>$ENV{SCRIPT_NAME},remoteAddress=>$ENV{REMOTE_ADDR},remoteHost=>$ENV{REMOTE_HOST},trueIp=>GetTrueIP(),user=>$USER},
   finalLedger=>$finalLedger,initialDefinition=>$initialDefinition,guildConfig=>$guildConfig,finalDefinition=>getGuildFile(GetPath($GUILD_FILE)),

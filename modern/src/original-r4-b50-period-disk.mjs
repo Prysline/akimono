@@ -7,12 +7,13 @@ import {parseGuildDefinition,parseGuildEventLedgers,stageGuildFiles,stageStableP
 import {applyGuildPeriod} from './original-r4-guild-ledger-file.mjs';
 import {appendR4CloseShopArchiveSandbox} from './original-r4-close-shop-archive-file.mjs';
 import {rotatePeriodBackupDisk,dataWriteBackupDisk} from './original-r4-backup-disk.mjs';
+import {projectB50PeriodLogRows,renewPeriodLogDisk} from './original-r4-period-log-disk.mjs';
 import {commitExternalFiles} from './original-r4-external-files-sandbox.mjs';
 import {readFile,writeFile,lstat,realpath,readdir,unlink} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 const fail=m=>{throw new RangeError('R4 B50 disk: '+m)};
-const expectedFiles=['guild.cgi','guildbal.cgi','play.cgi'];
+const expectedFiles=['guild.cgi','guildbal.cgi','log0.cgi','play.cgi'];
 async function rootFor(directory){
   const root=await realpath(directory);
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('isolated period sandbox required');
@@ -51,7 +52,7 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
   await writeFile(attempt,'B50 source attempt\n',{flag:'wx'});
   let shop={...initial.shops[0],dragon:0},town=initial.state,people=initial.people;
   let ledger=ledgers.guild_a;
-  const guildPeriods=[],steps=[];
+  const guildPeriods=[],steps=[];let logRows=[];
   for(const p of periods){
     const guildContext={id:'guild_a',feeRate:defs.guild_a.feerate,atk:ledger.atk,def:ledger.def};
     const payout=path.join(common,'drapay-street.cgi');
@@ -66,6 +67,8 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
     });
     if(!result.dragonPayoutFileConsumed||result.nonCommittable!==true)fail('source payout/period contract');
     await unlink(payout);
+    const calls=projectB50PeriodLogRows({reviewed:reviews.log,shop,town,result,nowSeconds:p.nowSeconds});
+    logRows=[...calls].reverse().concat(logRows);
     if(result.actualCloseEffect){
       await appendR4CloseShopArchiveSandbox({reviewed:reviews.archive,effect:result.actualCloseEffect,sandboxDirectory:root,nowSeconds:p.nowSeconds,...logContext});
       for(const n of result.actualCloseEffect.deletedSessions)await unlink(path.join(subdata,n));
@@ -75,7 +78,7 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
     ledger=applyGuildPeriod({...period,data:base});guildPeriods.push(period);
     const backup=await rotatePeriodBackupDisk({reviewed:reviews.backup,directory:root,nowSeconds:p.nowSeconds});
     const definition=await stageStablePeriodGuildDefinition({reviewed:reviews.guild,directory:root});
-    steps.push({result,ledger,backup,definition:definition.bytes,
+    steps.push({result,ledger,backup,definition:definition.bytes,logRows:[...logRows],
       generations:await Promise.all([1,2,3].map(i=>snapshots(path.join(root,'backup'+i)))),
       expiry:await expirySnapshot(path.join(root,'session')),
       subdata:(await readdir(subdata)).sort()});
@@ -88,7 +91,8 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
   const backup=await dataWriteBackupDisk({reviewed:reviews.backup,directory:root,nowSeconds:now,lasttime:now});
   const world={...initial,lasttime:now,people,state:town,shops:shop?[shop]:[]};
   const play=await stagePeriodPlay({...args,world});
-  return {steps,guild,backup,play,world,committable:false,worldStateWritten:false};
+  const log=await renewPeriodLogDisk({reviewed:reviews.log,directory:root,rows:logRows,nowSeconds:now});
+  return {steps,guild,backup,play,log,world,committable:false,worldStateWritten:false};
 }
 export async function commitB50PeriodDisk({directory,reviewed,recover=false}){
   const root=await rootFor(directory),attempt=path.join(root,'period-attempt'),marker=path.join(root,'commit.cgi');

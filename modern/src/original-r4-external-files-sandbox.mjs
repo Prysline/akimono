@@ -5,7 +5,7 @@ import {serializeGuildEventLedgers,parseGuildEventLedgers} from './original-r4-g
 import path from 'node:path';
 import os from 'node:os';
 const pins={write:'203f33b37511e838800a45b84183af98fcf46e4c',guild:'6593aa8a3ae4a1695c2418f12a3776f0053454ac',turn:'b8a4980275f475a952846a8d6072fad45f8dff50'};
-const files=['army.cgi','guild.cgi','guildbal.cgi','play.cgi'];
+const files=['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','play.cgi'];
 const reviews=new WeakSet();
 const fail=m=>{throw new RangeError('R4 external sandbox: '+m)};
 export function reviewExternalFiles(sources){
@@ -36,6 +36,7 @@ export async function stageEventGuildLedger({reviewed,directory,ledgers}){
 export async function commitExternalFiles({reviewed,directory,expectedFiles,abort=false}){
   const root=await rootFor(reviewed,directory),stage=await stageFor(root),marker=path.join(root,'commit.cgi');
   if(typeof abort!=='boolean'||!Array.isArray(expectedFiles)||!expectedFiles.includes('play.cgi')||!expectedFiles.includes('guildbal.cgi')||new Set(expectedFiles).size!==expectedFiles.length||expectedFiles.some(n=>!files.includes(n)))fail('explicit reviewed file set required');
+  if(expectedFiles.includes('log0.cgi')&&!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('log stage requires period sandbox');
   const pending=await readdir(stage),m=await exists(marker);
   if(m&&!m.isFile())fail('invalid marker');
   if(pending.some(n=>!expectedFiles.includes(n)))fail('unreviewed staged file');
