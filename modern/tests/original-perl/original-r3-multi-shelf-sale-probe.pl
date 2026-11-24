@@ -85,7 +85,8 @@ for my $case (@cases){
     temprank=>0+$shop->{temprank},trush=>0+$shop->{trush},
     saletoday=>0+$shop->{saletoday},taxtoday=>0+$shop->{taxtoday},
     costtoday=>0+$shop->{costtoday},
-    drawsUsed=>$used,consumedSamples=>[@draws[0..$used-1]],
+    drawsUsed=>$used,naturalDrawsUsed=>0+$main::B38_NATURAL_DRAWS_USED,
+    consumedSamples=>[@draws[0..$used-1]],
   };
 }
 print JSON::PP->new->canonical->encode({
