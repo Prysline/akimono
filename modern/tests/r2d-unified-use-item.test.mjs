@@ -142,8 +142,7 @@ test('R2-D source invalid USE, unknown callbacks, stale revision and malformed s
   const repo=ownsMap(),oracle=perl('original-b63-sword-map-all-outcomes-probe.pl','mixed');
   const good=oracle.originalSamples;
   for(const command of [
-    {itemId:999},{itemId:14,useId:1},{itemId:79,useId:4},
-    {itemId:14,requestedCount:2},
+    {itemId:999},{itemId:14,useId:1},{itemId:79,useId:99},
     {itemId:14,randomDraws:good.slice(0,-1)},
     {itemId:14,randomDraws:[...good,0]},
     {itemId:14,randomDraws:[1000000,...good.slice(1)]},
@@ -155,13 +154,13 @@ test('R2-D source invalid USE, unknown callbacks, stale revision and malformed s
     expectedRevision:repo.read().revision-1,
   },'REVISION_CONFLICT');
 });
-test('R2-D source money/time limits and second map USE refuse without modifying WorldState',()=>{
+test('R2-D source money/time/corrupt EXP reject without modifying WorldState',()=>{
   const owned=ownsMap().read();
   const samples=perl('original-b63-sword-map-all-outcomes-probe.pl','mixed').originalSamples;
   for(const change of [
     shop=>({...shop,money:11999}),
     shop=>({...shop,time:owned.nowSeconds-7100}),
-    shop=>({...shop,exp:{14:20}}),
+    shop=>({...shop,exp:{14:1001}}),
     shop=>({...shop,item:shop.item.map((v,i)=>i===13?0:v)}),
   ]){
     const snapshot=validateMemoryWorld({

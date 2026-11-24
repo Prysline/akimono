@@ -58,6 +58,15 @@ export function reviewOriginalB62SwordMap({
     if(val(use,k).length!==1||first(use,k)!==expected)
       fail('original map USE '+k+' source drift');
   }
+  // Original @@USE job modifier is a conditional *time/exptime* change,
+  // not a needjob gate. Frozen compiler emits int(clock/1.5) for peddle.
+  if(val(use,'job').length!==1||
+     first(use,'job').trim().replace(/\s+/g,' ')!==
+       '行腳商人 times/job_peddle_time_rate'||
+     !/set[ \t]+job_peddle_time_rate[ \t]+1\.5/.test(itemDsl)||
+     !compilerSource.includes("push(@keys,qw(time exptime)) if $key eq 'times';")||
+     !compilerSource.includes('"$keyuse=int($keyuse/$val);"'))
+    fail('original peddle job USE time modifier source drift');
   if(val(use,'use').length||val(use,'get').length!==5||
      val(use,'needexp').length||val(use,'need').length||
      val(use,'needpoint').length||val(use,'needevent').length)

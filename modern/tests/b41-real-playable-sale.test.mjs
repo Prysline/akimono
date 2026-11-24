@@ -163,7 +163,7 @@ test('B-41 HTTP interface performs real CAS buy -> shelf -> sourced sale, with v
   ]);
   const html=await (await fetch(url)).text();
   for(const text of ['【交易】','id="showcase-form"','id="advance-time-form"',
-    'data-minutes="60"','自填分鐘','第 1 架','開發測試｜時間快轉']){
+    'data-minutes="60"','自填分鐘','架1（空架）','開發測試｜時間快轉']){
     assert.ok(html.includes(text),'missing original-style B41 UI '+text);
   }
   const js=await (await fetch(url+'/app.js')).text();

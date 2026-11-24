@@ -49,7 +49,7 @@ test('B-31 fixed original Core source evidence for new shop/showcase is pinned',
 });
 test('B-31 StreetModule lists only source-reviewed supported commands',()=>{
   assert.equal(street.id,'standard-street');
-  assert.deepEqual(street.capabilities,['open-shop','edit-showcase','use-item']);
+  assert.deepEqual(street.capabilities,['open-shop','edit-showcase','discard-item','use-item']);
   assert.equal(street.metadata.itemCount,79);
   assert.equal(street.metadata.modelSourceMode,'reviewed-declarative-subset');
   assert.equal(street.metadata.opaqueCallbacks,true);

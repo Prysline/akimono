@@ -153,7 +153,7 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
     assert.ok(html.includes(sub),sub);
   }
   for(const id of ['initialize','open-shop','store-name','money','rank',
-    'time','showcase','paid','sales','market-offers','market-boundary',
+    'time','showcase-shelves','paid','sales','market-offers','market-boundary',
     'supply','inventory','feedback','receipt']){
     assert.ok(html.includes('id="'+id+'"'),'missing live state DOM id '+id);
   }

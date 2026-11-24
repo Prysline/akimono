@@ -5,6 +5,9 @@
  * Unknown source effects are never treated as no-ops.
  */
 import {projectOriginalUseTransaction} from './original-use-transaction-model.mjs';
+import {readCommonUseEffectPlan} from './shared-use-effect-plan.mjs';
+import {originalSourceUseClock,originalUseExperience}
+  from './shared-use-experience.mjs';
 
 export const USE_ITEM_COMMAND='use-item';
 const fail=reason=>{throw new RangeError('R2-D shared USE: '+reason);};
@@ -35,7 +38,7 @@ const noGuild=shop=>[undefined,null,0,'',false].includes(shop.guild);
  */
 export function projectSharedUseItem({world,command,useItem}){
   exact(command,['kind','expectedRevision','shopId','itemId','useId',
-    'requestedCount'],['randomDraws']);
+    'requestedCount'],['randomDraws','targetShopId']);
   if(command.kind!==USE_ITEM_COMMAND)fail('command kind');
   int(command.shopId,'shopId',1);
   int(command.itemId,'itemId',1);
@@ -50,6 +53,14 @@ export function projectSharedUseItem({world,command,useItem}){
      rule.useId!==command.useId||rule.supported!==true)
     fail(useItem.describe?.(command.itemId,command.useId)??
       'source USE not reviewed');
+  // Target IDs are resolved against this immutable WorldState, not accepted
+  // as caller-supplied shop objects or callback payloads.
+  const isTargetAdvertisement=rule.itemId===62&&rule.useId===1&&
+    rule.inlineCallback?.kind==='advertise-other';
+  if(!isTargetAdvertisement&&Object.hasOwn(command,'targetShopId'))
+    fail('targetShopId is only reviewed for original #62/1');
+  if(isTargetAdvertisement)int(command.targetShopId,'targetShopId',1);
+  const effects=readCommonUseEffectPlan(rule);
   if(!world.market||!Array.isArray(world.market.wholesale)||
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
@@ -61,6 +72,18 @@ export function projectSharedUseItem({world,command,useItem}){
   const shopIndex=world.shops.findIndex(s=>s.id===command.shopId);
   if(shopIndex<0)fail('unknown shop');
   const shop=world.shops[shopIndex];
+  const targetIndex=isTargetAdvertisement?
+    world.shops.findIndex(s=>s.id===command.targetShopId):-1;
+  if(isTargetAdvertisement){
+    if(world.shops.length!==2||targetIndex<0||targetIndex===shopIndex)
+      fail('source target advertisement requires one other existing shop');
+    const target=world.shops[targetIndex];
+    if(target.status!==1||!noGuild(target)||
+       !Number.isSafeInteger(target.rank)||target.rank<0||
+       target.rank>10000||typeof target.shopname!=='string'||
+       !target.shopname)
+      fail('source target shop status, guild, name or rank');
+  }
   if(shop.status!==1||!noGuild(shop)||
      !Array.isArray(shop.item)||shop.item.length!==rule.limits.length)
     fail('unreviewed source status, guild or inventory');
@@ -76,17 +99,19 @@ export function projectSharedUseItem({world,command,useItem}){
   for(const key of ['money','paytoday','time','rank'])int(shop[key],key);
   if(rule.singleUseOnly&&command.requestedCount!==1)
     fail('unreviewed original multiple USE');
-  const previousExp=shop.exp===undefined?0:
-    (()=>{if(!shop.exp||typeof shop.exp!=='object'||
-      Array.isArray(shop.exp))fail('unreviewed EXP record');
-      for(const [key,value] of Object.entries(shop.exp)){
-        if(!/^[1-9]\d*$/.test(key))fail('EXP key');
-        int(value,'EXP amount');
-      }
-      return shop.exp[String(rule.itemId)]??0;})();
-  if(rule.firstUseOnly&&
-     (previousExp!==0||shop.exp&&Object.keys(shop.exp).length>0))
-    fail('second USE / trained original GetItemUseTime unreviewed');
+  const expRecord=shop.exp??{};
+  if(!expRecord||typeof expRecord!=='object'||Array.isArray(expRecord))
+    fail('unreviewed EXP record');
+  for(const [key,value] of Object.entries(expRecord)){
+    if(!/^[1-9]\d*$/.test(key)||Number(key)>rule.limits.length)
+      fail('EXP item key');
+    if(int(value,'EXP amount')>1000)fail('EXP item cap');
+  }
+  const previousExp=expRecord[String(rule.itemId)]??0;
+  if(rule.firstUseOnly&&previousExp!==0)
+    fail('first-use-only reviewed rule');
+  const effectiveClock=originalSourceUseClock({rule,job:shop.job??'',
+    experience:previousExp});
   if(rule.requiresOwnedItem){
     if(shop.item[rule.itemId-1]<1||
        shop.item[rule.itemId-1]>rule.ownedMaximum)
@@ -110,7 +135,7 @@ export function projectSharedUseItem({world,command,useItem}){
     return draws[pointer++]/1000000;
   };
   let doubled=false,resultOk=rule.resultOk??null;
-  let creates=rule.creates;
+  let creates=effects.creates;
   if(rule.beforeCallback){
     const callback=rule.beforeCallback;
     if(callback.kind!=='double-create'||callback.threshold!==100)
@@ -126,17 +151,18 @@ export function projectSharedUseItem({world,command,useItem}){
   }
   if(rule.afterCallback&&
      (rule.afterCallback.kind!=='lostbook'||
-      rule.afterCallback.threshold!==100||
+      ![10,25,50,100,200].includes(rule.afterCallback.threshold)||
       rule.afterCallback.consumedCount!==1))
     fail('unreviewed after callback');
   if(rule.experienceCallback&&
      (rule.experienceCallback.kind!=='gain-fixed-exp'||
-      rule.experienceCallback.points!==20))
+      !Number.isSafeInteger(effects.expPoints)||
+      effects.expPoints<1||effects.expPoints>1000))
     fail('unreviewed EXP callback');
   const original=projectOriginalUseTransaction({
     shops:world.shops.map(s=>s.item),
     actingShopIndex:shopIndex,items:rule.limits,
-    wholesale:world.market.wholesale,uses:rule.uses,creates,
+    wholesale:world.market.wholesale,uses:effects.uses,creates,
     requestedCount:command.requestedCount,
     experience:previousExp,needExperience:rule.needExperience??0,
     experienceOld:previousExp,job:shop.job??'',needJob:rule.needJob??'',
@@ -145,7 +171,7 @@ export function projectSharedUseItem({world,command,useItem}){
     needsEvent:false,eventActive:false,
     money:shop.money,costPerUse:rule.money,paytoday:shop.paytoday,
     nowSeconds:world.nowSeconds,storedTimeSeconds:shop.time,
-    baseUseTimeSeconds:rule.time,trainedUseTimeSeconds:rule.exptime,
+    baseUseTimeSeconds:effectiveClock.base,trainedUseTimeSeconds:effectiveClock.trained,
     maxStockTimeSeconds:259200,shopStatus:true,random,
   });
   if(!original.performed||original.count<=0)
@@ -157,7 +183,8 @@ export function projectSharedUseItem({world,command,useItem}){
     fail('source output callback/branch not reviewed');
   let destroyed=false;
   let useItems=original.multiItem.consumed.map(x=>[x.itemId,x.amount]);
-  let useMsgs=original.multiItem.consumed.map(()=>null);
+  let useMsgs=original.multiItem.consumed.map((row,i)=>
+    rule.sourceUseMessages?.[i]??null);
   let functionReturn=null;
   const stocks=[...original.shops[shopIndex]];
   if(rule.afterCallback){
@@ -174,20 +201,158 @@ export function projectSharedUseItem({world,command,useItem}){
     }
     functionReturn='';
   }
-  if(pointer!==draws.length)
-    fail('extra random samples beyond original call sequence');
-  const added=original.multiItem.added.map(x=>[x.itemId,x.amount]);
+  let added=original.multiItem.added.map(x=>[x.itemId,x.amount]);
   const discarded=original.multiItem.discarded.map(x=>[x.itemId,x.amount]);
   const nextShop={
     ...shop,item:stocks,money:original.money,
     paytoday:original.paytoday,time:original.storedTimeSeconds,
   };
+  let inlineShowcase=null,inlineDairy=null,inlineWork=null;
+  let inlineCareer=null,inlineParty=null,inlineAdvertisement=null;
+  let inlineTargetAdvertisement=null;
+  if(isTargetAdvertisement){
+    if(!rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed source target advertising callback');
+    inlineTargetAdvertisement=useItem.runInlineCallback({
+      rule,shop:nextShop,targetShop:world.shops[targetIndex],
+      count:original.count,random,
+    });
+    if(!inlineTargetAdvertisement||
+       !Number.isSafeInteger(inlineTargetAdvertisement.rank)||
+       inlineTargetAdvertisement.rank<0||
+       inlineTargetAdvertisement.rank>10000||
+       typeof inlineTargetAdvertisement.returned!=='string'||
+       !Array.isArray(inlineTargetAdvertisement.logCalls)||
+       inlineTargetAdvertisement.logCalls.length!==2)
+      fail('original target advertising callback invalid');
+    functionReturn=inlineTargetAdvertisement.returned;
+  }
+  if(rule.inlineCallback?.kind==='advertise-self'){
+    if(rule.itemId!==62||rule.useId!==0||
+       !rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed source advertisement callback');
+    inlineAdvertisement=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineAdvertisement||
+       !Number.isSafeInteger(inlineAdvertisement.rank)||
+       inlineAdvertisement.rank<0||inlineAdvertisement.rank>10000||
+       typeof inlineAdvertisement.returned!=='string'||
+       !Array.isArray(inlineAdvertisement.logCalls))
+      fail('original advertising callback invalid');
+    nextShop.rank=inlineAdvertisement.rank;
+    functionReturn=inlineAdvertisement.returned;
+  }
+  if(rule.inlineCallback?.kind==='party-popularity'){
+    if(rule.itemId!==77||rule.useId!==0||
+       !rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed party popup callback');
+    inlineParty=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineParty||!Number.isSafeInteger(inlineParty.rank)||
+       inlineParty.rank<0||inlineParty.rank>10000||
+       typeof inlineParty.returned!=='string'||
+       !Array.isArray(inlineParty.logCalls))
+      fail('source party popup result invalid');
+    nextShop.rank=inlineParty.rank;
+    functionReturn=inlineParty.returned;
+  }
+  if(rule.inlineCallback?.kind==='career-change'){
+    if(rule.itemId!==78||rule.useId<0||rule.useId>13||
+       !rule.singleUseOnly||original.count!==1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed career use callback');
+    inlineCareer=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineCareer||!inlineCareer.exp||
+       typeof inlineCareer.exp!=='object'||
+       Array.isArray(inlineCareer.exp)||
+       typeof inlineCareer.job!=='string'||
+       typeof inlineCareer.returned!=='string'||
+       !Array.isArray(inlineCareer.logCalls))
+      fail('original career callback output invalid');
+    nextShop.job=inlineCareer.job;
+    nextShop.exp={...inlineCareer.exp};
+    functionReturn=inlineCareer.returned;
+  }
+  if(rule.inlineCallback?.kind==='book-work'){
+    if(rule.itemId!==13||rule.useId>1||
+       typeof useItem.runInlineCallback!=='function')
+      fail('unsupported work source callback');
+    inlineWork=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineWork||!Number.isSafeInteger(inlineWork.moneyAfter)||
+       inlineWork.moneyAfter<0||
+       inlineWork.moneyBefore!==nextShop.money||
+       inlineWork.earned!==(rule.useId===0?3000:10000)*original.count||
+       !Array.isArray(inlineWork.logCalls))
+      fail('original inline work projection mismatch');
+    nextShop.money=inlineWork.moneyAfter;
+    functionReturn=inlineWork.returned;
+  }
+  if(rule.inlineCallback&&
+     ['milk-cow','drink-milk'].includes(rule.inlineCallback.kind)){
+    if(typeof useItem.runInlineCallback!=='function'||
+       ![25,26].includes(rule.itemId))
+      fail('unreviewed dairy callback type');
+    inlineDairy=useItem.runInlineCallback({
+      rule,shop:nextShop,count:original.count,random,
+    });
+    if(!inlineDairy||!Array.isArray(inlineDairy.items)||
+       inlineDairy.items.length!==rule.limits.length||
+       !Number.isSafeInteger(inlineDairy.rank)||
+       inlineDairy.rank<0||inlineDairy.rank>10000||
+       typeof inlineDairy.returned!=='string'||
+       !Array.isArray(inlineDairy.addItems)||
+       !Array.isArray(inlineDairy.useItems))
+      fail('source dairy inline result invalid');
+    nextShop.item=[...inlineDairy.items];
+    nextShop.rank=inlineDairy.rank;
+    for(const item of inlineDairy.addItems)added.push([...item]);
+    for(const item of inlineDairy.useItems)useItems.push([...item]);
+    for(const msg of inlineDairy.useMessages)useMsgs.push(msg);
+    functionReturn=inlineDairy.returned;
+  }
+  if(rule.inlineCallback?.kind==='showcase-resize'){
+    if(rule.inlineCallback.kind!=='showcase-resize'||
+      !rule.singleUseOnly||rule.itemId!==63||original.count!==1||
+      typeof useItem.runInlineCallback!=='function')
+      fail('unreviewed inline source callback');
+    inlineShowcase=useItem.runInlineCallback({rule,shop:nextShop});
+    if(!inlineShowcase||!Number.isSafeInteger(inlineShowcase.showcaseCountAfter)||
+      inlineShowcase.showcaseCountAfter!==rule.inlineCallback.newCount||
+      !Array.isArray(inlineShowcase.showcase)||
+      !Array.isArray(inlineShowcase.prices)||
+      inlineShowcase.showcase.length!==inlineShowcase.showcaseCountAfter||
+      inlineShowcase.prices.length!==inlineShowcase.showcaseCountAfter)
+      fail('source inline callback result invalid');
+    nextShop.showcasecount=inlineShowcase.showcaseCountAfter;
+    nextShop.showcase=[...inlineShowcase.showcase];
+    nextShop.price=[...inlineShowcase.prices];
+    functionReturn=inlineShowcase.returned;
+  }
+  if(pointer!==draws.length)
+    fail('extra random samples beyond original call sequence');
+  let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
-    const exp=int(previousExp+rule.experienceCallback.points,'EXP total');
-    nextShop.exp={...(shop.exp??{}),[rule.itemId]:exp};
+    const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
+      points:effects.expPoints,count:original.count,
+      limit:3600});
+    nextShop.exp=next.exp;
+    experienceGain=next.gained;
+    experienceReductions=next.reductions;
   }
   const nextShops=world.shops.map((row,i)=>i===shopIndex?nextShop:
-    {...row,item:[...original.shops[i]]});
+    i===targetIndex?{
+      ...row,item:[...original.shops[i]],
+      rank:inlineTargetAdvertisement.rank,
+    }:{...row,item:[...original.shops[i]]});
   const market=useItem.writeMarket({world,rule,original});
   const acquired=original.multiItem.samples.filter(x=>x.phase==='create')
     .map(x=>({
@@ -204,17 +369,34 @@ export function projectSharedUseItem({world,command,useItem}){
       sourceUseItemId:rule.itemId,useNo:rule.useId,
       requestedCount:command.requestedCount,effectiveCount:original.count,
       moneySpent:original.moneySpent,timeSpentSeconds:original.timeSpentSeconds,
-      experienceGain:rule.experienceCallback?.points??0,
+      experienceGain,experienceReductions,
+      useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
       originalAddItem:added,
-      originalAddMsg:added.map(([id])=>
-        rule.outputMessages?.[id]??null),
+      originalAddMsg:added.map(([id],index)=>
+        index>=original.multiItem.added.length&&inlineDairy?
+          inlineDairy.addMessages[index-original.multiItem.added.length]:
+          rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
+      ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
+         inlineAdvertisement||inlineTargetAdvertisement?{
+        originalInlineLogCalls:(inlineTargetAdvertisement?.logCalls??
+          inlineAdvertisement?.logCalls??inlineParty?.logCalls??
+          inlineCareer?.logCalls??inlineDairy?.logCalls??
+          inlineWork.logCalls),
+      }:{}),
+      ...(inlineShowcase?{
+        showcaseCountBefore:inlineShowcase.showcaseCountBefore,
+        showcaseCountAfter:inlineShowcase.showcaseCountAfter,
+      }:{}),
       originalWholeStoreChecks:original.wholeStoreChecks,
       randomDrawsUsed:pointer,callbackOrder:Object.freeze([
         ...(rule.beforeCallback?['before-use']:[]),
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
+        ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||
+           inlineParty||inlineAdvertisement||inlineTargetAdvertisement?
+           ['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
       doubleRewardTriggered:doubled,mapDestroyed:destroyed,
@@ -222,7 +404,8 @@ export function projectSharedUseItem({world,command,useItem}){
       spentGift:useItems.find(([id])=>id===rule.itemId)?.[1]??0,
       gainedMaps:added,
       mapBefore:shop.item[rule.itemId-1],
-      mapAfter:stocks[rule.itemId-1],
+      mapAfter:nextShop.item[rule.itemId-1],
+      ...(isTargetAdvertisement?{targetShopId:command.targetShopId}:{}),
       sourceScope:rule.scope,
     },
   };

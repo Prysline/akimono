@@ -282,3 +282,23 @@ footer{margin-top:12px;font-size:10px}
   .site-heading h1{padding:0 75px 0 0;text-align:left;font-size:18px}
   .town-name{font-size:12px}
 }
+
+/* Shelf removal and original-style USE quantity shortcut controls. */
+.shelf-action-link{font-weight:normal;white-space:nowrap}
+.shelf-action-link:disabled{opacity:.55;cursor:default}
+.shelf-remove-note{text-align:center;font-size:11px!important;color:#888;margin:4px auto 7px!important}
+.use-action-form select{min-width:78px;max-width:165px;min-height:28px;padding:2px 4px}
+.use-action-form input{width:72px;min-height:28px;padding:2px 4px}
+
+/* Action time is essential player information; only raw diagnostics are gated. */
+.action-time{display:block;color:#777;font-size:11px;white-space:nowrap;margin-top:3px}
+.use-estimated-time{text-align:center;font-size:12px!important;color:#606060;margin:3px auto 4px!important}
+.dev-raw-value{font-size:11px;color:#999;font-weight:normal;white-space:nowrap}
+
+/* Per-source indexed showcase shelves and original bottom return positioning. */
+.back-row{display:flex;justify-content:center;margin:18px auto 6px;text-align:center}
+#tab-item #showcase-shelf{width:185px;max-width:100%;min-width:0}
+.discard-section{width:fit-content;max-width:100%;margin:16px auto 0;text-align:center;border-top:1px dotted #bbb;padding-top:6px}
+.discard-section .sub-title{text-align:center}
+.discard-section .inline-form{justify-content:center}
+.discard-section #discard-count{width:72px}

@@ -44,7 +44,13 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/flagRaw:item\?\.flagRaw/);
   assert.match(adapter,/type:item\?\.typeRaw/);
   assert.match(adapter,/costRaw:item\?\.costRaw/);
-  assert.match(html,/熟練、行情與供需/);
+  assert.match(html,/class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP/);
+  assert.match(html,/<th>持有／上限<\/th><th>熟練度<\/th>/);
+  assert.match(html,/<th>數量／上限<\/th><th>熟練度<\/th><th>陳列<\/th>/);
+  assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);
+  assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
+  assert.match(script,/dev\.className='dev-panel dev-raw-value'/);
+  assert.match(script,/\(exp\/10\)\.toLocaleString\('zh-TW'\)\+'%'/);
   assert.match(html,/id="item-detail-cost"/);
   assert.match(html,/id="item-detail-info"/);
 });
@@ -83,6 +89,13 @@ test('product details remain centered without a full-width shelf editor',()=>{
   assert.match(css,/#tab-item \.source-use-section\s*\{[\s\S]*?width:fit-content;max-width:100%;margin:16px auto 0/);
   assert.match(css,/#tab-item \.source-use-section>\.sub-title\{text-align:center\}/);
   assert.match(html,/id="showcase-form"/);
+  assert.match(script,/function showcaseSlotDescription\(s,index\)/);
+  assert.match(script,/option\.textContent='架'\+\(index\+1\)\+'（'\+/);
+  assert.match(html,/id="showcase-shelf" aria-label="選擇展示架（括號內為目前商品）"/);
+  assert.doesNotMatch(html,/id="shelf-item"/);
+  assert.match(script,/const itemId=selectedItemId;/);
+  assert.doesNotMatch(html,/id="showcase-shelf-current"/);
+  assert.doesNotMatch(script,/function updateShowcaseShelfCurrent\(/);
   assert.match(html,/class="shelf-percent"/);
   assert.match(css,/#tab-item \.shelf-percent\{display:inline-flex;align-items:center;gap:4px\}/);
   assert.doesNotMatch(html,/<h2 class="section-title">● 商品明細<\/h2>/);
@@ -143,19 +156,35 @@ test('shop overview and shelf restore original compact data tables without dupli
     assert.ok(shop.includes('id="'+id+'"'),'shop information cell '+id);
   assert.match(shop,/<table class="shelf-table">/);
   for(const header of ['架號','商品名稱','售價','標準價格','庫存',
-    '本期售出','前期售出'])
+    '本期售出','前期售出','操作'])
     assert.ok(shop.includes('<th>'+header+'</th>'),'original shelf column '+header);
-  for(const id of ['showcase','shop-shelf-price','shop-shelf-base-price',
-    'shop-shelf-stock','shop-shelf-today','shop-shelf-yesterday'])
-    assert.ok(shop.includes('id="'+id+'"'),'shelf data cell '+id);
+  assert.match(shop,/id="showcase-shelves"/);
+  assert.match(script,/shop\.showcase\[index\]/);
+  assert.match(script,/shop\.price\[index\]/);
+  assert.match(script,/shop\.showcasecount/);
+  assert.match(html,/id="source-shelf-sale-boundary"/);
+  assert.match(script,/const sourceSaleSupported=Boolean\(shop&&shop\.showcasecount===1\)/);
+  assert.match(html,/id="showcase-shelf"/);
   assert.match(shop,/<table class="shop-turnover-table"/);
+  assert.match(shop,/id="showcase-shelves"/);
+  assert.match(script,/dataset\.shelfAction=hasItem\?'remove':'open'/);
+  assert.match(shop,/id="shop-showcase-time"/);
+  assert.match(script,/text\('shop-showcase-time',Number\.isSafeInteger\(shelfEditSeconds\)\?/);
+  assert.match(script,/button\.className='text-link shelf-action-link'/);
+  assert.match(script,/td\.append\(button\);tr\.append\(td\);shelfBody\.append\(tr\)/);
+  assert.doesNotMatch(script,/time\.textContent='行動時間：'/);
+  assert.match(css,/\.shelf-action-link\{font-weight:normal;white-space:nowrap\}/);
+  assert.match(html,/<th>行動時間<\/th><th>購買<\/th>/);
+  assert.match(script,/cell\(Number\.isSafeInteger\(offer\.timeSeconds\)\?\s*conciseTimeText\(offer\.timeSeconds\):'—'\)/);
+  assert.match(script,/\$\('showcase-shelves'\)\.addEventListener\('click'/);
+  assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100,shelf/);
   assert.doesNotMatch(shop,/data-go-tab=/,
     'top navigation replaces redundant in-shop links');
   assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
   assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
-  assert.match(script,/text\('shop-shelf-price',hasShelf\?money\(shop\.price\[0\]\)/);
-  assert.match(script,/text\('shop-shelf-today',hasShelf\?number\(shop\.itemtoday\?\.\[shelfId\]\?\?0\)/);
+  assert.match(script,/money\(shop\.price\[index\]\)/);
+  assert.match(script,/number\(shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
 });
 
 
@@ -168,7 +197,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(html,/id="back-to-item"/);
   for(const id of ['use-detail-name','use-detail-item','use-detail-owned',
     'use-detail-materials','use-detail-money','use-detail-time',
-    'use-detail-limit','use-action-form','use-count','perform-use',
+    'use-detail-limit','use-action-form','use-count-presets','use-count','perform-use',
     'use-result-count','use-result-money','use-result-time',
     'use-result-consumed','use-result-acquired'])
     assert.ok(html.includes('id="'+id+'"'),'original USE route element '+id);
@@ -179,18 +208,59 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/renderUseResult\(data\.details,offer,before\.itemCatalog/);
   assert.match(script,/selectTab\('use-result'\)/);
   assert.match(script,/expectedRevision:before\.world\.revision,itemId,useId,requestedCount/);
+  assert.match(script,/maxUseCount/);
+  assert.match(script,/maxUseCountReason/);
+  assert.match(html,/id="use-estimated-time"/);
+  assert.match(script,/function updateUseEstimate\(\)/);
+  assert.match(script,/const timeSuffix=Number\.isSafeInteger\(row\.timePerUseSeconds\)/);
+  assert.match(script,/use-count'\)\.addEventListener\('input',updateUseEstimate/);
+  assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
+  assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
   assert.match(css,/\.use-action-list\{/);
   assert.match(css,/\.use-detail-table\{/);
 });
 test('showcase edit shows verified original source time, not a guessed number',()=>{
   assert.match(html,/id="showcase-time-cost"/);
-  assert.match(html,/調整或清空展示架均消耗/);
+  assert.match(html,/調整展示架消耗/);
   assert.match(adapter,/showcaseEditTimeSeconds:streetModule\.showcaseEditTimeSeconds/);
   assert.match(script,/Number\.isSafeInteger\(s\.showcaseEditTimeSeconds\)/);
   assert.match(script,/conciseTimeText\(s\.showcaseEditTimeSeconds\)/);
   assert.match(css,/#tab-item \.shelf-form\{[\s\S]*?flex-direction:column/);
 });
-test('unreviewed disposal is not wired as a misleading browser-only mutation',()=>{
-  assert.doesNotMatch(adapter,/case '\/api\/(?:throw|discard)'/);
-  assert.doesNotMatch(script,/fetch\('\/api\/(?:throw|discard)'/);
+test('discard is a CAS StreetModule command and never a browser-only stock mutation',()=>{
+  assert.match(adapter,/case '\/api\/discard'/);
+  assert.match(adapter,/kind:'discard-item'/);
+  assert.match(script,/call\('\/api\/discard'/);
+  assert.match(html,/id="discard-form"/);
+});
+
+
+test('raw EXP and popularity source internals remain developer-only while action times remain player-visible',()=>{
+  const stock=html.slice(html.indexOf('id="tab-stock"'),
+    html.indexOf('id="tab-item"'));
+  const shop=html.slice(html.indexOf('id="tab-shop"'),
+    html.indexOf('id="tab-market"'));
+  assert.match(stock,/class="muted dev-panel" data-dev-panel>熟練度來源/);
+  assert.match(shop,/id="dev-popularity-raw"/);
+  assert.match(shop,/class="muted dev-panel" data-dev-panel>/);
+  assert.match(css,/\.dev-panel\{display:none\}/);
+  assert.match(css,/body\.dev-mode \.dev-panel:not\(\[hidden\]\)\{display:block\}/);
+  assert.match(script,/dev\.textContent=Number\.isSafeInteger\(raw\)/);
+  assert.match(script,/缺少材料 ID #/);
+  assert.match(script,/本次預估行動時間：/);
+  assert.match(script,/dataset\.shelfIndex=String\(index\)/);
+  assert.match(html,/id="market-offers"/);
+});
+
+test('bottom return controls and discard stay in the player workflow',()=>{
+  const item=html.slice(html.indexOf('id="tab-item"'),html.indexOf('id="tab-use"'));
+  const use=html.slice(html.indexOf('id="tab-use"'),html.indexOf('id="tab-use-result"'));
+  const result=html.slice(html.indexOf('id="tab-use-result"'),html.indexOf('id="tab-balance"'));
+  assert.ok(item.indexOf('id="back-to-stock"')>item.indexOf('id="use-offers"'));
+  assert.ok(use.indexOf('id="back-to-item"')>use.indexOf('id="use-estimated-time"'));
+  assert.ok(result.indexOf('id="result-back-to-item"')>
+    result.indexOf('id="use-result-message"'));
+  assert.match(item,/id="discard-form"/);
+  assert.match(script,/call\('\/api\/discard'/);
+  assert.match(css,/\.back-row\{display:flex;justify-content:center/);
 });

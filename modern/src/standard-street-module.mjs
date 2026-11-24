@@ -16,6 +16,12 @@ import {compileStandardStreetMarketBuyRegistry}
   from './standard-street-market-buy-registry.mjs';
 import {compileReviewedGiftMapUse}
   from './reviewed-gift-map-use.mjs';
+import {compileReviewedGiftUseVariants}
+  from './reviewed-gift-use-variants.mjs';
+import {compileReviewedDeclarativeUses}
+  from './reviewed-declarative-use-compiler.mjs';
+import {compileReviewedGatheringMapUses}
+  from './reviewed-gathering-map-uses.mjs';
 import {reviewOriginalSparseWorldBootstrap,createOriginalSparseMarket,
   validateSourceSparseMarket,ORIGINAL_SPARSE_MARKET_SOURCE,
   traceOriginalSparseGiftWholesale}
@@ -59,6 +65,33 @@ import {reviewOriginalB63SwordMapOutcomes}
   from './original-b63-sword-map-all-outcomes.mjs';
 import {PERIOD_WORLD_SCHEMA}
   from './game-core-contract.mjs';
+import {originalSourceUseClock} from './shared-use-experience.mjs';
+import {compileReviewedShowcaseResizeUses}
+  from './reviewed-showcase-resize-use.mjs';
+import {compileReviewedSelfAdvertiseUse}
+  from './reviewed-self-advertise-use.mjs';
+import {projectOriginalSelfAdvertisement}
+  from './original-inline-self-advertise-model.mjs';
+import {compileReviewedTargetAdvertiseUse,projectOriginalTargetAdvertisement}
+  from './reviewed-target-advertise-use.mjs';
+import {compileReviewedPartyUse}
+  from './reviewed-party-use.mjs';
+import {projectOriginalPartyPopup}
+  from './original-inline-party-popup-model.mjs';
+import {compileReviewedCareerChangeUses}
+  from './reviewed-career-change-uses.mjs';
+import {projectOriginalCareerChange}
+  from './original-inline-career-change-model.mjs';
+import {compileReviewedBookWorkUses}
+  from './reviewed-book-work-uses.mjs';
+import {projectOriginalBookWorkCallback}
+  from './original-inline-work-showcase-model.mjs';
+import {compileReviewedDairyInlineUses}
+  from './reviewed-dairy-inline-uses.mjs';
+import {projectOriginalDairyInlineCallback}
+  from './original-inline-dairy-callback-model.mjs';
+import {projectOriginalShowcaseResizeCallback}
+  from './original-inline-work-showcase-model.mjs';
 import {
   loadStandardStreetModel,
   createStandardStreetShop,
@@ -66,7 +99,7 @@ import {
 } from './standard-street-model.mjs';
 
 export const STANDARD_STREET_ID='standard-street';
-const actions=Object.freeze(['open-shop','edit-showcase']);
+const actions=Object.freeze(['open-shop','edit-showcase','discard-item']);
 function bad(message){throw new RangeError('B-31 Standard Street: '+message);}
 function ownKeysExact(command,required,optional=[]){
   const allowed=new Set(['kind','expectedRevision',...required,...optional]);
@@ -342,6 +375,43 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // R2-D: StreetModule compiles source-approved USE recipes and callbacks.
   // All use-item accounting, material clipping, MakeAmount and EXP happen
   // once inside GameCore. Unknown USEs are described but not executable.
+  const giftUseVariants=compileReviewedGiftUseVariants({
+    itemDsl,model,giftMap,
+  });
+  const declarativeUses=compileReviewedDeclarativeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const gatheringUses=compileReviewedGatheringMapUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const showcaseResizeUses=compileReviewedShowcaseResizeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const dairyInlineUses=compileReviewedDairyInlineUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const bookWorkUses=compileReviewedBookWorkUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const careerChangeUses=compileReviewedCareerChangeUses({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const partyUse=compileReviewedPartyUse({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const selfAdvertiseUse=compileReviewedSelfAdvertiseUse({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
+    itemDsl,model,limits:giftMap.limits,
+  });
+  const declarativeUseIndex=new Map([
+    ...declarativeUses,...gatheringUses,...dairyInlineUses,
+    ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
+    targetAdvertiseUse,
+  ].map(rule=>[
+    rule.itemId+':'+rule.useId,rule,
+  ]));
   const giftUseRule=Object.freeze({
     supported:true,itemId:giftMap.itemId,useId:giftMap.useNo,
     source:'reviewed-original-gift-use',sourceFile:giftMap.sourceFile,
@@ -362,9 +432,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }))),
     limits:giftMap.limits,time:reviewedB62Map.mapUseTimeSeconds,
     exptime:3600,money:reviewedB62Map.mapUsePrice,
-    singleUseOnly:true,firstUseOnly:true,requiresOwnedItem:true,
+    jobTimeModifier:Object.freeze({job:'peddle',numerator:2,denominator:3}),
+    requiresOwnedItem:true,
     ownedMaximum:reviewedB62Map.mapStockLimit,
-    outputGuard:'no-overflow',
     outputAllowlist:reviewedB63Map?null:Object.freeze([40]),
     marketCodec:'source-sparse',
     beforeCallback:Object.freeze({
@@ -379,17 +449,19 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     experienceCallback:Object.freeze({kind:'gain-fixed-exp',points:20}),
     outputMessages:Object.freeze({
-      40:null,41:null,42:null,
+      40:'',41:'',42:'',
       43:'秘銀劍很便宜',44:'發現便宜的奧利哈鋼劍了!',
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
   const useItem=Object.freeze({
     getRule(itemId,useId){
-      if(useId!==0)return null;
-      if(itemId===giftUseRule.itemId)return giftUseRule;
-      if(itemId===swordUseRule?.itemId)return swordUseRule;
-      return null;
+      if(itemId===giftUseRule.itemId)
+        return useId===0?giftUseRule:
+          giftUseVariants.find(x=>x.useId===useId)??null;
+      if(itemId===63)return showcaseResizeUses[useId]??null;
+      if(itemId===swordUseRule?.itemId&&useId===0)return swordUseRule;
+      return declarativeUseIndex.get(itemId+':'+useId)??null;
     },
     describe(itemId,useId){
       if(!Number.isSafeInteger(itemId)||itemId<1||
@@ -404,6 +476,69 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
+    runInlineCallback({rule,shop,count,random,targetShop}){
+      if(rule===targetAdvertiseUse){
+        if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
+          bad('unreviewed original target advertisement');
+        return projectOriginalTargetAdvertisement({
+          rule,shop,target:targetShop,count,
+        });
+      }
+      if(rule===selfAdvertiseUse){
+        if(rule.inlineCallback?.kind!=='advertise-self'||count!==1)
+          bad('unreviewed self-advertising callback');
+        return projectOriginalSelfAdvertisement({rule,shop,count,random});
+      }
+      if(rule===partyUse){
+        if(rule.inlineCallback?.kind!=='party-popularity'||count!==1)
+          bad('unreviewed original party popup');
+        return projectOriginalPartyPopup({rule,shop,count});
+      }
+      if(careerChangeUses.includes(rule)){
+        if(rule.inlineCallback?.kind!=='career-change'||count!==1)
+          bad('unreviewed career source callback');
+        return projectOriginalCareerChange({
+          rule,shop,
+          sourceItemNames:Array.from({length:79},(_,i)=>
+            model.items.find(x=>x.id===i+1)?.name),
+        });
+      }
+      if(bookWorkUses.includes(rule)){
+        const amount=rule.inlineCallback?.param;
+        if(rule.itemId!==13||
+           rule.inlineCallback?.kind!=='book-work'||
+           amount!==(rule.useId===0?3000:10000)||
+           !Number.isSafeInteger(count)||count<1)
+          bad('unreviewed source work callback');
+        return projectOriginalBookWorkCallback({
+          money:shop.money,param1:amount,count,
+          shopId:shop.id,shopName:shop.shopname,
+          moneyPrefix:'¥',moneySuffix:'',
+        });
+      }
+      if(dairyInlineUses.includes(rule)){
+        if(!['milk-cow','drink-milk'].includes(rule.inlineCallback?.kind))
+          bad('unsupported dairy source callback');
+        return projectOriginalDairyInlineCallback({
+          kind:rule.inlineCallback.kind,level:rule.inlineCallback.level,
+          shop:{...shop},count,random,limits:rule.limits,
+        });
+      }
+      if(rule?.itemId!==63||rule.inlineCallback?.kind!=='showcase-resize'||
+        !Number.isSafeInteger(rule.inlineCallback.newCount)||
+        rule.inlineCallback.newCount<1||rule.inlineCallback.newCount>8||
+        !showcaseResizeUses.includes(rule)||
+        !Number.isSafeInteger(shop?.showcasecount)||
+        !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
+        shop.showcase.length!==shop.showcasecount||
+        shop.price.length!==shop.showcasecount)
+        bad('unsupported inline showcase callback');
+      return projectOriginalShowcaseResizeCallback({
+        showcaseCount:shop.showcasecount,showcase:shop.showcase,
+        prices:shop.price,newCount:rule.inlineCallback.newCount,
+        shopId:shop.id,shopName:shop.shopname,
+      });
+    },
     validateWorld({world,rule}){
       const market=world?.market;
       if(rule?.marketCodec==='gift'&&
@@ -412,7 +547,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           market.wholesale.length===giftMap.limits.length;
       return validateSourceSparseMarket(market)&&
         (rule?.marketCodec==='gift'||rule?.marketCodec==='source-sparse')&&
-        (rule.marketCodec!=='source-sparse'||world.shops.length===1);
+        (rule.marketCodec!=='source-sparse'||world.shops.length===1||
+          (rule===targetAdvertiseUse&&world.shops.length===2));
     },
     writeMarket({world,rule,original}){
       if(rule.marketCodec==='gift'){
@@ -423,8 +559,20 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return {...world.market,wholesale:[...original.wholesale]};
       }
       if(rule.marketCodec==='source-sparse'&&
-         original.wholesale.every((n,i)=>n===world.market.wholesale[i]))
-        return world.market;
+         world.market.source===ORIGINAL_SPARSE_MARKET_SOURCE){
+        // Frozen CheckWholeStore may leave both numeric wholesale AND sparse
+        // wire untouched. Preserve that existing source wire exactly so R3
+        // does not mistake a no-op USE for a fresh wholesale market write.
+        if(original.multiItem.discarded.length===0&&
+           original.wholesale.every((n,i)=>
+             n===world.market.wholesale[i]))
+          return world.market;
+        // Original overflow creates a defined wholesale slot even when a
+        // later CheckWholeStore reduces its numeric value to zero.
+        return traceOriginalSparseGiftWholesale({
+          world,compiled:giftMap,original,
+        });
+      }
       bad('unreviewed USE market write/overflow branch');
     },
   });
@@ -531,40 +679,128 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0));
-      return Object.freeze([giftUseRule,swordUseRule].filter(Boolean)
+      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
+        ...showcaseResizeUses,...declarativeUses,...gatheringUses,
+        ...dairyInlineUses,...bookWorkUses,
+        ...careerChangeUses,partyUse,selfAdvertiseUse].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
           const materials=rule.uses.length?
             rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
             (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
+          // Read-only source-backed acquisition hints; never synthesize
+          // inventory, wholesale stock, or a new player transaction.
+          // A positive PLUS is a replenishment possibility, not a promise
+          // of an in-stock purchase or sufficient funds.
+          const materialRoutes=Object.freeze(materials.map(row=>{
+            const sourceItem=model.items.find(item=>item.id===row.itemId);
+            const ownedCount=shop?.item?.[row.itemId-1]??0;
+            const missingCount=Math.max(0,row.count-ownedCount);
+            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
+            const buyRule=buyRegistry?.getRule(row.itemId)??null;
+            const plus=sourceItem?.plusRaw??'';
+            const replenishes=Boolean(buyRule&&
+              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
+            const providers=[giftUseRule,...giftUseVariants,
+              swordUseRule,...declarativeUses,...gatheringUses,
+              ...dairyInlineUses,...bookWorkUses,
+              ...careerChangeUses,partyUse,
+              selfAdvertiseUse].filter(provider=>
+                provider?.creates?.some(output=>
+                  output.itemId===row.itemId&&output.countPerUse>0)||
+                (row.itemId===26&&provider?.itemId===25&&
+                 provider.inlineCallback?.kind==='milk-cow'));
+            const availableProvider=providers.find(provider=>
+              provider.uses.every(input=>
+                (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&
+              (!provider.requiresOwnedItem||
+                (shop?.item?.[provider.itemId-1]??0)>=1));
+            const kind=missingCount===0?'owned':
+              buyRule&&marketStock>=missingCount?'market-stock':
+              availableProvider?'registered-use':
+              replenishes?'source-plus':
+              providers.length?'upstream-use-not-ready':
+              'source-acquisition-not-implemented';
+            return Object.freeze({
+              itemId:row.itemId,name:sourceItem?.name??'未知商品',
+              required:row.count,owned:ownedCount,missing:missingCount,
+              marketStock,kind,sourcePlus:replenishes?plus:null,
+              provider:kind==='registered-use'?Object.freeze({
+                itemId:availableProvider.itemId,useId:availableProvider.useId,
+              }):null,
+              providerCandidates:providers.map(p=>Object.freeze({
+                itemId:p.itemId,useId:p.useId,
+              })),
+            });
+          }));
           const priorExp=shop?.exp;
-          const trained=rule.firstUseOnly&&priorExp!==undefined&&
+          const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
-             Array.isArray(priorExp)||Object.keys(priorExp).length>0);
+             Array.isArray(priorExp)||Object.entries(priorExp).some(
+               ([id,value])=>!/^[1-9]\d*$/.test(id)||Number(id)>79||
+                 !Number.isSafeInteger(value)||value<0||value>1000));
+          const exp=invalidExp?0:(priorExp?.[String(rule.itemId)]??0);
+          const actualTime=originalSourceUseClock({
+            rule,job:shop?.job??'',experience:exp,
+          }).seconds;
           const missing=materials.find(row=>
             (shop?.item?.[row.itemId-1]??0)<row.count);
           const validMarket=world?.market&&
             useItem.validateWorld({world,rule});
+          // Display-only original CheckUseItem count ceiling. Actual server
+          // request still runs the shared preflight and may be clipped.
+          const timeMaximum=shop&&actualTime>0?
+            Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
+          const moneyMaximum=shop&&rule.money>0?
+            Math.floor(shop.money/rule.money):Number.MAX_SAFE_INTEGER;
+          const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
+            const available=shop.item[input.itemId-1]??0;
+            // NEED/proba=0 is a holding requirement, not consumption per use.
+            return input.probabilityPermille===0?
+              (available>=input.countPerUse?maximum:0):
+              Math.min(maximum,Math.floor(available/input.countPerUse));
+          },rule.requiresOwnedItem&&owned<1?0:Number.MAX_SAFE_INTEGER):0;
+          const policyMaximum=rule.firstUseOnly||rule.singleUseOnly?
+            1:Number.MAX_SAFE_INTEGER;
+          const constraints=[
+            {label:'材料最大',maximum:materialsMaximum},
+            {label:'時間最大',maximum:timeMaximum},
+            {label:'資金最大',maximum:moneyMaximum},
+            {label:'僅限首次',maximum:policyMaximum},
+          ];
+          const maxUseCount=Math.max(0,Math.min(
+            ...constraints.map(limit=>limit.maximum)));
+          const maxUseCountReason=constraints.find(limit=>
+            limit.maximum===maxUseCount)?.label??'可執行上限';
           const reason=!shop?'請先開店':
             !safeEvents?'尚未審閱的 EVENT 世界狀態':
             shop.status!==1?'尚未審閱的商店狀態':
             ![undefined,null,0,'',false].includes(shop.guild)?
               '尚未審閱的公會效果':
             !validMarket?'來源市場尚未驗證':
-            trained?'地圖第二次使用／EXP 熟練縮時未審閱':
-            missing?'材料不足：商品 #'+missing.itemId+
-              ' 需要 '+missing.count+' 件':
+            invalidExp?'熟練度紀錄不合法':
+            rule.requiresOwnedItem&&owned<1?'尚未持有使用此功能的商品':
+            missing?'材料不足：'+
+              (model.items.find(item=>item.id===missing.itemId)?.name??
+                '未知材料')+'需要 '+missing.count+' 件':
             shop.money<rule.money?'資金不足':
-            shop.time+rule.time>world.nowSeconds?'可用行動時間不足':
+            shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
           return Object.freeze({
             itemId:rule.itemId,useId:rule.useId,
             itemName:sourceName,useName:rule.name,
-            owned,materials,moneyPerUse:rule.money,
-            timePerUseSeconds:rule.time,
+            owned,materials,materialRoutes,moneyPerUse:rule.money,
+            timePerUseSeconds:actualTime,
+            proficiency:exp,maxUseCount,maxUseCountReason,
+            missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
-            randomSampleRequired:Boolean(rule.beforeCallback),
+            singleUseOnly:Boolean(rule.singleUseOnly),
+            randomSampleRequired:Boolean(rule.beforeCallback)||
+               Boolean(rule.inlineCallback&&
+                 rule.inlineCallback.kind!=='showcase-resize')||
+               [...rule.uses,...rule.creates].some(x=>
+                 x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,
             source:rule.source,sourceFile:rule.sourceFile,
           });
@@ -728,6 +964,33 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='discard-item'){
+        ownKeysExact(command,['shopId','itemId','count']);
+        integer(command.shopId,'shopId',1);
+        integer(command.itemId,'itemId',1);
+        integer(command.count,'count',1);
+        const idx=world.shops.findIndex(s=>s.id===command.shopId);
+        if(idx<0)bad('unknown shop');
+        const shop=world.shops[idx];
+        const item=model.items.find(x=>x.id===command.itemId);
+        if(shop.status!==1||!item||item.flagRaw.split('|').includes('notrash')||
+          !Number.isSafeInteger(shop.item?.[command.itemId-1])||
+          shop.item[command.itemId-1]<command.count)
+          bad('source discard not permitted or stock insufficient');
+        // Source item-detail.cgi permits discard unless the t/notrash flag
+        // is present; original player screen specifies NO action-time cost.
+        // Do not mutate price, wholesale, money, time or showcase locations.
+        const next={...shop,item:[...shop.item]};
+        next.item[command.itemId-1]-=command.count;
+        const shops=[...world.shops];shops[idx]=next;
+        return {shops,receipt:{
+          action:'discard-item',shopId:shop.id,
+          itemId:command.itemId,discardedCount:command.count,
+          stockAfter:next.item[command.itemId-1],
+          timeSpentSeconds:0,
+          source:'original item-detail discard gate; bounded local no-time discard',
+        }};
       }
       if(command.kind==='edit-showcase'){
         ownKeysExact(command,['shopId','shelf','itemId'],

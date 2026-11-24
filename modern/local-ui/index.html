@@ -100,15 +100,13 @@
         <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
         <tr><th scope="row">人氣</th><td id="shop-info-popularity">—</td></tr>
       </tbody></table></div>
+      <p class="muted dev-panel" data-dev-panel>原版人氣內部數值：<output id="dev-popularity-raw">—</output>；頂端點數依 GetDTPoint 獨立計算。</p>
       <h3 class="sub-title">展示架</h3>
       <div class="table-scroll"><table class="shelf-table">
-        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th></tr></thead>
-        <tbody><tr>
-          <td>第 1 架</td><td id="showcase">目前空架</td>
-          <td id="shop-shelf-price">—</td><td id="shop-shelf-base-price">—</td>
-          <td id="shop-shelf-stock">—</td><td id="shop-shelf-today">—</td><td id="shop-shelf-yesterday">—</td>
-        </tr></tbody>
+        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th><th>操作</th></tr></thead>
+        <tbody id="showcase-shelves"><tr><td colspan="8">尚未開店</td></tr></tbody>
       </table></div>
+      <p class="shelf-remove-note">調整或下架展示架消耗 <strong id="shop-showcase-time">—</strong> 行動時間；下架後商品仍保留在倉庫。</p>
       <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
         <th scope="row">本期售額</th><td id="shop-sales">—</td>
         <th scope="row">本期支出</th><td id="shop-paid">—</td>
@@ -116,6 +114,7 @@
       <details class="dev-panel" data-dev-panel>
         <summary>開發測試｜時間快轉</summary>
         <p class="help-text">只用於驗證自然販售與來源市場供貨；不代表正式遊戲的自動時間流逝。</p>
+        <p id="source-shelf-sale-boundary" class="help-text" role="status"></p>
         <div class="quick-time" aria-label="常用快轉時間">
           <button type="button" data-minutes="1" class="secondary">1 分鐘</button>
           <button type="button" data-minutes="10" class="secondary">10 分鐘</button>
@@ -163,8 +162,8 @@
       </details>
       <div class="table-scroll">
         <table class="market-table">
-          <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>購買</th></tr></thead>
-          <tbody id="market-offers"><tr><td colspan="5">請先初始化來源市場</td></tr></tbody>
+          <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>行動時間</th><th>購買</th></tr></thead>
+          <tbody id="market-offers"><tr><td colspan="6">請先初始化來源市場</td></tr></tbody>
         </table>
       </div>
       <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
@@ -176,19 +175,18 @@
       <p class="page-intro">點選商品名稱可查看明細、設定展示架或使用商品。</p>
       <h3 class="sub-title">保管倉庫</h3>
       <div class="table-scroll"><table class="warehouse-table">
-        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>持有數量</th></tr></thead>
-        <tbody id="storage-inventory"><tr><td colspan="4">目前沒有保管商品</td></tr></tbody>
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>持有／上限</th><th>熟練度</th></tr></thead>
+        <tbody id="storage-inventory"><tr><td colspan="5">目前沒有保管商品</td></tr></tbody>
       </table></div>
       <h3 class="sub-title">販售倉庫</h3>
       <div class="table-scroll"><table class="warehouse-table">
-        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>數量／上限</th><th>陳列</th></tr></thead>
-        <tbody id="inventory"><tr><td colspan="5">目前沒有販售商品</td></tr></tbody>
+        <thead><tr><th>名稱</th><th>標準價格</th><th>維持費</th><th>數量／上限</th><th>熟練度</th><th>陳列</th></tr></thead>
+        <tbody id="inventory"><tr><td colspan="6">目前沒有販售商品</td></tr></tbody>
       </table></div>
-      <p class="muted">熟練、行情與供需等尚未完成的數值暫不顯示。</p>
+      <p class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP，1000 點＝100%；原始 EXP 顯示於各商品百分比下方。行情與供需尚未完成，不顯示推測值。</p>
     </section>
 
     <section id="tab-item" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
       <h2 class="section-title">商品明細</h2>
       <h3 id="item-detail-name" class="sub-title">請從倉庫選擇商品</h3>
       <table class="item-detail-table"><tbody>
@@ -202,15 +200,25 @@
       </tbody></table>
       <form id="showcase-form" class="shelf-form">
         <fieldset>
-          <legend>展示架設定｜第 1 架</legend>
-          <label>商品
-            <select id="shelf-item"><option value="0">清空展示架</option></select>
+          <legend>展示架設定</legend>
+          <label>展示
+            <select id="showcase-shelf" aria-label="選擇展示架（括號內為目前商品）"><option value="0">架1（空架）</option></select>
           </label>
           <label>定價比例 <span class="shelf-percent"><input id="shelf-price-per" type="number" min="1" max="200" step="1" value="100" required><span>%</span></span></label>
-          <button id="set-showcase" class="primary" type="submit">設定展示架</button>
+          <button id="set-showcase" class="primary" type="submit">陳列</button>
         </fieldset>
-        <p class="shelf-time-note">調整或清空展示架均消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
+        <p class="shelf-time-note">調整展示架消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
       </form>
+      <div class="discard-section">
+        <h3 class="sub-title">丟棄商品</h3>
+        <form id="discard-form" class="inline-form">
+          <label>丟棄數量
+            <input type="number" id="discard-count" min="1" step="1" value="1" required>
+          </label>
+          <button type="submit" id="discard-submit" class="secondary">丟棄</button>
+        </form>
+        <p id="discard-note" class="muted">丟棄不消耗行動時間；丟棄後無法復原。</p>
+      </div>
       <div id="use-section" class="source-use-section">
         <h3 class="sub-title">商品使用／製作</h3>
         <ul id="use-offers" class="use-action-list">
@@ -218,10 +226,10 @@
         </ul>
         <p id="use-boundary" class="muted dev-panel" data-dev-panel>僅能使用來源已審閱的配方。</p>
       </div>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-stock">［返回倉庫］</button></div>
     </section>
 
     <section id="tab-use" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
       <h2 class="section-title">商品使用／製作</h2>
       <h3 class="sub-title" id="use-detail-name">選擇操作</h3>
       <table class="use-detail-table"><tbody>
@@ -233,15 +241,19 @@
         <tr><th scope="row">操作限制</th><td id="use-detail-limit">—</td></tr>
       </tbody></table>
       <form id="use-action-form" class="use-action-form" hidden>
-        <label for="use-count">執行次數</label>
-        <input id="use-count" type="number" min="1" step="1" value="1" required>
+        <label for="use-count-presets">執行次數</label>
+        <select id="use-count-presets" aria-label="快捷執行次數"></select>
+        <span>次，或自訂</span>
+        <input id="use-count" type="number" min="1" step="1" placeholder="次數" aria-label="自訂執行次數（空白時使用快捷選擇）">
+        <span>次</span>
         <button type="submit" id="perform-use" class="primary">執行操作</button>
       </form>
+      <p id="use-estimated-time" class="use-estimated-time">本次預估行動時間：—</p>
       <p class="muted use-eligibility" id="use-detail-note" role="status"></p>
+      <div class="back-row"><button type="button" class="text-link" id="back-to-item">［返回商品明細］</button></div>
     </section>
 
     <section id="tab-use-result" class="section pane" hidden>
-      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
       <h2 class="section-title">操作結果</h2>
       <h3 class="sub-title" id="use-result-name">—</h3>
       <table class="use-detail-table"><tbody>
@@ -252,6 +264,7 @@
         <tr><th scope="row">獲得商品</th><td id="use-result-acquired">—</td></tr>
       </tbody></table>
       <p id="use-result-message" class="use-result-message" role="status"></p>
+      <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
     </section>
 
     <section id="tab-balance" class="section pane" hidden>

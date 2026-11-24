@@ -5,8 +5,14 @@ let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
-let lastRenderedItemId=null;
+let selectedShelfIndex=0;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
+const sourceProficiency=(shop,itemId)=>{
+  if(!shop)return '—';
+  const exp=shop.exp?.[String(itemId)]??0;
+  return Number.isSafeInteger(exp)&&exp>=0&&exp<=1000?
+    (exp/10).toLocaleString('zh-TW')+'%':'—';
+};
 const sourceUpkeep=raw=>{
   if(typeof raw!=='string'||!/^\d+$/.test(raw))return '—';
   const amount=Number(raw);
@@ -93,6 +99,15 @@ $('back-to-stock').addEventListener('click',()=>selectTab('stock'));
 $('back-to-item').addEventListener('click',()=>selectTab('item'));
 $('result-back-to-item').addEventListener('click',()=>selectTab('item'));
 const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
+function showcaseSlotDescription(s,index){
+  const shop=s?.shop;
+  if(!shop||!Array.isArray(shop.showcase)||
+     !Number.isSafeInteger(index)||index<0||
+     index>=shop.showcasecount)return '—';
+  const itemId=shop.showcase[index]??0;
+  return itemId===0?'空架':
+    catalogItem(s,itemId)?.name??'未知商品';
+}
 function openItem(itemId){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
   selectedItemId=itemId;
@@ -109,35 +124,46 @@ function renderItemInfo(s){
   text('item-detail-cost',sourceUpkeep(item?.costRaw));
   text('item-detail-info',item?.info??'—');
   text('item-detail-limit',item?number(item.stockLimit):'—');
-  const shelf=shop?.showcase?.[0]===item?.itemId&&item?
-    '第 1 架（售價 '+money(shop.price[0])+'）':'未陳列';
-  text('item-detail-shelf',item?shelf:'—');
+  const displayed=shop&&item?shop.showcase.flatMap((id,index)=>
+    id===item.itemId?['第 '+(index+1)+' 架（'+money(shop.price[index])+'）']:[]):[];
+  text('item-detail-shelf',item?
+    (displayed.join('、')||'未陳列'):'—');
+  const shelfPicker=$('showcase-shelf');
+  shelfPicker.replaceChildren();
+  const shelfCount=Number.isSafeInteger(shop?.showcasecount)?
+    Math.min(shop.showcasecount,8):0;
+  for(let index=0;index<shelfCount;index++){
+    const option=document.createElement('option');
+    option.value=String(index);
+    option.textContent='架'+(index+1)+'（'+
+      showcaseSlotDescription(s,index)+'）';
+    shelfPicker.append(option);
+  }
+  if(selectedShelfIndex>=shelfCount)selectedShelfIndex=0;
+  shelfPicker.value=String(selectedShelfIndex);
   text('showcase-time-cost',
     Number.isSafeInteger(s.showcaseEditTimeSeconds)?
       conciseTimeText(s.showcaseEditTimeSeconds):'—');
-  const sourceShelves=s.showcaseOffers??[];
-  const shelfSelect=$('shelf-item');
-  const previous=Number(shelfSelect.value);
-  const newlyOpened=lastRenderedItemId!==selectedItemId;
-  lastRenderedItemId=selectedItemId;
-  shelfSelect.replaceChildren();
-  const empty=document.createElement('option');
-  empty.value='0';empty.textContent='清空展示架';
-  shelfSelect.append(empty);
-  const offer=sourceShelves.find(x=>x.itemId===selectedItemId);
-  if(offer){
-    const option=document.createElement('option');
-    option.value=String(offer.itemId);
-    option.textContent=offer.name+'（原價 '+money(offer.unitPrice)+'）';
-    option.disabled=!offer.canShow;
-    shelfSelect.append(option);
-  }
+  // This page already represents the chosen item. The one shelf picker
+  // shows occupancy; clearing a shelf is handled in the shop overview.
+  const offer=(s.showcaseOffers??[]).find(x=>x.itemId===selectedItemId);
   shelfSelect.value=offer?.canShow?
     (newlyOpened?String(offer.itemId):
       previous===0?'0':String(offer.itemId)):'0';
-  const canEdit=Boolean(item&&shop&&(offer||shop.showcase?.[0]===selectedItemId));
+  const canEdit=Boolean(item&&shop&&
+    (offer||shop.showcase?.includes(selectedItemId)));
   $('showcase-form').hidden=!canEdit;
   $('set-showcase').disabled=!shop||!canEdit;
+  const canDiscard=Boolean(shop&&item&&
+    shop.item[item.itemId-1]>0&&
+    !item.flagRaw.split('|').includes('notrash'));
+  $('discard-form').hidden=!shop||!item;
+  $('discard-count').max=String(shop&&item?
+    shop.item[item.itemId-1]:0);
+  $('discard-submit').disabled=!canDiscard;
+  text('discard-note',!canDiscard?
+    '此商品不可丟棄或沒有持有數量。':
+    '不消耗行動時間；丟棄後無法復原。');
   const useList=$('use-offers');
   useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
@@ -149,22 +175,30 @@ function renderItemInfo(s){
   }
   for(const row of useOffers){
     const li=document.createElement('li');
+    const timeSuffix=Number.isSafeInteger(row.timePerUseSeconds)?
+      '（每次 '+conciseTimeText(row.timePerUseSeconds)+'）':'';
     if(row.canUse){
       const button=document.createElement('button');
       button.type='button';button.className='text-link use-action-link';
       button.dataset.openUse=String(row.useId);
       button.dataset.useItem=String(row.itemId);
-      button.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      button.textContent=row.useName+(row.firstUseOnly?'（限首次）':'')+timeSuffix;
       li.append(button);
     }else{
       const label=document.createElement('span');
       label.className='use-unavailable';
-      label.textContent=row.useName+(row.firstUseOnly?'（限首次）':'');
+      label.textContent=row.useName+(row.firstUseOnly?'（限首次）':'')+timeSuffix;
       li.append(label);
       const reason=document.createElement('small');
       reason.className='muted';
       reason.textContent='（'+(row.reason??'目前不可執行')+'）';
       li.append(reason);
+      if(Number.isSafeInteger(row.missingMaterialId)){
+        const debug=document.createElement('small');
+        debug.className='dev-panel dev-raw-value';
+        debug.textContent='缺少材料 ID #'+row.missingMaterialId;
+        li.append(debug);
+      }
     }
     useList.append(li);
   }
@@ -178,7 +212,8 @@ $('use-offers').addEventListener('click',event=>{
     row.itemId===itemId&&row.useId===useId);
   if(!offer?.canUse||selectedItemId!==itemId)return;
   selectedUseId=useId;
-  $('use-count').value='1';
+  $('use-count').value='';
+  $('use-count-presets').value='';
   selectTab('use');
 });
 function renderUseDetail(s){
@@ -195,17 +230,56 @@ function renderUseDetail(s){
       number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料'):'—');
   text('use-detail-money',offer?money(offer.moneyPerUse):'—');
   text('use-detail-time',offer?conciseTimeText(offer.timePerUseSeconds):'—');
+  const maximum=offer?.maxUseCount??0;
+  const limitName=offer?.maxUseCountReason??'可執行上限';
   text('use-detail-limit',offer?
-    (offer.firstUseOnly?'僅限首次使用':'可選擇執行次數'):'—');
+    (maximum>0?'最多 '+number(maximum)+' 次（'+limitName+'）':
+      (offer.reason??'目前不可執行')):'—');
   const form=$('use-action-form');
   form.hidden=!offer;
+  const presets=$('use-count-presets');
+  const previous=Number(presets.value);
+  presets.replaceChildren();
+  const choices=[1,2,3,5,maximum].filter((n,i,all)=>
+    n>0&&n<=maximum&&all.indexOf(n)===i);
+  for(const n of choices){
+    const option=document.createElement('option');
+    option.value=String(n);
+    option.textContent=n===maximum&&maximum>1?
+      n+'（'+limitName+'）':String(n);
+    presets.append(option);
+  }
+  presets.disabled=!offer?.canUse||!choices.length;
+  presets.value=choices.includes(previous)?String(previous):String(choices[0]??'');
   const count=$('use-count');
   count.max=offer?.firstUseOnly?'1':'';
-  if(offer?.firstUseOnly)count.value='1';
-  $('perform-use').disabled=!offer?.canUse;
+  $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
     offer.canUse?'執行前請確認材料、資金與可用行動時間。':
       (offer.reason??'目前無法執行'));
+  updateUseEstimate();
+}
+function selectedUseCount(){
+  const manual=$('use-count').value.trim();
+  return Number(manual!==''?manual:$('use-count-presets').value);
+}
+function updateUseEstimate(){
+  const offer=snapshot?.useOffers?.find(row=>
+    row.itemId===selectedItemId&&row.useId===selectedUseId);
+  const requested=selectedUseCount();
+  if(!offer?.canUse||!Number.isSafeInteger(requested)||requested<1){
+    text('use-estimated-time','本次預估行動時間：—');
+    return;
+  }
+  const available=Math.min(requested,offer.maxUseCount??0);
+  const seconds=available*offer.timePerUseSeconds;
+  if(!Number.isSafeInteger(seconds)||available<=0){
+    text('use-estimated-time','本次預估行動時間：—');
+    return;
+  }
+  text('use-estimated-time','本次預估行動時間：'+
+    conciseTimeText(seconds)+'（'+number(available)+' 次）'+
+    (requested>available?'；超出可執行上限的次數將由來源裁切':''));
 }
 function renderUseResult(data,offer,catalog){
   const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
@@ -218,7 +292,9 @@ function renderUseResult(data,offer,catalog){
   text('use-result-time',conciseTimeText(data.timeSpentSeconds));
   text('use-result-consumed',tuples(data.originalUseItem));
   text('use-result-acquired',tuples(data.originalAddItem));
-  text('use-result-message',data.originalResultOk??'操作已完成。');
+  text('use-result-message',
+    (typeof data.originalFunctionReturn==='string'&&data.originalFunctionReturn)||
+      data.originalResultOk||'操作已完成。');
 }
 $('inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');
@@ -277,16 +353,47 @@ function showState(s){
   text('shop-info-time',actionTime);
   text('shop-info-popularity',Number.isSafeInteger(shop?.rank)?
     Math.trunc(shop.rank/100)+'%':'—');
-  const shelfId=shop?.showcase?.[0]??0;
-  const hasShelf=Boolean(shop&&shelfId>0);
-  const shelfItem=hasShelf?catalog.find(row=>row.itemId===shelfId):null;
-  text('showcase',hasShelf?shelfItem?.name??'商品 #'+shelfId:'目前空架');
-  text('shop-shelf-price',hasShelf?money(shop.price[0]):'—');
-  text('shop-shelf-base-price',hasShelf?money(shelfItem?.basePrice):'—');
-  text('shop-shelf-stock',hasShelf?number(shop.item[shelfId-1]):'—');
-  text('shop-shelf-today',hasShelf?number(shop.itemtoday?.[shelfId]??0):'—');
-  text('shop-shelf-yesterday',hasShelf&&w?.period?.settledCount>0?
-    number(shop.itemyesterday?.[shelfId]??0):'—');
+  text('dev-popularity-raw',Number.isSafeInteger(shop?.rank)?
+    number(shop.rank):'—');
+  const shelfBody=$('showcase-shelves');
+  shelfBody.replaceChildren();
+  const shelfCount=shop?.showcasecount??0;
+  const shelfEditSeconds=s.showcaseEditTimeSeconds;
+  text('shop-showcase-time',Number.isSafeInteger(shelfEditSeconds)?
+    conciseTimeText(shelfEditSeconds):'—');
+  const canEditShelf=Boolean(shop&&w.nowSeconds>=shop.time);
+  if(!Number.isSafeInteger(shelfCount)||shelfCount<1||shelfCount>8||
+     !Array.isArray(shop?.showcase)||shop.showcase.length!==shelfCount||
+     !Array.isArray(shop?.price)||shop.price.length!==shelfCount){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=8;td.textContent=shop?'展示架資料不合法':'尚未開店';
+    tr.append(td);shelfBody.append(tr);
+  }else for(let index=0;index<shelfCount;index++){
+    const itemId=shop.showcase[index]??0,hasItem=itemId>0;
+    const info=hasItem?catalog.find(row=>row.itemId===itemId):null;
+    const tr=document.createElement('tr');
+    const cell=value=>{
+      const td=document.createElement('td');
+      td.textContent=String(value);tr.append(td);return td;
+    };
+    cell('第 '+(index+1)+' 架');
+    cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
+    cell(hasItem?money(shop.price[index]):'—');
+    cell(hasItem?money(info?.basePrice):'—');
+    cell(hasItem?number(shop.item[itemId-1]):'—');
+    cell(hasItem?number(shop.itemtoday?.[itemId]??0):'—');
+    cell(hasItem&&w?.period?.settledCount>0?
+      number(shop.itemyesterday?.[itemId]??0):'—');
+    const td=document.createElement('td');
+    const button=document.createElement('button');
+    button.type='button';button.className='text-link shelf-action-link';
+    button.dataset.shelfIndex=String(index);
+    button.dataset.shelfAction=hasItem?'remove':'open';
+    button.textContent=hasItem?'下架':'上架';
+    button.disabled=hasItem?!canEditShelf:!shop;
+    button.title=hasItem?'清空第 '+(index+1)+' 架':'選擇要上架的商品';
+    td.append(button);tr.append(td);shelfBody.append(tr);
+  }
   text('paid',money(shop?.paytoday));
   text('sales',money(shop?.saletoday));
   text('shop-paid',money(shop?.paytoday));
@@ -311,7 +418,7 @@ function showState(s){
   marketBody.replaceChildren();
   if(!offers.length){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=5;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
+    td.colSpan=6;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
     tr.append(td);marketBody.append(tr);
   }else for(const offer of offers){
     const tr=document.createElement('tr');
@@ -325,6 +432,8 @@ function showState(s){
     cell(offer.price===null?'—':money(offer.price));
     cell(offer.marketStock);
     cell(offer.owned+'／'+offer.limit);
+    cell(Number.isSafeInteger(offer.timeSeconds)?
+      conciseTimeText(offer.timeSeconds):'—');
     const tdAction=document.createElement('td');
     const actions=document.createElement('div');
     actions.className='market-actions';
@@ -345,7 +454,7 @@ function showState(s){
   }
   // Only the selected item's verified USE actions appear in item details.
   // No action is simulated in the browser.
-  text('use-boundary','僅支援來源已審閱 #79 禮物卷交換及 #14 劍市地圖首次使用；未審閱回呼、二次使用及未知事件會拒絕。');
+  text('use-boundary','已接入來源審閱的禮物卷交換、劍市地圖重複使用與部分製作配方；尚未審閱的回呼、材料取得及存檔來源可能限制其他製作。');
   text('market-boundary',
     '只顯示原版市場當下實際有貨的商品，依來源宣告順序及即時市價排列；未審閱效果仍拒絕交易。');
   $('setup').hidden=Boolean(shop);
@@ -354,8 +463,14 @@ function showState(s){
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
   // Available actions are rendered in the selected original-style item page.
-  for(const control of document.querySelectorAll('.quick-time button'))control.disabled=!shop;
-  $('advance-time-form').querySelector('button[type=submit]').disabled=!shop;
+  const sourceSaleSupported=Boolean(shop&&shop.showcasecount===1);
+  for(const control of document.querySelectorAll('.quick-time button'))
+    control.disabled=!sourceSaleSupported;
+  $('advance-time-form').querySelector('button[type=submit]').disabled=
+    !sourceSaleSupported;
+  text('source-shelf-sale-boundary',shop&&shop.showcasecount>1?
+    '目前有 '+number(shop.showcasecount)+
+    ' 架展示架：多架自然販售尚未通過原版來源驗證，故暫停時間快轉。上架、下架及存讀檔仍可使用。':'');
   const entries=shop?catalog.filter(item=>shop.item[item.itemId-1]>0)
     .map(item=>({...item,count:shop.item[item.itemId-1]})):[];
   const storageBody=$('storage-inventory'),sellingBody=$('inventory');
@@ -363,6 +478,19 @@ function showState(s){
   const addEmpty=(body,colspan,message)=>{
     const tr=document.createElement('tr'),td=document.createElement('td');
     td.colSpan=colspan;td.textContent=message;tr.append(td);body.append(tr);
+  };
+  const addCell=(tr,value)=>{
+    const td=document.createElement('td');td.textContent=value;
+    tr.append(td);return td;
+  };
+  const addProficiency=(tr,item)=>{
+    const td=addCell(tr,sourceProficiency(shop,item.itemId));
+    const raw=shop?.exp?.[String(item.itemId)]??0;
+    const dev=document.createElement('small');
+    dev.className='dev-panel dev-raw-value';
+    dev.textContent=Number.isSafeInteger(raw)&&raw>=0&&raw<=1000?
+      'EXP '+number(raw)+'/1000':'EXP 不合法';
+    td.append(dev);
   };
   const addName=(tr,item)=>{
     const td=document.createElement('td');
@@ -374,26 +502,27 @@ function showState(s){
   };
   const storage=entries.filter(item=>item.flagRaw.includes('s'));
   const selling=entries.filter(item=>!item.flagRaw.includes('s'));
-  if(!storage.length)addEmpty(storageBody,4,'目前沒有保管商品');
+  if(!storage.length)addEmpty(storageBody,5,'目前沒有保管商品');
   for(const item of storage){
     const tr=document.createElement('tr');
     addName(tr,item);
     for(const value of [money(item.basePrice),
-      sourceUpkeep(item.costRaw),number(item.count)]){
-      const td=document.createElement('td');
-      td.textContent=value;tr.append(td);
-    }
+      sourceUpkeep(item.costRaw),
+      number(item.count)+'／'+number(item.stockLimit)])
+      addCell(tr,value);
+    addProficiency(tr,item);
     storageBody.append(tr);
   }
-  if(!selling.length)addEmpty(sellingBody,5,'目前沒有販售商品');
+  if(!selling.length)addEmpty(sellingBody,6,'目前沒有販售商品');
   for(const item of selling){
     const tr=document.createElement('tr');addName(tr,item);
-    const values=[money(item.basePrice),sourceUpkeep(item.costRaw),
-      number(item.count)+'／'+number(item.stockLimit),
-      shop.showcase?.[0]===item.itemId?'第 1 架｜'+money(shop.price[0]):'—'];
-    for(const value of values){
-      const td=document.createElement('td');td.textContent=value;tr.append(td);
-    }
+    for(const value of [money(item.basePrice),sourceUpkeep(item.costRaw),
+      number(item.count)+'／'+number(item.stockLimit)])
+      addCell(tr,value);
+    addProficiency(tr,item);
+    const shelves=shop.showcase.flatMap((id,index)=>
+      id===item.itemId?['第 '+(index+1)+' 架｜'+money(shop.price[index])]:[]);
+    addCell(tr,shelves.join('、')||'—');
     sellingBody.append(tr);
   }
   renderItemInfo(s);
@@ -463,7 +592,6 @@ $('reset-world').addEventListener('click',async()=>{
     }
     selectedItemId=null;
     selectedUseId=null;
-    lastRenderedItemId=null;
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
@@ -486,13 +614,55 @@ $('supply').addEventListener('click',()=>call('/api/supply',{
   expectedRevision:snapshot?.world?.revision,
   timespanSeconds:Number($('supply-seconds').value),
 },'原版 PLUS 供貨子步驟'));
+$('showcase-shelves').addEventListener('click',async event=>{
+  const button=event.target.closest('button[data-shelf-index]');
+  if(!button||button.disabled||!snapshot?.shop||!snapshot?.world)return;
+  const shelf=Number(button.dataset.shelfIndex);
+  if(!Number.isSafeInteger(shelf)||shelf<0||
+     shelf>=snapshot.shop.showcasecount)return;
+  if(button.dataset.shelfAction==='open'){
+    selectedShelfIndex=shelf;
+    selectTab('stock');
+    return;
+  }
+  if(button.dataset.shelfAction==='remove'&&
+     snapshot.shop.showcase[shelf]>0)
+    await call('/api/showcase',{
+      expectedRevision:snapshot.world.revision,itemId:0,per:100,shelf,
+    },'第 '+(shelf+1)+' 架下架');
+});
+$('showcase-shelf').addEventListener('change',()=>{
+  selectedShelfIndex=Number($('showcase-shelf').value);
+});
+$('discard-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const itemId=selectedItemId;
+  const count=Number($('discard-count').value);
+  const item=catalogItem(snapshot,itemId),shop=snapshot?.shop;
+  if(!item||!shop||!Number.isSafeInteger(count)||count<1||
+    count>shop.item[itemId-1]||item.flagRaw.split('|').includes('notrash')){
+    feedback('丟棄數量不正確或此商品不可丟棄。',null,true);
+    return;
+  }
+  if(!confirm('確定丟棄 '+item.name+' × '+number(count)+
+    '？丟棄後無法復原，且不消耗行動時間。'))return;
+  await call('/api/discard',{
+    expectedRevision:snapshot.world.revision,itemId,count,
+  },'丟棄商品：'+item.name);
+});
 $('showcase-form').addEventListener('submit',async event=>{
   event.preventDefault();
-  const itemId=Number($('shelf-item').value);
+  const itemId=selectedItemId;
+  if(!Number.isSafeInteger(itemId)||itemId<1||
+     !(snapshot?.showcaseOffers??[]).some(x=>x.itemId===itemId)){
+    feedback('此商品目前不可陳列。',null,true);
+    return;
+  }
   await call('/api/showcase',{
     expectedRevision:snapshot?.world?.revision,
     itemId,per:Number($('shelf-price-per').value),
-  },itemId===0?'清空展示架':'原版來源共用展示架上架 #'+itemId);
+    shelf:Number($('showcase-shelf').value),
+  },'陳列：'+(catalogItem(snapshot,itemId)?.name??'商品'));
 });
 async function advance(minutes){
   await call('/api/advance-time',{
@@ -518,6 +688,11 @@ $('market-offers').addEventListener('click',event=>{
     marketShelf:offer.shelf,expectedPrice:offer.price,
   },'來源市場進貨 #'+itemId+' '+offer.name);
 });
+$('use-count-presets').addEventListener('change',()=>{
+  $('use-count').value='';
+  updateUseEstimate();
+});
+$('use-count').addEventListener('input',updateUseEstimate);
 $('use-action-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const before=snapshot;
@@ -525,7 +700,8 @@ $('use-action-form').addEventListener('submit',async event=>{
   const offer=before?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
   if(!offer?.canUse||currentTab!=='use'||!before?.world)return;
-  const requestedCount=Number($('use-count').value);
+  const manual=$('use-count').value.trim();
+  const requestedCount=Number(manual!==''?manual:$('use-count-presets').value);
   if(!Number.isSafeInteger(requestedCount)||requestedCount<1||
     (offer.firstUseOnly&&requestedCount!==1)){
     feedback('請輸入有效的執行次數。',null,true);

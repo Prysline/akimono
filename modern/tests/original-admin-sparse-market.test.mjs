@@ -120,14 +120,14 @@ test('B-34 optional source bootstrap requires complete original admin/read/write
 });
 test('B-34 legacy module remains unchanged without opt-in original admin source',()=>{
   assert.deepEqual(legacyStreet.capabilities,[
-    'open-shop','edit-showcase','use-item',
+    'open-shop','edit-showcase','discard-item','use-item',
   ]);
   assert.equal(legacyStreet.reviewedBootstrap,null);
   assert.ok(!legacyStreet.capabilities.includes('initialize-source-market'));
 });
 test('B-34 review-ready Standard Street adds only one opt-in admin bootstrap command',()=>{
   assert.deepEqual(street.capabilities,[
-    'open-shop','edit-showcase','initialize-source-market','use-item',
+    'open-shop','edit-showcase','discard-item','initialize-source-market','use-item',
   ]);
   assert.equal(street.reviewedBootstrap.source,ORIGINAL_SPARSE_MARKET_SOURCE);
   assert.ok(!street.capabilities.includes('create-wholesale-stock'));

@@ -3,6 +3,9 @@
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
  * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
  */
+import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
+import {projectOriginalUseTransaction}
+  from '../src/original-use-transaction-model.mjs';
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
@@ -81,6 +84,9 @@ const saveStore=createLocalWorldSaveStore({
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
 });
+// Opt-in R2 memory-only audit. NOT player authentication or durable multi-shop.
+const targetAdvertisementMemoryAudit=
+  process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1';
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
 const send=(res,status,obj)=>{
@@ -142,6 +148,13 @@ function state(){
         };
       }),
     useOffers:streetModule.listUseOffers(world),
+    // Only source-created live shops, never client-supplied target records.
+    targetAdvertisementAudit:targetAdvertisementMemoryAudit?{
+      memoryOnly:true,authenticated:false,durable:false,
+      targets:world?.shops?.length===2&&world.shops[0]?.id===1?
+        world.shops.filter(shop=>shop.id!==1&&shop.status===1)
+          .map(shop=>({shopId:shop.id,shopName:shop.shopname})):[],
+    }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
@@ -156,7 +169,9 @@ function state(){
       }),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
-      '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
+      '來源 #10／#40～#44 共用展示架',
+      '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
+      '原版自然販售片段／時間（多架／EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
     memoryOnly:!save.available,
     diskSaveAvailable:true,
@@ -224,18 +239,71 @@ function sampleOriginalPlus(world,timespanSeconds){
 // original frozen Perl probes and are selected ONLY by a local test env var.
 function sampleSourceUse(world,{itemId,useId,requestedCount}){
   const rule=streetModule.useItem.getRule(itemId,useId);
-  if(!rule?.beforeCallback)return [];
+  if(!rule)return [];
+  if(!rule.beforeCallback){
+    // Rules without a pre-callback use the bounded original preflight to
+    // sample MakeAmount, plus one more draw for a reviewed lostbook callback.
+    // A dry-run with 0.5 samples changes no WorldState; all source random
+    // branches consume a fixed count from the effective material quantities.
+    const shopIndex=world.shops.findIndex(row=>row.id===1);
+    if(shopIndex<0)throw Error('USE 需要已開設的店舖');
+    const shop=world.shops[shopIndex];
+    const exp=shop.exp?.[String(itemId)]??0;
+    const clock=originalSourceUseClock({rule,job:shop.job??'',
+      experience:exp});
+    const trial=projectOriginalUseTransaction({
+      shops:world.shops.map(x=>x.item),actingShopIndex:shopIndex,
+      items:rule.limits,wholesale:world.market.wholesale,
+      uses:rule.uses,creates:rule.creates,requestedCount,
+      experience:exp,experienceOld:exp,
+      needExperience:rule.needExperience??0,
+      job:shop.job??'',needJob:rule.needJob??'',
+      point:shop.point??0,needPoint:rule.needPoint??0,
+      rank:shop.rank,needPopularity:rule.needPopularity??0,
+      needsEvent:false,eventActive:false,
+      money:shop.money,costPerUse:rule.money,
+      paytoday:shop.paytoday,nowSeconds:world.nowSeconds,
+      storedTimeSeconds:shop.time,baseUseTimeSeconds:clock.base,
+      trainedUseTimeSeconds:clock.trained,maxStockTimeSeconds:259200,
+      shopStatus:true,random:()=>0.5,
+    });
+    const n=trial.multiItem?.randomDraws??0;
+    if(!trial.performed)return [];
+    const inline=rule.inlineCallback?.kind;
+    const inlineDraws=inline==='milk-cow'?trial.count+1:
+      inline==='advertise-self'?1:
+        inline==='drink-milk'&&trial.count<10?1:0;
+    const needed=n+(rule.afterCallback?1:0)+inlineDraws;
+    if(needed===0)return [];
+    return process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'
+      ?Array(needed).fill(500000)
+      :sourceCommandDraws({world,kind:'use-item',
+        args:{shopId:1,itemId,useId,requestedCount},count:needed});
+  }
+  // #14 has no material USE list. The frozen UseItem preflight clips the
+  // batch by money and remaining action time BEFORE MakeAmount, and the
+  // latter selects the Gaussian two-draw branch at 20+ requested products.
+  // This is the reviewed source rule, not a separate player command.
+  const shop=world.shops.find(row=>row.id===1);
+  const experience=shop?.exp?.[String(itemId)]??0;
+  const time=originalSourceUseClock({rule,job:shop?.job??'',
+    experience}).seconds;
+  const count=Math.max(0,Math.min(requestedCount,
+    Math.floor(shop.money/rule.money),
+    Math.floor((world.nowSeconds-shop.time)/time)));
+  const batchGaussian=count>=2;
   const testMode=process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1';
   let draws;
   if(testMode){
     const scenario=process.env.AKIMONO_E2E_USE_SCENARIO??'mixed';
-    const mixed=Array.from({length:5},
+    const ordinary=Array.from({length:5},
       ()=>[0,0,...Array(8).fill(999999)]).flat();
     const gaussian=Array(10).fill(0);
     const cases={
-      mixed:[999999,...mixed,999999],
-      'mixed-loss':[999999,...mixed,0],
-      'zero-loss':[999999,...Array(50).fill(999999),0],
+      mixed:[999999,...(batchGaussian?gaussian:ordinary),999999],
+      'mixed-loss':[999999,...(batchGaussian?gaussian:ordinary),0],
+      'zero-loss':[999999,...(batchGaussian?gaussian:
+        Array(50).fill(999999)),0],
       doubled:[0,...gaussian,999999],
       'doubled-loss':[0,...gaussian,0],
       boundary:[100000,...gaussian,100000],
@@ -246,9 +314,8 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     draws=sourceCommandDraws({world,kind:'use-item',
       args:{shopId:1,itemId,useId,requestedCount},count:52});
   }
-  // Original funcb uses <=100/1000 and runs BEFORE MakeAmount. It is
-  // followed by five 10-draw groups OR five 2-draw groups, then lostbook.
-  return draws.slice(0,draws[0]<=100000?12:52);
+  // One funcb, then five MakeAmount calls, then one lostbook.
+  return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 function sampleSourceTime(world,minutes){
   // One source stream: natural sales, ITEM FUNCTURN/FUNCSALE, then 59 PLUS.
@@ -277,6 +344,19 @@ async function api(req,res,url){
   if(req.headers.origin && req.headers.origin!==`http://127.0.0.1:${server.address().port}`)
     return send(res,403,{ok:false,error:'僅允許相同來源的本機請求'});
   const body=await jsonBody(req);
+  // Opening a second shop is an isolated memory audit, not permission to
+  // run arbitrary single-shop player commands against a two-shop world.
+  const inTwoShopAudit=targetAdvertisementMemoryAudit&&
+    repo?.read().shops.length===2;
+  const reviewedTargetUse=inTwoShopAudit&&
+    url.pathname==='/api/use'&&body.itemId===62&&body.useId===1&&
+    Object.hasOwn(body,'targetShopId');
+  if(inTwoShopAudit&&!reviewedTargetUse&&
+     ['/api/use','/api/buy','/api/supply','/api/discard',
+       '/api/showcase','/api/advance-time'].includes(url.pathname))
+    return send(res,409,{ok:false,code:'UNREVIEWED_TWO_SHOP_ACTION',
+      error:'雙店驗證只允許原版 #62/1，共用單店玩法不得在多店中執行',
+      state:state()});
   let result;
   switch(url.pathname){
     case '/api/reset': {
@@ -322,6 +402,10 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/save': {
+      if(repo?.read().shops.length>1)
+        return send(res,409,{ok:false,
+          code:'MULTI_SHOP_PERSISTENCE_UNREVIEWED',
+          error:'多店來源保存尚未驗證，B-43 不接受雙店存檔',state:state()});
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化／載入世界才可存檔',state:state()});
       const world=repo.read();
@@ -369,6 +453,27 @@ async function api(req,res,url){
         shopId:1,ownerName,shopName});
       break;
     }
+    case '/api/r2/open-target-shop': {
+      // Auditing only: source open-shop for a second shop, not a second
+      // authenticated player. Disable by default; no injected inventory.
+      if(!targetAdvertisementMemoryAudit)
+        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
+          error:'雙店驗證模式未啟用',state:state()});
+      if(Object.keys(body).sort().join(',')!==
+         'expectedRevision,ownerName,shopName')
+        throw Error('雙店驗證只接受 expectedRevision、ownerName、shopName');
+      if(typeof body.ownerName!=='string'||
+         typeof body.shopName!=='string')
+        throw Error('第二間店的店主與店名必須是文字');
+      if(!repo||repo.read().shops.length!==1||
+         repo.read().shops[0]?.id!==1)
+        return send(res,409,{ok:false,code:'R2_AUDIT_REQUIRES_ONE_SHOP',
+          error:'只可在單店來源世界中開啟驗證目標店',state:state()});
+      result=commit({kind:'open-shop',
+        expectedRevision:ensureRevision(body),shopId:2,
+        ownerName:body.ownerName,shopName:body.shopName});
+      break;
+    }
     case '/api/supply': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const revision=ensureRevision(body),timespanSeconds=
@@ -402,7 +507,13 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const targeted=Object.hasOwn(body,'targetShopId');
+      if(targeted&&(!targetAdvertisementMemoryAudit||
+           body.itemId!==62||body.useId!==1))
+        return send(res,403,{ok:false,code:'UNREVIEWED_HTTP_TARGET',
+          error:'僅記憶體驗證模式可指定原版 #62/1 目標店',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',
+        ...(targeted?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -410,14 +521,36 @@ async function api(req,res,url){
       const itemId=commandNumber(body.itemId,'itemId',1);
       const useId=commandNumber(body.useId,'useId');
       const requestedCount=commandNumber(body.requestedCount,'requestedCount',1);
+      const targetShopId=targeted?commandNumber(body.targetShopId,'targetShopId',1):null;
       const world=repo.read();
       if(world.revision!==expectedRevision)
         return send(res,409,{ok:false,code:'REVISION_CONFLICT',
           error:'REVISION_CONFLICT',state:state()});
+      if(targeted){
+        // Browser never chooses the acting shop. Resolve canonical target ID
+        // from this authoritative world; GameCore rechecks it within CAS.
+        if(world.shops.length!==2||world.shops[0]?.id!==1||
+           !world.shops.some(shop=>shop.id===targetShopId&&
+             shop.status===1&&shop.id!==1))
+          return send(res,409,{ok:false,code:'INVALID_SOURCE_TARGET',
+            error:'目標不在已開設的第二間來源店舖中',state:state()});
+      }
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
+        ...(targeted?{targetShopId}:{}),
         ...(randomDraws.length?{randomDraws}:{})});
+      break;
+    }
+    case '/api/discard': {
+      if(!repo)return send(res,409,{ok:false,
+        error:'請先初始化世界',state:state()});
+      if(Object.keys(body).sort().join(',')!=='count,expectedRevision,itemId')
+        throw Error('丟棄僅接受 itemId、count、expectedRevision');
+      result=commit({kind:'discard-item',
+        expectedRevision:ensureRevision(body),shopId:1,
+        itemId:commandNumber(body.itemId,'itemId',1),
+        count:commandNumber(body.count,'count',1)});
       break;
     }
     case '/api/showcase': {
@@ -428,16 +561,22 @@ async function api(req,res,url){
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const fields=Object.keys(body).sort().join(',');
       if(fields!=='expectedRevision,itemId,per'&&
-         fields!=='expectedRevision,itemId,priceOverride')
-        throw Error('僅允許原版販售百分比或相容原價欄位');
+         fields!=='expectedRevision,itemId,per,shelf'&&
+         fields!=='expectedRevision,itemId,priceOverride'&&
+         fields!=='expectedRevision,itemId,priceOverride,shelf')
+        throw Error('僅允許原版販售比例、指定架號或相容原價欄位');
       const fromPercent=Object.hasOwn(body,'per');
       const per=fromPercent?commandNumber(body.per,'per',1):100;
       if(per>200)throw Error('原版展示架比例限制 1–200%');
       const sourcePrice=sourceRule?.unitPrice??0;
       if(!fromPercent&&body.priceOverride!==sourcePrice)
         throw Error('相容 priceOverride 只接受來源原價');
+      const shelf=Object.hasOwn(body,'shelf')?
+        commandNumber(body.shelf,'shelf'):0;
+      if(shelf>=(repo.read().shops[0]?.showcasecount??0))
+        throw Error('展示架不存在，請先使用擴建工具');
       result=commit({kind:'edit-showcase',
-        expectedRevision:ensureRevision(body),shopId:1,shelf:0,
+        expectedRevision:ensureRevision(body),shopId:1,shelf,
         itemId,per,priceOverride:fromPercent?0:sourcePrice});
       break;
     }
