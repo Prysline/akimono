@@ -60,12 +60,21 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   }
   async function enoughTime(seconds){
     assert.ok(Number.isSafeInteger(seconds)&&seconds>=0);
-    while(remaining()<seconds)await tick(Math.min(60,Math.max(1,Math.ceil((seconds-remaining())/60))));
+    for(let n=0;remaining()<seconds;n++){
+      assert.ok(n<144,'source action-time acquisition budget '+JSON.stringify({seconds,remaining:remaining(),period:state.world.period.settledCount}));
+      await tick(Math.min(60,Math.max(1,Math.ceil((seconds-remaining())/60))));
+    }
   }
   async function use(id,useId,count=1){
-    const offer=quote(id,useId);
-    assert.ok(offer,'registered USE #'+id+'/'+useId);
-    await enoughTime(offer.timePerUseSeconds*count);
+    // EXP can decay at a real settlement while waiting for action time.
+    // Re-quote after each wait; never assume the old shortened clock cost.
+    for(let n=0;;n++){
+      const offer=quote(id,useId);
+      assert.ok(offer,'registered USE #'+id+'/'+useId);
+      assert.ok(n<8,'source USE time quote did not converge');
+      if(remaining()>=offer.timePerUseSeconds*count)break;
+      await enoughTime(offer.timePerUseSeconds*count);
+    }
     const result=await command('/api/use',{itemId:id,useId,requestedCount:count});
     assert.equal(result.details.effectiveCount,count);
     return result;
@@ -111,14 +120,16 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   }
   async function ore(id,count){
     const useId={5:0,6:1,7:2}[id];assert.ok(useId!==undefined);
-    while(stock(id)<count){
+    for(let n=0;stock(id)<count;n++){
+      assert.ok(n<200,'source mining budget #'+id+' target '+count+' actual '+stock(id));
       if(!stock(9))await market(9);
       await use(9,useId);
     }
   }
   async function gather(id,count){
     const useId={1:0,2:2,3:1,4:3}[id];assert.ok(useId!==undefined);
-    while(stock(id)<count){
+    for(let n=0;stock(id)<count;n++){
+      assert.ok(n<200,'source gathering budget #'+id+' target '+count+' actual '+stock(id));
       if(!stock(12))await market(12);
       await use(12,useId);
     }

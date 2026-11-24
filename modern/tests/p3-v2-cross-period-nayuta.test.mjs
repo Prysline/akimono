@@ -83,7 +83,13 @@ test('P3 source #66/3 from genuine cross-period player, three skills, earned EXP
     // and natural-sale popularity can independently change rank).
     for(let n=0;p.stock(70)>0;n++){
       assert.ok(n<144,'source #70 sale budget');
-      const r=await p.tick(60);
+      const beforeTick=p.state.shop;
+      const shortSlice=n===0&&p.boundary()>120;
+      const r=await p.tick(shortSlice?2:60);
+      if(shortSlice&&beforeTick.rank<10000&&beforeTick.price[0]<=50000&&
+         r.details.naturalSaleCount===0&&p.stock(70)===1){
+        assert.equal(r.details.itemTurnAffectedSlices,1,'eligible unsold necklace invokes positive source FUNCTURN');
+      }
       if(r.details.itemTurnAffectedSlices>0)callbackObserved=true;
       salesObserved+=r.details.naturalSaleCount;
     }

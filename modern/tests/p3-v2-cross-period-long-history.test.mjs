@@ -42,7 +42,7 @@ async function crossOnce(p){
       const prize=receipt.prize;
       assert.equal(prize.stockAfter-prize.stockBefore,prize.granted);
       assert.equal(prize.granted+prize.discarded,prize.wanted);
-      assert.notEqual(period.dtPeople,before.period.dtPeople);
+      assert.equal(period.dtPeople,124000+before.period.town.develop*30+before.period.town.safety*20);
       tDiagnostic(p,receipt);
       return;
     }
