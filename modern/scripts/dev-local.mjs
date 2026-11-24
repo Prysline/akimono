@@ -481,6 +481,49 @@ async function api(req,res,url){
         shopId:1,ownerName,shopName});
       break;
     }
+    case '/api/r2/target-advertisement-preflight': {
+      // Non-committing, opt-in R2 diagnostic. Execute the same GameCore
+      // source transaction projector without publishing its proposed world.
+      // Not auth, an inventory grant, or a player USE authorization.
+      if(!targetAdvertisementMemoryAudit)
+        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
+          error:'原版跨店廣告稽核未啟用',state:state()});
+      if(Object.keys(body).sort().join(',')!==
+           'expectedRevision,targetShopId')
+        throw Error('稽核只接受 expectedRevision、targetShopId；不得提供亂數、角色、資金或回呼');
+      const expectedRevision=ensureRevision(body);
+      const targetShopId=commandNumber(body.targetShopId,'targetShopId',1);
+      if(!repo)return send(res,409,{ok:false,code:'WORLD_NOT_INITIALIZED',
+        error:'沒有來源世界',state:state()});
+      const world=repo.read();
+      if(expectedRevision!==world.revision)
+        return send(res,409,{ok:false,code:'REVISION_CONFLICT',
+          error:'REVISION_CONFLICT',state:state()});
+      if(world.shops.length!==2||world.shops[0]?.id!==1||
+         !world.shops.some(shop=>shop.id===targetShopId&&
+           shop.status===1&&shop.id!==1))
+        return send(res,409,{ok:false,code:'INVALID_SOURCE_TARGET',
+          error:'目標必須是來源世界中的另一間有效店舖',state:state()});
+      const projected=applyGameCommand({world,streetModule,
+        command:{kind:'use-item',expectedRevision,shopId:1,
+          itemId:62,useId:1,requestedCount:1,targetShopId}});
+      return send(res,200,{ok:true,code:'R2_PREFLIGHT_CHECKED',
+        details:{
+          action:'r2-target-advertisement-source-preflight',
+          targetShopId,sourceRevision:expectedRevision,
+          memoryOnly:true,authenticated:false,committed:false,
+          persisted:false,authoritativeUseApproval:false,
+          sourceProjectionSucceeded:projected.ok,
+          sourceProjectionCode:projected.code,
+          sourceRejectionReason:projected.ok?null:
+            (projected.details?.reason??projected.code),
+          ...(projected.ok?{
+            projectedTargetRank:projected.world.shops.find(
+              shop=>shop.id===targetShopId)?.rank??null,
+          }:{}),
+        },
+        state:state()});
+    }
     case '/api/r2/open-target-shop': {
       // Auditing only: source open-shop for a second shop, not a second
       // authenticated player. Disable by default; no injected inventory.
