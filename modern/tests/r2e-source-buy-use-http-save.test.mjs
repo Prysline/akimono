@@ -21,7 +21,7 @@ const perl=(file,...args)=>JSON.parse(execFileSync('perl',[file,...args],{
   timeout:30000,maxBuffer:4*1024*1024,
 }));
 async function boot(directory,scenario='mixed'){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:join(root,'modern'),env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:'1000000',

@@ -164,7 +164,7 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/shop\.showcasecount/);
   assert.match(html,/id="source-shelf-sale-boundary"/);
   assert.match(script,/const sourceSaleSupported=Boolean\(shop&&/);
-  assert.match(script,/shop\.showcasecount>=1&&shop\.showcasecount<=8/);
+  assert.match(script,/shop\.showcasecount>=1&&shop\.showcasecount<=\(snapshot\?\.reviewedTimeMode===true\?1:8\)/);
   assert.match(script,/shop\.showcasecount===1\|\|w\?\.period\?\.eventState!==null/);
   assert.match(script,/shop&&shop\.showcasecount>1\?/);
   assert.match(html,/id="showcase-shelf"/);
