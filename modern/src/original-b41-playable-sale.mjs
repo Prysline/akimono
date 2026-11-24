@@ -223,7 +223,8 @@ function projectSourcePreEventSaleSlice({
     }):null;
   const shop=world.shops[0];
   if(shop?.id!==shopId||shop.status!==1||
-    ![1,2].includes(shop.showcasecount)||
+    (!Number.isSafeInteger(shop.showcasecount)||
+      shop.showcasecount<1||shop.showcasecount>8)||
     shop.showcase?.length!==shop.showcasecount||
     shop.price?.length!==shop.showcasecount||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
@@ -267,7 +268,7 @@ function projectSourcePreEventSaleSlice({
   // until the original lifecycle has been source-reviewed.
   if(world.schema===PERIOD_WORLD_SCHEMA &&
      world.period?.eventState===null &&
-     (shop.showcasecount===2||
+     (shop.showcasecount>1||
        shop.showcase.some(id=>id>=40&&id<=44)))
     bad('R3 multi-shelf or sword sale blocked: EVENT state unknown; reviewed lifecycle required');
   const activeItemId=shop.showcase[0]||10;
@@ -297,15 +298,15 @@ function projectSourcePreEventSaleSlice({
     bad('this interval crosses original period settlement; not yet supported');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
-  if(shop.showcasecount===2&&activeKeys.length)
-    bad('two-shelf active EVENT overlay not source-reviewed');
+  if(shop.showcasecount>1&&activeKeys.length)
+    bad('multi-shelf active EVENT overlay not source-reviewed');
   const rule=shop.showcasecount===1&&shop.showcase[0]?
     reviewed.saleRules[shop.showcase[0]]:null;
   const popularOverride=rule&&swordDemandEventActive&&
     rule.itemId>=40&&rule.itemId<=44?
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
-    shop,rule,saleRules:shop.showcasecount===2?reviewed.saleRules:null,
+    shop,rule,saleRules:shop.showcasecount>1?reviewed.saleRules:null,
     upkeepCosts:reviewed.upkeepCosts,
     spanSeconds:span,randomDraws,popularOverride,
   });
@@ -345,7 +346,7 @@ function projectSourcePreEventSaleSlice({
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
-      ...(shop.showcasecount===2?{soldByItem:natural.soldByItem}:{}),
+      ...(shop.showcasecount>1?{soldByItem:natural.soldByItem}:{}),
       soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,
