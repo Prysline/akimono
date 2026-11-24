@@ -1,5 +1,5 @@
 /** Genuine v2 HTTP player. Server creates identity, RNG, market, EXP and time.
- * The test clock starts immediately after a source 36h boundary; no test
+ * The default test clock starts immediately after a source 36h boundary; no test
  * state, fixture PLUS, client RNG, or settlement bypass enters the game. */
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -13,7 +13,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401'}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
   const stop=async()=>{
@@ -25,7 +25,7 @@ export async function genuinePlayer(t,{now='896401'}={}){
     stderr='';
     child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0'},stdio:['ignore','pipe','pipe']});
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0'},stdio:['ignore','pipe','pipe']});
     child.stderr.on('data',b=>stderr+=b);
     let timer;
     url=await Promise.race([new Promise((resolve,reject)=>{
@@ -49,11 +49,13 @@ export async function genuinePlayer(t,{now='896401'}={}){
   const quote=(id,useId)=>state.useOffers.find(x=>x.itemId===id&&x.useId===useId);
   const boundary=()=>state.secondsUntilSettlement;
   async function tick(minutes){
-    assert.ok(minutes>=1&&minutes<=60&&minutes*60<boundary(),'source period budget exhausted: '+JSON.stringify({minutes,boundary:boundary(),remaining:remaining(),exp:state.shop.exp,stock:state.shop.item,money:state.shop.money}));
+    assert.ok(minutes>=1&&minutes<=60&&(crossPeriod||minutes*60<boundary()),'source period budget exhausted: '+JSON.stringify({minutes,boundary:boundary(),remaining:remaining(),exp:state.shop.exp,stock:state.shop.item,money:state.shop.money}));
     const nowSeconds=state.world.nowSeconds,revision=state.world.revision;
+    const priorPeriods=state.world.period.settledCount,crosses=minutes*60>=boundary();
     const result=await command('/api/advance-reviewed-time',{minutes});
     assert.equal(state.world.nowSeconds,nowSeconds+minutes*60);
     assert.equal(state.world.revision,revision+1);
+    assert.equal(state.world.period.settledCount,priorPeriods+(crosses?1:0));
     return result;
   }
   async function enoughTime(seconds){
@@ -84,8 +86,9 @@ export async function genuinePlayer(t,{now='896401'}={}){
   }
   async function market(id,count=1,{partial=false,sell=[]}={}){
     // Every refill advances full reviewed source time; purchases use live quotes.
-    let needed=count;
+    let needed=count,attempts=0;
     while(needed>0){
+      if(crossPeriod)assert.ok(++attempts<=240,'live market budget exhausted #'+id+' '+JSON.stringify({stock:stock(id),money:state.shop.money,period:state.world.period.settledCount}));
       const offer=state.marketOffers.find(x=>x.itemId===id);
       if(offer?.canBuy){
         const quantity=Math.min(needed,offer.marketStock,offer.limit-stock(id));
@@ -103,7 +106,7 @@ export async function genuinePlayer(t,{now='896401'}={}){
         const product=sell.find(item=>stock(item)>0);
         if(product)await list(product);
       }
-      await tick(Math.min(60,Math.floor((boundary()-1)/60)));
+      await tick(crossPeriod?60:Math.min(60,Math.floor((boundary()-1)/60)));
     }
   }
   async function ore(id,count){
@@ -152,5 +155,6 @@ export async function genuinePlayer(t,{now='896401'}={}){
   await boot();ok(await post('/api/initialize'));
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
+  assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   return {get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectForgedLatest,post};
 }
