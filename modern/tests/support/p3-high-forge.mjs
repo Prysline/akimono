@@ -64,7 +64,7 @@ export async function highForge(t,book){
     while(p.exp(book)<gate)await craft(0);
     assert.ok(p.exp(book)>=gate);
     await craft(useId);
-    if(i===0)first=await p.saveAndRestart(0);
+    if(i===r.gates.length-2)first=await p.saveAndRestart(0);
   }
   assert.ok(first);
   const second=await p.saveAndRestart(1);
