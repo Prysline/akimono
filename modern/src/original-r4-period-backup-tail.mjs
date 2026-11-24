@@ -29,8 +29,8 @@ export function reviewR4PeriodBackupTail({periodSource,configSource}){
   if(typeof periodSource!=='string'||typeof configSource!=='string')
     fail('frozen period/config required');
   for(const marker of [
-    '$BACKUP\\s*=\\s*3\\s*;',
-    '$EXPIRE_TIME\\s*=\\s*3600\\*24\\*7\\s*;',
+    '\\$BACKUP\\s*=\\s*3\\s*;',
+    '\\$EXPIRE_TIME\\s*=\\s*3600\\*24\\*7\\s*;',
     '\\$LOG_FILE\\.\'0\'',
     '\\$LOG_FILE\\.\'1\'',
     '\\$LOG_FILE\\.\'2\'',
