@@ -354,3 +354,90 @@ test('original direct 7501 G shelf price overrides 137% then sells through share
  assert.equal(verified.state.save.generation,2);
  assert.equal(verified.state.shop.price[0],7501);
 });
+
+test('R3 true #63 two-shelf expansion, source #14 swords, two actual listings and one B-41 multi-shelf CAS persist across restarts',async t=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'akimono-r3-multi-shelf-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ let server=await boot(directory);
+ t.after(async()=>await server.stop());
+ let api=(endpoint,payload={})=>server.post(endpoint,payload);
+ assert.equal((await api('/api/initialize')).code,'COMMITTED');
+ assert.equal((await api('/api/open-shop',{
+   expectedRevision:1,ownerName:'原版雙架',shopName:'原版多架來源店',
+ })).code,'COMMITTED');
+ const expanded=await api('/api/use',{
+   expectedRevision:2,itemId:63,useId:1,requestedCount:1,
+ });
+ assert.equal(expanded.code,'COMMITTED',JSON.stringify(expanded));
+ assert.equal(expanded.state.shop.showcasecount,2);
+ assert.equal(expanded.state.shop.item[62],0,
+   'original #63 resize consumes the sole initial tool');
+ const supplied=await api('/api/supply',{
+   expectedRevision:expanded.state.world.revision,timespanSeconds:3600,
+ });
+ assert.equal(supplied.code,'COMMITTED',JSON.stringify(supplied));
+ const mapOffer=supplied.state.marketOffers.find(x=>x.itemId===14);
+ assert.ok(mapOffer?.canBuy,'real PLUS must supply original #14 map');
+ const bought=await api('/api/buy',{
+   expectedRevision:supplied.state.world.revision,itemId:14,
+   requestedCount:1,marketShelf:mapOffer.shelf,expectedPrice:mapOffer.price,
+ });
+ assert.equal(bought.code,'COMMITTED',JSON.stringify(bought));
+ const made=await api('/api/use',{
+   expectedRevision:bought.state.world.revision,itemId:14,
+   useId:0,requestedCount:1,
+ });
+ assert.equal(made.code,'COMMITTED',JSON.stringify(made));
+ assert.ok(made.state.shop.item[39]>0,'source #14 yields #40 swords');
+ assert.ok(made.state.shop.item[40]>0,'source #14 yields #41 swords');
+ const first=await api('/api/showcase',{
+   expectedRevision:made.state.world.revision,itemId:40,per:100,shelf:0,
+ });
+ assert.equal(first.code,'COMMITTED',JSON.stringify(first));
+ const second=await api('/api/showcase',{
+   expectedRevision:first.state.world.revision,
+   itemId:41,per:120,priceOverride:2251,shelf:1,
+ });
+ assert.equal(second.code,'COMMITTED',JSON.stringify(second));
+ assert.deepEqual(second.state.shop.showcase,[40,41]);
+ assert.deepEqual(second.state.shop.price,[1200,2251]);
+ const original=second.state.world;
+ const turned=await api('/api/advance-time',{
+   expectedRevision:original.revision,minutes:30,
+ });
+ assert.equal(turned.code,'COMMITTED',JSON.stringify(turned));
+ assert.equal(turned.state.shop.showcasecount,2);
+ assert.deepEqual(turned.state.shop.showcase,[40,41]);
+ assert.deepEqual(turned.state.shop.price,[1200,2251]);
+ assert.ok(turned.details.naturalSaleCount>=0);
+ assert.ok(Object.hasOwn(turned.details,'soldByItem'),
+   'two-shelf receipts expose per-ITEM source natural sales');
+ assert.equal(turned.state.world.period.eventState,null,
+   'EVENT was not run, so successor period remains unknown');
+ const refused=await api('/api/advance-time',{
+   expectedRevision:turned.state.world.revision,minutes:30,
+ });
+ assert.equal(refused.ok,false,
+   'second natural time slice cannot bypass unreviewed EVENT');
+ assert.deepEqual(refused.state.world,turned.state.world);
+ const saved=await api('/api/save',{
+   expectedRevision:turned.state.world.revision,expectedGeneration:0,
+ });
+ assert.equal(saved.code,'SAVED',JSON.stringify(saved));
+ await server.stop();
+ server=await boot(directory);
+ api=(endpoint,payload={})=>server.post(endpoint,payload);
+ const loaded=await api('/api/load');
+ assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
+ assert.deepEqual(loaded.state.world,turned.state.world);
+ const savedSecond=await api('/api/save',{
+   expectedRevision:loaded.state.world.revision,expectedGeneration:1,
+ });
+ assert.equal(savedSecond.code,'SAVED',JSON.stringify(savedSecond));
+ await server.stop();
+ server=await boot(directory);
+ const twice=await server.post('/api/load');
+ assert.equal(twice.code,'LOADED',JSON.stringify(twice));
+ assert.equal(twice.state.save.generation,2);
+ assert.deepEqual(twice.state.shop.price,[1200,2251]);
+});
