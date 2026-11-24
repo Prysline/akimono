@@ -171,13 +171,15 @@ export function projectOriginalSwordExpiry({
 }
 export function projectOriginalSwordDemand({
   reviewed,timespanSeconds,activeAtDataRead,population=500000,
-  saleSpeed=12,
+  saleSpeed=12,reviewedDynamicPopulation=false,
 }){
   if(reviewed?.source!==B61_SWORD_SOURCE||
      reviewed.swordItems?.length!==5||
      reviewed.swordItems.some((x,i)=>x.itemId!==40+i||
        x.eventPopularSeconds!==Math.trunc(x.basePopularSeconds/2))||
-     typeof activeAtDataRead!=='boolean'||population!==500000||
+     typeof activeAtDataRead!=='boolean'||typeof reviewedDynamicPopulation!=='boolean'||
+     (!reviewedDynamicPopulation&&population!==500000)||
+     !Number.isSafeInteger(population)||population<1||
      saleSpeed!==12)
     fail('original source demand prerequisites');
   safe(timespanSeconds,'timespan',1);

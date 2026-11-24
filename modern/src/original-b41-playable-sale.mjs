@@ -288,6 +288,7 @@ function projectSourcePreEventSaleSlice({
       reviewed:reviewedB61Sword,timespanSeconds:span,
       activeAtDataRead:swordDemandEventActive,
       population:world.period.dtPeople,saleSpeed:12,
+      reviewedDynamicPopulation:boundary!==null,
     }):null;
   const shop=world.shops[0];
   if(p3InventoryStage&&(world.schema!==PERIOD_WORLD_SCHEMA||world.period.eventState===null||
