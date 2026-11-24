@@ -1,5 +1,9 @@
 **2026-11-24｜R4 本輪進展（來源期末備份尾段真檔案，尚未完成）：** HEAD `616c888ec4bfa1c45fdd242748e659298207455d` 的 Node 1121／1121、Perl 2282／2282 已先核對。接著新增來源備份／Session 尾段完整審閱，真 Perl 暫存磁碟上兩期三代 backup 旋轉、五檔複製、mtime 清理，並在 B-50 新 opt-in 下由同一真 Perl 行程接續已驗證的關店、龍賽、公會、爵位、技術與 City 階段。最終新工作包仍待相同 HEAD 雙 CI 逐次驗證；正式 GameCore 正向 36h settled period／Durable CAS／HTTP 重啟仍不可用，R4 不退出也不合併 PR。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
+## 2026-11-24｜P3 優先：共用非跨期時間及 B-43 歷史
+
+最新候選、介面及固定版本交接門檻見 [R4→P3 共用時間／持久化契約](./r4-p3-time-persistence-contract.md)。不等於 R4 全量退出或 P3 已可整合版本；原 36h/特殊 EVENT fail-closed 保留，舊期末子鏈成果保留。
+
 ## 2026-11-24｜R4 B-50 期末主檔、備份、封存及日誌共同子鏈
 
 新增 [B-50 期末真檔案整合契約](./r4-b50-period-disk-contract.md)。真原版單店 B50 一/兩期全段期末、DragonBalance、CloseShop+真 archive、三代 backup/session 清理、每期 MakeGuildFile、transient guild reset、最終 WriteGuildData→DataWrite/DataFilesBackup→RenewLog→四檔共同 commit→DataRead；Node 由 live 讀取、真實 stage/recover、原版 log/mtime/失敗差分及 ready 摘要拒絕不完整 stage。屬明示空 EVENT、固定受控 RNG/每期 NOW_TIME 與隔離檔案，非全 inc-turn、正式 WorldState 或跨期授權。舊 36h fail-closed、eventState:null、R2/R3 保留。下一主線是既有自然販售/ITEM/SortDT/59 PLUS/完整 17 EVENT 與期末檔案同一來源連續整合，之後才正式 CAS/HTTP/save/restart。以最終同 SHA 雙 CI 為驗收依據。
