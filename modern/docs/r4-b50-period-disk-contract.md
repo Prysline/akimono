@@ -35,3 +35,8 @@ Node 新加 period-attempt（外部副作用已開始不可直接重算）、per
 ## 下一主線：完整運作及 R4 退出
 
 本工作包已把先前獨立的 B50、公會、備份/封存、主檔、日誌接合；先前軍隊/城鎮/兩 EVENT 三檔共同子鏈仍有效。下一工作包要將既有自然販售→ITEM 回呼→SortDT→59 PLUS→完整 17 EVENT→期末順序與實際 world 檔案接成同一受控連續來源，而非重做本輪 B50 磁碟零件。仍欠多店/全部事件/軍隊領主情境、全部時間片正確 NOW_TIME、正式 lock 與持久化一致性、WorldState/CAS/HTTP 正向跨期、雙世代 save/restart 繼續營業。不得先開放正式 36h 或標記 R4/R5/R0/R1 完成。
+
+
+## 跨期正常時間候選與真檔案接合（待同 SHA CI）
+
+新增 opt-in `reviewPeriodPlay(sources,{crossPeriod:true})`，舊 codec 不變：原版 32 欄、11 CITY 欄、原始 sparse wholesale CSV、已審閱 durable EVENT 的寫入順序、多鍵 itemtoday/itemyesterday/exp/user、job 字串。對 map 的 Perl hash 排列只比較語意；EVENT wire 保留次序。新 `OriginalR4CrossPeriodDiskHarness.pm` 在既有 crossing Perl 行程內執行 period.cgi 真備份尾段、MakeGuildFile、缺席 DragonBalance 檔的原版分支及最後 WriteGuildData/DataWrite/RenewLog/DataCommitOrAbort/DataRead；Node `stageR4CrossPeriodDisk` 使用同一候選引擎及既有 sandbox 寫入器，真四檔 ready receipt/recovery，校驗 live play 與輸入一致後才有副作用。只限來源明示的獨立空公會、無龍族檔、無關店的單店；完整來源欄位及稅收/EXP/商品歷史為隔離 fixture，不是合法 HTTP 取得。正式 WorldState/B43 及跨期拒絕未改。所有測試需最終同 SHA CI，尚未宣告完成。
