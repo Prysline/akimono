@@ -318,6 +318,10 @@ test('R4 source boundary prefix runs settlement before dynamic-population PLUS w
   ]){
     const {repository}=fresh(true),world=structuredClone(repository.read());
     world.nowSeconds=start;world.period.eventState=active;
+    // Original play wire materializes an empty blocklogin column; the
+    // modern initial shop projection has not yet acquired that field.
+    // Explicit source fixture only, not a live-history acquisition proof.
+    world.shops[0].blocklogin='';
     world.shops[0].dignity=dignity;
     const before=JSON.stringify(world);
     const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
