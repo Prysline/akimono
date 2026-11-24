@@ -212,3 +212,25 @@ test('B50 ready receipt detects changed stage or already moved file; no marker o
   await commitB50PeriodDisk({...args,recover:true});
   equalPlay(await readFile(live,'utf8'),o.finalPlay);
 }));
+
+
+test('R4 cross-period play codec preserves sparse wholesale, ordered EVENT and multiple source history/EXP keys',()=>{
+  const cross=reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true});
+  const original=oracle(true).initialWorld;
+  const world={...original,wholesale:Array(79).fill(0),wholesaleCsv:'0,,2,',events:{happy:1030000,'plusup-tetu':1031000},shops:[{...original.shops[0],job:'weapon',exp:{14:20,37:200},itemtoday:{10:1,40:2},itemyesterday:{41:3,42:4},user:{first:'a',second:'b'}}]};
+  world.wholesale[2]=2;
+  const write=w=>serializePeriodPlay({reviewed:cross,townReview:reviews.town,world:w});
+  const read=bytes=>parsePeriodPlay({reviewed:cross,townReview:reviews.town,bytes});
+  const bytes=write(world);
+  assert.equal(bytes.split('\n')[2],'0,,2,');
+  assert.equal(bytes.split('\n')[3],'happy,1030000,plusup-tetu,1031000');
+  const got=read(bytes);
+  assert.equal(got.wholesaleCsv,world.wholesaleCsv);assert.deepEqual(got.wholesale,world.wholesale);assert.deepEqual(got.events,world.events);
+  for(const key of ['job','exp','itemtoday','itemyesterday','user'])assert.deepEqual(got.shops[0][key],world.shops[0][key]);
+  assert.deepEqual(read(bytes.replace('14,20,37,200','37,200,14,20')),got);
+  assert.throws(()=>read(bytes.replace('14,20,37,200','14,20,14,200')),/invalid map/);
+  assert.throws(()=>write({...world,events:null}),/explicit empty EVENT/);
+  assert.throws(()=>write({...world,events:{rebel:123}}),/unreviewed EVENT/);
+  assert.throws(()=>write({...world,wholesaleCsv:'0'}),/numeric view mismatch/);
+  assert.throws(()=>serialize(world),/explicit empty EVENT/);
+});
