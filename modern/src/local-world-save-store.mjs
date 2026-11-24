@@ -21,6 +21,8 @@ import {validateSourceSparseMarket}
   from './original-admin-world-bootstrap.mjs';
 import {isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
+import {proveReviewedMedicineSave}
+  from './reviewed-medicine-save-proof.mjs';
 
 export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v1';
 const MAX_BYTES=2200000;
@@ -158,9 +160,9 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
         Number.isSafeInteger(shop.item?.[i])&&
         shop.item[i]>=0&&shop.item[i]<=cap)
     );
-    // R2 selected source medicine/leather/wood recipes. Only these eight
-    // callback-free USEs are authorized. Other potion USEs execute lostbook
-    // and deliberately remain unsupported by the live Registry.
+    // R2 medicine/leather/wood recipes retain narrow source-based stock bounds.
+    // Advanced #15 callbacks and variable ingredients are separately pinned
+    // in proveReviewedMedicineSave; other recipes are not auto-authorized.
     const manufacturedSpecs=[
       {itemId:15,useIds:[0,2],outputs:[[30,20],[32,20]]},
       {itemId:16,useIds:[0,1],outputs:[[45,30],[51,32]]},
@@ -192,13 +194,13 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
     const manufactured15=manufacturedCounts[15];
     const manufactured16=manufacturedCounts[16];
     const manufactured17=manufacturedCounts[17];
+    const medicineProof=proveReviewedMedicineSave({shop,useItem,gatherCount12});
     // Gathered #1..#4 have source negative PLUS (no market minting from
-    // zero). Only bounded consumptions can justify manufacture proficiency.
-    // Bounds deliberately over-approximate unknown recipe mix, never
-    // manufacture goods that exceed the source's total possible yield.
+    // zero). #15 consumes different ingredients in each USE, including
+    // previously manufactured products; its bound is checked separately.
     const manufacturedInputProof=
       manufactured15>=0&&manufactured16>=0&&manufactured17>=0&&
-      shop.item[0]+10*manufactured15<=80*gatherCount12&&
+      medicineProof.valid&&
       shop.item[1]+24*manufactured16<=40*gatherCount12&&
       shop.item[2]+shop.item[3]+10*manufactured17<=80*gatherCount12;
     // For products with no legal fresh-market PLUS, a recipe's entire
@@ -213,7 +215,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
       manufacturedOutputProof&&
       manufacturedSpecs.every(spec=>
         manufacturedCounts[spec.itemId]===0||
-        shop.item[spec.itemId-1]>0);
+        (shop.item[spec.itemId-1]>0||
+           (spec.itemId===15&&medicineProof.lostBookPossible)));
     // Bounded gift-cow source: initial #79/4 exchange, #25 milk EXP
     // increments by 10 per effective use. The callback's maximum yield
     // is level*effectiveCount*cows, level<=2. This only bounds a reachable
