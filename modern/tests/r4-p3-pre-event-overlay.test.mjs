@@ -293,3 +293,59 @@ test('R4 reviewed normal-time opt-in uses exact GameCore CAS replay, not a fixtu
   assert.equal(continued.world.nowSeconds,gift.world.nowSeconds+3600);
   assert.equal(continued.world.shops[0].time,gift.world.shops[0].time);
 });
+
+ 
+// Source-only boundary composition: actual frozen period prefix executes
+// between SortDT and PLUS, with one uninterrupted source draw tape.
+// No runtime commit, EVENT successor or disk effects are claimed here.
+import {projectR4BoundaryPreEventCandidate} from '../src/original-b41-playable-sale.mjs';
+import {reviewOriginalSoloPeriodPhaseChain} from '../src/original-period-solo-chain.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
+const reviewedBoundaryPeriod=reviewOriginalSoloPeriodPhaseChain({
+  periodSource:source.originalPeriodSource,configSource:source.originalConfigSource,
+  itemDsl:source.itemDsl,model:loadStandardStreetModel(source.itemDsl,source.rebelDsl),
+  compilerSource:source.originalCompilerSource,originalAddItemSource:source.originalUseSource,
+  detailSource:source.originalDetailSource,readSource:source.originalDataReadSource,
+  adminSource:source.originalAdminInitSource,
+  bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
+  compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),
+  includeReviewedDignity:true,includeReviewedShopExpiry:true,
+});
+test('R4 source boundary prefix runs settlement before dynamic-population PLUS with exact residual seconds',()=>{
+  for(const [start,minutes,span,active,dignity] of [
+    [1025940,1,60,{},0],
+    [1025980,1,20,{'plusup-tetu':1030000},12],
+  ]){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=start;world.period.eventState=active;
+    world.shops[0].dignity=dignity;
+    const before=JSON.stringify(world);
+    const draws=Array.from({length:125},(_,i)=>(i*7919+170000)%1000000);
+    const oracle=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+      input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        span,draws,events:active,settlement:{town:world.period.town,
+          dtPeople:world.period.dtPeople,commandNowSeconds:start+minutes*60}}),
+    }));
+    const input={...args(world,minutes,oracle.consumed),reviewedPeriod:reviewedBoundaryPeriod,
+      r4ReviewedSort:reviewedR4.sort,r4DataRead:{reviewed:reviewedDataRead,activeOrder:oracle.activeOrder}};
+    const got=projectR4BoundaryPreEventCandidate(input);
+    assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
+    assert.equal(got.nowSeconds,1026000);assert.equal(got.plan.nowAfter,start+minutes*60);
+    assert.equal(got.plan.effectiveSlices[0].timespanSeconds,span);
+    assert.equal(got.receipt.periodDraws,dignity?4:3);
+    assert.equal(got.receipt.totalDraws,oracle.used);
+    assert.equal(got.receipt.plusPopulation,oracle.dtPeople);
+    assert.notEqual(oracle.dtPeople,world.period.dtPeople);
+    assert.deepEqual(got.settlement.town,oracle.town);
+    assert.deepEqual(got.market.wholesale,oracle.wholesale);
+    assert.equal(got.market.originalWholesaleCsv,oracle.csv);
+    for(const [key,value] of Object.entries(got.shops[0])){
+      if(key==='costtoday'){assert.ok(Math.abs(value-oracle.shop[key])<1e-8);continue;}
+      assert.deepEqual(value,oracle.shop[key],key);
+    }
+    assert.equal(JSON.stringify(world),before);
+    assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,randomDraws:oracle.consumed.slice(0,-1)}),/missing/);
+    assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,minutes,draws.slice(0,121)),reviewedR4,reviewedDataRead,activeOrder:oracle.activeOrder}),/period settlement/);
+  }
+});

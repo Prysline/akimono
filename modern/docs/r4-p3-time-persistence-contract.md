@@ -39,3 +39,7 @@ Core command：`{kind:'advance-reviewed-world-time',expectedRevision:<整數>,mi
 已確認同一 SHA 142155fdbf63529164010bfc25c3682e5b956a8a，Push #45406982700 / PR #45406997838 成功，Node 1176、Perl 2489。真 Perl 先 pre-EVENT 再同 seed 的 EVENT probe，比對 Node 相同輸入/亂數/順序/後繼；混合 P3 stock/EXP fixture 不是玩家合法取得證明。CAS 及 B-43 envelope 後續 2f5b07169646bc420214090c2cad94a0de5cc33a Push #45407938366 / PR #45407949961 成功；新 HTTP 測試 `r4-reviewed-time-http-history.test.mjs` 在 943b46eee6b74e66c3ea43c0ce1e4e328b15578a 加入，需對最終 SHA 實際 CI 驗證，不以測試檔存在當通過。
 
 固定交接：選共同基底、分析 commit 與 import/測試/來源相依閉包；若必要與無關改動混合，獨立 branch 重建最小閉包，不 rewrite R4 或改 P3。重新跑完整 JS、原版 Perl、來源審閱及 persistence；文件列確切 base SHA、head SHA、相依 commits、檔案、CI logs。版本一經驗收不再覆寫，後續修正另發。尚未完成合法 P3 acquisition 的自身整合驗收、128 上限續接之驗收與最小閉包獨立 CI 以前，不標示固定交接已發行。R4 原本期末外部副作用的成果保留，並行續作。
+
+## R4 跨期 source prefix 候選（非正式結算）
+
+凍結 inc-turn.cgi 順序確認：natural sale → FUNCTURN/FUNCSALE → SortDT → inc-period（dateupdate=1）→ 59 PLUS／CheckWholeStore → END/START/NOW。原版同一次 command 的 NOW_TIME 為終點，temptimenow 與每個 timespan 則為片段時鐘；不可把期末挪到 EVENT 之後，也不可把不足一分鐘的 boundary slice 四捨五入。新增隔離 `projectR4BoundaryPreEventCandidate`：由原版 partition 取得第一個 boundary slice、以同一 source tape 進入現有 B50 期末 prefix、PLUS 使用新人口；只限獨立零稅單店、無龍族／公會／關店外部效果、初始來源城市及已審閱 EVENT overlay。不回傳可提交的 WorldState，不變更正常 HTTP/CAS 的跨期拒絕。實際 Perl oracle 同一行程執行原版 natural／callback／SortDT／period prefix／PLUS；尚需真 CI、殘餘 slice、EVENT／DataRead hash 與 overlay 生命週期、合法獎品與稅收、外部磁碟共同交易與 B43 replay，不能宣告跨期完成。
