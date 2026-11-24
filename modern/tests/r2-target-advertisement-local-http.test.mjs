@@ -101,6 +101,16 @@ async t=>{
   })).code,'COMMITTED');
   const first=await s.state();
   assert.deepEqual(first.targetAdvertisementAudit.targets,[]);
+  const openedReadiness=first.targetAdvertisementAudit.readiness;
+  assert.equal(openedReadiness.evidenceOnly,true);
+  assert.equal(openedReadiness.authoritativeUseApproval,false);
+  assert.equal(openedReadiness.authenticated,false);
+  assert.equal(openedReadiness.actorShopId,1);
+  assert.equal(openedReadiness.packageOwned,0);
+  assert.equal(openedReadiness.sourceQuote,null);
+  assert.equal(openedReadiness.cash,100000);
+  assert.equal(openedReadiness.eventStateKnowledge,'source-known');
+  assert.equal(openedReadiness.twoShopDiskSaveRejected,false);
   // A real, clean one-shop B-43 generation is our recovery baseline.
   const saved=await s.post('/api/save',{
     expectedRevision:first.world.revision,expectedGeneration:0,
@@ -117,6 +127,15 @@ async t=>{
   // an unaffordable buy without inventing balance or inventory.
   assert.equal(supplied.shop.money,100000);
   assert.ok(offer.price>supplied.shop.money);
+  const quotedReadiness=supplied.targetAdvertisementAudit.readiness;
+  assert.deepEqual(quotedReadiness.sourceQuote,{
+    itemId:62,unitPrice:offer.price,marketStock:offer.marketStock,
+    sourceListed:true,cashShortfall:offer.price-supplied.shop.money,
+  });
+  assert.equal(quotedReadiness.packageOwned,0);
+  assert.equal(quotedReadiness.authoritativeUseApproval,false);
+  assert.deepEqual((await s.state()).targetAdvertisementAudit.readiness,
+    quotedReadiness,'read-only audit cannot alter source quote or CAS');
   await rejected(s,'/api/buy',{
     expectedRevision:supplied.world.revision,
     itemId:62,requestedCount:1,
@@ -158,6 +177,9 @@ async t=>{
     'one certified source sale cannot fund #62');
   assert.equal(earned.world.period.eventState,null,
     'the next EVENT-dependent slice has no reviewed source overlay');
+  assert.equal(earned.targetAdvertisementAudit.readiness.eventStateKnowledge,
+    'unreviewed');
+  assert.ok(earned.targetAdvertisementAudit.readiness.sourceQuote.cashShortfall>0);
   await rejected(s,'/api/advance-time',{
     expectedRevision:earned.world.revision,minutes:60,
   },400);
@@ -169,6 +191,10 @@ async t=>{
   assert.deepEqual(created.state.targetAdvertisementAudit.targets,[
     {shopId:2,shopName:'目標廣告來源店'},
   ]);
+  assert.equal(created.state.targetAdvertisementAudit.readiness.
+    twoShopDiskSaveRejected,true);
+  assert.equal(created.state.targetAdvertisementAudit.readiness.
+    authoritativeUseApproval,false);
   const before=created.state.world;
   assert.equal(before.shops[0].item[61],0,
     'the target audit must not fabricate an advertising package');
