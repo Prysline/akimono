@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {sourceCommandDraws} from '../src/local-source-command-draws.mjs';

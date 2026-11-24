@@ -9,7 +9,7 @@ import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   executeMemoryCommand,applyGameCommand} from '../src/game-core-contract.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {projectB41Sale} from '../src/original-b41-playable-sale.mjs';

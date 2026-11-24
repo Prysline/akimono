@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {mkdtemp as mkHistoricalDir,rm as removeHistoricalDir} from 'node:fs/promises';
+import {tmpdir as historicalTmpdir} from 'node:os';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {execFileSync,spawn} from 'node:child_process';
@@ -122,7 +124,9 @@ test('B-40 rejected stale quote, invalid quantity and isolated no-money do not c
 });
 
 test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purchase',async(t)=>{
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const directory=await mkHistoricalDir(path.join(historicalTmpdir(),'akimono-b40-historical-'));
+  t.after(()=>removeHistoricalDir(directory,{recursive:true,force:true}));
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0'},
     stdio:['ignore','pipe','pipe'],
   });
