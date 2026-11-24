@@ -1,5 +1,10 @@
 **2026-11-24｜R4 本輪進展（來源期末備份尾段真檔案，尚未完成）：** HEAD `616c888ec4bfa1c45fdd242748e659298207455d` 的 Node 1121／1121、Perl 2282／2282 已先核對。接著新增來源備份／Session 尾段完整審閱，真 Perl 暫存磁碟上兩期三代 backup 旋轉、五檔複製、mtime 清理，並在 B-50 新 opt-in 下由同一真 Perl 行程接續已驗證的關店、龍賽、公會、爵位、技術與 City 階段。最終新工作包仍待相同 HEAD 雙 CI 逐次驗證；正式 GameCore 正向 36h settled period／Durable CAS／HTTP 重啟仍不可用，R4 不退出也不合併 PR。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
+## 2026-11-24｜R4 第一階段真實資料寫入（受限增量，非正式完成）
+
+已重新確認 PR #1 Open/Draft，最新驗收依每次提交後同 SHA Push/PR Actions。新 [外部檔案來源契約](r4-external-file-effects-contract.md) 追明 inc-turn 原序及 DataWrite、SetUserData（此版 no-op）、EditGuildMoney（記憶體）與 WriteGuildData、公會檔、軍隊、SetTownData、WriteErrorLog 的真檔案差異。新增單店 DataWrite 凍結 Perl 真 File::Temp 兩期 commit/reload、Node 真檔案位元組差分／rename 失敗與恢復；不假裝 B-50 已完成可提交真期末。CloseShop 真 log、公會/軍隊真檔、DataFilesBackup 失敗、多檔整合、HTTP/WorldState/CAS 36h 正向閉環仍缺；R2 A～E、R3 受控結論保留，R4/R5/R0/R1 全量不結案。
+
+
 **2026-11-23｜R4 本輪（實際 HTTP CAS 防線＋關店觸發來源差分；R4 尚未完成）：** 已在本機 HTTP 的初始化／磁碟載入改用來源審閱版記憶體 CAS，連直接 compareAndSwap 都會重新核對 frozen 36h／+3h clock 與合法 v2 期別；已知單 EVENT 在零秒內憑空生效也被拒絕。實際 HTTP 初始世界→開店→59 PLUS→進貨→跨期拒絕→雙世代 save→Node restart→load→再次拒絕通過。新增凍結期末店主過期 `CloseShop` 判斷九個 Perl／Node 差分案（原始呼叫／日誌，未模擬真刪店）。程式 SHA `78a590676f921c1c83f0ef3372caa90ae41e818b` 同 SHA Push #45200662255／PR #45200680932 成功，Node 1110/1110、Perl 2225/2225（72 檔）。**正向來源期末 WorldState／CAS／HTTP 仍未完成，不允許 R4 退出或合併 PR**。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
 **2026-11-23｜R4 新增 GameCore 正式指令跨期來源閘門（R4 尚未完成）：** `src/original-r4-world-transition-gate.mjs` 將凍結 36h／+3h 期界和合法 B-51／B-59～61 v2 period source 證據帶進 `StandardStreetModule.reviewPeriodTransition`；`applyGameCommand` 在 v2 時間或期別改動時必須取得街道許可，跨期、不合法 settledCount／城市／EVENT 或 `nonCommittable` 片段均於正式記憶體 CAS 前拒絕。新 Node 回歸測試並檢查 B-43 雙代真實存檔未受拒絕結算污染。最初程式提交 `eeaede783ebfe20745273181280d7f955debe33a` 同 SHA Push #45128104169／PR #45128111810 success，Node 1101/1101、Perl 2210/2210；本輪後續文件／測試 HEAD 需獨立雙 CI。**正式可提交已結算 WorldState、原版全部 36h IO、HTTP/CAS/restart 尚未完成。** 詳見 [R4 退出清冊](r4-exit-audit.md)。
