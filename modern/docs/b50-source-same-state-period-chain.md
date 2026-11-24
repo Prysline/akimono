@@ -1,5 +1,10 @@
 # B-50｜同一間商店／同一座城市，原版期末前半段連續兩期對照
 
+## 2026-11-24｜與原版 DataWrite 真檔案子集合的接合界線
+
+本輪在 modern/src/original-r4-data-write-files.mjs 建立凍結原版 play.cgi 32 欄＋7 子段的受審核編碼與隔離真 OS 寫入，modern/tests/original-perl/original-r4-data-write-files-probe.pl 以同一磁碟檔真正跨兩期 DataWrite/commit/DataRead；Node 逐位元組比對並驗證 rename 失敗與 marker 恢復。**這不是 B-50 期末純投影自動擁有的欄位**：projectOriginalSoloPeriodPhaseChain 缺完整原版持久化來源快照及 guildbal/army/log 同步檔，不能自訂填空把其 nonCommittable:true 結果送入該 writer 當成正式交易。下一步要將既有 B-50 同一店/城市的全原版存檔與外部檔證據直接接上來源 writer。詳見 [外部副作用對映](r4-external-file-effects-contract.md)。B-50 本身未被升級為可提交。
+
+
 > 工作分支：\`test/task02-baseline-on-s1\`。**僅為固定原版期末程式的整合來源證據，尚不可提交玩家 WorldState、尚未開放36小時跨期。** 不得以這份測試代替真實的原版 \`inc-turn.cgi\` 全部事件、商品回呼、備份及持續營業。
 
 ## 本次真正前進的部分
