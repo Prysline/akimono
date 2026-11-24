@@ -106,8 +106,8 @@ function reviewP3TurnItems(items){
   const costs={},rules={};
   for(const id of P3_TURN_IDS){
     const b=items.get(id),price=one(b,'price'),cost=one(b,'cost');
-    if(!b||price===null||!/^\\d+$/.test(price)||
-       (cost!==null&&!/^\\d+$/.test(cost))||
+    if(!b||price===null||!/^\d+$/.test(price)||
+       (cost!==null&&!/^\d+$/.test(cost))||
        (id!==70&&['funct','functurn','funcs','funcsale'].some(k=>b.fields[k]?.length)))
       bad('P3 unreviewed ITEM upkeep/callback #'+id);
     // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
@@ -117,9 +117,9 @@ function reviewP3TurnItems(items){
     // Raw materials, skills, and books are supported as stock, not new shelves.
     if(id!==10&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
     const pop=one(b,'pop'),point=one(b,'point'),type=one(b,'type');
-    const match=/^([1-9]\\d*)(m|h|d)$/.exec(pop??'');
+    const match=/^([1-9]\d*)(m|h|d)$/.exec(pop??'');
     if(!match||!type||Number(price)<=0||
-       (point!==null&&!/^\\d+%$/.test(point)))bad('P3 unreviewed ITEM sale #'+id);
+       (point!==null&&!/^\d+%$/.test(point)))bad('P3 unreviewed ITEM sale #'+id);
     const seconds=Number(match[1])*({m:60,h:3600,d:86400}[match[2]]);
     rules[id]=Object.freeze({itemId:id,itemType:type,unitPrice:Number(price),
       popularSeconds:seconds,point:point===null?Math.trunc(seconds*100/24/36):
