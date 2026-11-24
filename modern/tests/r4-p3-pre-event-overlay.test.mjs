@@ -563,6 +563,37 @@ test('R4 actual crossing and residual EVENT feed four-file source commit, backup
     const wrong=structuredClone(world);wrong.shops[0].money++;
     await assert.rejects(stageR4CrossPeriodDisk({directory,reviews:diskReviews,commandArgs:{...commandArgs,world:wrong}}),/differs from live/);
     await assert.rejects(stat(path.join(directory,'period-attempt')),{code:'ENOENT'});
+    // Independently compare the actual runtime disk projection with the
+    // same frozen Perl result, rather than only testing the isolated writer.
+    const {createIndependentDiskProjection,R4_INDEPENDENT_DISK}=await import('../src/original-r4-independent-world-disk.mjs');
+    const projection=createIndependentDiskProjection({sources:{itemDsl:source.itemDsl,
+      writeSource:source.originalDataWriteSource,readSource:source.originalDataReadSource,
+      detailSource:source.originalDetailSource,configSource:source.originalConfigSource,
+      periodSource:source.originalPeriodSource,newSource:await readPerl('new.cgi'),
+      customSource:await readPerl('pinned-custom.cgi'),logSource:await readPerl('pinned-log.cgi')},sort:reviewedR4.sort,street});
+    const liveFiles={};
+    for(const n of [...backupNames,'guild.cgi','lasttime.cgi'])
+      liveFiles[n]={bytes:n==='lasttime.cgi'?'':await get(n),mtime:n==='log1.cgi'?world.nowSeconds-129600:world.nowSeconds};
+    const runtimeBefore={...world,period:{...world.period,disk:{source:R4_INDEPENDENT_DISK,live:liveFiles,
+      backup:Object.fromEntries(backupNames.map(n=>[n,{bytes:liveFiles[n].bytes,mtime:world.nowSeconds-7200}])),
+      generations:[null,null,null]}}};
+    projection.validate(runtimeBefore);
+    const finalized=projection.finalize({before:runtimeBefore,command:{kind:'advance-reviewed-world-time'},
+      applied:{shops:result.shops,market:result.market,period:result.period,nowSeconds:result.nowSeconds,receipt:{}},
+      logRows:projection.crossLogs(result)});
+    const projected=finalized.period.disk;
+    for(const n of ['guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])
+      assert.equal(projected.live[n].bytes,sourceDisk.live[n],'runtime '+n);
+    for(const n of backupNames){
+      assert.equal(projected.generations[0][n].bytes,sourceDisk.generations[0][n],'runtime newest backup '+n);
+      assert.equal(projected.backup[n].bytes,sourceDisk.backup[n],'runtime regular backup '+n);
+    }
+    const runtimePlay=parsePeriodPlay({...codec,bytes:projected.live['play.cgi'].bytes});
+    const actualPlay=parsePeriodPlay({...codec,bytes:sourceDisk.live['play.cgi']});
+    assert.ok(Math.abs(runtimePlay.shops[0].costtoday-actualPlay.shops[0].costtoday)<1e-8);
+    runtimePlay.shops[0].costtoday=actualPlay.shops[0].costtoday;
+    assert.deepEqual(runtimePlay,actualPlay);
+    assert.equal(projected.live['lasttime.cgi'].mtime,sourceDisk.lasttimeMtime);
     const stage=await stageR4CrossPeriodDisk({directory,reviews:diskReviews,commandArgs});
     assert.equal(stage.committable,false);assert.equal(stage.worldStateWritten,false);
     const parse=bytes=>parsePeriodPlay({...codec,bytes});
