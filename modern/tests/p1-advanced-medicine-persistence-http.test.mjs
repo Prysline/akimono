@@ -208,7 +208,7 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
       record.sha256=createHash('sha256').update(record.world,'utf8')
         .digest('hex');
     }
-    await writeFile(slot,JSON.stringify(record)+'\\n');
+    await writeFile(slot,JSON.stringify(record)+'\n');
     srv=await boot(directory);servers.push(srv);
     const recovered=await srv.post('/api/load');
     assert.equal(recovered.code,'LOADED',
