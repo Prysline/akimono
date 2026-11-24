@@ -157,7 +157,7 @@ export function projectOriginalHappyExpiry({
   });
 }
 export function projectOriginalHappyNow({
-  reviewed,shop,timespanSeconds,randomDraws,
+  reviewed,shop,timespanSeconds,randomDraws,reviewedSubminute=false,
 }){
   if(reviewed?.source!==B60_HAPPY_SOURCE||
      reviewed.rankCap!==10000||
@@ -173,7 +173,11 @@ export function projectOriginalHappyNow({
      randomDraws[0]>=1000000)
     fail('one exact original rand(int(TIMESPAN/36)) result required');
   const randMax=Math.trunc(Math.min(timespanSeconds,36000)/36);
-  if(randMax<1)fail('source festival zero-range rand unreviewed');
+  // Frozen Perl rand(0) is rand(1); int of that is zero, but the
+  // original callback still consumes its one draw. Only the explicitly
+  // reviewed intra-command second-level slice may use this branch.
+  if(typeof reviewedSubminute!=='boolean'||(randMax<1&&!reviewedSubminute))
+    fail('source festival zero-range rand unreviewed');
   const rankRoll=Math.trunc(randomDraws[0]*randMax/1000000);
   const nextRank=Math.min(reviewed.rankCap,shop.rank+rankRoll);
   return Object.freeze({

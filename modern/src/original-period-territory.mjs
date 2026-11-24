@@ -14,7 +14,7 @@ const safe=(v,key,min=0)=>{
   return v;
 };
 export function reviewOriginalPeriodTerritory({
-  periodSource,adminSource,readSource,bootstrapMeta,
+  periodSource,adminSource,readSource,bootstrapMeta,includeReviewedSaleTax=false,
 }){
   if(typeof periodSource!=='string'||typeof adminSource!=='string'||
      typeof readSource!=='string'||typeof bootstrapMeta!=='string')
@@ -50,6 +50,16 @@ export function reviewOriginalPeriodTerritory({
     fail('frozen territory source drift: '+needle);
   if(!periodSource.includes('return if !defined($id2idx{$STATE->{leader}});'))
     fail('unrecognized town leader rebel guard drift');
+  if(typeof includeReviewedSaleTax!=='boolean')fail('explicit source sale tax opt-in');
+  if(includeReviewedSaleTax){
+    const taxMarkers=['my $taxin=0;','$DT->{taxyesterday}=$DT->{taxtoday};','$DT->{taxtoday}=0;','$taxin+=$DT->{taxyesterday};','$STATE->{money}+=$taxin;','$STATE->{in}=$taxin;'];
+    let prior=-1;
+    for(const marker of taxMarkers){
+      const index=periodSource.indexOf(marker,prior+1);
+      if(index<0)fail('original tax history/accumulator source drift '+marker);
+      prior=index;
+    }
+  }
   const chunks=expected.split(',');
   const numbers=chunks[4].split(':').map(Number);
   if(numbers.length!==11||numbers.some(n=>!Number.isSafeInteger(n)))
@@ -59,6 +69,7 @@ export function reviewOriginalPeriodTerritory({
     source:B46_TERRITORY_SOURCE,initialDtPeople:500000,
     initialTown:Object.freeze(town),
     sourceFieldOrder:names,
+    ...(includeReviewedSaleTax?{reviewedSaleTax:true}:{}),
     scope:'source initial unled single-shop town + original 2-draw territory arithmetic only; not complete period',
   });
 }
@@ -69,7 +80,9 @@ export function projectOriginalPeriodTerritory({
   if(reviewed?.source!==B46_TERRITORY_SOURCE)
     fail('source review required');
   if(leaderShopExists!==false||!Array.isArray(activeEventKeys)||
-     activeEventKeys.length!==0||shopCount!==1||taxIn!==0)
+     activeEventKeys.length!==0||shopCount!==1||
+     !Number.isSafeInteger(taxIn)||taxIn<0||
+     (taxIn!==0&&reviewed.reviewedSaleTax!==true))
     fail('unreviewed active event, leader, guild tax or shop count');
   const people=safe(dtPeople,'previous population',1);
   if(!town||typeof town!=='object'||Array.isArray(town))fail('town');

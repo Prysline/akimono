@@ -194,6 +194,7 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,historyReplay){
     }
     const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
       marketBuyRegistry,useItem,historyReplay,proof,record.generation);
+    if(historyReplay?.periodDiskStore)historyReplay.periodDiskStore.verify(world);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
@@ -273,6 +274,7 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
   function preflight(world,{expectedGeneration,careerProof=null}){
     safeInt(expectedGeneration,'expected save generation');
     prepareRecord(world,{generation:expectedGeneration+1,careerProof});
+    historyReplay?.periodDiskStore?.stage(world);
     return true;
   }
   function save(raw,{expectedGeneration,careerProof=null}){
@@ -294,6 +296,7 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     const nextGen=safeInt(generation+1,'next save generation',1);
     const {encoded,proofText,record}=prepareRecord(world,{generation:nextGen,careerProof});
     ensureFolder(dir);
+    historyReplay?.periodDiskStore?.stage(world);
     const slot=nextGen%2;
     const dest=sourceFile(dir,slotNames[slot]);
     const temp=sourceFile(dir,'.world-'+randomUUID()+'.tmp');

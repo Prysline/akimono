@@ -171,6 +171,14 @@ export function applyGameCommand({world,command,streetModule}){
     return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{
       reason:'noncommittable source projection cannot enter GameCore CAS',
     });
+  // Optional trusted street finalizer includes ordinary shared buy/USE in
+  // the same persistence projection. The noncommittable guard above stays first.
+  if(typeof streetModule.finalizeReviewedTransition==='function'){
+    try{applied=streetModule.finalizeReviewedTransition({before:original,command:cmd,applied});}
+    catch(error){return answer(false,'SOURCE_BOUNDARY_REJECTED',original,{reason:error.message});}
+    if(!plain(applied)||!Array.isArray(applied.shops)||!plain(applied.receipt)||applied.nonCommittable===true||applied.committable===false||applied.receipt.nonCommittable===true||applied.receipt.committable===false)
+      reject('invalid reviewed finalizer result');
+  }
   if(original.schema===MEMORY_WORLD_SCHEMA&&Object.hasOwn(applied,'period'))
     reject('legacy world cannot silently acquire unvalidated period state');
   const after=snapshot({

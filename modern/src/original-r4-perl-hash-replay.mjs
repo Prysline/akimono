@@ -61,3 +61,58 @@ export function resolveR4HashOrders({reviewed,world,minutes,expired=[],started=[
   // The complete permutations are the evidence; fingerprint alone is not.
   return Object.freeze({policy:R4_HASH_POLICY,seed,interpreter,activeOrder:Object.freeze(value.prior),eventOrder:Object.freeze(value.all),nowOrder:Object.freeze(value.now),committable:false});
 }
+
+
+/** Replay an entire command's hash mutation history in one native Perl
+ * process, instead of rebuilding %DTevent from a serialization at the
+ * intra-command boundary. The v1 one-slice policy stays unchanged.
+ */
+export const R4_COMMAND_HASH_POLICY='akimono.r4.perl-command-event-hash-replay.v1';
+const commandPerlProgram=[
+  'use strict;use warnings;use JSON::PP;use Config;',
+  'local $/;my $in=decode_json(<STDIN>);',
+  'my %EVENT;for my $code (@{$in->{codes}}){$EVENT{$code}={code=>$code};}',
+  'my %DTevent=split(/,/,join(",",map { @$_ } @{$in->{active}}));',
+  'my @initial=keys(%DTevent);my @all=keys(%EVENT);my @steps;',
+  'for my $step (@{$in->{steps}}){my @prior=keys(%DTevent);',
+  'for my $code (@{$step->{expired}}){delete $DTevent{$code};}',
+  'for my $row (@{$step->{started}}){$DTevent{$row->[0]}=$row->[1];}',
+  'push @steps,{prior=>[@prior],now=>[keys(%DTevent)]};}',
+  'print encode_json({version=>"$^V",arch=>$Config{archname},initial=>[@initial],all=>[@all],steps=>[@steps],now=>[keys(%DTevent)]});'
+].join('\n');
+export function resolveR4CommandHashOrders({reviewed,world,minutes,steps=[],expectedInterpreter=null}){
+  if(!reviewedPolicies.has(reviewed)||!Array.isArray(steps)||steps.length>2)fail('bounded command hash history required');
+  const seed=r4HashSeed({world,minutes}),map=world?.period?.eventState;
+  if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
+  const active=Object.entries(map),keys=active.map(([k])=>k);
+  if(active.some(([k,v])=>!reviewed.declarationOrder.includes(k)||!integer(v)))fail('invalid active EVENT wire');
+  let known=keys;const expected=[];
+  for(const step of steps){
+    if(!step||Object.keys(step).sort().join(',')!=='expired,started')fail('exact hash mutation step');
+    const {expired,started}=step;
+    if(!Array.isArray(expired)||new Set(expired).size!==expired.length||expired.some(k=>!known.includes(k)))fail('invalid expired operations');
+    const survivors=known.filter(k=>!expired.includes(k));
+    if(!Array.isArray(started)||started.length>17||started.some(row=>!Array.isArray(row)||row.length!==2||!reviewed.declarationOrder.includes(row[0])||survivors.includes(row[0])||!integer(row[1]))||new Set(started.map(row=>row[0])).size!==started.length)fail('invalid started operations');
+    const next=[...survivors,...started.map(row=>row[0])];
+    expected.push({prior:known,now:next});known=next;
+  }
+  let value;
+  try{
+    const env={...process.env,PERL_HASH_SEED:seed,PERL_PERTURB_KEYS:'0'};
+    for(const k of ['PERL5OPT','PERL5LIB','PERLLIB','PERL_LOCAL_LIB_ROOT','PERL_MB_OPT','PERL_MM_OPT','PERL_HASH_SEED_DEBUG','PERL_UNICODE'])delete env[k];
+    value=JSON.parse(execFileSync('perl',['-e',commandPerlProgram],{input:JSON.stringify({codes:reviewed.declarationOrder,active,steps}),encoding:'utf8',env,timeout:3000,maxBuffer:16384,stdio:['pipe','pipe','pipe']}));
+  }catch{fail('native Perl command hash helper unavailable or invalid output')}
+  if(typeof value.version!=='string'||typeof value.arch!=='string'||
+     !keysEqual(value.initial,keys)||!keysEqual(value.all,reviewed.declarationOrder)||
+     !keysEqual(value.now,known)||!Array.isArray(value.steps)||value.steps.length!==steps.length||
+     value.steps.some((s,i)=>!keysEqual(s.prior,expected[i].prior)||!keysEqual(s.now,expected[i].now)||
+       s.prior.join(',')!==(i?value.steps[i-1].now:value.initial).join(','))||
+     value.now.join(',')!==(steps.length?value.steps.at(-1).now:value.initial).join(','))
+    fail('invalid native command hash history');
+  const interpreter=value.version+'/'+value.arch;
+  if(expectedInterpreter!==null&&interpreter!==expectedInterpreter)fail('interpreter fingerprint mismatch');
+  return Object.freeze({policy:R4_COMMAND_HASH_POLICY,seed,interpreter,
+    initialOrder:Object.freeze(value.initial),eventOrder:Object.freeze(value.all),
+    nowOrder:Object.freeze(value.now),steps:Object.freeze(value.steps.map(s=>Object.freeze({prior:Object.freeze(s.prior),now:Object.freeze(s.now)}))),
+    committable:false});
+}
