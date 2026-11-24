@@ -1,5 +1,6 @@
 /**
- * P2: bounded, source-reviewed career history for B-43.
+ * P2/P3: bounded, source-reviewed command history for B-43.
+ * The legacy careerProof wire and exports remain compatible.
  * Replays committed commands, not a guessed conversion of current EXP into
  * production counts. This is not cryptographic authentication or a general
  * event/period or cross-shop replay engine.
@@ -20,9 +21,19 @@ export const MAX_CAREER_COMMANDS=128;
 const recipes=new Map([
   [9,[0,1,2]],[12,[0,1,2,3]],[14,[0]],[15,[0,1,2,3,4]],
   [16,[0,1]],[17,[0,1,2,3]],[25,[0,1]],
-  [79,[0,1,4]],[78,Array.from({length:14},(_,i)=>i)],
+  [79,[0,1,3,4]],[78,Array.from({length:14},(_,i)=>i)],
+  // P3 first-stage: source gift/market kit, blacksmith or magic training,
+  // then the four iron recipes. Advanced recipes stay outside this proof.
+  [37,[0,1]],[20,[0]],[21,[0]],[22,[0]],[23,[0]],
 ]);
-const buyIds=[14,15,16,17,78];
+const buyIds=[8,14,15,16,17,20,21,22,23,37,78];
+// Do not require an unrelated career change to prove genuine P3 manufacture.
+// Magic training alone retains the older B-43 envelope; blacksmith training
+// and forging need complete source history even without #78.
+export function requiresReviewedHistory(c){
+  return c?.kind==='use-item'&&(c.itemId===78||
+    (c.itemId===37&&c.useId===0)||[20,21,22,23,66].includes(c.itemId));
+}
 export function isCareerReplayCommand(c){
   if(!object(c)||!int(c.expectedRevision))return false;
   const core=['kind','expectedRevision'];
@@ -78,7 +89,7 @@ export function verifyCareerProof({world,proof,streetModule,createInitialWorld,
      typeof proof.anchor!=='string'||proof.anchor.length>200000||
      !Array.isArray(proof.commands)||proof.commands.length<1||
      proof.commands.length>MAX_CAREER_COMMANDS||
-     !proof.commands.some(c=>c?.kind==='use-item'&&c.itemId===78)||
+     !proof.commands.some(requiresReviewedHistory)||
      !scope(world)||world.shops.length!==1)
     fail('missing or unreviewed career history');
   const anchor=decodeMemorySnapshot(proof.anchor);
@@ -99,7 +110,7 @@ export function verifyCareerProof({world,proof,streetModule,createInitialWorld,
   }
   const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:anchor,streetModule});
   for(const command of proof.commands){
-    if(!isCareerReplayCommand(command))fail('command outside P2 source scope');
+    if(!isCareerReplayCommand(command))fail('command outside P2/P3 source scope');
     const before=repository.read();
     if(!verifyDraws(before,command))fail('source RNG history mismatch');
     const after=replayCommand(repository,streetModule,command);
