@@ -29,6 +29,7 @@ import {B61_SWORD_SOURCE,B61_SWORD_CODE,isReviewedB61SwordPeriod,
 import {validateOriginalPeriodSeed} from './original-period-world-seed.mjs';
 import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
   from './original-r4-time-slices.mjs';
+import {projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
@@ -127,7 +128,8 @@ function reviewP3TurnItems(items){
   }
   return Object.freeze({costs:Object.freeze(costs),rules:Object.freeze(rules)});
 }
-function validateP3Inventory(shop,compiled,reviewed){
+export function validateP3Inventory(shop,compiled,reviewed){
+  if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||shop.item.some(n=>!Number.isSafeInteger(n)||n<0))bad('P3 source inventory shape');
   if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79||
      !reviewed.p3TurnItems||shop.showcasecount!==1||
      shop.item.some((n,i)=>n!==0&&(!Object.hasOwn(reviewed.p3TurnItems.costs,i+1)||
@@ -217,6 +219,7 @@ function projectSourcePreEventSaleSlice({
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
+  r4DataRead=null,
 }){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -237,7 +240,9 @@ function projectSourcePreEventSaleSlice({
      reviewed.swordMapSource!==(reviewedB62Map?.source??null)||
      reviewed.swordOutcomesSource!==(reviewedB63Map?.source??null))
     bad('source durable event contracts mismatch');
-  if(world.schema===PERIOD_WORLD_SCHEMA&&
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus});
+  if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
+  if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
      !isReviewedB59EventPeriod({
        period:world.period,reviewed:reviewedB59Iron,
@@ -278,8 +283,8 @@ function projectSourcePreEventSaleSlice({
     }):null;
   const shop=world.shops[0];
   if(p3InventoryStage&&(world.schema!==PERIOD_WORLD_SCHEMA||
-     !validateOriginalPeriodSeed(world.period)||world.period.eventState===null||activeKeys.length||
-     reviewedEventTimeSlice||r4ReviewedSort!==null))
+     world.period.eventState===null||
+     (overlay===null&&(!validateOriginalPeriodSeed(world.period)||activeKeys.length||reviewedEventTimeSlice||r4ReviewedSort!==null))))
     bad('P3 pre-EVENT projection requires known bootstrap and no active EVENT');
   const saleRules=p3InventoryStage?reviewed.p3TurnItems?.rules:reviewed.saleRules;
   const upkeepCosts=p3InventoryStage?reviewed.p3TurnItems?.costs:reviewed.upkeepCosts;
@@ -365,8 +370,8 @@ function projectSourcePreEventSaleSlice({
   if(shop.showcasecount>1&&activeKeys.length)
     bad('multi-shelf active EVENT overlay not source-reviewed');
   const rule=shop.showcasecount===1&&shop.showcase[0]?
-    saleRules[shop.showcase[0]]:null;
-  const popularOverride=rule&&swordDemandEventActive&&
+    (overlay?.saleRules??saleRules)[shop.showcase[0]]:null;
+  const popularOverride=overlay===null&&rule&&swordDemandEventActive&&
     rule.itemId>=40&&rule.itemId<=44?
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
@@ -401,6 +406,7 @@ function projectSourcePreEventSaleSlice({
     compiled,timespanSeconds:span,randomDraws:randomDraws.slice(used),
     reviewedB59Iron,ironEventActive,
     reviewedEventTimeSlice,
+    ...(overlay===null?{}:{r4DataReadOverlay:overlay}),
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
@@ -451,7 +457,14 @@ export function projectR3PreEventTurn(args){
 /** Pure P3 handoff. No command registration, period write, HTTP or CAS. */
 export function projectP3PreEventTurn(args){
   return projectR3PreEventTurn({...args,p3InventoryStage:true,
-    reviewedEventTimeSlice:false,r4ReviewedSort:null});
+    reviewedEventTimeSlice:false,r4ReviewedSort:null,r4DataRead:null});
+}
+
+/** R4 continuation: caller must finish all EVENT phases before committing. */
+export function projectR4InventoryPreEventTurn(args){
+  const stage=projectR3PreEventTurn({...args,p3InventoryStage:true,
+    reviewedEventTimeSlice:true});
+  return {...stage,committable:false,receipt:{...stage.receipt,r4Committable:false}};
 }
 
 /**
@@ -460,7 +473,7 @@ export function projectP3PreEventTurn(args){
  * Keep old narrow regression behavior until the R4 event engine replaces it.
  */
 export function projectB41Sale(args){
-  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:false});
+  const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:false,r4DataRead:null});
   return {
     ...stage,
     ...(args.world?.schema===PERIOD_WORLD_SCHEMA?{
