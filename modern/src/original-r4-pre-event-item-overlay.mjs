@@ -53,3 +53,16 @@ export function reviewedR4OverlayPlus(overlay,world,reviewed){
   if(!overlays.has(overlay)||overlay.committable!==false||!world?.period?.eventState||overlay.activeOrder.length!==Object.keys(world.period.eventState).length||overlay.activeOrder.some(k=>!Object.hasOwn(world.period.eventState,k))||reviewed.plusSeconds.length!==79)fail('source DataRead overlay required');
   return overlay.plusSeconds;
 }
+
+/** Ordinary buy/USE/showcase read only fields unaffected by the nine
+ * reviewed normal EVENT overlays. No empty-map substitution or unknown
+ * state acceptance. Source-supported recipe/market checks still run.
+ */
+export function validateR4OrdinaryEventContext({reviewed,world}){
+  try{
+    if(world?.schema!=='akimono.memory-world.v2'||world.events!==null||world.streetId!=='standard-street'||world.shops?.length!==1)return false;
+    const order=Object.keys(world.period.eventState);
+    validateR4PreEventPeriod({reviewed,period:world.period,activeOrder:order});
+    return order.every(code=>code==='happy'||reviewed.params.rules[code].every(r=>['popular','point','plus'].includes(r.field)));
+  }catch{return false}
+}

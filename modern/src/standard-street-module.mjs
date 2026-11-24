@@ -51,6 +51,8 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
+import {reviewR4PreEventItemOverlay,validateR4OrdinaryEventContext} from './original-r4-pre-event-item-overlay.mjs';
+import {attachR4ReviewedTimeController} from './original-r4-reviewed-world-time.mjs';
 import {reviewR4WorldTransitionGate,allowR4UnsettledWorldTransition}
   from './original-r4-world-transition-gate.mjs';
 import {reviewOriginalB62SwordMap}
@@ -136,9 +138,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
   originalUseSource=null,originalItemHelperSource=null,
+  enableReviewedNormalTime=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
+  if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
+  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource};
+  const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
+  const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
@@ -312,7 +319,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       const reviewedEvents=world?.period===undefined||
         (eventState!==null&&eventState!==undefined&&
          typeof eventState==='object'&&!Array.isArray(eventState)&&
-         Object.keys(eventState).length===0);
+         Object.keys(eventState).length===0)||knownOrdinaryEvents(world);
       const guild=world?.shops?.[0]?.guild;
       const noGuild=guild===undefined||guild===null||guild===0||
         guild===''||guild===false;
@@ -404,6 +411,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
+    ...(enableReviewedNormalTime?{validateEventState:({world})=>knownOrdinaryEvents(world)}:{}),
     validateWorld({world,rule}){
       const market=world?.market;
       if(rule?.marketCodec==='gift'&&
@@ -470,7 +478,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     unsupported:Object.freeze([...model.unsupported,
       'other item-use actions', 'market sales', 'period settlement', 'multiworld runtime']),
   });
-  return Object.freeze({
+  const base=Object.freeze({
     id:STANDARD_STREET_ID,
     capabilities:Object.freeze([...actions,
       ...(reviewedBootstrap?['initialize-source-market']:[]),
@@ -530,7 +538,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         (world?.period===undefined||
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
-           Object.keys(eventState).length===0));
+           Object.keys(eventState).length===0)||knownOrdinaryEvents(world));
       return Object.freeze([giftUseRule,swordUseRule].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
@@ -758,5 +766,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       }
       bad('unreviewed Standard Street action '+command.kind);
     },
-  });
+  })  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview}):base;
 }
