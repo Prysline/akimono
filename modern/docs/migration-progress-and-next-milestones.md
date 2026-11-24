@@ -1,5 +1,9 @@
 **2026-11-24｜R4 本輪進展（來源期末備份尾段真檔案，尚未完成）：** HEAD `616c888ec4bfa1c45fdd242748e659298207455d` 的 Node 1121／1121、Perl 2282／2282 已先核對。接著新增來源備份／Session 尾段完整審閱，真 Perl 暫存磁碟上兩期三代 backup 旋轉、五檔複製、mtime 清理，並在 B-50 新 opt-in 下由同一真 Perl 行程接續已驗證的關店、龍賽、公會、爵位、技術與 City 階段。最終新工作包仍待相同 HEAD 雙 CI 逐次驗證；正式 GameCore 正向 36h settled period／Durable CAS／HTTP 重啟仍不可用，R4 不退出也不合併 PR。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜R4 第一階段真實資料寫入（受限增量，非正式完成）
 
 已重新確認 PR #1 Open/Draft，最新驗收依每次提交後同 SHA Push/PR Actions。新 [外部檔案來源契約](r4-external-file-effects-contract.md) 追明 inc-turn 原序及 DataWrite、SetUserData（此版 no-op）、EditGuildMoney（記憶體）與 WriteGuildData、公會檔、軍隊、SetTownData、WriteErrorLog 的真檔案差異。新增單店 DataWrite 凍結 Perl 真 File::Temp 兩期 commit/reload、Node 真檔案位元組差分／rename 失敗與恢復；不假裝 B-50 已完成可提交真期末。CloseShop 真 log 在隔離目錄已新增真 Perl/Node 差分與 B-50 封存 sink；其與主檔／Session 正式交易、公會/軍隊真檔、DataFilesBackup 失敗、多檔整合、HTTP/WorldState/CAS 36h 正向閉環仍缺；R2 A～E、R3 受控結論保留，R4/R5/R0/R1 全量不結案。

@@ -79,7 +79,7 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
   // A period replay is limited to the existing B-50 single-member source chain.
   for(const p of periods){
     if(Object.keys(ledger).length!==1||!Object.hasOwn(ledger,p.id)||p.inputGuild?.feeRate!==old[p.id].feerate||p.outputGuild?.feeRate!==old[p.id].feerate)fail('unreviewed period context');
-    ledger[p.id]=applyGuildPeriod({data:ledger[p.id],...p});
+    ledger[p.id]=applyGuildPeriod({id:p.id,inputGuild:p.inputGuild,outputGuild:p.outputGuild,edits:p.edits,data:ledger[p.id]});
   }
   for(const {guildId,amount} of edits){
     if(!Object.hasOwn(ledger,guildId)||!Number.isSafeInteger(amount))fail('unreviewed money edit');

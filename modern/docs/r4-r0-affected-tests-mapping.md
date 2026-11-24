@@ -1,5 +1,9 @@
 # R4 第一個來源工作包｜R0 受影響測試映射（2026-11-23）
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜外部檔案／DataWrite 受影響 R0 映射（新增，不取代原回歸）
 
 | 檔案 | 原版風險／來源 | 驗證與限制 |

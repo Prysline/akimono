@@ -1,5 +1,9 @@
 # B-50｜同一間商店／同一座城市，原版期末前半段連續兩期對照
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜與原版 DataWrite 真檔案子集合的接合界線
 
 本輪在 modern/src/original-r4-data-write-files.mjs 建立凍結原版 play.cgi 32 欄＋7 子段的受審核編碼與隔離真 OS 寫入，modern/tests/original-perl/original-r4-data-write-files-probe.pl 以同一磁碟檔真正跨兩期 DataWrite/commit/DataRead；Node 逐位元組比對並驗證 rename 失敗與 marker 恢復。**這不是 B-50 期末純投影自動擁有的欄位**：projectOriginalSoloPeriodPhaseChain 缺完整原版持久化來源快照及 guildbal/army/log 同步檔，不能自訂填空把其 nonCommittable:true 結果送入該 writer 當成正式交易。新 tests/r4-source-b50-archive-disk-chain.test.mjs 已將此 B-50 第二期原版真 CloseShop effect 接往 Node 實際 log/delete.cgi，對照原版 CloseShop payload。**只代表封存單一副作用接合**，不等於完整 32 欄主檔＋guildbal＋army＋Session 共同提交。下一步仍須同一 file-set 和世界世代的安全持久化。詳見 [外部副作用對映](r4-external-file-effects-contract.md)。B-50 本身未被升級為可提交。

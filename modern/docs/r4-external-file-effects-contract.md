@@ -1,5 +1,9 @@
 # R4 第一階段｜真實資料檔案與外部副作用來源契約（2026-11-24）
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 **判定：來源契約已追查，DataWrite 單店主存檔與 CloseShop 實際封存日誌的受限子集合加入真 Node/Perl 檔案差分。不是原子期末交易；B-50 仍 nonCommittable，36 小時跨期仍 fail-closed。**
 
 固定原版：katelynn620/akimono-core commit 738d71a2985fd088f2ca90f25145706392ee2365；本庫未修改的 frozen write.cgi、lock.cgi、inc-func.cgi、core-detail.cgi、period.cgi 受 Git blob SHA 稽核。原版沒有獨立的 plug/read.cgi；實際主資料讀取為 inc-func.cgi 的 DataRead。固定原版 plug/user.cgi、plug/error.cgi 已新增不改動 SHA 副本 pinned-user.cgi、pinned-error.cgi 供真 Perl I/O 驗證；其他未在本庫保存的原版 plug/guild.cgi、guildsub.cgi、army.cgi、custom.cgi、config.cgi 也從該固定 commit 審閱，未將其當作可修改的 modern 原始檔。

@@ -91,8 +91,19 @@ test('B50 two periods in one isolated source turn keep live ledger unchanged unt
     await writeFile(path.join(directory,'guild.cgi'),oracle.initialDefinition);
     await writeFile(live,oracle.initialLedger);
     const periods=[];
+    let prior=null;
     for(const row of oracle.cases){
-      const result=projectOriginalSoloPeriodPhaseChain({reviewed,...row.input});
+      if(prior){
+        assert.deepEqual(prior.shop,row.input.shop);
+        assert.deepEqual(prior.town,row.input.town);
+        assert.equal(prior.dtPeople,row.input.dtPeople);
+        assert.deepEqual(prior.guildContext,row.input.guildContext);
+      }
+      const nextInput=prior?{...row.input,shop:prior.shop,town:prior.town,dtPeople:prior.dtPeople,guildContext:prior.guildContext}:row.input;
+      const result=projectOriginalSoloPeriodPhaseChain({reviewed,...nextInput});
+      assert.deepEqual(result.shop,row.output.shop);
+      assert.deepEqual(result.town,row.output.town);
+      prior=result;
       assert.deepEqual(result.guildMoneyEdits,row.output.guildMoneyEdits);
       assert.deepEqual(result.guildContext,row.output.guildContext);
       periods.push({id:'guild_a',inputGuild:row.input.guildContext,outputGuild:result.guildContext,edits:result.guildMoneyEdits});

@@ -28,7 +28,7 @@ async function rootFor(directory){
 /** Pure shared member projection, preserving prior ledger and period counter reset. */
 export function applyGuildPeriod({data,id,inputGuild,outputGuild,edits}){
   data={...data};
-  if(data.money<0||fields.some(k=>k!=='money'&&data[k]<0)||inputGuild?.id!==id||outputGuild?.id!==id||inputGuild.atk!==data.atk||inputGuild.def!==data.def||!Array.isArray(edits))fail('unreviewed period input');
+  if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(id)||Object.keys(data).length!==fields.length||fields.some(k=>!integer(data[k])||data[k]<0)||inputGuild?.id!==id||outputGuild?.id!==id||inputGuild.atk!==data.atk||inputGuild.def!==data.def||!Array.isArray(edits))fail('unreviewed period input');
   // Frozen period prefix resets counters before the per-shop EditGuildMoney calls.
   data.in=0;data.out=0;
   for(const e of edits){

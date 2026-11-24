@@ -9,9 +9,9 @@ import {reviewGuildFiles,stageGuildFiles,commitGuildFiles,parseGuildDefinition,p
 const perl=path.join(path.dirname(fileURLToPath(import.meta.url)),'original-perl');
 const sources=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write'].map(async k=>[k,await readFile(path.join(perl,(k==='write'?'':'pinned-')+k+'.cgi'),'utf8')])));
 const reviewed=reviewGuildFiles(sources);
-const oracle=()=>JSON.parse(execFileSync('perl',['original-r4-guild-files-probe.pl'],{cwd:perl,encoding:'utf8'}));
-async function fixture(fn){
-  const o=oracle(),directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-guild-'));
+const oracle=(mode)=>JSON.parse(execFileSync('perl',['original-r4-guild-files-probe.pl',...(mode?[mode]:[])],{cwd:perl,encoding:'utf8'}));
+async function fixture(fn,mode){
+  const o=oracle(mode),directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-guild-'));
   try{
     await mkdir(path.join(directory,'common'));await mkdir(path.join(directory,'stage'));
     await writeFile(path.join(directory,'guild.cgi'),o.initialDef);
@@ -71,3 +71,14 @@ test('incomplete stage without marker cannot be committed; discard preserves liv
   await commitGuildFiles({...args,abort:true});
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
 }));
+
+test('unchanged membership permits multi-guild real reload and next independent turn',async()=>fixture(async({o,directory,args})=>{
+  const first=await stageGuildFiles(args);
+  assert.deepEqual(first.ledger,o.ledger);
+  await commitGuildFiles(args);
+  const second=await stageGuildFiles({...args,edits:[{guildId:'old',amount:-20},{guildId:'alpha',amount:1}]});
+  assert.deepEqual(second.ledger,o.second.ledger);
+  await commitGuildFiles(args);
+  assert.deepEqual(parseGuildLedgers(await readFile(path.join(directory,'guildbal.cgi'),'utf8')),parseGuildLedgers(o.second.bytes));
+  assert.deepEqual(parseGuildDefinition(await readFile(path.join(directory,'guild.cgi'),'utf8')),parseGuildDefinition(o.second.definition));
+},'--stable'));

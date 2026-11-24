@@ -1,5 +1,9 @@
 # R4-B｜凍結原版 36 小時時間片與 Perl 差分（2026-11-23）
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜DataWrite 真檔案契約與 36 小時分段的界線
 
 同一 inc-turn.cgi 在所有時間片跑完後才依次執行有條件 MakeGuildFile、WriteGuildData、DataWrite、RenewLog、DataCommitOrAbort、UnLock。期末 inc-period.cgi 最尾的 MakeGuildFile、備份與 Session 清理不等於主狀態已提交。真檔案層級詳見 [外部副作用契約](r4-external-file-effects-contract.md)。新增單活躍店原版 Perl 兩期 play.cgi DataWrite/commit/reload 與 Node 實際 IO/位元組差分，嚴格禁止其結果解除 36 小時跨期或 eventState:null 的拒絕。未審閱公會、軍隊、城鎮多鍵、封存與主檔的同步，以及多檔原子性仍阻塞；另有真 Perl/Node CloseShop log 檔案差分和 B-50 第二期封存 sink，並未解鎖跨期。

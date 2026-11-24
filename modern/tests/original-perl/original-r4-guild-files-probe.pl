@@ -29,7 +29,9 @@ for my $pair(['pinned-config.cgi','ReadConfig'],['pinned-sub.cgi','GetString'],[
 }
 my $initialDef="use utf8;\n".'$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;%GUILD=('."'alpha'=>['原公會',10,50,],'old'=>['舊公會',20,30,],);1;";
 my $initialBal="alpha\tmoney\t1000\tin\t7\tout\t8\tatk\t90\tdef\t80\nold\tmoney\t300\tin\t0\tout\t0\tatk\t20\tdef\t10\n";
+my $stable=(@ARGV&&$ARGV[0] eq '--stable');
 my %configs=(alpha=>"shortname = 新<公會> # comment\ndealrate=15\nfeerate=50\n",beta=>"shortname=新公會B\ndealrate=25\nfeerate=60\n");
+if($stable){delete $configs{beta};$configs{old}="shortname=舊公會\ndealrate=20\nfeerate=30\n";}
 put("$COMMON_DIR/$_.pl",$configs{$_}) for keys %configs;
 put(GetPath($GUILD_FILE),$initialDef);put(GetPath($GUILDBAL_FILE),$initialBal);
 eval $initialDef or die $@;
@@ -51,4 +53,12 @@ eval $def or die $@;
 ReadGuildData();
 my %decoded=map {$_=>{shortname=>$GUILD{$_}[0],dealrate=>0+$GUILD{$_}[1],feerate=>0+$GUILD{$_}[2]}} keys %GUILD;
 my %ledger=map {my $id=$_;($id=>{map {$_=>0+$GUILD_DATA{$id}{$_}} qw(money in out atk def)})} keys %GUILD_DATA;
-print JSON::PP->new->canonical->utf8->encode({initialDef=>$initialDef,initialBal=>$initialBal,configs=>\%configs,shops=>\@shops,afterShops=>\@DT,oldKeys=>\@oldKeys,definitions=>\%decoded,ledger=>\%ledger,definitionBytes=>$def,ledgerBytes=>$bal,logs=>\@logs,partialPending=>\@pending,recovered=>JSON::PP::true});
+my $second;
+if($stable){
+  # Re-read both actual live files and definitions, as on a fresh source turn.
+  ReadGuild('');ReadGuildData();EditGuildMoney('old',-20);EditGuildMoney('alpha',1);
+  MakeGuildFile();WriteGuildData();DataCommitOrAbort(0);ReadGuildData();
+  my %next=map {my $id=$_;($id=>{map {$_=>0+$GUILD_DATA{$id}{$_}} qw(money in out atk def)})} keys %GUILD_DATA;
+  $second={ledger=>\%next,bytes=>get(GetPath($GUILDBAL_FILE)),definition=>get(GetPath($GUILD_FILE))};
+}
+print JSON::PP->new->canonical->utf8->encode({second=>$second,initialDef=>$initialDef,initialBal=>$initialBal,configs=>\%configs,shops=>\@shops,afterShops=>\@DT,oldKeys=>\@oldKeys,definitions=>\%decoded,ledger=>\%ledger,definitionBytes=>$def,ledgerBytes=>$bal,logs=>\@logs,partialPending=>\@pending,recovered=>JSON::PP::true});

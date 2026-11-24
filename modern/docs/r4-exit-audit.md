@@ -1,5 +1,9 @@
 # R4 退出驗收清冊｜更新至 2026-11-24
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜R4 第一階段外部資料真實寫入增量（不等於退出）
 
 原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile 的真磁碟整合仍未完成；WriteErrorLog 已補原版真檔案 append／rotate／失敗差分與受限 B-50 封存 sink，但正式跨檔交易仍未完成，不能將原有 recorder 當成真 IO。

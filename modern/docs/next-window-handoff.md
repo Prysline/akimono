@@ -1,5 +1,9 @@
 # R4 執行中｜2026-11-23 已驗收時間片 Oracle，完整 EVENT／期末尚未完成
 
+## 2026-11-24｜R4 公會真檔案子工作包
+
+新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
+
 ## 2026-11-24｜R4 第一階段外部 I/O 續作交接（優先於舊歷史）
 
 先查唯一分支 test/task02-baseline-on-s1 當前 HEAD、PR #1 Open/Draft/未合併、最後**同 SHA** push 和 pull_request Actions。來源審閱交付 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)；現有 modern/src/original-r4-data-write-files.mjs 與新 Perl/Node 真暫存磁碟差分是可用的**單店窄化 DataWrite**，非可提交 B-50。已確認 SetUserData 固定版 no-op、EditGuildMoney 只改記憶體、SetTownData 只改城鎮 map，真正主檔提交在所有 inc-turn 時間片後的 WriteGuildData → DataWrite → RenewLog → DataCommitOrAbort。
