@@ -130,6 +130,12 @@ test('P3 real GameCore iron forge with spent vouchers, skills and EXP enters pur
   assert.deepEqual(projected.shops[0].exp,shop.exp);
   assert.equal(JSON.stringify(repository.read()),before,'no memory CAS');
   assert.equal(world.nowSeconds,1000000);
+  command('edit-showcase',{shopId:1,shelf:0,itemId:41,per:50,priceOverride:0});
+  const listed=repository.read();
+  const sold=compare(listed,60,[999999,...Array(120).fill(0)]);
+  assert.ok(sold.receipt.naturalSaleCount>0,'real forged sword projected sale');
+  assert.ok(sold.shops[0].money>listed.shops[0].money);
+  assert.equal(repository.read().nowSeconds,1000000,'projection not a time commit');
 });
 test('P3 mixed-stock oracle: every reviewed manufacture product and source costs; stocked Nayuta dispatch',()=>{
   const {repository}=fresh(true);
@@ -146,6 +152,12 @@ test('P3 mixed-stock oracle: every reviewed manufacture product and source costs
     candidate.shops[0].showcase=[id];candidate.shops[0].price=[id?rules[id].unitPrice:0];
     const result=compare(candidate,1);
     if(id===70)assert.equal(result.receipt.itemCallbackStage.itemTurnAffectedShops,1);
+    if([47,58,67,70].includes(id)){
+      candidate.shops[0].price=[Math.trunc(rules[id].unitPrice/2)];
+      const sold=compare(candidate,60,[999999,...Array(120).fill(0)]);
+      assert.equal(sold.receipt.naturalSaleCount,1);
+      if(id===70)assert.equal(sold.receipt.itemCallbackStage.itemTurnAffectedShops,0);
+    }
   }
 });
 test('P3 pure handoff rejects overflow, unknown stock, EXP overflow, unknown EVENT, 36h boundary and extra shelves',()=>{
