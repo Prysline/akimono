@@ -9,7 +9,7 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 const fail=s=>{throw new RangeError('R4 DataRead ITEM overlay: '+s)};
 const reviews=new WeakSet(),overlays=new WeakSet();
 const durable=['boom-posyon','ken-sale','tate-sale','yoroi-sale','tue-sale','plusdown-yakusou','plusup-tetu','plusup-misuriru','plusup-oriharukon','happy'];
-const pins={itemDsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',turnSource:'b8a4980275f475a952846a8d6072fad45f8dff50',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0'};
+const pins={itemDsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',rebelDsl:'923634e58a05beca9ab004515fc7669d53a1ba3a',compilerSource:'1da8cce1e76ad6159325a37faec68efaa82c7f69',turnSource:'b8a4980275f475a952846a8d6072fad45f8dff50',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0'};
 export function reviewR4PreEventItemOverlay(sources){
   for(const [k,sha] of Object.entries(pins)){
     const s=sources[k];
