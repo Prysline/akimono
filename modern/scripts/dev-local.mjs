@@ -457,6 +457,8 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/save': {
+      if(Object.keys(body).sort().join(',')!=='expectedGeneration,expectedRevision')
+        throw Error('存檔只接受世界版本及存檔世代，不接受外部命令歷史');
       if(repo?.read().shops.length>1)
         return send(res,409,{ok:false,
           code:'MULTI_SHOP_PERSISTENCE_UNREVIEWED',
@@ -476,7 +478,8 @@ async function api(req,res,url){
       // Ordinary checkpoints remain backwards compatible. If a previously
       // untracked action was accepted by legacy B-43, begin at that checked
       // checkpoint rather than inventing a missing command history.
-      if(!careerRequired&&!careerProof)careerProof=beginCareerProof(world,'legacy');
+      if(!careerRequired&&careerProof?.anchorKind!=='fresh')
+        careerProof=beginCareerProof(world,'legacy');
       return send(res,200,{ok:true,code:'SAVED',
         details:{action:'save-world',generation:saved.generation,
           revision:saved.revision,durable:'two-slot-atomic-rename-fsync'},
