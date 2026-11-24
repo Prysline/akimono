@@ -204,7 +204,8 @@ function state(){
       readiness:targetAdvertisementReadiness(world,marketOffers),
     }:null,
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(streetModule.reviewedB41?.saleRules??{})
+    showcaseOffers:Object.values(careerRequired&&world?.shops?.[0]?.showcasecount===1?
+       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
         const owned=shop?.item?.[rule.itemId-1]??0;
@@ -217,7 +218,7 @@ function state(){
       }),
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
-      '來源 #10／#40～#44 共用展示架',
+      '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價，時間推進待接合',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
       '原版自然販售片段／時間（多架／EVENT 待審閱）'],
     disabled:['跨期決算','完整原版所有商品回呼','多人'],
@@ -720,7 +721,9 @@ async function api(req,res,url){
     case '/api/showcase': {
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
-      const sourceRule=streetModule.reviewedB41?.saleRules?.[itemId]??null;
+      const p3Shelf=careerRequired&&repo.read().shops[0]?.showcasecount===1;
+      const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
+        streetModule.reviewedB41?.saleRules?.[itemId])??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const keys=Object.keys(body);
