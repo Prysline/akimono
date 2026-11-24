@@ -652,7 +652,8 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   }
   die 'unused full-command source RNG' if @R4_MULTI_DRAWS;
   die 'wrong source command end' unless $cursor==$in->{settlement}{commandNowSeconds};
-  print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor});
+  my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor):undef;
+  print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor,($disk?(disk=>$disk):())});
   exit 0;
 }
 if(@ARGV&&$ARGV[0] eq '--cross-period-events'){

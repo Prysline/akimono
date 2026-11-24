@@ -66,12 +66,13 @@ if(exists $input->{settlement}){
   my $from=index($period,"\tforeach(keys(%GUILD))");
   my $to=index($period,"\t#データバックアップ",$from);
   die 'source period prefix moved' unless $from>=0&&$to>$from;
+  if($input->{disk}){$to=index($period,"\n1;",$to);die 'source period tail missing' unless $to>$from;}
   my $body=substr($period,$from,$to-$from);
   my $compiled=eval "package main;no strict;no warnings;use utf8;\n$add\n$rebel\n$update\nsub ActualBoundaryPeriod {\n$body\n1;\n}\n1;";
   die "source period compile $@" unless $compiled;
   {
     no warnings 'redefine';
-    *main::DragonBalance=sub { die 'external dragon payout not in prefix oracle' if grep {($_->{dragon}//0)!=0} @main::DT; };
+    unless($input->{disk}){*main::DragonBalance=sub { die 'external dragon payout not in prefix oracle' if grep {($_->{dragon}//0)!=0} @main::DT; };}
     *main::CloseShop=sub {die 'closure outside source prefix oracle'};
     *main::EditGuildMoney=sub {die 'guild outside source prefix oracle'};
     unless($preserveLogs){
@@ -109,6 +110,10 @@ $main::DTpeople=$input->{dtPeople} if exists $input->{dtPeople};
 @main::DT=($input->{shop});
 @main::DTwholestore=length($input->{csv})?map{length($_)?0+$_:undef}split(/,/,$input->{csv},-1):();
 
+if($input->{disk}){
+  require OriginalR4CrossPeriodDiskHarness;
+  OriginalR4CrossPeriodDiskHarness::prepare($input,\%generated);
+}
 return \@order;
 }
 1;
