@@ -10,6 +10,8 @@ import {execFileSync} from 'node:child_process';
 import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
 import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 
+const authenticatedStores=new WeakSet();
+export function isReviewedHistoryCheckpointStore(store){return authenticatedStores.has(store);}
 export const CHECKPOINT_DIRECTORY='reviewed-history-v1';
 const FORMAT='akimono.reviewed-history-checkpoint.v1';
 const MAX_PROOF=500000;
@@ -160,5 +162,5 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
   function verifyRecord(record){
     if(!equalMac(record.checkpointAuth,recordAuth(record)))fail('checkpoint save authentication failed');
   }
-  return Object.freeze({sealVerified,openPrefix,recordAuth,verifyRecord});
+  const store=Object.freeze({sealVerified,openPrefix,recordAuth,verifyRecord});authenticatedStores.add(store);return store;
 }

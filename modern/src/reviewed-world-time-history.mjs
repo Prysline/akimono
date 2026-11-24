@@ -127,10 +127,11 @@ export function verifyReviewedWorldHistory({world,proof,streetModule,createIniti
     const initialized=executeMemoryCommand({repository:seed,streetModule,command:{kind:'initialize-source-market',expectedRevision:0}});
     if(!initialized.ok||encodeMemorySnapshot(initialized.world)!==proof.anchor)fail('fresh source anchor mismatch');
   }else if(proof.anchorKind==='legacy'){
-    if(typeof validateLegacyAnchor!=='function'||validateLegacyAnchor(anchor)!==true)fail('unreviewed legacy anchor');
+    if(streetModule.reviewedCrossPeriod===true||typeof validateLegacyAnchor!=='function'||validateLegacyAnchor(anchor)!==true)fail('unreviewed legacy anchor');
   }else{
     if(!checkpointStore)fail('authenticated checkpoint verifier required');
     checkpointStore.openPrefix(proof,generation);
+    if(streetModule.reviewedCrossPeriod===true)streetModule.authorizeVerifiedCheckpoint({world:anchor,proof,checkpointStore,generation});
   }
   const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:anchor,streetModule});
   for(const entry of proof.commands){

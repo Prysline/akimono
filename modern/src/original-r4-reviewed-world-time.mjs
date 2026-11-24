@@ -1,3 +1,5 @@
+import {createHash} from 'node:crypto';
+import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
 /** Opt-in source-reviewed local normal-time command and exact CAS reviewer.
  * No crossing settlement, external special EVENT context, arbitrary draw or
  * caller ordering. The original legacy/fixture StreetModule remains separate.
@@ -39,11 +41,19 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
   const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
   const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true}):null;
+  // A structurally valid settled snapshot is NOT an acquisition proof.
+  // Only exact derived successors or an authenticated replay anchor may
+  // initialize the crossing CAS adapter. Retain bounded canonical digests.
+  const approved=new Set();
+  const identity=w=>createHash('sha256').update(encodeMemorySnapshot(w)).digest('hex');
+  function remember(w){if(!disk)return;const key=identity(w);approved.delete(key);approved.add(key);if(approved.size>4096)approved.delete(approved.values().next().value);}
+  function requireProvenance(w){if(disk&&w.revision!==0&&!approved.has(identity(w)))fail('crossing world has no verified command provenance');}
   function validate(world){
     if(world?.schema!==PERIOD_WORLD_SCHEMA||world.streetId!==street.id||world.events!==null||world.shops.length>1)fail('reviewed local one-shop v2 world required');
     const period=disk?independentCandidateWorld(world).period:world.period;
     if(disk){
       if(period.settledCount>0&&world.period.state!==R4_SETTLED_STATE)fail('committed settlement state required');
+      if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);
     }
     validateR4PreEventPeriod({reviewed:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk)});
@@ -100,6 +110,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       return disk.finalize({before,command,applied});
     }}:{}),
     validateReviewedWorldTimeState:validate,
+    ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
+      if(!isReviewedHistoryCheckpointStore(checkpointStore)||proof.anchor!==encodeMemorySnapshot(world))fail('authenticated checkpoint anchor required');
+      checkpointStore.openPrefix(proof,generation);validate(world);remember(world);
+    }}:{}),
     apply({world,command}){
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return propose(world,command);
       if(!ordinaryKinds.includes(command.kind))fail('legacy or internal fixture cannot enter reviewed normal-time runtime');
@@ -108,7 +122,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       return street.apply({world,command});
     },
     reviewPeriodTransition({before,after,command=null,initial=false}){
-      validate(before);
+      validate(before);requireProvenance(before);
       if(before.worldId!==after.worldId||before.streetId!==after.streetId||after.revision!==before.revision+1)fail('identity/revision transition');
       if(initial){
         if(command!==null||!same({...before,revision:after.revision},after))fail('initial validation must not alter source state');
@@ -119,7 +133,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         const p=propose(before,command);
         const expected={...before,shops:p.shops,market:p.market,period:p.period,nowSeconds:p.nowSeconds,revision:before.revision+1};
         if(!same(expected,after))fail('CAS successor differs from exact source normal-time replay');
-        return true;
+        remember(after);return true;
       }
       if(disk){
         if(!ordinaryKinds.includes(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
@@ -127,7 +141,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         if(!result.ok)fail('source ordinary replay rejected');
         const p=disk.finalize({before,command,applied:{shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details}});
         if(!same({...before,shops:p.shops,market:p.market,period:p.period,revision:before.revision+1},after))fail('independent ordinary CAS replay mismatch');
-        return true;
+        remember(after);return true;
       }
       if(!ordinaryKinds.includes(command?.kind)||before.nowSeconds!==after.nowSeconds||
          JSON.stringify(before.period)!==JSON.stringify(after.period))fail('unreviewed clock, EVENT or command transition');
