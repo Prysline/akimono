@@ -2,7 +2,7 @@
 import {createHash} from 'node:crypto';
 import {serializeR4DataWrite} from './original-r4-data-write-files.mjs';
 import {projectR4GuildbattleEnd} from './original-r4-guildbattle-end.mjs';
-import {parseGuildDefinition,parseGuildLedgers,parseGuildConfig} from './original-r4-guild-files.mjs';
+import {parseGuildDefinition,parseGuildEventLedgers,parseGuildConfig} from './original-r4-guild-files.mjs';
 import {readFile,lstat,realpath,readdir,writeFile,mkdir,rename,unlink} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -61,7 +61,7 @@ export function serializeTownPlay({reviewed,dataReview,world}){
 }
 async function rootFor(directory){
   const root=await realpath(directory);
-  if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-town-'))fail('isolated sandbox required');
+  if(path.dirname(root)!==await realpath(os.tmpdir())||!['akimono-r4-town-','akimono-r4-external-'].some(prefix=>path.basename(root).startsWith(prefix)))fail('isolated sandbox required');
   return root;
 }
 async function regular(p){if(!(await lstat(p)).isFile())fail('regular file required');return new TextDecoder('utf-8',{fatal:true}).decode(await readFile(p))}
@@ -78,7 +78,7 @@ export async function projectGuildbattleTownSandbox({fileReview,reviewed,directo
   if(await exists(path.join(root,'commit.cgi')))fail('pending commit requires recovery');
   const common=path.join(root,'common');if(!(await lstat(common)).isDirectory())fail('real common directory required');
   const definitions=parseGuildDefinition(await regular(path.join(root,'guild.cgi')));
-  const ledgers=parseGuildLedgers(await regular(path.join(root,'guildbal.cgi')));
+  const ledgers=parseGuildEventLedgers(await regular(path.join(root,'guildbal.cgi')));
   const keys=Object.keys(definitions).sort();
   if(JSON.stringify(keys)!==JSON.stringify(Object.keys(ledgers).sort()))fail('live guild and ledger mismatch');
   const configs={};
@@ -91,7 +91,8 @@ export async function projectGuildbattleTownSandbox({fileReview,reviewed,directo
   const guilds=keys.map(id=>({id,name:definitions[id].shortname,money:ledgers[id].money}));
   const result=projectR4GuildbattleEnd({reviewed,...input,guilds,dominion:Object.hasOwn(town,'dominion')?getTownData({reviewed:fileReview,town,key:'dominion'}):null});
   const after=result.setTownCalls?setTownData({reviewed:fileReview,town,key:'dominion',value:result.dominion}).town:{...town};
-  return {result,town:after,committable:false};
+  const ledgerAfter=Object.fromEntries(Object.entries(ledgers).map(([id,row])=>[id,result.setTownCalls?{...row,guild:id}:{...row}]));
+  return {result,town:after,ledgerAfter,committable:false};
 }
 export async function stageTownPlay({reviewed,dataReview,directory,world}){
   const bytes=serializeTownPlay({reviewed,dataReview,world}),root=await rootFor(directory);

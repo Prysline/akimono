@@ -54,7 +54,7 @@ export function serializeArmyFile({armyById,riotIds},shopIds){
 }
 async function rootFor(directory){
   const root=await realpath(directory);
-  if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-army-'))fail('isolated sandbox required');
+  if(path.dirname(root)!==await realpath(os.tmpdir())||!['akimono-r4-army-','akimono-r4-external-'].some(prefix=>path.basename(root).startsWith(prefix)))fail('isolated sandbox required');
   return root;
 }
 async function statOrNull(p){try{return await lstat(p)}catch(e){if(e.code==='ENOENT')return null;throw e}}

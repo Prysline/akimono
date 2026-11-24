@@ -132,3 +132,33 @@ export async function guildRebuildNeeded({reviewed,directory}){
   }
   return Math.floor(generated.mtimeMs/1000)<latest;
 }
+
+/** Explicit ENDFUNC ledger subset: guildbattle appends a transient guild=id.
+ * The earlier five-field reader stays strict. This is not arbitrary hash IO.
+ */
+export function parseGuildEventLedgers(text){
+  if(typeof text!=='string'||(text&&!text.endsWith('\n')))fail('invalid ledger text');
+  const rows={};
+  for(const line of text.split('\n').slice(0,-1)){
+    const [id,...pairs]=line.split('\t');
+    if(!code(id)||Object.hasOwn(rows,id)||pairs.length%2)fail('invalid event ledger row');
+    const base=[];let extra=false;
+    for(let i=0;i<pairs.length;i+=2){
+      if(pairs[i]==='guild'){
+        if(extra||pairs[i+1]!==id)fail('invalid transient guild field');
+        extra=true;
+      }else base.push(pairs[i],pairs[i+1]);
+    }
+    rows[id]={...parseGuildLedger([id,...base].join('\t')+'\n',id),...(extra?{guild:id}:{})};
+  }
+  return rows;
+}
+export function serializeGuildEventLedgers(ledgers){
+  if(!ledgers||Object.getPrototypeOf(ledgers)!==Object.prototype)fail('explicit event ledgers required');
+  const rows=[];
+  for(const [id,row] of Object.entries(ledgers)){
+    if(!code(id)||!row||typeof row!=='object'||Array.isArray(row)||Object.keys(row).some(k=>!keys.includes(k)&&k!=='guild')||keys.some(k=>!Number.isSafeInteger(row[k]))||Object.hasOwn(row,'guild')&&row.guild!==id)fail('invalid event ledger row');
+    rows.push([id,...keys.flatMap(k=>[k,row[k]]),...(Object.hasOwn(row,'guild')?['guild',id]:[])].join('\t')+'\n');
+  }
+  return rows.join('');
+}
