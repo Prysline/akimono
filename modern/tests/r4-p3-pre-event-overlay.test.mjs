@@ -603,3 +603,44 @@ test('R4 actual crossing and residual EVENT feed four-file source commit, backup
     await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
   }finally{await rm(directory,{recursive:true,force:true});}
 });
+
+test('R4 reviewed CAS settles two consecutive source boundaries from legal opening and rejects fabricated settled initial state',async()=>{
+  const crossStreet=createStandardStreetModule({...source,originalNewSource:await readPerl('new.cgi'),
+    originalCustomSource:await readPerl('pinned-custom.cgi'),originalLogSource:await readPerl('pinned-log.cgi'),
+    enableReviewedNormalTime:true,enableReviewedCrossPeriod:true});
+  const seed=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:source.originalPeriodSource,adminSource:source.originalAdminInitSource,
+    readSource:source.originalDataReadSource,writeSource:source.originalDataWriteSource,reviewedB41:crossStreet.reviewedB41}));
+  const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+    worldId:'r4-real-two-periods',streetId:crossStreet.id,nowSeconds:1025980,period:seed}),streetModule:crossStreet});
+  function command(kind,fields={}){
+    const result=executeMemoryCommand({repository,streetModule:crossStreet,command:{kind,expectedRevision:repository.read().revision,...fields}});
+    assert.equal(result.ok,true,JSON.stringify(result.details));return result;
+  }
+  command('initialize-source-market');
+  command('open-shop',{shopId:1,ownerName:'跨期來源',shopName:'連續結算'});
+  const initial=repository.read();
+  command('advance-reviewed-world-time',{minutes:1});
+  const first=repository.read();
+  assert.equal(first.period.settledCount,1);
+  assert.equal(first.period.disk.generations[0]['play.cgi'].bytes,initial.period.disk.live['play.cgi'].bytes);
+  const forged=structuredClone(first);forged.period.disk.live['log0.cgi'].bytes+='forged\n';
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forged,streetModule:crossStreet}),/provenance/);
+  const rejected=applyGameCommand({world:forged,streetModule:crossStreet,command:{kind:'advance-reviewed-world-time',expectedRevision:forged.revision,minutes:1}});
+  assert.equal(rejected.ok,false);
+  let beforeSecond;
+  for(let i=0;i<36;i++){
+    beforeSecond=repository.read();
+    command('advance-reviewed-world-time',{minutes:60});
+  }
+  const second=repository.read();
+  assert.equal(second.nowSeconds,1155640);
+  assert.equal(second.period.settledCount,2);
+  assert.equal(second.period.lastSettledBoundarySeconds,1155600);
+  assert.equal(second.period.disk.generations[0]['play.cgi'].bytes,beforeSecond.period.disk.live['play.cgi'].bytes);
+  assert.equal(second.period.disk.generations[1]['play.cgi'].bytes,initial.period.disk.live['play.cgi'].bytes);
+  assert.notEqual(second.period.dtPeople,first.period.dtPeople);
+  assert.ok(second.shops[0].rankingcount>=2);
+  const final=command('advance-reviewed-world-time',{minutes:1});
+  assert.equal(final.world.period.settledCount,2);
+});

@@ -1049,3 +1049,21 @@ prove -v original-admin-sparse-market.t
 **這不是正式可玩或真正存讀檔。** 原始 `init` 的檔案操作、真正 `DataRead/DataWrite` 世界提交、批發 `inc-turn.cgi` 週期補貨、其他115筆 USE、UI／玩家授權／多人同步**均未完成**。截至此階段 CI 基準**771 Node／1013 原版 Perl，27個 Perl `*.t`；19份固定 Core Blob SHA**。正式 Notion 12項仍**1已完成／3進行中／8待辦**，任務02／04／05均未完全驗收。
 
 **建議分窗：** 已建立 [`new-window handoff：``next-window-handoff.md`](docs/next-window-handoff.md)，包含固定 SHA、Repo／Draft PR、現況、下一步 B-35 與新聊天起手提示。**在同一 ChatGPT 專案開新聊天即可繼續**；舊窗可作歷史備查，不要兩個窗同時推送到同一工作分支。
+
+### R4 獨立單店跨期決算（另行 opt-in）
+
+本機原本的模式不變。要測試來源審閱的獨立單店正式跨期（不含公會成員、龍族 payout、領主、特殊 EVENT 外部副作用、關店封存或多人），在 `modern/` 執行：
+
+```sh
+AKIMONO_REVIEWED_NORMAL_TIME=1 AKIMONO_REVIEWED_CROSS_PERIOD=1 node scripts/dev-local.mjs
+```
+
+PowerShell：
+
+```powershell
+$env:AKIMONO_REVIEWED_NORMAL_TIME='1'
+$env:AKIMONO_REVIEWED_CROSS_PERIOD='1'
+node scripts/dev-local.mjs
+```
+
+請使用新的 `AKIMONO_SAVE_DIR`，既有非跨期存檔沒有自動升級。玩家仍只送 revision 和 1–60 分鐘，不可指定 clock、亂數、事件、期別、檔案或資產。時間推進經來源候選、獨立磁碟投影及相同 CAS 重播；手動存檔才發布 B43 世代。未通過來源驗證的範圍維持拒絕。詳見 [B50 跨期檔案契約](docs/r4-b50-period-disk-contract.md)。
