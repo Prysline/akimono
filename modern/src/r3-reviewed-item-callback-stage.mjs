@@ -6,6 +6,7 @@
  * Unknown or stocked callbacks fail closed; no executable Perl in Node.
  */
 import {parseDsl} from './parse-dsl.mjs';
+import {projectNayutaCallbackOnly} from './original-nayuta-functurn.mjs';
 export const R3_ITEM_CALLBACK_STAGE='r3-standard-item-callbacks-source-v1';
 const fail=reason=>{throw new RangeError('R3 item callbacks: '+reason);};
 const one=(b,k)=>b?.fields[k]?.length===1?b.fields[k][0].value:null;
@@ -60,7 +61,7 @@ export function reviewR3ItemCallbackStage({itemDsl,rebelDsl,turnSource}){
     itemSource:turn[0].file+':'+turn[0].startLine,
   });
 }
-export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraws}){
+export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraws,reviewedNayuta=null}){
   if(reviewed?.source!==R3_ITEM_CALLBACK_STAGE||
      reviewed.turnIds?.join(',')!=='70'||
      reviewed.saleIds?.length!==0||
@@ -69,7 +70,8 @@ export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraw
   if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||
      shop.item.some(x=>!Number.isSafeInteger(x)||x<0))
     fail('original shop inventory');
-  if(shop.item[69]>0)fail('stocked ITEM #70 FUNCTURN not yet integrated');
+  if(shop.item[69]>0&&!reviewedNayuta)
+    fail('stocked ITEM #70 FUNCTURN not yet integrated');
   if(!Number.isSafeInteger(spanSeconds)||spanSeconds<1)
     fail('invalid original time span');
   if(!Array.isArray(randomDraws))fail('original callback random input');
@@ -81,13 +83,24 @@ export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraw
   // Keep the projection pure: do not mutate the prior natural-sale proposal.
   const cleanedShop={...shop};
   delete cleanedShop._sale_count_;
+  // Original dispatcher considers only shops with stock AFTER natural sale.
+  // The existing reviewed #70 callback supplies the exact rank/RNG arithmetic.
+  let affected=0;
+  if(shop.item[69]>0){
+    const callback=projectNayutaCallbackOnly({reviewed:reviewedNayuta,
+      rank:shop.rank,showcaseItemId:shop.showcase[0]===70?70:0,
+      listedPrice:shop.price[0],timespanSeconds:spanSeconds,
+      randomDraws:randomDraws.slice(0,needsRandom?1:0),shopName:shop.shopname});
+    cleanedShop.rank=callback.rank;
+    affected=callback.rankAdded>0?1:0;
+  }
   // Original invokes #70 with no eligible shops: no asset changes.
   // At 1m it still consumes a draw, shifting every later PLUS rand.
   return Object.freeze({
     shop:cleanedShop,
     source:R3_ITEM_CALLBACK_STAGE,
     itemTurnDispatched:Object.freeze([70]),
-    itemTurnAffectedShops:0,itemSaleCallbackCount:0,
-    drawsUsed:needsRandom?1:0,sideEffects:0,
+    itemTurnAffectedShops:affected,itemSaleCallbackCount:0,
+    drawsUsed:needsRandom?1:0,sideEffects:affected,
   });
 }
