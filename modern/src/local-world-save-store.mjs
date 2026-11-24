@@ -23,6 +23,8 @@ import {isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
 import {proveReviewedMedicineSave}
   from './reviewed-medicine-save-proof.mjs';
+import {verifyCareerProof}
+  from './reviewed-career-save-replay.mjs';
 
 export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v1';
 const MAX_BYTES=2200000;
@@ -64,6 +66,8 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
     fail('only source-initialized single-shop Standard Street world is loadable');
   if(w.shops.length){
     const shop=w.shops[0];
+    // The legacy EXP envelope cannot establish a career assignment.
+    if(shop.job!==undefined&&shop.job!=='')fail('career history required');
     // R2-E opt-in source-certified gift exchange: original starting grant 5
     // minus exactly 2 per successful #79 USE. Unreviewed snapshots do NOT
     // get permissive voucher inventory just by supplying a JSON array.
@@ -390,6 +394,14 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
   return w;
 }
 const digest=text=>createHash('sha256').update(text,'utf8').digest('hex');
+const recordDigest=(world,proof)=>digest(proof===null?world:JSON.stringify([world,proof]));
+function verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,proof){
+  if(proof===null)return reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
+  if(!careerReplay)fail('career replay source unavailable');
+  const world=validateMemoryWorld(raw);
+  return verifyCareerProof({world,proof,...careerReplay,
+    validateLegacyAnchor:anchor=>reviewedPlayableWorld(anchor,marketBuyRegistry,useItem)});
+}
 function sourceFile(dir,name){
   return path.join(dir,name);
 }
@@ -399,7 +411,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot,marketBuyRegistry,useItem){
+function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -411,23 +423,31 @@ function readSlot(dir,slot,marketBuyRegistry,useItem){
     if(Buffer.byteLength(serialized,'utf8')>MAX_BYTES)
       fail('save record too long');
     const record=JSON.parse(serialized);
+    const hasProof=record!==null&&typeof record==='object'&&
+      Object.hasOwn(record,'careerProof');
     if(record===null||typeof record!=='object'||Array.isArray(record)||
        Object.keys(record).sort().join(',')!==
-         'format,generation,sha256,world'||
+         (hasProof?'careerProof,format,generation,sha256,world':'format,generation,sha256,world')||
        record.format!==LOCAL_SAVE_FORMAT||
        !Number.isSafeInteger(record.generation)||record.generation<1||
        (record.generation%2)!==slot||
        typeof record.sha256!=='string'||!/^[0-9a-f]{64}$/.test(record.sha256)||
        typeof record.world!=='string'||record.world.length>2000000)
       fail('invalid save record schema or generation');
-    if(digest(record.world)!==record.sha256)
+    const proofText=hasProof?record.careerProof:null;
+    if(hasProof&&(typeof proofText!=='string'||proofText.length>500000))
+      fail('invalid career proof wire');
+    if(recordDigest(record.world,proofText)!==record.sha256)
       fail('save content hash mismatch');
-    const world=reviewedPlayableWorld(decodeMemorySnapshot(record.world),
-      marketBuyRegistry,useItem);
+    const proof=hasProof?JSON.parse(proofText):null;
+    if(hasProof&&(proof===null||JSON.stringify(proof)!==proofText))
+      fail('non-canonical career history');
+    const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
+      marketBuyRegistry,useItem,careerReplay,proof);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
-    return {kind:'ok',slot,generation:record.generation,world};
+    return {kind:'ok',slot,generation:record.generation,world,proof};
   }catch(error){
     if(error?.code==='ENOENT')return {kind:'missing',slot};
     return {kind:'corrupt',slot,reason:error.message};
@@ -436,7 +456,7 @@ function readSlot(dir,slot,marketBuyRegistry,useItem){
   }
 }
 export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
-  useItem=null}){
+  useItem=null,careerReplay=null}){
   if(typeof directory!=='string'||!directory.trim())fail('save directory');
   const dir=path.resolve(directory);
   function scan(){
@@ -445,8 +465,8 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0,marketBuyRegistry,useItem),
-      readSlot(dir,1,marketBuyRegistry,useItem)];
+    const rows=[readSlot(dir,0,marketBuyRegistry,useItem,careerReplay),
+      readSlot(dir,1,marketBuyRegistry,useItem,careerReplay)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
@@ -469,11 +489,12 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     return Object.freeze({
       world:latest.world,generation:latest.generation,
       recovered:corrupt.length>0,
+      ...(latest.proof===null?{}:{careerProof:latest.proof}),
     });
   }
-  function save(raw,{expectedGeneration}){
+  function save(raw,{expectedGeneration,careerProof=null}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
+    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,careerProof);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
@@ -485,11 +506,20 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       fail('已存在不同世界存檔，禁止用新世界覆寫');
     if(previous&&previous.world.revision>world.revision)
       fail('不能以較舊的 WorldState 覆寫新版存檔');
+    // Once validated, the source history cannot be discarded or replaced.
+    if(previous?.proof&&careerProof===null)fail('career history cannot be discarded');
+    if(previous?.proof&&(careerProof.anchor!==previous.proof.anchor||
+       careerProof.anchorKind!==previous.proof.anchorKind||
+       JSON.stringify(careerProof.commands.slice(0,previous.proof.commands.length))!==
+         JSON.stringify(previous.proof.commands)))fail('career history prefix mismatch');
     const nextGen=safeInt(generation+1,'next save generation',1);
     const encoded=encodeMemorySnapshot(world);
+    const proofText=careerProof===null?null:JSON.stringify(careerProof);
+    if(proofText!==null&&proofText.length>500000)fail('career history too large');
     const record=JSON.stringify({
       format:LOCAL_SAVE_FORMAT,generation:nextGen,
-      sha256:digest(encoded),world:encoded,
+      sha256:recordDigest(encoded,proofText),world:encoded,
+      ...(proofText===null?{}:{careerProof:proofText}),
     })+'\n';
     if(Buffer.byteLength(record)>MAX_BYTES)fail('save too large');
     ensureFolder(dir);
@@ -517,7 +547,8 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     }
     const checked=scan();
     if(checked.latest?.generation!==nextGen||
-       encodeMemorySnapshot(checked.latest.world)!==encoded)
+       encodeMemorySnapshot(checked.latest.world)!==encoded||
+       (checked.latest.proof===null?null:JSON.stringify(checked.latest.proof))!==proofText)
       fail('post-save integrity re-read failed');
     return Object.freeze({generation:nextGen,revision:world.revision});
   }
