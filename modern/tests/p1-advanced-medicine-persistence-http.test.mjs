@@ -171,21 +171,51 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
   assert.equal(loaded2.state.shop.money,erikusa.state.shop.money);
   assert.equal(loaded2.state.shop.time,erikusa.state.shop.time);
 
-  // Checksum-valid but provenance-invalid output must fall back to generation 1.
+  // Saving with an obsolete disk generation must not overwrite either slot.
+  const staleSave=await srv.post('/api/save',{
+    expectedRevision:second.revision,expectedGeneration:1,
+  });
+  assert.equal(staleSave.status,409,JSON.stringify(staleSave));
+  assert.deepEqual((await srv.state()).world,second);
+  // Test malformed requests against the same authoritative WorldState.
+  const invalid=await srv.post('/api/use',{
+    expectedRevision:second.revision,
+    itemId:15,useId:4,requestedCount:-1,
+  });
+  assert.notEqual(invalid.status,200);
+  assert.deepEqual((await srv.state()).world,second);
+
+  // All cases are ATTACK fixtures, never a shortcut in the player flow.
+  // Generation 1 stays untouched and is the expected recovery candidate.
   await srv.stop();
   const slot=join(directory,'world-a.json'); // second generation
   const original=await readFile(slot,'utf8');
-  const record=JSON.parse(original);
-  assert.equal(record.generation,2);
-  const forged=JSON.parse(record.world);
-  forged.shops[0].item[33]=60; // #34 under stock limit 400, beyond 34 USEs
-  record.world=encodeMemorySnapshot(validateMemoryWorld(forged));
-  record.sha256=createHash('sha256').update(record.world,'utf8')
-    .digest('hex');
-  await writeFile(slot,JSON.stringify(record)+'\n');
-  srv=await boot(directory);servers.push(srv);
-  const recovered=await srv.post('/api/load');
-  assert.equal(recovered.code,'LOADED',JSON.stringify(recovered));
-  assert.deepEqual(recovered.state.world,first);
-  assert.equal(recovered.state.save.recoveryWarning,true);
+  assert.equal(JSON.parse(original).generation,2);
+  for(const variant of ['forged-erikusa','forged-herbs',
+      'forged-proficiency','broken-checksum']){
+    const record=JSON.parse(original);
+    if(variant==='broken-checksum'){
+      record.sha256='0'.repeat(64);
+    }else{
+      const forged=JSON.parse(record.world);
+      if(variant==='forged-erikusa')
+        forged.shops[0].item[33]=60; // under stock limit, impossible source
+      if(variant==='forged-herbs')
+        forged.shops[0].item[0]=3000; // below catalog limit, beyond #12 origin
+      if(variant==='forged-proficiency')
+        forged.shops[0].exp['15']=999; // below 1000, illegal EXP increment
+      record.world=encodeMemorySnapshot(validateMemoryWorld(forged));
+      record.sha256=createHash('sha256').update(record.world,'utf8')
+        .digest('hex');
+    }
+    await writeFile(slot,JSON.stringify(record)+'\\n');
+    srv=await boot(directory);servers.push(srv);
+    const recovered=await srv.post('/api/load');
+    assert.equal(recovered.code,'LOADED',
+      variant+': '+JSON.stringify(recovered));
+    assert.deepEqual(recovered.state.world,first,
+      variant+': invalid latest generation must not win recovery');
+    assert.equal(recovered.state.save.recoveryWarning,true,variant);
+    await srv.stop();
+  }
 });
