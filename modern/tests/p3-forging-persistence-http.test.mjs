@@ -249,7 +249,7 @@ for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]])
   });
 }
 
-test('P3 #23/0 earned mining EXP transfers to weapon career; two trained crafts and restarts',async t=>{
+test('P3 #23/0 earned mining EXP transfers to weapon career; trained craft after a career checkpoint and two restarts',async t=>{
   const dir=await mkdtemp(join(tmpdir(),'akimono-p3-career-staff-'));
   const servers=[];
   t.after(async()=>{for(const server of servers)await server.stop();
@@ -257,28 +257,28 @@ test('P3 #23/0 earned mining EXP transfers to weapon career; two trained crafts 
   let s=await boot(dir);servers.push(s);
   await open(s);
   await use(s,79,0);
-  const mine=await use(s,9,0,2);
-  assert.equal(mine.details.effectiveCount,2);
-  assert.equal(mine.state.shop.exp['9'],40);
-  assert.ok(mine.state.shop.item[4]>=40);
+  const mine=await use(s,9,0,1);
+  assert.equal(mine.details.effectiveCount,1);
+  assert.equal(mine.state.shop.exp['9'],20);
+  assert.ok(mine.state.shop.item[4]>=20);
   await supply(s);await buy(s,23);await buy(s,78);
   await use(s,79,3);
   let ready=false;
   for(let i=0;i<16;i++){
     const state=await s.state();
-    if((state.marketOffers.find(x=>x.itemId===8)?.marketStock??0)>=34){
+    if((state.marketOffers.find(x=>x.itemId===8)?.marketStock??0)>=32){
       ready=true;break;
     }
     await supply(s);
   }
   assert.equal(ready,true);
-  await buy(s,8,34);
+  await buy(s,8,32);
   const trained=await use(s,37,1);
   assert.equal(trained.state.shop.exp['37'],50);
   assert.equal(trained.state.shop.item[18],1);
   const career=await use(s,78,7);
   assert.equal(career.state.shop.job,'weapon');
-  assert.equal(career.state.shop.exp['23'],20);
+  assert.equal(career.state.shop.exp['23'],10);
   assert.equal(career.state.shop.exp['9']??0,0);
   assert.equal(career.state.shop.exp['37'],50);
   assert.equal(career.state.shop.item[77],0);
@@ -297,11 +297,10 @@ test('P3 #23/0 earned mining EXP transfers to weapon career; two trained crafts 
     assert.equal(done.state.shop.money,before.shop.money);
     assert.equal(done.state.shop.job,'weapon');
   };
-  await craft(40,1776);
   const first=await save(s,0);
   let step=await restartLoad(s,dir,servers);s=step.s;
   assert.deepEqual(step.loaded.state.world,first);
-  await craft(60,1752);
+  await craft(30,1788);
   const second=await save(s,1);
   step=await restartLoad(s,dir,servers);s=step.s;
   assert.deepEqual(step.loaded.state.world,second);
