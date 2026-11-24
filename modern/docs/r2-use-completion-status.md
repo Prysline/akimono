@@ -48,7 +48,7 @@
 - #15 USE 1、3、4 原版 `func lostbook` 已審核接入（param 25／25／50，依原版千分率抽樣；材料與產物先處理，再扣損毀的製作書），真 Perl／Node 使用相同亂數比對成品、製作書、EXP、耗時、原版日誌與回呼返回值。未知回呼或原版參數漂移仍 fail-closed。
 - `r2-source-manufacturing-http-save.test.mjs` 真實從初始禮券換地圖、山區採集、來源 PLUS 市場購書、實際製藥／皮盾／木刀、雙世代存檔、重啟、繼續製杖與再存讀。`r2-potion-lostbook-http.test.mjs` 實際由藥草與十次治療劑製作取得 200 EXP，再執行 #15/1，驗證 25‰ 回呼與未達門檻時 CAS 不變。不得預先填入原料或 EXP，也不接受客戶端自訂亂數。
 - B-43 保存審核只增加可比對的來源製作書、20 EXP 倍數、已採集材料投入量上界及部分非市場供貨產物上界；不把整個 ITEM 目錄的存檔限制放開。它是受限玩家狀態包絡，不是完整歷史交易追溯證明。
-- **P1：#15 進階製藥持久化（Draft PR #9）**：新 `reviewed-medicine-save-proof.mjs` 將真原版 #15/0～4 的 EXP／材料轉換／產量與 lostbook 參數來源鎖定，再以來源採集藥草與有效製作次數建立可行狀態包絡；`local-world-save-store.mjs` 不再錯把每一次 #15 操作視為消耗 10 藥草。`p1-advanced-medicine-persistence-http.test.mjs` 以新玩家真正完成 #79 換地圖→#12 採藥→來源 PLUS 買 #15 書→#15/0、/1、/2、/3、/4→B-43 第一代→重啟→繼續製藥→第二代→再重啟；另以偽造高級產物、材料、熟練度與損毀檔案的**負向攻擊 fixture** 驗證拒絕與保留舊世代。正式完成仍以本 PR 最終 HEAD 的 JS 與凍結原版 Perl GitHub Actions 全數成功為準。此為可行數量包絡，非不可偽造的交易歷史日誌；未知 EVENT、36h 結算、多店、非本次材料來源、EXP 飽和後額外製作依舊未獲 P1 授權。
+- **P1：#15 進階製藥持久化（PR #9 已合併）**：新 `reviewed-medicine-save-proof.mjs` 將真原版 #15/0～4 的 EXP／材料轉換／產量與 lostbook 參數來源鎖定，再以來源採集藥草與有效製作次數建立可行狀態包絡；`local-world-save-store.mjs` 不再錯把每一次 #15 操作視為消耗 10 藥草。`p1-advanced-medicine-persistence-http.test.mjs` 以新玩家真正完成 #79 換地圖→#12 採藥→來源 PLUS 買 #15 書→#15/0、/1、/2、/3、/4→B-43 第一代→重啟→繼續製藥→第二代→再重啟；另以偽造高級產物、材料、熟練度與損毀檔案的**負向攻擊 fixture** 驗證拒絕與保留舊世代。PR #9 HEAD `49ae6e21220744d44907402e22da62488385829b` 的 Actions 45323091134 已通過 JS 1227/1227、Perl 2286/2286。此為可行數量包絡，非不可偽造的交易歷史日誌；未知 EVENT、36h 結算、多店、非本次材料來源、EXP 飽和後額外製作依舊未獲 P1 授權。
 
 ### ITEM #20～#23：劍、盾、鎧、杖共十六項鍛造製作
 
@@ -86,7 +86,7 @@
 
 - 原版 `轉職指南` 的 USE 0～13 已按原始 `param` 與 `_local_／_local_1` 綁定編譯成獨立 Registry 規則，全部要求持有指南 1 本、`arg nocount`、時間 `6h×ItemUseTimeRate(0.5)`，共用 CAS 在正常扣除／時間／市場檢查後執行原版轉職函式。前 13 種轉職依原版將指定 13 個商品熟練度清除，轉入目標熟練度且係數 0.5、上限 1000，並改變店舖職業。第 14 種解除職業，不進行熟練度轉移。
 - **關鍵相容性**：凍結 Perl 的跳過條件確為 `next if !$exp || $exps==$exp1;`，其中 `$exp1` 是目標商品當前的**熟練度數值**、不是商品編號；不修正這個原版行為。完整 `original-r2-career-use-probe.pl` 直接執行凍結 `GetBuffer`、`UseItem` 與 inline `_local_`；`r2-career-change-source.test.mjs` 覆蓋 14 項、熟練度為 0／1000、編號恰等於熟練度值、職業別名、日誌及單次 USE／未持有拒絕。
-- `r2-career-true-player-http.test.mjs` 已建立市場正向 PLUS → 真購書 → 轉酪農家 → 禮券換牛 → 擠奶職業縮時。P2 的 `reviewed-career-save-replay.mjs` 與 B-43 新增有界真命令歷史，避免以轉職後 EXP 錯推過去產量：保存及載入重播原版初始化／已驗證舊檔錨點、真 GameCore CAS 及伺服器 RNG，逐欄比對完整世界；雙世代同一歷史前綴，舊無職業存檔維持相容。`p2-career-persistence-http.test.mjs` 覆蓋十三項轉職、解除職業、真 EXP 轉移、保留原庫存、兩次 Node 重啟及後續製作、舊檔接續、偽造 job／EXP／商品／歷史／RNG／校驗拒絕。只承認 `p2-career-persistence-source-review.md` 內明示白名單，非密碼學簽章；未審閱操作、R4 EVENT、跨期及多人仍 fail-closed。最終驗收以 PR #10 同 HEAD 全量 Actions 結果為準。
+- `r2-career-true-player-http.test.mjs` 已建立市場正向 PLUS → 真購書 → 轉酪農家 → 禮券換牛 → 擠奶職業縮時。P2 的 `reviewed-career-save-replay.mjs` 與 B-43 新增有界真命令歷史，避免以轉職後 EXP 錯推過去產量：保存及載入重播原版初始化／已驗證舊檔錨點、真 GameCore CAS 及伺服器 RNG，逐欄比對完整世界；雙世代同一歷史前綴，舊無職業存檔維持相容。`p2-career-persistence-http.test.mjs` 覆蓋十三項轉職、解除職業、真 EXP 轉移、保留原庫存、兩次 Node 重啟及後續製作、舊檔接續、偽造 job／EXP／商品／歷史／RNG／校驗拒絕。只承認 `p2-career-persistence-source-review.md` 內明示白名單，非密碼學簽章；未審閱操作、R4 EVENT、跨期及多人仍 fail-closed。PR #10 已合併；HEAD `23c959515d8e24f445af16367d6de380e8a72d01` 的 Actions 45375561791 已通過 JS 1230/1230、Perl 2286/2286。
 
 ### ITEM #77：一項慶祝派對人氣回呼 USE
 
@@ -132,3 +132,9 @@
 ## 5. 驗證標準
 
 正式判定需最終 R2 HEAD 的 GitHub Actions 完整成功（Node、原版 Perl、DSL/Core 來源 SHA、R2/R3/R4 回歸）與相同程式碼上的雙世代 HTTP 玩家驗收。新增測試通過數量不等於 116 項功能完成。即使 R2 分支 CI 綠燈，也僅能稱 **「R2 補完支線驗收通過」**，不能稱整個專案或 R2 全原版玩法完整結案。
+
+## P3 第一階段（Draft PR #11，尚未完成驗收）
+
+- `p3-forging-accessory-source-review.md` 記錄二十項 USE 與 #37 修行、#9 採礦、#8 魔石及製作書來源。共用歷史重播保留 P2 wire 格式、128 筆上限及完整世界比對，新增 #37/0、#37/1、#79/3、基礎四種鍛造和必要市場購買的白名單；不要求無職業鍛造玩家先轉職。
+- `p3-forging-persistence-http.test.mjs` 已新增 #20/0、#21/0、#22/0、#23/0 真玩家取得、製作、B-43 雙世代重啟及拒絕偽造測試；須由 PR #11 確切 HEAD 的 CI 證實，不以測試存在宣告通過。
+- 其餘十六項仍缺合法玩家／持久化證明；進階熟練度、雙技能、#24 修行門檻、實際時間推進及未審閱 EVENT 不得繞過。現有 PLUS 供貨子步驟不是完整時間推進。尚未驗收 P3 轉職及 lostbook 持久化；不擴張 #39 或進入 P4。
