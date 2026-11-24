@@ -175,7 +175,8 @@ test('P1 original #15/1, #15/3, #15/4 legal HTTP chain persists across two Node 
   const staleSave=await srv.post('/api/save',{
     expectedRevision:second.revision,expectedGeneration:1,
   });
-  assert.equal(staleSave.status,409,JSON.stringify(staleSave));
+  assert.equal(staleSave.status,400,JSON.stringify(staleSave));
+  assert.match(staleSave.error,/存檔世代衝突/);
   assert.deepEqual((await srv.state()).world,second);
   // Test malformed requests against the same authoritative WorldState.
   const invalid=await srv.post('/api/use',{
