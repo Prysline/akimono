@@ -85,10 +85,100 @@ async t=>{
     expectedRevision:2,targetShopId:2,
   },403);
   assert.equal(disabled.code,'R2_AUDIT_DISABLED');
+  const marketDisabled=await rejected(s,
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:2,
+    },403);
+  assert.equal(marketDisabled.code,'R2_AUDIT_DISABLED');
   await rejected(s,'/api/use',{
     expectedRevision:2,itemId:62,useId:1,requestedCount:1,targetShopId:2,
   },403);
   assert.equal((await s.state()).world.shops.length,1);
+});
+test('R2 #62 market package preflight uses true source shelf and price, without buying anything',
+async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-r2-package-market-'));
+  const s=await boot(dir,true);
+  t.after(async()=>{await s.stop();await rm(dir,{recursive:true,force:true});});
+  assert.equal((await s.post('/api/initialize')).code,'COMMITTED');
+  assert.equal((await s.post('/api/open-shop',{
+    expectedRevision:1,ownerName:'原版買家',shopName:'廣告包市場驗證',
+  })).code,'COMMITTED');
+  const original=await s.state();
+  assert.equal(original.world.revision,2);
+  const noStock=await s.post('/api/r2/advertisement-package-market-preflight',{
+    expectedRevision:original.world.revision,
+  });
+  assert.equal(noStock.status,200,JSON.stringify(noStock));
+  assert.equal(noStock.code,'R2_MARKET_PREFLIGHT_CHECKED');
+  assert.equal(noStock.details.sourceOfferAvailable,false);
+  assert.equal(noStock.details.sourceAdvertisedCanBuy,false);
+  assert.equal(noStock.details.sourceProjectionSucceeded,false);
+  assert.equal(noStock.details.sourceProjectionCode,'SOURCE_MARKET_OFFER_UNAVAILABLE');
+  assert.equal(noStock.details.sourceQuote,null);
+  assert.equal(noStock.details.committed,false);
+  assert.equal(noStock.details.persisted,false);
+  assert.equal(noStock.details.authenticated,false);
+  assert.equal(noStock.details.authoritativeBuyApproval,false);
+  assert.deepEqual(await s.state(),original,
+    'an absent-market quotation probe must be strictly read-only');
+  const stale=await rejected(s,
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:1,
+    },409);
+  assert.equal(stale.code,'REVISION_CONFLICT');
+  for(const extra of [
+    {itemId:62},{requestedCount:1},{shopId:1},
+    {marketShelf:0},{expectedPrice:1},{money:99999999},
+    {randomDraws:[]},{targetShopId:2},
+  ])await rejected(s,
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:2,...extra,
+    },400);
+  const supply=await s.post('/api/supply',{
+    expectedRevision:original.world.revision,timespanSeconds:3600,
+  });
+  assert.equal(supply.code,'COMMITTED',JSON.stringify(supply));
+  const before=await s.state();
+  const quote=before.marketOffers.find(o=>o.itemId===62);
+  assert.equal(quote?.canBuy,true,'real source PLUS must put #62 on shelf');
+  assert.ok(quote.price>before.shop.money);
+  const checked=await s.post(
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:before.world.revision,
+    });
+  assert.equal(checked.status,200,JSON.stringify(checked));
+  assert.equal(checked.code,'R2_MARKET_PREFLIGHT_CHECKED');
+  assert.equal(checked.details.itemId,62);
+  assert.equal(checked.details.sourceRevision,before.world.revision);
+  assert.equal(checked.details.memoryOnly,true);
+  assert.equal(checked.details.authenticated,false);
+  assert.equal(checked.details.committed,false);
+  assert.equal(checked.details.persisted,false);
+  assert.equal(checked.details.authoritativeBuyApproval,false);
+  assert.equal(checked.details.sourceOfferAvailable,true);
+  assert.equal(checked.details.sourceAdvertisedCanBuy,true);
+  assert.deepEqual(checked.details.sourceQuote,{
+    unitPrice:quote.price,marketShelf:quote.shelf,
+    marketStock:quote.marketStock,
+  });
+  assert.equal(checked.details.sourceProjectionSucceeded,false);
+  assert.equal(checked.details.sourceProjectionCode,'SOURCE_BOUNDARY_REJECTED');
+  assert.match(checked.details.sourceRejectionReason,
+    /item limit, money or market stock prevents buying/);
+  assert.equal(Object.hasOwn(checked.details,'projectedPackageStock'),false);
+  assert.deepEqual(await s.state(),before,
+    'market-buy projection cannot debit money or add a #62 package');
+  const opened=await s.post('/api/r2/open-target-shop',{
+    expectedRevision:before.world.revision,
+    ownerName:'真目標店主',shopName:'真目標店',
+  });
+  assert.equal(opened.code,'COMMITTED',JSON.stringify(opened));
+  const blocked=await rejected(s,
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:opened.state.world.revision,
+    },409);
+  assert.equal(blocked.code,'R2_PREFLIGHT_REQUIRES_ONE_SHOP');
 });
 test('R2 #62/1 preflight uses true GameCore source projection but does not commit or authorize any player USE',
 async t=>{
@@ -244,6 +334,22 @@ async t=>{
   assert.equal(earned.targetAdvertisementAudit.readiness.eventStateKnowledge,
     'unreviewed');
   assert.ok(earned.targetAdvertisementAudit.readiness.sourceQuote.cashShortfall>0);
+  // The quote can remain on a source shelf after EVENT goes unknown.
+  // Treat that as a reviewed market price, NOT as a legal buy permit.
+  const unknownEvent=await s.post(
+    '/api/r2/advertisement-package-market-preflight',{
+      expectedRevision:earned.world.revision,
+    });
+  assert.equal(unknownEvent.code,'R2_MARKET_PREFLIGHT_CHECKED');
+  assert.equal(unknownEvent.details.sourceOfferAvailable,true);
+  assert.equal(unknownEvent.details.sourceAdvertisedCanBuy,false);
+  assert.equal(unknownEvent.details.sourceProjectionSucceeded,false);
+  assert.equal(unknownEvent.details.sourceProjectionCode,
+    'SOURCE_BOUNDARY_REJECTED');
+  assert.match(unknownEvent.details.sourceRejectionReason,
+    /unsupported market, event or shop configuration/);
+  assert.deepEqual(await s.state(),earned,
+    'EVENT-unreviewed market projection must also leave world unchanged');
   await rejected(s,'/api/advance-time',{
     expectedRevision:earned.world.revision,minutes:60,
   },400);
