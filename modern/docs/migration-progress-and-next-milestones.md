@@ -1,5 +1,9 @@
 **2026-11-24｜R4 本輪進展（來源期末備份尾段真檔案，尚未完成）：** HEAD `616c888ec4bfa1c45fdd242748e659298207455d` 的 Node 1121／1121、Perl 2282／2282 已先核對。接著新增來源備份／Session 尾段完整審閱，真 Perl 暫存磁碟上兩期三代 backup 旋轉、五檔複製、mtime 清理，並在 B-50 新 opt-in 下由同一真 Perl 行程接續已驗證的關店、龍賽、公會、爵位、技術與 City 階段。最終新工作包仍待相同 HEAD 雙 CI 逐次驗證；正式 GameCore 正向 36h settled period／Durable CAS／HTTP 重啟仍不可用，R4 不退出也不合併 PR。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
+## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
+
+新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
+
 ## 2026-11-24｜R4 公會真檔案子工作包
 
 新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。

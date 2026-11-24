@@ -1,12 +1,16 @@
 # R4 第一階段｜真實資料檔案與外部副作用來源契約（2026-11-24）
 
+## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
+
+新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
+
 ## 2026-11-24｜R4 公會真檔案子工作包
 
 新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
 
 **判定：來源契約已追查，DataWrite 單店主存檔與 CloseShop 實際封存日誌的受限子集合加入真 Node/Perl 檔案差分。不是原子期末交易；B-50 仍 nonCommittable，36 小時跨期仍 fail-closed。**
 
-固定原版：katelynn620/akimono-core commit 738d71a2985fd088f2ca90f25145706392ee2365；本庫未修改的 frozen write.cgi、lock.cgi、inc-func.cgi、core-detail.cgi、period.cgi 受 Git blob SHA 稽核。原版沒有獨立的 plug/read.cgi；實際主資料讀取為 inc-func.cgi 的 DataRead。固定原版 plug/user.cgi、plug/error.cgi 已新增不改動 SHA 副本 pinned-user.cgi、pinned-error.cgi 供真 Perl I/O 驗證；其他未在本庫保存的原版 plug/guild.cgi、guildsub.cgi、army.cgi、custom.cgi、config.cgi 也從該固定 commit 審閱，未將其當作可修改的 modern 原始檔。
+固定原版：katelynn620/akimono-core commit 738d71a2985fd088f2ca90f25145706392ee2365；本庫未修改的 frozen write.cgi、lock.cgi、inc-func.cgi、core-detail.cgi、period.cgi 受 Git blob SHA 稽核。原版沒有獨立的 plug/read.cgi；實際主資料讀取為 inc-func.cgi 的 DataRead。固定原版 plug/user.cgi、plug/error.cgi 已新增不改動 SHA 副本 pinned-user.cgi、pinned-error.cgi 供真 Perl I/O 驗證；公會及軍隊/城鎮來源 plug/guild.cgi、guildsub.cgi、army.cgi、custom.cgi、config.cgi 已自固定 commit 新增原文快照與 SHA 核對；不是可修改的 modern 遊戲來源。
 
 ## 原版實際呼叫鏈與先後關係
 
@@ -28,8 +32,8 @@
 | plug/guild.cgi ReadGuildData / WriteGuildData | 讀 live data/guildbal.cgi：每行 guildcode + tab 交替 key/value；WriteGuildData 依 %GUILD 和 %GUILD_DATA 寫 data/temp/guildbal.cgi，後續由總 commit rename。 | Perl hash order 不定，單次鍵序不能硬編；本窗口已有真多公會 I/O、讀回及兩檔部分寫恢復；尚非正式多檔 WorldState 交易。 |
 | plug/guild.cgi EditGuildMoney：period 各會員店 | **只修改 %GUILD_DATA 記憶體**：正額增加 in、負額增加 out 絕對值，money 增加原金額；店鋪另扣費。 | 本身不開檔，B-50 guildMoneyEdits 只是呼叫/數值投影；本窗口已接 B-50 隔離帳本及總 commit 的真實差分，不代表正式玩家提交。 |
 | plug/guildsub.cgi MakeGuildFile：period 尾、inc-turn 末按 mtime | 開 data/temp/guild.cgi，產生可執行 Perl 程式文字，含 GUILDIDX 常數與 %GUILD=...；可依消失/新增公會記日誌、改店 guild/user。 | hash 順序不穩，不能當 JSON 或穩定 keys；本窗口已有真 guild.cgi 生成、reload、會員清理與 mtime 差分；備份尾段與全部 inc-turn 仍未整合。 |
-| plug/army.cgi ReadArmy / WriteArmy：rebel EVENT | live data/army.cgi 兩行，第一行 armyId,兵數交替，第二行 RIOT ID；原版 chop 行尾。寫入 temp/army.cgi 前刪不存在店 ID/零軍力；後續總 commit。 | 順序可能因 hash 改變、missing open 不一定報錯；R4 rebel/混合 EVENT 目前 IO stub，真軍隊檔與失敗/重啟尚缺。 |
-| plug/custom.cgi SetTownData：EVENT 與其他城鎮入口 | 對 DTtown hash 的 key/value 進行 %hex 跳脫（控制字元、逗號、%）；空值刪鍵。**本身不開檔**，要 DataWrite AutoVar::Get(DTtown) 才保存 play.cgi 城鎮行。 | 多鍵 Perl hash 順序、非法字元與前後事件流程仍未完整差分。現有特殊 EVENT 仍為純來源投影。 |
+| plug/army.cgi ReadArmy / WriteArmy：rebel EVENT | live data/army.cgi 兩行，第一行 armyId,兵數交替，第二行 RIOT ID；原版 chop 行尾。寫入 temp/army.cgi 前刪不存在店 ID/零軍力；後續總 commit。 | 順序可能因 hash 改變、missing open 不一定報錯；原 17-key fixture 仍為 stub；新 rebel period/NOW 與兩事件共同子鏈已執行真隔離軍隊檔、同 turn live/stage、commit/reload、失敗恢復。 |
+| plug/custom.cgi SetTownData：EVENT 與其他城鎮入口 | 對 DTtown hash 的 key/value 進行 %hex 跳脫（控制字元、逗號、%）；空值刪鍵。**本身不開檔**，要 DataWrite AutoVar::Get(DTtown) 才保存 play.cgi 城鎮行。 | 新專項多鍵 town wire、GetTownData key 解碼、真 guildbattle END → DataWrite/DataRead 與三檔共同提交已驗證；不宣稱 Perl hash 順序等價。 |
 
 ## 實際工作包、與 B-50 的接合邊界
 

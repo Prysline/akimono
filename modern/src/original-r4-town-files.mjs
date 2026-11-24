@@ -19,7 +19,7 @@ function review(r){if(!reviews.has(r))fail('source review required')}
 function string(s){if(typeof s!=='string'||/[\uD800-\uDFFF]/u.test(s))fail('explicit Unicode scalar string required');return s}
 function encode(s){return string(s).replace(/[\x00-\x1f,%]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0'))}
 function decode(s){return s.replace(/%([\da-fA-F]{2})/g,(_,n)=>String.fromCharCode(parseInt(n,16)))}
-function wire(s){return typeof s==='string'&&!/[\x00-\x1f,]/.test(s)&&!/%(?![\da-fA-F]{2})/.test(s)}
+function wire(s){return typeof s==='string'&&!/[\x00-\x1f,]/.test(s)&&!/%(?!0[\da-f]|1[\da-f]|2[5c])/.test(s)}
 function checkedTown(town){
   if(!town||Object.getPrototypeOf(town)!==Object.prototype)fail('explicit encoded town map required');
   for(const [k,v] of Object.entries(town))if(!k||!v||!wire(k)||!wire(v)||['__proto__','constructor','prototype'].includes(k))fail('invalid town wire');

@@ -75,6 +75,7 @@ test('town serializer rejects malformed encoded maps, old strict play path stays
   assert.throws(()=>reviewTownFiles({custom:custom+' ',read:incFuncSource,write:writeSource}),/source drift/);
   assert.throws(()=>parseTownLine({reviewed:townReview,line:'x,1,x,2'}),/duplicate/);
   assert.throws(()=>parseTownLine({reviewed:townReview,line:'x,%zz'}),/invalid town wire/);
+  assert.throws(()=>parseTownLine({reviewed:townReview,line:'x,%ff'}),/invalid town wire/);
   assert.throws(()=>serializeR4DataWrite({reviewed,world}),/one-key source map/);
   assert.ok(serializeTownPlay({reviewed:townReview,dataReview:reviewed,world}).includes('dominion,beta'));
 });

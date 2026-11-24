@@ -1,12 +1,16 @@
 # R4 退出驗收清冊｜更新至 2026-11-24
 
+## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
+
+新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
+
 ## 2026-11-24｜R4 公會真檔案子工作包
 
 新增 [公會持久化契約](./r4-guild-file-persistence-contract.md)：真原版公會定義、帳本、正負額、兩期 B-50、隔離多檔部分寫入及 marker 恢復。MakeGuildFile 不 reload %GUILD，WriteGuildData 仍用舊 keys；不把新公會缺帳本猜成零。僅已審閱檔案欄位、非正式 WorldState 提交；原版 hash 順序不宣稱等價。正式 36h fail-closed、eventState:null、R2/R3 原受控結論維持，R4/R5/R0/R1 全量未結案。以最後同一 HEAD 的 Push/PR Actions 為驗收依據；下一工作包軍隊/城鎮與主檔共同接合。
 
 ## 2026-11-24｜R4 第一階段外部資料真實寫入增量（不等於退出）
 
-原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile 的真磁碟整合仍未完成；WriteErrorLog 已補原版真檔案 append／rotate／失敗差分與受限 B-50 封存 sink，但正式跨檔交易仍未完成，不能將原有 recorder 當成真 IO。
+原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。這是第一階段歷史狀態；上方最新工作包已補 ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile 的受控真磁碟差分；WriteErrorLog 已補原版真檔案 append／rotate／失敗差分與受限 B-50 封存 sink，但正式跨檔交易仍未完成，不能將原有 recorder 當成真 IO。
 
 新增 source-pinned、單活躍店、79 ITEM、32/11 欄與最多單鍵 hash 的 DataWrite 編碼及隔離真檔 writer；新 Perl probe 真執行 frozen DataWrite → DataCommitOrAbort → DataRead 同檔兩期，Node 比較原始位元組、測試失敗保留 marker 與重新恢復。這是受限共享寫入介面證據；另有原版 WriteErrorLog 真 append／rotate／缺目錄後半關店差分及 B-50 第二期 CloseShop effect → 真 Node log sink 接合。**尚未接入 B-50 的完整主存檔或 WorldState/CAS**。所有新輸出維持 committable:false，正式 R4/R5/R0/R1 仍未退出。專項測試與整套回歸須以最終同 SHA Actions 驗收。
 
@@ -27,7 +31,7 @@
 
 | 必須具備的來源／運作契約 | 已有可用證據 | 真正未完成的驗收條件 |
 |---|---|---|
-| 17-key EVENT 原版開始／結束、群組、回呼及亂數 | **受控 17-key 來源差分已涵蓋**十種 durable、五種即時 STARTFUNC，且在同一凍結 Perl inc-turn END／START／NOW 中執行 rebel 與 guildbattle 真 DSL 回呼；透過 GetPath(event-n) 觀察 rebel 自刪前的 NOW key 遍歷。Node 比對 79 ITEM、商店、軍隊／城市／公會、日誌與共享 rand(range)。 | **仍欠正式 runtime**：ReadArmy／WriteArmy／ReadGuild／ReadGuildData／SetTownData 仍為受控 IO stub；樣本及 key 次序來自同一 Perl 行程，而非 JS 原生 seed 重現；全跨期與 WorldState 提交尚未驗證。 |
+| 17-key EVENT 原版開始／結束、群組、回呼及亂數 | **受控 17-key 來源差分已涵蓋**十種 durable、五種即時 STARTFUNC，且在同一凍結 Perl inc-turn END／START／NOW 中執行 rebel 與 guildbattle 真 DSL 回呼；透過 GetPath(event-n) 觀察 rebel 自刪前的 NOW key 遍歷。Node 比對 79 ITEM、商店、軍隊／城市／公會、日誌與共享 rand(range)。 | **仍欠正式 runtime**：17-key 混合 fixture 的 ReadArmy／WriteArmy／ReadGuild／ReadGuildData／SetTownData 仍為受控 IO stub；另有真二事件三檔隔離接合，尚未升格正式 runtime；樣本及 key 次序來自同一 Perl 行程，而非 JS 原生 seed 重現；全跨期與 WorldState 提交尚未驗證。 |
 | SortDT、販售、59 PLUS、EVENT 相互影響 | B-47 SortDT、R3 自然販售、B-56／B-59 時間片及九種 EVENT ITEM PARAM source probes | **尚缺**同一實際世界中連續販售→排行→PLUS→活動覆寫→結算對商品、商店、城市、稅額的整段來源差分 |
 | 36 小時時鐘切割與**完整**原版期末 | 已直接執行原版 `period.cgi` 兩期期末同世界來源鏈，涵蓋 `DragonBalance` 真暫存收支檔、Guild dues／atk／def（外部 `EditGuildMoney` 僅記錄呼叫）、dignity、四技術遺忘。`write.cgi::CloseShop` 原始子程式現已**真執行**，核對 32 欄關店封存 payload、status／money／rank 修改、受控 Session 檔案刪除，以及後續 `SortDT` 將停業店鋪移出活躍清單。新增期末尾段 Perl 真檔案差分：**三代 `backup1/2/3` 旋轉、五個來源檔 log0／log1／log2／guildbal／play 複製、七天 Session 嚴格 mtime 清理，連續兩次**；另有一個原版 Perl 行程把真關店與此備份尾段接在兩期期末同段執行。 | **尚非完整可提交期末**：原版外部 `SetUserData`、`WriteErrorLog`、`EditGuildMoney`、`MakeGuildFile` 的真帳本／封存 IO 並未接成原子交易，真 DataWrite／鎖定／複製失敗的恢復、全部 EVENT／多店／軍隊領地與完整 36h WorldState／CAS／HTTP 正向結算仍缺。真檔案測試全部隔離在 Perl 暫存目錄，B-50 的 Node 結果仍 `nonCommittable:true`。 |
 | 正式可提交事件與期末 WorldState | GameCore v2 的 `period` 初始來源契約、B-43 雙世代存檔與正式指令前審閱；**本機 HTTP 已改用 `createSourceReviewedMemoryWorldAdapter`**，在初始化及載入時檢查合法來源狀態，並於每次 `compareAndSwap` 再跑真 36h／+3h source review，跨期、偽造已結算期數／城市／不認識的 EVENT 在記憶體 CAS 前拒絕。即使是已知單一 iron／happy／sword EVENT，零時間內憑空增改仍拒絕；偽造審閱器不能繞過已綁定的來源審閱。 | **仍缺正向原版結算／可提交期別版本**、Guild／Army／backup／session 真資料與期末原子交易。現行時間推進中的已知 EVENT 封套驗證不等於完整 17-key provenance 或原版 hash seed。泛用 `createMemoryWorldAdapter` 仍為供 v1／測試用的通用介面；受審核 adapter 僅用於指定 Standard Street 本機 runtime，不能稱為跨程序持久化交易管理器。 |

@@ -126,3 +126,15 @@ test('joint real third-file rename failure keeps partial commit and prevents rea
   assert.deepEqual(parseGuildEventLedgers(await readFile(path.join(directory,'guildbal.cgi'),'utf8')),parseGuildEventLedgers(row.guildLive));
   assert.deepEqual(await readArmySandbox({reviewed:armyReview,directory,shopIds:[1]}),parseArmyFile(row.armyLive,[1]));
 }));
+
+test('joint incomplete stage cannot be committed; no marker abort keeps original files',()=>fixture(async({o,directory})=>{
+  const row=o.cases[0];await stageRound({row,directory,town:{}});
+  await rm(path.join(directory,'stage','guildbal.cgi'));
+  const args={reviewed:externalReview,directory,expectedFiles:full};
+  await assert.rejects(commitExternalFiles(args),/incomplete stage/);
+  assert.equal(await readFile(path.join(directory,'army.cgi'),'utf8'),o.armyInitial);
+  assert.equal(await readFile(path.join(directory,'guildbal.cgi'),'utf8'),o.guildBal);
+  await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
+  assert.equal((await commitExternalFiles({...args,abort:true})).mode,'discard');
+  assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+}));

@@ -1,5 +1,9 @@
 # R4 公會持久化工作包（2026-11-24）
 
+## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
+
+新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
+
 範圍：隔離來源差分與 B-50 子鏈，不是正式玩家跨期交易。所有 adapter 維持 committable:false；既有 WorldState/CAS、eventState:null 守門與 R2/R3 受控結論不變。
 
 ## 實際來源
