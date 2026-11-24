@@ -104,7 +104,6 @@ sub runCase {
     output=>{
       shop=>$after,liveLog=>getFile($logpath),
       oldLog=>getFile($oldpath),remainingSessions=>\@left,
-      setUserDataCreatedFile=>JSON::PP::false,
     },
     context=>{
       nowSeconds=>$NOW_TIME,
