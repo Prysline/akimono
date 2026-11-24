@@ -1,0 +1,18 @@
+use strict;
+use warnings;
+use Test::More;
+use FindBin;
+use JSON::PP;
+open my $p,'-|',$^X,"$FindBin::Bin/original-r4-data-files-backup-probe.pl" or die $!;
+binmode $p,':raw';local $/;my $s=<$p>;close $p or die 'backup probe failed';
+my $o=JSON::PP->new->utf8->decode($s);
+my($older,$equal,$newer,$missing,$bad)=@{$o->{cases}};
+is_deeply($older->{after},$older->{live},'strictly older triggers actual copy');
+is_deeply($equal->{after},$equal->{prior},'equal does not trigger');
+is_deeply($newer->{after},$newer->{prior},'newer does not trigger');
+is($missing->{after}{log1},'','missing source truncates destination');
+is($missing->{after}{log2},$missing->{live}{log2},'copy continues after missing source');
+ok(!defined($bad->{after}{log1}),'invalid destination remains directory');
+is($bad->{after}{log2},$bad->{live}{log2},'copy continues after destination failure');
+for my $r(@{$o->{cases}}){is($r->{clock},$r->{lasttime},$r->{mode}.' actual lasttime mtime')}
+done_testing();
