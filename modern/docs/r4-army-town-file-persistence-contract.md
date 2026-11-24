@@ -1,5 +1,9 @@
 # R4 軍隊／城鎮與共同檔案持久化工作包（2026-11-24）
 
+## 2026-11-24｜R4 B-50 期末主檔、備份、封存及日誌共同子鏈
+
+新增 [B-50 期末真檔案整合契約](./r4-b50-period-disk-contract.md)。真原版單店 B50 一/兩期全段期末、DragonBalance、CloseShop+真 archive、三代 backup/session 清理、每期 MakeGuildFile、transient guild reset、最終 WriteGuildData→DataWrite/DataFilesBackup→RenewLog→四檔共同 commit→DataRead；Node 由 live 讀取、真實 stage/recover、原版 log/mtime/失敗差分及 ready 摘要拒絕不完整 stage。屬明示空 EVENT、固定受控 RNG/每期 NOW_TIME 與隔離檔案，非全 inc-turn、正式 WorldState 或跨期授權。舊 36h fail-closed、eventState:null、R2/R3 保留。下一主線是既有自然販售/ITEM/SortDT/59 PLUS/完整 17 EVENT 與期末檔案同一來源連續整合，之後才正式 CAS/HTTP/save/restart。以最終同 SHA 雙 CI 為驗收依據。
+
 **範圍：已審閱的原版來源子流程及真隔離磁碟；不是正式 R4 36h WorldState 交易。** R2/R3 原受控結論不變，eventState:null 仍未知，既有 CAS 與 HTTP 守門未放寬。最終驗收必須查相同 HEAD 的 Push／PR CI。
 
 ## 原版來源與檔案順序

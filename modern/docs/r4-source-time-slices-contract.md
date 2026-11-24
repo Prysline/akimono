@@ -1,5 +1,9 @@
 # R4-B｜凍結原版 36 小時時間片與 Perl 差分（2026-11-23）
 
+## 2026-11-24｜R4 B-50 期末主檔、備份、封存及日誌共同子鏈
+
+新增 [B-50 期末真檔案整合契約](./r4-b50-period-disk-contract.md)。真原版單店 B50 一/兩期全段期末、DragonBalance、CloseShop+真 archive、三代 backup/session 清理、每期 MakeGuildFile、transient guild reset、最終 WriteGuildData→DataWrite/DataFilesBackup→RenewLog→四檔共同 commit→DataRead；Node 由 live 讀取、真實 stage/recover、原版 log/mtime/失敗差分及 ready 摘要拒絕不完整 stage。屬明示空 EVENT、固定受控 RNG/每期 NOW_TIME 與隔離檔案，非全 inc-turn、正式 WorldState 或跨期授權。舊 36h fail-closed、eventState:null、R2/R3 保留。下一主線是既有自然販售/ITEM/SortDT/59 PLUS/完整 17 EVENT 與期末檔案同一來源連續整合，之後才正式 CAS/HTTP/save/restart。以最終同 SHA 雙 CI 為驗收依據。
+
 ## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
 
 新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。

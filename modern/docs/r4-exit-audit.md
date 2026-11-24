@@ -1,5 +1,9 @@
 # R4 退出驗收清冊｜更新至 2026-11-24
 
+## 2026-11-24｜R4 B-50 期末主檔、備份、封存及日誌共同子鏈
+
+新增 [B-50 期末真檔案整合契約](./r4-b50-period-disk-contract.md)。真原版單店 B50 一/兩期全段期末、DragonBalance、CloseShop+真 archive、三代 backup/session 清理、每期 MakeGuildFile、transient guild reset、最終 WriteGuildData→DataWrite/DataFilesBackup→RenewLog→四檔共同 commit→DataRead；Node 由 live 讀取、真實 stage/recover、原版 log/mtime/失敗差分及 ready 摘要拒絕不完整 stage。屬明示空 EVENT、固定受控 RNG/每期 NOW_TIME 與隔離檔案，非全 inc-turn、正式 WorldState 或跨期授權。舊 36h fail-closed、eventState:null、R2/R3 保留。下一主線是既有自然販售/ITEM/SortDT/59 PLUS/完整 17 EVENT 與期末檔案同一來源連續整合，之後才正式 CAS/HTTP/save/restart。以最終同 SHA 雙 CI 為驗收依據。
+
 ## 2026-11-24｜R4 軍隊／城鎮及三檔共同 EVENT 子鏈
 
 新增 [軍隊、城鎮及共同檔案契約](./r4-army-town-file-persistence-contract.md)。真原版 ReadArmy/WriteArmy、SetTownData/GetTownData、DataRead/DataWrite、多鍵 town、同 turn 多次 NOW live/stage 差異，及兩個特殊 EVENT 同一原版 END/START/NOW → army.cgi/guildbal.cgi/play.cgi 共同暫存與 commit/reload；原版 guildbattle transient guild=id 已獨立 codec，舊五欄仍嚴格。Node 真第三檔 rename 失敗、marker 復原；僅隔離來源子鏈，不是全 17 EVENT 或完整 B-50/WorldState，既有 36h fail-closed/eventState:null 不變。最終同 SHA Push/PR CI 為驗收依據。下一工作包完整 B-50 主檔與 DataFilesBackup、封存/Session/備份共同恢復及正式跨期正向整合；不再重做公會／軍隊／town 已驗收子集合。
@@ -12,7 +16,7 @@
 
 原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。這是第一階段歷史狀態；上方最新工作包已補 ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile 的受控真磁碟差分；WriteErrorLog 已補原版真檔案 append／rotate／失敗差分與受限 B-50 封存 sink，但正式跨檔交易仍未完成，不能將原有 recorder 當成真 IO。
 
-新增 source-pinned、單活躍店、79 ITEM、32/11 欄與最多單鍵 hash 的 DataWrite 編碼及隔離真檔 writer；新 Perl probe 真執行 frozen DataWrite → DataCommitOrAbort → DataRead 同檔兩期，Node 比較原始位元組、測試失敗保留 marker 與重新恢復。這是受限共享寫入介面證據；另有原版 WriteErrorLog 真 append／rotate／缺目錄後半關店差分及 B-50 第二期 CloseShop effect → 真 Node log sink 接合。**尚未接入 B-50 的完整主存檔或 WorldState/CAS**。所有新輸出維持 committable:false，正式 R4/R5/R0/R1 仍未退出。專項測試與整套回歸須以最終同 SHA Actions 驗收。
+新增 source-pinned、單活躍店、79 ITEM、32/11 欄與最多單鍵 hash 的 DataWrite 編碼及隔離真檔 writer；新 Perl probe 真執行 frozen DataWrite → DataCommitOrAbort → DataRead 同檔兩期，Node 比較原始位元組、測試失敗保留 marker 與重新恢復。這是受限共享寫入介面證據；另有原版 WriteErrorLog 真 append／rotate／缺目錄後半關店差分及 B-50 第二期 CloseShop effect → 真 Node log sink 接合。此為歷史初始階段；最新 B50 已接受控完整主存檔及備份/日誌共同 stage，**仍未接入正式 WorldState/CAS**。所有新輸出維持 committable:false，正式 R4/R5/R0/R1 仍未退出。專項測試與整套回歸須以最終同 SHA Actions 驗收。
 
 
 本清冊只記錄已可證明的原版來源行為與**尚未通過的真正 R4 退出條件**。任一驗收工作包 Push／PR 雙 CI 綠燈不等於整體 R4 完成。R4 必須能在共同 GameCore／StreetModule／WorldState 下執行真跨期經營、可靠保存和 HTTP 路徑，並對原版 Perl 具可重現、跨階段、跨狀態的來源差分；不可用局部純投影或測試替身冒充。
