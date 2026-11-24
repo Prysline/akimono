@@ -376,9 +376,29 @@ test('R4 candidate preserves original DataRead overlay and native EVENT hash acr
   }));
   const wire=Object.entries(world.period.eventState).flat().join(',');
   const e=result.evidence.slices;
-  const events=run('original-r4-mixed-support-gate-probe.pl',{eventWire:wire,
-    slices:e.map(s=>({startSeconds:s.startSeconds,spanSeconds:s.spanSeconds,
-      shop:s.preEvent.shops[0],samples:s.eventSamples}))},['--cross-period-events']);
+  const actual=run('original-r4-mixed-support-gate-probe.pl',{
+    eventWire:wire,startSeconds:world.nowSeconds,shop:world.shops[0],
+    csv:world.market.originalWholesaleCsv,
+    settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:result.nowSeconds},
+    slices:e.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+    samples:e.flatMap(s=>[...s.preEventDraws,...s.eventSamples]),
+  },['--cross-period-turn']);
+  assert.equal(actual.nowSeconds,result.nowSeconds);
+  assert.deepEqual(actual.dataReadOrder,result.evidence.dataReadOrder);
+  const events=actual.slices;
+  for(const [i,s] of e.entries()){
+    const pre=events[i].preEvent;
+    assert.equal(pre.preEventDrawCount,s.preEventDraws.length);
+    assert.deepEqual(pre.wholesale,s.preEvent.market.wholesale);
+    assert.equal(pre.csv,s.preEvent.market.originalWholesaleCsv);
+    assert.deepEqual(pre.plus,result.evidence.plusSeconds);
+    assert.equal(pre.dtPeople,result.period.dtPeople);
+    assert.deepEqual(pre.town,result.period.town);
+    for(const [key,value] of Object.entries(s.preEvent.shops[0])){
+      if(key==='costtoday'){assert.ok(Math.abs(value-pre.shop[key])<1e-8);continue;}
+      assert.deepEqual(value,pre.shop[key],key+' pre-EVENT slice '+i);
+    }
+  }
   for(const [i,s] of e.entries()){
     assert.deepEqual(events[i].activeOrder,s.activeOrder);
     assert.deepEqual(events[i].eventOrder,s.eventOrder);

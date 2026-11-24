@@ -605,6 +605,56 @@ if(@ARGV&&$ARGV[0] eq '--normal-turn'){
   });
   exit 0;
 }
+# Full single-process source prefix + both EVENT slices. Input contains
+# only the initial shop/market/city/event wire, original split and tape.
+# Unlike the split oracle, no intermediate Node shop is injected.
+if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
+  binmode STDIN,':raw';
+  my $in=JSON::PP->new->utf8->decode(<STDIN>);
+  my $rand=\&CORE::GLOBAL::rand;
+  require OriginalR4PreEventHarness;
+  # The older B35 harness installs its own compile-time rand override.
+  # Restore the single R4 tape BEFORE compiling either source phase.
+  {no warnings 'redefine';*CORE::GLOBAL::rand=$rand;}
+  my $order=OriginalR4PreEventHarness::prepare($in,1);
+  $ITEM_DIR=$callbackRoot;
+  die 'special EVENT not in candidate scope' if exists($DTevent{rebel})||exists($DTevent{guildbattle});
+  die 'bounded actual boundary slices' unless ref($in->{slices})eq 'ARRAY'&&@{$in->{slices}}>=1&&@{$in->{slices}}<=2;
+  @R4_MULTI_DRAWS=@{$in->{samples}};
+  my @results;
+  my $cursor=$in->{startSeconds};
+  my $json=JSON::PP->new->canonical->utf8;
+  for my $i(0..$#{$in->{slices}}){
+    my $slice=$in->{slices}[$i];
+    my $span=$slice->{spanSeconds};
+    die 'positive source slice required' unless $span>0&&$span<=3600&&$slice->{dateupdate}==($i==0?1:0);
+    my @prior=keys(%DTevent);
+    @R4_MULTI_RANGES=();@LOG=();
+    my $before=scalar(@R4_MULTI_DRAWS);
+    main::ActualPreEvent($span,$slice->{dateupdate});
+    my $preCount=$before-scalar(@R4_MULTI_DRAWS);
+    no warnings 'uninitialized';
+    my $pre=$json->decode($json->encode({
+      shop=>$DT[0],wholesale=>[map {0+($_//0)} @main::DTwholestore[0..78]],
+      csv=>join(',',@main::DTwholestore),town=>$STATE,dtPeople=>0+$main::DTpeople,
+      preEventDrawCount=>$preCount,preEventLogs=>[@LOG],
+      plus=>[map {0+($ITEM[$_]{plus}//0)}1..79],
+    }));
+    @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
+    $temptimenow=$cursor;$timespan=$span;$TIMESPAN=$span;
+    R4MultiOriginalEventSlice();
+    push @results,$json->decode($json->encode({
+      preEvent=>$pre,activeOrder=>[@prior],eventOrder=>[@runtimeHashKeys],nowOrder=>[@R4_NOW_KEYS],
+      shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
+      logs=>[@LOG],ranges=>[@R4_MULTI_RANGES],
+    }));
+    $cursor+=$span;
+  }
+  die 'unused full-command source RNG' if @R4_MULTI_DRAWS;
+  die 'wrong source command end' unless $cursor==$in->{settlement}{commandNowSeconds};
+  print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor});
+  exit 0;
+}
 if(@ARGV&&$ARGV[0] eq '--cross-period-events'){
   binmode STDIN,':raw';
   my $in=JSON::PP->new->utf8->decode(<STDIN>);
