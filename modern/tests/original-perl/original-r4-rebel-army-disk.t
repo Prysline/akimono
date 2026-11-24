@@ -16,4 +16,9 @@ for my $r(@{$o->{cases}}){
     is($r->{liveArmy},$r->{initialArmy},$r->{name}.' live unchanged');
   }
 }
+my $m=$o->{multi};
+is(scalar @{$m->{steps}},3,'three sequential real NOW slices');
+is($m->{steps}[0]{output}{armyById}{2},2800,'first stage army');
+is($m->{steps}[1]{output}{armyById}{2},2800,'second reads original live army');
+is($m->{steps}[2]{output}{armyById}{2},1600,'third reads committed army');
 done_testing();

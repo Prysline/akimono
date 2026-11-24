@@ -148,7 +148,7 @@ sub run{
   die "combined source RNG leftover $in{name}" if @COMBINED_DRAWS;
   my $until=$state->{state}{rebel};
   my $output={
-    town=>{%$STATE},shops=>[map{{%$_}}@DT],
+    town=>{%$STATE},shops=>[map{{%$_,army=>0+$_->{army}}}@DT],
     riotIds=>[sort{$a<=>$b}map {0+$_} keys(%RIOT)],armyById=>{map {$_=>0+$ARMY{$_}} keys %ARMY},
     activeUntilSeconds=>$until,
     eventState=>{%{$state->{state}}},
@@ -210,7 +210,47 @@ my @cases=(
     riotIds=>[2],armyById=>{2=>3000},draws=>[500000],
     periodDrawCount=>0,nowDrawCount=>1),
 );
+
+# A real single-turn two NOW sequence: the second ReadArmy must read LIVE,
+# not the first stage. Third slice is after the isolated commit.
+sub multiSlice {
+  $NOW_TIME=1000000;$temptimenow=$NOW_TIME;$timespan=3600;$TIMESPAN=3600;
+  $STATE={%baseTown,army=>6000,robina=>4000};@DT=map{{%$_}}@baseShops;
+  @ITEM=();@LOG=();%EVENT=(rebel=>{code=>'rebel',group=>'rebel-group',startproba=>0,
+    basetime=>0,plustime=>0,startfunc=>'',endfunc=>'',func=>'_local_now',funcparam=>'',startmsg=>'',endmsg=>''});
+  %DTevent=(rebel=>1000005);
+  %id2idx=map{($DT[$_]{id}=>$_)}0..$#DT;
+  $BAL_JOB='外敵';$BAL_NAME='首領';$DTTaxrate=0;
+  my $initial="2,4000\n2\n";putFile(GetPath("army"),$initial);
+  my @steps;
+  for my $i(0..2){
+    my $liveBefore=getFile(GetPath("army"));
+    my $input={startSeconds=>$temptimenow,nowSeconds=>$NOW_TIME,spanSeconds=>3600,
+      town=>{%$STATE},shops=>[map{{%$_,army=>0+$_->{army}}}@DT],
+      activeUntilSeconds=>0+$DTevent{rebel},randomDraws=>[0],periodDrawCount=>0,
+      nowDrawCount=>1,leaderShopExists=>JSON::PP::true,taxRate=>$DTTaxrate,
+      balJob=>$BAL_JOB,balName=>$BAL_NAME};
+    @LOG=();@COMBINED_DRAWS=(0);@COMBINED_RANGES=();$READ_ARMY=0;$WRITE_ARMY=0;
+    originalPeriodRebelFragment() if $i==0;
+    originalRebelEventFragment();
+    die 'multi slice unused RNG' if @COMBINED_DRAWS;
+    my $stage=getFile(GetPath($TEMP_DIR,"army"));
+    die 'multi slice prematurely changed live' unless getFile(GetPath("army")) eq $liveBefore;
+    my $output={town=>{%$STATE},shops=>[map{{%$_,army=>0+$_->{army}}}@DT],
+      activeUntilSeconds=>0+$DTevent{rebel},armyById=>{map {$_=>0+$ARMY{$_}}keys %ARMY},
+      riotIds=>[sort {$a<=>$b}map {0+$_}keys %RIOT],taxRate=>$DTTaxrate,
+      logs=>[map{[@$_]}@LOG],drawsUsed=>scalar @COMBINED_RANGES,
+      randomDrawRanges=>[@COMBINED_RANGES],readArmyCalls=>$READ_ARMY,writeArmyCalls=>$WRITE_ARMY};
+    push @steps,{input=>$input,output=>$output,liveBefore=>$liveBefore,stage=>$stage};
+    DataCommitOrAbort(0) if $i>=1;
+    $temptimenow+=3600;
+  }
+  return {steps=>\@steps,initial=>$initial,final=>getFile(GetPath("army"))};
+}
+
+my $multi=multiSlice();
 print JSON::PP->new->canonical->utf8->encode({
+  multi=>$multi,
   source=>'complete frozen period.cgi RebelRobin + period rebel branch executed BEFORE actual inc-turn EVENT END/START/NOW and original rebel NOWFUNC body, one event',
   cases=>\@cases,
   scope=>'isolated single CITY/REBEL slice, original source execution + controlled rand only; real isolated army staging and commit/reload; no other 16 EVENTs or full period/WorldState',

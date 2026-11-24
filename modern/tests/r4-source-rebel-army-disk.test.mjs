@@ -89,3 +89,27 @@ test('two stages replace rather than append, read still uses live; rename failur
   assert.equal(await readFile(live,'utf8'),'1,900\n1\n');
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
 }));
+
+test('two actual source NOW slices read live army until final commit, then next slice reads committed army',()=>sandbox(async directory=>{
+  const m=oracle().multi;
+  await writeFile(path.join(directory,'army.cgi'),m.initial);
+  let prior=null;
+  for(const [i,row] of m.steps.entries()){
+    if(prior){
+      assert.deepEqual(prior.town,row.input.town);
+      assert.deepEqual(prior.shops,row.input.shops);
+      assert.equal(prior.activeUntilSeconds,row.input.activeUntilSeconds);
+    }
+    const input=prior?{...row.input,town:prior.town,shops:prior.shops,activeUntilSeconds:prior.activeUntilSeconds,taxRate:prior.taxRate}:row.input;
+    const {result,staged}=await projectRebelArmySandbox({fileReview,directory,reviewed:i===0?reviewed:reviewedNow,input,mode:i===0?'period':'now'});
+    for(const [key,value] of Object.entries(row.output))assert.deepEqual(result[key],value,'slice '+i+' '+key);
+    assert.deepEqual(parseArmyFile(staged.bytes,[1,2]),parseArmyFile(row.stage,[1,2]));
+    assert.equal(await readFile(path.join(directory,'army.cgi'),'utf8'),row.liveBefore);
+    if(i>=1)await commitArmySandbox({reviewed:fileReview,directory});
+    prior=result;
+  }
+  assert.equal(m.steps[0].output.armyById[2],2800);
+  assert.equal(m.steps[1].output.armyById[2],2800,'same live file, not previous staged 2800 minus 1200');
+  assert.equal(m.steps[2].output.armyById[2],1600,'next slice after commit reads 2800');
+  assert.deepEqual(parseArmyFile(await readFile(path.join(directory,'army.cgi'),'utf8'),[1,2]),parseArmyFile(m.final,[1,2]));
+}));
