@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile,rename,unlink,readdir,realpath,lstat,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {parseGuildLedger} from './original-r4-guild-ledger-file.mjs';
+import {parseGuildLedger,applyGuildPeriod} from './original-r4-guild-ledger-file.mjs';
 const pins=Object.freeze({guildsub:'4dee1edeeedf3b482b8786111e1e5d626095f8d5',config:'010e43766c1b78c7572cbc0aded2daf03dc07a1e',sub:'33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25',guild:'6593aa8a3ae4a1695c2418f12a3776f0053454ac',write:'203f33b37511e838800a45b84183af98fcf46e4c'});
 const fail=m=>{throw new RangeError('R4 guild files: '+m)};
 const reviews=new WeakSet();
@@ -24,7 +24,7 @@ async function rootFor(directory){
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-guild-'))fail('isolated sandbox required');
   return root;
 }
-async function regular(file){if(!(await lstat(file)).isFile())fail('regular file required');return readFile(file,'utf8')}
+async function regular(file){if(!(await lstat(file)).isFile())fail('regular file required');return new TextDecoder('utf-8',{fatal:true}).decode(await readFile(file))}
 async function dir(file){if(!(await lstat(file)).isDirectory())fail('real directory required');return file}
 async function exists(file){try{return await lstat(file)}catch(e){if(e.code==='ENOENT')return null;throw e}}
 function value(s){if(!/^(0|[1-9]\d*)$/.test(s)||Number(s)>1000)fail('unreviewed guild rate');return Number(s)}
@@ -63,7 +63,7 @@ function parseConfig(text){
   return {shortname:name(fields.shortname),dealrate:value(fields.dealrate),feerate:value(fields.feerate)};
 }
 const sameKeys=(a,b)=>JSON.stringify(Object.keys(a).sort())===JSON.stringify(Object.keys(b).sort());
-export async function stageGuildFiles({reviewed,directory,edits=[],shops=[]}){
+export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],shops=[]}){
   review(reviewed);const root=await rootFor(directory);
   const common=await dir(path.join(root,'common')),stage=await dir(path.join(root,'stage'));
   if(await exists(path.join(root,'commit.cgi'))||(await readdir(stage)).length)fail('pending files require recovery');
@@ -75,6 +75,12 @@ export async function stageGuildFiles({reviewed,directory,edits=[],shops=[]}){
     if(!/^[A-Za-z][A-Za-z0-9_]*\.pl$/.test(file)||!code(file.slice(0,-3)))fail('unreviewed common entry');
     definitions[file.slice(0,-3)]=parseConfig(await regular(path.join(common,file)));
   }
+  if(!Array.isArray(edits)||!Array.isArray(periods)||!Array.isArray(shops)||edits.length&&periods.length)fail('explicit edits or periods required');
+  // A period replay is limited to the existing B-50 single-member source chain.
+  for(const p of periods){
+    if(Object.keys(ledger).length!==1||!Object.hasOwn(ledger,p.id)||p.inputGuild?.feeRate!==old[p.id].feerate||p.outputGuild?.feeRate!==old[p.id].feerate)fail('unreviewed period context');
+    ledger[p.id]=applyGuildPeriod({data:ledger[p.id],...p});
+  }
   for(const {guildId,amount} of edits){
     if(!Object.hasOwn(ledger,guildId)||!Number.isSafeInteger(amount))fail('unreviewed money edit');
     const g=ledger[guildId];g.money+=amount;if(amount>0)g.in+=amount;if(amount<0)g.out-=amount;
@@ -84,12 +90,16 @@ export async function stageGuildFiles({reviewed,directory,edits=[],shops=[]}){
   const removed=Object.keys(old).filter(k=>!Object.hasOwn(definitions,k));
   const added=Object.keys(definitions).filter(k=>!Object.hasOwn(old,k));
   for(const shop of updated)if(removed.includes(shop.guild)){shop.guild='';delete shop.user._so_e}
+  const logCalls=[
+    ...removed.map(id=>[1,0,'ギルド「'+old[id].shortname+'」は滅びました。',1]),
+    ...added.map(id=>[1,0,'ギルド「'+definitions[id].shortname+'」が結成されました。',1]),
+  ];
   // MakeGuildFile does not reload %GUILD. WriteGuildData still uses old keys.
   const defBytes=prefix+Object.entries(definitions).map(([id,g])=>"'"+id+"'=>['"+g.shortname+"',"+g.dealrate+","+g.feerate+",],").join('')+');1;';
   const balBytes=Object.keys(old).map(id=>[id,...keys.flatMap(k=>[k,ledger[id][k]])].join('\t')+'\n').join('');
   await writeFile(path.join(stage,'guild.cgi'),defBytes,{flag:'wx'});
   await writeFile(path.join(stage,'guildbal.cgi'),balBytes,{flag:'wx'});
-  return {definitions,ledger,shops:updated,removed,added,committable:false,worldStateWritten:false};
+  return {definitions,ledger,shops:updated,removed,added,logCalls,committable:false,worldStateWritten:false};
 }
 export async function commitGuildFiles({reviewed,directory,abort=false}){
   review(reviewed);if(typeof abort!=='boolean')fail('invalid abort');
@@ -99,6 +109,7 @@ export async function commitGuildFiles({reviewed,directory,abort=false}){
   const m=await exists(marker);if(m&&!m.isFile())fail('invalid marker');
   if(!pending.length){if(m)await unlink(marker);return {mode:'empty',committable:false}}
   if(abort&&!m){for(const n of pending)await unlink(path.join(stage,n));return {mode:'discard',committable:false}}
+  if(!m&&pending.length!==fileNames.length)fail('incomplete stage; discard without marker');
   if(!m)await writeFile(marker,'',{flag:'wx'});
   // Deterministic sandbox order only; original readdir order is not guaranteed.
   for(const n of fileNames.filter(n=>pending.includes(n)))await rename(path.join(stage,n),path.join(root,n));

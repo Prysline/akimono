@@ -25,11 +25,9 @@ async function rootFor(directory){
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-guild-'))fail('isolated sandbox required');
   return root;
 }
-export async function persistGuildPeriod({reviewed,directory,id,inputGuild,outputGuild,edits}){
-  check(reviewed);
-  const root=await rootFor(directory),live=path.join(root,'guildbal.cgi'),stage=path.join(root,'guildbal.stage');
-  if(!(await lstat(live)).isFile())fail('regular ledger file required');
-  const data=parseGuildLedger(await readFile(live,'utf8'),id);
+/** Pure shared member projection, preserving prior ledger and period counter reset. */
+export function applyGuildPeriod({data,id,inputGuild,outputGuild,edits}){
+  data={...data};
   if(data.money<0||fields.some(k=>k!=='money'&&data[k]<0)||inputGuild?.id!==id||outputGuild?.id!==id||inputGuild.atk!==data.atk||inputGuild.def!==data.def||!Array.isArray(edits))fail('unreviewed period input');
   // Frozen period prefix resets counters before the per-shop EditGuildMoney calls.
   data.in=0;data.out=0;
@@ -41,8 +39,16 @@ export async function persistGuildPeriod({reviewed,directory,id,inputGuild,outpu
   }
   data.atk=outputGuild.atk;data.def=outputGuild.def;
   if(fields.some(k=>!integer(data[k])||(k!=='money'&&data[k]<0)))fail('invalid result');
+  return data;
+}
+export async function persistGuildPeriod({reviewed,directory,id,inputGuild,outputGuild,edits}){
+  check(reviewed);
+  const root=await rootFor(directory),live=path.join(root,'guildbal.cgi'),stage=path.join(root,'guildbal.stage');
+  if(!(await lstat(live)).isFile())fail('regular ledger file required');
+  const data=parseGuildLedger(await readFile(live,'utf8'),id);
+  const next=applyGuildPeriod({data,id,inputGuild,outputGuild,edits});
   // Explicit field order is Node's sandbox representation, NOT Perl hash order.
-  await writeFile(stage,[id,...fields.flatMap(k=>[k,data[k]])].join('\t')+'\n',{flag:'wx'});
+  await writeFile(stage,[id,...fields.flatMap(k=>[k,next[k]])].join('\t')+'\n',{flag:'wx'});
   await rename(stage,live);
   return {ledger:parseGuildLedger(await readFile(live,'utf8'),id),committable:false,worldStateWritten:false};
 }

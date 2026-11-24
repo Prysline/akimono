@@ -24,7 +24,7 @@ async function fixture(fn){
 test('actual Perl ReadGuild/ReadConfig/MakeGuildFile and ReadGuildData/EditGuildMoney/WriteGuildData agree with Node semantic disk contents; no hash order claim',async()=>fixture(async({o,directory,args})=>{
   const result=await stageGuildFiles(args);
   assert.deepEqual(result.definitions,o.definitions);assert.deepEqual(result.ledger,o.ledger);
-  assert.deepEqual(result.shops,o.afterShops);assert.deepEqual(result.removed,['old']);assert.deepEqual(result.added,['beta']);
+  assert.deepEqual(result.shops,o.afterShops);assert.deepEqual(result.removed,['old']);assert.deepEqual(result.added,['beta']);assert.deepEqual(result.logCalls,o.logs);
   assert.deepEqual(Object.keys(result.ledger).sort(),o.oldKeys);
   assert.deepEqual(parseGuildDefinition(await readFile(path.join(directory,'stage','guild.cgi'),'utf8')),parseGuildDefinition(o.definitionBytes));
   assert.deepEqual(parseGuildLedgers(await readFile(path.join(directory,'stage','guildbal.cgi'),'utf8')),parseGuildLedgers(o.ledgerBytes));
@@ -60,5 +60,14 @@ test('no marker abort discards stages, rejects invalid source/config/missing led
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
   await rm(path.join(directory,'guildbal.cgi'));
   await assert.rejects(stageGuildFiles(args),{code:'ENOENT'});
+  assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+}));
+
+test('incomplete stage without marker cannot be committed; discard preserves live files',async()=>fixture(async({o,directory,args})=>{
+  await stageGuildFiles(args);
+  await rm(path.join(directory,'stage','guildbal.cgi'));
+  await assert.rejects(commitGuildFiles(args),/incomplete stage/);
+  assert.equal(await readFile(path.join(directory,'guild.cgi'),'utf8'),o.initialDef);
+  await commitGuildFiles({...args,abort:true});
   assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
 }));

@@ -12,6 +12,7 @@ import {
 } from '../src/original-period-solo-chain.mjs';
 import {reviewGuildLedger,parseGuildLedger,persistGuildPeriod} from '../src/original-r4-guild-ledger-file.mjs';
 import {writeFile} from 'node:fs/promises';
+import {reviewGuildFiles,stageGuildFiles,commitGuildFiles,parseGuildDefinition,parseGuildLedgers} from '../src/original-r4-guild-files.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const sourcePaths={
@@ -58,22 +59,51 @@ test('B50 two periods use real Perl ledger IO and Node ledger restart',async()=>
     const live=path.join(dir,'guildbal.cgi');
     await writeFile(live,oracle.initialLedger);
     for(const row of oracle.cases){
-      assert.deepEqual(parseGuildLedger(await readFile(live,'utf8'),'guild-a'),row.ledgerBefore);
+      assert.deepEqual(parseGuildLedger(await readFile(live,'utf8'),'guild_a'),row.ledgerBefore);
       const result=projectOriginalSoloPeriodPhaseChain({reviewed,...row.input});
       assert.deepEqual(result.guildMoneyEdits,row.output.guildMoneyEdits);
       assert.deepEqual(result.guildContext,row.output.guildContext);
-      const disk=await persistGuildPeriod({reviewed:ledgerReviewed,directory:dir,id:'guild-a',inputGuild:row.input.guildContext,outputGuild:result.guildContext,edits:result.guildMoneyEdits});
+      const disk=await persistGuildPeriod({reviewed:ledgerReviewed,directory:dir,id:'guild_a',inputGuild:row.input.guildContext,outputGuild:result.guildContext,edits:result.guildMoneyEdits});
       assert.deepEqual(disk.ledger,row.ledgerAfter);
-      assert.deepEqual(disk.ledger,parseGuildLedger(row.ledgerBytes,'guild-a'));
+      assert.deepEqual(disk.ledger,parseGuildLedger(row.ledgerBytes,'guild_a'));
       assert.equal(disk.committable,false);
     }
     const row=oracle.cases[1],before=await readFile(live,'utf8');
-    await assert.rejects(persistGuildPeriod({reviewed:ledgerReviewed,directory:dir,id:'guild-a',inputGuild:{...row.input.guildContext,atk:-1},outputGuild:row.output.guildContext,edits:[]}),/unreviewed period input/);
+    await assert.rejects(persistGuildPeriod({reviewed:ledgerReviewed,directory:dir,id:'guild_a',inputGuild:{...row.input.guildContext,atk:-1},outputGuild:row.output.guildContext,edits:[]}),/unreviewed period input/);
     assert.equal(await readFile(live,'utf8'),before);
   }finally{await rm(dir,{recursive:true,force:true})}
 });
 test('guild ledger rejects drift, duplicate keys and incomplete rows',()=>{
   assert.throws(()=>reviewGuildLedger(ledgerSource+' '),/source drift/);
-  assert.throws(()=>parseGuildLedger('guild-a\tmoney\t1\n','guild-a'),/shape/);
-  assert.throws(()=>parseGuildLedger('guild-a\tmoney\t1\tmoney\t2\tin\t0\tatk\t0\tdef\t0\n','guild-a'),/invalid ledger field/);
+  assert.throws(()=>parseGuildLedger('guild_a\tmoney\t1\n','guild_a'),/shape/);
+  assert.throws(()=>parseGuildLedger('guild_a\tmoney\t1\tmoney\t2\tin\t0\tatk\t0\tdef\t0\n','guild_a'),/invalid ledger field/);
+});
+
+test('B50 two periods in one isolated source turn keep live ledger unchanged until final guild commit',async()=>{
+  const oracle=JSON.parse(execFileSync('perl',['original-r4-b50-guild-ledger-probe.pl','--one-turn'],{cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'}));
+  const files=Object.fromEntries(await Promise.all(['guildsub','config','sub','guild','write'].map(async k=>[k,await readFile(path.join(root,'modern/tests/original-perl',(k==='write'?'':'pinned-')+k+'.cgi'),'utf8')])));
+  const fileReview=reviewGuildFiles(files);
+  const directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-guild-'));
+  try{
+    const live=path.join(directory,'guildbal.cgi');
+    await mkdir(path.join(directory,'common'));await mkdir(path.join(directory,'stage'));
+    await writeFile(path.join(directory,'common','guild_a.pl'),oracle.guildConfig);
+    await writeFile(path.join(directory,'guild.cgi'),oracle.initialDefinition);
+    await writeFile(live,oracle.initialLedger);
+    const periods=[];
+    for(const row of oracle.cases){
+      const result=projectOriginalSoloPeriodPhaseChain({reviewed,...row.input});
+      assert.deepEqual(result.guildMoneyEdits,row.output.guildMoneyEdits);
+      assert.deepEqual(result.guildContext,row.output.guildContext);
+      periods.push({id:'guild_a',inputGuild:row.input.guildContext,outputGuild:result.guildContext,edits:result.guildMoneyEdits});
+    }
+    const args={reviewed:fileReview,directory,periods};
+    const staged=await stageGuildFiles(args);
+    assert.deepEqual(staged.ledger.guild_a,oracle.cases[1].ledgerAfter);
+    assert.equal(await readFile(live,'utf8'),oracle.initialLedger);
+    await commitGuildFiles(args);
+    assert.deepEqual(parseGuildLedgers(await readFile(live,'utf8')),parseGuildLedgers(oracle.finalLedger));
+    assert.deepEqual(parseGuildDefinition(await readFile(path.join(directory,'guild.cgi'),'utf8')),parseGuildDefinition(oracle.finalDefinition));
+    assert.equal(staged.committable,false);
+  }finally{await rm(directory,{recursive:true,force:true})}
 });

@@ -74,17 +74,19 @@ sub RecordedEditGuildMoney {
   push @GUILD_IO_CALLS,[@_];
   return OriginalEditGuildMoney(@_);
 }
-our ($GUILDBAL_FILE,$TEMP_DIR);
+our ($GUILDBAL_FILE,$GUILD_FILE,$TEMP_DIR,$DATA_DIR,$COMMIT_FILE,$FILE_EXT,$GUILDIDX_name,$GUILDIDX_dealrate,%GUILD_DETAIL);
+my $oneTurn=(@ARGV&&$ARGV[0] eq '--one-turn');
 my $ledgerRoot=tempdir('akimono-r4-guild-XXXX',TMPDIR=>1,CLEANUP=>1);
-$GUILDBAL_FILE='guildbal.cgi';
+$GUILDBAL_FILE='guildbal.cgi';$GUILD_FILE='guild.cgi';$COMMIT_FILE='commit.cgi';$FILE_EXT='.cgi';$DATA_DIR=$ledgerRoot;
 $TEMP_DIR="$ledgerRoot/stage";
 mkdir $TEMP_DIR or die $!;
 sub OpenAndCheck {open(OUT,'>:encoding(UTF-8)',$_[0]) or die $!}
+sub RenameAndCheck {rename($_[0],$_[1]) or die $!}
 my $payoutFolder=tempdir('akimono-r4-period-dragon-XXXX',TMPDIR=>1,CLEANUP=>1);
 $COMMON_DIR=$payoutFolder;
 sub GetPath {
-  return "$ledgerRoot/$GUILDBAL_FILE" if @_==1&&$_[0] eq $GUILDBAL_FILE;
-  return "$TEMP_DIR/$GUILDBAL_FILE" if @_==2&&$_[0] eq $TEMP_DIR&&$_[1] eq $GUILDBAL_FILE;
+  return "$ledgerRoot/$_[0]" if @_==1&&grep {$_ eq $_[0]} ($GUILDBAL_FILE,$GUILD_FILE,$COMMIT_FILE);
+  return "$TEMP_DIR/$_[1]" if @_==2&&$_[0] eq $TEMP_DIR&&($_[1] eq $GUILDBAL_FILE||$_[1] eq $GUILD_FILE);
   die 'R4 dragon-period only permits the original drapay file path'
     unless @_==2&&$_[0] eq $COMMON_DIR&&
       $_[1] eq 'drapay-'.$MYDIR;
@@ -96,10 +98,18 @@ my $guildSource=source('pinned-guild.cgi');
 $guildSource=~s/sub EditGuildMoney\b/sub OriginalEditGuildMoney/ or die 'guild source moved';
 eval "no strict;no warnings;".$guildSource or die $@;
 sub EditGuildMoney { RecordedEditGuildMoney(@_) }
-sub ledgerSnapshot { return {map {$_=>0+$GUILD_DATA{'guild-a'}{$_}} qw(money in out atk def)} }
+eval 'no strict;no warnings;'.source('pinned-guildsub.cgi') or die $@;
+for my $pair(['pinned-config.cgi','ReadConfig'],['pinned-sub.cgi','GetString'],['write.cgi','DataCommitOrAbort']){
+  my $s=source($pair->[0]);my($fn)=$s=~/(^sub $pair->[1]\n\{[\s\S]*?^\}\n)/m;
+  die 'source function missing' unless $fn;
+  eval "no strict;no warnings;$fn\n1;" or die $@;
+}
+sub putGuildFile {my($p,$s)=@_;open my $f,'>:encoding(UTF-8)',$p or die $!;print $f $s;close $f or die $!}
+sub getGuildFile {my($p)=@_;open my $f,'<:encoding(UTF-8)',$p or die $!;local $/;my $s=<$f>;close $f;return $s}
+sub ledgerSnapshot { return {map {$_=>0+$GUILD_DATA{'guild_a'}{$_}} qw(money in out atk def)} }
 sub saveLedger {
   WriteGuildData();
-  rename(GetPath($TEMP_DIR,$GUILDBAL_FILE),GetPath($GUILDBAL_FILE)) or die $!;
+  DataCommitOrAbort(0);
   open my $fd,'<:encoding(UTF-8)',GetPath($GUILDBAL_FILE) or die $!;
   local $/;my $bytes=<$fd>;close $fd;
   ReadGuildData();
@@ -215,7 +225,7 @@ my $originalShop={
   time=>956800,rank=>5000,money=>100000,rankingcount=>0,
   profitstock=>0,point=>0,
   item=>\@stock,showcasecount=>1,showcase=>[10],price=>[5000],
-  guild=>'guild-a',dragon=>0,drmoney=>0,dignity=>26,
+  guild=>'guild_a',dragon=>0,drmoney=>0,dignity=>26,
   saletoday=>10000,paytoday=>10000,taxtoday=>0,costtoday=>17.875,
   saleyesterday=>0,payyesterday=>0,taxyesterday=>0,costyesterday=>0,
   itemtoday=>{10=>2},itemyesterday=>{},
@@ -224,8 +234,13 @@ my $originalShop={
 $STATE=dclone($initialTown);
 $DTpeople=500000;$DTusercount=1;
 @DT=(dclone($originalShop));%DTevent=();
-%GUILD=('guild-a'=>[50]);$GUILDIDX_feerate=0;
-%GUILD_DATA=('guild-a'=>{
+my $guildConfig="shortname=來源公會\ndealrate=10\nfeerate=50\n";
+putGuildFile("$COMMON_DIR/guild_a.pl",$guildConfig);
+my $initialDefinition="use utf8;\n".'$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;%GUILD=('."'guild_a'=>['來源公會',10,50,],);1;";
+putGuildFile(GetPath($GUILD_FILE),$initialDefinition);
+eval $initialDefinition or die $@;
+ReadGuild('');
+%GUILD_DATA=('guild_a'=>{
   money=>1000000,atk=>1000,def=>500,in=>0,out=>0,
 });
 my $initialLedger=saveLedger();
@@ -244,9 +259,9 @@ for my $r (@rounds){
   my $inputTown=dclone($STATE);
   my $inputPeople=0+$DTpeople;
   my $guildInput={
-    id=>'guild-a',feeRate=>50,
-    atk=>0+$GUILD_DATA{'guild-a'}{atk},
-    def=>0+$GUILD_DATA{'guild-a'}{def},
+    id=>'guild_a',feeRate=>50,
+    atk=>0+$GUILD_DATA{'guild_a'}{atk},
+    def=>0+$GUILD_DATA{'guild_a'}{def},
   };
   my $ledgerBefore=ledgerSnapshot();
   @GUILD_IO_CALLS=();@TECH_LOGS=();
@@ -275,7 +290,12 @@ for my $r (@rounds){
   my %remain=map{$_=>1}@$sessionAfter;
   die 'Original in-place prefix consumed wrong RNG sequence'
     unless $B50_USED==4+@{$r->{tech}}&&!@B50_SAMPLES;
-  my $ledgerBytes=saveLedger();
+  MakeGuildFile();
+  my $ledgerBytes;
+  if(!$oneTurn){$ledgerBytes=saveLedger()}
+  else {
+    die 'early live ledger write in one-turn fixture' unless getGuildFile(GetPath($GUILDBAL_FILE)) eq $initialLedger;
+  }
   push @results,{
     ledgerBefore=>$ledgerBefore,ledgerAfter=>ledgerSnapshot(),ledgerBytes=>$ledgerBytes,
     input=>{
@@ -300,9 +320,9 @@ for my $r (@rounds){
       drawsUsed=>$B50_USED,
       dragonPayoutFileConsumed=>JSON::PP::true,
       guildContext=>{
-        id=>'guild-a',feeRate=>50,
-        atk=>0+$GUILD_DATA{'guild-a'}{atk},
-        def=>0+$GUILD_DATA{'guild-a'}{def},
+        id=>'guild_a',feeRate=>50,
+        atk=>0+$GUILD_DATA{'guild_a'}{atk},
+        def=>0+$GUILD_DATA{'guild_a'}{def},
       },
       guildMoneyEdits=>[map{{
         guildId=>$_->[0],amount=>0+$_->[1],
@@ -329,9 +349,11 @@ for my $r (@rounds){
     },
   };
 }
+my $finalLedger=$oneTurn?saveLedger():getGuildFile(GetPath($GUILDBAL_FILE));
 print JSON::PP->new->canonical->utf8->encode({
+  finalLedger=>$finalLedger,initialDefinition=>$initialDefinition,guildConfig=>$guildConfig,finalDefinition=>getGuildFile(GetPath($GUILD_FILE)),
   source=>'two actual frozen period.cgi prefixes with true original write.cgi CloseShop status/archive/temp-session unlink, subsequent guild/dragon/dignity accounting and genuine SortDT inactive-store removal',
-  scope=>'two real original pre-backup periods; true status=0 shop removal and temp session unlink, external SetUserData/WriteErrorLog recorded; real guild ledger read/write with isolated rename; no atomic disk WorldState commit',
+  scope=>'two real original pre-backup periods; true status=0 shop removal and temp session unlink, external SetUserData/WriteErrorLog recorded; real guild definition and ledger read/write with original DataCommitOrAbort and sandbox rename; no atomic disk WorldState commit',
   initialLedger=>$initialLedger,
   itemLimits=>[map {0+$limits{$_}} 1..79],
   cases=>\@results,
