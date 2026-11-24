@@ -14,11 +14,12 @@ import {fileURLToPath} from 'node:url';
 import {encodeMemorySnapshot,validateMemoryWorld} from '../src/game-core-contract.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-async function boot(directory){
+async function boot(directory,{reviewedTime=false,now='1000000'}={}){
   const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
     cwd:join(root,'modern'),env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
-      AKIMONO_E2E_FIXED_NOW:'1000000',AKIMONO_E2E_DETERMINISTIC_RNG:'1',
+      AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:reviewedTime?'0':'1',
+      AKIMONO_REVIEWED_NORMAL_TIME:reviewedTime?'1':'0',
     },stdio:['ignore','pipe','pipe'],
   });
   let stderr='';
@@ -96,9 +97,9 @@ async function denied(s,fields,status=409){
   assert.equal(result.status,status,JSON.stringify(result));
   assert.deepEqual((await s.state()).world,before.world);
 }
-async function restartLoad(s,dir,servers){
+async function restartLoad(s,dir,servers,options){
   await s.stop();
-  const next=await boot(dir);servers.push(next);
+  const next=await boot(dir,options);servers.push(next);
   const loaded=await next.post('/api/load');
   assert.equal(loaded.code,'LOADED',JSON.stringify(loaded));
   return {s:next,loaded};
@@ -366,4 +367,105 @@ test('P3 real accessory book purchase and single-skill checkpoint persist; dual 
   assert.equal(step.loaded.state.shop.exp['37'],50);
   assert.equal(step.loaded.state.save.generation,2);
   for(let i=0;i<4;i++)await denied(s,{itemId:66,useId:i});
+});
+
+test('P3 reviewed nonsettling time: legitimate dual skills, iron accessory and two durable checkpoints',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-p3-reviewed-accessory-'));
+  const servers=[];
+  t.after(async()=>{for(const server of servers)await server.stop();
+    await rm(dir,{recursive:true,force:true});});
+  // A legal fresh-world clock near the start of a source period. No edits
+  // to inventory, money, EXP, time, event state, or random samples.
+  const options={reviewedTime:true,now:'900000'};
+  let s=await boot(dir,options);servers.push(s);
+  await open(s);
+  const initial=await s.state();
+  assert.equal(initial.reviewedTimeMode,true);
+  assert.equal(initial.world.nowSeconds-initial.shop.time,43200);
+  let ticks=0;
+  const tick=async()=>{
+    const before=await s.state();
+    assert.ok(++ticks<=34,'nonsettling source time budget exhausted');
+    const result=await s.post('/api/advance-reviewed-time',{
+      expectedRevision:before.world.revision,minutes:60,
+    });
+    assert.equal(result.code,'COMMITTED',JSON.stringify(result));
+    assert.equal(result.state.world.nowSeconds,before.world.nowSeconds+3600);
+    assert.equal(result.details.sourceTrace.eventOrder.length,17);
+    assert.ok(result.state.world.period.eventState!==null);
+    assert.equal(result.state.world.period.settledCount,0);
+    return result.state;
+  };
+  const enoughTime=async seconds=>{
+    for(;;){
+      const state=await s.state();
+      if(state.world.nowSeconds-state.shop.time>=seconds)return state;
+      await tick();
+    }
+  };
+  const market=async(id,count=1)=>{
+    for(;;){
+      const state=await s.state();
+      const offer=state.marketOffers.find(x=>x.itemId===id);
+      if(offer?.canBuy&&offer.marketStock>=count){
+        await enoughTime(1200);
+        return buy(s,id,count);
+      }
+      await tick();
+    }
+  };
+  const mine=async(useId,count=1)=>{
+    await enoughTime(count*3600);
+    if((await s.state()).shop.item[8]===0)await market(9);
+    const result=await use(s,9,useId,count);
+    assert.equal(result.details.effectiveCount,count);
+    return result;
+  };
+  await use(s,79,0);await use(s,79,3);
+  await mine(0,3);
+  for(let i=0;i<4&&(await s.state()).shop.item[4]<60;i++)await mine(0);
+  for(let i=0;i<4&&(await s.state()).shop.item[5]<5;i++)await mine(1);
+  for(let i=0;i<4&&(await s.state()).shop.item[6]<3;i++)await mine(2);
+  let ready=await s.state();
+  assert.ok(ready.shop.item[4]>=60&&ready.shop.item[5]>=5&&ready.shop.item[6]>=3);
+  await enoughTime(21600);
+  const smith=await use(s,37,0);
+  assert.equal(smith.state.shop.item[17],1);
+  await market(66);
+  await denied(s,{itemId:66,useId:0});
+  await market(37);
+  await market(8,30);
+  await enoughTime(21600);
+  const magic=await use(s,37,1);
+  assert.equal(magic.state.shop.item[18],1);
+  assert.equal(magic.state.shop.exp['37'],100);
+  assert.ok(magic.state.world.nowSeconds>initial.world.nowSeconds);
+  await enoughTime(2700);
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  const before=await s.state();
+  const crafted=await use(s,66,0);
+  assert.equal(crafted.details.effectiveCount,1);
+  assert.equal(crafted.details.experienceGain,20);
+  assert.equal(crafted.state.shop.item[17],1);
+  assert.equal(crafted.state.shop.item[18],1);
+  assert.equal(crafted.state.shop.item[4],before.shop.item[4]-20);
+  assert.ok(crafted.state.shop.item[66]>before.shop.item[66]);
+  await tick();await enoughTime(2700);
+  const again=await use(s,66,0);
+  assert.equal(again.state.shop.exp['66'],40);
+  assert.equal(again.state.shop.item[17],1);
+  assert.equal(again.state.shop.item[18],1);
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.save.generation,2);
+  const record=JSON.parse(await readFile(join(dir,'world-a.json'),'utf8'));
+  const proof=JSON.parse(record.careerProof);
+  assert.ok(proof.commands.some(x=>x.kind==='advance-reviewed-world-time'&&x.trace));
+  assert.ok(proof.commands.some(x=>x.kind==='use-item'&&x.itemId===37&&x.useId===0));
+  assert.ok(proof.commands.some(x=>x.kind==='use-item'&&x.itemId===37&&x.useId===1));
+  assert.ok(proof.commands.some(x=>x.kind==='use-item'&&x.itemId===66&&x.useId===0));
+  await denied(s,{itemId:66,useId:1});
 });
