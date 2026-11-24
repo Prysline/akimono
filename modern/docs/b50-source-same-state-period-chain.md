@@ -2,7 +2,7 @@
 
 ## 2026-11-24｜與原版 DataWrite 真檔案子集合的接合界線
 
-本輪在 modern/src/original-r4-data-write-files.mjs 建立凍結原版 play.cgi 32 欄＋7 子段的受審核編碼與隔離真 OS 寫入，modern/tests/original-perl/original-r4-data-write-files-probe.pl 以同一磁碟檔真正跨兩期 DataWrite/commit/DataRead；Node 逐位元組比對並驗證 rename 失敗與 marker 恢復。**這不是 B-50 期末純投影自動擁有的欄位**：projectOriginalSoloPeriodPhaseChain 缺完整原版持久化來源快照及 guildbal/army/log 同步檔，不能自訂填空把其 nonCommittable:true 結果送入該 writer 當成正式交易。下一步要將既有 B-50 同一店/城市的全原版存檔與外部檔證據直接接上來源 writer。詳見 [外部副作用對映](r4-external-file-effects-contract.md)。B-50 本身未被升級為可提交。
+本輪在 modern/src/original-r4-data-write-files.mjs 建立凍結原版 play.cgi 32 欄＋7 子段的受審核編碼與隔離真 OS 寫入，modern/tests/original-perl/original-r4-data-write-files-probe.pl 以同一磁碟檔真正跨兩期 DataWrite/commit/DataRead；Node 逐位元組比對並驗證 rename 失敗與 marker 恢復。**這不是 B-50 期末純投影自動擁有的欄位**：projectOriginalSoloPeriodPhaseChain 缺完整原版持久化來源快照及 guildbal/army/log 同步檔，不能自訂填空把其 nonCommittable:true 結果送入該 writer 當成正式交易。新 tests/r4-source-b50-archive-disk-chain.test.mjs 已將此 B-50 第二期原版真 CloseShop effect 接往 Node 實際 log/delete.cgi，對照原版 CloseShop payload。**只代表封存單一副作用接合**，不等於完整 32 欄主檔＋guildbal＋army＋Session 共同提交。下一步仍須同一 file-set 和世界世代的安全持久化。詳見 [外部副作用對映](r4-external-file-effects-contract.md)。B-50 本身未被升級為可提交。
 
 
 > 工作分支：\`test/task02-baseline-on-s1\`。**僅為固定原版期末程式的整合來源證據，尚不可提交玩家 WorldState、尚未開放36小時跨期。** 不得以這份測試代替真實的原版 \`inc-turn.cgi\` 全部事件、商品回呼、備份及持續營業。

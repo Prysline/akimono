@@ -2,7 +2,7 @@
 
 ## 2026-11-24｜R4 第一階段真實資料寫入（受限增量，非正式完成）
 
-已重新確認 PR #1 Open/Draft，最新驗收依每次提交後同 SHA Push/PR Actions。新 [外部檔案來源契約](r4-external-file-effects-contract.md) 追明 inc-turn 原序及 DataWrite、SetUserData（此版 no-op）、EditGuildMoney（記憶體）與 WriteGuildData、公會檔、軍隊、SetTownData、WriteErrorLog 的真檔案差異。新增單店 DataWrite 凍結 Perl 真 File::Temp 兩期 commit/reload、Node 真檔案位元組差分／rename 失敗與恢復；不假裝 B-50 已完成可提交真期末。CloseShop 真 log、公會/軍隊真檔、DataFilesBackup 失敗、多檔整合、HTTP/WorldState/CAS 36h 正向閉環仍缺；R2 A～E、R3 受控結論保留，R4/R5/R0/R1 全量不結案。
+已重新確認 PR #1 Open/Draft，最新驗收依每次提交後同 SHA Push/PR Actions。新 [外部檔案來源契約](r4-external-file-effects-contract.md) 追明 inc-turn 原序及 DataWrite、SetUserData（此版 no-op）、EditGuildMoney（記憶體）與 WriteGuildData、公會檔、軍隊、SetTownData、WriteErrorLog 的真檔案差異。新增單店 DataWrite 凍結 Perl 真 File::Temp 兩期 commit/reload、Node 真檔案位元組差分／rename 失敗與恢復；不假裝 B-50 已完成可提交真期末。CloseShop 真 log 在隔離目錄已新增真 Perl/Node 差分與 B-50 封存 sink；其與主檔／Session 正式交易、公會/軍隊真檔、DataFilesBackup 失敗、多檔整合、HTTP/WorldState/CAS 36h 正向閉環仍缺；R2 A～E、R3 受控結論保留，R4/R5/R0/R1 全量不結案。
 
 
 **2026-11-23｜R4 本輪（實際 HTTP CAS 防線＋關店觸發來源差分；R4 尚未完成）：** 已在本機 HTTP 的初始化／磁碟載入改用來源審閱版記憶體 CAS，連直接 compareAndSwap 都會重新核對 frozen 36h／+3h clock 與合法 v2 期別；已知單 EVENT 在零秒內憑空生效也被拒絕。實際 HTTP 初始世界→開店→59 PLUS→進貨→跨期拒絕→雙世代 save→Node restart→load→再次拒絕通過。新增凍結期末店主過期 `CloseShop` 判斷九個 Perl／Node 差分案（原始呼叫／日誌，未模擬真刪店）。程式 SHA `78a590676f921c1c83f0ef3372caa90ae41e818b` 同 SHA Push #45200662255／PR #45200680932 成功，Node 1110/1110、Perl 2225/2225（72 檔）。**正向來源期末 WorldState／CAS／HTTP 仍未完成，不允許 R4 退出或合併 PR**。詳見 [R4 退出清冊](r4-exit-audit.md)。

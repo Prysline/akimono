@@ -2,9 +2,9 @@
 
 ## 2026-11-24｜R4 第一階段外部資料真實寫入增量（不等於退出）
 
-原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile、WriteErrorLog 的真磁碟整合仍未完成，不能將原有 recorder 當成真 IO。
+原版外部 I/O 呼叫、資料線路、失敗及恢復對映新增於 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)。確認固定版本 SetUserData 是 no-op、EditGuildMoney 與 SetTownData 是記憶體操作；實際 guildbal 在 WriteGuildData、town 在 DataWrite 才會分期落盤。ReadGuild、ReadGuildData、ReadArmy/WriteArmy、MakeGuildFile 的真磁碟整合仍未完成；WriteErrorLog 已補原版真檔案 append／rotate／失敗差分與受限 B-50 封存 sink，但正式跨檔交易仍未完成，不能將原有 recorder 當成真 IO。
 
-新增 source-pinned、單活躍店、79 ITEM、32/11 欄與最多單鍵 hash 的 DataWrite 編碼及隔離真檔 writer；新 Perl probe 真執行 frozen DataWrite → DataCommitOrAbort → DataRead 同檔兩期，Node 比較原始位元組、測試失敗保留 marker 與重新恢復。這是受限共享寫入介面證據，**不直接接入 B-50 的完整期末快照或 CAS**。所有新輸出維持 committable:false，正式 R4/R5/R0/R1 仍未退出。專項測試與整套回歸須以最終同 SHA Actions 驗收。
+新增 source-pinned、單活躍店、79 ITEM、32/11 欄與最多單鍵 hash 的 DataWrite 編碼及隔離真檔 writer；新 Perl probe 真執行 frozen DataWrite → DataCommitOrAbort → DataRead 同檔兩期，Node 比較原始位元組、測試失敗保留 marker 與重新恢復。這是受限共享寫入介面證據；另有原版 WriteErrorLog 真 append／rotate／缺目錄後半關店差分及 B-50 第二期 CloseShop effect → 真 Node log sink 接合。**尚未接入 B-50 的完整主存檔或 WorldState/CAS**。所有新輸出維持 committable:false，正式 R4/R5/R0/R1 仍未退出。專項測試與整套回歸須以最終同 SHA Actions 驗收。
 
 
 本清冊只記錄已可證明的原版來源行為與**尚未通過的真正 R4 退出條件**。任一驗收工作包 Push／PR 雙 CI 綠燈不等於整體 R4 完成。R4 必須能在共同 GameCore／StreetModule／WorldState 下執行真跨期經營、可靠保存和 HTTP 路徑，並對原版 Perl 具可重現、跨階段、跨狀態的來源差分；不可用局部純投影或測試替身冒充。

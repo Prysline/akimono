@@ -7,9 +7,11 @@
 | src/original-r4-data-write-files.mjs | write.cgi::DataWrite、inc-func.cgi::DataRead/AutoVar、core-detail.cgi::SortDT；不能憑空假定 Perl hash 順序或多檔原子 | 原版 4 Git blob SHA + 32/11 欄契約，限定單活店、79 ITEM、0/1-key map，受限暫存檔寫入、實際 rename/recovery；committable:false |
 | tests/original-perl/original-r4-data-write-files-probe.pl 及 .t | 人工 expected 冒充原版寫檔；兩期 reset 造成假延續 | 執行未修改原版 DataWrite / DataCommitOrAbort / DataRead，File::Temp 兩期同一 live play.cgi，確認原始 stage/live、已停業店排除 |
 | tests/r4-source-data-write-files.test.mjs | JS 假寫檔、UTF-8 位元組差異、失敗被當成功、非法 hash 排列 | 原版實際檔案 Perl 比較，Node 真 stage/rename、dest 佔用導致失敗保留 marker、恢復、abort unlink；原回歸不刪 |
+| src/original-r4-close-shop-archive-file.mjs；tests/r4-source-close-shop-archive-file.test.mjs；tests/original-perl/original-r4-close-shop-archive-file-probe.pl 與 .t | 原版關店封存被當 recorder，寫檔失敗被誤報成功 | 原版 pinned-user/error 真執行 CloseShop＋WriteErrorLog 與 Node 真 UTF-8 append/rotate/missing-dir 逐內容對照，失敗不會變成成功 receipt |
+| tests/r4-source-b50-archive-disk-chain.test.mjs | isolated 封存測試未連到 B-50 | 直接從 B-50 兩期同一店／城市的 actualCloseEffect 寫真 Node log，仍 nonCommittable |
 | docs/r4-external-file-effects-contract.md | 將 SetUserData/EditGuildMoney/SetTownData recorder 當磁碟交易、混淆 DataRead 與不存在 read.cgi | 實際來源定義／呼叫、讀寫資料、格式、失敗與未實作邊界明列；B-13/14/15 保留 |
 
-正式 B-50 共同寫入、完整 CloseShop 封存、公會/軍隊、WorldState/CAS/HTTP、R0/R1 全量仍是未通過項目。
+正式 B-50 跨檔共同交易、完整 CloseShop 原子封存、公會/軍隊、WorldState/CAS/HTTP、R0/R1 全量仍是未通過項目。
 
 
 **範圍：** 僅凍結原版 `inc-turn.cgi` 時間切割與 R3 既有跨期拒絕前置檢查。這不是 R0／R1 全量清冊，也不是 R4 結案。原有測試不刪減。
