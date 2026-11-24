@@ -7,7 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn,execFileSync} from 'node:child_process';
 import {createLocalWorldSaveStore,LOCAL_SAVE_FORMAT}
-  from '../src/local-world-save-store.mjs';
+  from './support/legacy-world-save-store.mjs';
 import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand,
   encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
@@ -151,7 +151,7 @@ test('B-43 source-backed saved world rejects arbitrary stock and integrity misma
   assert.throws(()=>store.load(),/存檔損毀/);
 });
 async function boot(directory,{legacyFixtureRandom=true}={}){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:join(root,'modern'),
     env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:'1000000',

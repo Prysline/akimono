@@ -17,7 +17,7 @@ import {encodeMemorySnapshot,validateMemoryWorld}
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 async function boot(directory){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:join(root,'modern'),env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:'1000000',

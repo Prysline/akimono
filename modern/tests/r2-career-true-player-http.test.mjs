@@ -15,7 +15,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 async function start(dir){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:join(root,'modern'),
     env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:dir,
       AKIMONO_E2E_FIXED_NOW:'1000000',

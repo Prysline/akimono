@@ -1,7 +1,7 @@
 /**
  * B-43 local-only browser adapter. No public server or authentication.
  * All authoritative changes pass GameCore -> StreetModule -> WorldState CAS.
- * "供貨子步驟" calls the reviewed 59-item original PLUS fragment, not a turn.
+ * Only complete reviewed normal time is admitted; no PLUS-only supply.
  */
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
 import {projectOriginalUseTransaction}
@@ -67,7 +67,7 @@ const streetModule=createStandardStreetModule({
   originalUseSource,originalItemHelperSource,
   enableReviewedNormalTime:true,
 });
-if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
+if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
   .every(c=>streetModule.capabilities.includes(c)))
   throw Error('R2-E runtime source-review capabilities missing');
@@ -90,7 +90,7 @@ function createInitialWorld({worldId,nowSeconds}){
     period:createOriginalPeriodSeed(reviewedPeriodSeed)});
 }
 // The player never supplies this history or RNG; only committed local commands
-// are recorded. Unsupported actions invalidate the proof, not the old save.
+// are recorded. Unsupported actions are rejected before CAS.
 let repo=null,careerProof=null,liveGeneration=0;
 function verifyCareerDraws(world,command){
   if(command.kind==='use-item'){
@@ -99,9 +99,7 @@ function verifyCareerDraws(world,command){
   }
   return !Object.hasOwn(command,'randomDraws');
 }
-// Reviewed time mode uses the existing P3 ordinary command policy, never
-// the R4-only narrow registry or PLUS-only supply history. Legacy saves
-// remain available in legacy mode; migration requires separate proof.
+// Single source-history player runtime. Old development records are not migrated.
 const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule);
 const verifyOrdinaryDraws=verifyCareerDraws;
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};

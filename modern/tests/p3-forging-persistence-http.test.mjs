@@ -15,7 +15,7 @@ import {encodeMemorySnapshot,validateMemoryWorld} from '../src/game-core-contrac
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 async function boot(directory,{reviewedTime=false,now='1000000'}={}){
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const child=spawn(process.execPath,[reviewedTime?'scripts/dev-local.mjs':'tests/support/legacy-dev-local.mjs'],{
     cwd:join(root,'modern'),env:{...process.env,
       AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
       AKIMONO_E2E_FIXED_NOW:now,AKIMONO_E2E_DETERMINISTIC_RNG:reviewedTime?'0':'1',

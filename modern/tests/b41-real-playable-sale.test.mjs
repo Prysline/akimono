@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {execFileSync,spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {tmpdir} from 'node:os';
 import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand}
   from '../src/game-core-contract.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
@@ -141,9 +142,11 @@ test('B-41 no showcase and stale CAS cannot fabricate sales',()=>{
   assert.equal(JSON.stringify(repository.read()),JSON.stringify(before));
 });
 test('B-41 HTTP interface performs real CAS buy -> shelf -> sourced sale, with visible minute controls',async t=>{
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const directory=await mkdtemp(path.join(tmpdir(),'akimono-b41-historical-'));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:path.join(root,'modern'),
-    env:{...process.env,AKIMONO_PORT:'0',AKIMONO_E2E_FIXED_NOW:'1000000',
+    env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:'1000000',
       AKIMONO_E2E_DETERMINISTIC_RNG:'1'},
     stdio:['ignore','pipe','pipe'],
   });
