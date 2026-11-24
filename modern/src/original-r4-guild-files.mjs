@@ -49,7 +49,7 @@ export function parseGuildLedgers(text){
   }
   return rows;
 }
-function parseConfig(text){
+export function parseGuildConfig(text){
   if(!text.endsWith('\n')||text.includes('\r'))fail('unreviewed config line ending');
   const fields={};
   for(let line of text.split('\n').slice(0,-1)){
@@ -73,7 +73,7 @@ export async function stageGuildFiles({reviewed,directory,edits=[],periods=[],sh
   const definitions={};
   for(const file of (await readdir(common)).sort()){
     if(!/^[A-Za-z][A-Za-z0-9_]*\.pl$/.test(file)||!code(file.slice(0,-3)))fail('unreviewed common entry');
-    definitions[file.slice(0,-3)]=parseConfig(await regular(path.join(common,file)));
+    definitions[file.slice(0,-3)]=parseGuildConfig(await regular(path.join(common,file)));
   }
   if(!Array.isArray(edits)||!Array.isArray(periods)||!Array.isArray(shops)||edits.length&&periods.length)fail('explicit edits or periods required');
   // A period replay is limited to the existing B-50 single-member source chain.
