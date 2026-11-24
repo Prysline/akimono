@@ -21,18 +21,24 @@ export const MAX_CAREER_COMMANDS=128;
 const recipes=new Map([
   [9,[0,1,2]],[12,[0,1,2,3]],[14,[0]],[15,[0,1,2,3,4]],
   [16,[0,1]],[17,[0,1,2,3]],[25,[0,1]],
-  [79,[0,1,3,4]],[78,Array.from({length:14},(_,i)=>i)],
-  // P3 first-stage: source gift/market kit, blacksmith or magic training,
-  // then the four iron recipes. Advanced recipes stay outside this proof.
-  [37,[0,1]],[20,[0]],[21,[0]],[22,[0]],[23,[0]],
+  [79,[0,1,2,3,4]],[78,Array.from({length:14},(_,i)=>i)],
+  // P3 source prerequisites and manufacture, via the SAME full replay.
+  // Listing a command never grants time, materials, NEED or EXP: the
+  // committed GameCore transaction and exact server RNG are still required.
+  [10,[0,1,2,3,4,5,6,7]],[37,[0,1,2,3]],
+  [20,[0,1,2,3]],[21,[0,1,2,3]],[22,[0,1,2,3]],
+  [23,[0,1,2,3]],[66,[0,1,2,3]],
 ]);
-const buyIds=[8,14,15,16,17,20,21,22,23,37,78];
+const buyIds=[8,9,10,12,14,15,16,17,20,21,22,23,30,32,37,66,78];
 // Do not require an unrelated career change to prove genuine P3 manufacture.
 // Magic training alone retains the older B-43 envelope; blacksmith training
 // and forging need complete source history even without #78.
+// P3 books require it at purchase, including checkpoints before any craft.
 export function requiresReviewedHistory(c){
-  return c?.kind==='use-item'&&(c.itemId===78||
-    (c.itemId===37&&c.useId===0)||[20,21,22,23,66].includes(c.itemId));
+  if(c?.kind==='market-buy')return [20,21,22,23,66].includes(c.itemId);
+  return c?.kind==='use-item'&&(c.itemId===78||c.itemId===10||
+    (c.itemId===79&&c.useId===2)||
+    (c.itemId===37&&c.useId!==1)||[20,21,22,23,66].includes(c.itemId));
 }
 export function isCareerReplayCommand(c){
   if(!object(c)||!int(c.expectedRevision))return false;
