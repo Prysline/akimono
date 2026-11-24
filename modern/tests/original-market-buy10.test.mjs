@@ -127,7 +127,7 @@ test('B-40 HTTP UI serves Traditional Chinese pages and actual CAS market purcha
   const directory=await mkHistoricalDir(path.join(historicalTmpdir(),'akimono-b40-historical-'));
   t.after(()=>removeHistoricalDir(directory,{recursive:true,force:true}));
   const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
-    cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0'},
+    cwd:path.join(root,'modern'),env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory},
     stdio:['ignore','pipe','pipe'],
   });
   t.after(()=>{child.kill();});
