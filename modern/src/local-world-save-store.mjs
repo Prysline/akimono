@@ -1,3 +1,4 @@
+import {reviewedHistoryLineageCompatible,MAX_REVIEWED_HISTORY_WIRE_BYTES} from './reviewed-world-time-history.mjs';
 /**
  * B-43 local-only WorldState durable saves.
  * Two independent, hashed and fsync'd generations. A failed/torn write never
@@ -395,8 +396,17 @@ function reviewedPlayableWorld(raw,marketBuyRegistry=null,useItem=null){
 }
 const digest=text=>createHash('sha256').update(text,'utf8').digest('hex');
 const recordDigest=(world,proof)=>digest(proof===null?world:JSON.stringify([world,proof]));
-function verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,proof){
-  if(proof===null)return reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
+function verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,proof,historyReplay=null,generation=null){
+  if(proof===null){
+    if(historyReplay?.requireProof===true)fail('source command history required in reviewed time mode');
+    return reviewedPlayableWorld(raw,marketBuyRegistry,useItem);
+  }
+  if(historyReplay!==null){
+    const world=validateMemoryWorld(raw);
+    const verified=historyReplay.verify({world,proof,generation});
+    if(encodeMemorySnapshot(verified)!==encodeMemorySnapshot(world))fail('source history returned a different world');
+    return world;
+  }
   if(!careerReplay)fail('career replay source unavailable');
   const world=validateMemoryWorld(raw);
   return verifyCareerProof({world,proof,...careerReplay,
@@ -422,7 +432,7 @@ function ensureFolder(dir){
   if(!st.isDirectory()||st.isSymbolicLink())
     fail('save directory must be a real directory');
 }
-function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay){
+function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay,historyReplay){
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
@@ -436,9 +446,10 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay){
     const record=JSON.parse(serialized);
     const hasProof=record!==null&&typeof record==='object'&&
       Object.hasOwn(record,'careerProof');
+    const hasAuth=hasProof&&Object.hasOwn(record,'checkpointAuth');
     if(record===null||typeof record!=='object'||Array.isArray(record)||
        Object.keys(record).sort().join(',')!==
-         (hasProof?'careerProof,format,generation,sha256,world':'format,generation,sha256,world')||
+         (hasProof?(hasAuth?'careerProof,checkpointAuth,format,generation,sha256,world':'careerProof,format,generation,sha256,world'):'format,generation,sha256,world')||
        record.format!==LOCAL_SAVE_FORMAT||
        !Number.isSafeInteger(record.generation)||record.generation<1||
        (record.generation%2)!==slot||
@@ -446,29 +457,36 @@ function readSlot(dir,slot,marketBuyRegistry,useItem,careerReplay){
        typeof record.world!=='string'||record.world.length>2000000)
       fail('invalid save record schema or generation');
     const proofText=hasProof?record.careerProof:null;
-    if(hasProof&&(typeof proofText!=='string'||proofText.length>500000))
+    if(hasProof&&(typeof proofText!=='string'||(historyReplay?Buffer.byteLength(proofText,'utf8'):proofText.length)>MAX_REVIEWED_HISTORY_WIRE_BYTES))
       fail('invalid career proof wire');
     if(recordDigest(record.world,proofText)!==record.sha256)
       fail('save content hash mismatch');
     const proof=hasProof?JSON.parse(proofText):null;
     if(hasProof&&(proof===null||JSON.stringify(proof)!==proofText))
       fail('non-canonical career history');
+    if(hasAuth!==(proof?.anchorKind==='checkpoint'))fail('checkpoint envelope authentication required');
+    if(hasAuth){
+      if(!historyReplay?.checkpointStore)fail('checkpoint key verifier unavailable');
+      historyReplay.checkpointStore.verifyRecord(record);
+    }
     const world=verifiedCheckpoint(decodeMemorySnapshot(record.world),
-      marketBuyRegistry,useItem,careerReplay,proof);
+      marketBuyRegistry,useItem,careerReplay,proof,historyReplay,record.generation);
     // Canonical encoding prevents duplicate-key and scalar wire ambiguity.
     if(encodeMemorySnapshot(world)!==record.world)
       fail('non-canonical WorldState JSON');
     return {kind:'ok',slot,generation:record.generation,world,proof};
   }catch(error){
-    if(error?.code==='ENOENT')return {kind:'missing',slot};
+    if(fd===undefined&&error?.code==='ENOENT')return {kind:'missing',slot};
     return {kind:'corrupt',slot,reason:error.message};
   }finally{
     if(fd!==undefined)fs.closeSync(fd);
   }
 }
 export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
-  useItem=null,careerReplay=null}){
+  useItem=null,careerReplay=null,historyReplay=null}){
   if(typeof directory!=='string'||!directory.trim())fail('save directory');
+  if(historyReplay!==null&&(typeof historyReplay.verify!=='function'||typeof historyReplay.requireProof!=='boolean'||careerReplay!==null))fail('source history verifier contract');
+  const compatible=(older,newer)=>historyReplay?reviewedHistoryLineageCompatible(older,newer,historyReplay.checkpointStore):careerLineageCompatible(older,newer);
   const dir=path.resolve(directory);
   function scan(){
     if(fs.existsSync(dir)){
@@ -476,14 +494,14 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       if(!st.isDirectory()||st.isSymbolicLink())
         fail('save path is not a real directory');
     }
-    const rows=[readSlot(dir,0,marketBuyRegistry,useItem,careerReplay),
-      readSlot(dir,1,marketBuyRegistry,useItem,careerReplay)];
+    const rows=[readSlot(dir,0,marketBuyRegistry,useItem,careerReplay,historyReplay),
+      readSlot(dir,1,marketBuyRegistry,useItem,careerReplay,historyReplay)];
     const valid=rows.filter(x=>x.kind==='ok')
       .sort((a,b)=>b.generation-a.generation);
     const corrupt=rows.filter(x=>x.kind==='corrupt');
     // A newer checksum-valid slot must not drop or replace a still-valid
     // older career history. Preserve the older source checkpoint instead.
-    if(valid.length===2&&!careerLineageCompatible(valid[1],valid[0])){
+    if(valid.length===2&&!compatible(valid[1],valid[0])){
       const rejected=valid.shift();
       corrupt.push({kind:'corrupt',slot:rejected.slot,reason:'career lineage mismatch'});
     }
@@ -509,9 +527,31 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       ...(latest.proof===null?{}:{careerProof:latest.proof}),
     });
   }
+  function prepareRecord(world,{generation,careerProof=null}){
+    safeInt(generation,'next save generation',1);
+    const encoded=encodeMemorySnapshot(world);
+    const proofText=careerProof===null?null:JSON.stringify(careerProof);
+    if(proofText!==null&&(historyReplay?Buffer.byteLength(proofText,'utf8'):proofText.length)>MAX_REVIEWED_HISTORY_WIRE_BYTES)fail('career history too large');
+    const envelope={format:LOCAL_SAVE_FORMAT,generation,
+      sha256:recordDigest(encoded,proofText),world:encoded,
+      ...(proofText===null?{}:{careerProof:proofText})};
+    if(careerProof?.anchorKind==='checkpoint'){
+      if(!historyReplay?.checkpointStore)fail('checkpoint authenticator unavailable');
+      historyReplay.checkpointStore.openPrefix(careerProof,generation);
+      envelope.checkpointAuth=historyReplay.checkpointStore.recordAuth(envelope);
+    }
+    const record=JSON.stringify(envelope)+'\n';
+    if(encoded.length>2000000||Buffer.byteLength(record)>MAX_BYTES)fail('save too large');
+    return {encoded,proofText,record};
+  }
+  function preflight(world,{expectedGeneration,careerProof=null}){
+    safeInt(expectedGeneration,'expected save generation');
+    prepareRecord(world,{generation:expectedGeneration+1,careerProof});
+    return true;
+  }
   function save(raw,{expectedGeneration,careerProof=null}){
     safeInt(expectedGeneration,'expected save generation');
-    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,careerProof);
+    const world=verifiedCheckpoint(raw,marketBuyRegistry,useItem,careerReplay,careerProof,historyReplay,expectedGeneration+1);
     const before=scan();
     if(!before.latest&&before.corrupt.length)
       fail('all existing save records are invalid; refusing overwrite');
@@ -527,18 +567,10 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
     // checked checkpoint. Subsequent generations must preserve its history.
     if(careerProof?.anchorKind==='legacy'&&!previous)
       fail('legacy career history requires an existing validated checkpoint');
-    if(previous&&!careerLineageCompatible(previous,{world,proof:careerProof}))
+    if(previous&&!compatible(previous,{world,proof:careerProof}))
       fail('career history prefix or legacy anchor mismatch');
     const nextGen=safeInt(generation+1,'next save generation',1);
-    const encoded=encodeMemorySnapshot(world);
-    const proofText=careerProof===null?null:JSON.stringify(careerProof);
-    if(proofText!==null&&proofText.length>500000)fail('career history too large');
-    const record=JSON.stringify({
-      format:LOCAL_SAVE_FORMAT,generation:nextGen,
-      sha256:recordDigest(encoded,proofText),world:encoded,
-      ...(proofText===null?{}:{careerProof:proofText}),
-    })+'\n';
-    if(Buffer.byteLength(record)>MAX_BYTES)fail('save too large');
+    const {encoded,proofText,record}=prepareRecord(world,{generation:nextGen,careerProof});
     ensureFolder(dir);
     const slot=nextGen%2;
     const dest=sourceFile(dir,slotNames[slot]);
@@ -605,5 +637,5 @@ export function createLocalWorldSaveStore({directory,marketBuyRegistry=null,
       generation:0,
     });
   }
-  return Object.freeze({status,load,save,clear});
+  return Object.freeze({status,load,save,clear,preflight});
 }
