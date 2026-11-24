@@ -119,7 +119,7 @@ function compare(world,minutes,draws=Array(121).fill(0)){
 test('R4 common P3 inventory stage handles all P3 source costs and source sale/callback after old EVENT overlay; not acquisition evidence',()=>{
   const {repository}=fresh(true),world=structuredClone(repository.read()),shop=world.shops[0];
   for(const id of Object.keys(street.reviewedB41.p3TurnItems.costs).map(Number))shop.item[id-1]=1;
-  shop.item[78]=2;shop.exp={'9':180,'20':600,'21':400,'22':200,'23':700,'37':250,'66':500};shop.job='tool';
+  shop.item[78]=2;shop.exp={'9':180,'20':600,'21':400,'22':200,'23':700,'25':100,'37':250,'66':500};shop.job='cow';
   const rules=street.reviewedB41.p3TurnItems.rules;
   const groups=new Set(),events={};
   for(const e of reviewedDataRead.catalog.compiled){
@@ -127,7 +127,7 @@ test('R4 common P3 inventory stage handles all P3 source costs and source sale/c
     if(groups.has(e.group))continue;
     groups.add(e.group);events[e.code]=world.nowSeconds+100000;
   }
-  for(const id of [0,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,67,68,69,70]){
+  for(const id of [0,25,26,30,31,32,33,34,35,36,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,67,68,69,70]){
     const candidate=structuredClone(world);candidate.period.eventState={...events};
     candidate.shops[0].showcase=[id];candidate.shops[0].price=[id?rules[id].unitPrice:0];
     const result=compare(candidate,1);

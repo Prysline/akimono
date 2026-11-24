@@ -144,10 +144,10 @@ test('P3 mixed-stock oracle: every reviewed manufacture product and source costs
   for(const id of Object.keys(street.reviewedB41.p3TurnItems.costs).map(Number))
     shop.item[id-1]=1;
   shop.item[78]=2;
-  shop.exp={'9':180,'20':600,'21':400,'22':200,'23':700,'37':250,'66':500};
-  shop.job='tool';
+  shop.exp={'9':180,'20':600,'21':400,'22':200,'23':700,'25':100,'37':250,'66':500};
+  shop.job='cow';
   const rules=street.reviewedB41.p3TurnItems.rules;
-  for(const id of [0,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,67,68,69,70]){
+  for(const id of [0,25,26,30,31,32,33,34,35,36,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,67,68,69,70]){
     const candidate=structuredClone(world);
     candidate.shops[0].showcase=[id];candidate.shops[0].price=[id?rules[id].unitPrice:0];
     const result=compare(candidate,1);

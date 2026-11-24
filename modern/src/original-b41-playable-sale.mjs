@@ -98,10 +98,10 @@ function reviewR3SourceSaleItems(itemDsl){
 // callback; full source acquisition is proven separately by GameCore/replay.
 const P3_TURN_IDS=Object.freeze([
   1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,22,23,24,
-  30,31,32,33,34,37,38,39,
+  25,26,30,31,32,33,34,35,36,37,38,39,
   ...Array.from({length:22},(_,i)=>40+i),63,66,67,68,69,70,78,79,
 ]);
-const P3_EXP_IDS=new Set([9,10,12,14,15,16,17,20,21,22,23,37,39,66]);
+const P3_EXP_IDS=new Set([9,10,12,14,15,16,17,20,21,22,23,25,37,39,66]);
 function reviewP3TurnItems(items){
   const one=(b,k)=>b?.fields[k]?.length===1?b.fields[k][0].value:null;
   const costs={},rules={};
@@ -114,9 +114,9 @@ function reviewP3TurnItems(items){
     // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
     costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
     if(!Number.isSafeInteger(costs[id]))bad('P3 unsafe ITEM cost');
-    // Keep the sale scope restricted to reviewed finished equipment and #10.
+    // Include already-reviewed P1/P2 medicine and dairy alongside P3 goods.
     // Raw materials, skills, and books are supported as stock, not new shelves.
-    if(id!==10&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
+    if(id!==10&&id!==25&&id!==26&&!(id>=30&&id<=36)&&!(id>=40&&id<=61)&&!(id>=67&&id<=70))continue;
     const pop=one(b,'pop'),point=one(b,'point'),type=one(b,'type');
     const match=/^([1-9]\d*)(m|h|d)$/.exec(pop??'');
     if(!match||!type||Number(price)<=0||
@@ -134,7 +134,7 @@ export function validateP3Inventory(shop,compiled,reviewed){
      !reviewed.p3TurnItems||shop.showcasecount!==1||
      shop.item.some((n,i)=>n!==0&&(!Object.hasOwn(reviewed.p3TurnItems.costs,i+1)||
        !Number.isSafeInteger(compiled.limits[i]?.limit)||n>compiled.limits[i].limit))||
-     !['','drug','tool','weapon','armor','material','book','peddle'].includes(shop.job??''))
+     !['','drug','tool','weapon','armor','material','book','peddle','cow'].includes(shop.job??''))
     bad('P3 source holding cap, career or single shelf');
   const exp=shop.exp??{};
   if(typeof exp!=='object'||Array.isArray(exp)||
