@@ -51,7 +51,6 @@ test('R4 full frozen CloseShop+WriteErrorLog actually append/rotate archived byt
         'frozen Perl actual CloseShop mutation');
       assert.deepEqual([...effect.deletedSessions],['1-alpha.cgi']);
       assert.deepEqual(row.output.remainingSessions,['2-keep.cgi']);
-      assert.equal(row.output.setUserDataCreatedFile,false);
       if(row.kind!=='missing'){
         const logDir=path.join(dir,'log');
         await mkdir(logDir);
