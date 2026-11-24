@@ -15,7 +15,7 @@ import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
-import {beginCareerProof,appendCareerCommand}
+import {beginCareerProof,appendCareerCommand,requiresReviewedHistory}
   from '../src/reviewed-career-save-replay.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
@@ -242,7 +242,7 @@ function commit(command){
     details:{reason:'請先初始化來源世界'}};
   const result=executeMemoryCommand({repository:repo,streetModule,command});
   if(result.ok){
-    if(command.kind==='use-item'&&command.itemId===78)careerRequired=true;
+    if(requiresReviewedHistory(command))careerRequired=true;
     careerProof=appendCareerCommand(careerProof,command);
   }
   return result;
@@ -472,7 +472,7 @@ async function api(req,res,url){
         'expectedGeneration');
       if(careerRequired&&!careerProof)
         return send(res,409,{ok:false,code:'CAREER_HISTORY_UNREVIEWED',
-          error:'轉職後的操作超出已審閱保存範圍，保留上一有效存檔',state:state()});
+          error:'需要來源歷史的操作超出已審閱保存範圍，保留上一有效存檔',state:state()});
       const saved=saveStore.save(world,{expectedGeneration,
         ...(careerRequired?{careerProof}:{})});
       // Ordinary checkpoints remain backwards compatible. If a previously
