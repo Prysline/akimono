@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {mkdtemp as mkHistoricalDir,rm as removeHistoricalDir} from 'node:fs/promises';
+import {tmpdir as historicalTmpdir} from 'node:os';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {execFileSync,spawn} from 'node:child_process';
@@ -150,9 +152,11 @@ test('B-42 original +3h clock shift gates the real 36-hour settlement boundary',
 });
 
 test('B-42 browser HTTP buys two real units, sells twice, rejects unreviewed EVENT repurchase and advances empty shelf without fake stock',async t=>{
-  const child=spawn(process.execPath,['scripts/dev-local.mjs'],{
+  const directory=await mkHistoricalDir(path.join(historicalTmpdir(),'akimono-b42-historical-'));
+  t.after(()=>removeHistoricalDir(directory,{recursive:true,force:true}));
+  const child=spawn(process.execPath,['tests/support/legacy-dev-local.mjs'],{
     cwd:path.join(root,'modern'),
-    env:{...process.env,AKIMONO_PORT:'0',AKIMONO_E2E_FIXED_NOW:'1000000',
+    env:{...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:'1000000',
       AKIMONO_E2E_DETERMINISTIC_RNG:'1'},
     stdio:['ignore','pipe','pipe'],
   });

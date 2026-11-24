@@ -10,7 +10,7 @@ import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {sourceCommandDraws} from '../src/local-source-command-draws.mjs';
 import {reviewOriginalLotoStartfunc,projectOriginalLotoStartfunc,
   LOTO_RANGE,B58_LOTO_SOURCE} from '../src/original-b58-loto-startfunc.mjs';

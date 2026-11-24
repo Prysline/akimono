@@ -10,7 +10,7 @@ import {createMemoryWorldAdapter,createPeriodMemoryWorld,
   applyGameCommand,executeMemoryCommand} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {reviewOriginalSupportEventCallbacks,projectOriginalSupportEventCallback,
   B57_SUPPORT_SOURCE} from '../src/original-b57-support-event-callbacks.mjs';
 

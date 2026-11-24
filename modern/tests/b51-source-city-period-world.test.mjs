@@ -10,7 +10,7 @@ import {
   applyGameCommand,PERIOD_WORLD_SCHEMA,MEMORY_WORLD_SCHEMA,
   validateMemoryWorld,encodeMemorySnapshot,
 } from '../src/game-core-contract.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {
   reviewOriginalPeriodBootstrap,createOriginalPeriodSeed,

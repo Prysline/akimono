@@ -11,7 +11,7 @@ import {createMemoryWorldAdapter,createPeriodMemoryWorld,
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {projectB41Sale} from '../src/original-b41-playable-sale.mjs';
-import {createLocalWorldSaveStore} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore} from './support/legacy-world-save-store.mjs';
 import {sourceCommandDraws} from '../src/local-source-command-draws.mjs';
 import {reviewOriginalB60HappyEvent,projectOriginalHappyStart,
   projectOriginalHappyExpiry,projectOriginalHappyNow,
