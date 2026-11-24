@@ -49,7 +49,8 @@ async function sandbox(fn){const directory=await mkdtemp(path.join(os.tmpdir(),'
 test('actual Perl period->rebel NOW reads and stages army.cgi; Node uses actual files and reloads after commit',async()=>{
   for(const row of oracle().cases)await sandbox(async directory=>{
     const live=path.join(directory,'army.cgi');await writeFile(live,row.initialArmy);
-    const {result,staged}=await projectRebelArmySandbox({fileReview,directory,reviewed,input:row.input});
+    const {result,staged,armyRead}=await projectRebelArmySandbox({fileReview,directory,reviewed,input:row.input});
+    assert.equal(armyRead,row.output.readArmyCalls===1);
     for(const k of ['town','shops','riotIds','armyById','activeUntilSeconds','eventState','eventPersisted','logs','randomDrawRanges','drawsUsed','taxRate','readArmyCalls','writeArmyCalls'])
       assert.deepEqual(result[k],row.output[k],row.name+' '+k);
     assert.equal(await readFile(live,'utf8'),row.initialArmy);
@@ -112,4 +113,16 @@ test('two actual source NOW slices read live army until final commit, then next 
   assert.equal(m.steps[1].output.armyById[2],2800,'same live file, not previous staged 2800 minus 1200');
   assert.equal(m.steps[2].output.armyById[2],1600,'next slice after commit reads 2800');
   assert.deepEqual(parseArmyFile(await readFile(path.join(directory,'army.cgi'),'utf8'),[1,2]),parseArmyFile(m.final,[1,2]));
+}));
+
+test('actual original missing/truncated/odd/duplicate army reads differ from safe parser; inactive source does not open army',()=>sandbox(async directory=>{
+  const o=oracle(),edge=o.edges;
+  assert.deepEqual(edge[0].armyById,{});assert.deepEqual(edge[0].riotIds,[]);
+  assert.deepEqual(edge[1].armyById,{2:3000});assert.deepEqual(edge[1].riotIds,[]);
+  assert.equal(edge[2].armyById[9],null);assert.equal(edge[3].armyById[2],123);
+  for(const r of edge.slice(1))assert.throws(()=>parseArmyFile(r.bytes,[1,2]),/invalid/);
+  const inactive=await projectRebelArmySandbox({fileReview,directory,reviewed,input:o.cases[0].input});
+  assert.equal(inactive.armyRead,false);assert.equal(inactive.staged,null);
+  await assert.rejects(projectRebelArmySandbox({fileReview,directory,reviewed,input:o.cases[3].input}),{code:'ENOENT'});
+  assert.deepEqual(await readdir(directory),[]);
 }));

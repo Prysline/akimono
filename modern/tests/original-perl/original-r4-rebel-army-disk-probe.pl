@@ -249,8 +249,20 @@ sub multiSlice {
 }
 
 my $multi=multiSlice();
+sub edgeCases {
+  my @rows;
+  for my $pair (['missing',undef],['no-final-LF',"2,3000\n2"],['odd-pairs',"2,3000,9\n2\n"],['duplicate',"2,3000,2,123\n2\n"]){
+    my($name,$bytes)=@$pair;unlink GetPath("army") if -e GetPath("army");
+    putFile(GetPath("army"),$bytes) if defined $bytes;
+    OriginalReadArmy();
+    push @rows,{name=>$name,bytes=>$bytes,armyById=>{map{$_=>(defined($ARMY{$_})?0+$ARMY{$_}:undef)}keys %ARMY},
+      riotIds=>[sort {$a<=>$b}map{0+$_}keys %RIOT]};
+  }
+  return \@rows;
+}
+my $edges=edgeCases();
 print JSON::PP->new->canonical->utf8->encode({
-  multi=>$multi,
+  multi=>$multi,edges=>$edges,
   source=>'complete frozen period.cgi RebelRobin + period rebel branch executed BEFORE actual inc-turn EVENT END/START/NOW and original rebel NOWFUNC body, one event',
   cases=>\@cases,
   scope=>'isolated single CITY/REBEL slice, original source execution + controlled rand only; real isolated army staging and commit/reload; no other 16 EVENTs or full period/WorldState',

@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {projectR4RebelPeriodToNow} from './original-r4-rebel-period-to-now.mjs';
 import {projectR4RebelNow} from './original-r4-rebel-now.mjs';
+import {projectR4RebelPeriodTrigger} from './original-r4-rebel-period-trigger.mjs';
 const fail=m=>{throw new RangeError('R4 army files: '+m)};
 const reviews=new WeakSet();
 const validId=n=>Number.isSafeInteger(n)&&n>0;
@@ -79,13 +80,28 @@ export async function stageArmySandbox({reviewed,directory,state,shopIds}){
 }
 export async function projectRebelArmySandbox({fileReview,directory,reviewed,input,mode='period'}){
   const shopIds=input.shops.map(s=>s.id);
+  if(!['period','now'].includes(mode))fail('unknown source mode');
+  review(fileReview);
+  const root=await rootFor(directory);
+  if(await statOrNull(path.join(root,'commit.cgi')))fail('pending commit requires recovery');
+  // Do not open army.cgi when original NOW never runs.
+  if(mode==='period'){
+    if(!Array.isArray(input.randomDraws)||![0,2,3].includes(input.periodDrawCount))fail('explicit period draw count required');
+    const trigger=projectR4RebelPeriodTrigger({...input,reviewed:reviewed?.period,randomDraws:input.randomDraws.slice(0,input.periodDrawCount)});
+    if(trigger.activeUntilSeconds===null){
+      // Retain caller's explicit prior context; it is not evidence of a disk read.
+      serializeArmyFile({armyById:input.armyById,riotIds:input.riotIds},shopIds);
+      const result=projectR4RebelPeriodToNow({reviewed,...input});
+      return {result,staged:null,armyRead:false,committable:false};
+    }
+  }
   const read=await readArmySandbox({reviewed:fileReview,directory,shopIds});
   // Stale non-riot ARMY IDs cannot participate in the reviewed callback.
   const usable=Object.fromEntries(Object.entries(read.armyById).filter(([k])=>shopIds.includes(Number(k))));
-  const result=(mode==='period'?projectR4RebelPeriodToNow:mode==='now'?projectR4RebelNow:fail('unknown source mode'))({reviewed,...input,armyById:usable,riotIds:read.riotIds});
+  const result=(mode==='period'?projectR4RebelPeriodToNow:projectR4RebelNow)({reviewed,...input,armyById:usable,riotIds:read.riotIds});
   let staged=null;
   if(result.writeArmyCalls===1)staged=await stageArmySandbox({reviewed:fileReview,directory,shopIds,state:result});
-  return {result,staged,committable:false};
+  return {result,staged,armyRead:true,committable:false};
 }
 export async function commitArmySandbox({reviewed,directory,abort=false}){
   review(reviewed);if(typeof abort!=='boolean')fail('invalid abort');
