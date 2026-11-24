@@ -422,8 +422,10 @@ async function api(req,res,url){
       const applied=executeMemoryCommand({repository:staged,streetModule,
         command:{kind:'initialize-source-market',expectedRevision:0}});
       if(!applied.ok)return send(res,409,{...applied});
+      const initialProof=reviewedTimeMode?beginReviewedWorldHistory(applied.world):null;
+      if(reviewedCrossPeriod)saveStore.preflight(applied.world,{expectedGeneration:0,careerProof:initialProof});
       repo=staged;
-      if(reviewedTimeMode)careerProof=beginReviewedWorldHistory(applied.world);
+      if(reviewedTimeMode)careerProof=initialProof;
       result=applied;
       break;
     }
