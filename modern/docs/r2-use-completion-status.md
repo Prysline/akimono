@@ -1,6 +1,6 @@
 # R2 原版商品 USE／製作補完狀態（平行支線）
 
-- R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。本次後續診斷分支：`work/r2-target-ad-readiness-20261124`。
+- R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。後續唯讀診斷 PR #3 也已合入同一隔離整合分支（`1cc0ae1cd7ad6d427ac6465e722e9fbfad5be73b`；CI 1,201／1,201）。本次試算分支：`work/r2-target-preflight-20261124`。
 - PR #2 原本目標 `test/task02-baseline-on-s1` 是 **R4 Draft PR #1 的來源分支**；為避免更動 R4，PR #2 已改指向上述獨立整合分支並成功合併。原有 Draft PR #1、R4 來源分支與 `main` 均未改動；**這不是合入主線或完成 R4 整合**。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
 - **原版宣告：79 ITEM／116 USE。** 本分支 `getRule` 現有 **112 項**（原 111＋#62/1 跨店廣告的記憶體限定實作）；單店本機 HTTP 的 `listUseOffers` 仍維持 **111 項**，不提供 #62/1 目標選擇與儲存。其他 **4 項** 尚未註冊。`getRule` 存在不代表玩家 HTTP、授權或 B-43 多店持久化已驗收。詳見 `r2-use-completion-gap-inventory.md`。
@@ -102,7 +102,9 @@
 
 ### #62/1 記憶體受控實作與剩餘 4 項跨世界回呼
 
-- **2026-11-24 後續唯讀驗證**：當 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 時，`/api/state.targetAdvertisementAudit.readiness` 顯示來源 #62 動態市場單價、當前現金與現金差額、廣告包是否持有、EVENT 狀態是否已失去來源確認、雙店是否禁止 B-43 存檔。市場 `canBuy` 不等於玩家能負擔或成功執行交易；所有資訊僅供診斷，`evidenceOnly=true`、`authoritativeUseApproval=false`、`authenticated=false`。關閉模式時仍回傳 `targetAdvertisementAudit=null`，沒有增加任意玩家身分、RNG、商品或金錢。
+- **2026-11-24 R2 後續受控來源試算（獨立分支／新 Draft PR）**：僅明確設定 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 且存在真來源雙店時，`POST /api/r2/target-advertisement-preflight` 只接受 `expectedRevision` 與 `targetShopId`。伺服器把固定 `shopId=1,itemId=62,useId=1,requestedCount=1` 送入與真 USE 共用的 `applyGameCommand`，只讀取投影是否被來源拒絕、原因與在來源允許時預計的目標人氣，**絕不呼叫 `executeMemoryCommand`／CAS**。客戶端不能指定金錢、物品、行為、亂數或回呼；不接受自家、未知或過期版本目標。回應強制標示 `committed=false`、`persisted=false`、`authenticated=false`、`authoritativeUseApproval=false`。目前真玩家情境會因缺廣告包或 EVENT 不明而拒絕；**試算成功也不等於正式玩家授權或可保存**。
+
+- **2026-11-24 已合併的唯讀驗證**：當 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 時，`/api/state.targetAdvertisementAudit.readiness` 顯示來源 #62 動態市場單價、當前現金與現金差額、廣告包是否持有、EVENT 狀態是否已失去來源確認、雙店是否禁止 B-43 存檔。市場 `canBuy` 不等於玩家能負擔或成功執行交易；所有資訊僅供診斷，`evidenceOnly=true`、`authoritativeUseApproval=false`、`authenticated=false`。關閉模式時仍回傳 `targetAdvertisementAudit=null`，沒有增加任意玩家身分、RNG、商品或金錢。
 
 - `#62/1` 指定其他店舖作廣告：已 source-pin 原版 `target|nocount`、10h×0.5、0 EXP、1 包材料與 inline Perl，以受控 `targetShopId` 解析同一記憶體 WorldState 中的另一間真實 `open-shop` 建立店舖。僅在雙店、無 guild／EVENT、目標有效時，以同一 revision/CAS 扣使用者的廣告包與時間並提高目標人氣；無額外 RNG。`original-r2-target-advertise-use-probe.pl` 與 `r2-target-advertisement-source.test.mjs` 已有凍結 Perl 差分。`modern/scripts/dev-local.mjs` 新增**預設關閉**的 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 本機驗證模式：`/api/r2/open-target-shop` 只可透過原本 `open-shop` 建立第二間店（固定 ID 2，未注入物品／EXP），`/api/use` 僅針對 #62/1 允許 `targetShopId`，實際操作店仍固定 ID 1；第二店建立後，市場購買、供貨、時間快轉、一般 USE、展示架與丟棄等原單店指令都被拒絕，只允許受控 #62/1 嘗試；由伺服器來源世界解析目標並重新做共用 CAS，客戶端不得指定回呼或亂數。`r2-target-advertisement-local-http.test.mjs` 以真來源 PLUS→市場購入 #14 地圖→真 `use-item` 製劍→B-41 自然販售，驗證該測試情境的 #62 動態報價 **121951** 超過起始金額 **100000**，缺錢購買維持拒絕；首次販售後 `period.eventState=null`，下一次販售時間片也因尚無完整 R4 EVENT 來源而被拒絕，**不憑空補錢或廣告包，也不假稱 HTTP 成功用了 #62/1**。另驗證第二店來源建立、非法目標／過期 revision／未持有包裹原子拒絕、雙店 B-43 存檔拒絕與既有單店存檔重啟載入；正向 #62/1 Perl／Node 差分仍由記憶體兩店測試提供。原 PR #2 最終同 SHA 1,198／1,198 CI 通過。**此模式沒有多玩家身分驗證，也不能保存雙店世界；正常啟動時 HTTP 不接受 target，B-43 仍拒絕雙店。不可宣告正式玩家跨店廣告已放行。**
 - `#62/2` 商會廣告：需可信 guild 身分、商會名稱字典、同 guild 的全部店舖快照與原版逐店人氣投影，不可用空商會資料替代。
