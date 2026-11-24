@@ -1,5 +1,12 @@
 # R4 執行中｜2026-11-23 已驗收時間片 Oracle，完整 EVENT／期末尚未完成
 
+## 2026-11-24｜R4 第一階段外部 I/O 續作交接（優先於舊歷史）
+
+先查唯一分支 test/task02-baseline-on-s1 當前 HEAD、PR #1 Open/Draft/未合併、最後**同 SHA** push 和 pull_request Actions。來源審閱交付 [r4-external-file-effects-contract.md](r4-external-file-effects-contract.md)；現有 modern/src/original-r4-data-write-files.mjs 與新 Perl/Node 真暫存磁碟差分是可用的**單店窄化 DataWrite**，非可提交 B-50。已確認 SetUserData 固定版 no-op、EditGuildMoney 只改記憶體、SetTownData 只改城鎮 map，真正主檔提交在所有 inc-turn 時間片後的 WriteGuildData → DataWrite → RenewLog → DataCommitOrAbort。
+
+**下個優先工作包：** 延續同一 B-50 同店同城資料，執行原版 CloseShop 的 WriteErrorLog 真 UTF-8 log append/rotate 及失敗分支；確認公會帳本 WriteGuildData 與 guild.cgi MakeGuildFile 的真檔案／失敗／恢復並接入同一暫存 file-set。再驗證 army/town、DataFilesBackup、實際多檔提交恢復與完整 WorldState/CAS。不得先開放 36h；必須明列剩餘原版依賴與 B-50 nonCommittable 邊界。不得修改 frozen source、Notion、其他分支或合併 PR。
+
+
 **2026-11-23｜R4-B 第一個可驗證來源工作包。** 新增 `src/original-r4-time-slices.mjs` 與從凍結 `inc-turn.cgi` 原文擷取執行的真 Perl Oracle；九個單次、多次、恰好跨 36h 與零尾段測試逐筆比對。原版 `@timespan` 切割器已接到既有 R3 前 EVENT 投影的跨期 fail-closed 前置檢查。**此工作包不執行 SortDT、完整 inc-period、EVENT；跨期仍拒絕提交，不宣稱 R4 退出。** R3 已完成自身受控來源退出，R2 A～E 不重做。後續須以 EVENT 真 Perl hash 次序／回呼／RNG、SortDT＋36h 期末與完整 HTTP/CAS 重啟來源差分收斂。PR #1 保持 Open／Draft，僅修改 modern/，不碰 Notion、凍結 Perl／DSL／Core。來源契約：[`r4-source-time-slices-contract.md`](r4-source-time-slices-contract.md)，受影響測試：[`r4-r0-affected-tests-mapping.md`](r4-r0-affected-tests-mapping.md)。
 
 **2026-11-23｜R4-A 受限原版 hash 探針：** 已新增直接執行凍結編譯器輸出的 17 EVENT Perl hash 初始化、實際 `keys(%EVENT)` 與明示人工三鍵 `keys(%DTevent)` Oracle，並加 Perl／Node 差分。**這不等於 EVENT 真生命週期或 RNG 來源完全等價**，不硬編任何排列，也不將 B-56 的明示 fixture 假稱原版 runtime。R4 仍未退出；跨期正式世界繼續 fail-closed。詳見 [R4 來源契約](r4-source-time-slices-contract.md)、[R0 受影響測試](r4-r0-affected-tests-mapping.md)。
