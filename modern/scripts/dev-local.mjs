@@ -20,7 +20,10 @@ import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
 
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
 import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
+import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 const reviewedTimeMode=process.env.AKIMONO_REVIEWED_NORMAL_TIME==='1';
+const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+if(reviewedCrossPeriod&&!reviewedTimeMode)throw Error('cross period requires reviewed normal time');
 if(reviewedTimeMode&&process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1')
   throw Error('reviewed normal time cannot use fixture RNG');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -35,6 +38,7 @@ const [
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
+  originalNewSource,originalCustomSource,originalLogSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -52,6 +56,7 @@ const [
   'modern/tests/original-perl/period.cgi',
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
+  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -61,7 +66,8 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  enableReviewedNormalTime:reviewedTimeMode,
+  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
+  enableReviewedNormalTime:reviewedTimeMode,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
 if(!['initialize-source-market','open-shop','reviewed-sparse-all-plus',
   'market-buy','use-item','edit-showcase',reviewedTimeMode?'advance-reviewed-world-time':'advance-source-time']
@@ -106,19 +112,20 @@ function verifyOrdinaryDraws(world,cmd){
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
 const checkpointStore=reviewedTimeMode?createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,...fingerprintReviewedCheckpointRuntime({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource],
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource],
   }),
 }):null;
+const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
 const saveStore=createLocalWorldSaveStore({
   directory:saveDirectory,
   marketBuyRegistry:streetModule.marketBuyRegistry,
   useItem:streetModule.useItem,
-  ...(reviewedTimeMode?{historyReplay:{requireProof:true,checkpointStore,verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})}}:{}),
+  ...(reviewedTimeMode?{historyReplay:{requireProof:true,checkpointStore,periodDiskStore,verify:({world,proof,generation})=>verifyReviewedWorldHistory({world,proof,generation,checkpointStore,...historyPolicy})}}:{}),
 });
 const port=Number(process.env.AKIMONO_PORT??'4173');
 if(!Number.isSafeInteger(port)||port<0||port>65535)throw Error('invalid port');
@@ -196,7 +203,8 @@ function state(){
     capabilities:['建立來源世界','原版開店','真實 PLUS 供貨子步驟',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架','原版自然販售片段／時間（EVENT 待審閱）'],
-    disabled:['跨期決算','完整原版所有商品回呼','多人'],
+    disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
+    reviewedCrossPeriod,
     reviewedTimeMode,
     historyCommands:careerProof?.commands.length??null,
     historyCheckpointRevision:careerProof?.checkpoint?.revision??null,

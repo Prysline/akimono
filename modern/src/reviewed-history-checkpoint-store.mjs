@@ -7,8 +7,8 @@ import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {R4_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
-import {R4_TIME_DRAW_POLICY} from './r4-time-command-draws.mjs';
+import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
+import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 
 export const CHECKPOINT_DIRECTORY='reviewed-history-v1';
 const FORMAT='akimono.reviewed-history-checkpoint.v1';
@@ -60,8 +60,10 @@ export function fingerprintReviewedCheckpointRuntime({sources,sourceDirectory,en
   if(!interpreter||interpreter.length>120)fail('invalid interpreter fingerprint');
   return {sourceFingerprint,interpreter};
 }
-export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter}){
+export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter,crossPeriod=false}){
   if(!digest(sourceFingerprint)||typeof interpreter!=='string'||!interpreter||interpreter.length>120)fail('runtime identity required');
+  const hashPolicy=crossPeriod?R4_HASH_POLICY+'+'+R4_COMMAND_HASH_POLICY:R4_HASH_POLICY;
+  const drawPolicy=crossPeriod?R4_TIME_DRAW_POLICY+'+'+R4_CROSS_PERIOD_DRAW_POLICY:R4_TIME_DRAW_POLICY;
   const base=path.resolve(saveDirectory),dir=path.join(base,CHECKPOINT_DIRECTORY),keyPath=path.join(dir,'key');
   function key(create=false){
     if(create){
@@ -109,7 +111,7 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
        p.format!==FORMAT||typeof p.worldId!=='string'||typeof p.streetId!=='string'||!int(p.revision)||!int(p.generation)||
        !digest(p.originSha256)||!digest(p.prefixSha256)||p.worldSha256!==sha(proof.anchor)||
        p.sourceFingerprint!==sourceFingerprint||p.interpreter!==interpreter||
-       p.hashPolicy!==R4_HASH_POLICY||p.drawPolicy!==R4_TIME_DRAW_POLICY)
+       p.hashPolicy!==hashPolicy||p.drawPolicy!==drawPolicy)
       fail('checkpoint source, runtime or state identity');
     const {mac,...body}=p;
     if(!equalMac(mac,hmac(key(),FORMAT,body)))fail('checkpoint authentication failed');
@@ -145,7 +147,7 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
     retain(wire,prefixSha256);
     const body={format:FORMAT,worldId:world.worldId,streetId:world.streetId,revision:world.revision,
       generation,originSha256,prefixSha256,worldSha256:sha(anchor),sourceFingerprint,interpreter,
-      hashPolicy:R4_HASH_POLICY,drawPolicy:R4_TIME_DRAW_POLICY};
+      hashPolicy,drawPolicy};
     const next={anchorKind:'checkpoint',anchor,commands:[],checkpoint:{...body,mac:hmac(signingKey,FORMAT,body)}};
     openPrefix(next);
     return next;

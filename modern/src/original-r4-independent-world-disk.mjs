@@ -47,7 +47,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
     if(d.live['play.cgi'].bytes!==wire(world)||d.live['lasttime.cgi'].mtime!==world.nowSeconds||d.live['lasttime.cgi'].bytes!==''||d.live['guildbal.cgi'].bytes!==''||d.live['guild.cgi'].bytes!==guild)fail('live source bytes differ from world');
     parsePeriodPlay({...codec,bytes:d.live['play.cgi'].bytes});
     for(const f of [d.backup,...d.generations])if(f!==null){validateFiles(f,backups,world.nowSeconds);parsePeriodPlay({...codec,bytes:f['play.cgi'].bytes});}
-    if(Buffer.byteLength(JSON.stringify(d))>150000)fail('independent source file history capacity');
+    if(Buffer.byteLength(JSON.stringify(d))>100000)fail('independent source file history capacity');
     return true;
   }
   function finalize({before,command,applied,logRows=[]}){
@@ -86,7 +86,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
       if(![0,1].includes(crossings))fail('one source boundary per command');
       const live={...old.live};
       // period.cgi copies the prior LIVE files, not the new settled play.
-      const generations=crossings?[capture(old.live),...old.generations.slice(0,2)]:old.generations;
+      const generations=crossings?[Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])),...old.generations.slice(0,2)]:old.generations;
       // DataWrite checks the original backup play mtime, before RenewLog.
       const copy=old.backup['play.cgi'].mtime<now-3600;
       const backup=copy?Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])):old.backup;
