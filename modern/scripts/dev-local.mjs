@@ -481,6 +481,62 @@ async function api(req,res,url){
         shopId:1,ownerName,shopName});
       break;
     }
+    case '/api/r2/advertisement-package-market-preflight': {
+      // Read-only original #62 market-buy proposal. Both the shelf and the
+      // exact wholesale quote come from this server's source WorldState,
+      // never from the HTTP caller. No CAS, stock, money, or time mutation.
+      if(!targetAdvertisementMemoryAudit)
+        return send(res,403,{ok:false,code:'R2_AUDIT_DISABLED',
+          error:'原版廣告包市場稽核未啟用',state:state()});
+      if(Object.keys(body).sort().join(',')!=='expectedRevision')
+        throw Error('廣告包購買稽核只接受 expectedRevision；價格、架位、金錢與商品皆由來源世界決定');
+      const expectedRevision=ensureRevision(body);
+      if(!repo)return send(res,409,{ok:false,code:'WORLD_NOT_INITIALIZED',
+        error:'沒有來源世界',state:state()});
+      const world=repo.read();
+      if(expectedRevision!==world.revision)
+        return send(res,409,{ok:false,code:'REVISION_CONFLICT',
+          error:'REVISION_CONFLICT',state:state()});
+      if(world.shops.length!==1||world.shops[0]?.id!==1)
+        return send(res,409,{ok:false,code:'R2_PREFLIGHT_REQUIRES_ONE_SHOP',
+          error:'原版市場買入只允許來源單店世界',state:state()});
+      const offer=world.market?streetModule.quoteMarketOffer(world,62):null;
+      // An on-shelf quote can still be unbuyable under the original EVENT
+      // gate. Project anyway, so the shared core reports that precise gate.
+      const available=Number.isSafeInteger(offer?.marketStock)&&
+        offer.marketStock>0&&
+        Number.isSafeInteger(offer?.price)&&offer.price>0&&
+        Number.isSafeInteger(offer?.shelf)&&offer.shelf>=0;
+      const projected=available?applyGameCommand({world,streetModule,
+        command:{kind:'market-buy',expectedRevision,shopId:1,
+          itemId:62,requestedCount:1,marketShelf:offer.shelf,
+          expectedPrice:offer.price}}):null;
+      return send(res,200,{ok:true,code:'R2_MARKET_PREFLIGHT_CHECKED',
+        details:{
+          action:'r2-advertisement-package-source-market-preflight',
+          sourceRevision:expectedRevision,itemId:62,
+          memoryOnly:true,authenticated:false,committed:false,
+          persisted:false,authoritativeBuyApproval:false,
+          sourceOfferAvailable:available,
+          sourceAdvertisedCanBuy:offer?.canBuy===true,
+          sourceQuote:available?{
+            unitPrice:offer.price,marketShelf:offer.shelf,
+            marketStock:offer.marketStock,
+          }:null,
+          sourceProjectionSucceeded:projected?.ok??false,
+          sourceProjectionCode:projected?.code??
+            'SOURCE_MARKET_OFFER_UNAVAILABLE',
+          sourceRejectionReason:projected?
+            (projected.ok?null:
+              (projected.details?.reason??projected.code)):
+            'source ITEM #62 wholesale offer is not currently available',
+          ...(projected?.ok?{
+            projectedPackageStock:projected.world.shops[0].item[61],
+            projectedMoney:projected.world.shops[0].money,
+          }:{}),
+        },
+        state:state()});
+    }
     case '/api/r2/target-advertisement-preflight': {
       // Non-committing, opt-in R2 diagnostic. Execute the same GameCore
       // source transaction projector without publishing its proposed world.

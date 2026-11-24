@@ -1,6 +1,6 @@
 # R2 原版商品 USE／製作補完狀態（平行支線）
 
-- R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。後續唯讀診斷 PR #3 也已合入同一隔離整合分支（`1cc0ae1cd7ad6d427ac6465e722e9fbfad5be73b`；CI 1,201／1,201）。本次試算分支：`work/r2-target-preflight-20261124`。
+- R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。後續唯讀診斷 PR #3 也已合入同一隔離整合分支（`1cc0ae1cd7ad6d427ac6465e722e9fbfad5be73b`；CI 1,201／1,201）。#62/1 非提交式 GameCore 試算 PR #4 已合併（`535a3eee5303d6ef22df6b0e2843bcdbc242c37f`；CI 1,202／1,202）。本次市場購買試算分支：`work/r2-ad-package-market-preflight-20261124`。
 - PR #2 原本目標 `test/task02-baseline-on-s1` 是 **R4 Draft PR #1 的來源分支**；為避免更動 R4，PR #2 已改指向上述獨立整合分支並成功合併。原有 Draft PR #1、R4 來源分支與 `main` 均未改動；**這不是合入主線或完成 R4 整合**。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
 - **原版宣告：79 ITEM／116 USE。** 本分支 `getRule` 現有 **112 項**（原 111＋#62/1 跨店廣告的記憶體限定實作）；單店本機 HTTP 的 `listUseOffers` 仍維持 **111 項**，不提供 #62/1 目標選擇與儲存。其他 **4 項** 尚未註冊。`getRule` 存在不代表玩家 HTTP、授權或 B-43 多店持久化已驗收。詳見 `r2-use-completion-gap-inventory.md`。
@@ -102,7 +102,8 @@
 
 ### #62/1 記憶體受控實作與剩餘 4 項跨世界回呼
 
-- **2026-11-24 R2 後續受控來源試算（獨立分支／新 Draft PR）**：僅明確設定 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 且存在真來源雙店時，`POST /api/r2/target-advertisement-preflight` 只接受 `expectedRevision` 與 `targetShopId`。伺服器把固定 `shopId=1,itemId=62,useId=1,requestedCount=1` 送入與真 USE 共用的 `applyGameCommand`，只讀取投影是否被來源拒絕、原因與在來源允許時預計的目標人氣，**絕不呼叫 `executeMemoryCommand`／CAS**。客戶端不能指定金錢、物品、行為、亂數或回呼；不接受自家、未知或過期版本目標。回應強制標示 `committed=false`、`persisted=false`、`authenticated=false`、`authoritativeUseApproval=false`。目前真玩家情境會因缺廣告包或 EVENT 不明而拒絕；**試算成功也不等於正式玩家授權或可保存**。
+- **2026-11-24 R2 #62 廣告包市場來源試算（新分支）**：僅在 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 下，新增 `POST /api/r2/advertisement-package-market-preflight`。請求只能有 `expectedRevision`；由伺服器從來源 `quoteMarketOffer(world,62)` 取真實架位、動態價格、批發存量，並用相同 `applyGameCommand(kind='market-buy',shopId=1,itemId=62,requestedCount=1)` **非提交**預測來源市場購買。來源市場沒有 #62 現貨時回傳 `SOURCE_MARKET_OFFER_UNAVAILABLE`；即使市場 `canBuy=true`，但錢不足，仍由 GameCore 拒絕，不能把「有市場現貨」誤稱成功買到；若 EVENT 變為 `null`，即使價格仍顯示也會從完整購買世界驗證拒絕。只有單店、固定 actor；雙店拒絕。不能從 HTTP 注入價格、架位、金錢、物品或 RNG；強制 `committed=false,persisted=false,authenticated=false,authoritativeBuyApproval=false`，且對比原 WorldState／B-43 存檔世代不變。**真購買只有既有 `/api/buy` 可執行，不會因試算而獲得資金或道具。**
+- **2026-11-24 R2 已合併的受控來源試算**：僅明確設定 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 且存在真來源雙店時，`POST /api/r2/target-advertisement-preflight` 只接受 `expectedRevision` 與 `targetShopId`。伺服器把固定 `shopId=1,itemId=62,useId=1,requestedCount=1` 送入與真 USE 共用的 `applyGameCommand`，只讀取投影是否被來源拒絕、原因與在來源允許時預計的目標人氣，**絕不呼叫 `executeMemoryCommand`／CAS**。客戶端不能指定金錢、物品、行為、亂數或回呼；不接受自家、未知或過期版本目標。回應強制標示 `committed=false`、`persisted=false`、`authenticated=false`、`authoritativeUseApproval=false`。目前真玩家情境會因缺廣告包或 EVENT 不明而拒絕；**試算成功也不等於正式玩家授權或可保存**。
 
 - **2026-11-24 已合併的唯讀驗證**：當 `AKIMONO_R2_TARGET_AD_MEMORY_ONLY=1` 時，`/api/state.targetAdvertisementAudit.readiness` 顯示來源 #62 動態市場單價、當前現金與現金差額、廣告包是否持有、EVENT 狀態是否已失去來源確認、雙店是否禁止 B-43 存檔。市場 `canBuy` 不等於玩家能負擔或成功執行交易；所有資訊僅供診斷，`evidenceOnly=true`、`authoritativeUseApproval=false`、`authenticated=false`。關閉模式時仍回傳 `targetAdvertisementAudit=null`，沒有增加任意玩家身分、RNG、商品或金錢。
 
