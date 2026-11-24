@@ -7,7 +7,7 @@ use lib $FindBin::Bin;
 use OriginalSparseAllPlusHarness;
 use OriginalNaturalSalePlusHarness;
 
-# Frozen inc-turn natural sale (two original shelves) + source 59 PLUS.
+# Frozen inc-turn natural sale (2..8 original shelves) + source 59 PLUS.
 # Controlled source-only arithmetic oracle: NOT player inventory or CAS.
 binmode STDOUT, ':encoding(UTF-8)';
 OriginalNaturalSalePlusHarness::bootstrap();
@@ -29,6 +29,31 @@ my @cases=(
    shown=>[0,0],prices=>[0,0],stocks=>{}},
   {name=>'reverse-shelf-order',
    shown=>[41,40],prices=>[2251,1200],stocks=>{40=>10,41=>10}},
+  {name=>'three-shelves-shared-stock',
+   shown=>[40,40,40],prices=>[1200,1501,1801],stocks=>{40=>10}},
+  {name=>'four-shelves-mixed-duplicate',
+   shown=>[10,40,40,41],prices=>[5000,1200,1801,2251],
+   stocks=>{10=>10,40=>10,41=>10}},
+  {name=>'four-shelves-empty-middle',
+   shown=>[40,0,41,0],prices=>[1200,0,2251,0],
+   stocks=>{40=>10,41=>10}},
+  {name=>'five-shelves-shared-one-stock',
+   shown=>[40,40,40,40,40],prices=>[1200,1501,1801,2000,2251],
+   stocks=>{40=>1}},
+  {name=>'six-shelves-sword-mix',
+   shown=>[40,41,40,41,40,41],
+   prices=>[1200,1500,1801,2251,2000,3000],
+   stocks=>{40=>10,41=>10}},
+  {name=>'seven-shelves-with-gaps',
+   shown=>[0,40,41,0,40,0,41],
+   prices=>[0,1200,1500,0,1801,0,2251],
+   stocks=>{40=>10,41=>10}},
+  {name=>'eight-shelves-shared-stock',
+   shown=>[10,40,41,40,0,41,40,0],
+   prices=>[5000,1200,1500,1801,0,2251,2000,0],
+   stocks=>{10=>10,40=>10,41=>10}},
+  {name=>'eight-shelves-all-empty',
+   shown=>[(0)x8],prices=>[(0)x8],stocks=>{}},
 );
 my @rows;
 for my $case (@cases){
@@ -60,10 +85,12 @@ for my $case (@cases){
   for my $id(keys %{$case->{stocks}}){
     $item[$id-1]=$case->{stocks}{$id};
   }
-  $item[62]=0;$item[78]=5; # source #63 tool consumed by 2-shelf resize
+  $item[62]=0;$item[78]=5; # source #63 tool consumed by 2..8-shelf resize
   @main::DT=({
-    id=>1,status=>1,rank=>5010,money=>80000,paytoday=>20000,
-    item=>\@item,showcasecount=>2,
+    id=>1,status=>1,rank=>5010,
+    money=>100000-10000*scalar(@{$case->{shown}}),
+    paytoday=>10000*scalar(@{$case->{shown}}),
+    item=>\@item,showcasecount=>scalar(@{$case->{shown}}),
     showcase=>[@{$case->{shown}}],price=>[@{$case->{prices}}],
     trush=>0,saletoday=>0,taxtoday=>0,costtoday=>0,
     itemtoday=>{},itemyesterday=>{},taxmode=>0,
@@ -90,6 +117,6 @@ for my $case (@cases){
   };
 }
 print JSON::PP->new->canonical->encode({
-  scope=>'frozen source two-shelf natural sale plus all 59 PLUS; synthetic source audit fixture, no player authorization or EVENT/period',
+  scope=>'frozen source 2..8 shelf natural sale plus all 59 PLUS; synthetic source audit fixture, no player authorization or EVENT/period',
   cases=>\@rows,
 }),"\n";
