@@ -604,3 +604,96 @@ test('v2 player refuses old development v1 records without silently migrating or
   await open(s);await save(s,0);
   assert.equal(JSON.parse(await readFile(slot,'utf8')).format,'akimono.local-world-save.v2');
 });
+
+for(const [book,skill,product] of [[20,18,41],[21,18,47],[22,18,53],[23,19,58]]){
+  test('v2 sole player path: P3 #'+book+'/0 source skill and craft across two generations',async t=>{
+    const dir=await mkdtemp(join(tmpdir(),'akimono-v2-p3-'+book+'-'));
+    const servers=[];t.after(async()=>{for(const server of servers)await server.stop();await rm(dir,{recursive:true,force:true});});
+    const options={reviewedTime:true,now:'900000'};
+    let s=await boot(dir,options);servers.push(s);await open(s);
+    let player=reviewedPlayer(s);
+    const mine=async useId=>{
+      if((await s.state()).shop.item[8]===0)await player.market(9);
+      await player.ensureTime(3600);
+      return use(s,9,useId);
+    };
+    const ensureOre=async(id,amount,useId)=>{
+      while((await s.state()).shop.item[id-1]<amount)await mine(useId);
+    };
+    await use(s,79,0);await use(s,79,3);
+    await denied(s,{itemId:book,useId:0});
+    await ensureOre(5,skill===18?60:40,0);
+    if(skill===18){await ensureOre(6,5,1);await ensureOre(7,3,2);}
+    await player.market(book);
+    await denied(s,{itemId:book,useId:0});
+    if(skill===19)await player.market(8,34);
+    await player.ensureTime(21600);
+    const trained=await use(s,37,skill===18?0:1);
+    assert.equal(trained.state.shop.item[skill-1],1);
+    assert.equal(trained.state.shop.exp['37'],50);
+    const craft=async()=>{
+      const before=await s.state();await player.ensureTime(3600);
+      const done=await use(s,book,0);
+      assert.equal(done.details.effectiveCount,1);
+      assert.equal(done.details.experienceGain,20);
+      assert.equal(done.state.shop.item[skill-1],1);
+      assert.equal(done.state.shop.item[4],before.shop.item[4]-20);
+      assert.ok(done.state.shop.item[product-1]>before.shop.item[product-1]);
+      return done;
+    };
+    await denied(s,{itemId:book,useId:1});
+    await craft();
+    const first=await save(s,0);
+    let step=await restartLoad(s,dir,servers,options);s=step.s;
+    assert.deepEqual(step.loaded.state.world,first);
+    player=reviewedPlayer(s);
+    await player.time();await craft();
+    const second=await save(s,1);
+    step=await restartLoad(s,dir,servers,options);s=step.s;
+    assert.deepEqual(step.loaded.state.world,second);
+    assert.equal(step.loaded.state.shop.exp[String(book)],40);
+    assert.equal(step.loaded.state.save.format,'akimono.local-world-save.v2');
+  });
+}
+
+test('v2 P3 earned 200 sword EXP opens steel recipe #20/1 after real time and restart',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'akimono-v2-p3-steel-'));
+  const servers=[];t.after(async()=>{for(const server of servers)await server.stop();await rm(dir,{recursive:true,force:true});});
+  const options={reviewedTime:true,now:'900000'};
+  let s=await boot(dir,options);servers.push(s);await open(s);
+  let player=reviewedPlayer(s);
+  await use(s,79,0);await use(s,79,3);
+  const mine=async useId=>{
+    if((await s.state()).shop.item[8]===0)await player.market(9);
+    await player.ensureTime(3600);
+    return use(s,9,useId);
+  };
+  const ensureOre=async(id,amount,useId)=>{
+    while((await s.state()).shop.item[id-1]<amount)await mine(useId);
+  };
+  await ensureOre(5,40,0);await ensureOre(6,5,1);await ensureOre(7,3,2);
+  await player.market(20);await player.ensureTime(21600);await use(s,37,0);
+  await denied(s,{itemId:20,useId:1});
+  for(let i=0;i<10;i++){
+    await ensureOre(5,20,0);
+    await player.ensureTime(2700);
+    await use(s,20,0);
+  }
+  assert.equal((await s.state()).shop.exp['20'],200);
+  const first=await save(s,0);
+  let step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,first);
+  player=reviewedPlayer(s);
+  await ensureOre(5,40,0);await player.ensureTime(5400);
+  const before=await s.state();
+  const steel=await use(s,20,1);
+  assert.equal(steel.details.effectiveCount,1);
+  assert.equal(steel.state.shop.exp['20'],220);
+  assert.equal(steel.state.shop.item[4],before.shop.item[4]-40);
+  assert.ok(steel.state.shop.item[41]>before.shop.item[41]);
+  await denied(s,{itemId:20,useId:2});
+  const second=await save(s,1);
+  step=await restartLoad(s,dir,servers,options);s=step.s;
+  assert.deepEqual(step.loaded.state.world,second);
+  assert.equal(step.loaded.state.shop.exp['20'],220);
+});
