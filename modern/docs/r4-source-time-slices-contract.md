@@ -1,5 +1,10 @@
 # R4-B｜凍結原版 36 小時時間片與 Perl 差分（2026-11-23）
 
+## 2026-11-24｜DataWrite 真檔案契約與 36 小時分段的界線
+
+同一 inc-turn.cgi 在所有時間片跑完後才依次執行有條件 MakeGuildFile、WriteGuildData、DataWrite、RenewLog、DataCommitOrAbort、UnLock。期末 inc-period.cgi 最尾的 MakeGuildFile、備份與 Session 清理不等於主狀態已提交。真檔案層級詳見 [外部副作用契約](r4-external-file-effects-contract.md)。新增單活躍店原版 Perl 兩期 play.cgi DataWrite/commit/reload 與 Node 實際 IO/位元組差分，嚴格禁止其結果解除 36 小時跨期或 eventState:null 的拒絕。未審閱公會、軍隊、錯誤封存、城鎮多鍵與多檔原子性仍阻塞。
+
+
 **受控進展，不是 R4 完成宣告。**
 
 - 新增 `src/original-r4-time-slices.mjs`：核對原版 `_config.cgi` 的 36h 週期與 JST／期末偏移，以及 `inc-turn.cgi` 的 `@timespan` 原始順序；只計算前後時間及期末旗標，不執行或假造 `SortDT`、結算、PLUS、EVENT。
