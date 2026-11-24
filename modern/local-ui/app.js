@@ -469,14 +469,18 @@ function showState(s){
   $('open-shop').querySelector('button[type=submit]').disabled=!w||Boolean(shop);
   $('supply').disabled=!shop;
   // Available actions are rendered in the selected original-style item page.
-  const sourceSaleSupported=Boolean(shop&&shop.showcasecount===1);
+  // Frozen R3 now reviews one store with one or exactly two shelves.
+  // More shelves or unresolved EVENT semantics remain fail-closed.
+  const sourceSaleSupported=Boolean(shop&&[1,2].includes(shop.showcasecount));
   for(const control of document.querySelectorAll('.quick-time button'))
     control.disabled=!sourceSaleSupported;
   $('advance-time-form').querySelector('button[type=submit]').disabled=
     !sourceSaleSupported;
-  text('source-shelf-sale-boundary',shop&&shop.showcasecount>1?
+  text('source-shelf-sale-boundary',shop&&shop.showcasecount>2?
     '目前有 '+number(shop.showcasecount)+
-    ' 架展示架：多架自然販售尚未通過原版來源驗證，故暫停時間快轉。上架、下架及存讀檔仍可使用。':'');
+    ' 架展示架：三架以上自然販售尚未完成來源驗證，暫停時間快轉。':
+    shop&&shop.showcasecount===2?
+      '雙架已接入原版來源審閱的首次自然販售；EVENT 未完成後仍會拒絕下一個時間片。':'');
   const entries=shop?catalog.filter(item=>shop.item[item.itemId-1]>0)
     .map(item=>({...item,count:shop.item[item.itemId-1]})):[];
   const storageBody=$('storage-inventory'),sellingBody=$('inventory');
