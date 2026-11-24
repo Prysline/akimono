@@ -28,6 +28,7 @@ export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-inte
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
 const safe=(n,s)=>{if(!Number.isSafeInteger(n)||n<0)fail(s);return n;};
 const unit=n=>Number.isSafeInteger(n)&&n>=0&&n<1000000;
+const ticket=n=>n!==null&&typeof n==='object'&&!Array.isArray(n)&&Object.keys(n).sort().join(',')==='range,result'&&n.range===LOTO_RANGE&&Number.isSafeInteger(n.result)&&n.result>=0&&n.result<LOTO_RANGE;
 const own=(obj,key)=>Object.hasOwn(obj,key);
 const sameKeys=(order,allowed)=>{
   return Array.isArray(order)&&order.length===allowed.length&&
@@ -173,7 +174,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
 export function projectOriginalR4MultiEventFixture({reviewed,items,
   startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
-  guildContext=null,rebelContext=null,rebelNowDrawCount=null}){
+  guildContext=null,rebelContext=null,rebelNowDrawCount=null,
+  reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -229,8 +231,11 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
      (reviewed.rebel===null&&
        (rebelContext!==null||rebelNowDrawCount!==null)))
     fail('explicit rebel army/city and bounded NOW RNG sample count required');
+  if(typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
+     (resolveNowOrder!==null&&nowHashOrderFixture!==null))
+    fail('invalid EVENT draw/order adapter');
   if(!Array.isArray(randomDraws)||randomDraws.length>100||
-     randomDraws.some(x=>!unit(x)))
+     randomDraws.some(x=>!unit(x)&&!(exactTicketDraws&&ticket(x))))
     fail('exact bounded original RNG sequence required');
 
   // The original DataRead loop loads prior active per-event generated ITEM
@@ -287,8 +292,14 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   let used=0;
   const draw=(range)=>{
     if(used>=randomDraws.length)fail('original RNG exhausted');
+    const sample=randomDraws[used++];
     ranges.push(range);
-    return randomDraws[used++]/1000000*range;
+    if(exactTicketDraws&&range===LOTO_RANGE){
+      if(!ticket(sample))fail('expected exact source lottery result');
+      return sample.result;
+    }
+    if(!unit(sample))fail('expected source uniform-millionth draw');
+    return sample/1000000*range;
   };
   for(const code of eventHashOrderFixture){
     const e=reviewed.catalog.find(x=>x.code===code);
@@ -356,7 +367,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       }
       const callback=projectOriginalInstantEventCallback({
         reviewed:reviewed.instant,eventCode:code,shop:nextShop,
-        randomDraws:samples,
+        randomDraws:samples,reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==samples.length)
@@ -396,9 +407,11 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(reviewed.happy!==null||reviewed.rebel!==null){
     // Capture actual original NOW foreach keys at GetPath dispatch. It can
     // include rebel even though that callback removes itself during NOW.
-    if(!sameKeys(nowHashOrderFixture,Object.keys(next)))
+    const nowOrder=resolveNowOrder===null?nowHashOrderFixture:
+      resolveNowOrder({expired:Object.freeze([...expired]),started:Object.freeze([...started]),activeUntilSeconds:Object.freeze({...next})});
+    if(!sameKeys(nowOrder,Object.keys(next)))
       fail('exact Perl post-START active EVENT hash order (pre-NOW EVENT hash traversal) required');
-    for(const code of nowHashOrderFixture){
+    for(const code of nowOrder){
       if(code==='happy'){
         const range=Math.trunc(Math.min(spanSeconds,
           reviewed.happy.maxNowSpanSeconds)/36);

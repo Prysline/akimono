@@ -125,7 +125,8 @@ function reviewP3TurnItems(items){
   }
   return Object.freeze({costs:Object.freeze(costs),rules:Object.freeze(rules)});
 }
-function validateP3Inventory(shop,compiled,reviewed){
+export function validateP3Inventory(shop,compiled,reviewed){
+  if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||shop.item.some(n=>!Number.isSafeInteger(n)||n<0))bad('P3 source inventory shape');
   if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79||
      !reviewed.p3TurnItems||shop.showcasecount!==1||
      shop.item.some((n,i)=>n!==0&&(!Object.hasOwn(reviewed.p3TurnItems.costs,i+1)||
