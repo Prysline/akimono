@@ -298,9 +298,10 @@ function renderUseResult(data,offer,catalog){
   text('use-result-time',conciseTimeText(data.timeSpentSeconds));
   text('use-result-consumed',tuples(data.originalUseItem));
   text('use-result-acquired',tuples(data.originalAddItem));
-  text('use-result-message',
-    (typeof data.originalFunctionReturn==='string'&&data.originalFunctionReturn)||
-      data.originalResultOk||'操作已完成。');
+  const resultMessage=(typeof data.originalFunctionReturn==='string'&&data.originalFunctionReturn)||
+    data.originalResultOk||'操作已完成。';
+  text('use-result-message',Number.isSafeInteger(data.moneyEarned)&&data.moneyEarned>0?
+    '收入 '+money(data.moneyEarned)+'；'+resultMessage:resultMessage);
 }
 $('inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');

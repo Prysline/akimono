@@ -453,7 +453,7 @@ async function api(req,res,url){
         itemId:commandNumber(body.itemId,'itemId',1),
         requestedCount:commandNumber(body.requestedCount,'requestedCount',1),
         marketShelf:commandNumber(body.marketShelf,'marketShelf'),
-        expectedPrice:commandNumber(body.expectedPrice,'expectedPrice',1),
+        expectedPrice:commandNumber(body.expectedPrice,'expectedPrice'),
       });
       break;
     }

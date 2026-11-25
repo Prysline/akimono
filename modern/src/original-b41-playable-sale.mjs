@@ -98,7 +98,7 @@ function reviewR3SourceSaleItems(itemDsl){
 // held ITEM still needs its compiled holding limit, cost, and reviewed
 // callback; full source acquisition is proven separately by GameCore/replay.
 const P3_TURN_IDS=Object.freeze([
-  1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,22,23,24,
+  1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
   25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,
   ...Array.from({length:22},(_,i)=>40+i),63,64,66,67,68,69,70,78,79,
 ]);
@@ -115,6 +115,10 @@ function reviewP3TurnItems(items){
     // Original GetBuffer PRICE defaults cost to int(price/10) when unset.
     costs[id]=cost===null?Math.trunc(Number(price)/10):Number(cost);
     if(!Number.isSafeInteger(costs[id]))bad('P3 unsafe ITEM cost');
+    // P5 held book: original zero upkeep, no showcase or turn callback.
+    if(id===13&&(one(b,'code')!=='book-work'||price!=='0'||costs[id]!==0||
+      one(b,'limit')!=='1/1'||one(b,'flag')!=='noshowcase'||one(b,'pop')!=='0'))
+      bad('P5 source book holding drift');
     // The source rank-1 prizes may be held on the next slice. They do
     // not become sale/USE rules merely by adding reviewed holding costs.
     const prizeStock={27:['seven_face',0],28:['ramusyu',0],29:['boots',0],64:['defence-manbiki',5000]};
