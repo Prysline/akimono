@@ -58,7 +58,8 @@ function createSourceWorld(){
   }
   return repo.read();
 }
-function fixture(rule,{job='',missingNeed=false,missingNeedId=null}={}){
+function fixture(rule,{job='',missingNeed=false,missingNeedId=null,
+  missingNeedByOne=false,missingMilk=false}={}){
   const initial=createSourceWorld();
   const old=initial.shops[0];
   const stock=[...old.item];
@@ -71,8 +72,9 @@ function fixture(rule,{job='',missingNeed=false,missingNeedId=null}={}){
     const needed=rule.uses.find(x=>x.probabilityPermille===0&&
       (missingNeedId===null||x.itemId===missingNeedId));
     assert.ok(needed,'must select a NEED recipe');
-    stock[needed.itemId-1]=0;
+    stock[needed.itemId-1]=missingNeedByOne?needed.countPerUse-1:0;
   }
+  if(missingMilk)stock[25]=14;
   const exp=rule.needExperience?
     {[rule.itemId]:rule.needExperience}:{};
   const world=validateMemoryWorld({...initial,shops:[{
@@ -110,8 +112,9 @@ function frozenPerl(rule,world,randomDraws){
     encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024}));
 }
 function compare(rule,{job='',missingNeed=false,missingNeedId=null,
-  destroy=false}={}){
-  const {world,randomDraws}=fixture(rule,{job,missingNeed,missingNeedId});
+  destroy=false,missingNeedByOne=false,missingMilk=false}={}){
+  const {world,randomDraws}=fixture(rule,{job,missingNeed,missingNeedId,
+    missingNeedByOne,missingMilk});
   if(destroy){
     assert.equal(rule.afterCallback?.kind,'lostbook');
     randomDraws[randomDraws.length-1]=0;
@@ -133,8 +136,8 @@ function compare(rule,{job='',missingNeed=false,missingNeedId=null,
     command:{kind:'use-item',expectedRevision:world.revision,shopId:1,
       itemId:rule.itemId,useId:rule.useId,requestedCount:1,
       ...(randomDraws.length?{randomDraws}:{})}});
-  if(missingNeed){
-    assert.equal(perl.result.count,0,'original NEED must gate');
+  if(missingNeed||missingMilk){
+    assert.equal(perl.result.count,0,'original NEED/USE must gate');
     assert.equal(result.code,'SOURCE_BOUNDARY_REJECTED');
     assert.equal(encodeMemorySnapshot(repo.read()),before);
     return;
@@ -505,5 +508,14 @@ test('R2 festival nocount declaration and material message fail closed',()=>{
     assert.notEqual(changed,sources.itemDsl);
     assert.throws(()=>createStandardStreetModule({...sources,
       itemDsl:changed}),/festival|source|nocount|drift/i);
+  }
+});
+
+// P4: one below the exact NEED and USE thresholds, with no other missing input.
+test('P4 dairy ferment rejects four/nine cows or fourteen milk against frozen Perl',()=>{
+  for(const useId of [1,2]){
+    const rule=street.useItem.getRule(26,useId);
+    compare(rule,{missingNeed:true,missingNeedByOne:true});
+    compare(rule,{missingMilk:true});
   }
 });
