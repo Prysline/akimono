@@ -31,7 +31,7 @@ my %pins=(
  'pinned-army-s.cgi'=>'6f457b78f530e37aa0ff4074358a57797f5087e2',
  'pinned-army.cgi'=>'cd29bcbfe52bac84794c4c79426bd559d7616d85',
  'calc.cgi'=>'586354a9a300e26d0e12a4efa512fa25760e3197',
- '../../../_config.cgi'=>'87e4fd4eefba063d982e3b79aa7cfa6565e1a0');
+ '../../../_config.cgi'=>'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0');
 for my $name(keys %pins){
  my $s=bytes("$FindBin::Bin/$name");
  die "source drift $name" unless sha1_hex("blob ".length($s)."\0".$s) eq $pins{$name};

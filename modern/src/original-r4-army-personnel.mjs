@@ -11,7 +11,7 @@ const pins=Object.freeze({
   armyCommand:'6f457b78f530e37aa0ff4074358a57797f5087e2',
   army:'cd29bcbfe52bac84794c4c79426bd559d7616d85',
   calc:'586354a9a300e26d0e12a4efa512fa25760e3197',
-  config:'87e4fd4eefba063d982e3b79aa7cfa6565e1a0',
+  config:'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0',
 });
 const reviewedSources=new WeakSet();
 const fail=m=>{throw new RangeError('R4 army personnel: '+m)};

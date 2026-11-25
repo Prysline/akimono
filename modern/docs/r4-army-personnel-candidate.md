@@ -15,3 +15,7 @@
 P3 正式 source disk v1 只接受固定空公會與現有檔案集合；v2 history 僅接受白名單普通/時間指令；source-reviewed time 單店無公會且不支援 external event。現無已驗收玩家爵位取得路徑與軍隊狀態來源 lineage。不能注入兵力／爵位當合法取得，也不能直接放寬白名單。新候選明示 committable:false，測試現有 GameCore guard 和 ordinary history 均拒絕它。未接入正式存檔、HTTP、UI、CAS、時間週期。下一批需要爵位任務共享 evt 來源、合法物品取得/容量與分數門檻、軍隊來源 file generation 及歷史重播、完整正負向驗收。新增 src 檔會影響既有 conservative runtime fingerprint，舊不相容 v2 仍拒絕，不做靜默遷移。
 
 不修改既有 P3 程式或原版；新 CI 尚待驗收。
+
+## CI 45591080548 修正
+
+初版 Node 測試於載入時拒絕 config SHA：兩處手抄 pin 僅 38 字元，實際固定 blob 為 `87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0`。1336 既有 JS 全數通過，新增 probe 尚未執行；Perl 階段未執行。修正兩個 pin，保持 frozen source 與嚴格比對，不變更交易公式。重驗收待確認。
