@@ -19,7 +19,8 @@
 | P3 A–E | 已完成：20/20 配方合法 HTTP、技能／EXP／材料／職業、跨期與 v2 保存 |
 | R4 已交付的獨立單店跨期 | 已驗收且納入正式基線 |
 | R4 公會／龍族／軍隊／領主／外部 IO／關店等 | 未納入正式玩家能力，研究續作；未審閱邊界 fail-closed |
-| P4／P5 | 本工作線尚未啟動，依賴與範圍另確認 |
+| P4 | 獨立候選：[來源審閱](p4-dairy-persistence-source-review.md)，待目標 PR CI 與玩家驗收，未合併 |
+| P5 | 尚未啟動 |
 | R0/R1 全量、R5、其他街道、多人與整款原版 | 不宣告完成 |
 
 R4 固定跨期交接 `eeb96e45d9fe1a1ab5b206872d0ad90f3e807c8b`，#14 [獨立 CI 45476330181](https://github.com/Prysline/akimono/actions/runs/45476330181) 1179 JS / 2452 Perl；P3 #15 [CI 45481087114](https://github.com/Prysline/akimono/actions/runs/45481087114) 1317 JS / 2456 Perl。正式 #17 run 再次實證 #66/3 EXP 515→535、535→555、跨期後 517→537 真 lostbook；#70 自然販售 3 件、positive FUNCTURN=true（#15 run 為 4 件，皆為各自合法伺服器 RNG）。兩次結算 1→2、260 合法普通操作、兩次 checkpoint 輪替、雙世代與 Node 重啟；來源亂數、歷史前綴、HMAC、商品、磁碟篡改／阻塞的負面測試通過。不是無限經營或無限容量，也不是人工操作驗收。

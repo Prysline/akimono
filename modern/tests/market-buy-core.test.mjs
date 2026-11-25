@@ -841,3 +841,24 @@ test('R2-C archived three item-shaped buy commands have no live capability or se
   }
   assert.equal(encodeMemorySnapshot(world),original);
 });
+
+test('P4 cow purchase source quote, cash/holding/time rejection and stale quote are atomic controlled boundaries',()=>{
+  const world=seed().repository.read(),q=sourceMarketQuote(world,25);
+  const rule=street.marketBuy.getRule(25);
+  assert.equal(rule.stockLimit,20);assert.equal(rule.unitPrice,10000);
+  assert.equal(q.price,10000);assert.equal(q.timeSeconds,600);
+  // Negative-only controlled fixtures; no claim of acquiring a 20-cow herd
+  // from wholesale. The separate P4 HTTP test uses real source acquisition.
+  for(const shop of [
+    {...world.shops[0],money:9999},
+    {...world.shops[0],item:world.shops[0].item.map((x,i)=>i===24?20:x)},
+    {...world.shops[0],time:world.nowSeconds+1},
+  ]){
+    const input={...world,shops:[shop]},r=apply(input,buyCommand(input,25,q));
+    assert.equal(r.ok,false);assert.deepEqual(r.world,input);
+  }
+  for(const fields of [{expectedPrice:10001},{marketShelf:q.shelf+1},{requestedCount:0},{expectedRevision:world.revision-1}]){
+    const r=apply(world,{...buyCommand(world,25,q),...fields});
+    assert.equal(r.ok,false);assert.deepEqual(r.world,world);
+  }
+});
