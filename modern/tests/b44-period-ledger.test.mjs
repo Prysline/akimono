@@ -77,3 +77,33 @@ test('B-44 fail closed against unseen guild/dragon, invalid limits or malformed 
     shop:input,reviewed,limits:oracle.limits.slice(1),
   }),/B-44/);
 });
+
+
+test('R4 opt-in 1-8 showcase maintenance matches original Perl ledger (isolated, not live time)',()=>{
+  const options={periodSource,configSource,itemDsl,model,compilerSource,includeReviewedMultiShelf:true};
+  const expanded=reviewOriginalPeriodShopLedger(options);
+  assert.deepEqual(expanded.showcaseMaintenanceCosts,[0,2000,4000,8000,16000,32000,64000,128000]);
+  const source=JSON.parse(execFileSync('perl',['original-b44-period-ledger-probe.pl','--multi-shelf'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  const fixtures=source.cases.filter(row=>row.name.startsWith('source-shelves-'));
+  assert.equal(fixtures.length,8);
+  for(const fixture of fixtures){
+    const before=structuredClone(fixture.input);
+    const actual=projectOriginalPeriodShopLedger({shop:before,reviewed:expanded,limits:source.limits});
+    for(const key of Object.keys(fixture.output))
+      assert.deepEqual(actual.shop[key],fixture.output[key],fixture.name+' '+key);
+    assert.equal(actual.chargedMaintenance,1234+expanded.showcaseMaintenanceCosts[before.showcasecount-1]);
+    assert.deepEqual(before,fixture.input);
+    if(before.showcasecount>1)assert.throws(()=>projectOriginalPeriodShopLedger({
+      shop:before,reviewed,limits:source.limits,
+    }),/B-44/,'default source runtime stays single-shelf');
+  }
+  const two=fixtures[1].input;
+  assert.throws(()=>projectOriginalPeriodShopLedger({shop:two,reviewed:{...expanded},limits:source.limits}),/B-44/);
+  for(const invalid of [{...two,showcasecount:9},{...two,price:[5000]},{...two,showcase:[10]}])
+    assert.throws(()=>projectOriginalPeriodShopLedger({shop:invalid,reviewed:expanded,limits:source.limits}),/B-44/);
+  assert.throws(()=>reviewOriginalPeriodShopLedger({...options,
+    itemDsl:itemDsl.replace(/(CostShowcase8\s+)128000/,'$1'+'0'),
+  }),/maintenance drift/);
+});

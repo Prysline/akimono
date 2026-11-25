@@ -30,6 +30,16 @@ our ($PROFIT_DAY_COUNT,$EXP_DOWN_RATE,$EXP_DOWN_POINT,$MAX_ITEM,
   @SHOWCASE_COST,@ITEM);
 $PROFIT_DAY_COUNT=3;$EXP_DOWN_RATE=60;$EXP_DOWN_POINT=5;$MAX_ITEM=79;
 @SHOWCASE_COST=(0,2000,4000,8000);
+my $multi=(@ARGV==1 && $ARGV[0] eq '--multi-shelf');
+die 'unknown ledger probe argument' if @ARGV && !$multi;
+if($multi){
+  my $dsl=File::Spec->catfile($FindBin::Bin,'..','..','..','custom','inc-item-data.cgi');
+  open(my $df,'<:encoding(UTF-8)',$dsl) or die $!;
+  my $d=<$df>;close $df;
+  my @costs=($d=~/^\s*CostShowcase\d+\s+(\d+)\s*(?:#.*)?$/gmi);
+  die 'eight original shelf costs required' unless @costs==8;
+  @SHOWCASE_COST=@costs;
+}
 @ITEM=(undef,map {{limit=>9999}} 1..79);
 $ITEM[10]->{limit}=20;
 $ITEM[79]->{limit}=10;
@@ -76,6 +86,19 @@ my @cases=(
     exp=>{10=>1,79=>10},
   )],
 );
+if($multi){
+  # Execute the SAME unmodified Perl accounting block for all eight source
+  # shelf sizes. These are isolated ledger inputs, not player acquisition.
+  for my $n (1..8){
+    my $s=shop(money=>200000,book=>11,gift=>5,profitstock=>230000,
+      saletoday=>490000,paytoday=>110000,taxtoday=>543,costtoday=>1234.875,
+      itemtoday=>{10=>7},exp=>{10=>400,79=>6});
+    $s->{showcasecount}=$n;
+    $s->{showcase}=[(10)x$n];
+    $s->{price}=[(5000)x$n];
+    push @cases,["source-shelves-$n",$s];
+  }
+}
 my @rows=();
 for my $case (@cases) {
   my($name,$input)=@$case;

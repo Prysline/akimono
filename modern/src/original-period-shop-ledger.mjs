@@ -14,9 +14,14 @@ export const B44_LEDGER_SOURCE='core-inc-period-single-shop-ledger-before-dignit
 const fail=x=>{throw new RangeError('B-44 source-period ledger: '+x);};
 const check=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
 const guard=(s,frag,label)=>{if(typeof s!=='string'||!s.includes(frag))fail('source drift: '+label);};
+// Opt-in source review only; ordinary P3/R4 single-shelf runtime is unchanged.
+const multiShelfReviews=new WeakSet();
+const originalShelfCosts=Object.freeze([0,2000,4000,8000,16000,32000,64000,128000]);
 export function reviewOriginalPeriodShopLedger({
   periodSource,configSource,itemDsl,model,compilerSource,
+  includeReviewedMultiShelf=false,
 }){
+  if(typeof includeReviewedMultiShelf!=='boolean')fail('explicit multi-shelf opt-in');
   for(const [needle,label] of [
     ['$DT->{rankingyesterday}=$dtcount;','ranking index before daily ledger'],
     ['$DT->{profitstock}=int(($DT->{profitstock}*$PROFIT_DAY_COUNT+$DT->{saletoday}-$DT->{paytoday})/($PROFIT_DAY_COUNT+1));','three-period weighted profit'],
@@ -62,12 +67,24 @@ export function reviewOriginalPeriodShopLedger({
   if(model.showcaseMaintenanceSource!==undefined&&
      model.showcaseMaintenanceSource!=='CostShowcase1=0')
     fail('reviewed showcase maintenance changed');
-  return Object.freeze({
+  let shelfCosts=null;
+  if(includeReviewedMultiShelf){
+    const rows=[...itemDsl.matchAll(/^\s*CostShowcase(\d+)\s+(\d+)\s*(?:#.*)?$/gmi)];
+    if(rows.length!==8||rows.some((row,i)=>Number(row[1])!==i+1||
+       Number(row[2])!==originalShelfCosts[i]))
+      fail('Standard Street 1-8 showcase maintenance drift');
+    shelfCosts=Object.freeze(rows.map(row=>Number(row[2])));
+  }
+  const reviewed=Object.freeze({
     source:B44_LEDGER_SOURCE,profitDayCount:3,
     expDownRate:60,expDownPoint:5,showcaseCount:1,
     showcaseDailyCost:0,maxItem:79,
-    scope:'single shop period ledger/history/limits/exp only; no complete settlement or state writes',
+    ...(shelfCosts?{showcaseMaintenanceCosts:shelfCosts}:{}),
+    scope:shelfCosts?'single shop, 1-8 source shelf costs, isolated period ledger; no complete settlement or state writes':
+      'single shop period ledger/history/limits/exp only; no complete settlement or state writes',
   });
+  if(shelfCosts)multiShelfReviews.add(reviewed);
+  return reviewed;
 }
 function checkedItemToday(value,key){
   if(value===null||typeof value!=='object'||Array.isArray(value))fail(key);
@@ -131,8 +148,13 @@ export function projectOriginalPeriodShopLedger({
     shop?.status===0;
   if(reviewedActualClose!==null&&!closedAuthorized)
     fail('unreviewed or mismatched real original CloseShop state');
+  const shelves=shop?.showcasecount;
+  const multiple=multiShelfReviews.has(reviewed);
   if(!shop||(!closedAuthorized&&shop.status!==1)||
-     shop.showcasecount!==1||
+     (!multiple?shelves!==1:
+       !Number.isSafeInteger(shelves)||shelves<1||shelves>8||
+       !Array.isArray(shop.showcase)||shop.showcase.length!==shelves||
+       !Array.isArray(shop.price)||shop.price.length!==shelves)||
      (!guildAuthorized&&shop.guild&&shop.guild!=='')||
      (!dragonAuthorized&&(
        shop.dragon&&shop.dragon!==0||shop.drmoney&&shop.drmoney!==0))||
@@ -157,9 +179,9 @@ export function projectOriginalPeriodShopLedger({
   const lastSales=checkedItemToday(shop.itemtoday,'itemtoday');
   const exp=expMap(shop.exp);
   const profit=Math.trunc((previousProfit*3+sales-payment)/4);
-  const upkeep=Math.trunc(cost)+reviewed.showcaseDailyCost;
+  const upkeep=Math.trunc(cost)+(multiple?reviewed.showcaseMaintenanceCosts[shelves-1]:reviewed.showcaseDailyCost);
   if(!Number.isSafeInteger(previousProfit*3+sales-payment)||
-     !Number.isSafeInteger(money-upkeep))
+     !Number.isSafeInteger(upkeep)||!Number.isSafeInteger(money-upkeep))
     fail('unsafe source arithmetic');
   const nextExp=Object.fromEntries(Object.entries(exp).flatMap(([id,v])=>{
     if(v>1000&&!techAuthorized)fail('unreviewed experience cap');
