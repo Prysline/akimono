@@ -54,19 +54,24 @@ npm run dev:local
 | migration/standard-street-s1 | 唯一正式現代化起點 |
 | test/task02-baseline-on-s1 (#1) | R4 原工作線與歷史來源；仍 Draft |
 | research/r4-guild-dragon-boundaries-20261125 (#16) | R4 獨立研究，保留原 base 和未完工作 |
+| work/r4-on-p3-baseline-20261125 (#18) | 從 #17 正式基線出發的 R4 新續作，僅來源證據入場，尚未合併 |
 | integration/p3-r4-cross-period-20261125 (#15) | P3 固定歷史驗收 |
 | #11、#13、#15 | P3 祖先已納入 migration；PR 封存 |
 | #12、#14 | 選擇性來源交接已納入；PR 封存，不是 Git merge |
 | 其他 integration/work/handoff/backup | 保留追溯，不作新正式開發起點 |
 
-同步前 13 條原有分支；開啟的既有 PR 僅 #1、#16，本次同步另開 docs PR。R4 #1 固定 `d2dccdacb83925b6f0121bd7311f92be2e18d2da`，原 Push 45474510079 / PR 45474525418 成功（1187 JS、2489 Perl），不替代新基線。#16 HEAD `b429504e07acfa986642fba3ae964ec3aeb33190`，較 #1 多 7 commits、26 檔，屬來源研究／隔離探針，不是正式 WorldState。其最新 [CI 45484109364](https://github.com/Prysline/akimono/actions/runs/45484109364) **failure**：Node 1198/1198；Perl 2769 tests、94 .t，`original-r4-guild-establishment.t` 第 39、40 斷言（L121–122）失敗：alpha ledger separate 預期 120000、beta ledger separate 預期 50000，皆實得 undef。根因由 R4 查證；不以舊 SHA 綠燈替代。目前未合入 migration，不影響正式基線。[R4 研究文件（固定 SHA）](https://github.com/Prysline/akimono/blob/b429504e07acfa986642fba3ae964ec3aeb33190/modern/docs/r4-guild-dragon-transaction-research-20261125.md)。
+本次同步初次查詢開啟 PR 為 #1、#16；再次查詢已新增 #18 R4 正式續作與本文件同步 #19。R4 #1 固定 `d2dccdacb83925b6f0121bd7311f92be2e18d2da`，原 Push 45474510079 / PR 45474525418 成功（1187 JS、2489 Perl），不替代新基線。
+
+#16 的舊研究版本 `b429504e07acfa986642fba3ae964ec3aeb33190`，[CI 45484109364](https://github.com/Prysline/akimono/actions/runs/45484109364) failure：Node 1198/1198；Perl `original-r4-guild-establishment.t` 第 39、40 項帳本斷言失敗（期待 120000、50000，實得 undef）。**本次同步期間已修正：** 新 HEAD `6664d60af29b4974f9386bf5c97ce09cdd477637` 的 [CI 45576804253](https://github.com/Prysline/akimono/actions/runs/45576804253) completed/success，Node 1198/1198、Perl 2774/2774（94 .t），alpha/beta 帳本斷言均通過。修正版仍是獨立來源研究，未納入 migration、非正式 WorldState/CAS。[R4 研究文件（固定 SHA）](https://github.com/Prysline/akimono/blob/6664d60af29b4974f9386bf5c97ce09cdd477637/modern/docs/r4-guild-dragon-transaction-research-20261125.md)。
+
+[#18 R4 新基線續作](https://github.com/Prysline/akimono/pull/18) 由 #17 merge `3b927866b4749aad3ffc583a9cf12bf3fb9eb783` 出發；入場 HEAD `19f35989b659fdfb3279e6cf4770d3fa6b72b322` 選擇性新增 33 份來源／歷史證據及 1 份清單，未覆寫既有檔案、未改 runtime。其 [CI 45577006632](https://github.com/Prysline/akimono/actions/runs/45577006632) 於本次複查時執行中；後續查 exact HEAD 結果。參見[入場清冊](https://github.com/Prysline/akimono/blob/19f35989b659fdfb3279e6cf4770d3fa6b72b322/modern/docs/r4-unified-baseline-intake-20261125.md)。#18 已採正確的新基線方向，仍 Draft，未完外部玩家功能不得宣告完成。
 
 R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最新 HEAD 開新功能分支，選擇性移植已證明成果，重新驗證 v2/CAS/HMAC/source staging/Perl hash 與外部交易權限／副作用。不直接合併 #1/#16 或以舊 registry/存檔取代新架構。P4/P5 亦從 migration 出發，先查依賴。保留原版、固定交接 refs，不 force push。現行 workflow 以 PR CI 為正式門檻；migration 尚未配置 push 觸發或強制 required checks，治理另開工作。
 
 ## 新工作窗起手提示
 
 ```text
-繼續 Prysline/akimono 標準街現代化。先讀 migration/standard-street-s1 實際最新 HEAD、modern/docs/current-baseline-status.md、相關來源文件及 CI。#17 已提升 P3 A–E／R2、P1、P2 與已驗收 R4 單店跨期為唯一正式基線。新正式功能從 migration 開獨立分支，不用舊 #1/#11/#12/#13/#14/#15 作開發起點。R4 #1/#16 是研究來源，保留未完工作；查 #16 exact HEAD CI 與公會帳本失敗，按需移植已證明成果，不重做 P3。區分來源 Oracle、fixture、真 HTTP/CAS 和正式驗收；保留唯一 v2、完整重播與安全拒絕。只改相關 modern/ 範圍，不碰凍結 Core/DSL/Perl、main、固定交接 refs 或 Notion；以目標 PR CI 驗收，合併依授權。
+繼續 Prysline/akimono 標準街現代化。先讀 migration/standard-street-s1 實際最新 HEAD、modern/docs/current-baseline-status.md、相關來源文件及 CI。#17 已提升 P3 A–E／R2、P1、P2 與已驗收 R4 單店跨期為唯一正式基線。新正式功能從 migration 開獨立分支，不用舊 #1/#11/#12/#13/#14/#15 作開發起點。R4 #1/#16 是研究來源，#18 是從正式基線出發的續作；#16 帳本修正版已通過獨立 CI，先查 #18 exact HEAD CI 與入場清冊，按需移植已證明成果，不重做 P3。區分來源 Oracle、fixture、真 HTTP/CAS 和正式驗收；保留唯一 v2、完整重播與安全拒絕。只改相關 modern/ 範圍，不碰凍結 Core/DSL/Perl、main、固定交接 refs 或 Notion；以目標 PR CI 驗收，合併依授權。
 ```
 
 本次同步只更新文件，不修改程式、測試、workflow、研究分支或 Notion；原歷史正文保留。
