@@ -6,13 +6,50 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
-async function maintainCows(p,target){
-  if(p.stock(25)<target)await p.market(25,target-p.stock(25),{partial:true});
+// Original whole.cgi::CheckWholeStore counts held cows against the
+// single-shop wholesale total int(1.5+0.99)=2. Buy market cows FIRST.
+// Beyond this street cap, use real #79 vouchers, including period prizes.
+async function maintainCows(p,target,observed){
+  await p.list(0);
+  for(let n=0;p.stock(25)<target;n++){
+    assert.ok(n<32,'bounded legal replacement');
+    if(!p.stock(79)){
+      // Earn vouchers through the existing reviewed rank-one settlement.
+      // Keep selling legitimately produced milk to pay upkeep while waiting.
+      for(let h=0;!p.stock(79);h++){
+        assert.ok(h<432,'bounded real period prize acquisition');
+        if(p.stock(25)>0&&p.stock(26)<30){
+          const count=Math.min(6,Math.floor(p.remaining()/p.quote(25,1).timePerUseSeconds));
+          if(count>0){
+            const result=await p.use(25,1,count);
+            observed.deaths+=result.details.originalUseItem.find(row=>row[0]===25)?.[1]??0;
+          }
+        }
+        if(p.stock(26)>0&&p.state.shop.showcase[0]!==26&&p.remaining()>=p.state.showcaseEditTimeSeconds)
+          await p.list(26);
+        const before=p.state.world;
+        const r=await p.tick(60);
+        const s=r.details.settlementReceipt;
+        if(s){
+          assert.equal(s.cashAfterLedger,s.cashBeforeLedger-s.maintenance);
+          assert.equal(p.state.shop.costyesterday,s.maintenance);
+          assert.equal(s.prize.stockAfter-s.prize.stockBefore,s.prize.granted);
+          if(s.prize.itemId===79)assert.equal(p.stock(79),before.shops[0].item[78]+s.prize.granted);
+        }
+      }
+      await p.list(0);
+    }
+    const count=Math.min(target-p.stock(25),p.stock(79));
+    const before=p.stock(25);
+    await p.use(79,4,count);
+    assert.equal(p.stock(25),before+count);
+    observed.giftCows+=count;
+  }
   assert.equal(p.stock(25),target,'actual cow ownership, not a fixture');
 }
 
 async function milkTo(p,target,cows,level,observed){
-  await maintainCows(p,cows);
+  await maintainCows(p,cows,observed);
   for(let n=0;p.stock(26)<target;n++){
     assert.ok(n<60,'bounded real milk acquisition: '+JSON.stringify({
       target,milk:p.stock(26),cows:p.stock(25),money:p.state.shop.money,
@@ -33,7 +70,7 @@ async function milkTo(p,target,cows,level,observed){
     assert.equal(p.state.shop.time,Math.max(before.time,now-259200)+clock*count);
     assert.equal(result.details.randomDrawsUsed,count+1);
     observed.deaths+=deaths;
-    await maintainCows(p,cows);
+    await maintainCows(p,cows,observed);
   }
 }
 
@@ -119,21 +156,29 @@ async function maintenance(p){
 
 test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 saves and checkpoint replay',async t=>{
   const p=await genuinePlayer(t,{now:null,crossPeriod:true});
-  const observed={deaths:0};
+  const observed={deaths:0,giftCows:0};
   assert.equal(p.state.shop.money,100000);
   assert.equal(p.stock(25),0);
   assert.equal(p.stock(79),5);
   await p.deny(25,0);
   await p.deny(25,1);
-  await p.use(79,4,4);
-  assert.equal(p.stock(25),4);
+  // Before redeeming any vouchers, legally purchase the full two-cow
+  // single-shop street cap using real PLUS, market quote and CAS.
+  await p.market(25,2,{partial:true});
+  assert.equal(p.stock(25),2);
+  await p.tick(60);
+  assert.equal(p.state.world.market.wholesale[24],0);
+  const beforeBlocked=p.state.world;
+  const blocked=await p.post('/api/buy',{expectedRevision:beforeBlocked.revision,
+    itemId:25,requestedCount:1,marketShelf:0,expectedPrice:10000});
+  assert.equal(blocked.ok,false);
+  assert.deepEqual(p.state.world,beforeBlocked);
+  await maintainCows(p,4,observed);
   assert.equal(p.quote(25,0).timePerUseSeconds,3600);
   await milkTo(p,15,4,0,observed);
   await p.enoughTime(p.quote(26,1).timePerUseSeconds);
   await p.deny(26,1);
-  await p.use(79,4);
-  assert.equal(p.stock(79),0);
-  assert.equal(p.stock(25),5);
+  await maintainCows(p,5,observed);
   await milkTo(p,30,5,1,observed);
   await p.enoughTime(p.quote(26,2).timePerUseSeconds);
   await p.deny(26,2);
@@ -143,13 +188,13 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   assert.equal(p.quote(25,0).timePerUseSeconds,2400);
   assert.equal(p.stock(78),0);
   await ferment(p,1,5);
-  await p.market(25,4,{partial:true});
-  assert.equal(p.stock(25),9);
+  await maintainCows(p,9,observed);
   await milkTo(p,15,9,1,observed);
   await p.enoughTime(p.quote(26,2).timePerUseSeconds);
   await p.deny(26,2);
-  await p.market(25);
-  assert.equal(p.stock(25),10);
+  await maintainCows(p,10,observed);
+  assert.ok(observed.giftCows>=8,'at least three additional source vouchers beyond the initial five');
+  assert.ok(p.state.world.period.settledCount>0,'genuine rank-prize settlements');
   await milkTo(p,31,10,1,observed);
   await ferment(p,2,10);
   assert.ok(p.stock(35)>0&&p.stock(36)>0&&p.stock(26)>0&&p.exp(25)>0);
@@ -167,7 +212,8 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   if(p.stock(26)>14)await p.discard(26,p.stock(26)-14);
   await p.deny(26,1);await p.deny(26,2);
   await milkTo(p,30,10,1,observed);
-  const sales={26:await sell(p,26),35:await sell(p,35),36:await sell(p,36)};
+  const sales={26:await sell(p,26),35:await sell(p,35),36:await sell(p,36),25:await sell(p,25)};
+  await maintainCows(p,10,observed);
   // Real ordinary discard commands, not inserted history or fake stock.
   // Force a checkpoint through the same shared P3 source replay path.
   await milkTo(p,160,10,1,observed);
@@ -191,7 +237,7 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   assert.equal(rejected.ok,false);
   assert.deepEqual(p.state.world,before);
   t.diagnostic('P4 real player sales='+JSON.stringify(sales)+
-    ' observed cow deaths='+observed.deaths+
+    ' observed cow deaths='+observed.deaths+' gift cows='+observed.giftCows+
     ' checkpoint='+p.state.historyCheckpointRevision+
     ' revisions='+first.revision+'→'+second.revision);
   await p.rejectForgedLatest(first,record=>{
