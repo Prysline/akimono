@@ -47,3 +47,5 @@ r2-dairy-true-player-http、r2-career-true-player-http、p2-career-persistence-h
 - 實際舊候選 CI [45651554594](https://github.com/Prysline/akimono/actions/runs/45651554594)，HEAD 12c0e1771fd52d8438e8df3d562a80e3e79a1762：1320/1321 JS，唯一失敗在持有五牛後等待市場補貨，長時間無交易觸發原版店主不在 closure fail-closed。Perl/後續 SHA 步驟未執行。修正的是玩家取得路徑，不是原版關店閘門。
 - 新獨立 `p4-dairy-death-and-save-security.test.mjs`：5 牛、預留合法禮券、酪農家、最多 480 次有效高等擠奶；若 server RNG 命中死亡，先保存死亡狀態並重啟，再隔離 5 牛 NEED 拒絕、真禮券補牛、製造優格及第二代重啟。若無死亡命中，明確 skip 並輸出實際機會數，**不是死亡驗收成功**。另一短路徑從 fresh v2 單獨偽造四種資產、EXP、job、history、RNG、v1 與錯誤 checksum，拒絕最新槽、回復舊槽、不覆寫。只在負面測試還原原本真實 save bytes。
 - 新候選仍待 exact HEAD 的完整目標 PR CI。不可把上述測試程式或舊成功數字當成本輪正向玩家證據。
+
+- P4 補充市場 cash/持有上限/負行動時間/錯誤報價的受控負面 CAS fixture（非正向玩家資產），及正式 HTTP market receipt 逐欄斷言。第二代實際 save bytes 只讀檢查 outer SHA、HMAC、每個 checkpoint HMAC、source fingerprint、retained prefix digest/revision/origin；負面破壞最新 retained prefix 及獨立 checkpoint metadata，驗證上一代回復且不得覆寫，之後只還原原始真實 bytes。完整執行仍以 exact HEAD CI 為準。

@@ -60,8 +60,7 @@ test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal
     assert.ok(p.stock(26)>=15,'isolate NEED gate with adequate milk');
     await prepare(p,26,1);await p.deny(26,1);
     // Initial reserved vouchers and genuine later period vouchers only.
-    const needed=5-p.stock(25);
-    for(let i=0;p.stock(79)<needed;i++){
+    for(let i=0;p.stock(79)<5-p.stock(25);i++){
       assert.ok(i<216,'bounded genuine prize voucher wait');
       if(p.stock(25)>0&&p.stock(26)<30&&p.remaining()>=p.quote(25,1).timePerUseSeconds)
         await milk(p,1);

@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
+import {inspectDairyCheckpoint} from './support/p4-dairy-proof.mjs';
 
 // Original whole.cgi::CheckWholeStore counts held cows against the
 // single-shop wholesale total int(1.5+0.99)=2. Buy market cows FIRST.
@@ -260,6 +261,8 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   assert.ok(second.revision>first.revision);
   assert.equal(p.stock(25),10);
   assert.ok(p.stock(35)>0&&p.stock(36)>0);
+  const proof=await inspectDairyCheckpoint(p,2);
+  assert.ok(proof.segments>=1);
   await eat(p,35);await eat(p,36);
   const before=p.state.world;
   const rejected=await p.post('/api/save',{expectedRevision:before.revision,expectedGeneration:1});
@@ -268,8 +271,9 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   t.diagnostic('P4 real player sales='+JSON.stringify(sales)+
     ' observed cow deaths='+observed.deaths+' gift cows='+observed.giftCows+
     ' prize vouchers='+observed.prizeVouchers+' periods='+observed.settlements+
-    ' checkpoint='+p.state.historyCheckpointRevision+
+    ' checkpoint='+p.state.historyCheckpointRevision+' authenticated prefixes='+proof.segments+
     ' revisions='+first.revision+'→'+second.revision);
+  await p.rejectDamagedNewestPrefix(first,second);
   for(const mutate of [
     r=>{r.checkpointAuth='0'.repeat(64);},
     r=>{const proof=JSON.parse(r.careerProof);proof.checkpoint.mac='0'.repeat(64);r.careerProof=JSON.stringify(proof);},

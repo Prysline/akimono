@@ -155,6 +155,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     await stop();await boot();ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,snapshot);
     assert.equal(state.save.format,'akimono.local-world-save.v2');
+    assert.equal(state.save.generation,generation+1);
     return snapshot;
   }
   async function rejectDamagedOldestPrefix(expected){
@@ -180,6 +181,23 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     await boot();ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,expected);
   }
+  async function rejectDamagedNewestPrefix(first,second){
+    const latest=JSON.parse(await readFile(join(directory,'world-a.json'),'utf8'));
+    const proof=JSON.parse(latest.careerProof);
+    assert.equal(proof.anchorKind,'checkpoint');
+    const file=join(directory,'reviewed-history-v1','prefix-'+proof.checkpoint.prefixSha256+'.json');
+    const good=await readFile(file,'utf8');
+    await stop();
+    try{
+      await writeFile(file,'damaged P4 newest retained source prefix');
+      await boot();ok(await post('/api/load'),'LOADED');
+      assert.deepEqual(state.world,first);
+      assert.equal(state.save.recoveryWarning,true);
+      assert.equal(await readFile(file,'utf8'),'damaged P4 newest retained source prefix');
+    }finally{await stop();await writeFile(file,good);}
+    await boot();ok(await post('/api/load'),'LOADED');
+    assert.deepEqual(state.world,second);
+  }
   async function rejectForgedLatest(first,mutate,{restore=false,recompute=true}={}){
     const slot=join(directory,'world-a.json');
     await stop();
@@ -203,5 +221,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectForgedLatest,post};
+  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
 }
