@@ -1,5 +1,7 @@
 # R2 原版商品 USE／製作功能缺口清冊（平行支線）
 
+> **2026-11-26 P4 候選，尚未驗收**：七項乳品 USE 已接入共用引擎；現行 v2 玩家候選與未完成證據見 [P4 來源審閱](p4-dairy-persistence-source-review.md)。舊版存檔測試不代表現行 v2 驗收。以下保留歷史盤點。
+
 > 來源：凍結 `custom/inc-item-data.cgi` 逐一 `@@ITEM`／`@@USE`，2026-11-23 原 R2 `work/r2-use-completion` 盤點；2026-11-24 PR #2 合併至隔離 `integration/r2-use-completion-20261124`，後續 PR #3 已合併至相同隔離分支（CI 1,201／1,201）；PR #4 `work/r2-target-preflight-20261124` 已合併（CI 1,202／1,202）；本輪 `work/r2-ad-package-market-preflight-20261124` 增加 #62 廣告包真市場交易**非提交式 GameCore 試算**。本清冊是**來源宣告對現行執行 Registry** 的缺口，不代表完整玩家驗收。僅修改 `modern/`；R4 PR #1、R4 來源分支、`main` 不修改；R4 EVENT／SortDT／36h 未被 R2 取代。
 
 ## 確認總數與缺口層級

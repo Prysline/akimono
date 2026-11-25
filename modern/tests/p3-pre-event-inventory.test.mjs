@@ -181,3 +181,23 @@ test('P3 pure handoff rejects overflow, unknown stock, EXP overflow, unknown EVE
     assert.equal(JSON.stringify(candidate),prior);
   }
 });
+
+test('P4 frozen Perl whole street cow cap 20/1.5: held animals constrain real PLUS, not owned limit',()=>{
+  const {repository}=fresh();
+  const limit=street.reviewedGiftMapUse.limits[24];
+  assert.equal(limit.limit,20);
+  assert.equal(limit.wslimit,1.5);
+  const cap=Math.trunc(limit.wslimit+0.99);
+  assert.equal(cap,2);
+  for(const cows of [0,1,2,4,5,9,10,20]){
+    // Pure source differential fixture. No player acquisition or persistence claim.
+    const candidate=structuredClone(repository.read());
+    candidate.shops[0].item[24]=cows;
+    candidate.shops[0].showcase=[0];
+    candidate.shops[0].price=[0];
+    const projected=compare(candidate,60);
+    const market=projected.market.wholesale[24];
+    assert.ok(market>=0&&market<=Math.max(0,cap-cows));
+    if(cows>=cap)assert.equal(market,0);
+  }
+});
