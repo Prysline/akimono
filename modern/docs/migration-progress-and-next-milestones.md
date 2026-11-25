@@ -1,3 +1,7 @@
+> **2026-11-25｜現行基線同步：** P3 A–E 與受控單店跨期已正式納入 migration。R4 外部交易、公會與龍族等未完工作仍獨立研究；下文舊工作分支和跨期一律拒絕的判定不得作為現行開發指令。 [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
 **2026-11-23｜R4 本輪（實際 HTTP CAS 防線＋關店觸發來源差分；R4 尚未完成）：** 已在本機 HTTP 的初始化／磁碟載入改用來源審閱版記憶體 CAS，連直接 compareAndSwap 都會重新核對 frozen 36h／+3h clock 與合法 v2 期別；已知單 EVENT 在零秒內憑空生效也被拒絕。實際 HTTP 初始世界→開店→59 PLUS→進貨→跨期拒絕→雙世代 save→Node restart→load→再次拒絕通過。新增凍結期末店主過期 `CloseShop` 判斷九個 Perl／Node 差分案（原始呼叫／日誌，未模擬真刪店）。程式 SHA `78a590676f921c1c83f0ef3372caa90ae41e818b` 同 SHA Push #45200662255／PR #45200680932 成功，Node 1110/1110、Perl 2225/2225（72 檔）。**正向來源期末 WorldState／CAS／HTTP 仍未完成，不允許 R4 退出或合併 PR**。詳見 [R4 退出清冊](r4-exit-audit.md)。
 
 **2026-11-23｜R4 新增 GameCore 正式指令跨期來源閘門（R4 尚未完成）：** `src/original-r4-world-transition-gate.mjs` 將凍結 36h／+3h 期界和合法 B-51／B-59～61 v2 period source 證據帶進 `StandardStreetModule.reviewPeriodTransition`；`applyGameCommand` 在 v2 時間或期別改動時必須取得街道許可，跨期、不合法 settledCount／城市／EVENT 或 `nonCommittable` 片段均於正式記憶體 CAS 前拒絕。新 Node 回歸測試並檢查 B-43 雙代真實存檔未受拒絕結算污染。最初程式提交 `eeaede783ebfe20745273181280d7f955debe33a` 同 SHA Push #45128104169／PR #45128111810 success，Node 1101/1101、Perl 2210/2210；本輪後續文件／測試 HEAD 需獨立雙 CI。**正式可提交已結算 WorldState、原版全部 36h IO、HTTP/CAS/restart 尚未完成。** 詳見 [R4 退出清冊](r4-exit-audit.md)。

@@ -1,5 +1,10 @@
 # R4 執行中｜2026-11-23 已驗收時間片 Oracle，完整 EVENT／期末尚未完成
 
+> **2026-11-25｜現行基線同步：** 下方舊起手提示、指定 test/task02-baseline-on-s1 為正式基線與禁止 migration 合併的敘述均已成為歷史。新工作窗只使用最新狀態內的起手提示。 [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
+
 **2026-11-23｜R4-B 第一個可驗證來源工作包。** 新增 `src/original-r4-time-slices.mjs` 與從凍結 `inc-turn.cgi` 原文擷取執行的真 Perl Oracle；九個單次、多次、恰好跨 36h 與零尾段測試逐筆比對。原版 `@timespan` 切割器已接到既有 R3 前 EVENT 投影的跨期 fail-closed 前置檢查。**此工作包不執行 SortDT、完整 inc-period、EVENT；跨期仍拒絕提交，不宣稱 R4 退出。** R3 已完成自身受控來源退出，R2 A～E 不重做。後續須以 EVENT 真 Perl hash 次序／回呼／RNG、SortDT＋36h 期末與完整 HTTP/CAS 重啟來源差分收斂。PR #1 保持 Open／Draft，僅修改 modern/，不碰 Notion、凍結 Perl／DSL／Core。來源契約：[`r4-source-time-slices-contract.md`](r4-source-time-slices-contract.md)，受影響測試：[`r4-r0-affected-tests-mapping.md`](r4-r0-affected-tests-mapping.md)。
 
 **2026-11-23｜R4-A 受限原版 hash 探針：** 已新增直接執行凍結編譯器輸出的 17 EVENT Perl hash 初始化、實際 `keys(%EVENT)` 與明示人工三鍵 `keys(%DTevent)` Oracle，並加 Perl／Node 差分。**這不等於 EVENT 真生命週期或 RNG 來源完全等價**，不硬編任何排列，也不將 B-56 的明示 fixture 假稱原版 runtime。R4 仍未退出；跨期正式世界繼續 fail-closed。詳見 [R4 來源契約](r4-source-time-slices-contract.md)、[R0 受影響測試](r4-r0-affected-tests-mapping.md)。
