@@ -155,8 +155,34 @@ async function maintenance(p){
 }
 
 test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 saves and checkpoint replay',async t=>{
-  const p=await genuinePlayer(t,{now:null,crossPeriod:true});
-  const observed={deaths:0,giftCows:0};
+  const observed={deaths:0,giftCows:0,prizeVouchers:0,marketCows:0,settlements:0};
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,
+    onTick(r,before){
+      const s=r.details.settlementReceipt;
+      if(!s)return;
+      observed.settlements++;
+      assert.equal(s.cashAfterLedger,s.cashBeforeLedger-s.maintenance);
+      assert.equal(r.state.shop.costyesterday,s.maintenance);
+      assert.equal(s.prize.stockAfter-s.prize.stockBefore,s.prize.granted);
+      if(s.prize.itemId===79){
+        observed.prizeVouchers+=s.prize.granted;
+        assert.equal(r.state.shop.item[78],before.shops[0].item[78]+s.prize.granted);
+      }
+    },
+    onPurchase(r,before,offer){
+      const d=r.details,old=before.shops[0],after=r.state.shop;
+      assert.equal(d.unitPrice,offer.price);
+      assert.equal(d.totalPaid,d.purchasedCount*offer.price);
+      assert.equal(d.timeConsumedSeconds,offer.timeSeconds);
+      assert.equal(after.money,old.money-d.totalPaid);
+      assert.equal(after.paytoday,old.paytoday+d.totalPaid);
+      assert.equal(after.item[d.itemId-1],old.item[d.itemId-1]+d.purchasedCount);
+      assert.equal(r.state.world.market.wholesale[d.itemId-1],offer.marketStock-d.purchasedCount);
+      assert.equal(after.time,Math.max(old.time,before.nowSeconds-259200)+offer.timeSeconds);
+      assert.equal(r.state.world.revision,before.revision+1);
+      if(d.itemId===25)observed.marketCows+=d.purchasedCount;
+    }
+  });
   assert.equal(p.state.shop.money,100000);
   assert.equal(p.stock(25),0);
   assert.equal(p.stock(79),5);
@@ -193,7 +219,8 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   await p.enoughTime(p.quote(26,2).timePerUseSeconds);
   await p.deny(26,2);
   await maintainCows(p,10,observed);
-  assert.ok(observed.giftCows>=8,'at least three additional source vouchers beyond the initial five');
+  assert.equal(observed.marketCows,2);
+  assert.ok(observed.giftCows>=8&&observed.prizeVouchers>=3,'at least three real rank prize vouchers beyond the initial five');
   assert.ok(p.state.world.period.settledCount>0,'genuine rank-prize settlements');
   await milkTo(p,31,10,1,observed);
   await ferment(p,2,10);
@@ -210,6 +237,7 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   await drink(p,1);await drink(p,10);await drink(p,30);
   await ferment(p,1,10);await ferment(p,2,10);
   if(p.stock(26)>14)await p.discard(26,p.stock(26)-14);
+  await p.enoughTime(p.quote(26,2).timePerUseSeconds);
   await p.deny(26,1);await p.deny(26,2);
   await milkTo(p,30,10,1,observed);
   const sales={26:await sell(p,26),35:await sell(p,35),36:await sell(p,36),25:await sell(p,25)};
@@ -224,6 +252,7 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   await milkTo(p,31,10,1,observed);
   await ferment(p,1,10);await ferment(p,2,10);
   await p.deny(25,0,{requestedCount:0});
+  await p.deny(25,0,{requestedCount:1.5});
   await p.deny(25,0,{expectedRevision:p.state.world.revision-1});
   await p.deny(25,0,{randomDraws:[0]});
   await maintenance(p);
@@ -238,8 +267,15 @@ test('P4 real-clock dairy: ten legal cows, seven USEs, reviewed sale, two v2 sav
   assert.deepEqual(p.state.world,before);
   t.diagnostic('P4 real player sales='+JSON.stringify(sales)+
     ' observed cow deaths='+observed.deaths+' gift cows='+observed.giftCows+
+    ' prize vouchers='+observed.prizeVouchers+' periods='+observed.settlements+
     ' checkpoint='+p.state.historyCheckpointRevision+
     ' revisions='+first.revision+'→'+second.revision);
+  for(const mutate of [
+    r=>{r.checkpointAuth='0'.repeat(64);},
+    r=>{const proof=JSON.parse(r.careerProof);proof.checkpoint.mac='0'.repeat(64);r.careerProof=JSON.stringify(proof);},
+    r=>{const proof=JSON.parse(r.careerProof);proof.checkpoint.sourceFingerprint='0'.repeat(64);r.careerProof=JSON.stringify(proof);},
+    r=>{const proof=JSON.parse(r.careerProof);proof.checkpoint.prefixSha256='0'.repeat(64);r.careerProof=JSON.stringify(proof);},
+  ])await p.rejectForgedLatest(first,mutate,{restore:true});
   await p.rejectForgedLatest(first,record=>{
     const world=JSON.parse(record.world);
     world.shops[0].item[24]++;
