@@ -1,5 +1,10 @@
 # R4 → P3 cross-period handoff candidate (2026-11-25)
 
+> **2026-11-25｜現行基線同步：** The candidate was formally accepted at eeb96e45d9fe1a1ab5b206872d0ad90f3e807c8b, independent PR CI 45476330181, and its selected closure was integrated into P3 and promoted by #17. This copy records the original candidate manifest; the immutable handoff ref remains untouched. Do not consume it as a newer player architecture. [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
+
 **Status: unverified candidate, CI-only; do not merge or consume as an accepted dependency.**
 
 - Parent (previous fixed handoff): `dffe18a60edc9f3ff9826342fcae4f9e7bc7959a`.

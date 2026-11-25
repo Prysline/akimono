@@ -1,5 +1,10 @@
 # P3 cross-period integration intake / pre-crossing baseline
 
+> **2026-11-25｜現行基線同步：** The intake candidate subsequently passed A–E at fixed P3 SHA b60c2078a2c63db71490980f0b113b3907d6d483 and was promoted by PR #17. Original candidate/pending-CI statements below are historical. See the current baseline and linked 86-path exit manifest. [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
+
 Status: **integration candidate, not P3 exit**. R4 formally approved the exact fixed dependency SHA during the intake. This branch now incorporates the fixed dependency closure, reconciled shared files, and a v2-only opt-in crossing candidate; CI remains the verification gate.
 
 - P3 parent: `1126acc5bb2e89a45a917fcc6e4e1b81bdcb555d` (PR #13, PR CI 45472802522; 1267 JS / 2286 Perl).
