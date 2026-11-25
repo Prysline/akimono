@@ -23,9 +23,11 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   t.after(async()=>{await stop();await rm(directory,{recursive:true,force:true});});
   async function boot(){
     stderr='';
-    child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env:{...process.env,
-      AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,AKIMONO_E2E_FIXED_NOW:now,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0'},stdio:['ignore','pipe','pipe']});
+    const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0'};
+    if(now===null)delete env.AKIMONO_E2E_FIXED_NOW;
+    else env.AKIMONO_E2E_FIXED_NOW=now;
+    child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env,stdio:['ignore','pipe','pipe']});
     child.stderr.on('data',b=>stderr+=b);
     let timer;
     url=await Promise.race([new Promise((resolve,reject)=>{
