@@ -117,6 +117,13 @@ die "B-50 original frozen complete in-place prefix failed to compile: $@"
 $EXPIRE_TIME=3600*24*7;
 $PROFIT_DAY_COUNT=3; $EXP_DOWN_RATE=60;$EXP_DOWN_POINT=5;
 $MAX_ITEM=79;@SHOWCASE_COST=(0,2000,4000,8000);
+my $shelfCount=1;
+if(@ARGV){
+  die 'expected --shelves=1..8' unless @ARGV==1 && $ARGV[0]=~/^--shelves=([1-8])$/;
+  $shelfCount=0+$1;
+  @SHOWCASE_COST=($itemDsl=~/^\s*CostShowcase\d+\s+(\d+)\s*(?:#.*)?$/gmi);
+  die 'eight original shelf costs required' unless @SHOWCASE_COST==8;
+}
 $DEFINE_FUNCUPDATE=0; $ITEM_DIR='unreadable-for-B50';
 $DTTaxrate=0;$BAL_JOB='';$BAL_NAME='';
 @ITEM=(undef,map {{name=>'',limit=>0,scale=>''}} 1..79);
@@ -139,6 +146,15 @@ my $originalShop={
   itemtoday=>{10=>2},itemyesterday=>{},
   rankingyesterday=>'',exp=>{10=>100},
 };
+if(@ARGV){
+  $originalShop->{showcasecount}=$shelfCount;
+  $originalShop->{showcase}=[(10)x$shelfCount];
+  $originalShop->{price}=[(5000)x$shelfCount];
+  # Source resize consumes the one starter tool for 2+ shelves.
+  $originalShop->{item}[62]=0 if $shelfCount>1;
+  # Enough funds for all maintenance tiers in this isolated source oracle.
+  $originalShop->{money}=1000000;
+}
 $STATE=dclone($initialTown);
 $DTpeople=500000;$DTusercount=1;
 @DT=(dclone($originalShop));%DTevent=();%GUILD=();%GUILD_DATA=();

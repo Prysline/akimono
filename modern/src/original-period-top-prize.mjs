@@ -15,7 +15,9 @@ const rewards=Object.freeze([
   ['挑剔的朗姆酒',1],['時髦的靴子',1],
 ]);
 const safe=(n,key,min=0)=>{if(!Number.isSafeInteger(n)||n<min)fail(key);return n;};
-export function reviewOriginalTopPrize({itemDsl,model,originalAddItemSource,periodSource}){
+const multiShelfPrizeReviews=new WeakSet();
+export function reviewOriginalTopPrize({itemDsl,model,originalAddItemSource,periodSource,includeReviewedMultiShelf=false}){
+  if(typeof includeReviewedMultiShelf!=='boolean')fail('explicit multi-shelf opt-in');
   if(typeof itemDsl!=='string'||typeof originalAddItemSource!=='string'||
      typeof periodSource!=='string')fail('all original sources required');
   const pos=itemDsl.indexOf('@@FUNCUPDATE');
@@ -64,11 +66,13 @@ export function reviewOriginalTopPrize({itemDsl,model,originalAddItemSource,peri
   if(!periodSource.includes('$DT[0]->{rankingcount}++;')||
      !periodSource.includes('UpdateResetBefore() if defined(&UpdateResetBefore);'))
     fail('source top rank counter or callback order changed');
-  return Object.freeze({
+  const reviewed=Object.freeze({
     source:B45_PRIZE_SOURCE,position:1,
     topChoices:Object.freeze(sourceRewards),
     scope:'original single-shop top-1 prize and rankingcount only; no complete period or world writes',
   });
+  if(includeReviewedMultiShelf)multiShelfPrizeReviews.add(reviewed);
+  return reviewed;
 }
 /**
  * The original first increments rank 1 winner count, then calls
@@ -83,7 +87,11 @@ export function projectOriginalTopPrize({shop,reviewed,drawMillionths}){
   if(drawMillionths>=1000000)fail('rand must be below 1');
   if(!shop||shop.id!==1||shop.status!==1||
      !Array.isArray(shop.item)||shop.item.length!==79||
-     (shop.showcasecount!==undefined&&shop.showcasecount!==1))
+     (multiShelfPrizeReviews.has(reviewed)?
+       !Number.isSafeInteger(shop.showcasecount)||shop.showcasecount<1||shop.showcasecount>8||
+       !Array.isArray(shop.showcase)||shop.showcase.length!==shop.showcasecount||
+       !Array.isArray(shop.price)||shop.price.length!==shop.showcasecount:
+       (shop.showcasecount!==undefined&&shop.showcasecount!==1)))
     fail('source one-shop top rank state');
   if(shop.item.some((n,i)=>!Number.isSafeInteger(n)||n<0))
     fail('unreviewed stock');

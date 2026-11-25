@@ -103,3 +103,38 @@ test('B-50 prohibited phase chain can NEVER use live WorldState CAS or stage a f
     ...patches,
   }),/B-4[4-9]|B-50/);
 });
+
+
+test('R4 opt-in 1-8 shelves through the same frozen B50 period prefix, two rounds each (isolated)',()=>{
+  const options={...sources,model,
+    bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
+    compiledLimits:compiled.limits.map(it=>it.limit),
+    includeReviewedMultiShelf:true,
+  };
+  const expanded=reviewOriginalSoloPeriodPhaseChain(options);
+  for(let n=1;n<=8;n++){
+    const source=JSON.parse(execFileSync('perl',['original-b50-period-chain-probe.pl','--shelves='+n],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+    }));
+    assert.equal(source.cases.length,2);
+    for(const row of source.cases){
+      const original=structuredClone(row.input);
+      const result=projectOriginalSoloPeriodPhaseChain({reviewed:expanded,...original});
+      assert.deepEqual(result.shop,row.output.shop,'shelves '+n+' whole shop');
+      assert.deepEqual(result.town,row.output.town,'shelves '+n+' whole city');
+      assert.equal(result.dtPeople,row.output.dtPeople);
+      assert.equal(result.pointsBefore,row.output.pointsBefore);
+      assert.equal(result.pointsAfter,row.output.pointsAfter);
+      assert.equal(result.nonCommittable,true);
+      assert.equal(result.worldStateWritten,false);
+      assert.deepEqual(original,row.input);
+      if(n>1){
+        assert.throws(()=>projectOriginalSoloPeriodPhaseChain({reviewed:contract,...original}),/B-50/);
+        assert.throws(()=>projectOriginalSoloPeriodPhaseChain({reviewed:{...expanded},...original}),/B-50/);
+      }
+    }
+  }
+  for(const key of ['includeReviewedDragon','includeReviewedGuild','includeReviewedPostTech',
+    'includeReviewedActualCloseShop','includeReviewedPeriodBackup'])
+    assert.throws(()=>reviewOriginalSoloPeriodPhaseChain({...options,[key]:true}),/multi-shelf external/);
+});
