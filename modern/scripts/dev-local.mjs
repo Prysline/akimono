@@ -4,6 +4,7 @@
  * Only complete reviewed normal time is admitted; no PLUS-only supply.
  */
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
+import {calculateSourceShopPoint} from '../src/original-period-solo-sort.mjs';
 import {projectOriginalUseTransaction}
   from '../src/original-use-transaction-model.mjs';
 import http from 'node:http';
@@ -136,19 +137,10 @@ const send=(res,status,obj)=>{
 // guessed score. This is NOT a leaderboard/RANK implementation.
 function sourceShopPoint(shop){
   if(!shop)return null;
-  const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
-    'rankingcount'];
-  const values=keys.map(key=>shop[key]??0);
-  if(values.some(value=>!Number.isSafeInteger(value)))return null;
-  const [rank,profitstock,sales,tax,paid,wins]=values;
-  // Profit and adjustments may be signed; Perl GetDTPoint accepts losses.
-  if(rank<0||wins<0)return null;
-  let profit=(profitstock*3+sales-tax-paid)/500000+1;
-  const winFactor=0.5+5/(wins+10);
-  if(profit>10)profit=15-50/profit;
-  if(profit<1)profit=1/(2-profit);
-  const point=Math.trunc(rank*winFactor*profit);
-  return Number.isSafeInteger(point)?point:null;
+  const keys=['rank','profitstock','saletoday','taxtoday','paytoday','rankingcount'];
+  const fields=Object.fromEntries(keys.map(key=>[key,shop[key]??0]));
+  try{return calculateSourceShopPoint(fields);}
+  catch(error){if(error instanceof RangeError)return null;throw error;}
 }
 function state(){
   const world=repo?.read()??null;
