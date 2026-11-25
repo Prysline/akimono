@@ -13,7 +13,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=null,onPurchase=null}={}){
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
   const stop=async()=>{
@@ -52,12 +52,14 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
   const boundary=()=>state.secondsUntilSettlement;
   async function tick(minutes){
     assert.ok(minutes>=1&&minutes<=60&&(crossPeriod||minutes*60<boundary()),'source period budget exhausted: '+JSON.stringify({minutes,boundary:boundary(),remaining:remaining(),exp:state.shop.exp,stock:state.shop.item,money:state.shop.money}));
-    const nowSeconds=state.world.nowSeconds,revision=state.world.revision;
+    const before=state.world;
+    const nowSeconds=before.nowSeconds,revision=before.revision;
     const priorPeriods=state.world.period.settledCount,crosses=minutes*60>=boundary();
     const result=await command('/api/advance-reviewed-time',{minutes});
     assert.equal(state.world.nowSeconds,nowSeconds+minutes*60);
     assert.equal(state.world.revision,revision+1);
     assert.equal(state.world.period.settledCount,priorPeriods+(crosses?1:0));
+    if(onTick)onTick(result,before);
     return result;
   }
   async function enoughTime(seconds){
@@ -104,8 +106,10 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
       if(offer?.canBuy){
         const quantity=Math.min(needed,offer.marketStock,offer.limit-stock(id));
         if(quantity>0&&(partial||quantity===needed)&&state.shop.money>=offer.price*quantity&&remaining()>=offer.timeSeconds){
+          const before=state.world;
           const result=await command('/api/buy',{itemId:id,requestedCount:quantity,marketShelf:offer.shelf,expectedPrice:offer.price});
           assert.equal(result.details.purchasedCount,quantity);
+          if(onPurchase)onPurchase(result,before,offer);
           needed-=quantity;
           continue;
         }
@@ -176,21 +180,28 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false}={}){
     await boot();ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,expected);
   }
-  async function rejectForgedLatest(first,mutate){
+  async function rejectForgedLatest(first,mutate,{restore=false,recompute=true}={}){
     const slot=join(directory,'world-a.json');
     await stop();
     const good=await readFile(slot,'utf8'),record=JSON.parse(good);
     mutate(record);
-    record.sha256=createHash('sha256').update(JSON.stringify([record.format,record.generation,record.world,record.careerProof])).digest('hex');
-    await writeFile(slot,JSON.stringify(record)+'\n');
+    if(recompute)record.sha256=createHash('sha256').update(JSON.stringify([record.format,record.generation,record.world,record.careerProof])).digest('hex');
+    const forged=JSON.stringify(record)+'\n';
+    await writeFile(slot,forged);
     await boot();
     ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,first);
     assert.equal(state.save.recoveryWarning,true);
+    assert.equal(await readFile(slot,'utf8'),forged);
+    if(restore){
+      await stop();await writeFile(slot,good);
+      await boot();ok(await post('/api/load'),'LOADED');
+      assert.deepEqual(state.world,JSON.parse(JSON.parse(good).world));
+    }
   }
   await boot();ok(await post('/api/initialize'));
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectForgedLatest,post};
+  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectForgedLatest,post};
 }
