@@ -66,16 +66,17 @@ function original(rule,world,requestedCount,randomDraws){
 }
 function compare(itemId,useId,{
   count=1,job='',rank=5010,draws=null,missingCow=false,
+  cows=3,milkStock=40,storedTime=956800,expectedCount=null,
 }={}){
   const rule=street.useItem.getRule(itemId,useId);
   assert.equal(rule?.source,'original-reviewed-dairy-inline-use');
   assert.equal(rule.inlineCallback.kind,itemId===25?'milk-cow':'drink-milk');
   const initial=fresh(),old=initial.shops[0];
   const stock=[...old.item];
-  if(itemId===25)stock[24]=missingCow?0:3;
-  else stock[25]=40;
+  if(itemId===25){stock[24]=missingCow?0:cows;stock[25]=milkStock===40?0:milkStock;}
+  else stock[25]=milkStock;
   const world=validateMemoryWorld({...initial,shops:[{
-    ...old,item:stock,rank,job,money:100000,time:956800,exp:{},
+    ...old,item:stock,rank,job,money:100000,time:storedTime,exp:{},
   }]});
   const total=itemId===25?count+1:count<10?1:0;
   const randomDraws=draws??Array(total).fill(500000);
@@ -102,6 +103,7 @@ function compare(itemId,useId,{
   }
   assert.equal(result.code,'COMMITTED',result.details?.reason);
   assert.equal(result.details.effectiveCount,oracle.result.count);
+  if(expectedCount!==null)assert.equal(oracle.result.count,expectedCount);
   assert.deepEqual(result.world.shops[0].item,oracle.result.stock);
   assert.equal(result.world.shops[0].rank,oracle.result.rank);
   assert.deepEqual(result.world.shops[0].exp??{},oracle.result.exp);
@@ -160,4 +162,15 @@ test('R2 read-only milk acquisition hint points to source-reviewed cow callback'
   assert.ok(milk.providerCandidates.some(x=>x.itemId===25&&x.useId===1));
   assert.equal(cowWorld.shops[0].item[25],0,
     'source hint must not grant milk as an inventory side effect');
+});
+
+// P4: controlled Perl differential only; these are not player acquisitions.
+test('P4 dairy source clips requested count before callback RNG and rank branching',()=>{
+  compare(25,0,{count:3,storedTime:996400,expectedCount:1,draws:[500000,500000]});
+  compare(26,0,{count:40,milkStock:9,expectedCount:9,draws:[500000]});
+});
+test('P4 capped milk AddItem and partial cow mortality preserve original callback receipts',()=>{
+  compare(25,0,{milkStock:2499,draws:[999999,500000]});
+  compare(25,1,{milkStock:2500,draws:[999999,0]});
+  compare(25,1,{count:3,cows:3,draws:[500000,0,500000,500000]});
 });
