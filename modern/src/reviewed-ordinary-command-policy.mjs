@@ -6,6 +6,7 @@ export function isReviewedOrdinaryCommand(c,street){
   if(!c||typeof c!=='object'||Array.isArray(c)||c.shopId!==1||!int(c.expectedRevision))return false;
   const common='kind,expectedRevision,shopId,';
   switch(c.kind){
+    case 'complete-palace-mission':return street.reviewedPalace===true&&exact(c,'expectedRevision,kind,shopId');
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
     case 'market-buy':return exact(c,common+'itemId,requestedCount,marketShelf,expectedPrice')&&
       int(c.itemId,1,79)&&Boolean(street.marketBuyRegistry?.getRule(c.itemId))&&int(c.requestedCount,1)&&int(c.marketShelf,0,79)&&int(c.expectedPrice,1);

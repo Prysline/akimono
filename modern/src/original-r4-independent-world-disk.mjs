@@ -8,6 +8,7 @@ import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
 const CANDIDATE='source-cross-period-candidate-not-committed';
@@ -28,10 +29,17 @@ export function createIndependentDiskProjection({sources,sort,street}){
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
-  function wire(world){
+  const palaceInputs=[sources.palaceViewSource,sources.palaceCommandSource,sources.palaceConfigSource];
+  if(palaceInputs.some(s=>s!=null)&&palaceInputs.some(s=>s==null))fail('incomplete palace source set');
+  const palace=palaceInputs.every(s=>s!=null)?reviewOriginalPalaceRules({
+    viewSource:sources.palaceViewSource,handlerSource:sources.palaceCommandSource,
+    configSource:sources.palaceConfigSource,readSource:sources.readSource}):null;
+  const palaceArgs={reviewed:palace,townReview:codec.townReview};
+  const applyPalace=(world,command)=>projectOriginalPalaceMission({...palaceArgs,world,command});
+  function wire(world,town){
     if(!world.market||world.period.eventState===null)fail('known source market and events required');
     return serializePeriodPlay({...codec,world:{lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,
-      state:world.period.town,town:{},events:world.period.eventState,wholesale:world.market.wholesale,wholesaleCsv:world.market.originalWholesaleCsv,shops:world.shops}});
+      state:world.period.town,town,events:world.period.eventState,wholesale:world.market.wholesale,wholesaleCsv:world.market.originalWholesaleCsv,shops:world.shops}});
   }
   const entry=(bytes,mtime)=>({bytes,mtime});
   const capture=live=>Object.fromEntries(backups.map(n=>[n,live[n]]));
@@ -42,11 +50,13 @@ export function createIndependentDiskProjection({sources,sort,street}){
   function validate(world){
     const d=world.period.disk;
     if(world.revision===0&&world.market===null){if(d!==undefined)fail('fresh world has no disk');return true;}
-    if(!exact(d,'source,live,backup,generations')||d.source!==R4_INDEPENDENT_DISK||!Array.isArray(d.generations)||d.generations.length!==3)fail('independent disk envelope required');
+    if(!exact(d,palace?'source,live,backup,generations,townData':'source,live,backup,generations')||d.source!==R4_INDEPENDENT_DISK||!Array.isArray(d.generations)||d.generations.length!==3)fail('independent disk envelope required');
     validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi'],world.nowSeconds);
-    if(d.live['play.cgi'].bytes!==wire(world)||d.live['lasttime.cgi'].mtime!==world.nowSeconds||d.live['lasttime.cgi'].bytes!==''||d.live['guildbal.cgi'].bytes!==''||d.live['guild.cgi'].bytes!==guild)fail('live source bytes differ from world');
+    const town=palace?d.townData:{};
+    if(palace)validatePalaceTown({...palaceArgs,town});
+    if(d.live['play.cgi'].bytes!==wire(world,town)||d.live['lasttime.cgi'].mtime!==world.nowSeconds||d.live['lasttime.cgi'].bytes!==''||d.live['guildbal.cgi'].bytes!==''||d.live['guild.cgi'].bytes!==guild)fail('live source bytes differ from world');
     parsePeriodPlay({...codec,bytes:d.live['play.cgi'].bytes});
-    for(const f of [d.backup,...d.generations])if(f!==null){validateFiles(f,backups,world.nowSeconds);parsePeriodPlay({...codec,bytes:f['play.cgi'].bytes});}
+    for(const f of [d.backup,...d.generations])if(f!==null){validateFiles(f,backups,world.nowSeconds);const parsed=parsePeriodPlay({...codec,bytes:f['play.cgi'].bytes});if(palace)validatePalaceTown({...palaceArgs,town:parsed.town});}
     if(Buffer.byteLength(JSON.stringify(d))>100000)fail('independent source file history capacity');
     return true;
   }
@@ -63,12 +73,21 @@ export function createIndependentDiskProjection({sources,sort,street}){
         next={pass:'',comment:'',remoteaddr:'',guild:'',blocklogin:'',nocheckip:'',job:'',
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
-      if(['edit-showcase','market-buy','use-item'].includes(command.kind))next.lastlogin=now;
+      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND].includes(command.kind))next.lastlogin=now;
       return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
-    const play=wire(after),old=before.period.disk;
+    const old=before.period.disk;
+    let town=palace?(old?.townData??{}):{};
     const newRows=[...logRows];
+    if(command.kind===PALACE_COMMAND){
+      if(!palace||!old)fail('palace source runtime required');
+      const expected=applyPalace(before,command);
+      if(!same(expected.shops,applied.shops)||!same(expected.receipt,applied.receipt))fail('palace successor drift');
+      town=expected.town;
+      newRows.unshift([now,0,0,shops[0].shopname+'が王様の使命を達成しました。'].join('\t')+'\n');
+    }
+    const play=wire(after,town);
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
@@ -98,10 +117,11 @@ export function createIndependentDiskProjection({sources,sort,street}){
       }
       d={source:R4_INDEPENDENT_DISK,live,backup,generations};
     }
-    const next={...applied,shops,period:{...period,disk:d}};
+    if(palace)d={...d,townData:town};
+    const next={...applied,shops,market:after.market,period:{...period,disk:d}};
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+  return Object.freeze({validate,finalize,...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }

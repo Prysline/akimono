@@ -28,20 +28,20 @@ export function sourceCommandDraws({world,kind,args,count}){
      !Number.isSafeInteger(world.revision)||world.revision<0||
      !Number.isSafeInteger(world.nowSeconds)||world.nowSeconds<0)
     fail('valid world identity, revision and clock required');
-  if(!['reviewed-sparse-all-plus','advance-source-time','use-item'].includes(kind))
+  if(!['reviewed-sparse-all-plus','advance-source-time','use-item','complete-palace-mission'].includes(kind))
     fail('unsupported source command kind');
   if(args===null||typeof args!=='object'||Array.isArray(args))
     fail('source arguments must be fixed object');
   const names=Object.keys(args).sort();
   const expected=kind==='advance-source-time'?
     ['minutes','shopId']:kind==='use-item'?
-    ['itemId','requestedCount','shopId','useId']:['timespanSeconds'];
+    ['itemId','requestedCount','shopId','useId']:kind==='complete-palace-mission'?['shopId']:['timespanSeconds'];
   if(names.join(',')!==expected.join(','))
     fail('source argument contract changed');
   for(const name of names)
     integer(args[name],name,kind==='use-item'&&name==='useId'?0:1);
   integer(count,'sample count',1);
-  if(count>(kind==='use-item'?52:121))
+  if(count>(kind==='complete-palace-mission'?1:kind==='use-item'?52:121))
     fail('original source sample budget exceeded');
   // SHA-256 48-bit slices with rejection sampling prevent modulo bias.
   // Domain separation ensures changing a command, world/revision or

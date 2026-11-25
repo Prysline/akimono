@@ -18,6 +18,7 @@ import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order
 import {projectR4NormalTurnCandidate,R4_NORMAL_TURN_PROJECTION} from './original-r4-normal-turn-candidate.mjs';
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
+import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
 export const REVIEWED_WORLD_TIME_COMMAND='advance-reviewed-world-time';
 const fail=s=>{throw new RangeError('R4 reviewed local world time: '+s)};
 const keys=(o)=>Object.keys(o).sort().join(',');
@@ -40,6 +41,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
   const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
+  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND);
   const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true}):null;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
@@ -130,13 +132,14 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):applied;
   }
   const wrapped=Object.freeze({...street,
-    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND]),
+    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
+    ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?{finalizeReviewedTransition({before,command,applied}){
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
-      if(!ordinaryKinds.includes(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
+      if(!allowedOrdinary(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
       return disk.finalize({before,command,applied});
     }}:{}),
     validateReviewedWorldTimeState:validate,
@@ -146,9 +149,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     }}:{}),
     apply({world,command}){
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return propose(world,command);
-      if(!ordinaryKinds.includes(command.kind))fail('legacy or internal fixture cannot enter reviewed normal-time runtime');
+      if(!allowedOrdinary(command.kind))fail('legacy or internal fixture cannot enter reviewed normal-time runtime');
       validate(world);
       if(disk&&command.kind==='reviewed-sparse-all-plus')fail('isolated PLUS fixture cannot enter crossing runtime');
+      if(command.kind===PALACE_COMMAND){requireProvenance(world);return disk.applyPalace(world,command);}
       return street.apply({world,command});
     },
     reviewPeriodTransition({before,after,command=null,initial=false}){
@@ -166,10 +170,15 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         remember(after);return true;
       }
       if(disk){
-        if(!ordinaryKinds.includes(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
-        const result=applyGameCommand({world:before,command,streetModule:street});
-        if(!result.ok)fail('source ordinary replay rejected');
-        const p=disk.finalize({before,command,applied:{shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details}});
+        if(!allowedOrdinary(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
+        let applied;
+        if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
+        else{
+          const result=applyGameCommand({world:before,command,streetModule:street});
+          if(!result.ok)fail('source ordinary replay rejected');
+          applied={shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details};
+        }
+        const p=disk.finalize({before,command,applied});
         if(!same({...before,shops:p.shops,market:p.market,period:p.period,revision:before.revision+1},after))fail('independent ordinary CAS replay mismatch');
         remember(after);return true;
       }
