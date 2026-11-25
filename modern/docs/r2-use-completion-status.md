@@ -1,5 +1,10 @@
 # R2 原版商品 USE／製作補完狀態（平行支線）
 
+> **2026-11-25｜現行基線同步：** R2 隔離整合分支已成為正式 migration 的祖先；P1/P2/P3 及已審閱時間功能後續整合已驗收。下方 getRule/listUseOffers 數量、未完成職業敘述、工作分支等僅是當時 R2 盤點，不宣稱所有 116 USE、R0/R1 或多人世界已完成。 [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
+
 - R2 原支線：`work/r2-use-completion`，由 R4 初始 `8cf56395cceba89464a9b7dfbd4c5b00a57e6b5a` 建立；2026-11-24 在獨立 `integration/r2-use-completion-20261124` 合併 PR #2（`6fadc54ba892a8ca6a747a157151dc591d13aa9a`）。後續唯讀診斷 PR #3 也已合入同一隔離整合分支（`1cc0ae1cd7ad6d427ac6465e722e9fbfad5be73b`；CI 1,201／1,201）。#62/1 非提交式 GameCore 試算 PR #4 已合併（`535a3eee5303d6ef22df6b0e2843bcdbc242c37f`；CI 1,202／1,202）。本次市場購買試算分支：`work/r2-ad-package-market-preflight-20261124`。
 - PR #2 原本目標 `test/task02-baseline-on-s1` 是 **R4 Draft PR #1 的來源分支**；為避免更動 R4，PR #2 已改指向上述獨立整合分支並成功合併。原有 Draft PR #1、R4 來源分支與 `main` 均未改動；**這不是合入主線或完成 R4 整合**。
 - 受控來源範圍：變更只在 `modern/`；凍結的 `custom/*.cgi`、Perl、DSL、Core 不修改。
