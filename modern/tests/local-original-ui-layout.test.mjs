@@ -291,3 +291,16 @@ test('compact original showcase editor retains each occupied shelf and syncs cus
   assert.match(css,/#tab-item #showcase-shelf\{width:152px/);
   assert.match(css,/\.discard-section \.inline-form label\{[\s\S]*?flex-direction:row/);
 });
+
+test('palace page uses the server audience quote and revision-only completion, not browser assets',()=>{
+  assert.match(html,/data-tab="palace"/);
+  assert.match(html,/id="tab-palace"/);
+  for(const id of ['palace-point','palace-required-point','palace-dignity','palace-mission','palace-item','palace-stock','palace-complete'])
+    assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(script,/currentGroup=\['market','palace'\]\.includes\(name\)\?'trade':'self'/);
+  assert.match(script,/const p=s\?\.palace/);
+  assert.match(script,/\$\('palace-mission'\)\.hidden=!canMeet/);
+  assert.match(script,/palaceSubmitting\|\|!s\?\.world\|\|!canMeet\|\|p\?\.canComplete!==true/);
+  assert.match(script,/await call\('\/api\/palace-complete',\{expectedRevision:before\.world\.revision\}/);
+  assert.match(adapter,/case '\/api\/palace-complete'/);
+});

@@ -70,4 +70,52 @@ test('R4 genuine player acquires 300 wooden staffs via forest and woodcraft, the
   assert.equal(snapshot.period.disk.live['play.cgi'].bytes.split('\n')[4],'');
   t.diagnostic('R4 real craft acquisition: '+branchesUsed+' branches consumed, '+produced+
     ' staffs retained; '+diagnostic(p)+'; palace completion not attempted');
+  // Second milestone: actual normal commerce in the same world, while all
+  // mission staffs remain reserved. Sell independently crafted wood swords.
+  // A bounded observation is not a proof of reaching the palace threshold.
+  const SWORD=40;
+  const economyStart=p.state.world;
+  const targetPeriod=economyStart.period.settledCount+1;
+  let totalSales=0,crafts=0,turns=0,maxPoint=p.state.palace.point;
+  const observe=()=>{maxPoint=Math.max(maxPoint,p.state.palace.point);
+    assert.equal(p.stock(STAFF),produced,'mission stock never listed or sold');
+    assert.equal(p.state.palace.point,p.state.shopSummary.point);
+    assert.equal(p.state.shop.dignity,0);};
+  while(p.state.world.period.settledCount<targetPeriod||totalSales===0){
+    assert.ok(++turns<=100,'source commerce budget '+diagnostic(p));
+    if(p.stock(SWORD)<12){
+      await p.gather(MATERIAL,20);
+      for(let n=0;;n++){
+        const offer=p.quote(BOOK,0);
+        assert.ok(offer&&n<8,'source wood sword quote');
+        if(p.remaining()>=offer.timePerUseSeconds)break;
+        await p.enoughTime(offer.timePerUseSeconds);
+      }
+      const before=p.stock(SWORD);
+      const made=await p.use(BOOK,0);
+      assert.equal(made.details.sourceUseItemId,BOOK);
+      assert.equal(made.details.useNo,0);
+      assert.equal(p.stock(SWORD)-before,made.details.acquired.find(x=>x.itemId===SWORD).produced);
+      crafts++;
+    }
+    if(p.stock(SWORD)>0){
+      await p.list(SWORD);
+      const before=p.state.shop;
+      const r=await p.tick(Math.min(60,Math.max(1,Math.ceil(p.boundary()/60))));
+      const sold=r.details.naturalSaleCount;
+      assert.ok(Number.isSafeInteger(sold)&&sold>=0);
+      totalSales+=sold;
+      assert.equal(p.stock(SWORD),before.item[SWORD-1]-sold);
+    }else await p.tick(10);
+    observe();
+  }
+  assert.ok(crafts>0&&totalSales>0);
+  assert.ok(p.state.world.period.settledCount>economyStart.period.settledCount);
+  const second=await p.saveAndRestart(1);
+  assert.equal(second.shops[0].item[STAFF-1],produced);
+  assert.equal(second.shops[0].dignity,0);
+  assert.deepEqual(second.period.disk.townData,{});
+  t.diagnostic('R4 economy observation (not 20,000-point acceptance): sword crafts='+crafts+
+    ', directly observed sales='+totalSales+', maximum observed point='+maxPoint+
+    ', '+diagnostic(p));
 });

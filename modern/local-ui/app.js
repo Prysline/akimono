@@ -7,6 +7,7 @@ let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
 let lastPricingItemId=null;
+let palaceSubmitting=false;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -32,7 +33,7 @@ const conciseTimeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',
   balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
@@ -73,7 +74,7 @@ function updateNavigation(){
 function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
-  currentGroup=name==='market'?'trade':'self';
+  currentGroup=['market','palace'].includes(name)?'trade':'self';
   updateNavigation();
 }
 function selectGroup(name){
@@ -310,6 +311,29 @@ $('storage-inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');
   if(button)openItem(Number(button.dataset.openItem));
 });
+function renderPalace(s){
+  const p=s?.palace;
+  text('palace-point',number(p?.point));
+  text('palace-required-point',number(p?.requiredPoint));
+  text('palace-dignity',number(p?.dignity));
+  const canMeet=p?.canMeet===true;
+  $('palace-mission').hidden=!canMeet;
+  $('palace-complete').disabled=palaceSubmitting||!s?.world||!canMeet||p?.canComplete!==true;
+  if(!s?.reviewedCrossPeriod){
+    text('palace-status','宮殿目前僅在已審閱的獨立跨期模式開放。');
+  }else if(!p){
+    text('palace-status','請先建立商店，再確認面會資格。');
+  }else if(!canMeet){
+    text('palace-status','大臣：國王目前無法與您面會，請先提升經營點數。');
+  }else{
+    text('palace-status',p.canComplete===true?'國王：指定商品已備齊，可以繳交。':'國王：請備齊指定商品。');
+  }
+  // Authority is the returned server quote; never calculate score or a
+  // successor mission in the browser. Hide mission details before audience.
+  text('palace-message',canMeet?p.message:'');
+  text('palace-item',canMeet?(catalogItem(s,p.itemId)?.name??'商品 #'+p.itemId):'—');
+  text('palace-stock',canMeet?number(p.owned)+'／'+number(p.count):'—');
+}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -352,6 +376,7 @@ function showState(s){
   text('money',money(shop?.money));
   text('rank',number(s.shopSummary?.rankPosition));
   text('shop-points',number(s.shopSummary?.point));
+  renderPalace(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -575,6 +600,25 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+$('palace-complete').addEventListener('click',async()=>{
+  const before=snapshot;
+  if(palaceSubmitting||!before?.world||before.palace?.canMeet!==true||before.palace?.canComplete!==true)return;
+  palaceSubmitting=true;
+  renderPalace(before);
+  try{
+    await call('/api/palace-complete',{expectedRevision:before.world.revision},'完成國王使命',data=>{
+      const receipt=data.details;
+      if(receipt?.action==='complete-palace-mission'){
+        const name=catalogItem(before,receipt.itemId)?.name??'指定商品';
+        feedback('國王使命完成：已繳交 '+number(receipt.consumedCount)+' 件'+name+
+          '，爵位經驗值 '+number(receipt.dignityBefore)+' → '+number(receipt.dignityAfter)+'。',receipt);
+      }
+    });
+  }finally{
+    palaceSubmitting=false;
+    renderPalace(snapshot);
+  }
+});
 $('save-world').addEventListener('click',()=>call('/api/save',{
   expectedRevision:snapshot?.world?.revision,
   expectedGeneration:snapshot?.save?.generation,

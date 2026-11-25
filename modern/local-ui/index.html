@@ -33,7 +33,7 @@
           <button type="button" data-tab="market">［市場］</button>
           <button type="button" disabled title="尚未實作">［商店街］</button>
           <button type="button" disabled title="尚未實作">［委託所］</button>
-          <button type="button" disabled title="尚未實作">［宮殿］</button>
+          <button type="button" data-tab="palace">［宮殿］</button>
         </span>
         <span class="subgroup" data-subgroup="info" hidden>
           <button type="button" disabled>［風景］</button>
@@ -296,6 +296,26 @@
         <tr><th scope="row">前期營業額</th><td id="balance-prev-sales">—</td><th scope="row">前期支出</th><td id="balance-prev-paid">—</td></tr>
       </tbody></table>
       <p class="muted" id="balance-note">其他店舖資訊尚未開放。</p>
+    </section>
+
+    <section id="tab-palace" class="section pane" hidden>
+      <h2 class="section-title">● 宮殿</h2>
+      <p id="palace-status" role="status">請先開店，確認目前的面會資格。</p>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">經營點數</th><td id="palace-point">—</td></tr>
+        <tr><th scope="row">面會門檻</th><td id="palace-required-point">—</td></tr>
+        <tr><th scope="row">爵位經驗值</th><td id="palace-dignity">—</td></tr>
+      </tbody></table>
+      <div id="palace-mission" hidden>
+        <h3 class="sub-title">國王的使命</h3>
+        <p id="palace-message"></p>
+        <table class="use-detail-table"><tbody>
+          <tr><th scope="row">指定商品</th><td id="palace-item">—</td></tr>
+          <tr><th scope="row">持有／所需數量</th><td id="palace-stock">—</td></tr>
+        </tbody></table>
+        <p class="help-text">完成使命可獲得 1 點爵位經驗值；任務由整條街共用，繳交後由伺服器更新。</p>
+        <div class="back-row"><button type="button" id="palace-complete" class="primary" disabled>繳交指定商品</button></div>
+      </div>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>
