@@ -66,15 +66,15 @@ function original(rule,world,requestedCount,randomDraws){
 }
 function compare(itemId,useId,{
   count=1,job='',rank=5010,draws=null,missingCow=false,
-  cows=3,milkStock=40,storedTime=956800,expectedCount=null,
+  cows=3,milkStock=null,storedTime=956800,expectedCount=null,
 }={}){
   const rule=street.useItem.getRule(itemId,useId);
   assert.equal(rule?.source,'original-reviewed-dairy-inline-use');
   assert.equal(rule.inlineCallback.kind,itemId===25?'milk-cow':'drink-milk');
   const initial=fresh(),old=initial.shops[0];
   const stock=[...old.item];
-  if(itemId===25){stock[24]=missingCow?0:cows;stock[25]=milkStock===40?0:milkStock;}
-  else stock[25]=milkStock;
+  if(itemId===25){stock[24]=missingCow?0:cows;stock[25]=milkStock??0;}
+  else stock[25]=milkStock??40;
   const world=validateMemoryWorld({...initial,shops:[{
     ...old,item:stock,rank,job,money:100000,time:storedTime,exp:{},
   }]});
