@@ -1,5 +1,10 @@
 # P3 integration: one player save path (v2)
 
+> **2026-11-25｜現行基線同步：** PR #13 was the historical nonsettling baseline. #15 completed v2 crossing integration and #17 promoted it. The sole v2 entry supports explicit reviewed crossing opt-in with a separate fresh save directory. Below is historical scope, not the current runtime contract. [最新基線、驗收與接續指引](current-baseline-status.md)。
+>
+> **下方為歷史內容，保留原始來源及當時紀錄。**
+
+
 ## Scope
 
 - Draft PR #13 only. Baseline P3 #11 `087efeb9427739bf1c2217be463b44e522a77437`; immutable R4 handoff `dffe18a60edc9f3ff9826342fcae4f9e7bc7959a`. Initial mixed-mode integration `a0839e44a844551ea02566ed38eff95c401339aa` Actions 45416765444 passed 1252 Node / 2286 Perl, including real #66/0 and >128 history. This is historical evidence, not acceptance of this v2 candidate.
