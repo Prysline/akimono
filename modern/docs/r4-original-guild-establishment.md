@@ -15,3 +15,7 @@
 
 ## 新原版驗證候選
 original-r4-guild-establishment.t：真 frozen gd-b CGI、CutStr、ReadConfig、ReadGuild/ReadGuildData、MakeGuildFile、WriteGuildData、EditGuildMoney，真 CoLock/CoUnLock 及 common 隔離檔案；兩個 File::Temp 街道目錄共用 common，生成/帳本 stage 由測試 driver rename，不宣稱實際街道 commit；身份、街道讀寫/lock/commit、UI 為 adapter。GIF 只是 opaque 測試 bytes。測試資料不代表真玩家已獲爵位或合法建會路徑。無現代版實作；新增 CI 未驗收。
+
+## 2026-11-25｜CI 反證與原版缺列行為
+
+初版 CI 45484109364 失敗：52 項中 50 通過，39/40 兩街金庫重讀為 undef，並非跨街道隔離失效。原版 EditGuildMoney 使用 my $guild=$GUILD_DATA{$guildcode}，缺列時對 lexical scalar 的 hash autovivification 不會建立全域 GUILD_DATA 該鍵；因此在第一筆金額處理後，WriteGuildData 依已載入 GUILD key 只輸出空列 red<TAB><LF>。再次 ReadGuildData 產生真空 hash 後，才會保留後續 EditGuildMoney。以原版函式新增明確缺列、空列重讀、兩街各自後續入帳斷言，不修改原版、不把舊失敗說成通過。重測尚待 CI。

@@ -111,12 +111,26 @@ is(bytes(GetPath($TEMP_DIR,$GUILDBAL_FILE)),'','first staged ledger uses old def
 publish_fixture($GUILD_FILE);publish_fixture($GUILDBAL_FILE);
 town('alpha');is_deeply($GUILD{red},['NewRed',500,10],'fresh alpha definition');
 ok(!exists $GUILD_DATA{red},'new guild initially has no ledger row');
+# Original EditGuildMoney copies an undefined entry into a lexical scalar.
+# Its autovivification is local; the first money change is not retained.
+EditGuildMoney('red',120000);
+ok(!exists $GUILD_DATA{red},'missing row contribution does not persist in original hash');
+WriteGuildData();
+is(bytes(GetPath($TEMP_DIR,$GUILDBAL_FILE)),"red\t\n",'first write creates an empty row');
+publish_fixture($GUILDBAL_FILE);
+town('alpha');
+is_deeply($GUILD_DATA{red},{},'empty row reload creates an actual ledger hash');
 EditGuildMoney('red',120000);WriteGuildData();publish_fixture($GUILDBAL_FILE);
 town('beta');is($GUILD_DETAIL{red}{shortname},'NewRed','same common detail visible in beta');
 ok(!exists $GUILD{red},'beta generated definition still stale');
 MakeGuildFile();publish_fixture($GUILD_FILE);
 town('beta');is_deeply($GUILD{red},['NewRed',500,10],'beta fresh generated definition');
 ok(!exists $GUILD_DATA{red},'alpha contribution not in beta ledger');
+EditGuildMoney('red',50000);
+ok(!exists $GUILD_DATA{red},'beta independently loses contribution with missing row');
+WriteGuildData();publish_fixture($GUILDBAL_FILE);
+town('beta');
+is_deeply($GUILD_DATA{red},{},'beta empty row reload creates ledger hash');
 EditGuildMoney('red',50000);WriteGuildData();publish_fixture($GUILDBAL_FILE);
 town('alpha');is($GUILD_DATA{red}{money},120000,'alpha ledger separate');
 town('beta');is($GUILD_DATA{red}{money},50000,'beta ledger separate');
