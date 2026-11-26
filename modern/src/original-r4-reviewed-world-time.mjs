@@ -117,7 +117,9 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
         ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem,
           shelfSales:boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0})),
-          costBeforeLedger:boundary.periodLogInput.shop.costtoday}:{}),
+          // Preserve the exact round-trippable decimal, not a fractional JSON
+          // number outside GameCore's receipt integer contract.
+          costBeforeLedger:String(boundary.periodLogInput.shop.costtoday)}:{}),
         cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
         saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
         taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,

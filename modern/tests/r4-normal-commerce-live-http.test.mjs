@@ -109,7 +109,7 @@ for(let count=1;count<=8;count++){
   test('R4 genuine '+count+'-shelf construction, sequential sale/tax and exact maintenance across two v2 generations',async t=>{
     const layout=([30,32,30,10,32,10,30,32]).slice(0,count);
     let ready=false,settlement=null,positiveTax=0;const sales={};
-    const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,onTick(r,before){
+    const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick(r,before){
       const d=r.details,shop=before.shops[0],rows=d.shelfSales;
       assert.ok(Array.isArray(rows),'formal per-shelf source receipt');
       assert.equal(rows.reduce((sum,x)=>sum+x.count,0),d.naturalSaleCount);
@@ -138,7 +138,10 @@ for(let count=1;count<=8;count++){
       assert.deepEqual(byItem,d.soldByItem);
       if(ready&&d.settlementReceipt){
         const q=d.settlementReceipt;
-        assert.equal(q.maintenance,Math.trunc(q.costBeforeLedger)+shelfCosts[count-1]);
+        assert.equal(typeof q.costBeforeLedger,'string','lossless decimal receipt wire');
+        const sourceCost=Number(q.costBeforeLedger);
+        assert.ok(Number.isFinite(sourceCost)&&sourceCost>=0&&String(sourceCost)===q.costBeforeLedger);
+        assert.equal(q.maintenance,Math.trunc(sourceCost)+shelfCosts[count-1]);
         assert.equal(q.cashBeforeLedger-q.cashAfterLedger,q.maintenance);
         assert.equal(shop.showcasecount,count);
         settlement=q;
@@ -148,6 +151,7 @@ for(let count=1;count<=8;count++){
     // exchange consumes all five. Obtain the gathering map by real market
     // purchase rather than attempting a second incompatible exchange.
     await p.use(79,1);
+    await p.market(13);
     // Manufacture rather than wait for a large random wholesale delivery.
     await p.gather(1,10);await p.use(15,0);
     assert.ok(p.stock(30)>=10);
@@ -156,7 +160,17 @@ for(let count=1;count<=8;count++){
     const quote=p.quote(63,count-1);
     assert.equal(quote.moneyPerUse,count*10000);
     assert.equal(quote.timePerUseSeconds,count*1800);
-    await p.enoughTime(quote.timePerUseSeconds);
+    // Earn the construction fee and reserve using genuine #13 work;
+    // recheck after every wait because the period can charge upkeep.
+    for(let n=0;;n++){
+      assert.ok(n<40,'source construction funding budget '+JSON.stringify({count,money:p.state.shop.money,period:p.state.world.period.settledCount}));
+      await p.enoughTime(p.quote(63,count-1).timePerUseSeconds);
+      const reserve=Math.max(10000,Math.ceil(p.state.shop.costtoday)+10000);
+      if(p.state.shop.money>=quote.moneyPerUse+reserve)break;
+      const work=await p.use(13,1);
+      assert.equal(work.details.moneyEarned,10000);
+    }
+    assert.equal(p.quote(63,count-1).canUse,true);
     const prior=p.state.shop,resize=await p.use(63,count-1);
     assert.equal(resize.details.effectiveCount,1);
     assert.equal(p.stock(63),0);assert.equal(p.state.shop.money,prior.money-count*10000);
