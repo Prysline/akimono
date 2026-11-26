@@ -6588,65 +6588,149 @@
       "path": "modern/tests/original-perl/original-use-eligibility.t",
       "sha": "15145631e9a3d3f554a78d7d1f9686eb2a2cf9f6",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（合成 eligibility）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "59–97 exact routines 擷取編譯；122–201 job override/fallback、before return 與 mutation；206–247 Get/List 回傳 reference、stale flags；253–266 unresolved callback error 與缺料不改 stock。",
+      "executionPath": "eval exact CheckUseItem/GetUseItem/GetUseItemListSub；本地 package item fixture",
+      "risk": "只證明原版前置流程與 wrapper 行為，不是正式授權及交易。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 15
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "synthetic callback 符號、材料及庫存；不載入真正 DSL。",
+      "limitations": "只證明原版前置流程與 wrapper 行為，不是正式授權及交易。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-use-experience-transaction.t",
       "sha": "4237dba71b2296a28aa564995e69dd2b4867de06",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（無回呼經驗尾段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "25–64 source gate-through-market 與 EXP tail 擷取，故意排除 callback；98–178 money/time/stock、EXP cap/negative/zero、count0、expold、total cap；185–197 觀察原版 hash tied order 及 reductions。",
+      "executionPath": "eval isolated_full_use_exp + require calc.cgi/whole.cgi",
+      "risk": "無真正 CGI、DSL callback；tie order 非跨 interpreter 保證。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 35
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "合成 shop、固定 clock、EXP records、LIMIT_EXP 3600。",
+      "limitations": "無真正 CGI、DSL callback；tie order 非跨 interpreter 保證。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-use-outcomes.t",
       "sha": "2590cb9e28ab1c4cea9fed0195bad425f146c872",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（機率與產出片段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "21–45 exact MakeAmount/creation block/whole；47–69 20 次走2 draws、19 次逐 draw、下一 RNG 狀態及端點；71–135 產出上限、overflow、market recap、負 retained、uncoded/固定與小數 cap。",
+      "executionPath": "eval exact MakeAmount/creation fragment + require whole.cgi",
+      "risk": "無完整 USE、真正玩家／session／事件／付款／磁碟。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 55
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "seeded random、人工 item/shop/market；原版數值公式。",
+      "limitations": "無完整 USE、真正玩家／session／事件／付款／磁碟。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-use-transaction.t",
       "sha": "2c8a9b941c73f6e8440b705d1e5f52cc8b54ce94",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（交易前段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "25–51 擷取 gate 到一次 market、MakeAmount、require calc/whole；87–132 baseline accounting、count0 不支出、經驗/職業/點數/人氣/事件/材料 gate；142–187 duplicate negative、late cap、inactive、expold 與 seeded material/create RNG 順序。",
+      "executionPath": "eval isolated_transaction + GetItemUseTime/UseTime/CheckWholeStore",
+      "risk": "未執行動態 job/functionbefore、callback、EXP redistribution、正式玩家、CGI/v2。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 75
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 shop、固定 clock、seed、recipe；停在 RequireFile 前。",
+      "limitations": "未執行動態 job/functionbefore、callback、EXP redistribution、正式玩家、CGI/v2。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-virtual-item-require.t",
@@ -7078,85 +7162,209 @@
       "path": "modern/tests/original-use-eligibility-model.test.mjs",
       "sha": "a2533adf1ab7f346d5e562968c1e5d9069bbcb09",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（合成 eligibility）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "28–49 pin job/functionbefore/status 及 stale flags；51–188 specific/fallback job、before 0/1/2/7、前置 mutation、材料逐列、Get first/list、flag 保留；190–218 fixture guards；220–244 13 個 Perl cases 比較 records/stock/selection/calls。",
+      "executionPath": "projectOriginalUseEligibility → Perl probe 擷取 CheckUseItem/GetUseItem/GetUseItemListSub",
+      "risk": "無真正 DSL job/functionbefore、實際物品執行、正式 command/CGI/v2。舊 stale flag 不代表現行授權允許。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 37
+        },
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-use-eligibility-model.mjs",
+          "sha": "7108e7fd0006d7a3998bd83805a595cb2e4b72df"
+        },
+        {
+          "path": "modern/tests/original-perl/original-use-eligibility-probe.pl",
+          "sha": "c46ae2d8f242ae3d35cfdfeabca67ae6d9f1aa2c"
+        }
+      ],
+      "fixtures": "人工 stock、USE no、named job/before callback effect；Perl 缺失可 skip。",
+      "limitations": "無真正 DSL job/functionbefore、實際物品執行、正式 command/CGI/v2。舊 stale flag 不代表現行授權允許。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-use-experience-transaction-model.test.mjs",
       "sha": "3bc6ef24125f3309715b6bdacbaf90bc1d427ae0",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（無回呼經驗尾段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "42–57 pin market→callback→EXP 及 cap/sort/denominator；59–200 gate、accounting、單項 cap1000、negative award、count0、expold、total cap 與刪零；201–266 原版 tie order、不自造 item ID 排序、callback boundary；268–305 fixture；307–337 9 個 Perl probes 逐欄比對。",
+      "executionPath": "projectOriginalUseWithExperience → projectOriginalUseTransaction → Perl probe 連接無回呼 source fragments",
+      "risk": "未執行真正 callbacks、職業 loader、合法取得、正式時間/RNG、CAS/v2；hash ties 只是該次 Perl 觀察。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 37
+        },
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 25
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-use-experience-transaction-model.mjs",
+          "sha": "8520192934e30274c7e7b7575b45538b7ea4e3cf"
+        },
+        {
+          "path": "modern/src/original-use-transaction-model.mjs",
+          "sha": "3ef8dfbcae1b520ca205cbfad1ecc4881de65fdb"
+        },
+        {
+          "path": "modern/tests/original-perl/original-use-experience-probe.pl",
+          "sha": "54177d528f7bae3640994e4d6db7cf7a1e14dc41"
+        }
+      ],
+      "fixtures": "人工兩店三槽、時鐘1000、EXP map、observedPerlSortedKeys；callbacksConfirmedAbsent=true；Perl 缺失可 skip。",
+      "limitations": "未執行真正 callbacks、職業 loader、合法取得、正式時間/RNG、CAS/v2；hash ties 只是該次 Perl 觀察。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-use-outcomes-model.test.mjs",
       "sha": "b11c2f941b1dc46b98f80d3ca9fa40f48ec9a372",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "純 Node 投影／來源守門（機率與產出）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/period.cgi",
+      "assertions": "30–56 source MakeAmount literal PI、sqrt(abs(t))、market 及 period；58–112 機率0/1000、19/20 draws、正負 t、RNG validation；114–186 負 inventory、overflow/recap、uncoded、fractional wslimit；188–199 immutable/no transaction。",
+      "executionPath": "projectOriginalMakeAmount / projectOriginalCreateThenWholesale / projectReviewedPeriodStock",
+      "risk": "本 JS 檔未執行 Perl；相鄰 .t 是獨立 Oracle，非自動逐欄差分。不是正式 RNG 或事件／玩家 transaction。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 36
+        },
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 45
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-use-outcomes-model.mjs",
+          "sha": "b6bc7c0ba6c8973017b7191d1236c7756ce12aba"
+        },
+        {
+          "path": "modern/src/period-stock-use-model.mjs",
+          "sha": "ba16fab527fdbe8b7b4e877e6d11ab05a35e6dcb"
+        }
+      ],
+      "fixtures": "注入 draws、單項 market fixture、人工負數。",
+      "limitations": "本 JS 檔未執行 Perl；相鄰 .t 是獨立 Oracle，非自動逐欄差分。不是正式 RNG 或事件／玩家 transaction。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-use-transaction-model.test.mjs",
       "sha": "1a740185e6b2bb023575eee8e3fe7183730a0364",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "純 Node 投影／來源守門（交易前段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "46–65 原版 gate→settle→spend→material/create→market、expold/time cap；67–150 count4→3→2、金錢/時間/stock、六種 gate、zero probability 仍需材料、duplicate 負數；152–201 zero cost、late time cap、inactive、expold、shared RNG、空 recipe；203–225 fixture guards/immutable。",
+      "executionPath": "projectOriginalUseTransaction → projectOriginalMultiItemUse",
+      "risk": "JS 未直接 exec Perl；無 callback、EXP tail、真時間、正式交易或持久化；負數 synthetic 不證明現行可觸發。",
+      "disposition": "保留限定原版流程證據；逐配方與正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 36
+        },
+        {
+          "path": "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+          "line": 65
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-use-transaction-model.mjs",
+          "sha": "3ef8dfbcae1b520ca205cbfad1ecc4881de65fdb"
+        },
+        {
+          "path": "modern/src/original-multi-item-use-model.mjs",
+          "sha": "dcc5f0fef376388f570370cb15b9bc3412fd270b"
+        }
+      ],
+      "fixtures": "人工兩店、時計、recipe、注入 RNG。",
+      "limitations": "JS 未直接 exec Perl；無 callback、EXP tail、真時間、正式交易或持久化；負數 synthetic 不證明現行可觸發。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs",
@@ -32568,14 +32776,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 89,
-      "待補": 120
+      "有效": 97,
+      "待補": 112
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 50,
+    "currentSessionReviewed": 58,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -32625,7 +32833,8 @@
     "modern/docs/r1-event-gift-oracle-evidence.md",
     "modern/docs/r0-gift-market-oracle-evidence.md",
     "modern/docs/r0-work-showcase-lostbook-evidence.md",
-    "modern/docs/r0-shared-helper-material-evidence.md"
+    "modern/docs/r0-shared-helper-material-evidence.md",
+    "modern/docs/r0-use-gates-outcomes-experience-evidence.md"
   ],
   "integrationCiHistory": [
     {

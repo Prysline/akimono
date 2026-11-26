@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 89、歷史 24、待補 120。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 50 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 97、歷史 24、待補 112。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 58 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -112,10 +112,10 @@
 | original-perl/original-sparse-all-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-sparse-multi-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-sparse-wholesale-plus.t | 待補 | 未完成語義審閱 |
-| original-perl/original-use-eligibility.t | 待補 | 未完成語義審閱 |
-| original-perl/original-use-experience-transaction.t | 待補 | 未完成語義審閱 |
-| original-perl/original-use-outcomes.t | 待補 | 未完成語義審閱 |
-| original-perl/original-use-transaction.t | 待補 | 未完成語義審閱 |
+| original-perl/original-use-eligibility.t | 有效 | Perl Oracle（合成 eligibility） |
+| original-perl/original-use-experience-transaction.t | 有效 | Perl Oracle（無回呼經驗尾段） |
+| original-perl/original-use-outcomes.t | 有效 | Perl Oracle（機率與產出片段） |
+| original-perl/original-use-transaction.t | 有效 | Perl Oracle（交易前段） |
 | original-perl/original-virtual-item-require.t | 有效 | Perl Oracle（虛擬 require） |
 | original-perl/original-world-use-sequence.t | 待補 | 未完成語義審閱 |
 | original-perl/period-experience.t | 有效 | Perl Oracle（固定片段） |
@@ -132,10 +132,10 @@
 | original-sparse-multi-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-sparse-wholesale-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-standard-callback-inventory.test.mjs | 有效 | 靜態來源回呼清冊 |
-| original-use-eligibility-model.test.mjs | 待補 | 未完成語義審閱 |
-| original-use-experience-transaction-model.test.mjs | 待補 | 未完成語義審閱 |
-| original-use-outcomes-model.test.mjs | 待補 | 未完成語義審閱 |
-| original-use-transaction-model.test.mjs | 待補 | 未完成語義審閱 |
+| original-use-eligibility-model.test.mjs | 有效 | Perl Oracle／Node 差分（合成 eligibility） |
+| original-use-experience-transaction-model.test.mjs | 有效 | Perl Oracle／Node 差分（無回呼經驗尾段） |
+| original-use-outcomes-model.test.mjs | 有效 | 純 Node 投影／來源守門（機率與產出） |
+| original-use-transaction-model.test.mjs | 有效 | 純 Node 投影／來源守門（交易前段） |
 | p1-advanced-medicine-persistence-http.test.mjs | 歷史 | 歷史 HTTP |
 | p2-career-persistence-http.test.mjs | 歷史 | 歷史 HTTP |
 | p3-forging-persistence-http.test.mjs | 有效 | 混合：正式 HTTP/v2 固定時鐘＋歷史 v1（分段） |

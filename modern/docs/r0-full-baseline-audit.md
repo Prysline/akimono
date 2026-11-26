@@ -43,3 +43,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 [打工／展示架／lostbook](r0-work-showcase-lostbook-evidence.md) 4 檔已逐檔審閱，83 有效、24 歷史、126 待補（107/233），收斂後補審44、既有待覆核56。57 項已有精確測試證據；B-27 兩種打工與展示架1–4 callback probe 補鏈，5–8 不升格；B-30 合成 A/B/C 不硬映射正式 USE。正式 lawfulAcquisition/HTTP/v2 下界不變。R1-HTTP-01 strict repro 未實跑；本批無 runtime 修改。
 
 第十批 [共用回呼／helper／材料與產出](r0-shared-helper-material-evidence.md) 補審 6 檔，89 有效、24 歷史、120 待補（113/233）；收斂後補審50，既有待覆核56。保留 B-26 stub、B-29 exact helper、B-22 數字片段的區分；沒有新增具體 ITEM/USE 正向旗標；未執行本批 CI。
+
+第十一批 [USE 資格／交易／機率／經驗尾段](r0-use-gates-outcomes-experience-evidence.md) 補審8檔：97有效、24歷史、112待補（121/233）；收斂後補審58、既有待覆核56。B-21/B-23 Node 純投影與獨立 Perl Oracle 分開，B-24/B-25 有直接 probe 差分。均非正式玩家；功能矩陣正向下界不變。新候選 CI 待驗。

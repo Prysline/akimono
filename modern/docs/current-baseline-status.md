@@ -84,7 +84,7 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 本次同步只更新文件，不修改程式、測試、workflow、研究分支或 Notion；原歷史正文保留。
 
 ## R0/R1 獨立收斂候選（2026-11-26）
-正式 HEAD/tree 未變；#23/#24 的既有證據收斂於 [canonical manifest](r0-r1-baseline-manifest.json)，233 既有測試去重分類 89/24/120（有效/歷史/待補），另 5 新測試。#25 為 #22 R4 固定基線 CI 專用 Draft，不納入本線。整合候選尚未完成 exact HEAD CI，R0/R1 未結案。
+正式 HEAD/tree 未變；#23/#24 的既有證據收斂於 [canonical manifest](r0-r1-baseline-manifest.json)，233 既有測試去重分類 97/24/112（有效/歷史/待補），另 5 新測試。#25 為 #22 R4 固定基線 CI 專用 Draft，不納入本線。整合候選尚未完成 exact HEAD CI，R0/R1 未結案。
 
 ## 已確認整合候選 CI 綠燈（固定版本）
 [45765900966](https://github.com/Prysline/akimono/actions/runs/45765900966) job 139726608654：HEAD `b40dec8bfd28f6e655e48f5068c5ba280d5513b8`，checkout `41808264862039019cacbed13d552ee63b1d8e91` tree `de0452748ce90c5367beeb327b35cba0397e8f65` 相同。JS 1342/1342、0 fail/skip/cancelled，Perl 85 檔 2456/2456、Result PASS，所有 DSL 與原版 pins 步驟成功。R1 CAS race 與 fresh replay 均通過；P4 實測 96 opportunities、1 death、4 cows、rev81→86 保存／合法復原。此綠燈屬固定前一候選，不替代新 HEAD。
@@ -104,3 +104,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 [打工／展示架／lostbook](r0-work-showcase-lostbook-evidence.md) 4 檔已逐檔審閱，83 有效、24 歷史、126 待補（107/233），收斂後補審44、既有待覆核56。57 項已有精確測試證據；B-27 兩種打工與展示架1–4 callback probe 補鏈，5–8 不升格；B-30 合成 A/B/C 不硬映射正式 USE。正式 lawfulAcquisition/HTTP/v2 下界不變。R1-HTTP-01 strict repro 未實跑；本批無 runtime 修改。
 
 第十批 [共用回呼／helper／材料與產出](r0-shared-helper-material-evidence.md) 補審 6 檔，89 有效、24 歷史、120 待補（113/233）；收斂後補審50，既有待覆核56。保留 B-26 stub、B-29 exact helper、B-22 數字片段的區分；沒有新增具體 ITEM/USE 正向旗標；未執行本批 CI。
+
+第十一批 [USE 資格／交易／機率／經驗尾段](r0-use-gates-outcomes-experience-evidence.md) 補審8檔：97有效、24歷史、112待補（121/233）；收斂後補審58、既有待覆核56。B-21/B-23 Node 純投影與獨立 Perl Oracle 分開，B-24/B-25 有直接 probe 差分。均非正式玩家；功能矩陣正向下界不變。新候選 CI 待驗。
