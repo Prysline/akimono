@@ -13,6 +13,7 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
+import {reviewOriginalNews,describeOriginalNews} from './original-r4-news-view.mjs';
 import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
 import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
 import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
@@ -50,6 +51,9 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const balanceInputs=[sources.balanceViewSource,sources.infoViewSource];
   if(balanceInputs.some(s=>s!=null)&&balanceInputs.some(s=>s==null))fail('incomplete original balance source set');
   const balance=normalCommerce&&balanceInputs.every(s=>s!=null)?reviewOriginalBalanceView(sources):null;
+  const newsInputs=[sources.newsViewSource,sources.newsHtmlSource,sources.newsPageSource,sources.newsTimeSource];
+  if(newsInputs.some(s=>s!=null)&&newsInputs.some(s=>s==null))fail('incomplete original news source set');
+  const news=normalCommerce&&enableReviewedCrossPeriod&&newsInputs.every(s=>s!=null)?reviewOriginalNews(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
   const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
@@ -175,6 +179,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     reviewedOwnerClosure:Boolean(closeReview),
+    ...(news?{describeNews(world){
+      if(!world?.shops?.length||!world.period?.disk)return null;
+      validate(world);
+      return describeOriginalNews({reviewed:news,world});
+    }}:{}),
     ...(balance?{describeBalance(world){
       if(!world?.shops?.length)return null;
       validate(world);

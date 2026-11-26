@@ -37,7 +37,7 @@
         </span>
         <span class="subgroup" data-subgroup="info" hidden>
           <button type="button" disabled>［風景］</button>
-          <button type="button" disabled>［新聞］</button>
+          <button type="button" data-tab="news">［新聞］</button>
           <button type="button" disabled>［圖書館］</button>
         </span>
         <span class="subgroup" data-subgroup="facility" hidden>
@@ -311,6 +311,19 @@
       <p id="sweep-report" role="status"></p>
     </section>
 
+    <section id="tab-news" class="section pane" hidden>
+      <h2 class="section-title">● 新聞：速報</h2>
+      <p class="muted">獨立單店世界；只顯示公開與本店日誌，排名／入賞／爵位名單尚未接入。</p>
+      <form id="news-search" class="inline-form">
+        <label>店名 <select id="news-target"><option value="">全</option></select></label>
+        <label>關鍵字 <input id="news-keyword" type="text"></label>
+        <label>種類 <select id="news-mode"><option value="0">全</option><option value="1">重要</option><option value="2">情報</option><option value="3">行動</option></select></label>
+        <button type="submit">搜尋</button>
+      </form>
+      <div id="news-events"></div>
+      <div id="news-rows" aria-live="polite"></div>
+      <div class="inline-form"><button type="button" id="news-prev">上一頁</button><span id="news-page">—</span><button type="button" id="news-next">下一頁</button></div>
+    </section>
     <section id="tab-balance" class="section pane" hidden>
       <h2 class="section-title">● 收支／店舖資訊</h2>
       <table class="balance-table"><tbody>

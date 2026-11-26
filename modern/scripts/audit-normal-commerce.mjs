@@ -51,6 +51,10 @@ const locations=[
  ['originalBalanceViewSource','modern/tests/original-perl/core-balance.cgi'],
  ['originalInfoViewSource','modern/tests/original-perl/core-inc-info.cgi'],
  ['originalMarketSurveySource','modern/tests/original-perl/core-shop-c.cgi'],
+ ['originalNewsViewSource','modern/tests/original-perl/core-log-view.cgi'],
+ ['originalNewsHtmlSource','modern/tests/original-perl/core-inc-html-log.cgi'],
+ ['originalNewsPageSource','modern/tests/original-perl/core-page.cgi'],
+ ['originalNewsTimeSource','modern/tests/original-perl/core-time.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));

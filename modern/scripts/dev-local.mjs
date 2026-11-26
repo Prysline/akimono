@@ -53,6 +53,7 @@ const {
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
   originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -92,6 +93,10 @@ const {
   originalBalanceViewSource:'modern/tests/original-perl/core-balance.cgi',
   originalInfoViewSource:'modern/tests/original-perl/core-inc-info.cgi',
   originalMarketSurveySource:'modern/tests/original-perl/core-shop-c.cgi',
+  originalNewsViewSource:'modern/tests/original-perl/core-log-view.cgi',
+  originalNewsHtmlSource:'modern/tests/original-perl/core-inc-html-log.cgi',
+  originalNewsPageSource:'modern/tests/original-perl/core-page.cgi',
+  originalNewsTimeSource:'modern/tests/original-perl/core-time.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -108,6 +113,7 @@ const streetModule=createStandardStreetModule({
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
   originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -160,6 +166,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
   originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
@@ -214,6 +221,7 @@ function state(){
     marketOffers,
     warehouse:world&&streetModule.describeWarehouse?streetModule.describeWarehouse(world):null,
     balance:world&&streetModule.describeBalance?streetModule.describeBalance(world):null,
+    news:world&&streetModule.describeNews?streetModule.describeNews(world):null,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -607,6 +615,7 @@ async function api(req,res,url){
 const statics=new Map([
   ['/','modern/local-ui/index.html'],
   ['/app.js','modern/local-ui/app.js'],
+  ['/news-query.js','modern/src/shared-source-news-query.mjs'],
   ['/style.css','modern/local-ui/style.css'],
 ]);
 const server=http.createServer(async (req,res)=>{

@@ -1,3 +1,4 @@
+import {queryOriginalNews} from '/news-query.js';
 const $=id=>document.getElementById(id);
 const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
@@ -34,7 +35,7 @@ const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場',survey:'市價調查',palace:'宮殿',army:'傭兵所',
-  sweep:'掃除',balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
+  sweep:'掃除',balance:'收支',news:'新聞',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
   $('status-summary').hidden=!snapshot?.shop||
@@ -76,6 +77,7 @@ function selectTab(name){
   currentTab=name;
   currentGroup=['market','palace','survey'].includes(name)?'trade':'self';
   if(name==='army')currentGroup='facility';
+  if(name==='news')currentGroup='info';
   updateNavigation();
 }
 function selectGroup(name){
@@ -83,6 +85,7 @@ function selectGroup(name){
   if(name==='self')return selectTab('shop');
   if(name==='trade')return selectTab('market');
   if(name==='facility')return selectTab('army');
+  if(name==='info')return selectTab('news');
   currentGroup=name;
   currentTab=null;
   updateNavigation();
@@ -441,6 +444,31 @@ function renderSweep(s){
   }
   if([...options.options].some(o=>o.value===selected))options.value=selected;
 }
+let newsQuery={mode:0,keyword:'',target:'',page:0};
+function renderNews(s){
+ const source=s?.news,rows=$('news-rows'),events=$('news-events'),targets=$('news-target');rows.replaceChildren();events.replaceChildren();targets.replaceChildren();
+ for(const name of ['',...(source?.targets??[])]){
+   const o=document.createElement('option');o.value=name;o.textContent=name||'全';targets.append(o);
+ }
+ if(!source?.targets.includes(newsQuery.target))newsQuery.target='';
+ targets.value=newsQuery.target;
+ const query=source?queryOriginalNews(source,newsQuery):null;
+ if(query)newsQuery.page=query.page;
+ for(const message of source?.eventMessages??[]){
+   const p=document.createElement('p');p.textContent='情報：'+message;events.append(p);
+ }
+ for(const row of query?.rows??[]){
+   const p=document.createElement('p');
+   p.textContent=row.private?row.message+'（秘密）':(row.timeLabel+' '+(['','[重要] ','[情報] ','[行動] '][row.mode]??'')+row.message);
+   rows.append(p);
+ }
+ if(!query?.rows.length){const p=document.createElement('p');p.textContent=source?'沒有資料':'請先開店；此模式未提供原版速報。';rows.append(p);}
+ text('news-page',query?(query.page+1)+'／'+(query.pageMax+1):'—');
+ $('news-prev').disabled=!query||query.pagePrev<0;$('news-next').disabled=!query||query.pageNext===0;
+}
+$('news-search').addEventListener('submit',e=>{e.preventDefault();newsQuery={mode:Number($('news-mode').value),keyword:$('news-keyword').value,target:$('news-target').value,page:0};renderNews(snapshot);});
+$('news-prev').addEventListener('click',()=>{newsQuery.page--;renderNews(snapshot);});
+$('news-next').addEventListener('click',()=>{newsQuery.page++;renderNews(snapshot);});
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -487,6 +515,7 @@ function showState(s){
   renderArmy(s);
   renderSweep(s);
   renderMarketSurvey(s);
+  renderNews(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
