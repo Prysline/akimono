@@ -35,7 +35,10 @@ if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGE
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 // Fail before opening a save store, generating a key or listening on HTTP.
 checkRuntimeEnvironment();
-const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
+const exactKeys=(obj,keys)=>{
+  const names=Object.keys(obj),expected=keys===''?[]:keys.split(',');
+  return names.length===expected.length&&expected.every(k=>Object.hasOwn(obj,k));
+};
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
@@ -373,6 +376,7 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/load': {
+      if(!exactKeys(body,''))throw Error('載入世界不接受任何欄位');
       if(repo)return send(res,409,{ok:false,
         error:'目前世界已啟用；不能將磁碟世界覆蓋正在營業的記憶體世界',state:state()});
       const saved=saveStore.load();
@@ -409,6 +413,7 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/initialize': {
+      if(!exactKeys(body,''))throw Error('初始化世界不接受任何欄位');
       if(repo)return send(res,409,{ok:false,error:'世界已存在；請使用當前世界',state:state()});
       const existing=saveStore.status();
       if(existing.available||existing.unreadable)
@@ -433,6 +438,7 @@ async function api(req,res,url){
       break;
     }
     case '/api/open-shop': {
+      if(!exactKeys(body,'expectedRevision,ownerName,shopName'))throw Error('開店僅接受 expectedRevision、ownerName、shopName');
       const ownerName=body.ownerName,shopName=body.shopName;
       if(typeof ownerName!=='string'||typeof shopName!=='string')
         throw Error('店主與店名必須是文字');
