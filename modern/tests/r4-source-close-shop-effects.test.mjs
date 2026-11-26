@@ -164,3 +164,33 @@ test('R4 closed-shop source SortDT and DataWrite filter drift or fake settled re
     reviewed:prune,closeEffect:{...result,shop:{...result.shop,status:1}},
   }),/source-reviewed closed shop result and SortDT exclusion/);
 });
+
+// Native order is evidence from this same frozen Perl invocation. It is
+// not a runtime order supplied by a client, and this remains isolated.
+test('R4 full commerce CloseShop archive preserves signed cash, eight shelves and every native multi-key map before pruning',()=>{
+  const full=reviewR4CloseShopEffects({writeSource,readSource,configSource},{fullCommerce:true});
+  const result=JSON.parse(execFileSync('perl',['original-r4-close-shop-effects-probe.pl','--full-commerce'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.equal(result.cases.length,1);
+  const row=result.cases[0],before=JSON.stringify(row.input);
+  assert.equal(row.input.shop.money,-123456);
+  assert.equal(row.input.shop.showcasecount,8);
+  const got=projectR4CloseShopEffects({reviewed:full,...row.input});
+  assert.equal(got.archived,row.output.archived);
+  assert.deepEqual(got.shop,row.output.shop);
+  assert.equal(got.shop.money,0);
+  assert.equal(got.shop.rank,0);
+  assert.equal(got.shop.status,0);
+  assert.deepEqual(got.deletedSessions,row.output.deletedSessions);
+  assert.deepEqual(got.writeErrorLogCalls,row.output.writeErrorLogCalls);
+  assert.deepEqual(got.setUserDataCalls,row.output.setUserDataCalls);
+  const prune=reviewR4ClosedShopPrune({detailSource,writeSource,reviewedClose:full});
+  assert.deepEqual(projectR4ClosedShopPrune({reviewed:prune,closeEffect:got}).activeShops,[]);
+  assert.equal(got.committable,false);
+  const {archiveHashOrders,...rest}=row.input;
+  assert.throws(()=>projectR4CloseShopEffects({reviewed:full,...rest}),/exact full commerce archive map order/);
+  assert.throws(()=>projectR4CloseShopEffects({reviewed:full,...row.input,archiveHashOrders:{...archiveHashOrders,exp:['12','12','17']}}),/exact full commerce archive map order/);
+  assert.throws(()=>projectR4CloseShopEffects({reviewed:{...full},...row.input}),/source-reviewed full commerce archive order/);
+  assert.equal(JSON.stringify(row.input),before);
+});

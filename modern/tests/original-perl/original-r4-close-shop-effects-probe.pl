@@ -143,6 +143,33 @@ my @cases=(
     shopId=>1,found=>1,shop=>{%$shop,status=>0,money=>0,rank=>0},
     reason=>'管理員關閉'),
 );
+# Additional isolated full-commerce case: observe the actual native
+# hash traversal in the frozen archive, not JSON canonical key order.
+# Default three historical cases are unchanged.
+if (@ARGV && $ARGV[0] eq '--full-commerce') {
+  my @wide=(10,30,32,40,45,51,57,0);
+  my @prices=(5000,200,300,1200,800,750,1200,0);
+  my @wideStock=(0)x79;
+  $wideStock[$_-1]=3 for grep {$_} @wide;
+  my $wideShop={%$shop,showcasecount=>8,showcase=>\@wide,price=>\@prices,
+    item=>\@wideStock,money=>-123456,profitstock=>-22345,
+    itemtoday=>{10=>2,30=>7,45=>3},itemyesterday=>{32=>5,40=>9},
+    exp=>{12=>895,16=>700,17=>350},user=>{source=>'active',other=>'kept'}};
+  my $row=run(name=>'full-commerce-eight-shelves-signed-cash-and-native-multi-key-archive',
+    shopId=>1,found=>1,shop=>$wideShop,reason=>'経営者不在');
+  my @lines=split(/\n/,$row->{output}{archived},3);
+  my @parts=split(/:/,$lines[2],-1);
+  die 'full archive seven sections' unless @parts==7;
+  my %orders;
+  my @names=qw(itemyesterday itemtoday exp user);
+  for my $i (0..$#names) {
+    my @kv=split(/,/,$parts[$i+3],-1);
+    my @keys=map {$kv[$_*2]} 0..(@kv/2-1);
+    $orders{$names[$i]}=\@keys;
+  }
+  $row->{input}{archiveHashOrders}=\%orders;
+  @cases=($row);
+}
 print JSON::PP->new->canonical->utf8->encode({
   source=>'entire unmodified original write.cgi sub CloseShop extracted and executed with true File::Temp session directory, actual unlink, exact inc-func 32 original archive fields',
   scope=>'real CloseShop shop mutation and session file deletion; external SetUserData and WriteErrorLog deliberately call-recorded, no cross-file atomic transaction or live user store',
