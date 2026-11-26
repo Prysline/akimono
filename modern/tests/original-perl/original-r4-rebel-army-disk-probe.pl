@@ -322,8 +322,44 @@ sub conflictChain{
   return {initial=>$initial,commands=>\@commands,now=>\@now,final=>getFile(GetPath("army"))};
 }
 my $conflict=conflictChain();
+
+# Real WriteArmy removes zero soldiers but leaves RIOT. After the commit,
+# another ReadArmy reads the RIOT with no army key; NOW sets DT.army to undef.
+sub zeroRiotChain{
+  $NOW_TIME=1000000;$temptimenow=$NOW_TIME;$timespan=$TIMESPAN=3600;
+  $STATE={%baseTown,leader=>1,army=>10000,robina=>0,robinb=>0};
+  @DT=map{{%$_}}@baseShops;
+  %id2idx=map{($DT[$_]{id}=>$_)}0..$#DT;
+  @ITEM=();@LOG=();$BAL_JOB='外敵';$BAL_NAME='首領';$DTTaxrate=0;
+  %EVENT=(rebel=>{code=>'rebel',group=>'rebel-group',startproba=>0,
+    basetime=>0,plustime=>0,startfunc=>'',endfunc=>'',func=>'_local_now',
+    funcparam=>'',startmsg=>'',endmsg=>''});
+  %DTevent=(rebel=>$NOW_TIME+259200);
+  my $initial="1,4000,2,500\n1,2\n";putFile(GetPath("army"),$initial);
+  my @steps;
+  for my $i(0..3){
+    my $live=getFile(GetPath("army"));
+    my $input={startSeconds=>$temptimenow,spanSeconds=>3600,activeUntilSeconds=>0+$DTevent{rebel},
+      town=>{%$STATE},shops=>[map{{%$_}}@DT],randomDraws=>$i==3?[]:[0],
+      taxRate=>$DTTaxrate,balJob=>$BAL_JOB,balName=>$BAL_NAME};
+    @LOG=();@COMBINED_DRAWS=@{$input->{randomDraws}};@COMBINED_RANGES=();$READ_ARMY=$WRITE_ARMY=0;
+    originalRebelEventFragment();die 'zero RIOT unused RNG' if @COMBINED_DRAWS;
+    die 'zero RIOT changed live prematurely' unless getFile(GetPath("army")) eq $live;
+    my $stage=getFile(GetPath($TEMP_DIR,"army"));
+    my $output={town=>{%$STATE},shops=>[map{{%$_}}@DT],
+      activeUntilSeconds=>$DTevent{rebel},riotIds=>[sort{$a<=>$b}map{0+$_}keys %RIOT],
+      armyById=>{map{$_=>0+$ARMY{$_}}keys %ARMY},taxRate=>$DTTaxrate,
+      logs=>[map{[@$_]}@LOG],randomDrawRanges=>[@COMBINED_RANGES],
+      drawsUsed=>scalar @COMBINED_RANGES,readArmyCalls=>$READ_ARMY,writeArmyCalls=>$WRITE_ARMY};
+    DataCommitOrAbort(0);
+    push @steps,{input=>$input,liveBefore=>$live,stage=>$stage,output=>$output,liveAfter=>getFile(GetPath("army"))};
+    $temptimenow+=3600;
+  }
+  return {initial=>$initial,steps=>\@steps,final=>getFile(GetPath("army"))};
+}
+my $zeroRiot=zeroRiotChain();
 print JSON::PP->new->canonical->utf8->encode({
-  multi=>$multi,edges=>$edges,conflict=>$conflict,
+  multi=>$multi,edges=>$edges,conflict=>$conflict,zeroRiot=>$zeroRiot,
   source=>'complete frozen period.cgi RebelRobin + period rebel branch executed BEFORE actual inc-turn EVENT END/START/NOW and original rebel NOWFUNC body, one event',
   cases=>\@cases,
   scope=>'isolated single CITY/REBEL slice, original source execution + controlled rand only; real isolated army staging and commit/reload; no other 16 EVENTs or full period/WorldState',

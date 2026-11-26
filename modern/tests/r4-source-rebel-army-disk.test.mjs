@@ -179,3 +179,37 @@ test('actual army-s start/join/guard commits lead to three real rebel NOW slices
   assert.equal(conflict.now[2].output.armyById[2],1600,'next transaction reads committed army');
   assert.deepEqual(parseArmyFile(await readFile(live,'utf8'),ids),parseArmyFile(conflict.final,ids));
 }));
+
+test('actual four committed rebel NOWs preserve zero-army RIOT and transient undef DT.army until suppression',()=>sandbox(async directory=>{
+  const z=oracle().zeroRiot,ids=[1,2],live=path.join(directory,'army.cgi');
+  await writeFile(live,z.initial);
+  let prior=null;
+  for(const [i,row] of z.steps.entries()){
+    const raw=await readFile(live,'utf8');
+    assert.deepEqual(parseArmyFile(raw,ids),parseArmyFile(row.liveBefore,ids));
+    const input=prior?{...row.input,town:prior.town,shops:prior.shops,activeUntilSeconds:prior.activeUntilSeconds,taxRate:prior.taxRate}:row.input;
+    for(const k of ['town','shops','activeUntilSeconds','taxRate'])assert.deepEqual(input[k],row.input[k],i+' '+k);
+    const {result,staged}=await projectRebelArmySandbox({fileReview,directory,reviewed:reviewedNow,input,mode:'now'});
+    for(const [k,v] of Object.entries(row.output)){
+      // Original WriteArmy mutates the Perl ARMY map by removing zeros;
+      // the pure NOW return is pre-write, compare the actual staged bytes.
+      if(k!=='armyById')assert.deepEqual(result[k],v,i+' '+k);
+    }
+    assert.deepEqual(parseArmyFile(staged.bytes,ids),{armyById:row.output.armyById,riotIds:row.output.riotIds});
+    assert.deepEqual(parseArmyFile(staged.bytes,ids),parseArmyFile(row.stage,ids));
+    assert.equal(await readFile(live,'utf8'),raw);
+    await commitArmySandbox({reviewed:fileReview,directory});
+    assert.deepEqual(parseArmyFile(await readFile(live,'utf8'),ids),parseArmyFile(row.liveAfter,ids));
+    prior=result;
+  }
+  const [a,b,c,d]=z.steps;
+  assert.deepEqual(parseArmyFile(a.stage,ids),{armyById:{1:2800},riotIds:[1,2]});
+  assert.equal(a.output.shops[1].army,500);
+  assert.equal(b.output.shops[1].army,null,'original undef is distinct from zero');
+  assert.equal(b.output.town.army,5200,'zero-soldier RIOT still adds 1200 guard loss');
+  assert.equal(c.output.town.army,2800);
+  assert.equal(d.output.activeUntilSeconds,null);
+  assert.equal(d.output.drawsUsed,0);
+  assert.equal(await readFile(live,'utf8'),'\n\n');
+  assert.equal(z.final,'\n\n');
+}));

@@ -72,7 +72,7 @@ export function projectR4RebelNow({
     if(!s||typeof s!=='object'||Array.isArray(s)||
        Object.keys(s).sort().join(',')!=='army,id,money,name,shopname'||
        !safe(s.id)||s.id===0||idMap.has(s.id)||
-       !safe(s.money)||!safe(s.army)||
+       !safe(s.money)||!(s.army===null||safe(s.army))||
        typeof s.name!=='string'||typeof s.shopname!=='string')
       fail('unreviewed source shop snapshot');
     idMap.set(s.id,i);return {...s};
@@ -81,8 +81,7 @@ export function projectR4RebelNow({
   if(Object.keys(army).some(x=>!/^[1-9]\d*$/.test(x)||
      !idMap.has(Number(x))||!safe(army[x])))fail('invalid ARMY map');
   for(const id of riotIds){
-    if(!safe(id)||!idMap.has(id)||riot.has(id)||
-       !Object.hasOwn(army,String(id)))
+    if(!safe(id)||!idMap.has(id)||riot.has(id))
       fail('invalid RIOT membership');
     riot.add(id);
   }
@@ -105,8 +104,14 @@ export function projectR4RebelNow({
     amount+=time*2;rebels+=city.robinb;
   }
   for(const id of riot){
-    shopsOut[idMap.get(id)].army=army[id];
-    army[id]=Math.max(0,army[id]-time);
+    // WriteArmy prunes zero ARMY entries, not RIOT membership. The
+    // next ReadArmy can therefore have a RIOT ID with no ARMY key.
+    // Preserve Perl undef in the transient DT.army field (JSON null),
+    // while Perl arithmetic treats undef as zero. It is NOT a persisted
+    // play.cgi column. The RIOT still contributes the full source loss.
+    const prior=army[id]??null;
+    shopsOut[idMap.get(id)].army=prior;
+    army[id]=Math.max(0,(prior??0)-time);
     amount+=time;rebels+=army[id];
   }
   if(rebels<200){
@@ -121,15 +126,15 @@ export function projectR4RebelNow({
       for(const id of riot)delete army[id];
       riot.clear();
       logs.push([2,0,'護衛軍被叛軍殲滅了。領主被趕出了城堡。']);
-      if(new Set(shopsOut.map(s=>s.army)).size!==shopsOut.length)
+      if(new Set(shopsOut.map(s=>s.army??0)).size!==shopsOut.length)
         fail('unreviewed equal-army sort');
-      const ranked=[...shopsOut].sort((a,b)=>b.army-a.army);
+      const ranked=[...shopsOut].sort((a,b)=>(b.army??0)-(a.army??0));
       let winner=ranked[0].id;
       if(winner===city.leader){
         if(!ranked[1])fail('missing second rebel successor');
         winner=ranked[1].id;
       }
-      if(city.robinb>ranked[0].army)winner=0;
+      if(city.robinb>(ranked[0].army??0))winner=0;
       city.robina=0;city.money=Math.max(0,city.money);
       if(winner){
         const shop=shopsOut[idMap.get(winner)];
@@ -152,7 +157,7 @@ export function projectR4RebelNow({
   }
   if(used!==randomDraws.length)fail('source rebel RNG samples unused');
   if(Object.values(city).some(v=>!safe(v))||
-     shopsOut.some(s=>!safe(s.money)||!safe(s.army)))
+     shopsOut.some(s=>!safe(s.money)||!(s.army===null||safe(s.army))))
     fail('source projected result not persistable');
   return Object.freeze({
     source:reviewed.source,committable:false,
