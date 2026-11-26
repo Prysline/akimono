@@ -23,7 +23,7 @@ sub SetWholeStore {die 'peer purchase must not write wholesale'}
 sub item::AddItemSub {die 'peer purchase must not award market voucher'}
 sub item::WriteLog {die 'peer purchase must not emit market voucher log'}
 binmode STDOUT, ':raw';
-our (%GUILD,%GUILD_DATA,%DTevent,@ITEM,$DT,$DTS,$id,$itemno,$showcase,$price,$num,
+our (%GUILD,%GUILD_DATA,%DTevent,@ITEM,@DT,$DT,$DTS,$id,$itemno,$showcase,$price,$num,
      $TIME_SEND_ITEM,$NOW_TIME,$MAX_STOCK_TIME,$MAX_ITEM,$USER,$DTTaxrate,
      $GUILDIDX_dealrate);
 sub l { $_[0] }
