@@ -7,7 +7,7 @@ import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
+import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY,R4_EXTERNAL_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
 import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 
 const authenticatedStores=new WeakSet();
@@ -62,9 +62,10 @@ export function fingerprintReviewedCheckpointRuntime({sources,sourceDirectory,en
   if(!interpreter||interpreter.length>120)fail('invalid interpreter fingerprint');
   return {sourceFingerprint,interpreter};
 }
-export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter,crossPeriod=false}){
+export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter,crossPeriod=false,externalRebel=false}){
   if(!digest(sourceFingerprint)||typeof interpreter!=='string'||!interpreter||interpreter.length>120)fail('runtime identity required');
-  const hashPolicy=crossPeriod?R4_HASH_POLICY+'+'+R4_COMMAND_HASH_POLICY:R4_HASH_POLICY;
+  if(typeof externalRebel!=='boolean'||externalRebel&&!crossPeriod)fail('external checkpoint requires crossing');
+  const hashPolicy=(crossPeriod?R4_HASH_POLICY+'+'+R4_COMMAND_HASH_POLICY:R4_HASH_POLICY)+(externalRebel?'+'+R4_EXTERNAL_COMMAND_HASH_POLICY:'');
   const drawPolicy=crossPeriod?R4_TIME_DRAW_POLICY+'+'+R4_CROSS_PERIOD_DRAW_POLICY:R4_TIME_DRAW_POLICY;
   const base=path.resolve(saveDirectory),dir=path.join(base,CHECKPOINT_DIRECTORY),keyPath=path.join(dir,'key');
   function key(create=false){

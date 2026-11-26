@@ -28,6 +28,8 @@ import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntim
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+const reviewedRebelTime=process.env.AKIMONO_REVIEWED_REBEL_TIME==='1';
+if(reviewedRebelTime&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('反亂審閱模式需要跨期及明確獨立存檔目錄');
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -78,7 +80,7 @@ const streetModule=createStandardStreetModule({
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
-  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedRebelTime:reviewedRebelTime,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -117,7 +119,7 @@ const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule)
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
 const checkpointStore=createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,externalRebel:reviewedRebelTime,...fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
@@ -172,6 +174,7 @@ function state(){
     },
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
     army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
+    ...(reviewedRebelTime?{reviewedRebelTime:true,armyConflict:world?streetModule.describeConflict(world):null}:{}),
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
@@ -493,6 +496,17 @@ async function api(req,res,url){
       if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
       result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
         expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/army-start-rebellion':
+    case '/api/army-join-rebellion':
+    case '/api/army-dispatch-guard': {
+      if(!streetModule.reviewedRebelTime)return send(res,409,{ok:false,error:'反亂操作需獨立審閱模式',state:state()});
+      const kind=url.pathname.slice('/api/army-'.length);
+      const dispatch=kind==='dispatch-guard';
+      if(!exactKeys(body,dispatch?'expectedRevision':'expectedRevision,confirmation')||(!dispatch&&body.confirmation!=='rebel'))
+        throw Error('反亂指令只接受版本及原版確認值，不接受兵力、城市、EVENT 或 RNG');
+      result=commit({kind,expectedRevision:ensureRevision(body),shopId:1,...(dispatch?{}:{confirmation:'rebel'})});
       break;
     }
     case '/api/discard': {

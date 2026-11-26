@@ -316,6 +316,11 @@ $('storage-inventory').addEventListener('click',event=>{
 });
 function renderArmy(s){
   const a=s?.army;
+  const conflict=s?.armyConflict;
+  $('army-conflict-panel').hidden=s?.reviewedRebelTime!==true;
+  $('army-conflict-disabled').hidden=s?.reviewedRebelTime===true;
+  text('army-conflict-status',conflict?(conflict.rebellion?'反亂進行中。':'目前沒有反亂。'):'需要完成來源決算及開店。');
+  for(const [kind,allowed] of [['start-rebellion',conflict?.canStart],['join-rebellion',conflict?.canJoin],['dispatch-guard',conflict?.canDispatch]])$('army-'+kind).disabled=allowed!==true||armySubmitting||!s?.world;
   text('army-status',a?'矮人兵士正在等待僱用。':s?.reviewedCrossPeriod?'請先建立商店。':'傭兵所需已審閱的跨期模式。');
   text('army-dignity',number(a?.dignity));
   text('army-maximum',number(a?.maximum));
@@ -623,6 +628,17 @@ async function call(path,payload={},label='操作',onSuccess=null){
     onSuccess?.(data);
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
+}
+for(const [kind,flag,label] of [['start-rebellion','canStart','發動反亂'],['join-rebellion','canJoin','參加反亂'],['dispatch-guard','canDispatch','派遣護衛']]){
+  $('army-'+kind).addEventListener('click',async()=>{
+    const before=snapshot;
+    if(armySubmitting||!before?.world||before.armyConflict?.[flag]!==true)return;
+    if(kind!=='dispatch-guard'&&!window.confirm('確定要'+label+'？'))return;
+    armySubmitting=true;renderArmy(before);
+    try{
+      await call('/api/army-'+kind,{expectedRevision:before.world.revision,...(kind==='dispatch-guard'?{}:{confirmation:'rebel'})},label,data=>feedback('已'+label+'。',data.details));
+    }finally{armySubmitting=false;renderArmy(snapshot);}
+  });
 }
 for(const mode of ['hire','fire']){
   $('army-'+mode+'-form').addEventListener('submit',async event=>{

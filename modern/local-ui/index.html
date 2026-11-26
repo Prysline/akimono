@@ -342,7 +342,17 @@
         <label>或輸入人數 <input id="army-fire-count" type="number" min="1" step="1"></label>
         <button id="army-fire" type="submit" disabled>解僱</button>
       </form>
-      <p class="muted">反亂、護衛派遣及領主交易尚未開放。</p>
+      <p id="army-conflict-disabled" class="muted">反亂、護衛派遣及領主交易尚未開放。</p>
+      <div id="army-conflict-panel" hidden>
+        <h3 class="sub-title">反亂與護衛派遣</h3>
+        <p id="army-conflict-status" role="status">等待來源資格核對。</p>
+        <div class="inline-form">
+          <button id="army-start-rebellion" type="button" disabled>發動反亂（30分鐘）</button>
+          <button id="army-join-rebellion" type="button" disabled>參加反亂（20分鐘）</button>
+          <button id="army-dispatch-guard" type="button" disabled>派遣護衛（20分鐘）</button>
+        </div>
+        <p class="muted">獨立審閱模式：需已完成至少一期決算及原版軍事資格；領主稅率、公會與多人操作尚未開放。</p>
+      </div>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>
