@@ -811,15 +811,25 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
     reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
     reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
     reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
-  for(const armed of [false,true]){
+  // Existing led suppression/persistence cases remain unchanged. Add the
+  // two leaderless city branches a genuine first player uprising can reach.
+  // These are source differential fixtures, not evidence of recruitment.
+  const cases=[
+    {name:'led-unarmed',armed:false,leader:1,army:10000,robina:2000,money:5000000,secondRead:false,finalLeader:1},
+    {name:'led-armed',armed:true,leader:1,army:10000,robina:2000,money:5000000,secondRead:true,finalLeader:1},
+    {name:'leaderless-guarded',armed:true,leader:0,army:0,robina:2000,money:0,secondRead:true,finalLeader:0},
+    {name:'leaderless-victory',armed:true,leader:0,army:0,robina:0,money:0,secondRead:false,finalLeader:1},
+  ];
+  for(const scenario of cases){
+    const {armed,leader,army,robina,money,secondRead,finalLeader}=scenario;
     const {repository}=fresh(true),world=structuredClone(repository.read());
     world.nowSeconds=1155580;
     world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
       lastSettledBoundarySeconds:1026000,dtPeople:350000,
-      town:{...world.period.town,leader:1,money:5000000,develop:5001,safety:5001,army:10000,robina:2000,people:500000},
+      town:{...world.period.town,leader,money,develop:5001,safety:5001,army,robina,people:500000},
       eventState:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
     Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
-    const liveArmyBytes=armed?'1,4000\n1\n':'\n\n';
+    const liveArmyBytes=armed?(leader===0?'1,2500\n1\n':'1,4000\n1\n'):'\n\n';
     const input={world,minutes:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
       reviewedEvents,reviewedPeriod,liveArmyBytes};
 
@@ -831,6 +841,13 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
     assert.throws(()=>serializePeriodPlay({reviewed:diskReviews.play,townReview:reviews.town,world:initial}),/unreviewed EVENT/);
     const result=projectR4ExternalCrossPeriodCandidate(input);
     const e=result.evidence.slices;
+    assert.equal(result.period.town.leader,finalLeader,scenario.name+' final leader');
+    assert.equal(e[1].armyRead,secondRead,scenario.name+' residual army read');
+    if(scenario.name==='leaderless-victory'){
+      assert.equal(Object.hasOwn(result.period.eventState,'rebel'),false);
+      assert.equal(result.stagedArmyBytes,'\n\n');
+      assert.ok(e[0].eventLogs.some(row=>row[2].includes('成為了新的領主')));
+    }
     const sourceDisk=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
       cwd:perlDir,encoding:'utf8',maxBuffer:8*1024*1024,
       env:{...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'},
@@ -898,7 +915,7 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
       const historyEntry=makeReviewedTimeHistoryEntry({before:runtimeBefore,command,result:fixtureResult});
       assert.equal(isReviewedTimeHistoryEntry(historyEntry),true);
       assert.equal(historyEntry.trace.slices[0].armyRead,true);
-      assert.equal(historyEntry.trace.slices[1].armyRead,armed);
+      assert.equal(historyEntry.trace.slices[1].armyRead,secondRead,scenario.name);
       assert.deepEqual(historyEntry.trace.slices.map(s=>s.afterOrder),e.map(s=>s.afterOrder));
       const tampered=structuredClone(historyEntry);
       tampered.trace.slices[1].activeOrder.push('rebel');
