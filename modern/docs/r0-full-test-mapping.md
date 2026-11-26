@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 60、歷史 24、待補 149。B56 重疊去重；既有 63 份分類中 5 份已重新逐檔覆核（其餘 58 待覆核）；收斂後累計另逐檔審閱 21 份，並非全量重審。新增 4 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 68、歷史 24、待補 141。B56 重疊去重；既有 63 份分類中 5 份已重新逐檔覆核（其餘 58 待覆核）；收斂後累計另逐檔審閱 29 份，並非全量重審。新增 4 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -45,7 +45,7 @@
 | original-perl/backup-safety.t | 有效 | 原版 Perl Oracle／不安全歷史語義 |
 | original-perl/baseline.t | 有效 | 原版 Perl Oracle |
 | original-perl/lock-safety.t | 有效 | 原版 Perl Oracle／歷史鎖 |
-| original-perl/new-store.t | 待補 | 未完成語義審閱 |
+| original-perl/new-store.t | 有效 | Perl Oracle（隔離 new.cgi） |
 | original-perl/original-admin-sparse-market.t | 待補 | 未完成語義審閱 |
 | original-perl/original-b41-real-sale.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b42-two-rounds.t | 有效 | Perl Oracle（受控） |
@@ -118,8 +118,8 @@
 | original-perl/original-use-transaction.t | 待補 | 未完成語義審閱 |
 | original-perl/original-virtual-item-require.t | 待補 | 未完成語義審閱 |
 | original-perl/original-world-use-sequence.t | 待補 | 未完成語義審閱 |
-| original-perl/period-experience.t | 待補 | 未完成語義審閱 |
-| original-perl/period-stock-use.t | 待補 | 未完成語義審閱 |
+| original-perl/period-experience.t | 有效 | Perl Oracle（固定片段） |
+| original-perl/period-stock-use.t | 有效 | Perl Oracle（固定片段） |
 | original-perl/showcase-market.t | 待補 | 未完成語義審閱 |
 | original-perl/whole-store.t | 待補 | 未完成語義審閱 |
 | original-perl/world-commit.t | 待補 | 未完成語義審閱 |
@@ -156,8 +156,8 @@
 | p5-book-work-market-source.test.mjs | 有效 | Perl Oracle |
 | p5-book-work-v2-player-http.test.mjs | 有效 | HTTP/CAS |
 | peer-trade-model.test.mjs | 待補 | 未完成語義審閱 |
-| period-experience-model.test.mjs | 待補 | 未完成語義審閱 |
-| period-stock-use-model.test.mjs | 待補 | 未完成語義審閱 |
+| period-experience-model.test.mjs | 有效 | 來源守門／純 EXP 投影 |
+| period-stock-use-model.test.mjs | 有效 | 來源守門／純 stock/USE preflight |
 | r2-book-work-source.test.mjs | 待補 | 未完成語義審閱 |
 | r2-career-change-source.test.mjs | 待補 | 未完成語義審閱 |
 | r2-career-true-player-http.test.mjs | 歷史 | 舊 HTTP／CAS（固定時鐘/RNG） |
@@ -227,9 +227,9 @@
 | reviewed-gift-map-use.test.mjs | 待補 | 未完成語義審閱 |
 | reviewed-use-fixture-street.test.mjs | 待補 | 未完成語義審閱 |
 | source-audit.test.mjs | 有效 | 靜態來源 |
-| standard-init.test.mjs | 待補 | 未完成語義審閱 |
-| standard-street-model.test.mjs | 待補 | 未完成語義審閱 |
-| wholesale-turn-model.test.mjs | 待補 | 未完成語義審閱 |
+| standard-init.test.mjs | 有效 | 來源宣告／靜態 parser |
+| standard-street-model.test.mjs | 有效 | 來源守門／純模型 |
+| wholesale-turn-model.test.mjs | 有效 | 來源守門／純 PLUS 投影 |
 | world-backup-preflight.test.mjs | 歷史 | 舊備份／鎖純規劃 |
 | world-commit-plan.test.mjs | 歷史 | 舊 CGI commit 純規劃 |
 | world-lock-contract.test.mjs | 歷史 | 純投影／歷史檔鎖 fixture |

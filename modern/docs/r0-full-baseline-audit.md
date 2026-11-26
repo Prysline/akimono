@@ -20,3 +20,8 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 第五批覆核既有 63 分類中的 5 檔，詳見 [R1 v2 安全證據](r1-v2-security-evidence.md)；原 63 中仍 58 待最終覆核。分類 60/24/149 不變；新候選測試增為 4 檔。修正稽核器原先只接受 baseline 文件引用的缺口：候選證據文件必須顯式列冊、實際存在、heading 與測試路徑及行號一致，舊來源仍固定 SHA。尚未執行新測試。
 
 整合候選 ee961fd68e93c5063b584b903eb108488a1a1278 的 exact CI 45760668915：JS 1340 pass / 1 fail / 1 skip（未觀察牛死亡），Perl 未執行。唯一失敗為本線競爭測試對成功 staging 的錯誤假設，修正與限制見 [R1 契約](r1-current-core-contract-audit.md)。新候選未驗收。
+
+## 已確認整合候選 CI 綠燈（固定版本）
+[45765900966](https://github.com/Prysline/akimono/actions/runs/45765900966) job 139726608654：HEAD `b40dec8bfd28f6e655e48f5068c5ba280d5513b8`，checkout `41808264862039019cacbed13d552ee63b1d8e91` tree `de0452748ce90c5367beeb327b35cba0397e8f65` 相同。JS 1342/1342、0 fail/skip/cancelled，Perl 85 檔 2456/2456、Result PASS，所有 DSL 與原版 pins 步驟成功。R1 CAS race 與 fresh replay 均通過；P4 實測 96 opportunities、1 death、4 cows、rev81→86 保存／合法復原。此綠燈屬固定前一候選，不替代新 HEAD。
+
+第六批補審 8 檔（[開店、展示、PLUS、EXP、USE](r0-init-wholesale-exp-use-evidence.md)），有效 68、歷史 24、待補 141（92/233），收斂後補審 29 份，既有 58 份待覆核。
