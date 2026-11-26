@@ -711,7 +711,7 @@ test('R4 source-only crossing closes an expired shop, preserves native archive a
   assert.equal(settlement.shopExpiry.expiredOwner,true);assert.equal(settlement.shop,null);
   assert.equal(close.closed,true);assert.deepEqual(close.deletedSessions,['1-alpha.cgi']);
   assert.deepEqual(close.remainingSessions,['1-.cgi','2-keep.cgi']);
-  assert.equal(close.shop.money,0);assert.equal(settlement.closedShop.money,-settlement.maintenance);
+  assert.equal(close.shop.money,0);assert.equal(settlement.closedShop.money,0-settlement.maintenance);
   assert.equal(first.preEvent.closeHashEvidence.interpreter,result.evidence.interpreter);
   assert.equal(first.preEvent.closeHashEvidence.seed,result.evidence.seed);
   assert.ok(close.archived.startsWith('経営者不在\n'));
