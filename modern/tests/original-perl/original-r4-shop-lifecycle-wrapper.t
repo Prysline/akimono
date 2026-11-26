@@ -25,6 +25,15 @@ our ($DATA_DIR,$TEMP_DIR,$BACKUP_DIR,$FILE_EXT,$DATA_FILE,$COMMIT_FILE,
   $MYDIR,@OtherDir,@NG_SHOP_NAME,$MOBILE,$CHECK_IP,$TZ_JST,$ITEM_DIR,
   @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
 my %pins=(
+  'pinned-army.cgi'=>'cd29bcbfe52bac84794c4c79426bd559d7616d85',
+  'pinned-guild.cgi'=>'6593aa8a3ae4a1695c2418f12a3776f0053454ac',
+  'pinned-gd-m.cgi'=>'b18dd3166709e270e5cb2d525ce404bca80551ca',
+  'pinned-inc-dragon.cgi'=>'76bb00f247733630cbcc374a82f693638f653b71',
+  'pinned-drreada.cgi'=>'01110533ae1a223f687f13b02f0aaeebd30c3155',
+  'pinned-drreadb.cgi'=>'1b13a1a855490c80c88b0fa117676c68b6440753',
+  'pinned-drreadc.cgi'=>'f363bcdab6022581976b6b99dd5e095b51f5f238',
+  'pinned-drwrite.cgi'=>'0abc25f24ea6bd06576d5d1ba31eeb82419a2fee',
+  'period.cgi'=>'6183e88e9dd69a16606a1064c8084e9a1411dbd5',
   'inc-func.cgi'=>'e7a8add7b0291901e71fe797783b664dff1568a0',
   'core-detail.cgi'=>'9a83d26fb29edee4032958f1e6de837a250f3384',
   'new.cgi'=>'9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7',
@@ -330,5 +339,116 @@ for my $restartFirst(0,1){
     is(raw_file("$DATA_DIR/play.cgi"),$before,'blockIP denial no publication');
   }
 }
+
+# LC-B2 external retention: real lifecycle wrappers followed by separately
+# invoked original readers/settlement. No implicit cleanup or modern publication.
+our ($COMMON_DIR,$COTEMP_DIR,$GUILDBAL_FILE,%GUILD_DATA,%ARMY,%RIOT,
+  @ENTRY,@MYENTRY,@ENTRYnamelist,$Ecount,
+  @ST,@JK,@RC,@DR,@PR,@RD,@RDS,$STcount,$JKcount,$RCcount,$DRcount,$PRcount,$RDcount,
+  @STnamelist,@JKnamelist,@RCnamelist,@DRnamelist,@PRnamelist,@RDnamelist,
+  $MYST,$MYJK,$MYRC,@MYDR,@MYPR,%id2st,%id2jk,%id2rc,%id2dra,%id2pr);
+$COMMON_DIR="$root/common";$COTEMP_DIR="$COMMON_DIR/temp";make_path($COTEMP_DIR);
+$GUILDBAL_FILE='guildbal';
+for my $name(qw(pinned-army.cgi pinned-guild.cgi pinned-drreada.cgi pinned-drreadb.cgi pinned-drreadc.cgi pinned-drwrite.cgi)){
+  require "$FindBin::Bin/$name";
+}
+for my $name(qw(ST JK RC DR PR RD)){
+  my $fieldName=$name.'namelist';
+  my($fields)=$source{'pinned-inc-dragon.cgi'}=~/\@\Q$fieldName\E\s*=\s*qw\s*\(([^)]*)\)/s;
+  die "missing dragon schema $name" unless defined $fields;
+  no strict 'refs';
+  @{"main::".$fieldName}=split(/\s+/,$fields=~s/^\s+|\s+$//gr);
+}
+my($entrySchema)=$source{'pinned-gd-m.cgi'}=~/\@ENTRYnamelist\s*=\s*qw\s*\(([^)]*)\)/s;
+die 'missing invitation schema' unless defined $entrySchema;
+@ENTRYnamelist=split(/\s+/,$entrySchema=~s/^\s+|\s+$//gr);
+for my $pair (['pinned-gd-m.cgi','ReadEntry'],['period.cgi','DragonBalance']){
+  my($file,$name)=@$pair;
+  my($body)=$source{$file}=~/(^sub \Q$name\E\n\{[\s\S]*?^\}\n)/m;
+  die "missing original reader $name" unless defined $body;
+  eval "package main; no strict; no warnings; use utf8;\n$body\n1;" or die $@;
+}
+sub external_row {
+  my($schema,$values)=@_;
+  return join(',',map {exists $values->{$_}?$values->{$_}:0} @$schema)."\n";
+}
+my @dragonSets=(
+  ['dra-st',\@STnamelist,\@ST,\%id2st,\&ReadStable,\&WriteStable,1],
+  ['dra-jk',\@JKnamelist,\@JK,\%id2jk,\&ReadJock,\&WriteJock,1],
+  ['dra-rc',\@RCnamelist,\@RC,\%id2rc,\&ReadRanch,\&WriteRanch,1],
+  ['dra-pr',\@PRnamelist,\@PR,\%id2pr,\&ReadParent,\&WriteParent,1],
+  ['dra-dr',\@DRnamelist,\@DR,\%id2dra,\&ReadDragon,\&WriteDragon,0],
+);
+for my $action(qw(restart cls)){
+  my($aliceToken,$bobId)=two_shop_case();
+  my %files=(
+    "$DATA_DIR/army.cgi"=>"1,11,$bobId,22\n1,$bobId\n",
+    "$COMMON_DIR/guildbal.cgi"=>"7\tmoney\t12345\tin\t234\tout\t12\n",
+    "$COMMON_DIR/7.pl"=>"fixture role file: intentionally opaque to lifecycle wrapper\n",
+    "$COMMON_DIR/entry.cgi"=>"1,".($NOW_TIME+60).",$MYDIR,1,7\n2,".($NOW_TIME+60).",other,1,7\n3,".($NOW_TIME-1).",$MYDIR,1,7\n",
+    "$COMMON_DIR/drapay-$MYDIR.cgi"=>"1\t90\n$bobId\t30\n",
+    "$COMMON_DIR/drapay-other.cgi"=>"1\t700\n",
+    "$COMMON_DIR/dra-rd0.cgi"=>"1,2,3\n".external_row(\@RDnamelist,{no=>101,dr=>101,name=>'race-row'}),
+  );
+  for my $set(@dragonSets){
+    my($file,$schema)=@$set;
+    $files{"$COMMON_DIR/$file.cgi"}=join('',map {
+      external_row($schema,{no=>$_->[0],owner=>$_->[1],town=>$_->[2],
+        name=>$_->[3],birth=>$NOW_TIME-100,fm=>1,prize=>10})
+    } ([101,1,$MYDIR,'local-alice'],[102,1,'other','other-alice'],[103,$bobId,$MYDIR,'local-bob']));
+  }
+  put_file($_,$files{$_}) for keys %files;
+  delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  my $confirmation=$action eq 'restart'?'restart':'closeshop';
+  like((submit('pinned-membership-user.cgi',$aliceToken,$action,$confirmation))[0],
+    qr/__SOURCE_RENDER__/,"external source fixture actual $action");
+  DataRead();
+  my $active=$action eq 'restart';
+  is(exists($id2idx{1})?1:0,$active?1:0,"$action exact active ID");
+  ok(exists $id2idx{$bobId},"$action other owner retained");
+  for my $file(sort keys %files){
+    is(raw_file($file),$files{$file},"$action leaves raw external ".($file=~s{.*/}{}r)." unchanged");
+  }
+  # The next operation is explicitly separate from the lifecycle handler.
+  $DT=$DT[$id2idx{$bobId}];
+  ReadGuildData();
+  is($GUILD_DATA{7}{money},12345,"$action guild ledger still read");
+  ReadEntry();
+  ok(defined($ENTRY[0])&&defined($ENTRY[1]),"$action unexpired invitations remain independent of active ID");
+  ok(!defined($ENTRY[2]),"$action expired invite filtered on read only");
+  is(raw_file("$COMMON_DIR/entry.cgi"),$files{"$COMMON_DIR/entry.cgi"},"$action invitation read does not write");
+  ReadArmy();
+  is($ARMY{1},11,"$action army count initially read even for inactive ID");
+  is(exists($RIOT{1})?1:0,$active?1:0,"$action riot visibility follows active local ID");
+  Lock();WriteArmy();DataCommitOrAbort();UnLock();
+  ReadArmy();
+  is(exists($ARMY{1})?1:0,$active?1:0,"$action army count filtered at later WriteArmy");
+  is($ARMY{$bobId},22,"$action peer army retained");
+  for my $set(@dragonSets){
+    my($file,$schema,$rows,$index,$read,$write,$filtersInactive)=@$set;
+    $read->();
+    my $visible=$active||!$filtersInactive;
+    is(defined($rows->[0])?1:0,$visible?1:0,"$action $file local row read visibility");
+    is($index->{101},0,"$action $file original index exists before filter");
+    is($rows->[1]{name},'other-alice',"$action $file cross-street same ID retained");
+    is($rows->[2]{name},'local-bob',"$action $file active peer retained");
+    $write->();
+    my $expected=join('',map {external_row($schema,$_)} grep {defined $_} @$rows);
+    is(raw_file("$COTEMP_DIR/$file.cgi"),$expected,"$action $file later writer stages visible rows");
+    is(raw_file("$COMMON_DIR/$file.cgi"),$files{"$COMMON_DIR/$file.cgi"},"$action $file writer has not published common file");
+    unlink "$COTEMP_DIR/$file.cgi" or die $!;
+  }
+  ReadRace(0);
+  is($RD[0]{dr},101,"$action race entry not removed by owner lifecycle");
+  my $bobBefore=$DT[$id2idx{$bobId}]{dragon}+0;
+  my $aliceBefore=$active?$DT[$id2idx{1}]{dragon}+0:0;
+  DragonBalance();
+  ok(!-e "$COMMON_DIR/drapay-$MYDIR.cgi","$action later source settlement consumes local payout file");
+  is($DT[$id2idx{$bobId}]{dragon},$bobBefore+30,"$action active peer receives pending payout");
+  is($DT[$id2idx{1}]{dragon},$aliceBefore+90,'restart stable ID receives pending payout') if $active;
+  ok(!exists $id2idx{1},'closed owner not recreated by payout') unless $active;
+  is(raw_file("$COMMON_DIR/drapay-other.cgi"),$files{"$COMMON_DIR/drapay-other.cgi"},"$action other street payout untouched");
+}
+
 chdir $cwd or die 'restore cwd';
 done_testing();
