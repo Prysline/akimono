@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
-async function packageAndSell(t,p,{id,useId,components,sales}){
+async function packageAndSell(t,p,{id,useId,components,sales,losses}){
   assert.equal(p.stock(id),0,'no pre-existing package');
   assert.ok(components.every(x=>p.stock(x)>=10));
   assert.equal(p.stock(39),1);
@@ -27,21 +27,36 @@ async function packageAndSell(t,p,{id,useId,components,sales}){
   assert.equal(listed.code,'COMMITTED',JSON.stringify(listed.details??listed.error));
   for(let n=0;!sales[id]&&n<36;n++)await p.tick(60);
   assert.ok(sales[id]>0,JSON.stringify({id,sales,held:p.stock(id),period:p.state.world.period.settledCount}));
-  assert.equal(p.stock(id),10-sales[id]);
+  // Losses from a real theft/robbery EVENT are not natural sales.
+  // Reconcile both from the same command receipts before checking disk.
+  assert.equal(p.stock(id),10-sales[id]-(losses[id]??0));
   const second=await p.saveAndRestart(1);
-  assert.equal(second.shops[0].item[id-1],10-sales[id]);
+  assert.equal(second.shops[0].item[id-1],10-sales[id]-(losses[id]??0));
   assert.equal(second.shops[0].showcase[0],id);
   await p.tick(1);
-  t.diagnostic(JSON.stringify({package:id,manufactured:10,naturalSales:sales[id],saved:second.shops[0].item[id-1],revision:second.revision}));
+  t.diagnostic(JSON.stringify({package:id,manufactured:10,naturalSales:sales[id],eventLoss:losses[id]??0,saved:second.shops[0].item[id-1],revision:second.revision}));
 }
-function onSale(sales){
-  return r=>{
+function onSale(sales,losses,packageId){
+  return (r,before)=>{
     assert.equal(Object.values(r.details.soldByItem).reduce((sum,x)=>sum+x,0),r.details.naturalSaleCount);
     for(const [id,n] of Object.entries(r.details.soldByItem))sales[id]=(sales[id]??0)+n;
+    const shop=before.shops[0];
+    if(shop.showcase[0]!==packageId)return;
+    assert.equal(shop.showcasecount,1);
+    const trace=r.details.sourceTrace;
+    const logs=trace.slices?trace.slices.flatMap(x=>x.logs):trace.logs;
+    const stolenValue=logs.reduce((total,row)=>{
+      const match=String(row[2]).match(/(?:被偷了|被搶了)相當於總額(\d+)的商品。/);
+      return total+(match?Number(match[1]):0);
+    },0);
+    assert.equal(stolenValue%shop.price[0],0,'original single-shelf event loss value');
+    const stolen=stolenValue/shop.price[0];
+    losses[packageId]=(losses[packageId]??0)+stolen;
+    assert.equal(r.state.shop.item[packageId-1],shop.item[packageId-1]-(r.details.soldByItem[packageId]??0)-stolen);
   };
 }
 test('R4 genuine #72 wooden equipment package uses all four crafted components, sells and survives two v2 generations',async t=>{
-  const sales={},p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick:onSale(sales)});
+  const sales={},losses={},p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick:onSale(sales,losses,72)});
   await p.use(79,1); // source starter ticket exchange -> books #15, #16, #17
   assert.equal(p.stock(17),1);
   await p.market(13);
@@ -53,10 +68,10 @@ test('R4 genuine #72 wooden equipment package uses all four crafted components, 
     }
   }
   await p.market(39);
-  await packageAndSell(t,p,{id:72,useId:13,components:[40,46,52,57],sales});
+  await packageAndSell(t,p,{id:72,useId:13,components:[40,46,52,57],sales,losses});
 });
 test('R4 genuine #73 iron equipment package from two source skills and four books, actual sale and dual v2 restart',async t=>{
-  const sales={},p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick:onSale(sales)});
+  const sales={},losses={},p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick:onSale(sales,losses,73)});
   await p.use(79,0);await p.use(79,3);
   await p.market(13);
   // Buy expensive source books before mining the full inventory. The
@@ -75,5 +90,5 @@ test('R4 genuine #73 iron equipment package from two source skills and four book
     }
   }
   await p.market(39);
-  await packageAndSell(t,p,{id:73,useId:14,components:[41,47,53,58],sales});
+  await packageAndSell(t,p,{id:73,useId:14,components:[41,47,53,58],sales,losses});
 });

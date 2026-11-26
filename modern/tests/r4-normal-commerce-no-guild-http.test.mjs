@@ -8,6 +8,7 @@ test('R4 real player obtains #62 and executes original no-guild advertisement re
   assert.equal(p.stock(62),1);
   assert.ok(!p.state.shop.guild);
   assert.equal(p.quote(62,2).timePerUseSeconds,28800);
+  assert.equal(p.quote(62,2).randomSampleRequired,false);
   await p.enoughTime(28800);
   const before=await p.saveAndRestart(0);
   const old=p.state.shop,revision=p.state.world.revision;

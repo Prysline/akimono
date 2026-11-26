@@ -832,7 +832,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             singleUseOnly:Boolean(rule.singleUseOnly),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                Boolean(rule.inlineCallback&&
-                 rule.inlineCallback.kind!=='showcase-resize')||
+                 !['showcase-resize','advertise-no-guild'].includes(rule.inlineCallback.kind))||
                [...rule.uses,...rule.creates].some(x=>
                  x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,
