@@ -16,6 +16,7 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  naturalDurable:'R4 genuine ten natural durable EVENT lifecycles, DataRead effects, logs and active/expired v2 restarts',
   careers:'R4 genuine fourteen #78 career changes transfer earned donor EXP and persist across two v2 generations',
   dismantle:'R4 genuine #37/3 dismantling skill and #39/0-2 recycle manufactured equipment with dual v2 reload',
   writing:'R4 genuine #10/0-3 write four source books with materials, production RNG and dual v2 reload',
@@ -41,6 +42,7 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.naturalDurable],events:['happy','boom-posyon','ken-sale','tate-sale','yoroi-sale','tue-sale','plusdown-yakusou','plusup-tetu','plusup-misuriru','plusup-oriharukon']},
   {tests:[title.careers],acquire:[12,78],uses:['12:0',...Array.from({length:14},(_,i)=>'78:'+i)]},
   {tests:[title.dismantle],acquire:[37,38,39,40,45,46,51,52,57],uses:['37:3','39:0','39:1','39:2','16:0','16:1','17:0','17:1','17:2','17:3']},
   {tests:[title.writing],acquire:[10,15,16,17,66],uses:['10:0','10:1','10:2','10:3']},

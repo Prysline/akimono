@@ -499,7 +499,17 @@ function projectSourcePreEventSaleSlice({
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
       ...(shop.showcasecount>1||normalCommerce!==null?{soldByItem:natural.soldByItem}:{}),
-      ...(normalCommerce!==null?{shelfSales:natural.shelfSales}:{}),
+      ...(normalCommerce!==null?{shelfSales:natural.shelfSales,
+        // Read-only evidence from the actual rule table supplied to natural
+        // sales and the actual PLUS result; no additional draws or grants.
+        eventCommerce:{
+          saleParameters:overlay.baseItems.flatMap(base=>{
+            const rule=overlay.saleRules[base.itemId];
+            return rule&&(rule.popularSeconds!==base.popular||rule.point!==base.point)?
+              [[base.itemId,rule.popularSeconds,rule.point]]:[];
+          }),
+          plusChanges:plus.receipt.signedChanges.filter(row=>[1,5,6,7].includes(row.itemId)),
+        }}:{}),
       soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,

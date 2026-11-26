@@ -61,5 +61,6 @@ export function projectR4NormalTurnCandidate({world,minutes,street,reviewedR4,re
       activeOrder:hash.activeOrder,eventOrder:hash.eventOrder,nowOrder:finalOrder.nowOrder,
       preEventDraws:Object.freeze([...samples]),eventDrawRanges:event.randomDrawRanges,eventSamples:event.consumedSamples,
       started:event.started,expired:event.expired,zeroStartTransient:event.zeroStartTransient,logs:event.logs,
+      ...(normalCommerce!==null?{happyEffects:event.happyEffects}:{}),
       preEventReceipt:pre.receipt}});
 }

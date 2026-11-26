@@ -285,7 +285,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
     instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[],
-    guildEndCallbacks=[],rebelNowCallbacks=[];
+    guildEndCallbacks=[],rebelNowCallbacks=[],happyEffects=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
   let nextGuild=guildContext===null?null:{
     dominion:guildContext.dominion,
@@ -481,6 +481,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
            callback.randMax!==range)
           fail('reviewed happy NOWFUNC contract violation');
+        if(reviewedInventory?.normalCommerce)happyEffects.push({
+          rankBefore:callback.rankBefore,rankAfter:callback.rankAfter,
+          rankRoll:callback.rankRoll,randMax:callback.randMax,sample,
+        });
         nextShop=callback.shop;
         happyNowCallbacks.push(code);
       }else if(code==='rebel'){
@@ -556,6 +560,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),
       happyNowCallbacks:Object.freeze(happyNowCallbacks),
+      ...(reviewedInventory?.normalCommerce?{happyEffects:Object.freeze(happyEffects)}:{}),
     }),
     ...(guildContext===null?{}:{
       guildContext:Object.freeze({
