@@ -222,7 +222,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
       await economyTurn();
       await checkpointFunds();
     }
-    assert.ok(p.state.palace.point>=20000&&shop().money>=cash);
+    assert.ok(p.state.palace.point>=20000&&shop().money>=cash&&p.state.palace.owned>=p.state.palace.count);
   }
   async function forgeSkill(){
     if(p.stock(18))return;
@@ -294,20 +294,23 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   await scoreAndCash(100000);
   t.diagnostic('R4 genuine first audience eligibility '+diagnostic());
   await p.saveAndRestart(generation++);
-  while(shop().dignity<3||p.remaining()<4200){
+  for(let rounds=0;;rounds++){
+    assert.ok(rounds<1000,'genuine dignity and recruitment reserve budget '+diagnostic());
     if(shop().dignity>=3){
-      await p.enoughTime(4200);
-      if(shop().dignity>=3)break;
+      // Palace itself consumes no stock time. Earn reserve and recruitment
+      // time AFTER obtaining dignity; if real settlement decay removes
+      // eligibility, immediately resume the original mission path.
+      if(shop().money<2700000){await economyTurn();continue;}
+      if(p.remaining()<4200){await p.enoughTime(4200);continue;}
+      break;
     }
     assert.ok(missions<15,'genuine palace dignity budget '+diagnostic());
     await missionStock();
-    const reserve=missions===0?100000:2700000;
-    await scoreAndCash(reserve);
-    if(p.state.palace.owned<p.state.palace.count){await missionStock();continue;}
-    // The score can change while time is replenished; obtain it again if
-    // necessary, and never permit a below-threshold audience.
-    await p.enoughTime(4200);
-    if(!p.state.palace.canComplete||shop().money<reserve)continue;
+    await scoreAndCash(100000);
+    if(!p.state.palace.canComplete)continue;
+    // Use the actual source eligibility now, not after gratuitous time
+    // passage or waiting for the full army reserve. The original command
+    // has no time charge; a fresh subsequent quote selects the next task.
     const task=p.state.palace,before=shop(),world=snapshot();
     assert.ok(task.point>=20000&&task.canComplete);
     const result=await command('/api/palace-complete');

@@ -223,7 +223,7 @@ function state(){
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
-      reviewedCrossPeriod?(reviewedRebelTime?'單架已審閱庫存跨期及獨立反亂時間推進':'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）'):'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
+      reviewedCrossPeriod?(reviewedRebelTime?(reviewedFullCommerce?'1～8 架已審閱商品跨期及獨立反亂時間推進候選':'單架已審閱庫存跨期及獨立反亂時間推進'):(reviewedFullCommerce?'1～8 架已審閱商品的跨期時間推進':'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）')):(reviewedFullCommerce?'1～8 架已審閱商品的非跨期時間推進':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）')],
     disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
     reviewedCrossPeriod,
     reviewedTimeMode:true,
