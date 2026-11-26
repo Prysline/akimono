@@ -433,7 +433,9 @@ for my $action(qw(restart cls)){
     is($rows->[1]{name},'other-alice',"$action $file cross-street same ID retained");
     is($rows->[2]{name},'local-bob',"$action $file active peer retained");
     $write->();
-    my $expected=join('',map {external_row($schema,$_)} grep {defined $_} @$rows);
+    my @expectedRows=split(/\n/,$files{"$COMMON_DIR/$file.cgi"});
+    shift @expectedRows unless $visible;
+    my $expected=join("\n",@expectedRows)."\n";
     is(raw_file("$COTEMP_DIR/$file.cgi"),$expected,"$action $file later writer stages visible rows");
     is(raw_file("$COMMON_DIR/$file.cgi"),$files{"$COMMON_DIR/$file.cgi"},"$action $file writer has not published common file");
     unlink "$COTEMP_DIR/$file.cgi" or die $!;
