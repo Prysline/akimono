@@ -141,7 +141,13 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
     if(sourceShowcaseLog)newRows.unshift(projectOriginalShowcaseLog({reviewed:showcaseLog,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
     const sourceBuyLog=buyLog&&command.kind==='market-buy';
     if(sourceBuyLog)newRows.unshift(projectOriginalWholesaleBuyLog({reviewed:buyLog,before:before.shops[0],command,receipt:applied.receipt,nowSeconds:now}));
-    if(!sourceUseLogs&&!sourceShowcaseLog&&!sourceBuyLog&&['edit-showcase','market-buy','use-item'].includes(command.kind))
+    // Frozen plug/use.cgi has no generic log call; item-s.cgi displays the
+    // USE result and renews only emitted logs. The five #79 USE recipes
+    // are reviewed callback-free (no WriteLog/PushLog), unlike other USEs
+    // whose callback-specific log audit remains separate.
+    const giftRule=command.kind==='use-item'&&street.reviewedCommerceUseLogs&&sources.ownerMainSource!=null&&command.itemId===79?street.useItem.getRule(command.itemId,command.useId):null;
+    const sourceSilentGift=giftRule?.supported===true&&['reviewed-original-gift-use','original-pure-gift-dsl'].includes(giftRule.source)&&applied.receipt.source===giftRule.source;
+    if(!sourceSilentGift&&!sourceUseLogs&&!sourceShowcaseLog&&!sourceBuyLog&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
     if(command.kind==='market-buy'&&street.marketBuy?.reviewedVoucher)newRows.unshift(...projectReviewedWholesaleVoucherLogRows({
       review:street.marketBuy.reviewedVoucher,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));

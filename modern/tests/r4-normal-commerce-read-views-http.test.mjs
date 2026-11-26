@@ -14,7 +14,10 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.balance.shelfMaintenance,0);
  assert.equal(p.state.balance.foundedLabel,'00秒');
  assert.equal(row(79).count,5);assert.equal(row(79).marketPrice,null);assert.deepEqual(p.state.warehouse.survey,[]);
+ const logsBeforeGift=structuredClone(p.state.news.rows);
  await p.use(79,0);assert.equal(p.stock(9),1);assert.equal(row(9).count,1);assert.equal(row(9).storage,true);
+ assert.deepEqual(p.state.news.rows,logsBeforeGift,'callback-free gift exchange produces no generic original USE log');
+ assert.equal(p.state.world.period.disk.live['log0.cgi'].bytes,opening[0].wire+'\n');
  await p.list(79);
  assert.deepEqual(p.state.showcaseView.rows,[{shelf:0,itemId:79,taxRate:0,tax:0}]);
  assert.equal(p.state.news.rows[0].message,'將禮物卷\\10,000陳列在展示架1上了。');
