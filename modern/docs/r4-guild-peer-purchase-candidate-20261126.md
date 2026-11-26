@@ -1,0 +1,4 @@
+# R4 公會 #79 雙店來源候選（2026-11-26）
+僅 source differential，非玩家、非 CAS。完整 pin buy-s/calc/item/core-detail/pinned-guild/Standard Street ITEM/REBEL DSL。將舊 11 案測試內算式抽取至 original-r4-guild-peer-purchase.mjs，唯一商品 #79，固定單架與兩店明示測資；不開 API，不改既有 runtime 白名單。拒絕定義/帳本鍵不一致，不用缺帳本猜資金。保留同 guild 補助後負金庫及 rate 不復原，賣方 base 稅/時間，實付 cash clamp。19 案包括 fractional rank 兩種真 Perl rand 結果、同 guild/補助不足無 draw、rank 0、整數 rank、單方 guild、72h cap、累計 itemtoday、時間債。受控 RNG 僅供隔離原版差分。
+原版擷取段延長至 UnLock：實際 require 由 pin DSL @@FUNCBUY 生成的全域 callback（只替換已審閱 #79 macro），peer whole=false 不得給市場券；#79 無個別買入 callback。真 WriteGuildData 寫 File::Temp 帳本並讀回，語意比對（包括負金庫及零 margin）；其餘買入 log、RequireFile 初始化、RenewLog、DataWrite、DataCommitOrAbort、UnLock 為順序 recorder，不是真 auth/鎖/主檔/日誌或共同發布。
+下一步需完整多店 DataRead/DataWrite、獨立真玩家公會取得及定義/帳本生命周期、唯一多店 CAS/replay/log/重啟與 common/street 鎖。原版負金庫期末 unlink 和 producer/consumer race 不在本候選中開放。新增 src 檔會改既有 conservative checkpoint fingerprint，未證明跨版本遷移。CI 尚待實際結果，R4 不結案。

@@ -3,46 +3,49 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {readFileSync} from 'node:fs';
-import {quoteUnguildedPurchase} from '../src/economy-model.mjs';
-import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
-
-const model=loadStandardStreetModel(
-  readFileSync(new URL('../../custom/inc-item-data.cgi',import.meta.url),'utf8'),
-  readFileSync(new URL('../../custom/inc-rebel-data.cgi',import.meta.url),'utf8'));
+import {reviewGuildPeerPurchase,projectGuildPeerPurchase} from '../src/original-r4-guild-peer-purchase.mjs';
+import {parseGuildLedgers} from '../src/original-r4-guild-files.mjs';
+const load=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const sources={
+  buy:load('./original-perl/buy-s.cgi'),calc:load('./original-perl/calc.cgi'),
+  item:load('./original-perl/item.cgi'),detail:load('./original-perl/core-detail.cgi'),
+  guild:load('./original-perl/pinned-guild.cgi'),
+  itemDsl:load('../../custom/inc-item-data.cgi'),rebelDsl:load('../../custom/inc-rebel-data.cgi'),
+};
+const reviewed=reviewGuildPeerPurchase(sources);
 const probe=fileURLToPath(new URL('./original-perl/original-r4-guild-peer-buy-probe.pl',import.meta.url));
 const {cases}=JSON.parse(execFileSync('perl',[probe],{encoding:'utf8'}));
-assert.equal(cases.length,11);
-for(const {spec:s,before:b,after:a,receipt:r} of cases){
+assert.equal(cases.length,19);
+const input=({spec:s,before})=>({reviewed,before,definitions:{alpha:{dealrate:150},beta:{dealrate:250}},
+  command:{itemId:79,shelf:0,offeredPrice:s.offer,requestedCount:s.want},
+  nowSeconds:1000000,townTaxRate:10,sendItemTime:1200,rankDraws:s.draws??[]});
+for(const c of cases){
+  const {spec:s,before:b,after:a,receipt:r}=c;
   test('R4 guild peer source differential: '+s.name,()=>{
-    if(s.reject){assert.equal(r,null);assert.deepEqual(a,b);return;}
-    // Test-only expected guild adjustment; not a second runtime or a player command.
-    const same=!!s.bg&&s.bg===s.sg;
-    const deal=s.sg==='alpha'?150:250;
-    let type=s.bg&&s.sg?(same?1:2):0;
-    let margin=type?Math.trunc(b.seller.price[0]*deal/1000):0;
-    const rate=1000+(type===1?-deal:type===2?deal:0);
-    if(type===1&&margin&&b.ledgers[s.bg].money<10000){type=-1;margin=0;}
-    const unit=b.seller.price[0]+(type===1?-margin:margin);
-    const count=Math.min(s.want,10-b.buyer.item[78],b.seller.item[78],
-      unit?Math.floor(b.buyer.money/unit):Number.MAX_SAFE_INTEGER);
-    assert.deepEqual([r.type,r.rate,r.margin,r.saleprice,r.count],[type,rate,margin,unit,count]);
-    // Existing neutral model evaluates seller-base tax/time using explicit count.
-    // Synthetic quote money removes base-price affordability, already checked above.
-    const baseTaxRate=b.seller.taxmode===1?0:b.seller.taxmode===2?20:10;
-    const q=quoteUnguildedPurchase(model,{...b.buyer,guild:'',money:r.baseprice*count},
-      {...b.seller,guild:''},{shelf:0,itemId:79,offeredPrice:r.baseprice,
-        requestedCount:count,itemLimit:10,baseTaxRate,sendItemTime:1200});
-    assert.deepEqual([r.tax,r.taxrate,r.usetime],[q.tax,q.taxRate,q.timeSeconds]);
-    const expected=structuredClone(b);
-    expected.buyer.item[78]+=count;expected.seller.item[78]-=count;
-    expected.buyer.money-=unit*count;expected.buyer.paytoday+=unit*count;
-    expected.buyer.time+=q.timeSeconds;
-    expected.seller.money+=q.sellerProceeds;expected.seller.saletoday+=r.baseprice*count;
-    expected.seller.taxtoday+=q.tax;expected.seller.trush+=q.sellerTrashIncrease;
-    expected.seller.itemtoday[79]=count;
-    if(expected.seller.item[78]===0&&type!==1&&type!==-1)expected.seller.rank--;
-    if(type===1){expected.ledgers[s.bg].money-=margin*count;expected.ledgers[s.bg].out+=margin*count;}
-    if(type===2){expected.ledgers[s.sg].money+=margin*count;expected.ledgers[s.sg].in+=margin*count;}
-    assert.deepEqual(a,expected);
+    const untouched=structuredClone(b);
+    const result=projectGuildPeerPurchase(input(c));
+    assert.deepEqual(b,untouched,'pure source candidate');
+    assert.equal(result.committable,false);
+    assert.equal(result.ok,!s.reject);
+    assert.deepEqual(result.receipt,r);
+    assert.deepEqual(result.after,a);
+    assert.deepEqual(result.rankRanges,c.rankRanges);
+    assert.deepEqual(result.stages,c.trace);
+    if(!result.ok){assert.deepEqual(a,b);assert.equal(c.ledgerBytes,null);return;}
+    assert.equal(result.ledgerWriteRequired,r.type>0);
+    if(result.ledgerWriteRequired)assert.deepEqual(parseGuildLedgers(c.ledgerBytes),a.ledgers);
+    else assert.equal(c.ledgerBytes,null);
+    assert.equal(a.buyer.item[78]+a.seller.item[78],b.buyer.item[78]+b.seller.item[78]);
+    const total=x=>x.buyer.money+x.seller.money+Object.values(x.ledgers).reduce((sum,g)=>sum+g.money,0);
+    assert.equal(total(a)+r.tax,total(b));
   });
 }
+test('R4 guild peer candidate refuses source drift, forged review, unmatched ledger and missing/unused RNG',()=>{
+  for(const k of Object.keys(sources))assert.throws(()=>reviewGuildPeerPurchase({...sources,[k]:sources[k]+'\n'}),/source drift/);
+  const neutral=input(cases.find(x=>x.spec.name==='neutral-soldout'));
+  assert.throws(()=>projectGuildPeerPurchase({...neutral,reviewed:{...reviewed}}),/explicit reviewed/);
+  assert.throws(()=>projectGuildPeerPurchase({...neutral,definitions:{alpha:{dealrate:150}}}),/explicit reviewed/);
+  assert.throws(()=>projectGuildPeerPurchase({...neutral,rankDraws:[0]}),/unused rank draw/);
+  const fractional=input(cases.find(x=>x.spec.name==='fractional-hit'));
+  assert.throws(()=>projectGuildPeerPurchase({...fractional,rankDraws:[]}),/missing fractional rank draw/);
+});

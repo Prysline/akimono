@@ -18,6 +18,7 @@ on:
       - 'modern/tests/r4-source-rebel-now.test.mjs'
       - 'modern/tests/b50-period-same-state-chain.test.mjs'
       - 'modern/tests/p4-dairy-death-and-save-security.test.mjs'
+      - 'modern/tests/r4-guild-peer-buy-source.test.mjs'
       - 'modern/tests/r4-lord-*.test.mjs'
       - 'modern/tests/support/r4-lord-*.mjs'
       - 'modern/tests/r4-perl-hash-replay.test.mjs'
@@ -140,3 +141,19 @@ jobs:
         env:
           AKIMONO_TEST_REQUIRE_COW_DEATH: '1'
         run: node --test --test-name-pattern='P4 actual cow mortality' tests/p4-dairy-death-and-save-security.test.mjs
+
+  guild-peer-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated guild peer numeric, fractional RNG and FUNCBUY differential (not genuine player)
+        working-directory: modern
+        run: |
+          prove tests/original-perl/original-r4-guild-peer-buy.t
+          node --test tests/r4-guild-peer-buy-source.test.mjs
