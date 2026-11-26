@@ -24,3 +24,7 @@ D1 文件候選；尚未收錄任何 A/B runtime。起點 migration/standard-str
 6. 跨系統整合與 exact tree 回歸；C 同步獨立驗收，正式基線合併另需授權。
 
 每批記錄來源 refs、base/head/tree、選擇路徑、排除路徑及理由、相依閉包、來源 pin、測試命令/CI actual checkout、已知缺陷/待證、回復方式。禁止整支舊 R4 覆蓋、隱性回退、平行保存。D1 未查其他本機 worktree、stash、untracked/unpushed；由各窗核對保全，不宣稱已保存。
+
+## D2-VOUCHER 候選收錄
+
+見 [D2 三方 blob 清冊](r4-d2-three-way-intake.md)（固定 P/A/B/M、244 路徑）。原樣收錄 A 批發贈券 source 模組及對應 source-only Perl/Node 差分兩檔；三份 source pins 已核對，歷史 exact blob CI 兩測試通過，D 新 CI 待證。未接正式市場入口，不提升功能完成狀態。B 已發布雙店 wire 三檔 exact blobs，原未發布候選不再需要重建。D1 的本機保全限制仍有效。收錄回復以正常 revert/後續修正提交，不 reset 或 force。
