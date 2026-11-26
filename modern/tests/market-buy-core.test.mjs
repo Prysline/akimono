@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from '../src/original-r4-wholesale-voucher.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
@@ -940,4 +941,48 @@ test('P5 frozen Perl zero-price book and shared market-buy differential (control
   const fakeRule=apply(start,{...buyCommand(start,10,positive),expectedPrice:0},unsafeStreet);
   assert.equal(fakeRule.ok,false);
   assert.deepEqual(fakeRule.world,start);
+});
+
+test('R4 source-only shared market FUNCBUY clips purchase, validates grant and rolls back later wholesale failure',async()=>{
+  const initial=seed().repository.read();
+  const wholesale=[...initial.market.wholesale];
+  wholesale[63]=1; // source CheckWholeStore(0.5, one shop) caps at 1
+  const defined=[...new Set([...initial.market.sparseWrittenSlots,63])]
+    .sort((a,b)=>a-b);
+  const slots=new Set(defined);
+  const market={...initial.market,wholesale,
+    sparseWrittenSlots:defined,sourceWriteShape:'whole-store-79',
+    originalWholesaleCsv:Array.from({length:79},(_,i)=>
+      slots.has(i)?String(wholesale[i]):'').join(',')};
+  const rich={...initial,market,shops:[{
+    ...initial.shops[0],money:600000,
+  }]};
+  const q=sourceMarketQuote(rich,64);
+  const review=reviewOriginalWholesaleVoucher({itemDsl:src.itemDsl,buySource:src.originalBuySource,helperSource:await read('modern/tests/original-perl/core-inc-item.cgi')});
+  const snapshot=encodeMemorySnapshot(rich);
+  for(const owned of [0,9,10]){
+    const item=[...rich.shops[0].item];item[78]=owned;
+    const world={...rich,shops:[{...rich.shops[0],item}]};
+    const before=encodeMemorySnapshot(world);
+    const adapter={...street.marketBuy,runBuyCallback:args=>runReviewedWholesaleVoucher({...args,review})};
+    const command=buyCommand(world,64,q,2);
+    const ok=apply(world,command,{...street,marketBuy:adapter});
+    assert.equal(ok.ok,true,JSON.stringify(ok.details));
+    assert.equal(ok.details.purchasedCount,1);
+    assert.equal(ok.details.totalPaid,500000);
+    assert.equal(ok.details.voucherReward.grantedCount,owned===10?0:1);
+    assert.equal(ok.world.shops[0].item[78],Math.min(10,owned+1));
+    assert.equal(ok.world.shops[0].item[63],1);
+    assert.equal(ok.world.shops[0].money,100000);
+    assert.equal(ok.world.market.wholesale[63],0);
+    let seen=false;
+    const failLate={...adapter,runBuyCallback(args){const r=adapter.runBuyCallback(args);seen=true;return r;},
+      writeMarket(){throw new Error('explicit source-only late wholesale failure');}};
+    const denied=apply(world,command,{...street,marketBuy:failLate});
+    assert.equal(seen,true);assert.equal(denied.ok,false);
+    assert.equal(denied.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.deepEqual(denied.world,world);
+    assert.equal(encodeMemorySnapshot(world),before);
+  }
+  assert.equal(encodeMemorySnapshot(rich),snapshot);
 });
