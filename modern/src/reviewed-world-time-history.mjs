@@ -28,7 +28,7 @@ function externalTrace(t,result){
     slices:t.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,periodRebel:s.periodRebel,
       activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,afterOrder:s.afterOrder,
       preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples.map((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?n?.result:n),
-      armyRead:s.armyRead,stagedArmySha256:s.stagedArmySha256,effectsSha256:digest(JSON.stringify([s.periodLogs,s.logs]))})),
+      armyRead:s.armyRead,stagedArmySha256:s.stagedArmySha256,effectsSha256:digest(JSON.stringify([s.periodLogs,s.logs,s.stateSha256]))})),
     afterSha256:digest(encodeMemorySnapshot(result.world))};
   if(!validExternalTrace(trace))fail('invalid external crossing source trace');
   return trace;

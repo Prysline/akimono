@@ -13,5 +13,6 @@ export function projectExternalTimeTrace(candidate){
     slices:e.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,periodRebel:s.periodRebel,
       activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,afterOrder:s.afterOrder,
       preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,
-      armyRead:s.armyRead,stagedArmySha256:digest(s.stagedArmyBytes),periodLogs:s.periodLogs,logs:s.eventLogs}))};
+      armyRead:s.armyRead,stagedArmySha256:digest(s.stagedArmyBytes),periodLogs:s.periodLogs,logs:s.eventLogs,
+      stateSha256:digest(JSON.stringify([s.town,s.shop,s.eventState,s.transientArmy,s.preEvent.market.originalWholesaleCsv]))}))};
 }

@@ -40,6 +40,38 @@ test('independent army adapter keeps original effects and over-cap soldiers afte
   assert.equal(isReviewedOrdinaryCommand({...command,randomDraws:[0]},{reviewedArmy:true}),false);
   assert.equal(isReviewedOrdinaryCommand(command,{reviewedArmy:false}),false);
 });
+test('external army adapter preserves normal EVENT keys, original eligibility and conflict side effects (source fixture only)',()=>{
+  const conflict=createIndependentArmyProjection(sources,{externalRebel:true});
+  const fixture={schema:'akimono.memory-world.v2',revision:5,events:null,nowSeconds:1100000,
+    shops:[{id:1,status:1,name:'來源店主',shopname:'來源商店',dignity:4,money:2500000,time:1090000}],
+    period:{settledCount:1,town:{leader:0,money:0,in:0,out:0,develop:5001,devem:0,safety:6000,safem:0,army:0,robina:10000,robinb:0,people:500000},
+      eventState:{'ken-sale':1200000},disk:{live:{'army.cgi':{bytes:'1,4000\n\n',mtime:1100000}}}}};
+  const cmd={kind:'start-rebellion',expectedRevision:5,shopId:1,confirmation:'rebel'};
+  assert.equal(conflict.describeConflict(fixture).canStart,true);
+  assert.equal(isReviewedOrdinaryCommand(cmd,{reviewedRebelTime:true}),true);
+  assert.equal(isReviewedOrdinaryCommand(cmd,{reviewedRebelTime:false}),false);
+  assert.equal(isReviewedOrdinaryCommand({...cmd,armyBytes:'1,4000\n1\n'},{reviewedRebelTime:true}),false);
+  const before=structuredClone(fixture);
+  const started=conflict.applyConflict(fixture,cmd);
+  assert.deepEqual(fixture,before);
+  assert.deepEqual(started.period.eventState,{'ken-sale':1200000,rebel:1359200});
+  assert.equal(started.period.town.safety,5400);
+  assert.equal(started.period.town.people,500000);
+  assert.equal(started.shops[0].time,1091800);
+  assert.equal(started.armyBytes,'1,4000\n1\n');
+  assert.equal(started.receipt.logs[0][0],2);
+  assert.throws(()=>conflict.applyConflict({...fixture,period:{...fixture.period,settledCount:0}},cmd),/settled source/);
+  assert.throws(()=>conflict.applyConflict(fixture,{...cmd,confirmation:'wrong'}),/confirmation/);
+  const opposing={...fixture,period:{...fixture.period,eventState:{'ken-sale':1200000,rebel:1300000}}};
+  const joined=conflict.applyConflict(opposing,{...cmd,kind:'join-rebellion'});
+  assert.equal(joined.armyBytes,'1,4000\n1\n');
+  assert.equal(joined.receipt.logs[0][0],3);
+  assert.deepEqual(joined.period.eventState,opposing.period.eventState);
+  const dispatched=conflict.applyConflict(opposing,{kind:'dispatch-guard',expectedRevision:5,shopId:1});
+  assert.equal(dispatched.period.town.robina,14000);
+  assert.equal(dispatched.armyBytes,'\n\n');
+  assert.equal(dispatched.receipt.logs[0][0],3);
+});
 test('genuine fresh HTTP player cannot hire/fire or inject army assets; save/restart preserves refusal',async t=>{
   const p=await genuinePlayer(t,{crossPeriod:true});
   assert.equal(p.state.army.count,0);assert.equal(p.state.army.maximum,0);

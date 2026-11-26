@@ -31,6 +31,16 @@ export function isReviewedWorldTimeCommand(command){
     Number.isSafeInteger(command.minutes)&&command.minutes>=1&&command.minutes<=60;
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
+// Both native command paths report the same actual B50 boundary fields.
+function sourceSettlementReceipt(evidence){
+  const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
+  return boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
+    naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
+    cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
+    saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
+    taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
+    expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
+}
 const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
 export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedRebelTime=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
@@ -116,7 +126,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         action:REVIEWED_WORLD_TIME_COMMAND,source:candidate.source,minutes:command.minutes,elapsedSeconds:command.minutes*60,
         naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),
         itemTurnAffectedSlices:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0),
-        settlementReceipt:null,sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
+        settlementReceipt:sourceSettlementReceipt(evidence),sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
         scope:'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
     }
     if(disk&&(crossing||world.period.settledCount>0)){
@@ -128,13 +138,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       // Compact source-derived receipts for actual player acceptance. These
       // are derived from the same reviewed candidate, not a second formula.
       const itemTurnAffectedSlices=evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0);
-      const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
-      const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
-        naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
-        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
-        saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
-        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
-        expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
+      const settlementReceipt=sourceSettlementReceipt(evidence);
       return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
     }
     const candidate=projectR4NormalTurnCandidate(args);

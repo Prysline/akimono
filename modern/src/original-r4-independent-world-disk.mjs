@@ -112,7 +112,12 @@ export function createIndependentDiskProjection({sources,sort,street,externalReb
       newRows.unshift(...projectReviewedArmyConflictLogRows({reviewed:log,candidate,nowSeconds:now}));
     }
     const externalTime=externalRebel&&command.kind==='advance-reviewed-world-time'&&applied.receipt?.source==='r4-external-rebel-cross-period-candidate.v1';
-    if(externalTime&&(!old||applied.receipt.sourceTrace?.liveArmySha256!==(old.live['army.cgi']?createHash('sha256').update(old.live['army.cgi'].bytes).digest('hex'):null)))fail('external time army preimage mismatch');
+    if(externalTime){
+      const digest=bytes=>bytes===null?null:typeof bytes==='string'?createHash('sha256').update(bytes).digest('hex'):fail('explicit army bytes or absent stage');
+      const trace=applied.receipt.sourceTrace;
+      if(!old||trace?.liveArmySha256!==digest(old.live['army.cgi']?.bytes??null))fail('external time army preimage mismatch');
+      if(trace.slices?.at(-1)?.stagedArmySha256!==digest(applied.armyBytes))fail('external time army staged bytes mismatch');
+    }
     const play=wire(after,town);
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
