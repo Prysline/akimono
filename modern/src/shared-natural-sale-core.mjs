@@ -1,3 +1,4 @@
+import {calculateSourceMarketStatus} from './shared-source-market-status.mjs';
 import {isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** R3 shared frozen inc-turn natural-sale arithmetic.
  * Works on one to eight source-reviewed shelves of one source shop.
@@ -98,12 +99,8 @@ export function projectSharedNaturalSale({
     return randomDraws[used++]/1000000;
   };
   const sourcePopular=r=>popularOverride??r.popularSeconds;
-  const seed=population*saleSpeed/3/50;
   for(const status of market.values()){
-    status.marketprice=Math.trunc(status.weightedPrice/status.stock);
-    const popular=sourcePopular(status.rule);
-    status.uppoint=popular===0?100:Math.max(10,Math.min(1000,
-      Math.trunc(status.stock/seed*popular)));
+    Object.assign(status,calculateSourceMarketStatus({stock:status.stock,weightedPrice:status.weightedPrice,popular:sourcePopular(status.rule),population,saleSpeed}));
   }
 
   let sold=0,rankUp=0,rankDown=0;

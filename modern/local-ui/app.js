@@ -33,7 +33,7 @@ const conciseTimeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',survey:'市價調查',palace:'宮殿',army:'傭兵所',
   sweep:'掃除',balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
@@ -74,7 +74,7 @@ function updateNavigation(){
 function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
-  currentGroup=['market','palace'].includes(name)?'trade':'self';
+  currentGroup=['market','palace','survey'].includes(name)?'trade':'self';
   if(name==='army')currentGroup='facility';
   updateNavigation();
 }
@@ -118,9 +118,32 @@ function openItem(itemId){
   selectedUseId=null;
   selectTab('item');
 }
+function marketBalanceText(b){return b?b.label+(b.percent===null?'':' '+number(b.percent)+'%'):'—';}
+function renderMarketSurvey(s){
+ const rows=s.warehouse?.survey,body=$('market-survey-rows');body.replaceChildren();
+ text('survey-scope',rows?'目前為獨立單店世界；未整合其他玩家店舖。':'此模式尚未啟用原版市價調查。');
+ if(!rows?.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent=rows?'目前沒有陳列且有庫存的商品':'尚未開放';tr.append(td);body.append(tr);return;}
+ for(const row of rows){
+  const tr=document.createElement('tr'),item=catalogItem(s,row.itemId);
+  for(const value of [item?.name??'#'+row.itemId,number(row.soldToday)+'／'+number(row.soldYesterday),money(row.lowestPrice),money(row.highestPrice),money(row.marketPrice),money(row.standardPrice),marketBalanceText(row.balance)]){
+   const td=document.createElement('td');td.textContent=value;tr.append(td);
+  }
+  body.append(tr);
+ }
+}
 function renderItemInfo(s){
   const item=catalogItem(s,selectedItemId);
   const shop=s.shop;
+  const status=s.warehouse?.marketItems?.find(row=>row.itemId===item?.itemId);
+  const visible=Boolean(status&&!status.storage);
+  $('item-market-price-row').hidden=!visible;
+  $('item-market-low-row').hidden=!visible||status.marketPrice===null;
+  $('item-market-high-row').hidden=!visible||status.marketPrice===null;
+  $('item-market-balance-row').hidden=!visible;
+  text('item-market-price',status?.marketPrice==null?'沒有販售店舖':money(status.marketPrice));
+  text('item-market-low',status?.lowestPrice==null?'—':money(status.lowestPrice));
+  text('item-market-high',status?.highestPrice==null?'—':money(status.highestPrice));
+  text('item-market-balance',marketBalanceText(status?.balance));
   text('item-detail-name',item?.name??'請從倉庫選擇商品');
   text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
   text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
@@ -463,6 +486,7 @@ function showState(s){
   renderPalace(s);
   renderArmy(s);
   renderSweep(s);
+  renderMarketSurvey(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):

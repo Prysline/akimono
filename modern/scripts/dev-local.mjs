@@ -52,6 +52,7 @@ const {
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -90,6 +91,7 @@ const {
   originalStockViewSource:'modern/tests/original-perl/core-stock.cgi',
   originalBalanceViewSource:'modern/tests/original-perl/core-balance.cgi',
   originalInfoViewSource:'modern/tests/original-perl/core-inc-info.cgi',
+  originalMarketSurveySource:'modern/tests/original-perl/core-shop-c.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -105,6 +107,7 @@ const streetModule=createStandardStreetModule({
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -156,6 +159,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });

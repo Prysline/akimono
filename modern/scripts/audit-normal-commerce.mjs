@@ -50,6 +50,7 @@ const locations=[
  ['originalStockViewSource','modern/tests/original-perl/core-stock.cgi'],
  ['originalBalanceViewSource','modern/tests/original-perl/core-balance.cgi'],
  ['originalInfoViewSource','modern/tests/original-perl/core-inc-info.cgi'],
+ ['originalMarketSurveySource','modern/tests/original-perl/core-shop-c.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));
