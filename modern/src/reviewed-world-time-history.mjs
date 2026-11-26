@@ -7,7 +7,7 @@
 import {createHash} from 'node:crypto';
 import {applyGameCommand,executeMemoryCommand,encodeMemorySnapshot,decodeMemorySnapshot,createSourceReviewedMemoryWorldAdapter} from './game-core-contract.mjs';
 import {isReviewedWorldTimeCommand,REVIEWED_WORLD_TIME_COMMAND} from './original-r4-reviewed-world-time.mjs';
-import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
+import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY,R4_EXTERNAL_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
 import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
 export const MAX_REVIEWED_HISTORY_COMMANDS=128;
@@ -20,8 +20,47 @@ const arr=(a,min,max,f)=>Array.isArray(a)&&a.length>=min&&a.length<=max&&a.every
 const codes=a=>arr(a,0,17,k=>typeof k==='string'&&/^[a-z][a-z0-9-]{0,39}$/.test(k))&&new Set(a).size===a.length;
 const unit=n=>integer(n,0,999999);
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
+const nullableSha=s=>s===null||sha(s);
+const armyDigest=world=>{const bytes=world.period?.disk?.live?.['army.cgi']?.bytes;return bytes===undefined?null:digest(bytes)};
+function externalTrace(t,result){
+  const trace={drawPolicy:t.drawPolicy,hashPolicy:t.hashPolicy,seed:t.seed,interpreter:t.interpreter,
+    dataReadOrder:t.dataReadOrder,liveArmySha256:t.liveArmySha256,
+    slices:t.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,periodRebel:s.periodRebel,
+      activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,afterOrder:s.afterOrder,
+      preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples.map((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?n?.result:n),
+      armyRead:s.armyRead,stagedArmySha256:s.stagedArmySha256,effectsSha256:digest(JSON.stringify([s.periodLogs,s.logs]))})),
+    afterSha256:digest(encodeMemorySnapshot(result.world))};
+  if(!validExternalTrace(trace))fail('invalid external crossing source trace');
+  return trace;
+}
+function validExternalTrace(t){
+  if(!exact(t,'drawPolicy,hashPolicy,seed,interpreter,dataReadOrder,liveArmySha256,slices,afterSha256')||
+    t.drawPolicy!==R4_CROSS_PERIOD_DRAW_POLICY||t.hashPolicy!==R4_EXTERNAL_COMMAND_HASH_POLICY||
+    typeof t.seed!=='string'||!/^0x[a-f0-9]{32}$/.test(t.seed)||typeof t.interpreter!=='string'||!t.interpreter.length||t.interpreter.length>120||
+    !codes(t.dataReadOrder)||!nullableSha(t.liveArmySha256)||!sha(t.afterSha256)||
+    !arr(t.slices,1,2,s=>exact(s,'dateupdate,spanSeconds,periodRebel,activeOrder,eventOrder,nowOrder,afterOrder,preEventDraws,eventDrawRanges,eventSamples,armyRead,stagedArmySha256,effectsSha256')&&
+      [0,1].includes(s.dateupdate)&&integer(s.spanSeconds,1,3600)&&(s.periodRebel===null||s.dateupdate===1&&integer(s.periodRebel,1))&&
+      codes(s.activeOrder)&&codes(s.eventOrder)&&s.eventOrder.length===17&&codes(s.nowOrder)&&codes(s.afterOrder)&&
+      s.activeOrder.every(k=>s.eventOrder.includes(k))&&s.nowOrder.every(k=>s.eventOrder.includes(k))&&
+      s.afterOrder.every(k=>s.nowOrder.includes(k))&&s.nowOrder.filter(k=>!s.afterOrder.includes(k)).every(k=>k==='rebel')&&
+      arr(s.preEventDraws,0,125,unit)&&arr(s.eventDrawRanges,0,105,n=>integer(n,0,LOTO_RANGE))&&Array.isArray(s.eventSamples)&&
+      s.eventSamples.length===s.eventDrawRanges.length&&s.eventSamples.every((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&
+      typeof s.armyRead==='boolean'&&nullableSha(s.stagedArmySha256)&&sha(s.effectsSha256)))return false;
+  if(t.slices.length===2&&(t.slices[0].dateupdate!==1||t.slices[1].dateupdate!==0))return false;
+  let prior=t.dataReadOrder,stage=null,eventOrder=t.slices[0].eventOrder;
+  for(const [i,s] of t.slices.entries()){
+    const expected=s.periodRebel!==null&&!prior.includes('rebel')?[...prior,'rebel']:prior;
+    if(s.activeOrder.length!==expected.length||expected.some(k=>!s.activeOrder.includes(k))||
+      (i>0&&s.activeOrder.join(',')!==prior.join(','))||s.eventOrder.join(',')!==eventOrder.join(',')||
+      s.armyRead!==s.nowOrder.includes('rebel')||
+      (s.armyRead?(t.liveArmySha256===null||s.stagedArmySha256===null):s.stagedArmySha256!==stage))return false;
+    prior=s.afterOrder;stage=s.stagedArmySha256;
+  }
+  return true;
+}
 function traceFrom(result){
   const t=result?.details?.sourceTrace;
+  if(t?.hashPolicy===R4_EXTERNAL_COMMAND_HASH_POLICY)return externalTrace(t,result);
   if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY){
     const trace={drawPolicy:t.drawPolicy,hashPolicy:t.hashPolicy,seed:t.seed,interpreter:t.interpreter,
       slices:t.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples.map((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?n?.result:n),effectsSha256:digest(JSON.stringify(s.logs))})),afterSha256:digest(encodeMemorySnapshot(result.world))};
@@ -41,6 +80,7 @@ function traceFrom(result){
   return trace;
 }
 function validTrace(t){
+  if(t?.hashPolicy===R4_EXTERNAL_COMMAND_HASH_POLICY)return validExternalTrace(t);
   if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY)return exact(t,'drawPolicy,hashPolicy,seed,interpreter,slices,afterSha256')&&t.hashPolicy===R4_COMMAND_HASH_POLICY&&typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&typeof t.interpreter==='string'&&t.interpreter.length>=1&&t.interpreter.length<=120&&sha(t.afterSha256)&&arr(t.slices,1,2,(s)=>exact(s,'dateupdate,spanSeconds,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,effectsSha256')&&[0,1].includes(s.dateupdate)&&integer(s.spanSeconds,1,3600)&&codes(s.activeOrder)&&codes(s.eventOrder)&&s.eventOrder.length===17&&codes(s.nowOrder)&&s.activeOrder.every(x=>s.eventOrder.includes(x))&&s.nowOrder.every(x=>s.eventOrder.includes(x))&&arr(s.preEventDraws,0,125,unit)&&arr(s.eventDrawRanges,0,100,n=>integer(n,0,LOTO_RANGE))&&Array.isArray(s.eventSamples)&&s.eventSamples.length===s.eventDrawRanges.length&&s.eventSamples.every((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&sha(s.effectsSha256))&&(t.slices.length===1||t.slices[0].dateupdate===1&&t.slices[1].dateupdate===0);
   return exact(t,'drawPolicy,hashPolicy,seed,interpreter,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,afterSha256,effectsSha256')&&
     t.drawPolicy===R4_TIME_DRAW_POLICY&&t.hashPolicy===R4_HASH_POLICY&&
@@ -63,11 +103,18 @@ export function makeReviewedTimeHistoryEntry({before,command,result}){
      result.details?.action!==REVIEWED_WORLD_TIME_COMMAND||result.world.revision!==before.revision+1||
      result.world.worldId!==before.worldId||result.world.nowSeconds!==before.nowSeconds+command.minutes*60)
     fail('source-approved time successor required');
-  return {...command,trace:traceFrom(result)};
+  const trace=traceFrom(result);
+  if(trace.hashPolicy===R4_EXTERNAL_COMMAND_HASH_POLICY){
+    const last=trace.slices.at(-1);
+    if(trace.liveArmySha256!==armyDigest(before)||(last.stagedArmySha256??trace.liveArmySha256)!==armyDigest(result.world)||
+      last.afterOrder.join(',')!==Object.keys(result.world.period.eventState).join(','))fail('external source army or EVENT successor mismatch');
+  }
+  return {...command,trace};
 }
 export function replayReviewedTimeHistoryEntry({repository,streetModule,entry}){
   if(!isReviewedTimeHistoryEntry(entry)||streetModule.reviewedNormalTime!==true)fail('exact reviewed time history entry required');
   const {trace,...command}=entry,before=repository.read();
+  if(trace.hashPolicy===R4_EXTERNAL_COMMAND_HASH_POLICY&&streetModule.reviewedRebelTime!==true)fail('external time replay not authorized');
   const preview=applyGameCommand({world:before,command,streetModule});
   if(!preview.ok)fail('source time replay rejected: '+(preview.details?.reason??preview.code));
   const expected=makeReviewedTimeHistoryEntry({before,command,result:preview});
