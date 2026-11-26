@@ -299,7 +299,7 @@ test('palace page uses the server audience quote and revision-only completion, n
   assert.match(html,/id="tab-palace"/);
   for(const id of ['palace-point','palace-required-point','palace-dignity','palace-mission','palace-item','palace-stock','palace-complete'])
     assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(script,/currentGroup=\['market','palace'\]\.includes\(name\)\?'trade':'self'/);
+  assert.match(script,/currentGroup=\['market','palace','survey'\]\.includes\(name\)\?'trade':'self'/);
   assert.match(script,/const p=s\?\.palace/);
   assert.match(script,/\$\('palace-mission'\)\.hidden=!canMeet/);
   assert.match(script,/palaceSubmitting\|\|!s\?\.world\|\|!canMeet\|\|p\?\.canComplete!==true/);

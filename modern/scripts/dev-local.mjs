@@ -55,6 +55,7 @@ const {
   originalMarketSurveySource,
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -101,6 +102,7 @@ const {
   originalShowcaseViewSource:'modern/tests/original-perl/core-inc-sc.cgi',
   originalItemDetailViewSource:'modern/tests/original-perl/core-item-view.cgi',
   originalOwnerMainSource:'modern/tests/original-perl/core-main.cgi',
+  originalBuyFormSource:'modern/tests/original-perl/core-buy-view.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -119,6 +121,7 @@ const streetModule=createStandardStreetModule({
   originalMarketSurveySource,
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -173,6 +176,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalMarketSurveySource,
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });

@@ -1,3 +1,4 @@
+import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
 import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
@@ -190,7 +191,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   originalBalanceViewSource=null,originalInfoViewSource=null,originalMarketSurveySource=null,
   originalNewsViewSource=null,originalNewsHtmlSource=null,originalNewsPageSource=null,originalNewsTimeSource=null,
-  originalShowcaseViewSource=null,originalItemDetailViewSource=null,originalOwnerMainSource=null,
+  originalShowcaseViewSource=null,originalItemDetailViewSource=null,originalOwnerMainSource=null,originalBuyFormSource=null,
   originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
@@ -204,6 +205,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewCommerceUseLogs({helperSource:originalItemHelperSource,logSource:originalLogSource,configSource:originalConfigSource}):null;
+  const buyForm=enableReviewedFullCommerce&&originalBuyFormSource!==null?reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource}):null;
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewOriginalTopPrize({itemDsl,model,originalAddItemSource:originalUseSource,
@@ -917,7 +919,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       const canBuy=Boolean(quote&&marketBuy.validateWorld(world)&&
         shop?.id===1&&shop.status===1&&
         shop.item[entry.shopIndex]<entry.stockLimit);
-      return Object.freeze({
+      const offer={
         itemId,name:entry.itemName,itemCode:entry.itemCode,
         price:quote?.price??null,timeSeconds:quote?.timeSeconds??null,
         basePrice:entry.basePrice,marketStock,shelf,
@@ -925,7 +927,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         classification:entry.classification,source:entry.source,
         reason:entry.reason??(rule?null:'unsupported original source semantics'),
         canBuy,
-      });
+      };
+      return Object.freeze({...offer,...(buyForm?{form:describeOriginalBuyForm({reviewed:buyForm,offer,shop,nowSeconds:world.nowSeconds})}:{})});
     },
     listMarketOffers(world){
       if(!buyRegistry||!validateSourceSparseMarket(world?.market))
