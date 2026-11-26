@@ -118,9 +118,13 @@ $EXPIRE_TIME=3600*24*7;
 $PROFIT_DAY_COUNT=3; $EXP_DOWN_RATE=60;$EXP_DOWN_POINT=5;
 $MAX_ITEM=79;@SHOWCASE_COST=(0,2000,4000,8000);
 my $shelfCount=1;
-if(@ARGV){
-  die 'expected --shelves=1..8' unless @ARGV==1 && $ARGV[0]=~/^--shelves=([1-8])$/;
-  $shelfCount=0+$1;
+my ($shelfMode,$conflictMode)=(0,0);
+for my $arg (@ARGV){
+  if($arg eq '--conflict' && !$conflictMode){$conflictMode=1;}
+  elsif($arg=~/^--shelves=([1-8])$/ && !$shelfMode){$shelfMode=1;$shelfCount=0+$1;}
+  else{die 'expected unique --shelves=1..8 and/or --conflict';}
+}
+if($shelfMode){
   @SHOWCASE_COST=($itemDsl=~/^\s*CostShowcase\d+\s+(\d+)\s*(?:#.*)?$/gmi);
   die 'eight original shelf costs required' unless @SHOWCASE_COST==8;
 }
@@ -146,7 +150,7 @@ my $originalShop={
   itemtoday=>{10=>2},itemyesterday=>{},
   rankingyesterday=>'',exp=>{10=>100},
 };
-if(@ARGV){
+if($shelfMode){
   $originalShop->{showcasecount}=$shelfCount;
   $originalShop->{showcase}=[(10)x$shelfCount];
   $originalShop->{price}=[(5000)x$shelfCount];
@@ -196,7 +200,7 @@ for my $r (@rounds){
 # Isolated full prefix with nonzero tax and earned-dignity decay inputs.
 # Keep the historical two-case result unchanged for the existing .t.
 my @conflictResults;
-if(@ARGV&&$ARGV[0] eq '--conflict'){
+if($conflictMode){
   my @conflictRounds=(
     {name=>'calm-led-tax',town=>{%$initialTown,leader=>1,money=>5000000,army=>10000,robina=>2000},draws=>[0,0,0,0]},
     {name=>'start-led-invasion',town=>{%$initialTown,leader=>1,money=>5000000,develop=>9000,safety=>9000,army=>10000,robina=>2000},draws=>[0,0,0,0,299999]},
@@ -228,5 +232,5 @@ print JSON::PP->new->canonical->utf8->encode({
   source=>'full fixed inc-period.cgi pre-backup prefix + true original SortDT/FUNCUPDATE/Use::AddItem',
   scope=>'single active Standard Street shop; no DragonBalance file, stale closure, guilds, real events, original backup/session; not player period commit',
   itemLimits=>[map {0+$limits{$_}} 1..79],
-  cases=>\@results,(@ARGV&&$ARGV[0] eq '--conflict'?(conflictCases=>\@conflictResults):()),
+  cases=>\@results,($conflictMode?(conflictCases=>\@conflictResults):()),
 });

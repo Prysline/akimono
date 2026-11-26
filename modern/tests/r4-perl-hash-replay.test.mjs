@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {reviewR4HashPolicy,resolveR4HashOrders,r4HashSeed,resolveR4ExternalCommandHashOrders} from '../src/original-r4-perl-hash-replay.mjs';
-import {createR4TimeDraws,createR4CrossPeriodDraws,R4_FULL_PRE_EVENT_DRAWS,R4_FULL_CROSS_SLICE_DRAWS} from '../src/r4-time-command-draws.mjs';
+import {createR4TimeDraws,createR4CrossPeriodDraws,R4_FULL_PRE_EVENT_DRAWS,R4_FULL_CROSS_SLICE_DRAWS,R4_FULL_CROSS_EVENT_DRAWS} from '../src/r4-time-command-draws.mjs';
 import {LOTO_RANGE} from '../src/original-b58-loto-startfunc.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const dir=path.join(root,'modern/tests/original-perl');
@@ -58,8 +58,16 @@ test('R4 time RNG is restart-reproducible and domain-separated, and lottery cove
   assert.doesNotThrow(()=>expanded.unit(R4_FULL_PRE_EVENT_DRAWS+99));
   assert.throws(()=>expanded.unit(R4_FULL_PRE_EVENT_DRAWS+100),/range/);
   const cross=createR4CrossPeriodDraws({world,minutes:60,fullCommerce:true});
-  assert.doesNotThrow(()=>cross.unit(2*(R4_FULL_CROSS_SLICE_DRAWS+100)-1));
-  assert.throws(()=>cross.unit(2*(R4_FULL_CROSS_SLICE_DRAWS+100)),/range/);
+  const limit=2*(R4_FULL_CROSS_SLICE_DRAWS+R4_FULL_CROSS_EVENT_DRAWS);
+  assert.equal(R4_FULL_CROSS_EVENT_DRAWS,105,'external mixed cursor includes reviewed callback budget');
+  assert.equal(limit,512,'two bounded source slices');
+  assert.doesNotThrow(()=>cross.unit(limit-1));
+  assert.doesNotThrow(()=>cross.lottery(limit-1));
+  assert.throws(()=>cross.unit(limit),/range/);
+  assert.throws(()=>cross.lottery(limit),/range/);
+  const priorCross=createR4CrossPeriodDraws({world,minutes:60});
+  assert.equal(priorCross.unit(449),cross.unit(449),'existing entropy identity unchanged');
+  assert.throws(()=>priorCross.unit(450),/range/);
 });
 
 test('external replay retains period assignment, pre-NOW traversal and post-NOW deletion across two source slices',()=>{

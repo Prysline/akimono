@@ -114,8 +114,9 @@ test('B50 complete actual period prefix feeds tax, dignity and post-SortDT shop 
     compiledLimits:compiled.limits.map(it=>it.limit),includeReviewedDignity:true,
     includeReviewedShopExpiry:true,includeReviewedSaleTax:true};
   const reviewed=reviewOriginalSoloPeriodPhaseChain({...args,reviewedRebelNow});
-  const {conflictCases}=JSON.parse(execFileSync('perl',['original-b50-period-chain-probe.pl','--conflict'],{
+  const {cases,conflictCases}=JSON.parse(execFileSync('perl',['original-b50-period-chain-probe.pl','--conflict'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'}));
+  assert.deepEqual(cases,oracle.cases,'conflict mode must not alter legacy source input');
   assert.equal(conflictCases.length,3);
   for(const row of conflictCases){
     const before=structuredClone(row.input);
@@ -170,4 +171,31 @@ test('R4 opt-in 1-8 shelves through the same frozen B50 period prefix, two round
   for(const key of ['includeReviewedDragon','includeReviewedGuild','includeReviewedPostTech',
     'includeReviewedActualCloseShop','includeReviewedPeriodBackup'])
     assert.throws(()=>reviewOriginalSoloPeriodPhaseChain({...options,[key]:true}),/multi-shelf external/);
+});
+
+test('B50 original conflict and multi-shelf options compose without changing frozen source order',async()=>{
+  const turnSource=await read('modern/tests/original-perl/inc-turn.cgi');
+  const compiledCatalog=reviewOriginalCompiledEventCatalog({...sources,turnSource});
+  const reviewedRebelNow=reviewR4RebelNow({...sources,turnSource,compiledCatalog});
+  const reviewed=reviewOriginalSoloPeriodPhaseChain({...sources,model,
+    bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
+    compiledLimits:compiled.limits.map(it=>it.limit),includeReviewedDignity:true,
+    includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:true,reviewedRebelNow});
+  for(const n of [2,4,8]){
+    const args=['original-b50-period-chain-probe.pl','--shelves='+n,'--conflict'];
+    const opts={cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'};
+    const original=JSON.parse(execFileSync('perl',args,opts));
+    assert.deepEqual(original,JSON.parse(execFileSync('perl',[args[0],args[2],args[1]],opts)));
+    assert.equal(original.conflictCases.length,3);
+    for(const row of original.conflictCases){
+      assert.equal(row.input.shop.showcasecount,n);
+      const got=projectOriginalSoloPeriodPhaseChain({reviewed,...row.input});
+      for(const k of ['shop','town','dtPeople','pointsBefore','pointsAfter'])assert.deepEqual(got[k],row.output[k],n+' shelves '+row.name+' '+k);
+      for(const k of ['activeUntilSeconds','eventState','logs'])assert.deepEqual(got.conflictTerritory[k],row.output[k],n+' shelves '+row.name+' '+k);
+      assert.deepEqual([9,100,...got.conflictTerritory.randomDrawRanges],row.output.ranges);
+      assert.equal(got.worldStateWritten,false);
+    }
+  }
+  for(const bad of [['--conflict','--conflict'],['--shelves=0'],['--shelves=2','--shelves=3'],['--unknown']])
+    assert.throws(()=>execFileSync('perl',['original-b50-period-chain-probe.pl',...bad],{cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',stdio:['ignore','pipe','pipe']}),/expected unique/);
 });
