@@ -344,3 +344,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 
 - 10 檔逐檔重新覆核（均有效），固定基線 233/233 完成逐檔審閱；有效 200、歷史 33。170 份新審閱、原 63 份全數重新覆核。分類不等於全功能驗收。
 - 詳見 `modern/docs/r0-p3-r4-http-v2-rereview-evidence.md`；正式 HTTP/CAS/v2、固定起始時鐘及伺服器 RNG，不升格真玩家；#66/3 實售/lostbook 與條件 FUNCTURN、多架時間拒絕、歷史 checkpoint 與跨期負向回復各自限縮。R1 詳細 87/220 暫不變，#23/#24 語義收斂及 R1-HTTP-01 strict repro 未結案。新 HEAD 待 CI。
+
+### 第五十一批：#23/#24 證據去重核對
+
+- `modern/docs/r0-r1-pr23-pr24-reconciliation.md`：#23 11路徑、#24 3路徑逐項收錄核對；233 pins/220 declarations、舊 known flags/evidence 保留，補回6檔9筆舊文件引用，B56 僅計一次。#24 42列 status/realPlayer/blob 一致，三補件 blob 相同。兩 PR 不關閉，待新 CI 與使用者/D 決定。
+- #44/45 CI 45851995042、45852340690 success，job 140020465192/140021659118；checkout compare files=[]；JS1350/1350、Perl2456/2456，無 fail/skip/cancel；tree 未獨立取得。R1-HTTP-01 未實跑，87/220 詳細列暫不變，新 HEAD 待驗。

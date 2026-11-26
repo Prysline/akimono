@@ -11195,6 +11195,10 @@
         {
           "path": "modern/docs/r0-peer-use-fixture-evidence.md",
           "line": 5
+        },
+        {
+          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
+          "line": 49
         }
       ],
       "realPlayer": false,
@@ -13147,6 +13151,10 @@
         {
           "path": "modern/docs/r0-r2-declarative-unified-use-evidence.md",
           "line": 14
+        },
+        {
+          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -13447,6 +13455,22 @@
         {
           "path": "modern/docs/r0-r3-natural-sword-sales-evidence.md",
           "line": 5
+        },
+        {
+          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
+          "line": 28
+        },
+        {
+          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
+          "line": 38
+        },
+        {
+          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
+          "line": 50
+        },
+        {
+          "path": "modern/docs/r4-r0-affected-tests-mapping.md",
+          "line": 11
         }
       ],
       "realPlayer": false,
@@ -13563,6 +13587,10 @@
         {
           "path": "modern/docs/r0-r3-natural-sword-sales-evidence.md",
           "line": 14
+        },
+        {
+          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
+          "line": 29
         }
       ],
       "realPlayer": false,
@@ -15627,6 +15655,10 @@
         {
           "path": "modern/docs/r0-r4-sorted-pre-event-evidence.md",
           "line": 5
+        },
+        {
+          "path": "modern/docs/r4-r0-affected-tests-mapping.md",
+          "line": 31
         }
       ],
       "realPlayer": false,
@@ -17107,6 +17139,10 @@
         {
           "path": "modern/docs/r0-peer-use-fixture-evidence.md",
           "line": 14
+        },
+        {
+          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
+          "line": 40
         }
       ],
       "realPlayer": false,
@@ -44037,6 +44073,46 @@
         "pass": 2456
       },
       "pins": "DSL/source pins passed; compare files=[]; candidate tree returned by create_tree, checkout tree SHA not separately retrieved"
+    },
+    {
+      "head": "49d9eb6748c1aa2a9bfacbd2bedfe737a17eb22b",
+      "checkout": "6691024fd084aad6b74b1ea4dcd0adc0911be9d6",
+      "run": 45851995042,
+      "job": 140020465192,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; compare files=[]; checkout tree not separately retrieved"
+    },
+    {
+      "head": "0d698582eb7455922963f1055445a269b72d0c1a",
+      "checkout": "9a4a4eb648f2a01ddda469f70d88215b062ba0b0",
+      "run": 45852340690,
+      "job": 140021659118,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; compare files=[]; checkout tree not separately retrieved"
     }
   ],
   "evidenceLayerSchema": {
