@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 33 份已重新逐檔覆核（其餘 30 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 37 份已重新逐檔覆核（其餘 26 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -265,3 +265,9 @@
 - 四檔維持1有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審33、剩30；實際逐檔203/233（87.1%）。B56 重疊唯一列。
 - [逐檔證據](r0-b54-b56-rereview-evidence.md)：B54 local deterministic replay 非 Perl RNG；B55 十例直接 callback、人工 stock/draw、memory CAS 與 legacy disk；B56 反轉17-key fixture，非 Perl hash order，實際受控 CAS/拒絕、舊存檔、prefix retry；null state 負例未隔離其他 review 參數。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - 第43/44批 CI 45849759031/45851995042 查詢時仍 in_progress；未本機重跑、strict repro 未實跑；新 HEAD 待驗。
+
+### 第四十六批：B57–B58 既有分類重新覆核
+
+- 四檔維持2有效2歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審37、剩26；實際逐檔207/233（88.8%）。
+- [逐檔證據](r0-b57-b58-rereview-evidence.md)：B57 十一例、兩 callback、受控CAS；B58 十五例獎級/邊界、合法 memory market 買券、人工 draw/legacy reload，整合 expected 為 Node projector，不是同 world Perl 全差分。非正式 HTTP/v2/自然RNG；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- 第43批 CI 45849759031/job140012737260 success，checkout `f0b67b86d33cabb85c23cd60658909efca6a449c` 與 `59d07e9` compare files=[]；JS1350/1350、0 fail/skip/cancelled、Perl2456/2456（85檔），DSL/source pins 通過。candidate tree 已知，checkout tree未單獨取得。第44/45批仍 in_progress；strict repro 未實跑；新 HEAD 待驗。

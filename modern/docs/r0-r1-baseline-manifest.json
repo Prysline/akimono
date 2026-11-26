@@ -4447,8 +4447,8 @@
       "status": "歷史",
       "evidenceLevel": "Perl 差分＋fixture CAS",
       "originalSource": "兩 DSL STARTFUNC getmoney/getpop、inc-turn.cgi",
-      "assertions": "十一案資金／人氣、300 gate、999999999 cap、log、RNG、return 0",
-      "executionPath": "original-b57-support-event-callbacks；advance-source-time-reviewed-events；legacy save",
+      "assertions": "L106–145 十一例 stock/money/rank/ret/message/draw 差分、輸入不變與兩 callback 串接；L147–183 五種來源 mutation、八種 projector 拒絕；L185–224 買#10、自然售出後同 CAS 加100000資金及1000 rank、cap、19 draws、event starts/messages、market/營收不受援助影響、legacy load exact；L226–252 四種 fixture 拒絕全 snapshot，stale pure apply。",
+      "executionPath": "reviewOriginalSupportEventCallbacks → projector → advance-source-time-reviewed-events memory CAS；legacy-world-save-store 同程序 save/load。",
       "risk": "錯誤收入、超額、虛構 durable EVENT",
       "disposition": "保留 source；#22 自然觸發與 v2 另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4457,6 +4457,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 28
+        },
+        {
+          "path": "modern/docs/r0-b57-b58-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -4466,7 +4470,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "固定 time、人工 trigger/order/draw；原版 callback-only、格式 stub；非完整 EVENT gate 差分。標題 restart 實際無子程序重啟。happy 負例只查 SOURCE_BOUNDARY_REJECTED，未隔離 typed/duration 缺 draw 或其他 guard；stale apply 未送 adapter。非正式 HTTP/v2。"
     },
     {
       "path": "modern/tests/b58-source-loto-real-ticket-cas.test.mjs",
@@ -4475,8 +4480,8 @@
       "status": "歷史",
       "evidenceLevel": "Perl 差分＋fixture CAS",
       "originalSource": "兩 DSL loto STARTFUNC、buy-s.cgi、inc-turn.cgi",
-      "assertions": "十五案五獎級、邊界、沒券、扣券、上限、log/RNG；實買 #11 但固定事件抽樣",
-      "executionPath": "original-b58-loto-startfunc；market-buy；advance-source-time-reviewed-events；legacy save",
+      "assertions": "L145–170 十五例五獎級/邊界/未中/cap/stock/log/draw；L172–227 六 source mutation、market review 拒絕、九 projector 拒絕；L229–251 原版單張 #11 價2000/時間與現代雙張購入4000/600s、#10 shelf 消失；L253–335 固定 lottery draws，耗2券、獎110000、log/營收/維持費/market、CAS rev+1、legacy reload 與空券再抽；L337–373 八種錯 tape/order 拒絕全 snapshot，stale pure apply。",
+      "executionPath": "reviewOriginalLotoStartfunc → projector；source market-buy → advance-source-time-reviewed-events memory CAS；legacy store；先 search valid sale prefix 再 commit。",
       "risk": "假獎金、券重複、亂數順序",
       "disposition": "保留 source；#22 真 time/收入/存檔另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4489,6 +4494,10 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 63
+        },
+        {
+          "path": "modern/docs/r0-b57-b58-rereview-evidence.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -4498,7 +4507,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "原版 callback-only，人工庫存、固定 draw 與 WriteLog 收集 stub；整合預期採 Node projector 非獨立同 world Perl oracle，actualPerl mixed-three 只核對 logs.length；#10 實際是否售出未獨立斷言；L200–210 buy10 mutation 同時 model 可能 undefined，未隔離；同程序 reload 非正式重啟/HTTP/v2，非真 RNG。"
     },
     {
       "path": "modern/tests/b59-source-iron-event-live-lifecycle.test.mjs",
@@ -6408,13 +6418,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "兩 DSL STARTFUNC getmoney/getpop、inc-turn.cgi",
-      "assertions": "十一案 getmoney/getpop、上限、門檻",
-      "executionPath": "Perl .t → original-b57-support-event-probe.pl；Node 對照 b57-source-support-events-live-cas.test.mjs",
+      "assertions": "L10–53 exit/JSON、十一例資金與人氣命中/拒絕/threshold inclusive/cap、兩回呼共享 draw 串接、每案 ret=0、draw=1、79 inventory 長度。",
+      "executionPath": "Perl .t → original-b57-support-event-probe.pl，抽取 DSL STARTFUNC 直接 eval 執行。",
       "risk": "錯誤收入、超額、虛構 durable EVENT",
       "disposition": "保留原版來源斷言及探針；保留 source；#22 自然觸發與 v2 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b57-b58-rereview-evidence.md",
+          "line": 21
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b57-support-event-probe.pl"
@@ -6422,7 +6437,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L26–38 formatter stub、MaxMoney 來源 marker 後人工常數，非編譯器實跑；每案人工單店/stock/rank/money/draw，combined 同店兩回呼；無 EVENT gate/hash order/磁碟，ret 數值檢查後輸出0，非型別證據。"
     },
     {
       "path": "modern/tests/original-perl/original-b58-loto-event.t",
@@ -6431,8 +6447,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "兩 DSL loto STARTFUNC、buy-s.cgi、inc-turn.cgi",
-      "assertions": "十五案、五獎級、6096454 RNG 範圍、消耗券",
-      "executionPath": "Perl .t → original-b58-loto-event-probe.pl；Node 對照 b58-source-loto-real-ticket-cas.test.mjs",
+      "assertions": "L9–57 exit/JSON、15 cases、rand range6096454、五級與五個嚴格邊界、未中/零券、多券、cap、每張一 draw、全部清券、opening log level2。",
+      "executionPath": "Perl .t → original-b58-loto-event-probe.pl，抽 DSL loto STARTFUNC 直接 eval 執行。",
       "risk": "假獎金、券重複、亂數順序",
       "disposition": "保留原版來源斷言及探針；保留 source；#22 真 time/收入/存檔另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
@@ -6441,6 +6457,10 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 63
+        },
+        {
+          "path": "modern/docs/r0-b57-b58-rereview-evidence.md",
+          "line": 29
         }
       ],
       "realPlayer": false,
@@ -6450,7 +6470,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L25–40 GetMoneyString/WriteLog stub、MaxMoney marker 後常數；人工券庫存與 exact integer draw，不驗自然 RNG 或合法取得；原版 gate/hash/persistent log 未跑；ret 數值檢查後輸出0。"
     },
     {
       "path": "modern/tests/original-perl/original-b59-iron-event.t",
@@ -43064,7 +43085,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 33
+    "reReviewedBaseline": 37
   },
   "provenance": [
     {
@@ -43148,7 +43169,8 @@
     "modern/docs/r0-b41-b43-rereview-evidence.md",
     "modern/docs/r0-b48-b49-rereview-evidence.md",
     "modern/docs/r0-b50-b52-rereview-evidence.md",
-    "modern/docs/r0-b54-b56-rereview-evidence.md"
+    "modern/docs/r0-b54-b56-rereview-evidence.md",
+    "modern/docs/r0-b57-b58-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -43829,6 +43851,27 @@
         "pass": 2456
       },
       "pins": "DSL/source pins passed; GitHub compare HEAD vs actual checkout files=[]; tree SHA cited from prior PR metadata, not independently fetched"
+    },
+    {
+      "head": "59d07e9fa40d3a4da2ab7e72d395a44394ad2f9e",
+      "tree": "e5e22559e56d84b4ef0aee4a8d63c444568e92ea",
+      "checkout": "f0b67b86d33cabb85c23cd60658909efca6a449c",
+      "run": 45849759031,
+      "job": 140012737260,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; compare files=[]; candidate tree returned by create_tree, checkout tree SHA not separately retrieved"
     }
   ],
   "evidenceLayerSchema": {
