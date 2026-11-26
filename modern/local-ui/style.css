@@ -314,3 +314,12 @@ footer{margin-top:12px;font-size:10px}
   white-space:nowrap
 }
 .discard-section #discard-count{width:72px}
+
+/* Frozen market.cgi desktop geometry; CSS substitutes for unavailable legacy GIFs.
+ * Text remains accessible and is the original compact/mobile variant. */
+.source-market-graph{display:inline-flex;align-items:center;white-space:nowrap;gap:0;font-size:12px;vertical-align:middle}
+.source-market-spacer,.source-market-bar{height:12px;flex:none;display:inline-block}
+.source-market-bar.saturated{background:#0000ff}
+.source-market-bar.shortage{background:#ff0000}
+.source-market-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:540px){.source-market-graph{display:none}.source-market-text{position:static;width:auto;height:auto;overflow:visible;clip-path:none}}

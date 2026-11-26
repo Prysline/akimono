@@ -24,6 +24,16 @@ export function originalMarketBalance(per){
  if(!safe(per)||per>1000)fail('source supply point');
  return per>=110?{label:'飽和',percent:Math.trunc(per/10)}:per<=90?{label:'不足',percent:110-per}:{label:'平衡',percent:null};
 }
+/** Desktop GetMarketStatusGraph uses a 100px scale split at its midpoint.
+ * Preserve the source's negative left spacer at raw point 0..9 in the
+ * projection; only the browser CSS rendering bounds the invalid length. */
+export function originalMarketGraph(per){
+ if(!safe(per)||per>1000)fail('source supply point');
+ const type=per>=110?1:per<=90?2:0;
+ const width=type===1?Math.trunc(per*100/1000):type===2?110-per:100;
+ const bar=type===0?0:Math.trunc(width/2);
+ return {type,left:type===1?50:50-bar,bar,right:type===2?50:50-bar};
+}
 export function describeOriginalWarehouse({reviewed,world,normalCommerce,overlay,order,limits}){
  if(!reviews.has(reviewed)||!isReviewedNormalCommerceItems(normalCommerce)||!overlay?.saleRules||world?.shops?.length!==1||!safe(world.period?.dtPeople)||world.period.dtPeople===0||!Array.isArray(order)||order.length!==79||new Set(order).size!==79||!Array.isArray(limits)||limits.length!==79)fail('source view inputs');
  const shop=world.shops[0],blocked=(shop.trush??0)>5000000;
@@ -46,11 +56,11 @@ export function describeOriginalWarehouse({reviewed,world,normalCommerce,overlay
   const status=a?calculateSourceMarketStatus({stock:a.stock,weightedPrice:a.weighted,popular,population:world.period.dtPeople,saleSpeed:reviewed.saleSpeed}):null;
   const point=status?.uppoint??0;
   const common={itemId:id,storage:item.flag.includes('s'),typeId:item.type,count,experience,soldToday,soldYesterday,compiledCost:item.cost,stockLimit:limits[id-1].limit,standardPrice:item.price,
-    displayedStock:a?.stock??0,marketPrice:status?.marketprice??null,lowestPrice:a?.low??null,highestPrice:a?.high??null,popularSeconds:popular,...(reviewed.itemDetailReviewed?{saleWarning:item.flag.includes('s')?'not-listable':popular===0?'no-sales':popular>800000?'rare-sales':null}:{}),supplyPoint:point,balance:originalMarketBalance(point)};
+    displayedStock:a?.stock??0,marketPrice:status?.marketprice??null,lowestPrice:a?.low??null,highestPrice:a?.high??null,popularSeconds:popular,...(reviewed.itemDetailReviewed?{saleWarning:item.flag.includes('s')?'not-listable':popular===0?'no-sales':popular>800000?'rare-sales':null}:{}),supplyPoint:point,balance:originalMarketBalance(point),graph:originalMarketGraph(point)};
   marketItems.push(common);
   if(a)survey.push(common); // original %marketitemlist: only displayed positive stock
   // Yesterday alone does not qualify a row in stock.cgi; its graph uses ||=10.
-  if(!blocked&&(count||soldToday||experience))rows.push({...common,supplyPoint:point||10,balance:originalMarketBalance(point||10)});
+  if(!blocked&&(count||soldToday||experience))rows.push({...common,supplyPoint:point||10,balance:originalMarketBalance(point||10),graph:originalMarketGraph(point||10)});
  }
  return {blocked,types:reviewed.types,rows,...(reviewed.surveyReviewed?{marketItems,survey}: {})};
 }

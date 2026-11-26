@@ -122,15 +122,34 @@ function openItem(itemId){
   selectTab('item');
 }
 function marketBalanceText(b){return b?b.label+(b.percent===null?'':' '+number(b.percent)+'%'):'—';}
+function renderMarketBalance(cell,b,graph){
+ cell.replaceChildren();
+ if(!b||!graph){cell.textContent=marketBalanceText(b);return;}
+ const desktop=document.createElement('span');desktop.className='source-market-graph';
+ desktop.setAttribute('aria-hidden','true');
+ const spacer=width=>{if(!width)return;const el=document.createElement('span');el.className='source-market-spacer';el.style.width=Math.max(0,width)+'px';desktop.append(el);};
+ const label=name=>{const el=document.createElement('span');el.textContent=name;desktop.append(el);};
+ spacer(graph.left);
+ if(graph.type===0)label('平衡');
+ else{
+  if(graph.left===50)label('飽和');
+  const bar=document.createElement('span');bar.className='source-market-bar '+(graph.type===1?'saturated':'shortage');bar.style.width=graph.bar+'px';desktop.append(bar);
+  if(graph.right===50)label('不足');
+ }
+ spacer(graph.right);
+ const compact=document.createElement('span');compact.className='source-market-text';compact.textContent=marketBalanceText(b);
+ cell.append(desktop,compact);
+}
 function renderMarketSurvey(s){
  const rows=s.warehouse?.survey,body=$('market-survey-rows');body.replaceChildren();
  text('survey-scope',rows?'目前為獨立單店世界；未整合其他玩家店舖。':'此模式尚未啟用原版市價調查。');
  if(!rows?.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent=rows?'目前沒有陳列且有庫存的商品':'尚未開放';tr.append(td);body.append(tr);return;}
  for(const row of rows){
   const tr=document.createElement('tr'),item=catalogItem(s,row.itemId);
-  for(const value of [item?.name??'#'+row.itemId,number(row.soldToday)+'／'+number(row.soldYesterday),money(row.lowestPrice),money(row.highestPrice),money(row.marketPrice),money(row.standardPrice),marketBalanceText(row.balance)]){
+  for(const value of [item?.name??'#'+row.itemId,number(row.soldToday)+'／'+number(row.soldYesterday),money(row.lowestPrice),money(row.highestPrice),money(row.marketPrice),money(row.standardPrice)]){
    const td=document.createElement('td');td.textContent=value;tr.append(td);
   }
+  const balance=document.createElement('td');renderMarketBalance(balance,row.balance,row.graph);tr.append(balance);
   body.append(tr);
  }
 }
@@ -146,7 +165,7 @@ function renderItemInfo(s){
   text('item-market-price',status?.marketPrice==null?'沒有販售店舖':money(status.marketPrice));
   text('item-market-low',status?.lowestPrice==null?'—':money(status.lowestPrice));
   text('item-market-high',status?.highestPrice==null?'—':money(status.highestPrice));
-  text('item-market-balance',marketBalanceText(status?.balance));
+  renderMarketBalance($('item-market-balance'),status?.balance,status?.graph);
   const warning=status?.saleWarning;
   $('item-sale-warning-row').hidden=!warning;
   text('item-sale-warning',warning==='not-listable'?'無法販售'+(item?.name??'此商品'):warning==='no-sales'?'這個產品即使陳列了也無法販售':warning==='rare-sales'?'這個產品即使陳列了也很難販售':'');
@@ -750,7 +769,7 @@ function showState(s){
       id===item.itemId?['第 '+(index+1)+' 架｜'+money(shop.price[index])]:[]);
     addCell(tr,shelves.join('、')||'—');
     addCell(tr,warehouse&&item.marketPrice?money(item.marketPrice):'—');
-    addCell(tr,warehouse?item.balance.label+(item.balance.percent===null?'':' '+number(item.balance.percent)+'%'):'—');
+    renderMarketBalance(addCell(tr,'—'),warehouse?item.balance:null,warehouse?item.graph:null);
     sellingBody.append(tr);
   }
   renderItemInfo(s);

@@ -7,7 +7,7 @@ import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,executeMemoryCommand} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed} from '../src/original-period-world-seed.mjs';
 import {calculateSourceMarketStatus} from '../src/shared-source-market-status.mjs';
-import {originalMarketBalance} from '../src/original-r4-warehouse-view.mjs';
+import {originalMarketBalance,originalMarketGraph} from '../src/original-r4-warehouse-view.mjs';
 
 // Actual frozen compiler numeric ITEM metadata and original GetMarketStatus,
 // GetMarketStatusGraph. Only the locale formatter is a stub. No player proof.
@@ -95,4 +95,17 @@ test('source retail balance thresholds and mobile percentage preserve original d
   {label:'不足',percent:110},{label:'不足',percent:100},{label:'不足',percent:20},{label:'平衡',percent:null},
   {label:'平衡',percent:null},{label:'平衡',percent:null},{label:'飽和',percent:11},{label:'飽和',percent:100},
  ]);
+});
+
+
+test('source desktop supply graph matches all 1001 original widths, labels and compact text',async()=>{
+ const input=await loadNormalCommerceAuditSources();
+ const perl=['use utf8;use JSON::PP;no strict;no warnings;local $/;my $s=decode_json(<STDIN>);','sub l {$_[0]} eval $s;die $@ if $@;','$MOBILE=0;$IMAGE_URL="/original";my @out;','for my $p (0..1000){push @out,[GetMarketStatusGraph($p),GetMarketStatusGraph($p,1)]}print encode_json(\\@out);'].join('\n');
+ const expected=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify(input.originalMarketSource)}));
+ for(let p=0;p<=1000;p++){
+  const {type,left,bar,right}=originalMarketGraph(p),b=originalMarketBalance(p);
+  const image=(kind,width)=>'<img src="/original/'+kind+'.gif" width="'+width+'" height="12">';
+  const html=type?(left?image('t',left):'')+(left===50?' 飽和 ':'')+image(type===1?'b':'r',bar)+(right===50?' 不足 ':'')+(right?image('t',right):''):image('t',50)+' 均衡 '+image('t',50);
+  assert.deepEqual([html,(b.label==='平衡'?'均衡':b.label)+' '+(b.percent===null?'':' '+b.percent+'%')],expected[p],'source point '+p);
+ }
 });

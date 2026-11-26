@@ -383,3 +383,12 @@ test('source market buy form retains source presets and server-only transaction 
  assert.match(script,/requestedCount:requested/);
  assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
 });
+
+
+test('source supply graph geometry is shared by all three retail read views',()=>{
+ assert.match(script,/renderMarketBalance\(balance,row\.balance,row\.graph\)/);
+ assert.match(script,/renderMarketBalance\(\$\('item-market-balance'\),status\?\.balance,status\?\.graph\)/);
+ assert.match(script,/renderMarketBalance\(addCell\(tr,'—'\),warehouse\?item\.balance:null,warehouse\?item\.graph:null\)/);
+ assert.match(css,/\.source-market-bar\.saturated/);
+ assert.match(css,/\.source-market-bar\.shortage/);
+});
