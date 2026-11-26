@@ -19,7 +19,7 @@ function accountSwordTick(before,result){
   const total=d.naturalSaleCount,trace=d.sourceTrace;
   assert.ok(Number.isSafeInteger(total)&&total>=0);
   assert.equal(shop.showcasecount,1);
-  assert.equal(shop.item[63],0,'this genuine path has no guard robot');
+  let robots=shop.item[63];
   assert.deepEqual(after.showcase,shop.showcase);
   assert.deepEqual(after.price,shop.price);
   const listed=shop.showcase[0]===SWORD;
@@ -47,15 +47,34 @@ function accountSwordTick(before,result){
     const sold=i===0?first:total-first;
     assert.ok(sold<=expected,'natural sales cannot exceed slice stock');
     expected-=sold;
+    if(slice.dateupdate===1){
+      const prize=d.settlementReceipt.prize;
+      if(prize?.itemId===64){
+        assert.equal(prize.stockBefore,robots);
+        assert.equal(prize.granted,Math.min(1,1-robots));
+        robots+=prize.granted;
+        assert.equal(prize.stockAfter,robots);
+      }
+      assert.notEqual(prize?.itemId,SWORD,'#40 is not a source top prize');
+    }
     assert.ok(Array.isArray(slice.logs));
     for(const [, ,message] of slice.logs){
       assert.equal(typeof message,'string');
+      const blocked=message===shop.shopname+'有人企圖入室行竊，但被制止了。';
+      const broken=message===shop.shopname+'有人企圖入室行竊，看門機器人被破壊了。'||
+        message===shop.shopname+'有強盜闖入，看門機器人被破壞了。';
+      if(blocked||broken){
+        assert.ok(robots>0,'source robot protection requires real stock');
+        if(broken)robots--;
+        continue;
+      }
       if(!listed)continue;
       const stolen=message.startsWith(shop.shopname+'被偷了相當於總額');
       const robbed=message.startsWith(shop.shopname+'被搶了相當於總額');
       const emptyTheft=message==='闖入'+shop.shopname+'的小偷什麼都沒拿就逃走了。';
       const emptyRobbery=message==='闖入'+shop.shopname+'的強盜什麼都沒拿就逃走了。';
       if(!stolen&&!robbed&&!emptyTheft&&!emptyRobbery)continue;
+      assert.equal(robots,0,'source unprotected theft requires no guard robot');
       const count=Math.trunc(expected/((stolen||emptyTheft)?10:4));
       if(emptyTheft||emptyRobbery)assert.equal(count,0);
       else{
@@ -65,6 +84,7 @@ function accountSwordTick(before,result){
       expected-=count;lost+=count;
     }
   }
+  assert.equal(after.item[63],robots,'source guard robot prize/loss accounting');
   assert.equal(after.item[SWORD-1],expected,'unexplained #40 stock delta: '+JSON.stringify({
     revision:before.revision,before:shop.item[SWORD-1],sold:total,lost,
     after:after.item[SWORD-1],settlement:d.settlementReceipt,trace
@@ -93,6 +113,12 @@ test('R4 sword accounting separates source EVENT loss from sales and settlement'
   ]}};
   after.item[SWORD-1]=9;after.itemyesterday={40:5};after.itemtoday={40:2};
   assert.deepEqual(accountSwordTick(before,result),{sold:4,lost:5});
+  // A real boundary can award #64 before EVENT, so protection must not
+  // assume that a player starting without a robot can never acquire one.
+  result.details.settlementReceipt.prize={itemId:64,stockBefore:0,granted:1,stockAfter:1};
+  result.details.sourceTrace.slices[0].logs=[[2,0,'帳本測試有強盜闖入，看門機器人被破壞了。']];
+  after.item[SWORD-1]=13;
+  assert.deepEqual(accountSwordTick(before,result),{sold:4,lost:1});
 });
 function diagnostic(p){
   const s=p.state.shop;
