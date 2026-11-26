@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 14 | 70 | 25 |
-| nodeDifferential | 14 | 70 | 25 |
+| perlOracle | 14 | 108 | 25 |
+| nodeDifferential | 14 | 108 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -204,3 +204,8 @@
 ### 第52批：31 USE 詳細補鏈
 
 [逐項來源與受控差分](r1-writing-training-disassembly-evidence.md)：#10/0–7、#37/0–3、#39/0–18，詳細列 118/220（剩102）；USE Oracle／Node 70，正式下界不變。非新執行，無 runtime 修改。R1-HTTP-01 尚未實跑。
+
+
+### 第53批：製作／鍛造／乳製品／節慶
+
+[38 USE 詳細證據](r1-manufacturing-dairy-festival-evidence.md)：34 新詳細、4 既有補強；152/220（剩68），USE Oracle/Node 108，正式下界不變；固定材料/EXP/time/draw，lostbook 受控，不是新執行或正式玩家。R1-HTTP-01 尚未實跑。
