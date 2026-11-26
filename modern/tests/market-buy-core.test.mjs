@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {compileStandardStreetMarketBuyRegistry} from '../src/standard-street-market-buy-registry.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from '../src/original-r4-wholesale-voucher.mjs';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
@@ -985,4 +987,90 @@ test('R4 source-only shared market FUNCBUY clips purchase, validates grant and r
     assert.equal(encodeMemorySnapshot(world),before);
   }
   assert.equal(encodeMemorySnapshot(rich),snapshot);
+});
+
+test('R4 #63 source repeated zero-price purchase and positive FUNCINIT transport match actual frozen buy-s handler',()=>{
+  const registry=compileStandardStreetMarketBuyRegistry({
+    itemDsl:src.itemDsl,rebelDsl:src.rebelDsl,
+    model:loadStandardStreetModel(src.itemDsl,src.rebelDsl),compiled:street.reviewedGiftMapUse,
+    compilerSource:src.originalCompilerSource,buySource:src.originalBuySource,
+    wholeSource:src.originalWholeSource,itemSource:src.originalBuyItemSource,
+    globalBuyCallback:street.marketBuy.globalBuyCallback,includeReviewedShowcaseTool:true,
+  });
+  const extended={...street,marketBuy:{...street.marketBuy,reviewedSignedCash:true,
+    order:registry.order,getRule:id=>registry.getRule(id),describe:id=>registry.describe(id),
+    quote:args=>registry.quote(args)}};
+  const start=seed().repository.read();
+  assert.equal(registry.getRule(63).zeroPriceReviewed,true);
+  for(const [mode,id,n] of [['--showcase-tool',63,17],['--transport-10',10,4],['--transport-12',12,4]]){
+    const {cases}=JSON.parse(execFileSync('perl',['p5-book-work-market-oracle.pl',mode],{
+      cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',timeout:30000,
+      maxBuffer:4*1024*1024,
+    }));
+    assert.equal(cases.length,n);
+    for(const c of cases){
+      const expected=id!==63||['success','zero-money','count-clamp','time-cap','peddle','appraiser','peddle-appraiser','debt'].includes(c.case);
+      assert.equal(c.accepted,expected,c.case);
+      const shop={...start.shops[0],item:[...start.shops[0].item],
+        money:c.moneyBefore,paytoday:123,time:c.timeBefore,job:c.job};
+      shop.item[id-1]=c.ownedBefore;shop.item[23]=c.appraiser;
+      const wholesale=[...start.market.wholesale];wholesale[id-1]=c.marketBefore;
+      if(id===63)shop.item[62]=c.ownedBefore;
+      const market=street.marketBuy.writeMarket({market:start.market,wholesale,itemId:id,wholesaleIndex:id-1});
+      const world={...start,shops:[shop],market};
+      const rule=registry.getRule(id),before=encodeMemorySnapshot(world);
+      const quote=registry.quote({rule,marketStock:Math.max(c.marketBefore,1),shop});
+      if(c.marketBefore>0){
+        assert.equal(quote.price,c.trueMarketPrice,c.case);
+        assert.equal(quote.timeSeconds,c.trueMarketTimeSeconds,c.case);
+      }
+      // The oracle and the Node fixture may have a different sparse market
+      // layout; derive the live shelf from each actual market, not a fixed ID.
+      const position=registry.order.findIndex(x=>x.itemId===id);
+      const shelf=registry.order.slice(0,position).filter(x=>wholesale[x.wholesaleIndex]>0).length;
+      const command={kind:'market-buy',expectedRevision:world.revision,shopId:1,
+        itemId:c.itemId,requestedCount:c.requestedCount,
+        marketShelf:shelf+(c.case==='stale-shelf'?1:0),expectedPrice:c.expectedPrice};
+      const actual=apply(world,command,extended);
+      assert.equal(actual.ok,c.accepted,mode+' '+c.case+' '+JSON.stringify(actual.details));
+      assert.equal(encodeMemorySnapshot(world),before);
+      if(actual.ok){
+        assert.equal(actual.details.timeConsumedSeconds,c.trueMarketTimeSeconds,c.case);
+        assert.equal(actual.details.tax,c.actualTax,c.case);
+        assert.equal(actual.world.shops[0].money,c.money,c.case);
+        assert.equal(actual.world.shops[0].paytoday,c.paytoday,c.case);
+        assert.equal(actual.world.shops[0].time,c.time,c.case);
+        assert.equal(actual.world.shops[0].item[id-1],c.stock,c.case);
+        assert.equal(actual.world.market.wholesale[id-1],c.marketStock,c.case);
+      }else assert.deepEqual(actual.world,world,c.case);
+    }
+  }
+});
+
+test('D4 controlled shared wholesale tax hook preserves buyer accounting and rejects unsafe receipt before write',()=>{
+  const world=seed().repository.read(),q=sourceMarketQuote(world,10);
+  const before=encodeMemorySnapshot(world),command=buyCommand(world,10,q);
+  let seen=0;
+  const adapter={...street.marketBuy,projectSourceTax({world:observed,rule,count,gross}){
+    seen++;assert.deepEqual(observed,world);assert.equal(rule.itemId,10);
+    assert.equal(count,1);assert.equal(gross,q.price);return 123;
+  }};
+  const ok=apply(world,command,{...street,marketBuy:adapter});
+  assert.equal(ok.ok,true,JSON.stringify(ok.details));assert.equal(seen,1);
+  assert.equal(ok.details.tax,123);
+  assert.equal(ok.world.shops[0].money,world.shops[0].money-q.price);
+  assert.equal(ok.world.shops[0].paytoday,world.shops[0].paytoday+q.price);
+  for(const tax of [-1,1.5,q.price+1,NaN]){
+    let writes=0;
+    const denied=apply(world,command,{...street,marketBuy:{...adapter,
+      projectSourceTax:()=>tax,writeMarket(){writes++;throw new Error('unexpected write');}}});
+    assert.equal(denied.code,'SOURCE_BOUNDARY_REJECTED');
+    assert.match(denied.details.reason,/source (wholesale tax|tax exceeds gross)/);
+    assert.equal(writes,0);assert.deepEqual(denied.world,world);
+  }
+  const zero=sourceMarketQuote(world,13);
+  const free=apply(world,buyCommand(world,13,zero),{...street,marketBuy:adapter});
+  assert.equal(free.ok,true,JSON.stringify(free.details));
+  assert.equal(free.details.tax,0);assert.equal(seen,1);
+  assert.equal(encodeMemorySnapshot(world),before);
 });

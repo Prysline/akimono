@@ -42,3 +42,11 @@ D1 文件候選；尚未收錄任何 A/B runtime。起點 migration/standard-str
 - A HTTP 測試 `r4-normal-commerce-funcbuy-http.test.mjs` 9f2b6b3237261e235f4367c368453504c14afa7a 有 #64 真實付、單次 log、stale CAS 及雙世代重啟；`r4-normal-commerce-funcinit-http.test.mjs` 160a5e7a70f5133db3b56332ac947b14c62a9a53 有 #24/peddle 正價運輸與兩次 v2 reload。兩者依賴 divergent genuinePlayer support、full commerce、history/disk 等尚未整合，不直接收錄宣稱可跑。
 
 下一批：先核實 D2/D3 actual checkout/log、Node/Perl/DSL/pins；若確定性失敗先修原因。再做 Registry+cash/tax/transport 原版差分閉包，分離 opt-in 與正式 runtime；贈券正式入口必須補 A runner 與 receipt/log/HTTP/CAS/v2、B fiscal/replay/security 及 A close/archive 的選擇性適配。A/B/C 不需等待。此批不修改原版、runtime、workflow、正式基線、其他窗、Notion；D3 仍測試候選，非功能移植完成，非正式玩家證據。
+
+## D4-MARKET-CONTRACT｜Registry、運輸與稅額共用契約候選
+
+D3 `bfaa6c268e6e0606b150dd0e442105124ce2d843` / tree `50e84cffa3f1529883bc2fec494778c2b60aeb20` 已通過 actual checkout 0390c66f532df39d8ea8b031d890582d91cdaae4 同 tree；CI 45851923108 job 140020214318 原始 log JS1332/1332、fail/skip/cancelled 0、Perl2456/2456(85檔)、DSL/pins success；D3 FUNCBUY ok222。D2 CI 45849832350 job140012985650 actual checkout 1e5da9c03c7d619996ce87afba45679ee2d1107b / tree 59c1bd0412937317516e4d17f09ab79aaea01ecc 同 HEAD，JS1331/1331、fail/skip/cancelled0、Perl2456/2456(85檔)、DSL/pins success；兩 source-only FUNCBUY ok1081/1082。D2/D3 已核證，不代替 D4。
+
+固定來源 A `d533b8c876c5bba6a70f69c501dc44c1ee5d33c0`、B `383dc2704fbaf52dce583ba051a1256f60a3381d`。選擇性重建 registry 與 market core 差分（重建結果分別等 A/B 9d277441dad820aeb53d8fcb67a97ba91fc058c9、B af21f7989f17dc1d52fb3462b8284ac9e8e661dc）；不是整支或整個共用架構覆蓋。registry opt-in 預設 false，保留 P5 #13、#63 default deny、正價 default quote。保留 B projectSourceTax hook、gross cap 與 safe integer 拒絕，稅只在 receipt 不重扣買方；不接領主正式 mode。新增 #63/正價 FUNCINIT 25 個受控原版 buy-s 差分案例：同 A/B oracle blob cf8138cf804cb9cea562ff0e2ead7684e6647017（測試 harness，非 frozen CGI），只改 OriginalSparseAllPlusHarness 測試初始 #63 持有參數，預設仍 1；其 imports OriginalSparseWholesalePlusHarness ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6、OriginalGiftMapUseHarness 4a81cd4b834222acdd059d9ea9a717452fc830c5 兩窗/D 相同。凍結 calc/item/whole/buy-s pins 不變。從 B market-buy test 選取具名測試及兩 import，保留 D3 全部斷言；另增 D 自有稅額 hook 介面測試，人工回傳123只驗 hook/買方扣款/拒絕，非原版稅公式證據。現有 B fiscal context、完整差分及外部 replay/HTTP 仍待後續閉包。
+
+正式 StreetModule、HTTP、disk、workflow 未變；本批沒有啟用 #63、voucher、signed cash 或 lord fiscal 的新正式入口。需 D4 exact CI，再以共同模式選擇性接線，保留 A 關店封存、B 外部保存與稅務安全。C 玩家驗收獨立，無本機 repo，未自行執行 Node/Perl。
