@@ -1,0 +1,3 @@
+## 反亂決算完整 pre-EVENT 候選
+
+外部專用 DataRead review 可讀原版無 ITEM overlay 的 rebel，仍拒絕未審閱特殊事件及普通正式路徑使用；僅允許候選單店城市 leader 0/1。B41 boundary candidate 以 opt-in B50 conflict review 執行自然銷售→FUNCTURN/FUNCSALE→SortDT→prize/ledger/dignity→territory/RebelRobin→動態人口 PLUS/CheckWholeStore，動態取得 period RNG，保留原始 DataRead overlays。新增同一 Perl full prefix 兩組來源差分：新反亂與過期延長，驗證 shop、市場 CSV、城市、事件、亂數消耗；source fixture 非玩家取得。正常候選不變，正式 CAS 尚未開放。

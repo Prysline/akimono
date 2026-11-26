@@ -255,7 +255,7 @@ function projectSourcePreEventSaleSlice({
     bad('source durable event contracts mismatch');
   // Source DataRead executes once per command, NOT once per time slice.
   const overlayWorld=boundary?.dataReadWorld??world;
-  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,candidateSettled:boundary?.candidateSettled===true});
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,candidateSettled:boundary?.candidateSettled===true,externalCandidate:boundary?.externalCandidate===true});
   if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
   if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -438,16 +438,26 @@ function projectSourcePreEventSaleSlice({
        (newShop.taxtoday!==0&&reviewedPeriod.territory?.reviewedSaleTax!==true))
       bad('boundary candidate only supports independent reviewed-tax no-external-effect source prefix');
     const dignity=(newShop.dignity??0)!==0;
-    periodDraws=3+(dignity?1:0);
+    const conflict=reviewedPeriod.conflictTerritory??null;
+    if(Boolean(conflict)!==(boundary.externalCandidate===true))bad('explicit reviewed external period prefix required');
+    const basePeriodDraws=1+(dignity?1:0);
+    periodDraws=basePeriodDraws+2;
     if(randomDraws.length<used+periodDraws)bad('missing original period random samples');
     const draws=randomDraws.slice(used,used+periodDraws);
     settlement=projectOriginalSoloPeriodPhaseChain({
       reviewed:reviewedPeriod,shop:newShop,town:world.period.town,dtPeople:world.period.dtPeople,
       awardDrawMillionths:draws[0],
       dignityDrawMillionths:dignity?draws[1]:null,
-      territoryDrawMillionths:draws.slice(dignity?2:1),
+      ...(conflict?{conflictContext:{activeUntilSeconds:world.period.eventState.rebel??null,
+        balJob:boundary.conflictNames.balJob,balName:boundary.conflictNames.balName},
+        territoryRandomDrawProvider:(index)=>{
+          const at=used+basePeriodDraws+index;
+          if(at>=randomDraws.length)bad('missing original period random samples');
+          return randomDraws[at];
+        }}:{territoryDrawMillionths:draws.slice(dignity?2:1)}),
       nowSeconds:boundary.commandNowSeconds,
     });
+    if(conflict)periodDraws=basePeriodDraws+settlement.conflictTerritory.drawsUsed;
     if(settlement.shopExpiry?.expiredOwner||!settlement.shop||settlement.nonCommittable!==true)
       bad('source closure requires external archive/session transaction');
     plusWorld={...world,shops:[settlement.shop],period:{...world.period,
@@ -528,7 +538,9 @@ export function projectR4InventoryPreEventTurn(args){
  * @timespan plan. The remaining command slices, EVENT and disk effects
  * MUST still be handled by a future coordinator. No public time authority.
  */
-export function projectR4BoundaryPreEventCandidate({reviewedPeriod,candidateSettled=false,...args}){
+export function projectR4BoundaryPreEventCandidate({reviewedPeriod,candidateSettled=false,conflictNames=null,...args}){
+  const externalCandidate=reviewedPeriod?.conflictTerritory!=null;
+  if(externalCandidate?(!conflictNames||Object.keys(conflictNames).sort().join(',')!=='balJob,balName'||Object.values(conflictNames).some(v=>typeof v!=='string'||!v)):conflictNames!==null)bad('explicit source conflict names and review required');
   const {world,reviewed,minutes}=args;
   if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60||
      !Number.isSafeInteger(world?.nowSeconds))bad('bounded source command window');
@@ -539,7 +551,7 @@ export function projectR4BoundaryPreEventCandidate({reviewedPeriod,candidateSett
     bad('source settlement boundary required');
   const spanSeconds=plan.effectiveSlices[0].timespanSeconds;
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
-    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world,candidateSettled});
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:1,dataReadWorld:world,candidateSettled,externalCandidate,conflictNames});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 
@@ -563,7 +575,7 @@ export function projectR4ResidualPreEventCandidate({originWorld,reviewedPeriod,c
     bad('exact second source slice required');
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
     {spanSeconds:plan.effectiveSlices[1].timespanSeconds,commandNowSeconds,
-     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld,candidateSettled});
+     reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:originWorld,candidateSettled,externalCandidate:reviewedPeriod?.conflictTerritory!=null});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 
@@ -575,7 +587,7 @@ export function projectR4PostSettlementPreEventCandidate({reviewedPeriod,...args
   const plan=projectOriginalR4TimeSlices({reviewed:reviewed.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:commandNowSeconds});
   if(plan.crossesSettlement||plan.effectiveSlices.length!==1)bad('noncrossing candidate continuation required');
   const stage=projectSourcePreEventSaleSlice({...args,p3InventoryStage:true,reviewedEventTimeSlice:true},
-    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:world,candidateSettled:true});
+    {spanSeconds,commandNowSeconds,reviewed:reviewedPeriod,dateupdate:0,dataReadWorld:world,candidateSettled:true,externalCandidate:reviewedPeriod?.conflictTerritory!=null});
   return {...stage,plan,committable:false,worldStateWritten:false};
 }
 

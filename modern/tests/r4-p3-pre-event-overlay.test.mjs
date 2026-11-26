@@ -12,7 +12,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
 
 import {reviewR4SortedPreEvent,projectR4SortedInventoryPreEventTurn} from '../src/original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay} from '../src/original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay,reviewR4ExternalPreEventItemOverlay,validateR4PreEventPeriod} from '../src/original-r4-pre-event-item-overlay.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const locations=[
  ['itemDsl','custom/inc-item-data.cgi'],
@@ -676,4 +676,54 @@ test('R4 reviewed CAS settles two consecutive source boundaries from legal openi
   assert.ok(second.shops[0].rankingcount>=2);
   const final=command('advance-reviewed-world-time',{minutes:1});
   assert.equal(final.world.period.settledCount,2);
+});
+
+
+test('external candidate full pre-EVENT prefix uses actual natural sale, ledger, rebel period and dynamic-population PLUS on the same state',()=>{
+  const external=reviewR4ExternalPreEventItemOverlay({itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,
+    compilerSource:source.originalCompilerSource,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,periodSource:source.originalPeriodSource});
+  const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true,reviewedRebelNow:external.rebel});
+  for(const existing of [false,true]){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=1155540;
+    world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
+      lastSettledBoundarySeconds:1026000,dtPeople:350000,
+      town:{...world.period.town,leader:1,money:5000000,develop:9000,safety:9000,army:10000,robina:2000,people:500000},
+      eventState:{'plusup-tetu':1200000,...(existing?{rebel:1155500}:{})}};
+    Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
+    const before=JSON.stringify(world);
+    // Zeros intentionally drive invasion and award/dignity thresholds in
+    // a source differential, never a genuine player trajectory.
+    const draws=Array(125).fill(0);
+    const oracle=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+      input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        span:60,draws,events:world.period.eventState,externalCandidate:true,
+        settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:1155600}}),
+    }));
+    const input={...args(world,1,oracle.consumed),reviewedPeriod,candidateSettled:true,
+      conflictNames:{balJob:'外敵',balName:'首領'},r4ReviewedSort:reviewedR4.sort,
+      r4DataRead:{reviewed:external,activeOrder:oracle.activeOrder}};
+    const got=projectR4BoundaryPreEventCandidate(input);
+    assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
+    assert.equal(got.receipt.periodDraws,existing?4:7);
+    assert.equal(got.receipt.totalDraws,oracle.used);
+    assert.equal(got.receipt.plusPopulation,oracle.dtPeople);
+    assert.deepEqual(got.settlement.town,oracle.town);
+    assert.equal(got.settlement.conflictTerritory.activeUntilSeconds,oracle.eventState.rebel);
+    assert.equal(oracle.eventState.rebel,1155600+259200);
+    assert.equal(got.settlement.town.in,321);
+    assert.equal(got.shops[0].dignity,11);
+    assert.deepEqual(got.market.wholesale,oracle.wholesale);
+    assert.equal(got.market.originalWholesaleCsv,oracle.csv);
+    for(const [key,value] of Object.entries(got.shops[0])){
+      if(key==='costtoday'){assert.ok(Math.abs(value-oracle.shop[key])<1e-8);continue;}
+      assert.deepEqual(value,oracle.shop[key],key);
+    }
+    assert.equal(JSON.stringify(world),before);
+    assert.throws(()=>validateR4PreEventPeriod({reviewed:external,period:world.period,activeOrder:oracle.activeOrder,candidateSettled:true}),/explicit external candidate/);
+    assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,reviewedPeriod:reviewedTaxPeriod,conflictNames:null}),/external candidate/);
+    assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,randomDraws:oracle.consumed.slice(0,2)}),/missing/);
+  }
 });

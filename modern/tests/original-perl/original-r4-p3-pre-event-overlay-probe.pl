@@ -20,6 +20,7 @@ print JSON::PP->new->utf8->canonical->encode({
   shop=>$main::DT[0],wholesale=>\@whole,defined=>\@defined,
   (exists $input->{settlement}?(town=>$main::STATE,dtPeople=>0+$main::DTpeople):()),
   csv=>join(',',@main::DTwholestore),activeOrder=>\@order,
+  ($input->{externalCandidate}?(eventState=>{%main::DTevent}):()),
   consumed=>[ @{$input->{draws}}[0..$main::B35_USED-1] ],
   used=>$main::B35_USED,
   plus=>[map{0+($main::ITEM[$_]{plus}//0)}1..79],

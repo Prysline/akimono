@@ -84,6 +84,7 @@ if(exists $input->{settlement}){
   my $s=$input->{settlement};
   $main::STATE=$s->{town};$main::DTpeople=$s->{dtPeople};$main::DTusercount=1;
   $main::NOW_TIME=$s->{commandNowSeconds};
+  if($input->{externalCandidate}){$main::BAL_JOB='外敵';$main::BAL_NAME='首領';}
   $main::EXPIRE_TIME=604800;$main::DEFINE_FUNCUPDATE=0;
   $main::PROFIT_DAY_COUNT=3;$main::EXP_DOWN_RATE=60;$main::EXP_DOWN_POINT=5;
   @main::SHOWCASE_COST=(0,2000,4000,8000);%main::GUILD=();%main::GUILD_DATA=();
@@ -102,7 +103,7 @@ if(exists $input->{eventWire}) {
 }
 my @order=keys %main::DTevent;
 for my $code(@order){
-  next if $code eq 'happy';
+  next if $code eq 'happy'||($input->{externalCandidate}&&$code eq 'rebel');
   die 'unknown source overlay' unless exists $generated{$code};
   eval "package main;no strict;no warnings;".$generated{$code}."\n1;" or die $@;
 }
