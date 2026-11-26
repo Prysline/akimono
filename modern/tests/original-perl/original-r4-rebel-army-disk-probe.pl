@@ -261,8 +261,69 @@ sub edgeCases {
   return \@rows;
 }
 my $edges=edgeCases();
+
+# Actual army-s commands and their real source file commit, followed by
+# original NOWFUNC on the very same state. Only the outer account/renderer
+# and play.cgi write are adapters. Do not count this as player acquisition.
+our ($DT,$MAX_STOCK_TIME,$USER,$num,$ret,$disp,$TBT,$TRT,$TD,$TRE,$TBE,$NOMENU,%Q);
+sub Lock{1}sub DataRead{1}sub CheckUserPass{1}
+sub RenewLog{1}sub DataWrite{1}sub UnLock{1}sub OutSkin{1}
+sub GetTagImgJob{''}sub GetMenuTag{''}sub GetTime2HMS{$_[0]}
+sub OutError{die "source command refused: $_[0]"}
+require "$FindBin::Bin/calc.cgi";
+sub slimShops{ return [map{{id=>$_->{id},name=>$_->{name},shopname=>$_->{shopname},
+ money=>0+$_->{money},army=>0+$_->{army}}}@DT] }
+sub conflictChain{
+  $NOW_TIME=1000000;$MAX_STOCK_TIME=259200;$USER='fixture';
+  $temptimenow=$NOW_TIME;$timespan=$TIMESPAN=3600;
+  $STATE={%baseTown,leader=>1,army=>10000,robina=>0,safety=>6000,develop=>6000};
+  @DT=map{{id=>$_,name=>"owner$_",shopname=>"shop$_",army=>$_*10,
+    money=>800000,status=>1,dignity=>5,time=>$NOW_TIME-10000}}1..4;
+  %id2idx=map{($DT[$_]{id}=>$_)}0..$#DT;
+  %DTevent=();@ITEM=();@LOG=();$BAL_JOB='外敵';$BAL_NAME='首領';$DTTaxrate=0;
+  %EVENT=(rebel=>{code=>'rebel',group=>'rebel-group',startproba=>0,
+    basetime=>0,plustime=>0,startfunc=>'',endfunc=>'',func=>'_local_now',
+    funcparam=>'',startmsg=>'',endmsg=>''});
+  my $initial="1,300,2,4000,3,4000,4,800\n\n";
+  putFile(GetPath("army"),$initial);
+  my @commands;my $revision=5;
+  for my $row([2,'rebelon'],[3,'rside'],[4,'lside'],[1,'lside']){
+    my($id,$mode)=@$row;
+    $DT=$DT[$id2idx{$id}];%Q=(mode=>$mode,cmd=>'rebel');
+    $disp=$ret=$TBT=$TRT=$TD=$TRE=$TBE='';@LOG=();
+    my $input={world=>{schema=>'akimono.memory-world.v2',revision=>$revision,nowSeconds=>$NOW_TIME,
+      events=>undef,shops=>[map{{%$_}}@DT],period=>{town=>{%$STATE},eventState=>{%DTevent}}},
+      armyBytes=>getFile(GetPath("army"))};
+    my $ok=do "$FindBin::Bin/pinned-army-s.cgi";die "conflict command $mode: $@ $!" unless $ok;
+    die 'source command did not commit army' if -e GetPath($TEMP_DIR,"army")||-e GetPath("commit");
+    push @commands,{input=>$input,mode=>$mode,id=>$id,output=>{
+      shops=>[map{{%$_}}@DT],town=>{%$STATE},eventState=>{%DTevent},logs=>[map{[@$_]}@LOG],
+      armyBytes=>getFile(GetPath("army"))}};
+    $revision++;
+  }
+  my @now;
+  # Two source slices within a transaction, then a third after commit.
+  for my $i(0..2){
+    my $live=getFile(GetPath("army"));
+    my $input={startSeconds=>$temptimenow,spanSeconds=>3600,activeUntilSeconds=>0+$DTevent{rebel},
+      town=>{%$STATE},shops=>slimShops(),randomDraws=>[0],taxRate=>$DTTaxrate,
+      balJob=>$BAL_JOB,balName=>$BAL_NAME};
+    @LOG=();@COMBINED_DRAWS=(0);@COMBINED_RANGES=();$READ_ARMY=$WRITE_ARMY=0;
+    originalRebelEventFragment();die 'conflict NOW unused RNG' if @COMBINED_DRAWS;
+    die 'conflict NOW changed live prematurely' unless getFile(GetPath("army")) eq $live;
+    my $stage=getFile(GetPath($TEMP_DIR,"army"));
+    push @now,{input=>$input,liveBefore=>$live,stage=>$stage,output=>{
+      town=>{%$STATE},shops=>slimShops(),activeUntilSeconds=>0+$DTevent{rebel},
+      riotIds=>[sort{$a<=>$b}map{0+$_}keys %RIOT],armyById=>{map{$_=>0+$ARMY{$_}}keys %ARMY},
+      taxRate=>$DTTaxrate,logs=>[map{[@$_]}@LOG],randomDrawRanges=>[@COMBINED_RANGES],
+      drawsUsed=>scalar @COMBINED_RANGES,readArmyCalls=>$READ_ARMY,writeArmyCalls=>$WRITE_ARMY}};
+    DataCommitOrAbort(0) if $i>=1;$temptimenow+=3600;
+  }
+  return {initial=>$initial,commands=>\@commands,now=>\@now,final=>getFile(GetPath("army"))};
+}
+my $conflict=conflictChain();
 print JSON::PP->new->canonical->utf8->encode({
-  multi=>$multi,edges=>$edges,
+  multi=>$multi,edges=>$edges,conflict=>$conflict,
   source=>'complete frozen period.cgi RebelRobin + period rebel branch executed BEFORE actual inc-turn EVENT END/START/NOW and original rebel NOWFUNC body, one event',
   cases=>\@cases,
   scope=>'isolated single CITY/REBEL slice, original source execution + controlled rand only; real isolated army staging and commit/reload; no other 16 EVENTs or full period/WorldState',
