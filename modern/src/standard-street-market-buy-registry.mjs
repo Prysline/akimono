@@ -24,13 +24,17 @@ function positive(raw,label){
      !Number.isSafeInteger(Number(raw)))fail('unsupported '+label);
   return Number(raw);
 }
-export function quoteCompiledWholesaleRule(rule,marketStock){
+export function quoteCompiledWholesaleRule(rule,marketStock,shop=null){
   if(!rule||!['common-static','common-dynamic'].includes(rule.classification))
     fail('unsupported rule cannot be quoted');
   if(!Number.isSafeInteger(marketStock)||marketStock<=0)
     fail('wholesale quote requires source in-stock item');
-  const base=positive(String(rule.basePrice),'source compiled PRICE');
+  const zero=rule.zeroPriceReviewed===true;
+  const base=zero?0:positive(String(rule.basePrice),'source compiled PRICE');
   const policy=rule.pricePolicy;
+  if(zero&&(rule.basePrice!==0||policy?.kind!=='fixed'||
+      !Number.isSafeInteger(rule.wholesaleLimit)||rule.wholesaleLimit<1||
+      marketStock>rule.wholesaleLimit))fail('invalid reviewed zero-price source rule or stock');
   if(!policy||!['fixed','original-pricehalf'].includes(policy.kind))
     fail('unsupported source PRICE policy');
   let price=base;
@@ -45,12 +49,24 @@ export function quoteCompiledWholesaleRule(rule,marketStock){
     price=Math.trunc(base/denominator);
     if(price<=0)price=1;
   }
-  if(!Number.isSafeInteger(price)||price<=0)
+  if(!Number.isSafeInteger(price)||price<(zero?0:1)||(zero&&price!==0))
     fail('invalid original market quote');
   // Frozen item.cgi::GetTimeDeal(baseprice*num,itemno,num) after
   // buy-s.cgi halves the original 1200s TIME_SEND_ITEM to 600s.
-  const multiplier=Math.max(0.5,Math.min(2,2-price/base));
-  const timeSeconds=Math.trunc(rule.marketTimeSeconds*multiplier);
+  const multiplier=zero?1:Math.max(0.5,Math.min(2,2-price/base));
+  let timeSeconds=Math.trunc(rule.marketTimeSeconds*multiplier);
+  // P5 zero-price transport includes the reviewed original FUNCINIT prelude
+  // before buy-s.cgi halves TimeSendItem. Positive-price policies are unchanged.
+  if(zero&&shop!==null){
+    const transport=rule.zeroPriceTransport;
+    if(!transport||!Array.isArray(shop.item)||
+      !Number.isSafeInteger(shop.item[transport.appraiserIndex])||shop.item[transport.appraiserIndex]<0)
+      fail('invalid zero-price source transport context');
+    let originalSend=rule.marketTimeSeconds*2;
+    if(shop.item[transport.appraiserIndex]>0)originalSend=Math.trunc(originalSend/4*3);
+    if(shop.job===transport.job)originalSend=Math.trunc(originalSend/2);
+    timeSeconds=Math.trunc(originalSend/2);
+  }
   if(!Number.isSafeInteger(timeSeconds)||timeSeconds<0)
     fail('unsafe original GetTimeDeal time');
   return Object.freeze({price,timeSeconds});
@@ -83,6 +99,11 @@ export function compileStandardStreetMarketBuyRegistry({
     [wholeSource,'$price=int($price/ ((($stock-$ITEM->{pricebase})/$ITEM->{pricehalf})+1) );'],
     [buySource,'$TIME_SEND_ITEM=int($TIME_SEND_ITEM/2) if !$id;'],
     [buySource,'$DTS=GetWholeStore();'],
+    [buySource,'$num=int($DT->{money}/$price) if ($DT->{money}<$num*$price && $price > 0);'],
+    [wholeSource,'my $price=$ITEM->{price};'],
+    [itemSource,'my $mul=1;'],
+    [itemSource,'if $price && $ITEM[$itemno]->{price};'],
+    [itemSource,'my $taxrate=$ITEM[$itemno]->{price} && $itemcnt ? ($price/$itemcnt/$ITEM[$itemno]->{price}-1) : 0;'],
     [buySource,'require "$ITEM_DIR/funcbuy.cgi" if $DEFINE_FUNCBUY;'],
     [itemSource,'return int($TIME_SEND_ITEM*$mul);'],
     [itemSource,'$mul=2 - ($price / $itemcount / $ITEM[$itemno]->{price})'],
@@ -97,6 +118,11 @@ export function compileStandardStreetMarketBuyRegistry({
   // Frozen TimeSendItem=20m; market buy halves it and with no price modifier
   // GetTimeDeal(price*num,item,num) has multiplier 1.
   const marketTimeSeconds=600;
+  const init=main.blocks.filter(b=>b.kind==='FUNCINIT');
+  const zeroTransport=init.length===1&&init[0].raw.includes('$TIME_SEND_ITEM=int($TIME_SEND_ITEM/4*3) if $DT->{item}[@@ITEMNO"行家的精隨"-1];')&&
+    init[0].raw.includes("$TIME_SEND_ITEM=int($TIME_SEND_ITEM/2) if $DT->{job} eq 'peddle';")&&
+    model.items.some(x=>x.id===24&&x.code==='skill-mekiki'&&x.name==='行家的精隨')?
+    Object.freeze({appraiserIndex:23,job:'peddle'}):null;
   const sourceItems=[...main.blocks,...rebel.blocks]
     .filter(b=>b.kind==='ITEM');
   if(sourceItems.length!==79)fail('original ITEM count');
@@ -121,10 +147,18 @@ export function compileStandardStreetMarketBuyRegistry({
     const rawBase=one(block,'base')?.value??null;
     const callback=one(block,'funcb');
     const price=Number(priceRow.value);
+    // P5: admit only the explicitly reviewed fixed-zero book source, not
+    // every zero PRICE (e.g. #63 remains unsupported). The shared engine
+    // sees a source rule, never a special ITEM-number purchase path.
+    const zeroPriceReviewed=block.file===ITEM_SOURCE&&itemId===13&&
+      item.code==='book-work'&&priceRow.value==='0'&&limitRow.value==='1/1'&&
+      limit.limit===1&&limit.wslimit===1&&one(block,'plus')?.value==='10h'&&
+      one(block,'pop')?.value==='0'&&one(block,'flag')?.value==='noshowcase'&&
+      rawBase===null&&!callback&&zeroTransport!==null;
     let reason=null,classification='common-static';
     if(!/^[0-9]+$/.test(priceRow.value)||!Number.isSafeInteger(price))
       reason='unreviewed original PRICE at '+block.file+':'+priceRow.line;
-    else if(price===0)
+    else if(price===0&&!zeroPriceReviewed)
       reason='zero-price wholesale GetTimeDeal and stock policy not yet reviewed at '+block.file+':'+priceRow.line;
     else if(limit.limit<1)
       reason='nonpositive original LIMIT at '+block.file+':'+limitRow.line;
@@ -159,6 +193,7 @@ export function compileStandardStreetMarketBuyRegistry({
       pricePolicy:Object.freeze(pricePolicy),
       stockLimit:limit.limit,wholesaleLimit:limit.wslimit,
       marketTimeSeconds,
+      ...(zeroPriceReviewed?{zeroPriceReviewed:true,zeroPriceTransport:zeroTransport}:{}),
       callbackSource:callback?block.file+':'+callback.line:null,
       globalBuyCallback,classification,reason,
     };
@@ -172,8 +207,8 @@ export function compileStandardStreetMarketBuyRegistry({
     entries:Object.freeze(entries),
     order,
     describe(itemId){return byId.get(itemId)??null;},
-    quote({rule,marketStock}){
-      return quoteCompiledWholesaleRule(rule,marketStock);
+    quote({rule,marketStock,shop=null}){
+      return quoteCompiledWholesaleRule(rule,marketStock,shop);
     },
     getRule(itemId){
       const e=byId.get(itemId);
@@ -185,6 +220,8 @@ export function compileStandardStreetMarketBuyRegistry({
         unitPrice:e.basePrice,basePrice:e.basePrice,
         classification:e.classification,pricePolicy:e.pricePolicy,
         stockLimit:e.stockLimit,
+        ...(e.zeroPriceReviewed?{zeroPriceReviewed:true,wholesaleLimit:e.wholesaleLimit,
+          zeroPriceTransport:e.zeroPriceTransport}:{}),
         marketTimeSeconds:e.marketTimeSeconds,
         source:e.source,
         scope:e.classification==='common-static'?

@@ -370,6 +370,7 @@ export function projectSharedUseItem({world,command,useItem}){
       sourceUseItemId:rule.itemId,useNo:rule.useId,
       requestedCount:command.requestedCount,effectiveCount:original.count,
       moneySpent:original.moneySpent,timeSpentSeconds:original.timeSpentSeconds,
+      ...(inlineWork?{moneyEarned:inlineWork.earned}:{}),
       experienceGain,experienceReductions,
       useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
