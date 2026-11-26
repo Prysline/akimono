@@ -10,6 +10,9 @@ export function isReviewedOrdinaryCommand(c,street){
     case 'hire-army':case 'fire-army':return street.reviewedArmy===true&&exact(c,common+'requestedCount')&&int(c.requestedCount,1);
     case 'start-rebellion':case 'join-rebellion':return street.reviewedRebelTime===true&&exact(c,common+'confirmation')&&c.confirmation==='rebel';
     case 'dispatch-guard':return street.reviewedRebelTime===true&&exact(c,'kind,expectedRevision,shopId');
+    case 'lord-inside':return street.reviewedLordFiscal===true&&exact(c,common+'taxrate,devem,safem')&&[['taxrate',40],['devem',10000000],['safem',10000000]].every(([k,max])=>typeof c[k]==='string'&&c[k].length>0&&!/[^0-9]/.test(c[k])&&int(Number(c[k]),0,max));
+    case 'lord-tax-side':return street.reviewedLordFiscal===true&&exact(c,common+'targetShopId,mode')&&c.targetShopId===1&&['free','double','normal'].includes(c.mode);
+    case 'lord-tax-reset':return street.reviewedLordFiscal===true&&exact(c,'kind,expectedRevision,shopId');
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
     case 'market-buy':{
       const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;

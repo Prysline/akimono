@@ -29,6 +29,8 @@ import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-dis
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
 const reviewedRebelTime=process.env.AKIMONO_REVIEWED_REBEL_TIME==='1';
+const reviewedLordFiscal=process.env.AKIMONO_REVIEWED_LORD_FISCAL==='1';
+if(reviewedLordFiscal&&(!reviewedRebelTime||!reviewedCrossPeriod||process.env.AKIMONO_REVIEWED_FULL_COMMERCE!=='1'||!process.env.AKIMONO_SAVE_DIR))throw Error('領主財政需要獨立跨期反亂完整商業存檔');
 if(reviewedRebelTime&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('反亂審閱模式需要跨期及明確獨立存檔目錄');
 // Explicit real HTTP candidate; existing v2 player mode stays compatible.
 const reviewedFullCommerce=process.env.AKIMONO_REVIEWED_FULL_COMMERCE==='1';
@@ -50,7 +52,7 @@ const {
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
-  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -80,6 +82,8 @@ const {
   originalArmyViewSource:'modern/tests/original-perl/pinned-army-view.cgi',
   originalArmyCommandSource:'modern/tests/original-perl/pinned-army-s.cgi',
   originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
+  originalLordViewSource:'modern/tests/original-perl/pinned-lord-f.cgi',
+  originalLordCommandSource:'modern/tests/original-perl/pinned-lord-s.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -91,9 +95,9 @@ const streetModule=createStandardStreetModule({
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
-  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
-  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedRebelTime:reviewedRebelTime,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedRebelTime:reviewedRebelTime,enableReviewedLordFiscal:reviewedLordFiscal,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -139,8 +143,8 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
        originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
-       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
-       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
+       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1',reviewedLordFiscal?'lord-fiscal-v1':'prior-lord-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -189,6 +193,7 @@ function state(){
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
     army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
     ...(reviewedRebelTime?{reviewedRebelTime:true,armyConflict:world?streetModule.describeConflict(world):null}:{}),
+    ...(reviewedLordFiscal?{reviewedLordFiscal:true,lord:world?streetModule.describeLord(world):null}:{}),
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
@@ -505,6 +510,16 @@ async function api(req,res,url){
       if(!streetModule.reviewedPalace)return send(res,409,{ok:false,error:'宮殿需已審閱的跨期來源存檔模式',state:state()});
       if(!exactKeys(body,'expectedRevision'))throw Error('宮殿只接受 expectedRevision，不接受商品、爵位、evt、點數或 RNG');
       result=commit({kind:'complete-palace-mission',expectedRevision:ensureRevision(body),shopId:1});
+      break;
+    }
+    case '/api/lord-inside':
+    case '/api/lord-tax-side':
+    case '/api/lord-tax-reset': {
+      if(!streetModule.reviewedLordFiscal)return send(res,409,{ok:false,error:'領主財政需獨立審閱模式',state:state()});
+      const kind=url.pathname.slice('/api/'.length);
+      const fields=kind==='lord-inside'?'taxrate,devem,safem':kind==='lord-tax-side'?'targetShopId,mode':'';
+      if(!exactKeys(body,'expectedRevision'+(fields?','+fields:'')))throw Error('領主指令僅接受原版欄位及版本');
+      result=commit({kind,expectedRevision:ensureRevision(body),shopId:1,...Object.fromEntries(fields?fields.split(',').map(k=>[k,body[k]]):[])});
       break;
     }
     case '/api/army-hire':

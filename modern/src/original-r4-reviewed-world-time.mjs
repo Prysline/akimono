@@ -24,6 +24,8 @@ import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
 import {ARMY_COMMANDS,CONFLICT_COMMANDS} from './original-r4-independent-army.mjs';
+import {LORD_COMMANDS} from './original-r4-independent-lord.mjs';
+import {reviewR4LordSaleTax,createR4LordSaleTaxContext,projectR4LordSaleTax} from './original-r4-lord-sale-tax.mjs';
 export const REVIEWED_WORLD_TIME_COMMAND='advance-reviewed-world-time';
 const fail=s=>{throw new RangeError('R4 reviewed local world time: '+s)};
 const keys=(o)=>Object.keys(o).sort().join(',');
@@ -44,13 +46,26 @@ function sourceSettlementReceipt(evidence){
     expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
 }
 const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
-export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedFullCommerce=false,enableReviewedRebelTime=false}){
+export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedFullCommerce=false,enableReviewedRebelTime=false,enableReviewedLordFiscal=false}){
+  if(typeof enableReviewedLordFiscal!=='boolean'||enableReviewedLordFiscal&&(!enableReviewedRebelTime||!enableReviewedFullCommerce))fail('fiscal requires external full commerce');
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   if(typeof enableReviewedFullCommerce!=='boolean')fail('explicit full commerce review');
   const normalCommerce=enableReviewedFullCommerce?reviewNormalCommerceItems(sources):null;
   if(normalCommerce!==null){
     if(!sources.writeSource.includes('$DT->{money}=$MAX_MONEY if $DT->{money}>$MAX_MONEY;'))fail('original DataWrite money cap required');
     street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
+  }
+  const lordTax=enableReviewedLordFiscal?reviewR4LordSaleTax({detail:sources.detailSource,item:sources.itemSource,turn:sources.turnSource}):null;
+  if(lordTax){
+    for(const [k,pin] of Object.entries({buySource:'6ba8df9a733ed16c490389414cd94934fe1185ca',wholeSource:'778badaf157326bcfd1f8fa1e310d94f94995eb3'})){
+      const s=sources[k];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==pin)fail('frozen wholesale '+k);
+    }
+    street=Object.freeze({...street,marketBuy:Object.freeze({...street.marketBuy,projectSourceTax({world,rule,count,gross}){
+      if(gross===0)return 0;
+      const context=createR4LordSaleTaxContext({reviewed:lordTax,townTaxRate:world.period.disk.lordTaxRate,
+        taxMode:undefined,eventState:world.period.eventState.rebel?{rebel:world.period.eventState.rebel}:{}});
+      return projectR4LordSaleTax({context,count,gross,basePrice:rule.unitPrice}).tax;
+    }})});
   }
   const capApplied=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>capReviewedCommerceCash(s,normalCommerce))};
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
@@ -70,11 +85,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
     reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:externalData.rebel,reviewedManualCommerce:externalData.manual??null}):null;
-  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,externalRebel:enableReviewedRebelTime}):null;
-  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k))||(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(k));
+  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,externalRebel:enableReviewedRebelTime,lordFiscal:enableReviewedLordFiscal}):null;
+  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k))||(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(k))||(disk?.lord&&LORD_COMMANDS.includes(k));
   const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce}):null;
   const externalPeriod=externalData?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,reviewedRebelNow:externalData.rebel}):null;
-  const needsExternal=period=>Object.hasOwn(period.eventState??{},'rebel')||period.town?.leader!==0;
+  const needsExternal=world=>Object.hasOwn(world.period.eventState??{},'rebel')||world.period.town?.leader!==0||Boolean(lordTax&&(world.period.disk?.lordTaxRate>0||world.shops.some(s=>s.taxmode!==0&&s.taxmode!==undefined)));
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
   // initialize the crossing CAS adapter. Retain bounded canonical digests.
@@ -91,7 +106,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);
     }
-    const external=enableReviewedRebelTime&&needsExternal(period);
+    const external=enableReviewedRebelTime&&needsExternal(world);
     if(external&&period.settledCount<1)fail('external time requires settled source state');
     validateR4PreEventPeriod({reviewed:external?externalData:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk),externalCandidate:external});
     if(world.market===null){
@@ -126,12 +141,12 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const input=disk?independentCandidateWorld(world):world;
     const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod};
     const crossing=disk&&projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+command.minutes*60}).crossesSettlement;
-    if(enableReviewedRebelTime&&needsExternal(world.period)){
+    if(enableReviewedRebelTime&&needsExternal(world)){
       requireProvenance(world);
       const candidate=projectR4ExternalCrossPeriodCandidate({...args,reviewedDataRead:externalData,reviewedEvents:externalEvents,reviewedPeriod:externalPeriod,
-        liveArmyBytes:world.period.disk.live['army.cgi']?.bytes??null});
+        liveArmyBytes:world.period.disk.live['army.cgi']?.bytes??null,...(lordTax?{taxRate:world.period.disk.lordTaxRate,reviewedLordSaleTax:lordTax}:{})});
       const {shops,market,period,nowSeconds,evidence,stagedArmyBytes}=candidate;
-      if(candidate.source!==R4_EXTERNAL_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||candidate.taxRate!==0||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete external time candidate required');
+      if(candidate.source!==R4_EXTERNAL_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||(!lordTax?candidate.taxRate!==0:!Number.isSafeInteger(candidate.taxRate)||candidate.taxRate<0||candidate.taxRate>40)||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete external time candidate required');
       const sourceTrace=projectExternalTimeTrace(candidate);
       const saleReceipt=projectExternalSaleReceipt(candidate);
       const settlementReceipt=sourceSettlementReceipt(evidence);
@@ -139,12 +154,12 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         if(normalCommerce!==null){const boundary=evidence.slices.find(s=>s.dateupdate===1).preEvent;
           settlementReceipt.shelfSales=boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0}));settlementReceipt.costBeforeLedger=String(boundary.periodLogInput.shop.costtoday);}}
       const shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
-      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,armyBytes:stagedArmyBytes,receipt:{
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,armyBytes:stagedArmyBytes,...(lordTax?{lordTaxRate:candidate.taxRate}:{}),receipt:{
         action:REVIEWED_WORLD_TIME_COMMAND,source:candidate.source,minutes:command.minutes,elapsedSeconds:command.minutes*60,
-        ...saleReceipt,...(normalCommerce!==null?{shelfSales}:{}),
+        ...saleReceipt,...(lordTax?{lordTax:evidence.slices.map(s=>s.lordTax)}:{}),...(normalCommerce!==null?{shelfSales}:{}),
         itemTurnAffectedSlices:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0),
         settlementReceipt,sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
-        scope:'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
+        scope:lordTax?'source-reviewed independent settled external fiscal time; no guild or dragon':'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
     }
     if(disk&&(crossing||world.period.settledCount>0)){
       const candidate=(world.period.settledCount>0?projectR4SettledPeriodCandidate:projectR4CrossPeriodCandidate)(args);
@@ -196,9 +211,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):capApplied(applied);
   }
   const wrapped=Object.freeze({...street,
-    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[]),...(enableReviewedRebelTime?CONFLICT_COMMANDS:[])]),
+    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[]),...(enableReviewedRebelTime?CONFLICT_COMMANDS:[]),...(disk?.lord?LORD_COMMANDS:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
+    ...(disk?.lord?{reviewedLordFiscal:true,describeLord:world=>{validate(world);requireProvenance(world);return disk.describeLord(world);}}:{}),
     ...(enableReviewedRebelTime?{reviewedRebelTime:true,describeConflict:world=>{validate(world);requireProvenance(world);return disk.describeConflict(world);}}:{}),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
@@ -218,6 +234,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       if(!allowedOrdinary(command.kind))fail('legacy or internal fixture cannot enter reviewed normal-time runtime');
       validate(world);
       if(disk&&command.kind==='reviewed-sparse-all-plus')fail('isolated PLUS fixture cannot enter crossing runtime');
+      if(disk?.lord&&LORD_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyLord(world,command);}
       if(command.kind===PALACE_COMMAND){requireProvenance(world);return disk.applyPalace(world,command);}
       if(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyConflict(world,command);}
       if(ARMY_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyArmy(world,command);}
@@ -240,7 +257,8 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       if(disk){
         if(!allowedOrdinary(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
         let applied;
-        if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
+        if(disk.lord&&LORD_COMMANDS.includes(command.kind))applied=disk.applyLord(before,command);
+        else if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
         else if(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(command.kind))applied=disk.applyConflict(before,command);
         else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
         else if(command.kind==='use-item'&&street.useItem?.getRule(command.itemId,command.useId)?.inlineCallback?.kind==='local-self-industry-rumor'){

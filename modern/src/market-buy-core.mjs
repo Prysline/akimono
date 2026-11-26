@@ -138,7 +138,8 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   // The source taxes the synthetic wholesale seller, not the buyer. Retain
   // actual GetSaleTax in the receipt without charging it twice.
   const tax=marketBuy.reviewedSignedCash===true&&price>0?Math.trunc(total*Math.min(99,Math.trunc(Math.max(0,price/rule.unitPrice-1)*5+0.5))/100):0;
-  const sourceTax=price===0?0:tax;
+  const sourceTax=price===0?0:typeof marketBuy.projectSourceTax==='function'?safe(marketBuy.projectSourceTax({world,rule,count,gross:total}),'source wholesale tax'):tax;
+  if(sourceTax>total)fail('source tax exceeds gross');
   const receipt={
     action:MARKET_BUY_COMMAND,shopId:shop.id,itemId:rule.itemId,
     source:rule.source,scope:rule.scope??'source-reviewed subset',

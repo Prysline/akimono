@@ -25,7 +25,7 @@ export function reviewR4RebelOrdinaryContext(sources,options={}){
      !sources.useSource.includes('$count=0 if ($USE->{needevent} && !$DTevent{$USE->{needevent}});'))
     fail('source tax/event gate drift');
   const data=reviewR4ExternalPreEventItemOverlay(sources,options);
-  const r=Object.freeze({data,committable:false});
+  const r=Object.freeze({data,committable:false,lordFiscal:options.includeReviewedLordFiscal===true});
   reviews.add(r);return r;
 }
 export function validateR4RebelOrdinaryContext({reviewed,world}){
@@ -34,11 +34,12 @@ export function validateR4RebelOrdinaryContext({reviewed,world}){
        world.streetId!=='standard-street'||world.shops?.length!==1)return false;
     const p=world.period,shop=world.shops[0],disk=p?.disk;
     if(p?.state!==R4_SETTLED_STATE||p.settledCount<1||disk?.source!==R4_INDEPENDENT_DISK||
-       shop.id!==1||shop.status!==1||shop.taxmode!==0||shop.guild!==''||
-       Object.hasOwn(shop,'army')||(!Object.hasOwn(p.eventState,'rebel')&&p.town.leader!==1))return false;
+       shop.id!==1||shop.status!==1||(reviewed.lordFiscal?!['',0,1,2].includes(shop.taxmode):shop.taxmode!==0)||shop.guild!==''||
+       Object.hasOwn(shop,'army')||(!reviewed.lordFiscal&&!Object.hasOwn(p.eventState,'rebel')&&p.town.leader!==1))return false;
     const play=disk.live['play.cgi'].bytes.split('\n');
     const header=play[1].split(',');
-    if(header.length!==5||header[3]!=='0'||play[3]!==Object.entries(p.eventState).flat().join(','))return false;
+    const rate=reviewed.lordFiscal?disk.lordTaxRate:0;
+    if(!Number.isSafeInteger(rate)||rate<0||rate>40||header.length!==5||header[3]!==String(rate)||play[3]!==Object.entries(p.eventState).flat().join(','))return false;
     if(Object.hasOwn(p.eventState,'rebel')){
       const armyBytes=disk.live['army.cgi']?.bytes;
       const army=parseArmyFile(armyBytes,[1]);

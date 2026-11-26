@@ -183,7 +183,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
-  originalShowcaseSource=null,enableReviewedFullCommerce=false,
+  originalShowcaseSource=null,originalLordViewSource=null,originalLordCommandSource=null,enableReviewedLordFiscal=false,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedRebelTime=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
@@ -192,9 +192,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
   if(typeof enableReviewedRebelTime!=='boolean'||enableReviewedRebelTime&&!enableReviewedCrossPeriod)bad('external time requires reviewed crossing');
   if(typeof enableReviewedFullCommerce!=='boolean'||enableReviewedFullCommerce&&!enableReviewedNormalTime)bad('full commerce requires reviewed normal time');
-  const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
+  if(typeof enableReviewedLordFiscal!=='boolean'||enableReviewedLordFiscal&&(!enableReviewedRebelTime||!enableReviewedFullCommerce))bad('fiscal requires external full commerce');
+  const r4Sources={itemSource:originalItemSource,buySource:originalBuySource,wholeSource:originalWholeSource,lordViewSource:originalLordViewSource,lordCommandSource:originalLordCommandSource,itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources,{includeReviewedManualCommerce:enableReviewedFullCommerce&&enableReviewedCrossPeriod}):null;
-  const rebelOrdinaryReview=enableReviewedRebelTime?reviewR4RebelOrdinaryContext({...r4Sources,buySource:originalBuySource,useSource:originalUseSource},{includeReviewedManualCommerce:enableReviewedFullCommerce}):null;
+  const rebelOrdinaryReview=enableReviewedRebelTime?reviewR4RebelOrdinaryContext({...r4Sources,buySource:originalBuySource,useSource:originalUseSource},{includeReviewedManualCommerce:enableReviewedFullCommerce,includeReviewedLordFiscal:enableReviewedLordFiscal}):null;
   const knownOrdinaryEvents=world=>(ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod}))||
     (rebelOrdinaryReview!==null&&validateR4RebelOrdinaryContext({reviewed:rebelOrdinaryReview,world}));
   const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
@@ -1087,5 +1088,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedFullCommerce,enableReviewedRebelTime}):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedFullCommerce,enableReviewedRebelTime,enableReviewedLordFiscal}):base;
 }
