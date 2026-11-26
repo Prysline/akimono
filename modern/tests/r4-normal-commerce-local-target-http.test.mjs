@@ -26,7 +26,7 @@ test('R4 genuine forbidden book exposes original point gate, denies unowned targ
   const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true});
   await p.market(13);await p.market(65);await p.enoughTime(18000);
   assert.ok(p.state.shop.point<20000);
-  for(const [useId,fee] of [[0,0],[1,50000]]){
+  for(const [useId,fee] of [[0,0],[1,50000],[2,50000]]){
     const q=p.quote(65,useId);
     assert.equal(q.targetShopId,1);assert.equal(q.moneyPerUse,fee);
     assert.equal(q.canUse,false);assert.match(q.reason,/點數不足/);

@@ -434,7 +434,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // Only the authenticated local shop is a legal HTTP target. Preserve
   // the existing two-shop memory rule separately outside this mode.
   const localTargetUses=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
-    compileReviewedLocalTargetUses({sources:r4Sources,model,limits:giftMap.limits,targetAdvertiseUse}):[];
+    compileReviewedLocalTargetUses({sources:r4Sources,model,limits:giftMap.limits,targetAdvertiseUse,manualCommerce:ordinaryEventReview?.manual??null}):[];
   const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,

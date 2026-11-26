@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {projectSharedUseItem} from './shared-use-item-core.mjs';
 import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
 /** Opt-in source-reviewed local normal-time command and exact CAS reviewer.
  * No crossing settlement, external special EVENT context, arbitrary draw or
@@ -194,7 +195,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         let applied;
         if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
         else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
-        else{
+        else if(command.kind==='use-item'&&street.useItem?.getRule(command.itemId,command.useId)?.inlineCallback?.kind==='local-self-industry-rumor'){
+          if(command.expectedRevision!==before.revision)fail('manual EVENT USE revision');
+          // Recompute shared USE directly; outer reviewer owns period mutation.
+          applied=projectSharedUseItem({world:before,command,useItem:street.useItem});
+        }else{
           const result=applyGameCommand({world:before,command,streetModule:street});
           if(!result.ok)fail('source ordinary replay rejected');
           applied={shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details};

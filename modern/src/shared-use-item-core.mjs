@@ -221,6 +221,7 @@ export function projectSharedUseItem({world,command,useItem}){
     if(!inlineLocalTarget||typeof inlineLocalTarget.returned!=='string'||!Array.isArray(inlineLocalTarget.logCalls)||
       !Number.isSafeInteger(inlineLocalTarget.rank)||inlineLocalTarget.rank<0||inlineLocalTarget.rank>10000||
       !inlineLocalTarget.exp||typeof inlineLocalTarget.exp!=='object'||Array.isArray(inlineLocalTarget.exp))fail('local target callback result');
+    if(inlineLocalTarget.eventState!==undefined&&(rule.inlineCallback.kind!=='local-self-industry-rumor'||!world.period||!inlineLocalTarget.manualEventActivation))fail('unreviewed local EVENT callback');
     nextShop.rank=inlineLocalTarget.rank;
     nextShop.exp={...inlineLocalTarget.exp};
     functionReturn=inlineLocalTarget.returned;
@@ -384,6 +385,7 @@ export function projectSharedUseItem({world,command,useItem}){
     }));
   return {
     shops:nextShops,market,
+    ...(inlineLocalTarget?.eventState?{period:{...world.period,eventState:inlineLocalTarget.eventState}}:{}),
     receipt:{
       action:USE_ITEM_COMMAND,shopId:command.shopId,
       itemId:rule.itemId,useId:rule.useId,source:rule.source,
@@ -393,6 +395,7 @@ export function projectSharedUseItem({world,command,useItem}){
       moneySpent:original.moneySpent,timeSpentSeconds:original.timeSpentSeconds,
       ...(inlineWork?{moneyEarned:inlineWork.earned}:{}),
       experienceGain,experienceReductions,
+      ...(inlineLocalTarget?.manualEventActivation?{manualEventActivation:inlineLocalTarget.manualEventActivation}:{}),
       useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
       originalAddItem:added,

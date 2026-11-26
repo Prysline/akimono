@@ -24,9 +24,9 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
   assert.ok(report.items.every(x=>x.lawfulAcquisition==='requires route evidence'));
   assert.equal(report.summary.fullCommerceSaleRules,67);
   assert.equal(report.summary.registeredUses,112);
-  assert.equal(report.summary.fullCommerceRegisteredUses,115);
-  assert.equal(report.summary.fullCommerceListedUses,115);
-  assert.deepEqual(report.summary.fullCommerceUnregisteredUses.map(x=>[x.itemId,x.useId]),[[65,2]]);
+  assert.equal(report.summary.fullCommerceRegisteredUses,116);
+  assert.equal(report.summary.fullCommerceListedUses,116);
+  assert.deepEqual(report.summary.fullCommerceUnregisteredUses.map(x=>[x.itemId,x.useId]),[]);
   assert.equal(report.items[61].uses[1].fullCommerceListedUse,true);
   assert.equal(report.items[61].uses[2].fullCommerceListedUse,true);
   assert.match(report.items[61].uses[2].fullCommerceScope,/no-guild/);
@@ -49,7 +49,7 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
     assert.equal(e.activation.strictExpiry,true);
     assert.equal(e.activation.declaredEndMessageEmitted,false);
     assert.ok(e.activation.changedPoints.some(row=>row[2]===-400));
-    assert.match(e.runtimeAndPlayerEvidence,/formal USE.*unverified/);
+    assert.match(e.runtimeAndPlayerEvidence,/formal local USE.*unverified/);
   }
   t.diagnostic('R4 full commerce audit '+JSON.stringify(report.summary));
 });

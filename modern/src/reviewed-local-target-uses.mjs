@@ -4,9 +4,10 @@
  */
 import {parseDsl} from './parse-dsl.mjs';
 import {reviewTargetCommerceCallbacks,projectTargetCommerceCallback} from './original-r4-target-commerce-callbacks.mjs';
+import {isReviewedManualCommerceEvents,orderManualCommerceActivation,R4_MANUAL_COMMERCE_EVENT_CODES} from './original-r4-manual-commerce-events.mjs';
 const rules=new WeakMap();
 const fail=s=>{throw new RangeError('R4 local target USE: '+s)};
-export function compileReviewedLocalTargetUses({sources,model,limits,targetAdvertiseUse}){
+export function compileReviewedLocalTargetUses({sources,model,limits,targetAdvertiseUse,manualCommerce=null}){
   const reviewed=reviewTargetCommerceCallbacks(sources);
   if(model?.items?.length!==79||limits?.length!==79||limits[64]?.limit!==1||
     targetAdvertiseUse?.itemId!==62||targetAdvertiseUse?.useId!==1)fail('source inputs');
@@ -17,7 +18,7 @@ export function compileReviewedLocalTargetUses({sources,model,limits,targetAdver
     inlineCallback:Object.freeze({kind:'local-self-advertise-other'}),
     source:'original-reviewed-local-self-target-advertisement',
     scope:'source local self-target rejection after consumption; no other-shop authorization'})];
-  for(const useId of [0,1]){
+  for(const useId of (isReviewedManualCommerceEvents(manualCommerce)?[0,1,2]:[0,1])){
     const q=reviewed.rules['65:'+useId];
     out.push(Object.freeze({supported:true,itemId:65,useId,localSelfTarget:true,
       source:'original-reviewed-local-self-target-forbidden-book',
@@ -28,25 +29,33 @@ export function compileReviewedLocalTargetUses({sources,model,limits,targetAdver
       uses:Object.freeze([Object.freeze({itemId:65,countPerUse:1,probabilityPermille:1000})]),
       creates:Object.freeze([]),
       experienceCallback:Object.freeze({kind:'gain-fixed-exp',points:q.exp}),
-      inlineCallback:Object.freeze({kind:useId===0?'local-self-rumor':'local-self-theft'}),
-      scope:'source local self-target only; other-shop compensation/theft and manual EVENT remain uncommitted'}));
+      inlineCallback:Object.freeze({kind:useId===0?'local-self-rumor':useId===1?'local-self-theft':'local-self-industry-rumor'}),
+      scope:'source local self-target only; other-shop compensation/theft remain uncommitted; industry EVENT is local only'}));
   }
-  for(const rule of out)rules.set(rule,reviewed);
+  for(const rule of out)rules.set(rule,{reviewed,manualCommerce});
   return Object.freeze(out);
 }
 export function projectReviewedLocalTargetUse({rule,shop,count,random,world}){
-  const reviewed=rules.get(rule);
+  const {reviewed,manualCommerce}=rules.get(rule)??{};
   if(!reviewed||count!==1||world?.shops?.length!==1||world.shops[0].id!==shop.id||
     shop.id!==1||shop.status!==1||shop.guild!==''||shop.item[rule.itemId-1]!==0)fail('post-consumption local target');
   if(rule.itemId===62)return {rank:shop.rank,exp:{...shop.exp},returned:'沒辦法指定自己的商店',logCalls:[]};
   const result=projectTargetCommerceCallback({reviewed,itemId:65,useId:rule.useId,
     shops:[shop],actorIndex:0,targetIndex:0,town:world.period.town,events:world.period.eventState,
-    nowSeconds:world.nowSeconds,randomDraws:rule.useId===0?[Math.round(random()*1000000)]:[]});
+    nowSeconds:world.nowSeconds,randomDraws:rule.useId!==1?[Math.round(random()*1000000)]:[]});
   const next=result.shops[0];
   // Do not silently drop any other state changes from this limited adapter.
   const {rank,exp,...unchanged}=next;
   const {rank:oldRank,exp:oldExp,...old}=shop;
-  if(JSON.stringify(unchanged)!==JSON.stringify(old)||JSON.stringify(result.town)!==JSON.stringify(world.period.town)||
-    JSON.stringify(result.events)!==JSON.stringify(world.period.eventState))fail('unexpected external local target effect');
-  return {rank,exp,returned:result.returned,logCalls:result.logs};
+  if(JSON.stringify(unchanged)!==JSON.stringify(old)||JSON.stringify(result.town)!==JSON.stringify(world.period.town) )fail('unexpected external local target effect');
+  const before=world.period.eventState,added=Object.keys(result.events).filter(k=>!Object.hasOwn(before,k));
+  if(Object.keys(before).some(k=>result.events[k]!==before[k])||added.length>1||added.length&&rule.useId!==2)fail('unexpected EVENT effect');
+  let eventState,manualEventActivation;
+  if(added.length){
+    const code=added[0],expiresAtSeconds=result.events[code];
+    if(!R4_MANUAL_COMMERCE_EVENT_CODES.includes(code))fail('manual EVENT code');
+    eventState=orderManualCommerceActivation({reviewed:manualCommerce,world,code,expiresAtSeconds});
+    manualEventActivation={code,expiresAtSeconds};
+  }
+  return {rank,exp,returned:result.returned,logCalls:result.logs,...(eventState?{eventState,manualEventActivation}:{})};
 }

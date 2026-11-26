@@ -318,7 +318,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='advertise-self'||inline==='local-self-rumor'?1:
+      inline==='advertise-self'||inline==='local-self-rumor'||inline==='local-self-industry-rumor'?1:
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];

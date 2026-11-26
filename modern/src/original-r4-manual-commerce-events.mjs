@@ -4,6 +4,7 @@
  * negative ITEM metadata, automatic start, or external target authority.
  */
 import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import {reviewOriginalCompiledEventCatalog} from './original-event-compiled-catalog.mjs';
 import {loadStandardStreetModel} from './standard-street-model.mjs';
 export const R4_MANUAL_COMMERCE_EVENT_CODES=Object.freeze(['kill-ken','kill-yoroi','kill-tate','kill-tue']);
@@ -15,7 +16,7 @@ export const isReviewedManualSaleRule=r=>saleRules.has(r);
 export function reviewManualCommerceEvents(sources){
   for(const [k,sha] of Object.entries(pins)){
     const s=sources[k];
-    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\\0').update(s).digest('hex')!==sha)fail('frozen source drift '+k);
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('frozen source drift '+k);
   }
   const catalog=reviewOriginalCompiledEventCatalog(sources);
   const model=loadStandardStreetModel(sources.itemDsl,sources.rebelDsl);
@@ -29,7 +30,7 @@ export function reviewManualCommerceEvents(sources){
     if(!event||event.compiled||event.startProba!==-1||event.baseTimeSeconds!==0||event.plusTimeSeconds!==0||
        Object.values(event.callbacks).some(v=>v!==null))fail('manual event catalog '+code);
     const rows=event.parameterRows.map(raw=>{
-      const m=/^(.+?)\\s+point=(-?\\d+)$/.exec(raw);
+      const m=/^(.+?)\s+point=(-?\d+)$/.exec(raw);
       const item=m&&model.items.find(i=>i.name===m[1]);
       if(!item)fail('manual source POINT row '+raw);
       return Object.freeze({itemId:item.id,point:Number(m[2])});
@@ -52,4 +53,24 @@ export function reviewedManualSaleRule({reviewed,rule,activeOrder}){
   if(!reviews.has(reviewed)||!Array.isArray(activeOrder)||!Number.isSafeInteger(rule?.point)||rule.point>=0||
     !activeOrder.some(code=>reviewed.rules[code]?.some(r=>r.itemId===rule.itemId&&r.point===rule.point)))fail('negative point must come from an active manual source EVENT');
   const result=Object.freeze({...rule});saleRules.add(result);return result;
+}
+
+/** Native USE-request hash reconstruction; seed is local replay policy. */
+export function orderManualCommerceActivation({reviewed,world,code,expiresAtSeconds}){
+  if(!reviews.has(reviewed)||!R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)||
+    typeof world?.worldId!=='string'||!Number.isSafeInteger(world.revision)||
+    !Number.isSafeInteger(world.nowSeconds)||expiresAtSeconds!==world.nowSeconds+28800||
+    !Number.isSafeInteger(expiresAtSeconds))fail('manual activation identity');
+  const active=Object.entries(world.period.eventState);
+  if(active.length>20||active.some(([k,v])=>k===code||!Number.isSafeInteger(v)||v<0||!/^[a-z0-9-]+$/.test(k)))fail('manual activation input');
+  const seed='0x'+createHash('sha256').update(JSON.stringify(['r4-manual-commerce-use-hash.v1',world.worldId,world.revision,world.nowSeconds,code])).digest('hex').slice(0,32);
+  const env={...process.env,PERL_HASH_SEED:seed,PERL_PERTURB_KEYS:'0'};
+  for(const k of ['PERL5OPT','PERL5LIB','PERLLIB','PERL_LOCAL_LIB_ROOT','PERL_MB_OPT','PERL_MM_OPT','PERL_HASH_SEED_DEBUG','PERL_UNICODE'])delete env[k];
+  const program='use strict;use warnings;use JSON::PP;local $/;my $in=decode_json(<STDIN>);my %DTevent=split(/,/,join(",",map { @$_ } @{$in->{active}}));$DTevent{$in->{code}}=$in->{until};print encode_json([keys %DTevent]);';
+  let keys;
+  try{keys=JSON.parse(execFileSync('perl',['-e',program],{input:JSON.stringify({active,code,until:expiresAtSeconds}),encoding:'utf8',env,timeout:3000,maxBuffer:16384,stdio:['pipe','pipe','pipe']}));}
+  catch{fail('native manual USE hash helper unavailable');}
+  const values=Object.fromEntries([...active,[code,expiresAtSeconds]]);
+  if(!Array.isArray(keys)||keys.length!==Object.keys(values).length||new Set(keys).size!==keys.length||keys.some(k=>!Object.hasOwn(values,k)))fail('native activation hash order');
+  return Object.fromEntries(keys.map(k=>[k,values[k]]));
 }
