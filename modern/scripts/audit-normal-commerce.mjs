@@ -9,8 +9,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {parseDsl,validateStandardStreet} from '../src/parse-dsl.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
-import {compileStandardStreetMarketBuyRegistry} from '../src/standard-street-market-buy-registry.mjs';
-import {reviewNormalCommerceItems,validateNormalCommerceInventory} from '../src/reviewed-normal-commerce-items.mjs';
+import {validateNormalCommerceInventory} from '../src/reviewed-normal-commerce-items.mjs';
 import {reviewOriginalTopPrize} from '../src/original-period-top-prize.mjs';
 import {validateP3Inventory} from '../src/original-b41-playable-sale.mjs';
 
@@ -35,6 +34,15 @@ const locations=[
  ['originalUseSource','modern/tests/original-perl/use.cgi'],
  ['originalItemHelperSource','modern/tests/original-perl/core-inc-item.cgi'],
  ['originalShowcaseSource','modern/tests/original-perl/sc-s.cgi'],
+ ['originalNewSource','modern/tests/original-perl/new.cgi'],
+ ['originalCustomSource','modern/tests/original-perl/pinned-custom.cgi'],
+ ['originalLogSource','modern/tests/original-perl/pinned-log.cgi'],
+ ['originalPalaceViewSource','modern/tests/original-perl/pinned-palace.cgi'],
+ ['originalPalaceCommandSource','modern/tests/original-perl/pinned-palace-s.cgi'],
+ ['originalPalaceConfigSource','custom/inc-palace.cgi'],
+ ['originalArmyViewSource','modern/tests/original-perl/pinned-army-view.cgi'],
+ ['originalArmyCommandSource','modern/tests/original-perl/pinned-army-s.cgi'],
+ ['originalArmyFileSource','modern/tests/original-perl/pinned-army.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));
@@ -54,6 +62,9 @@ export async function auditNormalCommerce(){
   if(!audit.ok)throw new Error('source declaration audit failed');
   const blocks=parsed.flatMap(p=>p.blocks);
   const street=createStandardStreetModule(input);
+  // Inspect the actual opt-in runtime, not a second approximation of its registry.
+  const fullStreet=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedCrossPeriod:true,enableReviewedFullCommerce:true});
+  const fullOffers=new Set(fullStreet.listUseOffers({shops:[],events:null}).map(o=>o.itemId+':'+o.useId));
   const numeric=JSON.parse(execFileSync('perl',['original-normal-commerce-item-compiler.pl'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
   }));
@@ -64,14 +75,13 @@ export async function auditNormalCommerce(){
     throw new Error('reviewed commerce registries unavailable');
   const turn=street.reviewedB41.p3TurnItems;
   const model=loadStandardStreetModel(input.itemDsl,input.rebelDsl);
-  const full=reviewNormalCommerceItems({itemDsl:input.itemDsl,compilerSource:input.originalCompilerSource,showcaseSource:input.originalShowcaseSource,turnSource:input.originalTurnSource});
-  const fullMarket=compileStandardStreetMarketBuyRegistry({itemDsl:input.itemDsl,rebelDsl:input.rebelDsl,model,compiled:street.reviewedGiftMapUse,compilerSource:input.originalCompilerSource,buySource:input.originalBuySource,wholeSource:input.originalWholeSource,itemSource:input.originalBuyItemSource,globalBuyCallback:street.marketBuy.globalBuyCallback,includeReviewedShowcaseTool:true});
+  const full=fullStreet.reviewedNormalCommerce,fullMarket=fullStreet.marketBuyRegistry;
   const prizes=reviewOriginalTopPrize({itemDsl:input.itemDsl,model,originalAddItemSource:input.originalUseSource,periodSource:input.originalPeriodSource,includeReviewedMultiShelf:true});
   const producerRules=[];
   for(const item of model.items){
     const uses=blocks.filter(u=>u.kind==='USE'&&u.file===item.source&&u.ownerItemLine===item.line);
     for(let useId=0;useId<uses.length;useId++){
-      const rule=street.useItem.getRule(item.id,useId);
+      const rule=fullStreet.useItem.getRule(item.id,useId);
       if(!rule)continue;
       const outputs=(rule.creates??[]).filter(o=>o.countPerUse>0&&o.probabilityPermille>0).map(o=>({itemId:o.itemId,count:o.countPerUse,probabilityPermille:o.probabilityPermille}));
       if(rule.inlineCallback?.kind==='milk-cow')outputs.push({itemId:26,sourceCallback:'milk-cow'});
@@ -116,6 +126,9 @@ export async function auditNormalCommerce(){
       uses:ownedUses.map((u,useId)=>({
         useId,source:source(u),declaration:fields(u),
         registryRule:street.useItem.getRule(id,useId)!==null,
+        fullCommerceRegistryRule:fullStreet.useItem.getRule(id,useId)!==null,
+        fullCommerceListedUse:fullOffers.has(id+':'+useId),
+        fullCommerceScope:fullStreet.useItem.getRule(id,useId)?.scope??null,
       })),
       // Explicitly do not infer any of these from declaration or registry.
       lawfulAcquisition:'requires route evidence',
@@ -148,6 +161,10 @@ export async function auditNormalCommerce(){
       fullCommerceExpRejected:items.filter(x=>!x.fullCommerce.experienceShape).map(x=>x.id),
       fullCommerceStaticDependencyMissing:items.filter(x=>!x.fullCommerce.staticDependencyReachable).map(x=>x.id),
       unregisteredUses:items.flatMap(x=>x.uses.filter(u=>!u.registryRule).map(u=>({itemId:x.id,useId:u.useId,source:u.source}))),
+      fullCommerceRegisteredUses:items.flatMap(x=>x.uses).filter(u=>u.fullCommerceRegistryRule).length,
+      fullCommerceUnregisteredUses:items.flatMap(x=>x.uses.filter(u=>!u.fullCommerceRegistryRule).map(u=>({itemId:x.id,useId:u.useId,source:u.source}))),
+      fullCommerceListedUses:items.flatMap(x=>x.uses).filter(u=>u.fullCommerceListedUse).length,
+      fullCommerceLimitedUses:[{itemId:62,useId:1,scope:'memory-only target shop; no single-shop HTTP target'}, {itemId:62,useId:2,scope:'no-guild callback only; positive member effects external'}],
       sourceRouteCaveat:'Static material closure ignores available time, money, career, EXP, point gates, exact RNG and external authorization; never proof of player acquisition.',
     },items,events,globalCallbacks};
 }

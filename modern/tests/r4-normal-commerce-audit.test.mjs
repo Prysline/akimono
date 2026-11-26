@@ -23,6 +23,13 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
   assert.equal(report.items[69].declaration.funct[0],'_local_');
   assert.ok(report.items.every(x=>x.lawfulAcquisition==='requires route evidence'));
   assert.equal(report.summary.fullCommerceSaleRules,67);
+  assert.equal(report.summary.registeredUses,112);
+  assert.equal(report.summary.fullCommerceRegisteredUses,113);
+  assert.equal(report.summary.fullCommerceListedUses,112);
+  assert.deepEqual(report.summary.fullCommerceUnregisteredUses.map(x=>[x.itemId,x.useId]),[[65,0],[65,1],[65,2]]);
+  assert.equal(report.items[61].uses[1].fullCommerceListedUse,false);
+  assert.equal(report.items[61].uses[2].fullCommerceListedUse,true);
+  assert.match(report.items[61].uses[2].fullCommerceScope,/no-guild/);
   assert.equal(report.items[62].fullCommerce.marketBuyRule,true);
   assert.equal(report.items[64].fullCommerce.saleRule.popularSeconds,0);
   assert.equal(report.items[63].fullCommerce.saleRule,null);
