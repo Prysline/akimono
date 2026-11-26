@@ -23,7 +23,19 @@ function decimal(v,crossPeriod=false){
   return s;
 }
 const fieldMin=(k,signedCash)=>k==='profitstock'||(k==='money'&&signedCash)?-Number.MAX_SAFE_INTEGER:0;
-function field(v,k,crossPeriod=false,signedCash=false){
+function taxHeader(v,reviewed){
+  const n=integer(v,'taxRate');
+  if(reviewed.lordTaxWire&&n>40)fail('unreviewed lord tax rate');
+  return n;
+}
+function field(v,k,crossPeriod=false,signedCash=false,lordTaxWire=false){
+  // Original taxside/treset deletes taxmode. DataWrite joins undef as
+  // an empty column; DataRead reloads that exact empty string.
+  if(lordTaxWire&&k==='taxmode'){
+    if(v===undefined||v==='')return '';
+    const n=integer(v,k);if(n>2)fail('unreviewed shop tax mode');
+    return String(n);
+  }
   if(textFields.has(k)||crossPeriod&&k==='job')return safeText(v,k);
   if(k==='rankingyesterday'&&v==='')return '';
   if(k==='costtoday')return decimal(v,crossPeriod);
@@ -65,27 +77,28 @@ function sparseWire(world){
   if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||p.stock.some((v,i)=>v!==world.wholesale[i]))fail('sparse wholesale numeric view mismatch');
   return p.originalCsv;
 }
-export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,signedCash=false,externalRebel=false,manualCommerce=null}={}){
+export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,signedCash=false,externalRebel=false,manualCommerce=null,lordTaxWire=false}={}){
+  if(typeof lordTaxWire!=='boolean'||lordTaxWire&&!crossPeriod)fail('explicit cross-period lord tax wire opt-in');
   if(manualCommerce!==null&&(!crossPeriod||!isReviewedManualCommerceEvents(manualCommerce)))fail('manual commerce wire review');
   if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||typeof signedCash!=='boolean'||typeof externalRebel!=='boolean'||(ordinaryMultiShelf||signedCash||externalRebel)&&!crossPeriod)fail('explicit cross-period wire opt-in');
   // DataWrite joins the actual arrays; DataRead splits both full arrays.
   // This only extends ordinary disk encoding, not the single-shelf time gate.
   if(ordinaryMultiShelf&&(!sources.writeSource.includes('join(",",@{$DT->{showcase}})')||!sources.writeSource.includes('join(",",@{$DT->{price}})')||!sources.incFuncSource.includes('@DT{qw(showcase price)}=map{[split(/,/,$_)]}@list[0,1];')))fail('source showcase wire drift');
   const data=reviewR4DataWriteFiles(sources);
-  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,signedCash,manualCommerce,...(externalRebel?{externalRebel:true}:{})});reviews.add(r);return r;
+  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,signedCash,manualCommerce,...(lordTaxWire?{lordTaxWire:true}:{}),...(externalRebel?{externalRebel:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
 export function serializePeriodPlay({reviewed,townReview,world}){
   check(reviewed);
   if(!plain(world)||!plain(world.events)||(!reviewed.crossPeriod&&Object.keys(world.events).length!==0)||!Array.isArray(world.shops)||world.shops.length>1)fail('explicit empty EVENT and zero/one active shop required');
   const lines=[String(integer(world.lasttime,'lasttime',1)),
-    [integer(world.people,'people'),integer(world.nextid,'nextid',1),safeText(world.blockip,'blockip'),integer(world.taxRate,'taxRate'),reviewed.stateFields.map(k=>integer(world.state?.[k],k)).join(':')].join(','),
+    [integer(world.people,'people'),integer(world.nextid,'nextid',1),safeText(world.blockip,'blockip'),taxHeader(world.taxRate,reviewed),reviewed.stateFields.map(k=>integer(world.state?.[k],k)).join(':')].join(','),
     reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events,reviewed):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
   if(world.shops.length){
     const s=world.shops[0];
     const shelves=integer(s.showcasecount,'showcasecount',1);
     if(s.status!==1||integer(s.id,'id',1)!==1||integer(s.foundation,'foundation',1)<1||integer(s.money,'money',fieldMin('money',reviewed.signedCash))>(reviewed.signedCash?999999999:1000000000)||shelves>(reviewed.ordinaryMultiShelf?8:1))fail('unreviewed B50 shop');
-    lines.push(reviewed.shopFields.map(k=>field(s[k],k,reviewed.crossPeriod,reviewed.signedCash)).join(','));
+    lines.push(reviewed.shopFields.map(k=>field(s[k],k,reviewed.crossPeriod,reviewed.signedCash,reviewed.lordTaxWire)).join(','));
     lines.push([wireArray(s.showcase,'showcase',shelves),wireArray(s.price,'price',shelves),wireArray(s.item,'item',79),...['itemyesterday','itemtoday','exp','user'].map(k=>wireMap(s[k],k,reviewed.crossPeriod))].join(':'));
   }
   return lines.join('\n')+'\n';
@@ -104,10 +117,10 @@ export function parsePeriodPlay({reviewed,townReview,bytes}){
   if(![6,8].includes(rows.length)||(!reviewed.crossPeriod&&rows[3]!=='')||rows[5]!=='//')fail('unreviewed play layout or EVENT');
   const h=rows[1].split(',');if(h.length!==5)fail('world header');
   const values=h[4].split(':');if(values.length!==11)fail('state fields');
-  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:integer(h[3],'taxRate'),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3],reviewed):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
+  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:taxHeader(h[3],reviewed),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3],reviewed):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
   if(rows.length===8){
     const cols=rows[6].split(',');if(cols.length!==32)fail('shop fields');
-    const s=Object.fromEntries(reviewed.shopFields.map((k,i)=>[k,textFields.has(k)||reviewed.crossPeriod&&k==='job'||k==='rankingyesterday'&&cols[i]===''?cols[i]:k==='costtoday'?Number(decimal(cols[i],reviewed.crossPeriod)):integer(cols[i],k,fieldMin(k,reviewed.signedCash))]));
+    const s=Object.fromEntries(reviewed.shopFields.map((k,i)=>[k,textFields.has(k)||reviewed.crossPeriod&&k==='job'||(k==='rankingyesterday'||reviewed.lordTaxWire&&k==='taxmode')&&cols[i]===''?cols[i]:k==='costtoday'?Number(decimal(cols[i],reviewed.crossPeriod)):integer(cols[i],k,fieldMin(k,reviewed.signedCash))]));
     const parts=rows[7].split(':');if(parts.length!==7)fail('shop segments');
     s.status=1;
     for(const [i,k] of ['showcase','price','item'].entries())s[k]=parts[i].split(',').map(v=>integer(v,k));

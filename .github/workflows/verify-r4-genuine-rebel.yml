@@ -15,11 +15,26 @@ on:
       - 'modern/tests/r4-rebel-reviewed-runtime.test.mjs'
       - 'modern/tests/r4-source-rebel-now.test.mjs'
       - 'modern/tests/b50-period-same-state-chain.test.mjs'
+      - 'modern/tests/r4-lord-*.test.mjs'
+      - 'modern/tests/support/r4-lord-*.mjs'
       - 'modern/tests/r4-perl-hash-replay.test.mjs'
       - 'modern/tests/original-perl/**'
       - '.github/workflows/verify-r4-genuine-rebel.yml'
 
 jobs:
+  lord-fiscal-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated lord fiscal source differential (not genuine player)
+        working-directory: modern
+        run: node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs
   genuine-rebel:
     runs-on: ubuntu-latest
     timeout-minutes: 60
