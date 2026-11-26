@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 181、歷史 32、待補 20。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 150 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 185、歷史 32、待補 16。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 154 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -79,8 +79,8 @@
 | original-perl/original-r4-b50-period-disk.t | 有效 | Perl Oracle（隔離 period disk tail） |
 | original-perl/original-r4-close-shop-archive-file.t | 有效 | 原版 Oracle（真隔離封存磁碟） |
 | original-perl/original-r4-close-shop-effects.t | 有效 | 原版 Perl Oracle（CloseShop／真 session unlink） |
-| original-perl/original-r4-data-files-backup.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-data-write-files.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-data-files-backup.t | 有效 | 原版 Oracle（真隔離備份 prelude／部分失敗） |
+| original-perl/original-r4-data-write-files.t | 有效 | 原版 Oracle（真隔離 DataWrite／rename／DataRead） |
 | original-perl/original-r4-declarative-event-cycle.t | 有效 | Perl Oracle（隔離 END/START） |
 | original-perl/original-r4-dragon-balance.t | 有效 | 原版 Perl Oracle（龍賽檔案／ledger） |
 | original-perl/original-r4-dynamic-population-plus.t | 有效 | Perl Oracle（動態人口 PLUS） |
@@ -208,11 +208,11 @@
 | r4-source-b50-archive-disk-chain.test.mjs | 有效 | Perl Oracle／Node 差分＋Node 真隔離封存（非兩期原版磁碟差分） |
 | r4-source-b50-guild-ledger.test.mjs | 有效 | Perl Oracle／Node 差分（隔離公會磁碟） |
 | r4-source-b50-period-disk.test.mjs | 有效 | Perl Oracle／Node 差分（隔離 B50 磁碟） |
-| r4-source-backup-disk.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-backup-disk.test.mjs | 有效 | Perl Oracle／Node 差分（真隔離備份磁碟／失敗拒絕） |
 | r4-source-cas-http-save-restart.test.mjs | 歷史 | legacy HTTP／雙世代 fixture |
 | r4-source-close-shop-archive-file.test.mjs | 有效 | Perl Oracle／Node 差分（真隔離封存磁碟） |
 | r4-source-close-shop-effects.test.mjs | 有效 | Perl Oracle／Node 差分（CloseShop 真 session unlink、封存文字／SortDT） |
-| r4-source-data-write-files.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-data-write-files.test.mjs | 有效 | Perl Oracle／Node 差分（真隔離單檔 stage/rename/recovery） |
 | r4-source-dragon-balance.test.mjs | 有效 | 原版 Oracle／Node 差分（龍賽檔案／純 ledger） |
 | r4-source-guild-files.test.mjs | 有效 | Perl Oracle／Node 差分（隔離公會磁碟） |
 | r4-source-guild-period-fee.test.mjs | 有效 | Perl Oracle／Node 差分（單店會費呼叫） |

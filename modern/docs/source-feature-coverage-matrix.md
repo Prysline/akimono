@@ -101,3 +101,8 @@
 
 - 新審 4 檔：有效 181、歷史 32、待補 20；固定分母 233，分類收斂 213/233（91.4%）；收斂後另逐檔補審 150，既有分類重審 7、剩 56；候選新增 5 獨立計算。
 - [逐檔證據](r0-r4-period-backup-full-tail-evidence.md)：兩期真隔離三代五檔 rename/copy、session strict mtime、MakeGuildFile recorder；joint probe 真 CloseShop/SortDT/drapay 及備份尾段，第二期 closed shop prune、draws4。人工 activeFiles 非 DataWrite 產物，Node 每期 Oracle input 純投影不寫檔；外部 archive/guild/log 呼叫記錄，缺世代、失敗/原子性未驗，不升格正式玩家。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。Git DNS 仍失敗，R1-HTTP-01 未實跑；新候選 CI 待驗。
+
+### 第三十四批：R4 備份磁碟／DataWrite 及 DataRead
+
+- 新審 4 檔：有效 185、歷史 32、待補 16；固定分母 233，分類收斂 217/233（93.1%）；收斂後另逐檔補審 154，既有分類重審 7、剩 56；候選新增 5 獨立計算。
+- [逐檔證據](r0-r4-backup-data-write-disk-evidence.md)：原版 backup prelude 3600s 嚴格 mtime、缺來源截斷／目的目錄錯誤後續仍 copy、lasttime 仍更新；blocked work stale generations。Node 真隔離兩期 rotation、preflight 拒絕，非中途 OS failure 原子性。DataWrite 原版兩次真單檔 stage/rename、同程序 DataRead reload 後人工修改；Node 窄序列化與真單檔 rename failure/recover/discard，不重算 point、非完整 period/鎖/CAS/v2。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。Git DNS 仍失敗，R1-HTTP-01 未實跑；CI29–33 查詢仍 in_progress，新候選待驗。
