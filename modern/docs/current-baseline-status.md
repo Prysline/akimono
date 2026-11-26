@@ -95,3 +95,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 本批 R1 25 EVENT metadata oracle 與 gift 受控差分已逐項連結；14層 schema 檢查及六項負例待最新 CI。R0 既有分類覆核7、餘56。正式 runtime 未改。Canonical manifest 超過 Contents API 1MiB 文字回傳界線，續作從固定 tree 的 manifest blob SHA 使用 GitHub blob API 讀取，不把空 content 誤判檔案遺失。
 
 本批 [禮物卷與市場差分](r0-gift-market-oracle-evidence.md) 補審5檔，103/233 已分類，收斂後補審40；既有待覆核56不變。新增五筆 ITEM/USE 差分連結；正式正向數不變。新候選 CI 待驗。
+
+本批 R1 在既有 HTTP persistence 測試追加12個 transport/schema 拒絕案例（新增一個 subtest，五份候選 test files 數量不變），exact 新 HEAD CI 待驗；R1-HTTP-01 仍未實跑。

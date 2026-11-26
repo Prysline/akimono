@@ -100,3 +100,34 @@ test('R1 same-revision competing discard and same-generation competing saves com
  await p.stop();await p.boot();await p.command('/api/load',{},'LOADED');
  assert.deepEqual(await p.snapshot(),saved);
 });
+
+test('R1 formal HTTP rejects malformed transport, foreign origin and non-safe numeric payloads without side effects',async t=>{
+ const p=await auditPlayer(t),s=await p.open();
+ await p.command('/api/save',{expectedRevision:s.world.revision,expectedGeneration:s.save.generation},'SAVED');
+ const before=await p.snapshot(),rev=before.world.revision;
+ const legal={expectedRevision:rev,itemId:79,count:1};
+ const json=body=>JSON.stringify(body);
+ const cases=[
+   ['method GET',405,{method:'GET'}],
+   ['foreign Origin',403,{headers:{origin:'https://example.invalid'},body:json(legal)}],
+   ['malformed JSON',400,{body:'{"expectedRevision":'}],
+   ['null JSON',400,{body:'null'}],
+   ['array JSON',400,{body:'[]'}],
+   ['string JSON',400,{body:'"invalid"'}],
+   ['number JSON',400,{body:'1'}],
+   ['oversized request',400,{body:json({...legal,padding:'x'.repeat(4097)})}],
+   ['missing required count',400,{body:json({expectedRevision:rev,itemId:79})}],
+   ['boolean count',400,{body:json({...legal,count:true})}],
+   ['unsafe count',400,{body:json({...legal,count:Number.MAX_SAFE_INTEGER+1})}],
+   ['null revision',400,{body:json({...legal,expectedRevision:null})}],
+ ];
+ for(const [label,status,options] of cases){
+   const r=await p.raw('/api/discard',options);
+   assert.equal(r.status,status,label);
+   assert.equal(r.body.ok,false,label);
+   assert.deepEqual(await p.snapshot(),before,label+' must not change world/history/checkpoint/generation/disk');
+ }
+ await p.stop();await p.boot();
+ await p.command('/api/load',{},'LOADED');
+ assert.deepEqual(await p.snapshot(),before);
+});

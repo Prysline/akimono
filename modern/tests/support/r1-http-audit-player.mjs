@@ -31,6 +31,11 @@ export async function auditPlayer(t){
    const response=await fetch(url+route,body===undefined?{headers}:{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(body)});
    return {status:response.status,body:await response.json()};
  }
+ // Raw transport is for malformed-request negative tests, not gameplay.
+ async function raw(route,{method='POST',body,headers={}}={}){
+   const response=await fetch(url+route,{method,headers:{'content-type':'application/json',...headers},...(body===undefined?{}:{body})});
+   return {status:response.status,body:await response.json()};
+ }
  async function state(){return (await request('/api/state')).body;}
  async function post(route,body={}){return request(route,body);}
  async function command(route,body={},code='COMMITTED'){
@@ -52,5 +57,5 @@ export async function auditPlayer(t){
  }
  async function snapshot(){const s=await state();return {world:s.world,historyCommands:s.historyCommands,historyCheckpointRevision:s.historyCheckpointRevision,generation:s.save.generation,disk:await disk()};}
  await boot();
- return {directory,state,post,command,open,stop,boot,snapshot,request};
+ return {directory,state,post,command,open,stop,boot,snapshot,request,raw};
 }
