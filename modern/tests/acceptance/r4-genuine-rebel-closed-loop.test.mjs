@@ -13,6 +13,7 @@ import {createIndependentPeriodDiskStore} from '../../src/r4-independent-period-
 import {encodeMemorySnapshot} from '../../src/game-core-contract.mjs';
 import {parseArmyFile} from '../../src/original-r4-army-files.mjs';
 import {R4_EXTERNAL_COMMAND_HASH_POLICY} from '../../src/original-r4-perl-hash-replay.mjs';
+import {calculateSourceShopPoint} from '../../src/original-period-solo-sort.mjs';
 
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
 const WOOD=40,IRON=41,MITHRIL=43,PRICE_PER=75;
@@ -27,7 +28,7 @@ const missionRoutes={
   47:{book:21,useId:0,materials:[[5,20]]},
 };
 test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers, two-slice rebel CAS and durable replay',{timeout:3300000},async t=>{
-  let ticks=0,proceeds=0,maxPoint=0,missions=0;
+  let ticks=0,proceeds=0,maxPoint=0,missions=0,generation=0,fundsCheckpoint=false;
   const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,now:null,onTick(r,before){
     const old=before.shops[0],next=r.state.shop,d=r.details;
     assert.ok(++ticks<=2300,'bounded genuine time experiment exhausted');
@@ -47,6 +48,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
       }
       proceeds+=sold*old.price[0];
     }
+    assert.equal(r.state.palace.point,calculateSourceShopPoint(next),'source GetDTPoint, not cash balance');
     maxPoint=Math.max(maxPoint,r.state.palace.point);
     if(d.settlementReceipt)t.diagnostic('R4 genuine period '+JSON.stringify({
       period:r.state.world.period.settledCount,revision:r.state.world.revision,point:r.state.palace.point,
@@ -60,7 +62,8 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   const diagnostic=()=>JSON.stringify({revision:snapshot().revision,period:snapshot().period.settledCount,
     point:p.state.palace.point,maxPoint,rank:shop().rank,money:shop().money,profit:shop().profitstock,
     dignity:shop().dignity,mission:p.state.palace,ticks,proceeds,missions,population:snapshot().period.dtPeople,
-    upkeep:shop().costtoday,stock:shop().item.map((n,i)=>[i+1,n]).filter(([,n])=>n)});
+    upkeep:shop().costtoday,rankingcount:shop().rankingcount,saletoday:shop().saletoday,paytoday:shop().paytoday,taxtoday:shop().taxtoday,
+    pointAtMaximumRank:calculateSourceShopPoint({...shop(),rank:10000}),stock:shop().item.map((n,i)=>[i+1,n]).filter(([,n])=>n)});
   function bounded(){assert.ok(snapshot().revision<6500,'genuine command budget '+diagnostic());}
   async function command(route,body={}){
     bounded();
@@ -168,10 +171,41 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
       throw error;
     }
   }
+  async function checkpointFunds(){
+    if(fundsCheckpoint||shop().money<2700000||p.state.palace.owned<p.state.palace.count||missions!==0)return;
+    // A separately reported milestone in the SAME real player trajectory.
+    // The parent acceptance still fails unless every original gate succeeds.
+    await t.test('genuine 2.7m reserve and actual first mission inventory survive authenticated restart',async()=>{
+      assert.equal(shop().dignity,0);
+      const prior=snapshot(),history=p.state.historyCommands,task=p.state.palace;
+      assert.equal(task.point,calculateSourceShopPoint(shop()));
+      assert.ok(task.owned>=task.count&&shop().money>=2700000);
+      const denied=await p.post('/api/army-hire',{expectedRevision:prior.revision,requestedCount:2500});
+      assert.equal(denied.ok,false,'money alone cannot manufacture army capacity');
+      assert.deepEqual(snapshot(),prior);
+      assert.equal(p.state.historyCommands,history);
+      if(task.point<20000){
+        const audience=await p.post('/api/palace-complete',{expectedRevision:prior.revision});
+        assert.equal(audience.ok,false,'money and goods cannot bypass the source point gate');
+        assert.deepEqual(snapshot(),prior);
+        assert.equal(p.state.historyCommands,history);
+      }
+      const saved=await p.saveAndRestart(generation++);
+      assert.deepEqual(saved,prior);
+      assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(saved),true);
+      assert.equal(p.state.palace.owned,task.owned);
+      assert.equal(p.state.palace.point,task.point);
+      assert.equal(p.state.army.count,0);
+      assert.equal(Object.hasOwn(saved.period.disk.live,'army.cgi'),false);
+      t.diagnostic('R4 genuine FUNDS_AND_GOODS_CHECKPOINT '+diagnostic());
+    });
+    fundsCheckpoint=true;
+  }
   async function scoreAndCash(cash){
     for(let n=0;p.state.palace.point<20000||shop().money<cash;n++){
       assert.ok(n<1000,'genuine point/cash budget '+diagnostic());
       await economyTurn();
+      await checkpointFunds();
     }
     assert.ok(p.state.palace.point>=20000&&shop().money>=cash);
   }
@@ -235,7 +269,6 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   // Earn an audience and complete the first task before insisting on the
   // full recruitment reserve; a high score in the early city need not be
   // wasted while waiting for 2.7m cash. All subsequent goals remain exact.
-  let generation=0;
   await missionStock();
   await scoreAndCash(100000);
   t.diagnostic('R4 genuine first audience eligibility '+diagnostic());
