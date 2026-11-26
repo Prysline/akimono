@@ -4167,8 +4167,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（不可提交前綴）",
       "originalSource": "period.cgi、inc-func.cgi、use.cgi、兩 DSL",
-      "assertions": "同店同城市連續兩期、七階段、兩次排名／回呼、庫存、人口；禁止 CAS",
-      "executionPath": "original-period-solo-chain；明示 nonCommittable",
+      "assertions": "L45–56 七階段、79 cap、nonCommittable、移除 UpdateResetAfter drift；L57–78 兩期 shop/town、人口、points exact、輸入不變；L79–105 獨立 memory repo 不變及六種 projector 負例。",
+      "executionPath": "reviewOriginalSoloPeriodPhaseChain → projectOriginalSoloPeriodPhaseChain；每期取 Perl oracle input。",
       "risk": "把前綴當完整決算或重設城市",
       "disposition": "保留不可提交拒絕；#18/#22 完整鏈另證",
       "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
@@ -4181,6 +4181,10 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 13
+        },
+        {
+          "path": "modern/docs/r0-b50-b52-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -4190,7 +4194,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "原版同程序單店兩期，Node 每期重新讀 Oracle input，不證明自身連續提交；L82–92 只建立未傳給 projector 的 repo 並比較，不是真 CAS 拒絕測試。固定 clock/draw、人工資產；無外部 IO、正式 period/HTTP/v2。"
     },
     {
       "path": "modern/tests/b51-source-city-period-world.test.mjs",
@@ -4199,8 +4204,8 @@
       "status": "歷史",
       "evidenceLevel": "fixture／舊 CAS 存檔",
       "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi、write.cgi、_config.cgi",
-      "assertions": "129600s 期界、10800s shift、500000 人口、bootstrap-only envelope；拒絕偽造期別",
-      "executionPath": "original-period-world-seed；GameCore period memory；legacy-world-save-store",
+      "assertions": "L60–91 129600/10800、500000、town seed、兩 review 負例；L92–134 memory 初始化/開店 rev2、legacy disk gen1、四種偽造 period 拒絕、load snapshot exact；L135–176 七種 seed drift、generic schema 容許、v1/v2 downgrade CAS 與 dummy apply 拒絕。",
+      "executionPath": "reviewOriginalPeriodBootstrap → createPeriodMemoryWorld → executeMemoryCommand → legacy-world-save-store save/load；generic adapter compareAndSwap。",
       "risk": "混淆 memory v2 和磁碟 v2、城市偽造",
       "disposition": "保留 seed 及拒絕；P3 v2 存檔另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4209,6 +4214,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b50-b52-rereview-evidence.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -4216,7 +4225,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "固定 time=1000000，bootstrap-only，不執行結算；磁碟為 legacy store，不是正式 v2；拒絕後只核對 generation 及最終重載，不逐槽比 bytes；L77–82 缺 writeSource 且改 clockShift，未隔離 clockShift guard；沒有 HTTP 或新程序重啟。"
     },
     {
       "path": "modern/tests/b52-event-bootstrap-source.test.mjs",
@@ -4225,8 +4235,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分",
       "originalSource": "core-inc-admin-func.cgi、inc-func.cgi、write.cgi",
-      "assertions": "空 EVENT CSV、單 active expiry 往返、null 未知與空 map 區分、拒絕偽造活動事件",
-      "executionPath": "original-event-world-bootstrap / original-period-world-seed",
+      "assertions": "L25–46 空 CSV / 單 rebel wire、bootstrap 空 map、null 相容、active 拒絕及三 source mutation；L47–59 seed 空 map、null 可讀、active/array/hasOwnProperty 形狀拒絕。",
+      "executionPath": "reviewOriginalEmptyEventBootstrap / reviewOriginalPeriodBootstrap；Perl probe JSON 比對。",
       "risk": "未知 EVENT 被當空、虛構 expiry",
       "disposition": "保留；現行時間 unknown gate 另證",
       "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
@@ -4235,6 +4245,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b50-b52-rereview-evidence.md",
+          "line": 21
         }
       ],
       "realPlayer": false,
@@ -4244,7 +4258,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "Perl 只抽 admin seed 字串及 DataRead/DataWrite 單句，使用 scalar filehandle，非真磁碟；人工 rebel expiry，不證明發生事件。Node 無整體 world save 或 CAS/HTTP/v2。"
     },
     {
       "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -6232,13 +6247,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "period.cgi、inc-func.cgi、use.cgi、兩 DSL",
-      "assertions": "兩期同一原版店城、排名、禮券、機器人及帳本",
-      "executionPath": "Perl .t → original-b50-period-chain-probe.pl；Node 對照 b50-period-same-state-chain.test.mjs",
+      "assertions": "L9–43 exit/JSON、79 cap、兩期同店 town；rankingcount 1→2、gift stock10、robot1、帳本 rollover、money99983、EXP100→89→79、人口374050、每期3 draws、第二期承接前三欄。",
+      "executionPath": "Perl .t → original-b50-period-chain-probe.pl；真 SortDT/GetDTPoint/AddItem、RebelRobin、DSL before/after 與 period 前綴 eval。",
       "risk": "把前綴當完整決算或重設城市",
       "disposition": "保留原版來源斷言及探針；保留不可提交拒絕；#18/#22 完整鏈另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b50-b52-rereview-evidence.md",
+          "line": 29
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b50-period-chain-probe.pl"
@@ -6246,7 +6266,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "原版同程序保留 DT/STATE；人工 stock、EXP、帳、時間及每期 draw tape。probe L38–48 log/DragonBalance stub、CloseShop/guild/disk fail closed；L91–114 截至 backup 前，無完整 period/正式 IO；ITEMNO regex 替換非全 compiler。"
     },
     {
       "path": "modern/tests/original-perl/original-b52-event-wire.t",
@@ -6255,13 +6276,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "core-inc-admin-func.cgi、inc-func.cgi、write.cgi",
-      "assertions": "空 CSV、rebel expiry 123456、真讀寫",
-      "executionPath": "Perl .t → original-b52-event-wire-probe.pl；Node 對照 b52-event-bootstrap-source.test.mjs",
+      "assertions": "L9–18 exit/JSON、初始 active0、空行、rebel,123456 單行、回讀唯一 key。",
+      "executionPath": "Perl .t → original-b52-event-wire-probe.pl → admin seed regex、DataRead/DataWrite 單句 eval。",
       "risk": "未知 EVENT 被當空、虛構 expiry",
       "disposition": "保留原版來源斷言及探針；保留；現行時間 unknown gate 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b50-b52-rereview-evidence.md",
+          "line": 37
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b52-event-wire-probe.pl"
@@ -6269,7 +6295,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L19–35 抽 seed 與單句，L43–54 scalar handle 而非真檔；人工 active state，非實際 EVENT lifecycle、完整 admin/DataRead/DataWrite/commit 或玩家。"
     },
     {
       "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -43016,7 +43043,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 24
+    "reReviewedBaseline": 29
   },
   "provenance": [
     {
@@ -43098,7 +43125,8 @@
     "modern/docs/r0-r3-natural-sword-sales-evidence.md",
     "modern/docs/r0-b44-b47-rereview-evidence.md",
     "modern/docs/r0-b41-b43-rereview-evidence.md",
-    "modern/docs/r0-b48-b49-rereview-evidence.md"
+    "modern/docs/r0-b48-b49-rereview-evidence.md",
+    "modern/docs/r0-b50-b52-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

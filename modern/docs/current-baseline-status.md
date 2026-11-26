@@ -303,3 +303,9 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 四檔有效分類維持：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審24、剩39；實際逐檔194/233（83.3%）。
 - [逐檔證據](r0-b48-b49-rereview-evidence.md)：五／六個單 synthetic EVENT、固定 time/draw，原版 START 與 END/START region；strict expiry equality、group、duration、draw count；無真 callback/NOW/period/world IO/HTTP/CAS/v2；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - 第42批 CI 45844865477/job139995779986 success，實際 checkout `27f4fd45e9d915167057664e50cc89e3d4d006e0`，與 `50528dd` compare files=[]；JS1350/1350、0 fail/skip/cancelled，Perl2456/2456（85檔），DSL/source pins 通過；tree SHA 來自前 PR metadata，未獨立取 tree。新 HEAD 待驗；本機 Git DNS 仍失敗，strict repro 未實跑。
+
+### 第四十四批：B50–B52 既有分類重新覆核
+
+- 五檔維持4有效1歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審29、剩34；實際逐檔199/233（85.4%）。
+- [逐檔證據](r0-b50-b52-rereview-evidence.md)：B50 Perl 同程序兩期前綴，Node 每次 Oracle input；repo 未傳 projector，不是真 CAS 拒絕。B51 真 memory CAS/legacy disk bootstrap，不是正式 v2 或期末；clockShift 負例同時缺 writeSource。B52 原版 seed/單句與 scalar handle，非真磁碟或實際 EVENT。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- #24 三個補件檔與 #26 blob SHA 全相同，#23 registry audit script 相同，audit/repro/test/R5 plan 有差異仍須語義比對。第43批 CI 45849759031 查詢時 in_progress；本環境 git ls-remote 仍 DNS failure，strict repro 未實跑；新 HEAD 待驗。
