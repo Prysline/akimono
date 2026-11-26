@@ -323,3 +323,161 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
   assert.equal(p.stock(39),0);
   t.diagnostic(JSON.stringify({fundingWorks:p.fundingWorks,finalMoney:p.state.shop.money,period:p.state.world.period.settledCount}));
 });
+
+
+// Separate from the package careers. A single genuine player retains
+// at least eleven of each actual manufactured component: ten consumed by
+// the original dismantling recipe, a positive remainder for natural sale.
+test('R4 genuine #39/3-11 advanced dismantling, all sixteen manufactured components, robot recovery, natural sales and v2 reload',async t=>{
+  const sales={},crafts=[],recovered=[];
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,
+    fundingWorkBudget:240,fundingSaleItems:[40,45,51,57],onTick(r){
+      assert.equal(r.details.shelfSales.reduce((n,row)=>n+row.count,0),r.details.naturalSaleCount);
+      for(const [id,n] of Object.entries(r.details.soldByItem))sales[id]=(sales[id]??0)+n;
+    }});
+  await prepareAdvancedCapital(t,p);
+  // Retain the genuinely earned working capital, reduce recurring shelf
+  // maintenance and protect the dismantling training materials from sales.
+  await p.market(63);await p.use(63,0);
+  assert.equal(p.state.shop.showcasecount,1);
+  await p.list(0);
+  for(const [book,useId,id,raw,amount] of [[17,0,40,3,20],[17,1,57,3,20],[16,0,45,2,24],[16,1,51,2,24]]){
+    for(let n=0;p.stock(id)<20;n++){
+      assert.ok(n<12,'dismantling skill component #'+id);
+      if(!p.stock(book))await p.market(book);
+      await p.gather(raw,amount);await p.use(book,useId);
+    }
+  }
+  async function tool(id){if(!p.stock(id))await p.market(id);}
+  async function time(id,useId){
+    for(let n=0;n<8;n++){
+      const offer=p.quote(id,useId);
+      assert.ok(offer,'source USE #'+id+'/'+useId);
+      if(p.remaining()>=offer.timePerUseSeconds)return offer;
+      await p.enoughTime(offer.timePerUseSeconds);
+    }
+    assert.fail('source time quote convergence #'+id+'/'+useId);
+  }
+  await tool(37);await time(37,3);
+  assert.ok([40,57,45,51].every(id=>p.stock(id)>=20));
+  const skillBefore=p.state.shop;
+  const learned=await p.use(37,3);
+  assert.deepEqual(learned.details.originalAddItem,[[38,1]]);
+  for(const id of [40,57,45,51])assert.equal(p.stock(id),skillBefore.item[id-1]-20);
+  assert.equal(p.stock(38),1);
+  await tool(37);await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
+  await p.use(37,0);assert.equal(p.stock(18),1);
+  await tool(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
+  // Stock and EXP are still acquired by the existing genuine helpers.
+  for(const [book,basic,career,gates] of [[23,58,7,[0,250,500,700]],[20,41,4,[0,200,400,600]],[21,47,5,[0,200,400,600]],[22,53,6,[0,200,400,600]]]){
+    await tool(book);await tool(78);await p.ore(5,160);await p.use(78,career);
+    async function craft(useId){
+      await tool(book);
+      const raw=[5,5,6,7][useId],qty=useId===1?40:20,stone=book===23?[2,4,6,10][useId]:0;
+      await p.ore(raw,qty);if(stone)await p.stones(stone);
+      const offer=await time(book,useId);
+      if(p.exp(book)<gates[useId])return false;
+      assert.equal(offer.canUse,true);
+      const before=p.state.shop,id=basic+useId;
+      const r=await p.use(book,useId),d=r.details;
+      assert.equal(d.effectiveCount,1);
+      assert.equal(d.timeSpentSeconds,offer.timePerUseSeconds);
+      assert.equal(p.stock(raw),before.item[raw-1]-qty);
+      if(stone)assert.equal(p.stock(8),before.item[7]-stone);
+      const made=d.acquired.find(row=>row.itemId===id);
+      assert.equal(made?.attemptedCount,20);assert.equal(made?.probabilityPermille,[800,800,600,400][useId]);
+      assert.equal(p.stock(id),before.item[id-1]+made.produced);
+      assert.equal(p.exp(book),Math.min(1000,(before.exp?.[book]??0)+20));
+      assert.equal(p.stock(book),before.item[book-1]-(d.mapDestroyed?1:0));
+      assert.ok([18,19,38].every(i=>p.stock(i)===1));
+      crafts.push({book,useId,id,produced:made.produced,destroyed:d.mapDestroyed});
+      return true;
+    }
+    for(const useId of [0,1,2,3]){
+      for(let n=0;p.stock(basic+useId)<11;n++){
+        assert.ok(n<80,'source disassembly component budget '+JSON.stringify({book,useId,exp:p.exp(book),held:p.stock(basic+useId),period:p.state.world.period.settledCount,money:p.state.shop.money}));
+        if(p.exp(book)>=gates[useId]&&await craft(useId))continue;
+        // Train on source iron before checking the gate again; never
+        // import an already-skilled character or rewrite its EXP.
+        await craft(0);
+      }
+    }
+  }
+  const components=[41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61];
+  assert.ok(components.every(id=>p.stock(id)>=11));
+  const recipes=[
+    [3,[41,58],[[5,50,800],[8,10,500]]],
+    [4,[47,53],[[5,50,800]]],
+    [5,[42,59],[[5,100,800],[8,10,500]]],
+    [6,[48,54],[[5,100,800]]],
+    [7,[43,60],[[6,50,700],[8,20,500]]],
+    [8,[49,55],[[6,50,700]]],
+    [9,[44,61],[[7,50,600],[8,30,500]]],
+    [10,[50,56],[[7,50,600]]],
+  ];
+  const limits={5:1000,6:800,7:600,8:200};
+  for(const [useId,inputs,outputs] of recipes){
+    await tool(39);
+    for(const [id,amount] of outputs)if(p.stock(id)>limits[id]-amount)await p.discard(id,p.stock(id)-(limits[id]-amount));
+    const offer=await time(39,useId),before=p.state.shop;
+    assert.equal(offer.canUse,true);
+    const r=await p.use(39,useId),d=r.details;
+    assert.equal(d.effectiveCount,1);assert.equal(d.timeSpentSeconds,offer.timePerUseSeconds);
+    assert.equal(p.stock(39),before.item[38]-1);assert.equal(p.stock(38),1);
+    for(const id of inputs)assert.equal(p.stock(id),before.item[id-1]-10);
+    for(const [id,amount,prob] of outputs){
+      const got=d.acquired.find(row=>row.itemId===id);
+      assert.equal(got?.attemptedCount,amount);assert.equal(got?.probabilityPermille,prob);
+      assert.equal(p.stock(id),before.item[id-1]+got.produced);
+      assert.ok(got.produced>0);
+    }
+    assert.equal(d.experienceGain,Math.min(10,1000-(before.exp?.['39']??0)));
+    recovered.push({useId,added:d.originalAddItem});
+  }
+  // Robot is either an actual prize or an actual paid wholesale offer.
+  // Keep the whole action clock available before acquisition so a natural
+  // EVENT cannot be silently bypassed between purchase and disassembly.
+  await tool(39);
+  for(const id of [4,5,6,7,8,65])if(p.stock(id))await p.discard(id);
+  let robot=null;
+  for(let n=0;!robot;n++){
+    assert.ok(n<240,'genuine robot readiness '+JSON.stringify({money:p.state.shop.money,stock:p.stock(64),period:p.state.world.period.settledCount}));
+    const seconds=p.quote(39,11).timePerUseSeconds;
+    await p.enoughTime(seconds+600);
+    if(p.stock(64)){
+      const before=p.state.shop,done=await p.use(39,11);
+      assert.deepEqual(done.details.originalUseItem,[[39,1],[64,1]]);
+      assert.deepEqual(done.details.originalAddItem,[[5,300],[6,50],[7,10],[8,30],[65,1],[4,1]]);
+      assert.equal(p.stock(64),0);assert.equal(p.stock(38),1);
+      for(const [id,n] of done.details.originalAddItem)assert.equal(p.stock(id),before.item[id-1]+n);
+      robot={added:done.details.originalAddItem,revision:p.state.world.revision};
+      break;
+    }
+    const offer=p.state.marketOffers.find(x=>x.itemId===64);
+    const plan=planGenuineMarketStep({offer,owned:0,needed:1,partial:false,money:p.state.shop.money,
+      remaining:p.remaining()-seconds,reserve:Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000)});
+    if(plan.kind==='buy'){await p.market(64);continue;}
+    if(p.state.shop.money<545000)await p.use(13,1);else await p.tick(60);
+  }
+  const first=await p.saveAndRestart(0);
+  assert.equal(first.shops[0].item[63],0);assert.equal(first.shops[0].item[64],1);
+  await tool(39);
+  // Actual remaining components and an actual spare dismantling tool are
+  // displayed and sold individually; neither theft nor a static listing
+  // substitutes for the natural sale receipt.
+  for(const id of [...components,39]){
+    const prior=sales[id]??0;
+    await p.enoughTime(600);
+    assert.ok(p.stock(id)>0,'real manufactured remainder #'+id);
+    const list=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf:0,itemId:id,per:10});
+    assert.equal(list.code,'COMMITTED',JSON.stringify(list.details??list.error));
+    for(let n=0;(sales[id]??0)===prior&&n<576&&p.stock(id)>0;n++){
+      await p.tick(60);
+      if(n%24===23&&(sales[id]??0)===prior)await p.use(13,0);
+    }
+    assert.ok((sales[id]??0)>prior,'actual natural component sale #'+id);
+  }
+  const last=await p.saveAndRestart(1);
+  assert.equal(last.shops[0].item[37],1);assert.equal(last.shops[0].showcase[0],39);
+  t.diagnostic(JSON.stringify({crafts:crafts.length,recovered,robot,sales,first:first.revision,last:last.revision,fundingWorks:p.fundingWorks}));
+});

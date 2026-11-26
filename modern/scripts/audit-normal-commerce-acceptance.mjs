@@ -16,6 +16,7 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  advancedDismantling:'R4 genuine #39/3-11 advanced dismantling, all sixteen manufactured components, robot recovery, natural sales and v2 reload',
   naturalInstant:'R4 genuine five instant natural EVENT effects, repeated shelves, lottery payment and v2 replay',
   mortality:'R4 genuine full commerce cow mortality, persisted NEED denial, lawful replacement and fermentation',
   accessories:'R4 genuine #66/0-3 accessory manufacture, #67-70 natural sales, positive FUNCTURN and lostbook with dual v2 reload',
@@ -46,6 +47,7 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.advancedDismantling],acquire:[38,39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61,64,65],showcase:[39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61],sale:[39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61],uses:['37:3',...Array.from({length:9},(_,i)=>'39:'+(i+3))]},
   {tests:[title.naturalInstant],acquire:[11],events:['manbiki','goutou','getmoney','getpop','loto']},
   {tests:[title.mortality],uses:['25:1','26:1','79:4']},
   {tests:[title.accessories],acquire:[18,19,24,66,67,68,69,70],showcase:[67,68,69,70],sale:[67,68,69,70],uses:['37:0','37:1','37:2','66:0','66:1','66:2','66:3','78:3','79:0','79:3']},
