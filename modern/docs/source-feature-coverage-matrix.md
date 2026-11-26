@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 14 | 108 | 25 |
-| nodeDifferential | 14 | 108 | 25 |
+| perlOracle | 66 | 108 | 25 |
+| nodeDifferential | 66 | 108 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -209,3 +209,8 @@
 ### 第53批：製作／鍛造／乳製品／節慶
 
 [38 USE 詳細證據](r1-manufacturing-dairy-festival-evidence.md)：34 新詳細、4 既有補強；152/220（剩68），USE Oracle/Node 108，正式下界不變；固定材料/EXP/time/draw，lostbook 受控，不是新執行或正式玩家。R1-HTTP-01 尚未實跑。
+
+
+### 第54批：明示 GET 產物 ITEM
+
+[52 ITEM 逐項證據](r1-explicit-recipe-item-output-evidence.md)：依已測 USE 明示 GET 與 stock/receipt 差分逐項連結，不將全79槽向量硬映射。204/220（剩16）；ITEM Oracle/Node 66（52為限定產物差分，不是全部 ITEM 功能）；正式下界不變，未重跑。R1-HTTP-01 尚未實跑。

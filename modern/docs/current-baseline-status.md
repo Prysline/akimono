@@ -359,3 +359,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ## C 第53批 R1 詳細補鏈（待本提交 CI）
 
 [38 USE 證據](r1-manufacturing-dairy-festival-evidence.md)：118→152/220（34 新），USE Oracle/Node 70→108（38 補鏈），R0 233/233 不變。第52批 CI 45861136133 queued；第51批 45857315261 in_progress。未本地重跑；不升格正式玩家。
+
+
+## C 第54批 R1 ITEM 明示產物補鏈（待本提交 CI）
+
+[52 ITEM 證據](r1-explicit-recipe-item-output-evidence.md)：152→204/220，ITEM Oracle/Node 14→66（僅限定受控 GET 產物差分），正式下界不變。第53批 CI45861418600 queued（最近查詢）。不重跑或升格正式玩家。
