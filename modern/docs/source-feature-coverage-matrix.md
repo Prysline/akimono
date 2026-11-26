@@ -177,3 +177,9 @@
 - 四檔維持2有效2歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審41、剩22；實際逐檔211/233（90.6%）。
 - [逐檔證據](r0-b59-b60-rereview-evidence.md)：B59 5案 END/START、全79 numeric PLUS、手組 modifier；B60 9案真 temp event-n file 與 NOWFUNC、手工組裝非全 compiler；連續 memory CAS 有效受控證據，負例 pure apply 不是真 CAS；固定 clock/draw/order、legacy reload 非正式 v2。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - 本輪 git ls-remote 實際 DNS failure，未本機重跑；第44/45/46批最後查詢尚未完成，新 HEAD 待驗；strict repro 未實跑。
+
+### 第四十八批：B61–B63 既有分類重新覆核
+
+- 六檔維持3有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審47、剩16；實際逐檔217/233（93.1%）。
+- [逐檔證據](r0-b61-b63-rereview-evidence.md)：B61 真 PARAM compiler fragment/人工200木刀 buyer prep，Node #10 店只 preview；B62 #14 market/use得10#40，Node active/normal sale 5vs2，非原版獨立售出差分；B63 六種 first-use 受控 Perl/Node 差分，真 memory acquisition，legacy save、未上架五劍持有，非全部正式取得/銷售。B62/B63 負例多位於 already-used/EXP20 state，未隔離各 guard。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- B41–63 的 #24 42列既有證據完成本輪重新覆核；仍需其他16檔與 #23 全語義收斂，未結案。新 HEAD 待驗，strict repro 未實跑。
