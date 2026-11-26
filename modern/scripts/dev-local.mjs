@@ -203,6 +203,7 @@ function state(){
     reviewedDiscard:streetModule.reviewedDiscard===true,
     discardOffers:world&&streetModule.reviewedDiscard?streetModule.listDiscardOffers(world):[],
     marketOffers,
+    warehouse:world&&streetModule.describeWarehouse?streetModule.describeWarehouse(world):null,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -214,6 +215,7 @@ function state(){
           flagRaw:item?.flagRaw??'',
           type:item?.typeRaw??null,
           costRaw:item?.costRaw??null,
+          ...(streetModule.reviewedNormalCommerce?{compiledCost:streetModule.reviewedNormalCommerce.upkeepCosts[e.itemId]}:{}),
           info:item?.infoRaw??null,
         };
       }),

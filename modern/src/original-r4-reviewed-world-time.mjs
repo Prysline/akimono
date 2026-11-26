@@ -13,7 +13,8 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
+import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
+import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
@@ -44,6 +45,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const capApplied=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>capReviewedCommerceCash(s,normalCommerce))};
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
+  const warehouse=normalCommerce&&sources.stockViewSource!=null?reviewOriginalWarehouse(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
   const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
@@ -169,6 +171,13 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     reviewedOwnerClosure:Boolean(closeReview),
+    ...(warehouse?{describeWarehouse(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      const input=disk?independentCandidateWorld(world):world;
+      const overlay=projectR4PreEventItemOverlay({reviewed:data,world:input,activeOrder:Object.keys(input.period.eventState),saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled:Boolean(disk),normalCommerce});
+      return describeOriginalWarehouse({reviewed:warehouse,world:input,normalCommerce,overlay,order:street.marketBuyRegistry.entries.map(e=>e.itemId),limits:street.reviewedGiftMapUse.limits});
+    }}:{}),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
     ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){

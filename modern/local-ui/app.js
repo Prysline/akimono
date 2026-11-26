@@ -125,7 +125,7 @@ function renderItemInfo(s){
   text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
   text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
   text('item-detail-type',item?.type??'—');
-  text('item-detail-cost',sourceUpkeep(item?.costRaw));
+  text('item-detail-cost',Number.isSafeInteger(item?.compiledCost)?money(item.compiledCost):sourceUpkeep(item?.costRaw));
   text('item-detail-info',item?.info??'—');
   text('item-detail-limit',item?number(item.stockLimit):'—');
   const displayed=shop&&item?shop.showcase.flatMap((id,index)=>
@@ -585,7 +585,7 @@ function showState(s){
   // Frozen R3 handles one source store, with 1..8 genuine indexed shelves.
   // Multi-shelf following any unknown EVENT is not authorized.
   const sourceSaleSupported=Boolean(shop&&
-    shop.showcasecount>=1&&shop.showcasecount<=(snapshot?.reviewedTimeMode===true?1:8)&&
+    shop.showcasecount>=1&&shop.showcasecount<=(snapshot?.reviewedTimeMode===true&&!snapshot?.reviewedFullCommerce?1:8)&&
     (shop.showcasecount===1||w?.period?.eventState!==null));
   for(const control of document.querySelectorAll('.quick-time button'))
     control.disabled=!sourceSaleSupported;
@@ -595,8 +595,10 @@ function showState(s){
     (w?.period?.eventState===null?
       '多架時間片的 EVENT 後繼尚未完成來源驗證，暫停再次快轉。':
       number(shop.showcasecount)+' 架已接入原版來源審閱的首次自然販售，後續仍須通過 EVENT 驗證。'):'');
-  const entries=shop?catalog.filter(item=>shop.item[item.itemId-1]>0)
-    .map(item=>({...item,count:shop.item[item.itemId-1]})):[];
+  const warehouse=s.warehouse;
+  const byId=new Map((warehouse?.rows??[]).map(row=>[row.itemId,row]));
+  const entries=shop?(warehouse?catalog.filter(item=>byId.has(item.itemId)).map(item=>({...item,...byId.get(item.itemId)})):
+    catalog.filter(item=>shop.item[item.itemId-1]>0).map(item=>({...item,count:shop.item[item.itemId-1]}))):[];
   const storageBody=$('storage-inventory'),sellingBody=$('inventory');
   storageBody.replaceChildren();sellingBody.replaceChildren();
   const addEmpty=(body,colspan,message)=>{
@@ -608,7 +610,7 @@ function showState(s){
     tr.append(td);return td;
   };
   const addProficiency=(tr,item)=>{
-    const td=addCell(tr,sourceProficiency(shop,item.itemId));
+    const td=addCell(tr,warehouse?(item.experience?number(Math.trunc(item.experience/10))+'%':'—'):sourceProficiency(shop,item.itemId));
     const raw=shop?.exp?.[String(item.itemId)]??0;
     const dev=document.createElement('small');
     dev.className='dev-panel dev-raw-value';
@@ -622,37 +624,50 @@ function showState(s){
     link.type='button';link.className='text-link item-link';
     link.dataset.openItem=String(item.itemId);
     link.textContent=item.name;
-    td.append(link);tr.append(td);
+    if(item.count>0)td.append(link);else td.textContent=item.name;
+    tr.append(td);
   };
-  const storage=entries.filter(item=>item.flagRaw.includes('s'));
-  const selling=entries.filter(item=>!item.flagRaw.includes('s'));
+  const storage=entries.filter(item=>warehouse?item.storage:item.flagRaw.split('|').includes('noshowcase'));
+  const selling=entries.filter(item=>warehouse?!item.storage:!item.flagRaw.split('|').includes('noshowcase'));
+  const category=$('warehouse-type'),priorType=category.value;category.replaceChildren();
+  for(const [id,label] of [[0,'全部'],...(warehouse?.types??[]).map(t=>[t.id,t.name])]){
+    const option=document.createElement('option');option.value=String(id);option.textContent=label;category.append(option);
+  }
+  category.hidden=!warehouse;
+  if([...category.options].some(o=>o.value===priorType))category.value=priorType;
+  const selectedType=Number(category.value);
   if(!storage.length)addEmpty(storageBody,5,'目前沒有保管商品');
   for(const item of storage){
     const tr=document.createElement('tr');
     addName(tr,item);
     for(const value of [money(item.basePrice),
-      sourceUpkeep(item.costRaw),
+      Number.isSafeInteger(item.compiledCost)?money(item.compiledCost):sourceUpkeep(item.costRaw),
       number(item.count)+'／'+number(item.stockLimit)])
       addCell(tr,value);
     addProficiency(tr,item);
     storageBody.append(tr);
   }
-  if(!selling.length)addEmpty(sellingBody,6,'目前沒有販售商品');
-  for(const item of selling){
+  const filteredSelling=selling.filter(item=>!selectedType||item.typeId===selectedType);
+  if(!filteredSelling.length)addEmpty(sellingBody,9,'目前沒有販售商品');
+  for(const item of filteredSelling){
     const tr=document.createElement('tr');addName(tr,item);
-    for(const value of [money(item.basePrice),sourceUpkeep(item.costRaw),
+    for(const value of [money(item.basePrice),Number.isSafeInteger(item.compiledCost)?money(item.compiledCost):sourceUpkeep(item.costRaw),
       number(item.count)+'／'+number(item.stockLimit)])
       addCell(tr,value);
+    addCell(tr,warehouse&&(item.soldToday||item.soldYesterday)?number(item.soldToday)+'／'+number(item.soldYesterday):'—');
     addProficiency(tr,item);
     const shelves=shop.showcase.flatMap((id,index)=>
       id===item.itemId?['第 '+(index+1)+' 架｜'+money(shop.price[index])]:[]);
     addCell(tr,shelves.join('、')||'—');
+    addCell(tr,warehouse&&item.marketPrice?money(item.marketPrice):'—');
+    addCell(tr,warehouse?item.balance.label+(item.balance.percent===null?'':' '+number(item.balance.percent)+'%'):'—');
     sellingBody.append(tr);
   }
   renderItemInfo(s);
   if(currentTab==='use')renderUseDetail(s);
   syncStatusVisibility();
 }
+$('warehouse-type').addEventListener('change',()=>{if(snapshot)showState(snapshot);});
 function feedback(message,receipt=null,failed=false){
   text('feedback',message);
   const panel=document.querySelector('.feedback');panel.classList.toggle('error',failed);

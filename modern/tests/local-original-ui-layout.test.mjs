@@ -36,7 +36,7 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(html,/id="tab-use"/);
   assert.match(html,/id="tab-use-result"/);
   assert.match(script,/catalog\.filter\(item=>shop\.item\[item\.itemId-1\]>0\)/);
-  assert.match(script,/item\.flagRaw\.includes\('s'\)/);
+  assert.match(script,/warehouse\?item\.storage:item\.flagRaw\.split\('\|'\)\.includes\('noshowcase'\)/);
   assert.match(script,/link\.dataset\.openItem=String\(item\.itemId\)/);
   assert.match(script,/selectedItemId=itemId/);
   assert.match(script,/renderItemInfo\(s\)/);
@@ -46,7 +46,9 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/costRaw:item\?\.costRaw/);
   assert.match(html,/class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP/);
   assert.match(html,/<th>持有／上限<\/th><th>熟練度<\/th>/);
-  assert.match(html,/<th>數量／上限<\/th><th>熟練度<\/th><th>陳列<\/th>/);
+  assert.match(html,/<th>數量／上限<\/th><th>售出／前期<\/th><th>熟練度<\/th><th>陳列<\/th><th>販售行情<\/th><th>供需<\/th>/);
+  assert.match(html,/id="warehouse-type"/);
+  assert.match(adapter,/warehouse:world&&streetModule\.describeWarehouse/);
   assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);
   assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
   assert.match(script,/dev\.className='dev-panel dev-raw-value'/);
