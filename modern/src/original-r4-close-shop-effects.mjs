@@ -156,7 +156,7 @@ export function projectR4CloseShopEffects({
     new RegExp('^'+shopId+'-.+\\.cgi$').test(name));
   return immutable({
     source:reviewed.source,committable:false,closed:true,
-    shop:{...shop,status:0,money:0,rank:0},
+    shop:{...(fullCommerce?structuredClone(shop):shop),status:0,money:0,rank:0},
     archived:content,
     setUserDataCalls:[{shopId}],
     writeErrorLogCalls:[{file:'delete',content}],

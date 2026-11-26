@@ -7,6 +7,7 @@ use Storable qw(dclone);
 use File::Temp qw(tempdir);
 use JSON::PP;
 binmode STDOUT,':raw';
+my $fullCommerce=(@ARGV && $ARGV[0] eq '--full-commerce') ? 1 : 0;
 
 # B-50: actual frozen Core SortDT before, full in-place period prefix
 # (through UpdateResetAfter), Standard Street before/after FUNCUPDATE, and
@@ -178,7 +179,7 @@ die "B-50 original frozen complete in-place prefix failed to compile: $@"
 
 $EXPIRE_TIME=3600*24*7;
 $PROFIT_DAY_COUNT=3; $EXP_DOWN_RATE=60;$EXP_DOWN_POINT=5;
-$MAX_ITEM=79;@SHOWCASE_COST=(0,2000,4000,8000);
+$MAX_ITEM=79;@SHOWCASE_COST=$fullCommerce?(0,2000,4000,8000,16000,32000,64000,128000):(0,2000,4000,8000);
 $DEFINE_FUNCUPDATE=0; $ITEM_DIR='unreadable-for-B50';
 $DTTaxrate=0;$BAL_JOB='';$BAL_NAME='';$MYDIR='street';
 @ITEM=(undef,map {{name=>'',limit=>0,scale=>''}} 1..79);
@@ -202,6 +203,18 @@ my $originalShop={
   itemtoday=>{10=>2},itemyesterday=>{},
   rankingyesterday=>'',exp=>{10=>5000},user=>{},
 };
+if($fullCommerce){
+  my @layout=(10,30,32,40,45,51,57,0);
+  my @prices=(5000,200,300,1200,800,750,1200,0);
+  my @wideStock=(0)x79;
+  $wideStock[$_-1]=3 for grep {$_} @layout;
+  $wideStock[78]=5;
+  $originalShop={%$originalShop,money=>-123456,profitstock=>-22345,
+    item=>\@wideStock,showcasecount=>8,showcase=>\@layout,price=>\@prices,
+    guild=>'',dragon=>0,drmoney=>0,exp=>{12=>895,16=>700,17=>350},
+    itemtoday=>{10=>2,30=>7,45=>3},itemyesterday=>{32=>5,40=>9},
+    user=>{source=>'active',other=>'kept'},taxtoday=>321};
+}
 $STATE=dclone($initialTown);
 $DTpeople=500000;$DTusercount=1;
 @DT=(dclone($originalShop));%DTevent=();
@@ -209,6 +222,7 @@ $DTpeople=500000;$DTusercount=1;
 %GUILD_DATA=('guild-a'=>{
   money=>1000000,atk=>1000,def=>500,in=>0,out=>0,
 });
+if($fullCommerce){%GUILD=();%GUILD_DATA=();}
 my @rounds=(
   {time=>1000000,award=>0,dignityDraw=>0,
     town=>[250000,750000],payout=>"1\t500\n",
@@ -217,13 +231,16 @@ my @rounds=(
     town=>[500000,500000],payout=>"1\t1000\n",
     tech=>[]},
 );
+if($fullCommerce){
+  for my $r (@rounds){$r->{payout}='';$r->{tech}=[];}
+}
 my @results;
 for my $r (@rounds){
   $NOW_TIME=$r->{time};
   my $inputShop=dclone($DT[0]);
   my $inputTown=dclone($STATE);
   my $inputPeople=0+$DTpeople;
-  my $guildInput={
+  my $guildInput=$fullCommerce?undef:{
     id=>'guild-a',feeRate=>50,
     atk=>0+$GUILD_DATA{'guild-a'}{atk},
     def=>0+$GUILD_DATA{'guild-a'}{def},
@@ -254,6 +271,18 @@ for my $r (@rounds){
   my %remain=map{$_=>1}@$sessionAfter;
   die 'Original in-place prefix consumed wrong RNG sequence'
     unless $B50_USED==4+@{$r->{tech}}&&!@B50_SAMPLES;
+  my $orders;
+  if($fullCommerce && @CLOSE_ARCHIVES){
+    my @lines=split(/\n/,$CLOSE_ARCHIVES[0]{content},3);
+    my @parts=split(/:/,$lines[2],-1);
+    die 'full commerce archive seven sections' unless @parts==7;
+    my @names=qw(itemyesterday itemtoday exp user);
+    $orders={};
+    for my $i (0..$#names){
+      my @kv=length($parts[$i+3])?split(/,/,$parts[$i+3],-1):();
+      $orders->{$names[$i]}=[map {$kv[$_*2]} 0..(@kv/2-1)];
+    }
+  }
   push @results,{
     input=>{
       shop=>$inputShop,town=>$inputTown,dtPeople=>$inputPeople,
@@ -265,6 +294,7 @@ for my $r (@rounds){
       postTechDraws=>$r->{tech},
       nowSeconds=>$r->{time},
       sessionFileNames=>$sessionInput,
+      ($orders?(archiveHashOrders=>$orders):()),
     },
     output=>{
       shop=>@DT?dclone($DT[0]):undef,
@@ -276,7 +306,7 @@ for my $r (@rounds){
       pointsAfter=>@DT?0+$DT[0]->{point}:undef,
       drawsUsed=>$B50_USED,
       dragonPayoutFileConsumed=>JSON::PP::true,
-      guildContext=>{
+      guildContext=>$fullCommerce?undef:{
         id=>'guild-a',feeRate=>50,
         atk=>0+$GUILD_DATA{'guild-a'}{atk},
         def=>0+$GUILD_DATA{'guild-a'}{def},

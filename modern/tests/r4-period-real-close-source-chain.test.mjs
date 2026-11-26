@@ -175,3 +175,57 @@ test('R4 real closure source chain requires strict opt-in, bounded archive hash 
   }),/real CloseShop requires the source period owner-expiry gate/);
   assert.equal(JSON.stringify(row),initial);
 });
+
+test('R4 independent full commerce source period closes an eight-shelf indebted shop only after prize, archives native maps, charges upkeep then prunes',()=>{
+  const reviewed=reviewOriginalSoloPeriodPhaseChain({
+    ...opts,includeReviewedDignity:true,includeReviewedSaleTax:true,
+    includeReviewedMultiShelf:true,includeReviewedShopExpiry:true,
+    includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true,
+  });
+  const original=JSON.parse(execFileSync('perl',['original-r4-period-real-close-chain-probe.pl','--full-commerce'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+  assert.equal(original.cases.length,2);
+  let previous=null;
+  for(const row of original.cases){
+    const {payoutText,guildContext,postTechDraws,...input}=row.input;
+    const snapshot=JSON.stringify(input);
+    assert.equal(input.shop.showcasecount,8);
+    assert.ok(input.shop.money<0);
+    if(previous)assert.deepEqual(input.shop,previous.shop);
+    const got=projectOriginalSoloPeriodPhaseChain({reviewed,...input});
+    assert.deepEqual(got.shop,row.output.shop);
+    assert.deepEqual(got.town,row.output.town);
+    assert.equal(got.dtPeople,row.output.dtPeople);
+    assert.equal(got.pointsBefore,row.output.pointsBefore);
+    assert.equal(got.pointsAfter,row.output.pointsAfter);
+    assert.equal(got.shopExpiry.expiredOwner,row.output.expiredOwner);
+    assert.deepEqual(got.shopExpiry.logs,row.output.closeLogs);
+    assert.equal(got.maintenance,Math.trunc(input.shop.costtoday)+128000);
+    if(row.output.expiredOwner){
+      assert.equal(got.shop,null);
+      assert.deepEqual(got.activeShops,[]);
+      assert.deepEqual(got.closedShop,row.output.closedShop);
+      assert.equal(got.closedShop.money,-got.maintenance);
+      assert.equal(got.actualCloseEffect.archived,row.output.closeArchived);
+      assert.deepEqual(got.actualCloseEffect.writeErrorLogCalls,row.output.closeWriteErrorLogCalls);
+      assert.deepEqual([...got.actualCloseEffect.deletedSessions].sort(),[...row.output.closeDeletedSessions].sort());
+      assert.deepEqual([...got.actualCloseEffect.remainingSessions].sort(),[...row.output.closeRemainingSessions].sort());
+      assert.throws(()=>projectOriginalSoloPeriodPhaseChain({reviewed,...input,archiveHashOrders:null}),/exact full commerce archive map order/);
+    }else{
+      assert.equal(got.actualCloseEffect,undefined);
+      assert.equal(got.shop.status,1);
+      previous=got;
+    }
+    assert.equal(got.nonCommittable,true);
+    assert.equal(got.worldStateWritten,false);
+    assert.equal(JSON.stringify(input),snapshot);
+  }
+  assert.equal(original.cases[0].output.expiredOwner,false);
+  assert.equal(original.cases[1].output.expiredOwner,true);
+  assert.throws(()=>reviewOriginalSoloPeriodPhaseChain({...opts,includeReviewedMultiShelf:true,
+    includeReviewedShopExpiry:true,includeReviewedActualCloseShop:true}),/unreviewed multi-shelf external period dependencies/);
+  assert.throws(()=>reviewOriginalSoloPeriodPhaseChain({...opts,includeReviewedMultiShelf:true,
+    includeReviewedShopExpiry:true,includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true,
+    includeReviewedGuild:true}),/explicit independent full commerce CloseShop source review/);
+});
