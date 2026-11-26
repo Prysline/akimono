@@ -2,6 +2,7 @@ import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} 
 import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
+import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
@@ -430,11 +431,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  // Only the authenticated local shop is a legal HTTP target. Preserve
+  // the existing two-shop memory rule separately outside this mode.
+  const localTargetUses=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    compileReviewedLocalTargetUses({sources:r4Sources,model,limits:giftMap.limits,targetAdvertiseUse}):[];
   const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
-    targetAdvertiseUse,...(noGuildAdvertiseUse?[noGuildAdvertiseUse]:[]),
+    targetAdvertiseUse,...(noGuildAdvertiseUse?[noGuildAdvertiseUse]:[]),...localTargetUses,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -505,7 +510,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
-    runInlineCallback({rule,shop,count,random,targetShop}){
+    runInlineCallback({rule,shop,count,random,targetShop,world}){
+      if(localTargetUses.includes(rule))return projectReviewedLocalTargetUse({rule,shop,count,random,world});
       if(noGuildAdvertiseUse&&rule===noGuildAdvertiseUse)return projectOriginalNoGuildAdvertisement({rule,shop,count});
       if(rule===targetAdvertiseUse){
         if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
@@ -714,7 +720,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       const rules=[giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse].filter(Boolean);
+        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse,...localTargetUses].filter(Boolean);
       const offers=rules.map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -789,9 +795,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
             singleUseOnly:Boolean(rule.singleUseOnly),
+            ...(rule.localSelfTarget===true?{targetShopId:shop?.id??null,targetShopName:shop?.shopname??null}:{}),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                Boolean(rule.inlineCallback&&
-                 !['showcase-resize','advertise-no-guild'].includes(rule.inlineCallback.kind))||
+                 !['showcase-resize','advertise-no-guild','local-self-advertise-other','local-self-theft'].includes(rule.inlineCallback.kind))||
                [...rule.uses,...rule.creates].some(x=>
                  x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,

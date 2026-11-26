@@ -85,7 +85,8 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       if(remaining()>=offer.timePerUseSeconds*count)break;
       await enoughTime(offer.timePerUseSeconds*count);
     }
-    const result=await command('/api/use',{itemId:id,useId,requestedCount:count});
+    const offer=quote(id,useId);
+    const result=await command('/api/use',{itemId:id,useId,requestedCount:count,...(offer.targetShopId?{targetShopId:offer.targetShopId}:{})});
     assert.equal(result.details.effectiveCount,count);
     return result;
   }

@@ -318,7 +318,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='advertise-self'?1:
+      inline==='advertise-self'||inline==='local-self-rumor'?1:
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
@@ -477,8 +477,10 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      if(Object.hasOwn(body,'targetShopId'))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const rule=streetModule.useItem.getRule(body.itemId,body.useId);
+      const localTarget=rule?.localSelfTarget===true;
+      if(Object.hasOwn(body,'targetShopId')&&(!localTarget||body.targetShopId!==1))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',...(localTarget?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -493,7 +495,7 @@ async function api(req,res,url){
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
-        ...(randomDraws.length?{randomDraws}:{})});
+        ...(localTarget?{targetShopId:1}:{}),...(randomDraws.length?{randomDraws}:{})});
       break;
     }
     case '/api/palace-complete': {

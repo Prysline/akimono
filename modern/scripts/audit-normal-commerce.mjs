@@ -184,7 +184,7 @@ export async function auditNormalCommerce(){
       fullCommerceUnregisteredUses:items.flatMap(x=>x.uses.filter(u=>!u.fullCommerceRegistryRule).map(u=>({itemId:x.id,useId:u.useId,source:u.source}))),
       fullCommerceListedUses:items.flatMap(x=>x.uses).filter(u=>u.fullCommerceListedUse).length,
       eventActivationCounts:Object.fromEntries(['natural-start','external-zero-start','source-use-manual','disabled-no-reviewed-trigger'].map(kind=>[kind,events.filter(e=>e.activation.kind===kind).length])),
-      fullCommerceLimitedUses:[{itemId:62,useId:1,scope:'memory-only target shop; no single-shop HTTP target'}, {itemId:62,useId:2,scope:'no-guild callback only; positive member effects external'}],
+      fullCommerceLimitedUses:[{itemId:62,useId:1,scope:'local self-target rejection callback; other-shop memory rule remains separate'}, {itemId:62,useId:2,scope:'no-guild callback only; positive member effects external'}, {itemId:65,useId:0,scope:'local self-target only'}, {itemId:65,useId:1,scope:'local self-target rejection callback only'}],
       sourceRouteCaveat:'Static material closure ignores available time, money, career, EXP, point gates, exact RNG and external authorization; never proof of player acquisition.',
     },items,events,globalCallbacks};
 }

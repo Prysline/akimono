@@ -291,7 +291,7 @@ function renderUseDetail(s){
   count.max=offer?.firstUseOnly?'1':'';
   $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
-    offer.canUse?'執行前請確認材料、資金與可用行動時間。':
+    offer.canUse?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
       (offer.reason??'目前無法執行'));
   updateUseEstimate();
 }
@@ -877,6 +877,7 @@ $('use-action-form').addEventListener('submit',async event=>{
   try{
     await call('/api/use',{
       expectedRevision:before.world.revision,itemId,useId,requestedCount,
+      ...(offer.targetShopId?{targetShopId:offer.targetShopId}:{}),
     },'商品使用／製作：'+offer.useName,data=>{
       if(!data.details||!data.state)return;
       renderUseResult(data.details,offer,before.itemCatalog??[]);
