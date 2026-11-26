@@ -190,6 +190,7 @@ if(@ARGV&&$ARGV[0] eq '--conflict'){
     $NOW_TIME=1000000;$DTpeople=500000;$DTusercount=1;
     $STATE=dclone($r->{town});@DT=(dclone($originalShop));
     $DT[0]{dignity}=13;$DT[0]{taxtoday}=1234;
+    $DT[0]{blocklogin}='';
     %DTevent=defined($r->{active})?(rebel=>$r->{active}):();
     $BAL_JOB='外敵';$BAL_NAME='首領';%GUILD=();%GUILD_DATA=();
     my $input={shop=>dclone($DT[0]),town=>dclone($STATE),dtPeople=>$DTpeople,

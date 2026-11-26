@@ -639,7 +639,12 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
     my $src=OriginalGiftMapUseHarness::source('pinned-army.cgi');
     eval "package main;no strict;no warnings;\n$src\n1;" or die $@;
     my $read=\&main::ReadArmy;my $write=\&main::WriteArmy;
-    *main::ReadArmy=sub{$READ_ARMY++;$read->(@_)};
+    *main::ReadArmy=sub{
+      # The catalog probe above localizes $/ to undef for its JSON slurp.
+      # Frozen ReadArmy uses two physical records, like the real CGI.
+      local $/="\n";
+      $READ_ARMY++;$read->(@_);
+    };
     *main::WriteArmy=sub{$WRITE_ARMY++;$write->(@_)};
     $DTTaxrate=0;
   }
