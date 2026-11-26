@@ -344,7 +344,17 @@ test('R4 mixed categories source break changes actual demand, not just specialty
   assert.equal(mixedTypeOracle.cases[0].soldByItem[40],5);
   assert.equal(mixedTypeOracle.cases[1].soldByItem[40],5);
 });
-for(const sourceRow of [...twoShelfOracle.cases,...mixedTypeOracle.cases]){
+const garbageOracle=JSON.parse(execFileSync('perl',
+  ['original-r3-multi-shelf-sale-probe.pl','--garbage-audit'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+test('R4 original garbage accumulation and popularity loss source fixtures',()=>{
+  assert.equal(garbageOracle.cases.length,10);
+  const empty=garbageOracle.cases.filter(x=>x.name.endsWith('empty-shelves'));
+  assert.deepEqual(empty.map(x=>x.startingGarbage),[0,300000,5000000,5000001,10000000]);
+  assert.ok(empty.at(-1).rank<empty[0].rank,'original garbage affects popularity loss');
+});
+for(const sourceRow of [...twoShelfOracle.cases,...mixedTypeOracle.cases,...garbageOracle.cases]){
   test('R3 2..8 shelf source Perl natural market and RNG: '+sourceRow.name,()=>{
     const item=Array(79).fill(0);
     for(const [id,stock] of Object.entries(sourceRow.startingStocks))
@@ -355,7 +365,7 @@ for(const sourceRow of [...twoShelfOracle.cases,...mixedTypeOracle.cases]){
       money:100000-10000*sourceRow.shown.length,
       paytoday:10000*sourceRow.shown.length,
       item,showcasecount:sourceRow.shown.length,showcase:[...sourceRow.shown],
-      price:[...sourceRow.prices],trush:0,saletoday:0,
+      price:[...sourceRow.prices],trush:sourceRow.startingGarbage??0,saletoday:0,
       taxtoday:0,costtoday:0,itemtoday:{},itemyesterday:{},taxmode:0,
     };
     const unchanged=JSON.stringify(shop);

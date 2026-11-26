@@ -58,8 +58,14 @@ my @cases=(
 # Additional deliberately discriminating source cases, separate from the
 # historical 16-case acceptance set. The second unlike type stops the
 # original demand-denominator scan, but does not stop sales.
-if(@ARGV){
-  die 'expected --mixed-type-audit' unless @ARGV==1 && $ARGV[0] eq '--mixed-type-audit';
+if(@ARGV==1 && $ARGV[0] eq '--garbage-audit'){
+  @cases=map {
+    my $garbage=$_;
+    ({name=>"garbage-$garbage-empty-shelves",shown=>[0,0],prices=>[0,0],stocks=>{},trush=>$garbage},
+     {name=>"garbage-$garbage-active-sales",shown=>[40,41],prices=>[1200,1500],stocks=>{40=>10,41=>10},trush=>$garbage})
+  } (0,300000,5000000,5000001,10000000);
+} elsif(@ARGV){
+  die 'expected --mixed-type-audit or --garbage-audit' unless @ARGV==1 && $ARGV[0] eq '--mixed-type-audit';
   @cases=(
     {name=>'mixed-type-break-positive-draw',shown=>[10,40],
      prices=>[5000,1200],stocks=>{10=>10,40=>10},
@@ -112,7 +118,7 @@ for my $case (@cases){
     paytoday=>10000*scalar(@{$case->{shown}}),
     item=>\@item,showcasecount=>scalar(@{$case->{shown}}),
     showcase=>[@{$case->{shown}}],price=>[@{$case->{prices}}],
-    trush=>0,saletoday=>0,taxtoday=>0,costtoday=>0,
+    trush=>($case->{trush}//0),saletoday=>0,taxtoday=>0,costtoday=>0,
     itemtoday=>{},itemyesterday=>{},taxmode=>0,
   });
   @main::DTwholestore=();
@@ -124,7 +130,7 @@ for my $case (@cases){
   my ($shop,$used)=($main::DT[0],$main::B35_USED);
   push @rows,{
     name=>$case->{name},shown=>$case->{shown},prices=>$case->{prices},
-    startingStocks=>$case->{stocks},
+    startingStocks=>$case->{stocks},startingGarbage=>($case->{trush}//0),
     soldByItem=>{map{$_=>0+($shop->{itemtoday}{$_}//0)}(10,40,41)},
     stockAfter=>{map{$_=>0+$shop->{item}[$_-1]}(10,40,41)},
     saleRecordCounts=>{map{$_=>0+($shop->{_sale_count_}{$_}{count}//0)}(10,40,41)},
