@@ -339,3 +339,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 六檔維持3有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審53、剩10；實際逐檔223/233（95.7%）。
 - [逐檔證據](r0-core-market-legacy-http-rereview-evidence.md)：B31 舊 memory contract；共用 market 36歷史/3普通/16動態/P5 16案、BASE quote、synthetic hook、人工 carryover/資產、legacy disk；P1/P2 真 HTTP 子程序/重啟但固定 clock/RNG/legacy checksum；P5 Perl 零價書籍16案、IO stub；DSL structure 不代表 runtime。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - 剩餘 P3 9檔及 R4 reviewed-time HTTP history 1檔；新 HEAD 待驗，strict repro 未實跑。
+
+### 第五十批：P3／R4 HTTP 與 v2 證據
+
+- 10 檔逐檔重新覆核（均有效），固定基線 233/233 完成逐檔審閱；有效 200、歷史 33。170 份新審閱、原 63 份全數重新覆核。分類不等於全功能驗收。
+- 詳見 `modern/docs/r0-p3-r4-http-v2-rereview-evidence.md`；正式 HTTP/CAS/v2、固定起始時鐘及伺服器 RNG，不升格真玩家；#66/3 實售/lostbook 與條件 FUNCTURN、多架時間拒絕、歷史 checkpoint 與跨期負向回復各自限縮。R1 詳細 87/220 暫不變，#23/#24 語義收斂及 R1-HTTP-01 strict repro 未結案。新 HEAD 待 CI。

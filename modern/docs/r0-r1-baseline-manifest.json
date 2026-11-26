@@ -10602,14 +10602,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #37/2",
-      "assertions": "合法熟練度與鑑定技能、v2 保存",
-      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L5–37：採礦、採集、購書、#37/0,1 真實取得技能與 EXP 200；未達門檻拒絕；#37/2 消耗 #1–8 各3，保留 #18/19，取得 #24、EXP250，兩世代重啟",
+      "executionPath": "genuinePlayer →正式 HTTP USE/buy/discard/advance/save/load",
       "risk": "受控玩家履歷、技能／保存",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401；伺服器 RNG，非自然長期玩家；#37/2 首次成功路徑。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-cross-period-long-history.test.mjs",
@@ -10687,14 +10694,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #66/3 / lostbook / inc-turn.cgi",
-      "assertions": "合法材料、自然販售、lostbook、跨期及 v2",
-      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L5 起：跨期養成 #66 EXP500、#37 鑑定、#18/19/24；#66/3 消耗5/6/7各20及8×6、產70；實售並重試至 lostbook，最多32次；兩世代重啟；正 FUNCTURN 為條件斷言及 diagnostic，非無條件成功",
+      "executionPath": "genuinePlayer(crossPeriod:true) →正式 reviewed time/USE/自然販售/v2",
       "risk": "受控玩家履歷、技能／保存",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 13
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始；低機率 bounded trial 失敗會 fail，不可把 diagnostic 當必然；只單店單架。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-cross-period-ordinary-multishelf.test.mjs",
@@ -10703,14 +10717,21 @@
       "status": "有效",
       "evidenceLevel": "HTTP/CAS",
       "originalSource": "custom/inc-item-data.cgi #63; 原版展示架",
-      "assertions": "普通兩架、保存、拒絕未審閱多架時間",
-      "executionPath": "dev-local.mjs → GameCore → v2（時鐘類型另審）",
+      "assertions": "L7 起：#63/1 合法擴架，兩架編輯、play.cgi wire、時間推進拒絕且 world/history 不變；discard 不耗時；兩世代 v2 重啟",
+      "executionPath": "genuinePlayer(crossPeriod:true) →正式 HTTP",
       "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
       "reason": "固定測試內容與來源／PR 證據",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 21
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始；cross-enabled 不表示完成跨期，多架 time 明確拒絕；非多架自然販售驗收。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-high-forge-20.test.mjs",
@@ -10719,14 +10740,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #20 USE；use.cgi / FUNCB / EXP",
-      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
-      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L1–3 wrapper → highForge(20)；#9 採礦 earned EXP → #78/4 轉職，保留 floor(earned/2)；技能 #18；門檻 200/400/600，逐階 EXP+20、材料扣除、NEED 保留、產物 41–44、lostbook 與 callback，兩代重啟；最新世代 forged EXP999 回退",
+      "executionPath": "support/p3-high-forge.mjs → genuinePlayer →正式 HTTP",
       "risk": "來源配方、職業轉移及歷史重播",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 45
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401，跨期關閉；未達門檻拒絕為條件分支，已達則不宣稱實際拒絕；非每次必 lostbook/售出；#66/3 另由 nayuta 測試。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-high-forge-21.test.mjs",
@@ -10735,14 +10763,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #21 USE；use.cgi / FUNCB / EXP",
-      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
-      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L1–3 wrapper → highForge(21)；#9 採礦 earned EXP → #78/5 轉職，保留 floor(earned/2)；技能 #18；門檻 200/400/600，逐階 EXP+20、材料扣除、NEED 保留、產物 47–50、lostbook 與 callback，兩代重啟",
+      "executionPath": "support/p3-high-forge.mjs → genuinePlayer →正式 HTTP",
       "risk": "來源配方、職業轉移及歷史重播",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 53
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401，跨期關閉；未達門檻拒絕為條件分支，已達則不宣稱實際拒絕；非每次必 lostbook/售出；#66/3 另由 nayuta 測試。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-high-forge-22.test.mjs",
@@ -10751,14 +10786,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #22 USE；use.cgi / FUNCB / EXP",
-      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
-      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L1–3 wrapper → highForge(22)；#9 採礦 earned EXP → #78/6 轉職，保留 floor(earned/2)；技能 #18；門檻 200/400/600，逐階 EXP+20、材料扣除、NEED 保留、產物 53–56、lostbook 與 callback，兩代重啟",
+      "executionPath": "support/p3-high-forge.mjs → genuinePlayer →正式 HTTP",
       "risk": "來源配方、職業轉移及歷史重播",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 61
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401，跨期關閉；未達門檻拒絕為條件分支，已達則不宣稱實際拒絕；非每次必 lostbook/售出；#66/3 另由 nayuta 測試。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-high-forge-23.test.mjs",
@@ -10767,14 +10809,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #23 USE；use.cgi / FUNCB / EXP",
-      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
-      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L1–3 wrapper → highForge(23)；#9 採礦 earned EXP → #78/7 轉職，保留 floor(earned/2)；技能 #19；門檻 250/500/700，逐階 EXP+20、材料扣除、NEED 保留、產物 58–61、lostbook 與 callback，兩代重啟",
+      "executionPath": "support/p3-high-forge.mjs → genuinePlayer →正式 HTTP",
       "risk": "來源配方、職業轉移及歷史重播",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 69
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401，跨期關閉；未達門檻拒絕為條件分支，已達則不宣稱實際拒絕；非每次必 lostbook/售出；#66/3 另由 nayuta 測試。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-high-forge-66.test.mjs",
@@ -10783,14 +10832,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #66 USE；use.cgi / FUNCB / EXP",
-      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟；66/3 另由 nayuta 測試涵蓋",
-      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L1–3 wrapper → highForge(66)；#9 採礦 earned EXP → #78/3 轉職，保留 floor(earned/2)；技能 #18/19；門檻 250/500，逐階 EXP+20、材料扣除、NEED 保留、產物 67–69、lostbook 與 callback，兩代重啟；缺 #24 時 #66/3 拒絕",
+      "executionPath": "support/p3-high-forge.mjs → genuinePlayer →正式 HTTP",
       "risk": "來源配方、職業轉移及歷史重播",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 77
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 896401，跨期關閉；未達門檻拒絕為條件分支，已達則不宣稱實際拒絕；非每次必 lostbook/售出；#66/3 另由 nayuta 測試。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-v2-two-checkpoint-rotations.test.mjs",
@@ -10860,14 +10916,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
       "originalSource": "ITEM #10/3、#66/0",
-      "assertions": "合法寫書與製作、正式 v2 保存",
-      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "assertions": "L7 起：#79/1 兌15/16/17，#10/3 合法消耗材料與書、NEED 不消耗，寫66；技能不足拒絕；重啟後訓練18/19並 #66/0 製67，EXP20/100，兩世代",
+      "executionPath": "genuinePlayer →正式 HTTP",
       "risk": "受控玩家履歷、技能／保存",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 29
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始；寫書 while 無明文獨立重試上限，受時間等外部限制；未覆蓋所有寫書輸出。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p4-dairy-death-and-save-security.test.mjs",
@@ -15527,14 +15590,21 @@
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS",
       "originalSource": "inc-turn.cgi / period.cgi / inc-makeitem.cgi",
-      "assertions": "正式 reviewed-time 路由、跨期限制、歷史保存與拒絕",
-      "executionPath": "dev-local；固定起始時鐘；非本輪真時鐘",
+      "assertions": "4 cases：正常 time+gift、拒絕 RNG/now/stale/舊 route、origin 403、兩世代 trace 破壞回退；36h 邊界拒絕；128 歷史 checkpoint obstruction、認證/key/prefix 損壞拒絕及復原；跨期20+40秒、filesystem obstruction CAS、play/backup bytes、合法後續 commerce、trace/disk 損壞回退",
+      "executionPath": "spawn scripts/dev-local.mjs → HTTP、隔離暫存磁碟、真 Node restart",
       "risk": "時間入口、歷史重播與期末",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md",
+          "line": 37
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定起始 1000000/1025980/900000/1022380；人工破壞只為負向測試；部分 forged trace/outer checksum rejection 不隔離內層因果；origin 403 未獨立重查 world。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/r4-sorted-pre-event.test.mjs",
@@ -43176,7 +43246,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 53
+    "reReviewedBaseline": 63
   },
   "provenance": [
     {
@@ -43264,7 +43334,8 @@
     "modern/docs/r0-b57-b58-rereview-evidence.md",
     "modern/docs/r0-b59-b60-rereview-evidence.md",
     "modern/docs/r0-b61-b63-rereview-evidence.md",
-    "modern/docs/r0-core-market-legacy-http-rereview-evidence.md"
+    "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+    "modern/docs/r0-p3-r4-http-v2-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {
