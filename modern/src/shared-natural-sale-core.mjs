@@ -1,3 +1,4 @@
+import {isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** R3 shared frozen inc-turn natural-sale arithmetic.
  * Works on one to eight source-reviewed shelves of one source shop.
  * Source ITEM metadata and exact RNG samples are supplied by the StreetModule.
@@ -52,7 +53,7 @@ export function projectSharedNaturalSale({
     if(!r||r.itemId!==id||int(r.unitPrice,'source base price',1)<1||
        listed<1||int(r.popularSeconds,'source popularity')<0||
        (r.popularSeconds===0&&(id!==65||r.zeroPopularReviewed!==true))||
-       int(r.point,'source point')<0||id>79)
+       (!Number.isSafeInteger(r.point)||r.point<0&&!isReviewedManualSaleRule(r))||id>79)
       fail('displayed ITEM price or rule not source reviewed');
     if(shelfCount===1&&rule?.itemId!==id)
       fail('single original shelf rule mismatch');

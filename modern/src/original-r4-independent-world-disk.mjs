@@ -27,7 +27,7 @@ export function independentCandidateWorld(world){
 function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
 export function createIndependentDiskProjection({sources,sort,street}){
   if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
-  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,signedCash:street.reviewedNormalCommerce!==undefined}),
+  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,signedCash:street.reviewedNormalCommerce!==undefined,manualCommerce:street.reviewedManualCommerceEvents??null}),
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});

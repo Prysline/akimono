@@ -190,7 +190,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
   if(typeof enableReviewedFullCommerce!=='boolean'||enableReviewedFullCommerce&&!enableReviewedNormalTime)bad('full commerce requires reviewed normal time');
   const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
-  const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
+  const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources,{includeReviewedManualCommerce:enableReviewedFullCommerce&&enableReviewedCrossPeriod}):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
@@ -687,6 +687,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedMarketBuy11,
     reviewedB41,
     reviewedEventCatalog,
+    ...(ordinaryEventReview?.manual?{reviewedManualCommerceEvents:ordinaryEventReview.manual}:{}),
     reviewedInstantEventCallbacks,
     reviewedSupportEventCallbacks,
     reviewedLoto,

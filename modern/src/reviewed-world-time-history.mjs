@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES} from './original-r4-manual-commerce-events.mjs';
 /** Shared bounded world-time history for B-43 / P3.
  * Ordinary command/recipe policy is injected by its owning street, never
  * copied here. Fresh anchors are regenerated; old development anchors are
@@ -18,6 +19,8 @@ const exact=(o,keys)=>o!==null&&typeof o==='object'&&!Array.isArray(o)&&Object.k
 const integer=(n,min=0,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
 const arr=(a,min,max,f)=>Array.isArray(a)&&a.length>=min&&a.length<=max&&a.every(f);
 const codes=a=>arr(a,0,17,k=>typeof k==='string'&&/^[a-z][a-z0-9-]{0,39}$/.test(k))&&new Set(a).size===a.length;
+const activeCodes=(a,automatic)=>arr(a,0,21,k=>automatic.includes(k)||R4_MANUAL_COMMERCE_EVENT_CODES.includes(k))&&new Set(a).size===a.length;
+const automaticCodes=a=>codes(a)&&a.length===17&&a.every(k=>!R4_MANUAL_COMMERCE_EVENT_CODES.includes(k));
 const unit=n=>integer(n,0,999999);
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
 function traceFrom(result){
@@ -41,13 +44,12 @@ function traceFrom(result){
   return trace;
 }
 function validTrace(t){
-  if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY)return exact(t,'drawPolicy,hashPolicy,seed,interpreter,slices,afterSha256')&&t.hashPolicy===R4_COMMAND_HASH_POLICY&&typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&typeof t.interpreter==='string'&&t.interpreter.length>=1&&t.interpreter.length<=120&&sha(t.afterSha256)&&arr(t.slices,1,2,(s)=>exact(s,'dateupdate,spanSeconds,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,effectsSha256')&&[0,1].includes(s.dateupdate)&&integer(s.spanSeconds,1,3600)&&codes(s.activeOrder)&&codes(s.eventOrder)&&s.eventOrder.length===17&&codes(s.nowOrder)&&s.activeOrder.every(x=>s.eventOrder.includes(x))&&s.nowOrder.every(x=>s.eventOrder.includes(x))&&arr(s.preEventDraws,0,R4_FULL_CROSS_SLICE_DRAWS,unit)&&arr(s.eventDrawRanges,0,100,n=>integer(n,0,LOTO_RANGE))&&Array.isArray(s.eventSamples)&&s.eventSamples.length===s.eventDrawRanges.length&&s.eventSamples.every((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&sha(s.effectsSha256))&&(t.slices.length===1||t.slices[0].dateupdate===1&&t.slices[1].dateupdate===0);
+  if(t?.drawPolicy===R4_CROSS_PERIOD_DRAW_POLICY)return exact(t,'drawPolicy,hashPolicy,seed,interpreter,slices,afterSha256')&&t.hashPolicy===R4_COMMAND_HASH_POLICY&&typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&typeof t.interpreter==='string'&&t.interpreter.length>=1&&t.interpreter.length<=120&&sha(t.afterSha256)&&arr(t.slices,1,2,(s)=>exact(s,'dateupdate,spanSeconds,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,effectsSha256')&&[0,1].includes(s.dateupdate)&&integer(s.spanSeconds,1,3600)&&automaticCodes(s.eventOrder)&&activeCodes(s.activeOrder,s.eventOrder)&&activeCodes(s.nowOrder,s.eventOrder)&&arr(s.preEventDraws,0,R4_FULL_CROSS_SLICE_DRAWS,unit)&&arr(s.eventDrawRanges,0,100,n=>integer(n,0,LOTO_RANGE))&&Array.isArray(s.eventSamples)&&s.eventSamples.length===s.eventDrawRanges.length&&s.eventSamples.every((n,i)=>s.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&sha(s.effectsSha256))&&(t.slices.length===1||t.slices[0].dateupdate===1&&t.slices[1].dateupdate===0);
   return exact(t,'drawPolicy,hashPolicy,seed,interpreter,activeOrder,eventOrder,nowOrder,preEventDraws,eventDrawRanges,eventSamples,afterSha256,effectsSha256')&&
     t.drawPolicy===R4_TIME_DRAW_POLICY&&t.hashPolicy===R4_HASH_POLICY&&
     typeof t.seed==='string'&&/^0x[a-f0-9]{32}$/.test(t.seed)&&
     typeof t.interpreter==='string'&&t.interpreter.length>=1&&t.interpreter.length<=120&&
-    codes(t.activeOrder)&&codes(t.eventOrder)&&t.eventOrder.length===17&&codes(t.nowOrder)&&
-    t.activeOrder.every(k=>t.eventOrder.includes(k))&&t.nowOrder.every(k=>t.eventOrder.includes(k))&&
+    automaticCodes(t.eventOrder)&&activeCodes(t.activeOrder,t.eventOrder)&&activeCodes(t.nowOrder,t.eventOrder)&&
     arr(t.preEventDraws,0,R4_FULL_PRE_EVENT_DRAWS,unit)&&arr(t.eventDrawRanges,0,100,n=>integer(n,0,LOTO_RANGE))&&
     Array.isArray(t.eventSamples)&&t.eventSamples.length===t.eventDrawRanges.length&&
     t.eventSamples.every((n,i)=>t.eventDrawRanges[i]===LOTO_RANGE?integer(n,0,LOTO_RANGE-1):unit(n))&&

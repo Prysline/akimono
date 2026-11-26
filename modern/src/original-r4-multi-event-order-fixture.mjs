@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /**
  * R4 reviewed multi-key EVENT fixture: the exact Perl order is supplied by
  * a *same-process original-source oracle*, not derived from DSL or JS maps.
@@ -41,7 +42,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
   reviewedHappyEvent=null,reviewedIronEvent=null,
   reviewedSwordEvent=null,reviewedGuildbattleEvent=null,
-  reviewedRebelEvent=null}){
+  reviewedRebelEvent=null,reviewedManualCommerce=null}){
+  if(reviewedManualCommerce!==null&&!isReviewedManualCommerceEvents(reviewedManualCommerce))fail('source-reviewed manual commerce events required');
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -160,7 +162,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
     happy:reviewedHappyEvent,iron:reviewedIronEvent,
     sword:reviewedSwordEvent,guildbattle:reviewedGuildbattleEvent,
-    rebel:reviewedRebelEvent,committable:false,
+    rebel:reviewedRebelEvent,manualCommerce:reviewedManualCommerce,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
     scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
@@ -192,9 +194,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const keys=Object.keys(activeUntilSeconds);
   if(keys.length>(7+(reviewed.happy!==null?1:0)+
     (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0)+
-    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0))||
+    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0)+(reviewed.manualCommerce?4:0))||
     keys.some(code=>
-    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
+    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code))||
       (code==='happy'&&reviewed.happy!==null)||
       (code===B59_IRON_CODE&&reviewed.iron!==null)||
       (code===B61_SWORD_CODE&&reviewed.sword!==null)||
@@ -255,6 +257,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   for(const code of activeHashOrderFixture){
     // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
     if(code==='happy'||code==='guildbattle'||code==='rebel')continue;
+    if(R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      current=projectManualCommerceEventItems({reviewed:reviewed.manualCommerce,code,items:current});continue;
+    }
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
@@ -278,6 +283,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const groups=new Set();
   const end=startSeconds+spanSeconds;
   for(const code of activeHashOrderFixture){
+    if(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      // Original OutEventData omits START=-1 from %EVENT; the generated
+      // DataRead overlay exists but END has no registered endmsg/callback.
+      if(next[code]<end){delete next[code];expired.push(code);}
+      else groups.add('');
+      continue;
+    }
     const event=reviewed.catalog.find(e=>e.code===code);
     if(next[code]<end){
       delete next[code];
