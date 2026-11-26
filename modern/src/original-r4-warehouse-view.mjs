@@ -17,7 +17,8 @@ export function reviewOriginalWarehouse(sources){
  const types=Array.from({length:10},(_,i)=>({id:i+1,name:d.fields['type'+(i+1)][0].value}));
  if(!/\$SALE_SPEED\s*=\s*12\s*;/.test(sources.configSource))fail('source SALE_SPEED');
  if(sources.marketSurveySource!=null&&createHash('sha1').update('blob '+Buffer.byteLength(sources.marketSurveySource)+'\0').update(sources.marketSurveySource).digest('hex')!=='2cfdc8acbae1b2259cbf966d8e490b6a6329355f')fail('frozen source drift marketSurveySource');
- const review=Object.freeze({surveyReviewed:sources.marketSurveySource!=null,types:Object.freeze(types.map(Object.freeze)),saleSpeed:12});reviews.add(review);return review;
+ if(sources.itemDetailViewSource!=null&&createHash('sha1').update('blob '+Buffer.byteLength(sources.itemDetailViewSource)+'\0').update(sources.itemDetailViewSource).digest('hex')!=='9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8')fail('frozen source drift itemDetailViewSource');
+ const review=Object.freeze({itemDetailReviewed:sources.itemDetailViewSource!=null,surveyReviewed:sources.marketSurveySource!=null,types:Object.freeze(types.map(Object.freeze)),saleSpeed:12});reviews.add(review);return review;
 }
 export function originalMarketBalance(per){
  if(!safe(per)||per>1000)fail('source supply point');
@@ -45,7 +46,7 @@ export function describeOriginalWarehouse({reviewed,world,normalCommerce,overlay
   const status=a?calculateSourceMarketStatus({stock:a.stock,weightedPrice:a.weighted,popular,population:world.period.dtPeople,saleSpeed:reviewed.saleSpeed}):null;
   const point=status?.uppoint??0;
   const common={itemId:id,storage:item.flag.includes('s'),typeId:item.type,count,experience,soldToday,soldYesterday,compiledCost:item.cost,stockLimit:limits[id-1].limit,standardPrice:item.price,
-    displayedStock:a?.stock??0,marketPrice:status?.marketprice??null,lowestPrice:a?.low??null,highestPrice:a?.high??null,popularSeconds:popular,supplyPoint:point,balance:originalMarketBalance(point)};
+    displayedStock:a?.stock??0,marketPrice:status?.marketprice??null,lowestPrice:a?.low??null,highestPrice:a?.high??null,popularSeconds:popular,...(reviewed.itemDetailReviewed?{saleWarning:item.flag.includes('s')?'not-listable':popular===0?'no-sales':popular>800000?'rare-sales':null}:{}),supplyPoint:point,balance:originalMarketBalance(point)};
   marketItems.push(common);
   if(a)survey.push(common); // original %marketitemlist: only displayed positive stock
   // Yesterday alone does not qualify a row in stock.cgi; its graph uses ||=10.

@@ -1,3 +1,4 @@
+import {calculateSourceSaleTax} from './shared-source-sale-tax.mjs';
 import {calculateSourceMarketStatus} from './shared-source-market-status.mjs';
 import {isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** R3 shared frozen inc-turn natural-sale arithmetic.
@@ -136,12 +137,8 @@ export function projectSharedNaturalSale({
       rankUp+=contribution;
       const proceeds=int(take*listed,'proceeds');
       // Frozen item.cgi::GetSaleTax; base source UserTaxRate is zero.
-      let taxRate=listed/r.unitPrice-1;
-      if(taxRate>0)taxRate*=5;
-      let taxDown=1;
-      if(taxRate<0){taxDown=taxRate+1;taxRate=0;}
-      taxRate=Math.min(99,Math.trunc(taxRate*taxDown+0.5));
-      const tax=int(Math.trunc(proceeds*taxRate/100),'sale tax');
+      const {tax:sourceTax}=calculateSourceSaleTax({basePrice:r.unitPrice,count:take,totalPrice:proceeds});
+      const tax=int(sourceTax,'sale tax');
       money=int(money+proceeds-tax,'money after sale',cashMin);
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');

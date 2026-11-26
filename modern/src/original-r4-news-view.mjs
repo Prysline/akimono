@@ -14,7 +14,9 @@ export function reviewOriginalNews(sources){
  const declarations=[...parseDsl(sources.itemDsl,'custom/inc-item-data.cgi').blocks,...parseDsl(sources.rebelDsl,'custom/inc-rebel-data.cgi').blocks].filter(b=>b.kind==='EVENT');
  const infos=Object.freeze(Object.fromEntries(declarations.map(b=>[b.fields.code[0].value,b.fields.info?.[0]?.value??''])));
  if(Object.keys(infos).length!==25)fail('original EVENT info set');
- const reviewed=Object.freeze({infos,pageRows:25,timezoneSeconds:9*3600});reviews.add(reviewed);return reviewed;
+ if(sources.ownerMainSource!=null&&createHash('sha1').update('blob '+Buffer.byteLength(sources.ownerMainSource)+'\0').update(sources.ownerMainSource).digest('hex')!=='f4c899ad28eb9a38445a60d3b050048f0a40528b')fail('source drift ownerMainSource');
+ if(sources.ownerMainSource!=null&&!/\$MAIN_LOG_PAGE_ROWS\s*=10\s*;/.test(sources.configSource))fail('source owner topic rows');
+ const reviewed=Object.freeze({infos,pageRows:25,timezoneSeconds:9*3600,ownerMainReviewed:sources.ownerMainSource!=null});reviews.add(reviewed);return reviewed;
 }
 function timeLabel(seconds,timezoneSeconds){
  if(!seconds)return '--/--';
@@ -45,5 +47,5 @@ export function describeOriginalNews({reviewed,world}){
   if(reviewed.infos[code])eventMessages.push(reviewed.infos[code]);
  }
  eventMessages.sort();
- return {source:'r4-frozen-news-owner.v1',pageRows:reviewed.pageRows,targets:[shop.shopname],eventMessages,rows};
+ return {source:'r4-frozen-news-owner.v1',pageRows:reviewed.pageRows,targets:[shop.shopname],eventMessages,rows,...(reviewed.ownerMainReviewed?{recentRows:rows.filter(r=>shop.shopname==='0'||r.wire.includes(shop.shopname)).slice(0,10)}:{})};
 }

@@ -55,6 +55,9 @@ const locations=[
  ['originalNewsHtmlSource','modern/tests/original-perl/core-inc-html-log.cgi'],
  ['originalNewsPageSource','modern/tests/original-perl/core-page.cgi'],
  ['originalNewsTimeSource','modern/tests/original-perl/core-time.cgi'],
+ ['originalShowcaseViewSource','modern/tests/original-perl/core-inc-sc.cgi'],
+ ['originalItemDetailViewSource','modern/tests/original-perl/core-item-view.cgi'],
+ ['originalOwnerMainSource','modern/tests/original-perl/core-main.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));

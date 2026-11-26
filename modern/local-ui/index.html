@@ -102,16 +102,18 @@
         <tr><th scope="row">垃圾</th><td id="shop-info-clean">—</td></tr>
       </tbody></table></div>
       <p class="muted dev-panel" data-dev-panel>原版人氣內部數值：<output id="dev-popularity-raw">—</output>；頂端點數依 GetDTPoint 獨立計算。</p>
-      <h3 class="sub-title">展示架</h3>
+      <h3 class="sub-title">展示架 <span id="shop-shelf-maintenance"></span></h3>
       <div class="table-scroll"><table class="shelf-table">
-        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th>庫存</th><th>本期售出</th><th>前期售出</th><th>操作</th></tr></thead>
-        <tbody id="showcase-shelves"><tr><td colspan="8">尚未開店</td></tr></tbody>
+        <thead><tr><th>架號</th><th>商品名稱</th><th>售價</th><th>標準價格</th><th id="shop-shelf-tax-heading">銷售稅</th><th>庫存</th><th>本期售出</th><th>前期售出</th><th>操作</th></tr></thead>
+        <tbody id="showcase-shelves"><tr><td colspan="9">尚未開店</td></tr></tbody>
       </table></div>
       <p class="shelf-remove-note">調整或下架展示架消耗 <strong id="shop-showcase-time">—</strong> 行動時間；下架後商品仍保留在倉庫。</p>
       <table class="shop-turnover-table" aria-label="本期即時營業摘要"><tbody><tr>
         <th scope="row">本期售額</th><td id="shop-sales">—</td>
         <th scope="row">本期支出</th><td id="shop-paid">—</td>
       </tr></tbody></table>
+      <h3 id="shop-recent-title" class="sub-title">店舖事件</h3>
+      <div id="shop-recent-rows"></div>
       <details class="dev-panel" data-dev-panel>
         <summary>開發測試｜時間快轉</summary>
         <p class="help-text">只用於驗證自然販售與來源市場供貨；不代表正式遊戲的自動時間流逝。</p>
@@ -211,6 +213,7 @@
         <tr id="item-market-low-row" hidden><th scope="row">最低價</th><td id="item-market-low">—</td></tr>
         <tr id="item-market-high-row" hidden><th scope="row">最高價</th><td id="item-market-high">—</td></tr>
         <tr id="item-market-balance-row" hidden><th scope="row">供需平衡</th><td id="item-market-balance">—</td></tr>
+        <tr id="item-sale-warning-row" hidden><th scope="row">販售說明</th><td id="item-sale-warning"></td></tr>
       </tbody></table>
       <form id="showcase-form" class="shelf-form">
         <fieldset>

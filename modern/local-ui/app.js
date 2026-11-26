@@ -147,6 +147,9 @@ function renderItemInfo(s){
   text('item-market-low',status?.lowestPrice==null?'—':money(status.lowestPrice));
   text('item-market-high',status?.highestPrice==null?'—':money(status.highestPrice));
   text('item-market-balance',marketBalanceText(status?.balance));
+  const warning=status?.saleWarning;
+  $('item-sale-warning-row').hidden=!warning;
+  text('item-sale-warning',warning==='not-listable'?'無法販售'+(item?.name??'此商品'):warning==='no-sales'?'這個產品即使陳列了也無法販售':warning==='rare-sales'?'這個產品即使陳列了也很難販售':'');
   text('item-detail-name',item?.name??'請從倉庫選擇商品');
   text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
   text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
@@ -452,6 +455,10 @@ function renderNews(s){
  }
  if(!source?.targets.includes(newsQuery.target))newsQuery.target='';
  targets.value=newsQuery.target;
+ const recent=$('shop-recent-rows');recent.replaceChildren();
+ text('shop-recent-title',s?.shop?s.shop.shopname+'的事件':'店舖事件');
+ for(const row of source?.recentRows??[]){const p=document.createElement('p');p.textContent=row.private?row.message+'（秘密）':row.timeLabel+' '+(['','[重要] ','[情報] ','[行動] '][row.mode]??'')+row.message;recent.append(p);}
+ if(!source?.recentRows?.length){const p=document.createElement('p');p.textContent=source?.recentRows?'沒有資料':'尚未開放';recent.append(p);}
  const query=source?queryOriginalNews(source,newsQuery):null;
  if(query)newsQuery.page=query.page;
  for(const message of source?.eventMessages??[]){
@@ -526,6 +533,8 @@ function showState(s){
     Math.trunc(shop.rank/100)+'%':'—');
   text('dev-popularity-raw',Number.isSafeInteger(shop?.rank)?
     number(shop.rank):'—');
+  text('shop-shelf-tax-heading','銷售稅'+(s.showcaseView?.taxModeLabel??''));
+  text('shop-shelf-maintenance',s.balance?'：目前'+shop.showcasecount+'個：維持費 '+money(s.balance.shelfMaintenance):'');
   const shelfBody=$('showcase-shelves');
   shelfBody.replaceChildren();
   const shelfCount=shop?.showcasecount??0;
@@ -537,7 +546,7 @@ function showState(s){
      !Array.isArray(shop?.showcase)||shop.showcase.length!==shelfCount||
      !Array.isArray(shop?.price)||shop.price.length!==shelfCount){
     const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=8;td.textContent=shop?'展示架資料不合法':'尚未開店';
+    td.colSpan=9;td.textContent=shop?'展示架資料不合法':'尚未開店';
     tr.append(td);shelfBody.append(tr);
   }else for(let index=0;index<shelfCount;index++){
     const itemId=shop.showcase[index]??0,hasItem=itemId>0;
@@ -551,6 +560,8 @@ function showState(s){
     cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
     cell(hasItem?money(shop.price[index]):'—');
     cell(hasItem?money(info?.basePrice):'—');
+    const shelfTax=s.showcaseView?.rows[index];
+    cell(hasItem&&shelfTax?.tax!==null&&shelfTax?money(shelfTax.tax)+'（稅率'+shelfTax.taxRate+'%）':'—');
     cell(hasItem?number(shop.item[itemId-1]):'—');
     cell(hasItem?number(shop.itemtoday?.[itemId]??0):'—');
     cell(hasItem&&w?.period?.settledCount>0?

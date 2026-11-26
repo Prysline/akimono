@@ -13,6 +13,7 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
+import {reviewOriginalShowcaseView,describeOriginalShowcase} from './original-r4-showcase-view.mjs';
 import {reviewOriginalNews,describeOriginalNews} from './original-r4-news-view.mjs';
 import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
 import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
@@ -54,6 +55,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const newsInputs=[sources.newsViewSource,sources.newsHtmlSource,sources.newsPageSource,sources.newsTimeSource];
   if(newsInputs.some(s=>s!=null)&&newsInputs.some(s=>s==null))fail('incomplete original news source set');
   const news=normalCommerce&&enableReviewedCrossPeriod&&newsInputs.every(s=>s!=null)?reviewOriginalNews(sources):null;
+  const showcaseView=normalCommerce&&sources.showcaseViewSource!=null?reviewOriginalShowcaseView(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
   const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
@@ -179,6 +181,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     reviewedOwnerClosure:Boolean(closeReview),
+    ...(showcaseView?{describeShowcase(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      return describeOriginalShowcase({reviewed:showcaseView,world,normalCommerce});
+    }}:{}),
     ...(news?{describeNews(world){
       if(!world?.shops?.length||!world.period?.disk)return null;
       validate(world);
