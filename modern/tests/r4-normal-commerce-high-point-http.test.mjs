@@ -160,10 +160,12 @@ test('R4 genuine #65/2 four industry rumors, negative natural sales, exact expir
     onTick(r,before){
       if(!active)return;
       const trace=r.details.sourceTrace;
-      const orders=trace.slices?trace.slices.map(x=>x.activeOrder):[trace.activeOrder];
+      // DataRead is once per command, even when a 36h boundary splits
+      // it into two slices. A manual END in slice 0 does not reload ITEM
+      // for slice 1. The next command reads the new event map.
+      const overlay=Object.hasOwn(before.period.eventState,active.code);
       for(const row of r.details.shelfSales){
         if(row.itemId!==active.id)continue;
-        const overlay=orders[row.sliceIndex].includes(active.code);
         if(overlay){
           assert.equal(row.effectivePoint,-100);
           assert.ok(Number(row.rankContribution)<=0);
