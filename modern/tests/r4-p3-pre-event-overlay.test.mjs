@@ -166,6 +166,10 @@ test('R4 actual legal market buy/open source state works and legacy P3/R3 guards
   assert.throws(()=>projectP3PreEventTurn(args(w,1,samples)),/EVENT/);
   const bad=structuredClone(world);bad.shops[0].exp={'20':1001};
   assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(bad,1,samples),reviewedR4,reviewedDataRead,activeOrder:[]}),/LIMIT_EXP/);
+  const debt=structuredClone(world);debt.shops[0].money=-1;
+  const debtBefore=structuredClone(debt);
+  assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(debt,1,samples),reviewedR4,reviewedDataRead,activeOrder:[]}),/source shop debt outside reviewed runtime.*"money":-1/);
+  assert.deepEqual(debt,debtBefore,'signed cash refusal is atomic; no debt forgiveness');
   const crossing=structuredClone(world);crossing.nowSeconds=1025980;
   assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(crossing,1,samples),reviewedR4,reviewedDataRead,activeOrder:[]}),/period settlement/);
 });

@@ -304,6 +304,15 @@ function projectSourcePreEventSaleSlice({
     bad('P3 pre-EVENT projection requires known bootstrap and no active EVENT');
   const saleRules=p3InventoryStage?reviewed.p3TurnItems?.rules:reviewed.saleRules;
   const upkeepCosts=p3InventoryStage?reviewed.p3TurnItems?.costs:reviewed.upkeepCosts;
+  // Preserve the existing nonnegative-cash natural-sale guard, but report
+  // precisely if a real period ledger left debt at the next slice. Do not
+  // reject the source-only ledger itself: frozen period.cgi may subtract
+  // upkeep below zero. Signed cash continuation/persistence is unreviewed.
+  if(p3InventoryStage&&Number.isSafeInteger(shop?.money)&&shop.money<0)
+    bad('source shop debt outside reviewed runtime: '+JSON.stringify({
+      money:shop.money,costyesterday:shop.costyesterday,paytoday:shop.paytoday,
+      dateupdate:boundary?.dateupdate??null,nowSeconds:world.nowSeconds
+    }));
   if(shop?.id!==shopId||shop.status!==1||
     (!Number.isSafeInteger(shop.showcasecount)||
       shop.showcasecount<1||shop.showcasecount>8)||
@@ -465,15 +474,6 @@ function projectSourcePreEventSaleSlice({
     if(conflict)periodDraws=basePeriodDraws+settlement.conflictTerritory.drawsUsed;
     if(settlement.shopExpiry?.expiredOwner||!settlement.shop||settlement.nonCommittable!==true)
       bad('source closure requires external archive/session transaction');
-    // Original period.cgi subtracts upkeep without flooring shop money.
-    // The current independent play codec and normal EVENT/BUY/USE stages
-    // only review nonnegative shop balances. Refuse the entire command,
-    // with actual source ledger values, rather than losing the reason in
-    // the residual slice's broad B41 guard (or silently forgiving debt).
-    if(settlement.shop.money<0)bad('source shop debt outside reviewed runtime: '+JSON.stringify({
-      cashBeforeLedger:newShop.money,maintenance:settlement.maintenance,
-      cashAfterLedger:settlement.shop.money,nowSeconds:boundary.commandNowSeconds
-    }));
     plusWorld={...world,shops:[settlement.shop],period:{...world.period,
       town:settlement.town,dtPeople:settlement.dtPeople}};
   }
