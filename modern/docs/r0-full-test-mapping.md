@@ -243,3 +243,4 @@
 - modern/tests/r1-formal-startup-legacy-rejection.test.mjs：正式入口負向回歸；#24 已有 CI，整合候選待驗。
 
 - modern/tests/r1-http-persistence-contract.test.mjs：正式 HTTP/v2 負向及競爭回歸，整合候選待驗。
+- modern/tests/r1-v2-fresh-negative-replay.test.mjs：正式 v2 fresh replay 九種負向變體、雙槽全損拒絕與復原；整合候選待驗。
