@@ -6622,17 +6622,65 @@
       "path": "modern/tests/original-perl/original-r4-dynamic-population-plus.t",
       "sha": "a9e41c70b0dd9257bf2b1c1e933b9b5a12552c24",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（動態人口 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "probe exit/JSON；三指定人口、各79 wholesale、draw count 等於 consumedSamples、#10 在低/高人口 stock 不同。",
+      "executionPath": "Perl modern/tests/original-perl/original-r4-dynamic-population-plus-probe.pl → source fragment → Test::More",
+      "risk": "時間分割／人口影響批發庫存；非正式玩家",
+      "disposition": "保留；不得升格正式時間／HTTP/v2",
+      "reason": "逐檔審閱來源、probe、harness 與差分斷言。固定 GetTime 編譯59 PLUS、原版 inc-turn PLUS 與整個 CheckWholeStore；只核 consumed prefix，非全部118 draws 皆耗盡；非完整 CGI/合法取得/自然售出/正式結算。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-clock-population-plus-evidence.md",
+          "line": 26
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-dynamic-population-plus-probe.pl",
+          "sha": "c0a6502c2ce734bfce4b1966501cb800da7a1999"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "人工單店初始 #63/#79、空 sparse wholesale、三人口、120秒與零亂數",
+      "limitations": "固定 GetTime 編譯59 PLUS、原版 inc-turn PLUS 與整個 CheckWholeStore；只核 consumed prefix，非全部118 draws 皆耗盡；非完整 CGI/合法取得/自然售出/正式結算。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-event-hash-order.t",
@@ -7414,22 +7462,45 @@
       "path": "modern/tests/original-perl/original-r4-time-slices.t",
       "sha": "f63fbcbfd02be0cbe26c613792a5456496f9d7e3",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（36h 時鐘分割）",
+      "originalSource": "_config.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "probe exit/JSON；九 cases、exact boundary [1,60],[0,0]、雙 boundary [1,60],[1,129600],[0,60]、起於 boundary 不重結算、逐案 lastTime/now 恢復。",
+      "executionPath": "Perl modern/tests/original-perl/original-r4-time-slices-probe.pl → source fragment → Test::More",
+      "risk": "時間分割／人口影響批發庫存；非正式玩家",
+      "disposition": "保留；不得升格正式時間／HTTP/v2",
+      "reason": "逐檔審閱來源、probe、harness 與差分斷言。只執行擷取的 unchanged inc-turn partition；配置常值由 probe 指派；非真時鐘、結算或存檔。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 9
+        },
+        {
+          "path": "modern/docs/r0-r4-clock-population-plus-evidence.md",
+          "line": 12
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-time-slices-probe.pl",
+          "sha": "17c89309d609b9020d556060a07822098171fa38"
+        }
+      ],
+      "fixtures": "固定原版時鐘變數",
+      "limitations": "只執行擷取的 unchanged inc-turn partition；配置常值由 probe 指派；非真時鐘、結算或存檔。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-town-play.t",
@@ -11578,22 +11649,81 @@
       "path": "modern/tests/r4-dynamic-population-plus.test.mjs",
       "sha": "588cc19ee484c4d9a2e8dc4f20c9c45538a0002b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（動態人口 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "三人口 250000/500000/750000，120秒；比79槽 wholesale/defined indices/CSV/drawsUsed；非500000缺 r4PeriodPopulation mode 拒絕；非法人口 0/-1/1.5/null/MAX_SAFE_INTEGER 拒絕、原始 world 不變。",
+      "executionPath": "Perl modern/tests/original-perl/original-r4-dynamic-population-plus-probe.pl → source fragment → Node reviewed projector",
+      "risk": "時間分割／人口影響批發庫存；非正式玩家",
+      "disposition": "保留；不得升格正式時間／HTTP/v2",
+      "reason": "逐檔審閱來源、probe、harness 與差分斷言。實際 memory 初始化與開店，之後人工 period envelope 只供純 projector、不提交；Perl 執行59 PLUS＋full CheckWholeStore；probe 118零樣本只返回 consumed prefix，Node 用該 prefix；非實際人口生成、合法79商品取得、正式 period/HTTP/CAS/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 42
+        },
+        {
+          "path": "modern/docs/r0-r4-clock-population-plus-evidence.md",
+          "line": 19
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-dynamic-population-plus-probe.pl",
+          "sha": "c0a6502c2ce734bfce4b1966501cb800da7a1999"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/original-sparse-all-plus.mjs",
+          "sha": "c5bce229da9f5efefdd4aa062eb0676945d9fdd7"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "memory initialize-source-market/open-shop，人工 PERIOD_WORLD_SCHEMA 與 period.dtPeople，120秒、全零 draws",
+      "limitations": "實際 memory 初始化與開店，之後人工 period envelope 只供純 projector、不提交；Perl 執行59 PLUS＋full CheckWholeStore；probe 118零樣本只返回 consumed prefix，Node 用該 prefix；非實際人口生成、合法79商品取得、正式 period/HTTP/CAS/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-event-item-param.test.mjs",
@@ -12531,22 +12661,49 @@
       "path": "modern/tests/r4-original-time-slices.test.mjs",
       "sha": "2f8c02af9e40f0c53cc820810857b6755d4e0b5c",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（36h 時鐘分割）",
+      "originalSource": "_config.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "九例 raw/effective slices、lastTime/now、settlement flag；36h=129600、shift10800；config/turn marker drift、負/非整數/倒退/溢位/128 boundaries cap 拒絕。",
+      "executionPath": "Perl modern/tests/original-perl/original-r4-time-slices-probe.pl → source fragment → Node reviewed projector",
+      "risk": "時間分割／人口影響批發庫存；非正式玩家",
+      "disposition": "保留；不得升格正式時間／HTTP/v2",
+      "reason": "逐檔審閱來源、probe、harness 與差分斷言。只執行原版 clock partition；probe 固定 TZ=32400、DATE_REVISE=21600、period129600，Node marker 檢查 config；effective 去零尾，非實際 period/SortDT/PLUS/EVENT/clock service/CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 7
+        },
+        {
+          "path": "modern/docs/r0-r4-clock-population-plus-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-time-slices-probe.pl",
+          "sha": "17c89309d609b9020d556060a07822098171fa38"
+        },
+        {
+          "path": "modern/src/original-r4-time-slices.mjs",
+          "sha": "ca7bce68e25c2221a8f53008752d74aa35ded670"
+        }
+      ],
+      "fixtures": "固定 last/now、九 clock cases",
+      "limitations": "只執行原版 clock partition；probe 固定 TZ=32400、DATE_REVISE=21600、period129600，Node marker 檢查 config；effective 去零尾，非實際 period/SortDT/PLUS/EVENT/clock service/CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-p3-pre-event-overlay.test.mjs",
@@ -39406,14 +39563,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 149,
-      "待補": 52
+      "有效": 153,
+      "待補": 48
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 118,
+    "currentSessionReviewed": 122,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -39477,7 +39634,8 @@
     "modern/docs/r0-r4-rebel-period-now-evidence.md",
     "modern/docs/r0-r4-guild-files-fee-evidence.md",
     "modern/docs/r0-r4-mixed-support-instant-evidence.md",
-    "modern/docs/r0-r4-mixed-loto-happy-iron-sword-guild-rebel-evidence.md"
+    "modern/docs/r0-r4-mixed-loto-happy-iron-sword-guild-rebel-evidence.md",
+    "modern/docs/r0-r4-clock-population-plus-evidence.md"
   ],
   "integrationCiHistory": [
     {
