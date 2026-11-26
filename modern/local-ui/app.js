@@ -315,7 +315,7 @@ function updateUseEstimate(){
   }
   text('use-estimated-time','本次預估行動時間：'+
     conciseTimeText(seconds)+'（'+number(available)+' 次）'+
-    (requested>available?'；超出可執行上限的次數將由來源裁切':''));
+    (requested>available?'；超出畫面最大次數，實際執行結果以來源提交端為準':''));
 }
 function renderUseResult(data,offer,catalog){
   const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;

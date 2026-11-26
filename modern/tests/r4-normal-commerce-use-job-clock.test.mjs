@@ -165,3 +165,40 @@ test('R4 controlled gathering fallback shares quote, exact time gate, USE effect
   const stale=executeMemoryCommand({repository:enough,streetModule:street,command:{kind:'use-item',expectedRevision:before.revision,...cmd}});
   assert.equal(stale.code,'REVISION_CONFLICT');assert.deepEqual(enough.read(),after);
 });
+
+
+// Read-only offer contract, not a transaction or player provenance test.
+// The original form caps GetStockTime; original UseItem's submission
+// uses raw time. Preserve the distinction rather than change gameplay.
+test('R4 full commerce quote uses original 72h stock-time ceiling and leaves legacy quote unchanged',async()=>{
+  const input=await loadNormalCommerceAuditSources();
+  const full=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedFullCommerce:true});
+  const legacy=createStandardStreetModule(input);
+  assert.match(input.originalConfigSource,/\$MAX_STOCK_TIME\s*=\s*72\*60\*60\s*;/);
+  const samples=[1499,1500,257999,258000,259199,259200,360000];
+  const sourceMax=JSON.parse(execFileSync('perl',['-e',[
+    'use JSON::PP;no strict;no warnings;',
+    'local $/;my $in=decode_json(<STDIN>);',
+    'eval $in->{stock};die $@ if $@;',
+    '$MAX_STOCK_TIME=72*60*60;$NOW_TIME=1000000;',
+    'my @max=map { int(GetStockTime($NOW_TIME-$_)/1500) } @{$in->{samples}};',
+    'print encode_json(\\@max);',
+  ].join('\n')],{encoding:'utf8',input:JSON.stringify({
+    stock:subSource(input.originalBuyCalcSource,'GetStockTime'),samples,
+  })}));
+  assert.deepEqual(sourceMax,[0,1,171,172,172,172,172]);
+  for(const [i,remaining] of samples.entries()){
+    const item=Array(79).fill(0);item[8]=1;
+    const world={shops:[{status:1,job:'material',exp:{'9':500},item,money:0,time:1000000-remaining}],events:null,nowSeconds:1000000};
+    const before=structuredClone(world);
+    const q=full.listUseOffers(world).find(x=>x.itemId===9&&x.useId===1);
+    assert.equal(q.timePerUseSeconds,1500);
+    assert.equal(q.maxUseCount,sourceMax[i],String(remaining));
+    assert.equal(q.maxUseCountReason,'時間最大');
+    // No source market/provenance is fabricated just to test a quote.
+    assert.equal(q.canUse,false);
+    const old=legacy.listUseOffers(world).find(x=>x.itemId===9&&x.useId===1);
+    assert.equal(old.maxUseCount,Math.floor(remaining/old.timePerUseSeconds));
+    assert.deepEqual(world,before);
+  }
+});

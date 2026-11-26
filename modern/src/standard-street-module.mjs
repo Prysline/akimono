@@ -753,10 +753,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             (shop?.item?.[row.itemId-1]??0)<row.count);
           const validMarket=world?.market&&
             useItem.validateWorld({world,rule});
-          // Display-only original CheckUseItem count ceiling. Actual server
-          // request still runs the shared preflight and may be clipped.
+          // Frozen item-m form uses calc.cgi::GetStockTime, which caps
+          // displayed stock time at MAX_STOCK_TIME (72h in _config.cgi).
+          // Frozen UseItem submission instead clips using raw NOW_TIME-time
+          // before UseTime applies its cap. Do not change that transaction.
+          const rawStockTime=shop?world.nowSeconds-shop.time:0;
+          const quoteStockTime=enableReviewedFullCommerce?Math.min(rawStockTime,259200):rawStockTime;
           const timeMaximum=shop&&actualTime>0?
-            Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
+            Math.max(0,Math.floor(quoteStockTime/actualTime)):0;
           const moneyMaximum=shop&&rule.money>0?
             Math.max(0,Math.floor(shop.money/rule.money)):Number.MAX_SAFE_INTEGER;
           const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
