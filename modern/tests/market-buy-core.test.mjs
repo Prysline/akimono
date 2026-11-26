@@ -862,3 +862,82 @@ test('P4 cow purchase source quote, cash/holding/time rejection and stale quote 
     assert.equal(r.ok,false);assert.deepEqual(r.world,world);
   }
 });
+
+
+test('P5 frozen Perl zero-price book and shared market-buy differential (controlled source fixture, not player)',()=>{
+  const oracle=JSON.parse(execFileSync('perl',['p5-book-work-market-oracle.pl'],{
+    cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',timeout:30000,
+    maxBuffer:4*1024*1024,
+  }));
+  const start=seed().repository.read();
+  const rule=street.marketBuy.getRule(13);
+  assert.equal(rule.zeroPriceReviewed,true);
+  assert.equal(rule.unitPrice,0);
+  assert.equal(rule.wholesaleLimit,1);
+  assert.equal(street.marketBuy.getRule(63),null);
+  assert.equal(street.marketBuyRegistry.describe(63).classification,'unsupported');
+  assert.equal(start.market.wholesale[12],1);
+  for(const c of oracle.cases){
+    const shop={...start.shops[0],item:[...start.shops[0].item],
+      money:c.moneyBefore,paytoday:123,time:c.timeBefore};
+    shop.item[12]=c.ownedBefore;
+    let market=start.market;
+    if(c.marketBefore===0){
+      const wholesale=[...market.wholesale];wholesale[12]=0;
+      market=street.marketBuy.writeMarket({market,wholesale,itemId:13,wholesaleIndex:12});
+    }
+    const world={...start,market,shops:[shop]};
+    const before=encodeMemorySnapshot(world);
+    const q=street.quoteMarketOffer(world,13);
+    if(c.marketBefore){
+      assert.equal(q.price,0,c.case);
+      assert.equal(q.shelf,c.sourceShelf,c.case);
+      assert.equal(q.timeSeconds,600,c.case);
+    }else{
+      assert.equal(q.price,null,c.case);
+      assert.equal(q.canBuy,false,c.case);
+    }
+    const result=apply(world,{kind:'market-buy',expectedRevision:world.revision,
+      shopId:1,itemId:c.itemId,requestedCount:c.requestedCount,
+      marketShelf:c.marketShelf,expectedPrice:c.expectedPrice});
+    assert.equal(result.ok,c.accepted,c.case);
+    assert.equal(encodeMemorySnapshot(world),before,c.case);
+    if(!c.accepted){
+      assert.deepEqual(result.world,world,c.case);
+      continue;
+    }
+    assert.equal(result.details.purchasedCount,c.purchasedCount,c.case);
+    assert.equal(result.details.totalPaid,0,c.case);
+    assert.equal(result.details.unitPrice,0,c.case);
+    assert.equal(result.details.tax,c.actualTax,c.case);
+    assert.equal(result.details.timeConsumedSeconds,c.trueMarketTimeSeconds,c.case);
+    assert.equal(result.world.shops[0].money,c.money,c.case);
+    assert.equal(result.world.shops[0].paytoday,c.paytoday,c.case);
+    assert.equal(result.world.shops[0].item[12],c.stock,c.case);
+    assert.equal(result.world.shops[0].item[78],c.giftStock,c.case);
+    assert.equal(result.world.shops[0].time,c.time,c.case);
+    assert.equal(result.world.market.wholesale[12],c.marketStock,c.case);
+    assert.equal(result.world.market.originalWholesaleCsv,c.wholesaleCsv,c.case);
+    assert.deepEqual(result.world.market.sparseWrittenSlots,c.sparseWrittenSlots,c.case);
+  }
+  const q=sourceMarketQuote(start,13);
+  const command=buyCommand(start,13,q);
+  // Forged over-cap stock is a negative fixture, never acquisition evidence.
+  const wholesale=[...start.market.wholesale];wholesale[12]=2;
+  const invalid={...start,market:street.marketBuy.writeMarket({
+    market:start.market,wholesale,itemId:13,wholesaleIndex:12,
+  })};
+  const denied=apply(invalid,command);
+  assert.equal(denied.ok,false);
+  assert.deepEqual(denied.world,invalid);
+  const positive=sourceMarketQuote(start,10);
+  const fakePrice=apply(start,{...buyCommand(start,10,positive),expectedPrice:0});
+  assert.equal(fakePrice.ok,false);
+  assert.deepEqual(fakePrice.world,start);
+  const unsafeStreet={...street,marketBuy:{...street.marketBuy,
+    quote(){return {price:0,timeSeconds:600};},
+  }};
+  const fakeRule=apply(start,{...buyCommand(start,10,positive),expectedPrice:0},unsafeStreet);
+  assert.equal(fakeRule.ok,false);
+  assert.deepEqual(fakeRule.world,start);
+});
