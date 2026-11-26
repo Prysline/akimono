@@ -532,7 +532,9 @@ function showState(s){
   const balance=s.balance;
   $('balance-source-extra').hidden=!balance;
   if(balance){
-    text('balance-founded',conciseTimeText(balance.foundedSeconds));
+    text('balance-founded',balance.foundedLabel);
+    text('balance-prev-sales',money(shop.saleyesterday));
+    text('balance-prev-paid',money(shop.payyesterday));
     text('balance-cost',money(balance.accruedMaintenance)+' + '+money(balance.shelfMaintenance));
     text('balance-prev-cost',money(balance.previousMaintenance));
     text('balance-prev-tax',money(balance.previousTax));

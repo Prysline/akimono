@@ -341,3 +341,11 @@ test('source discard and sweep use server quotes, original controls and strict r
   assert.match(script,/call\('\/api\/sweep',\{expectedRevision:before\.world\.revision,requestedHours\}/);
   assert.match(adapter,/exactKeys\(body,'expectedRevision,requestedHours'\)/);
 });
+
+
+test('source balance view displays source-ledger maintenance, historical taxes, job and elapsed founding time',()=>{
+  for(const id of ['balance-prev-cost','balance-prev-tax','balance-base-tax','balance-exp','balance-job','balance-dignity','balance-wins','balance-clean'])assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(adapter,/balance:world&&streetModule\.describeBalance/);
+  assert.match(script,/money\(balance\.accruedMaintenance\)\+' \+ '\+money\(balance\.shelfMaintenance\)/);
+  assert.match(script,/text\('balance-founded',balance\.foundedLabel\)/);
+});
