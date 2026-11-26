@@ -727,3 +727,72 @@ test('external candidate full pre-EVENT prefix uses actual natural sale, ledger,
     assert.throws(()=>projectR4BoundaryPreEventCandidate({...input,randomDraws:oracle.consumed.slice(0,2)}),/missing/);
   }
 });
+
+
+import {projectR4ExternalCrossPeriodCandidate} from '../src/original-r4-external-cross-period-candidate.mjs';
+import {parseArmyFile} from '../src/original-r4-army-files.mjs';
+test('full actual two-slice source prefix, territory, mixed EVENT and real original army live/stage stay in one transaction',()=>{
+  const external=reviewR4ExternalPreEventItemOverlay({itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,
+    compilerSource:source.originalCompilerSource,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,periodSource:source.originalPeriodSource});
+  const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true,reviewedRebelNow:external.rebel});
+  const reviewedEvents=reviewOriginalR4MultiEventFixture({
+    compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,
+    reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
+    reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
+    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
+  for(const armed of [false,true]){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=1155580;
+    world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
+      lastSettledBoundarySeconds:1026000,dtPeople:350000,
+      town:{...world.period.town,leader:1,money:5000000,develop:5001,safety:5001,army:10000,robina:2000,people:500000},
+      eventState:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
+    Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
+    const liveArmyBytes=armed?'1,4000\n1\n':'\n\n';
+    const input={world,minutes:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
+      reviewedEvents,reviewedPeriod,liveArmyBytes};
+    const before=JSON.stringify(world),got=projectR4ExternalCrossPeriodCandidate(input);
+    assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
+    assert.equal(got.nowSeconds,1155640);
+    assert.equal(got.period.settledCount,2);
+    assert.deepEqual(got.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+    const slices=got.evidence.slices;
+    const actual=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+      env:{...process.env,PERL_HASH_SEED:got.evidence.seed,PERL_PERTURB_KEYS:'0'},
+      input:JSON.stringify({externalCandidate:true,liveArmyBytes,eventWire:Object.entries(world.period.eventState).flat().join(','),
+        startSeconds:world.nowSeconds,shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:got.nowSeconds},
+        slices:slices.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+        samples:slices.flatMap(s=>[...s.preEventDraws,...s.eventSamples])})
+    }));
+    assert.deepEqual(actual.dataReadOrder,got.evidence.dataReadOrder);
+    for(const [i,s] of slices.entries()){
+      const a=actual.slices[i];
+      for(const k of ['activeOrder','eventOrder','nowOrder','afterOrder','eventState','town','transientArmy'])assert.deepEqual(s[k],a[k],i+' '+k);
+      assert.equal(s.armyRead,Boolean(a.armyRead));
+      assert.equal(a.liveArmyBytes,liveArmyBytes);
+      assert.deepEqual(parseArmyFile(s.stagedArmyBytes,[1]),parseArmyFile(a.stagedArmyBytes,[1]));
+      assert.deepEqual(s.eventDrawRanges,a.ranges);
+      assert.deepEqual(s.eventLogs,a.logs);
+      assert.equal(s.preEvent.receipt.totalDraws,a.preEvent.preEventDrawCount);
+      assert.deepEqual(s.preEvent.market.wholesale,a.preEvent.wholesale);
+      assert.equal(s.preEvent.market.originalWholesaleCsv,a.preEvent.csv);
+      assert.deepEqual(a.preEvent.plus,got.evidence.plusSeconds);
+      for(const [k,v] of Object.entries(s.shop)){
+        if(k==='costtoday'){assert.ok(Math.abs(v-a.shop[k])<1e-8);continue;}
+        assert.deepEqual(v,a.shop[k],i+' '+k);
+      }
+    }
+    assert.equal(slices[0].armyRead,true);
+    assert.equal(slices[1].armyRead,armed);
+    assert.equal(Object.hasOwn(got.shops[0],'army'),false);
+    assert.equal(got.liveArmyBytes,liveArmyBytes);
+    assert.equal(got.stagedArmyBytes,armed?'1,3987\n1\n':'\n\n');
+    assert.equal(JSON.stringify(world),before);
+    assert.deepEqual(projectR4ExternalCrossPeriodCandidate(input),got);
+    assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,taxRate:1}),/no tax-rate/);
+  }
+});

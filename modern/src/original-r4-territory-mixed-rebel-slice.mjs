@@ -12,7 +12,8 @@ const exact=(o,keys)=>o!==null&&typeof o==='object'&&Object.getPrototypeOf(o)===
 export function projectR4TerritoryMixedRebelSlice({reviewedTerritory,reviewedEvent,period=null,
   town,taxRate,balJob,balName,liveArmyBytes,pendingArmyBytes=null,
   items,shop,startSeconds,spanSeconds,activeUntilSeconds,activeHashOrderFixture,
-  eventHashOrderFixture,nowHashOrderFixture,guildContext=null,randomDrawProvider}){
+  eventHashOrderFixture,nowHashOrderFixture=null,guildContext=null,randomDrawProvider,
+  resolveNowOrder=null,reviewedInventory=null,reviewedSubminute=false}){
   if(reviewedEvent?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||reviewedEvent.committable!==false||
      !reviewedEvent.rebel||typeof randomDrawProvider!=='function'||
      !shop||shop.id!==1||shop.status!==1||!town||
@@ -52,7 +53,8 @@ export function projectR4TerritoryMixedRebelSlice({reviewedTerritory,reviewedEve
   let armyRead=false;
   const event=projectOriginalR4MultiEventFixture({reviewed:reviewedEvent,items,shop,startSeconds,spanSeconds,
     activeUntilSeconds:events,activeHashOrderFixture,eventHashOrderFixture,nowHashOrderFixture,
-    guildContext,rebelContext:{town:city,taxRate,balJob,balName,armyById:{},riotIds:[]},
+    guildContext,resolveNowOrder,reviewedInventory,reviewedSubminute,
+    rebelContext:{town:city,taxRate,balJob,balName,armyById:{},riotIds:[]},
     exactTicketDraws:true,reviewedExternalDraws:true,
     randomDrawProvider:(index,range)=>sample(periodDrawCount+index,range),
     readRebelArmy:()=>{

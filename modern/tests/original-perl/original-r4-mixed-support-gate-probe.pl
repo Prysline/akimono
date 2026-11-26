@@ -618,7 +618,31 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   {no warnings 'redefine';*CORE::GLOBAL::rand=$rand;}
   my $order=OriginalR4PreEventHarness::prepare($in,1);
   $ITEM_DIR=$callbackRoot;
-  die 'special EVENT not in candidate scope' if exists($DTevent{rebel})||exists($DTevent{guildbattle});
+  my $external=$in->{externalCandidate};
+  die 'special EVENT not in candidate scope' if (!$external&&exists($DTevent{rebel}))||exists($DTevent{guildbattle});
+  my ($armyLive,$armyStage);
+  my $readBytes=sub{my($file)=@_;open my $h,'<:raw',$file or die $!;my $s=do{local $/;<$h>};close $h;return $s};
+  if($external){
+    die 'external candidate cannot access full disk harness' if $in->{disk};
+    our $TEMP_DIR;
+    $TEMP_DIR="$callbackRoot/army-stage";make_path($TEMP_DIR);
+    $armyLive="$callbackRoot/army-live.cgi";$armyStage="$TEMP_DIR/army.cgi";
+    open my $h,'>:raw',$armyLive or die $!;print {$h} $in->{liveArmyBytes};close $h or die $!;
+    my $path=\&main::GetPath;
+    no warnings 'redefine';
+    *main::GetPath=sub{
+      return $armyLive if @_==1&&$_[0] eq 'army';
+      return $armyStage if @_==2&&$_[0] eq $TEMP_DIR&&$_[1] eq 'army';
+      return $path->(@_);
+    };
+    *main::OpenAndCheck=sub{open(OUT,'>:encoding(UTF-8)',$_[0]) or die $!};
+    my $src=OriginalGiftMapUseHarness::source('pinned-army.cgi');
+    eval "package main;no strict;no warnings;\n$src\n1;" or die $@;
+    my $read=\&main::ReadArmy;my $write=\&main::WriteArmy;
+    *main::ReadArmy=sub{$READ_ARMY++;$read->(@_)};
+    *main::WriteArmy=sub{$WRITE_ARMY++;$write->(@_)};
+    $DTTaxrate=0;
+  }
   die 'bounded actual boundary slices' unless ref($in->{slices})eq 'ARRAY'&&@{$in->{slices}}>=1&&@{$in->{slices}}<=2;
   @R4_MULTI_DRAWS=@{$in->{samples}};
   my @results;
@@ -633,6 +657,8 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
     my $before=scalar(@R4_MULTI_DRAWS);
     main::ActualPreEvent($span,$slice->{dateupdate});
     my $preCount=$before-scalar(@R4_MULTI_DRAWS);
+    @prior=keys(%DTevent) if $external;
+    $READ_ARMY=$WRITE_ARMY=0 if $external;
     no warnings 'uninitialized';
     my $pre=$json->decode($json->encode({
       shop=>$DT[0],wholesale=>[map {0+($_//0)} @main::DTwholestore[0..78]],
@@ -647,6 +673,10 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
       preEvent=>$pre,activeOrder=>[@prior],eventOrder=>[@runtimeHashKeys],nowOrder=>[@R4_NOW_KEYS],
       shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
       logs=>[@LOG],ranges=>[@R4_MULTI_RANGES],
+      ($external?(town=>$STATE,afterOrder=>[keys %DTevent],armyRead=>$READ_ARMY,
+        transientArmy=>defined($DT[0]{army})?0+$DT[0]{army}:undef,
+        liveArmyBytes=>$readBytes->($armyLive),
+        stagedArmyBytes=>-e $armyStage?$readBytes->($armyStage):undef):()),
     }));
     $cursor+=$span;
   }

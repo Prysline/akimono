@@ -1,0 +1,3 @@
+## 雙 slice 外部反亂來源交易候選
+
+完整 pre-EVENT prefix → native external hash → mixed EVENT → live army read / pending stage。原始 DataRead overlay 整筆命令只取一次；決算在 END 前更新 rebel，NOW 可刪除自身，第二 slice 用 post-NOW order。軍隊同一命令始終讀原 live，保留 stage 直到最後；DT.army 只暫存，不回寫 play。新同一 Perl process 的原版完整前綴與 mixed callback，實際 pinned ReadArmy/WriteArmy 對隔離檔案讀寫；2個測試（反亂鎮壓、兩次 NOW 延續），實際 stage 不提交。只支援一店、taxRate=0、無guild/dragon/closure，不是正式 CAS/HTTP/history，也不證明玩家取得。CI待驗。
