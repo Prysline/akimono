@@ -1,0 +1,291 @@
+use strict;
+use warnings;
+use utf8;
+use Test::More;
+use FindBin;
+use File::Temp qw(tempdir);
+use File::Path qw(make_path);
+use Cwd qw(getcwd);
+use Encode qw(decode_utf8 encode_utf8 FB_CROAK);
+use Digest::SHA qw(sha1_hex);
+use JSON::PP;
+
+# Controlled source oracle, not a modern login implementation. All credentials
+# are synthetic and all writes use an isolated temporary directory.
+our ($DATA_DIR,$TEMP_DIR,$BACKUP_DIR,$FILE_EXT,$DATA_FILE,$COMMIT_FILE,
+  $LASTTIME_FILE,$NOW_TIME,$BACKUP_TIME,$DTlasttime,$DTpeople,$DTnextid,
+  $DTblockip,$DTTaxrate,$DTState,$DTtown,$MAX_ITEM,$MAX_MONEY,$LOCKED,
+  $LOCKED_LEVEL,$LOCK_FILE,$AUTO_UNLOCK_TIME,$DTusercount,$STATE,
+  @STATEnamelist,@DTindexnamelist,@DTwholestore,%DTevent,@DT,
+  %id2idx,%name2idx,%name2pass,%Q,$DT,$DTid,$DTidx,$USER,$USERSESSION,
+  $USERPASSURL,$USERPASSFORM,$GUEST_USER,$MASTER_USER,$COOKIESESSION,
+  $SESSION_DIR,$SESSION_TIMEOUT_TIME,$DEFINE_FUNCINIT,$PASSWORD_CRYPT,
+  $MASTER_PASSWORD,$NEW_SHOP_ADMIN,$NEW_OTHERTOWN_BLOCK,$NEW_SHOP_BLOCKIP,
+  $NEW_SHOP_KEYWORD,$MAX_USER,$DEFINE_FUNCNEW,$DEFINE_FUNCNEW_NOLOG,
+  $MYDIR,@OtherDir,@NG_SHOP_NAME,$MOBILE,$CHECK_IP,$TZ_JST,$ITEM_DIR,
+  @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
+my %pins=(
+  'inc-func.cgi'=>'e7a8add7b0291901e71fe797783b664dff1568a0',
+  'core-detail.cgi'=>'9a83d26fb29edee4032958f1e6de837a250f3384',
+  'new.cgi'=>'9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7',
+  'write.cgi'=>'203f33b37511e838800a45b84183af98fcf46e4c',
+  'lock.cgi'=>'84382170f1b7f70348c4e2a91bf30b1d1043b964',
+  'pinned-login.cgi'=>'1e5963c52a4ca82d75922b5a1ca3b3db14fef436',
+  'pinned-ip.cgi'=>'2624e31edd1966c9535b9dd43dbce003d8ffa9a7',
+  'pinned-name.cgi'=>'ae3b3a862fc78b8775795ed88d5d1911861b3d80',
+  'pinned-time.cgi'=>'e164091d4dc6de084bb4770e0b9b4bf6005d9f3f',
+  'pinned-membership-user.cgi'=>'8e817c535d4cd17e68d65f0e2f67846a344b5094',
+  'pinned-other.cgi'=>'2463a62fb4cac2364a7c8c7f8f0823d619396157',
+  'pinned-user.cgi'=>'46fe3b13e68ee83997aa919125ab210372af2822',
+  'inc-makeitem.cgi'=>'1da8cce1e76ad6159325a37faec68efaa82c7f69',
+  '../../../custom/inc-item-data.cgi'=>'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',
+);
+sub raw_file {
+  my ($path)=@_;
+  open my $fh,'<:raw',$path or die "read $path: $!";
+  local $/; my $bytes=<$fh>; close $fh or die "close $path: $!";
+  return defined($bytes)?$bytes:'';
+}
+sub put_file {
+  my ($path,$bytes)=@_;
+  open my $fh,'>:raw',$path or die "write $path: $!";
+  print {$fh} $bytes; close $fh or die "close $path: $!";
+}
+my %source;
+for my $name (sort keys %pins) {
+  my $bytes=raw_file("$FindBin::Bin/$name");
+  my $got=sha1_hex('blob '.length($bytes)."\0".$bytes);
+  is($got,$pins{$name},"exact original blob $name");
+  BAIL_OUT("source pin drift: $name") if $got ne $pins{$name};
+  $source{$name}=decode_utf8($bytes,FB_CROAK);
+}
+sub block {
+  my($s,$start,$end)=@_;
+  my $a=index($s,$start); my $b=index($s,$end,$a+length($start));
+  die "missing original block $start" if $a<0 || $b<0;
+  return substr($s,$a,$b-$a);
+}
+my $func=$source{'inc-func.cgi'};
+my($names)=$func=~/\@DTindexnamelist=\s*qw\s*\(([^)]*)\)/s;
+my($states)=$func=~/\@STATEnamelist=\s*qw\s*\(([^)]*)\)/s;
+@DTindexnamelist=split(/\s+/,$names=~s/^\s+|\s+$//gr);
+@STATEnamelist=split(/\s+/,$states=~s/^\s+|\s+$//gr);
+die 'original schema drift' unless @DTindexnamelist==32 && @STATEnamelist==11;
+for my $part (
+  block($func,"sub GetPath\n{","#携帯端末系"),
+  block($func,"sub GetCookieSession\n{","sub DataRead"),
+  block($func,"sub DataRead\n{","sub GetDTPoint"),
+  block($func,"sub GetDTPoint\n{","sub CheckUserPass"),
+  block($func,"sub CheckUserPass\n{","sub Get02D"),
+  block($source{'core-detail.cgi'},"sub SortDT\n{","sub GetRankMessage"),
+  substr($func,index($func,'package AutoVar;')),
+) {
+  my $ok=eval "package main; no strict; no warnings; use utf8;\n".$part."\n1;";
+  die "original block compilation: $@" unless $ok;
+}
+# These are trace adapters for nonessential presentation/log/error boundaries.
+# Original Lock/UnLock, DataRead/Write/Commit, name/IP checks and login code run.
+my ($rendered,$logs,$renewed)=(0,0,0); my(@logCalls,@archiveCalls,@renewSnapshots);
+sub l {my($s,@a)=@_;for my $i(0..$#a){my $n=$i+1;$s=~s/%$n/$a[$i]/g}return $s;}
+sub GetTagImgKao { return ''; }
+sub PushLog { ++$logs; push @logCalls,[@_];return 1; }
+sub RenewLog { ++$renewed; push @renewSnapshots,{time=>$DT->{time},hasTime=>exists $DT->{time},keys=>[sort keys %$DT]};return 1; }
+sub OutSkin { ++$rendered; die "__SOURCE_RENDER__\n"; }
+sub OutError { die "GAME_ERROR:".$_[0]."\n"; }
+sub OutErrorBlockLogin { die "BLOCK_LOGIN:".$_[0]."\n"; }
+sub WriteErrorLog {die "unexpected source IO error\n" unless $_[1] eq $LOG_DELETESHOP_FILE;push @archiveCalls,[@_];return 1;}
+sub RequireFile {die 'unexpected source include' unless $_[0] eq 'inc-html-ownerinfo.cgi';return 1;}
+for my $name (qw(write.cgi lock.cgi pinned-login.cgi pinned-ip.cgi pinned-name.cgi pinned-time.cgi pinned-user.cgi)) {
+  require "$FindBin::Bin/$name";
+}
+# Reuse the already reviewed real source DataWrite/Commit one-shop fixture.
+open my $child,'-|',$^X,"$FindBin::Bin/original-r4-data-write-files-probe.pl"
+  or die "start original write probe: $!";
+binmode $child,':raw';
+my $json; { local $/; $json=<$child>; }
+close $child or die 'original write probe failed';
+my $fixture=JSON::PP->new->utf8->decode($json)->{cases}[0]{live};
+my @initial=split(/\n/,$fixture);
+my @alice=split(/,/,$initial[6],-1);
+die 'fixture identity drift' unless $alice[0]==1 && $alice[2] eq 'alice';
+# Controlled password only, not a historical player's data.
+my %column=map { $DTindexnamelist[$_]=>$_ } 0..$#DTindexnamelist;
+$alice[$column{pass}]='alpha_pw';
+# The old write probe initializes unused text fields as numeric zero;
+# original CheckLogin treats any nonempty blocklogin other than 'mark' as denial.
+$alice[$column{blocklogin}]='';
+$alice[$column{nocheckip}]='';
+$initial[6]=join(',',@alice);
+my $root=tempdir('akimono-r4-identity-XXXX',TMPDIR=>1,CLEANUP=>1);
+my $cwd=getcwd();
+$MYDIR='street';
+$DATA_DIR="$root/$MYDIR/data";
+$TEMP_DIR="$DATA_DIR/temp";
+$BACKUP_DIR="$DATA_DIR/backup";
+$SESSION_DIR="$DATA_DIR/session";
+make_path($TEMP_DIR,$BACKUP_DIR,$SESSION_DIR);
+chdir "$root/$MYDIR" or die 'enter isolated street';
+$FILE_EXT='.cgi'; $DATA_FILE='play'; $COMMIT_FILE='commit'; $LASTTIME_FILE='lasttime';
+$LOCK_FILE='street-lock'; $LOCKED=''; $LOCKED_LEVEL=0; $AUTO_UNLOCK_TIME=120;
+$NOW_TIME=1_000_000; $BACKUP_TIME=3600; $SESSION_TIMEOUT_TIME=600; $TZ_JST=9*3600;
+$MAX_ITEM=79; $MAX_MONEY=1_000_000_000; $MAX_USER=50; $STATE={};
+$MASTER_PASSWORD='fixture-admin'; $PASSWORD_CRYPT=0; $DEFINE_FUNCINIT=0;
+$NEW_SHOP_ADMIN=0; $NEW_OTHERTOWN_BLOCK=0; $NEW_SHOP_BLOCKIP=0;
+$NEW_SHOP_KEYWORD=''; $DEFINE_FUNCNEW=0; $DEFINE_FUNCNEW_NOLOG=0;
+$CHECK_IP=0; $MOBILE=0; @NG_SHOP_NAME=(); @OtherDir=();
+$TB=$TR=$TD=$TRE=$TBE='';
+for my $key (qw(HTTP_VIA HTTP_SP_HOST HTTP_CLIENT_IP HTTP_FROM HTTP_FORWARDED
+  HTTP_X_FORWARDED_FOR HTTP_REFERER HTTP_COOKIE)) { $ENV{$key}=''; }
+$ENV{REMOTE_ADDR}='192.0.2.5'; $ENV{HTTP_USER_AGENT}='source-fixture';
+$ENV{HTTP_ACCEPT}='text/html';
+put_file("$DATA_DIR/play.cgi",encode_utf8(join("\n",@initial)."\n"));
+put_file("$DATA_DIR/lasttime.cgi",'time');
+put_file("$DATA_DIR/user.cgi",'');
+put_file("$DATA_DIR/$LOCK_FILE",'held by nobody');
+put_file("$BACKUP_DIR/play.cgi",'fresh backup');
+utime($NOW_TIME-1,$NOW_TIME-1,"$BACKUP_DIR/play.cgi") or die 'backup timestamp';
+
+sub auth {
+  my(%args)=@_;
+  local %Q=(nm=>$args{name}//'',pw=>$args{password}//'',ss=>$args{token}//'',key=>'');
+  local $ENV{HTTP_COOKIE}=$args{cookie}//'';
+  local $ENV{REMOTE_ADDR}=$args{ip}//'192.0.2.5';
+  $MASTER_USER=$GUEST_USER=0; $DT=undef; $DTid=$DTidx=-99; $USERSESSION='';
+  my ($out,$ok,$error);
+  {
+    local *STDOUT;
+    open STDOUT,'>',\$out or die 'capture cookie output';
+    $ok=eval { CheckUserPass($args{guest}//0); 1; };
+    $error=$@;
+  }
+  return {ok=>$ok?1:0,error=>$error,id=>$DTid,index=>$DTidx,token=>$USERSESSION,
+    guest=>$GUEST_USER,cookie=>$COOKIESESSION};
+}
+sub registration {
+  my(%args)=@_;
+  local %Q=(admin=>'',name=>$args{name},sname=>$args{shop},
+    pass1=>'beta_pw',pass2=>'beta_pw',icon=>3,newkey=>'');
+  local $ENV{REMOTE_ADDR}=$args{ip};
+  do "$FindBin::Bin/new.cgi";
+  my $error=$@;
+  # The real OutError renderer is not executed in this oracle. If a denial
+  # occurred under the real lock, clean it up explicitly in the harness.
+  UnLock() if $LOCKED ne '';
+  return $error;
+}
+
+# Bounded actual compiler functions. No top-level DeleteItemData or game install.
+my $compiler=$source{'inc-makeitem.cgi'};
+for my $name(qw(GetLine GetTime GetNumber GetString GetDefineString GetItemNumber ClearBuffer GetBuffer GetFuncItemNo GetFuncValue OutFunctionData)){
+  my($part)=$compiler=~/(^sub \Q$name\E\n\{[\s\S]*?^\}\n)/m;
+  die "compiler source missing $name" unless defined $part;
+  eval "package main; no strict; no warnings; use utf8;\n$part\n1;" or die "compiler $name: $@";
+}
+my $dsl=$source{'../../../custom/inc-item-data.cgi'};
+$g_define={cmdhead=>'@@',cmdfoot=>'',function=>{},scale=>'個'};
+my($define)=$dsl=~/^\@\@DEFINE\b[^\n]*\n([\s\S]*?)(?=^\@\@ITEM\b)/m;
+my($funcnew)=$dsl=~/^\@\@FUNCNEW\b[^\n]*\n([\s\S]*?)(?=^\@\@FUNCSHOPIN\b)/m;
+die 'missing source sections' unless defined $define && defined $funcnew;
+sub feed {
+  my($mode,$text,$filter)=@_;
+  my $bytes=encode_utf8($text);open my $fh,'<:encoding(UTF-8)',\$bytes or die $!;
+  while(my $line=GetLine($fh)){next if $filter && $line!~$filter;GetBuffer($mode,$line);}
+  close $fh;
+}
+feed('define',$define,qr/\sset\s+NewShop(?:Money|Time|Item)\s/i);
+is($g_define->{NewShopMoney},'100000','actual compiler DEFINE money');
+is($g_define->{NewShopTime},'12*60*60','actual compiler DEFINE time expression');
+@ITEM=();
+while($dsl=~/^\@\@ITEM\b[^\n]*\n([\s\S]*?)(?=^\@\@(?:ITEM|USE|EVENT|FUNC\w+|END)\b|\z)/mg){
+  ClearBuffer('item');feed('item',$1,qr/^\s*(?:no|code|name)\s/i);
+  die 'missing compiler ITEM identity' unless $g_item->{no} && $g_item->{name};
+  $ITEM[$g_item->{no}]={map {$_=>$g_item->{$_}} qw(no name code)};
+}
+is(scalar(grep {defined $_} @ITEM),79,'actual source ITEM identity compiler rows');
+is($ITEM[63]{name},'展示架擴建拆卸工具','FUNCNEW source item 63');
+is($ITEM[79]{name},'禮物卷','FUNCNEW source item 79');
+feed('funcnew',$funcnew,undef);
+$ITEM_DIR="$root/$MYDIR/compiled";make_path($ITEM_DIR);
+OutFunctionData();
+is_deeply(\@errormsg,[],'original compiler emitted FUNCNEW without errors');
+ok(-f "$ITEM_DIR/funcnew.cgi",'actual original OutFunctionData output');
+$SUBDATA_DIR="$DATA_DIR/subdata";make_path($SUBDATA_DIR);
+$LOG_DELETESHOP_FILE='delete';$ICON_NUMBER=25;$METHOD='METHOD=POST';@term=();
+my @subNames=qw(1-alpha.cgi 1-beta.cgi 1-.cgi 10-alpha.cgi 2-keep.cgi 1-CAPS.CGI index.html);
+sub subNames {
+  opendir my $d,$SUBDATA_DIR or die $!;my @f=sort grep {$_ ne '.'&&$_ ne '..'} readdir($d);closedir $d;return \@f;
+}
+sub reset_case {
+  my($age,$compiled)=@_;
+  my @rows=@initial;my @s=split(/,/,$rows[6],-1);
+  $s[$column{foundation}]=$NOW_TIME-$age;$s[$column{remoteaddr}]='192.0.2.5';
+  $s[$column{guild}]=7;$rows[6]=join(',',@s);
+  put_file("$DATA_DIR/play.cgi",encode_utf8(join("\n",@rows)."\n"));
+  unlink "$SUBDATA_DIR/$_" for @{subNames()};
+  put_file("$SUBDATA_DIR/$_",'synthetic subdata') for @subNames;
+  unlink "$SESSION_DIR/alice.cgi" if -e "$SESSION_DIR/alice.cgi";
+  $DEFINE_FUNCNEW=$compiled;delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  @logCalls=();@archiveCalls=();@renewSnapshots=();
+  DataRead();my $auth=auth(name=>'alice',password=>'alpha_pw');
+  die 'fixture login denied' unless $auth->{ok};return $auth->{token};
+}
+sub submit {
+  my($file,$token,$mode,$confirm)=@_;
+  local %Q=(nm=>'alice',ss=>$token,key=>'user',mode=>$mode,rss=>$confirm,cls=>$confirm);
+  $MASTER_USER=$GUEST_USER=0;$disp='';
+  my($out,$error);
+  {local *STDOUT;open STDOUT,'>',\$out or die $!;
+   do "$FindBin::Bin/$file";$error=$@;}
+  UnLock() if $LOCKED ne '';
+  return ($error,$out,$disp);
+}
+for my $age(10799,10800,10801){
+  my $token=reset_case($age,1);
+  my $before=raw_file("$DATA_DIR/play.cgi");
+  my($e,$out,$form)=submit('pinned-other.cgi',$token,'','');
+  like($e,qr/__SOURCE_RENDER__/,"source form rendered $age");
+  is(($form=~/NAME=mode VALUE=restart/)?1:0,$age>10800?1:0,"normal form exact age $age");
+  my($err)=submit('pinned-membership-user.cgi',$token,'restart','restart');
+  if($age<10800){
+    like($err,qr/GAME_ERROR:/,'raw source rejects 10799');
+    is(raw_file("$DATA_DIR/play.cgi"),$before,'denied restart no publication');
+    is_deeply(subNames(),[sort @subNames],'denied restart no subdata deletion');
+    next;
+  }
+  like($err,qr/__SOURCE_RENDER__/,"actual raw restart handler accepted $age");
+  is($renewSnapshots[0]{time},$NOW_TIME-43200,'compiled callback sets time before DataWrite');
+  DataRead();my $s=$DT[$id2idx{1}];
+  is($s->{money},100000,'actual source restart money');
+  is($s->{rank},5010,'actual source restart rank');
+  is($s->{point},5010,'actual reread point');
+  is($s->{time},$NOW_TIME-43200,'actual reread time');
+  is($s->{foundation},$NOW_TIME,'actual reread foundation');
+  is($s->{showcasecount},1,'actual reread shelf count');
+  is($s->{item}[62],1,'actual reread item63');is($s->{item}[78],5,'actual reread item79');
+  ok(!$s->{guild},'source restart clears shop guild field');
+  is($s->{pass},'alpha_pw','synthetic credential preserved');
+  is_deeply(subNames(),[sort grep {$_!~/^1-.+\.cgi$/} @subNames],'source deletes only matching subdata');
+  ok(-e "$SESSION_DIR/alice.cgi",'source separate session file preserved');
+  ok(auth(name=>'alice',token=>$token)->{ok},'original existing session still resolves stable ID after restart');
+  is_deeply($logCalls[0],[1,0,$s->{shopname}.'が気持ちを新たに出直しました。'],'source restart log arguments');
+}
+my $noCallback=reset_case(10801,0);
+like((submit('pinned-membership-user.cgi',$noCallback,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'controlled disabled FUNCNEW core wrapper');
+ok($renewSnapshots[0]{hasTime}&&!defined $renewSnapshots[0]{time},'six-LHS/five-RHS source time undef before callback (disabled control)');
+my $token=reset_case(10801,1);my $before=raw_file("$DATA_DIR/play.cgi");
+like((submit('pinned-membership-user.cgi',$token,'cls','wrong'))[0],qr/GAME_ERROR:/,'wrong close confirmation');
+is(raw_file("$DATA_DIR/play.cgi"),$before,'wrong close no publication');
+my($err,$cookie)=submit('pinned-membership-user.cgi',$token,'cls','closeshop');
+like($err,qr/__SOURCE_RENDER__/,'actual voluntary close wrapper completed');
+like($cookie,qr/Set-Cookie: SESSION=-check-cookie-!\d+;/,'actual source clear-cookie marker');
+is($USERPASSFORM,'','source clears hidden auth form');is($USERPASSURL,'','source clears auth URL');
+is(scalar @archiveCalls,1,'actual CloseShop uses existing archive boundary once');
+like($archiveCalls[0][0],qr/^自主閉店\n/,'actual archive reason at boundary');
+is_deeply(subNames(),[sort grep {$_!~/^1-.+\.cgi$/} @subNames],'actual CloseShop removes same subdata selection');
+ok(-e "$SESSION_DIR/alice.cgi",'raw close does not delete separate session file');
+DataRead();ok(!exists $id2idx{1},'closed ID absent on actual reload');
+is($DTblockip,'192.0.2.5','actual block IP written and reloaded');
+ok(!auth(name=>'alice',token=>$token)->{ok},'old session rejected by missing active owner');
+ok($LOCKED eq ''&&! -e "$DATA_DIR/commit.cgi",'actual commit and unlock complete');
+chdir $cwd or die 'restore cwd';
+done_testing();
