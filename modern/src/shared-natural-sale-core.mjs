@@ -151,10 +151,13 @@ export function projectSharedNaturalSale({
       taxtoday=int(taxtoday+tax,'taxtoday after sale');
       const stockBefore=item[id-1];
       item[id-1]-=take;
-      // Evidence from the very same sequential inventory mutation. No
-      // separate price, RNG, demand, stock or tax calculation.
+      // Evidence from the same mutation, including the DataRead ITEM POINT
+      // actually used by this sale (manual EVENT may make it negative).
+      // The pre-rounding contribution is a lossless decimal string: receipt
+      // numbers must remain safe integers. No extra draw or recomputation.
       if(recordShelfSales)shelfSales.push({shelf,itemId:id,count:take,unitPrice:listed,
-        gross:proceeds,tax,stockBefore,stockAfter:item[id-1]});
+        gross:proceeds,tax,stockBefore,stockAfter:item[id-1],
+        effectivePoint:r.point,rankContribution:String(contribution)});
       itemtoday[id]=int((itemtoday[id]??0)+take,'itemtoday');
       sold+=take;
       soldByItem[id]=(soldByItem[id]??0)+take;

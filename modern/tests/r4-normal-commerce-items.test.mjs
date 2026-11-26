@@ -6,6 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
 import {projectSharedNaturalSale} from '../src/shared-natural-sale-core.mjs';
+import {reviewManualCommerceEvents,reviewedManualSaleRule} from '../src/original-r4-manual-commerce-events.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const paths={itemDsl:'custom/inc-item-data.cgi',
@@ -15,7 +16,7 @@ const paths={itemDsl:'custom/inc-item-data.cgi',
 const sources=Object.fromEntries(await Promise.all(Object.entries(paths).map(
   async ([key,p])=>[key,await readFile(path.join(root,p),'utf8')])));
 const review=reviewNormalCommerceItems(sources);
-const perl=name=>JSON.parse(execFileSync('perl',[name],{
+const perl=(name,...args)=>JSON.parse(execFileSync('perl',[name,...args],{
   cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
 }));
 test('R4 full commerce ITEM compiler matches frozen Perl PRICE/POP/POINT/COST/TYPE/FLAG for all 79',()=>{
@@ -55,6 +56,11 @@ test('R4 original natural-sale arithmetic for all source-listable ITEMs and mixe
       assert.equal(entry.stockBefore,remaining.get(entry.itemId)??shop.item[entry.itemId-1]);
       assert.equal(entry.stockAfter,entry.stockBefore-entry.count);
       assert.equal(entry.gross,entry.count*entry.unitPrice);
+      assert.equal(entry.effectivePoint,review.saleRules[entry.itemId].point);
+      assert.equal(typeof entry.rankContribution,'string');
+      assert.ok(Number.isFinite(Number(entry.rankContribution)));
+      assert.equal(String(Number(entry.rankContribution)),entry.rankContribution);
+      assert.ok(Number(entry.rankContribution)>=0);
       remaining.set(entry.itemId,entry.stockAfter);
       aggregate[entry.itemId]=(aggregate[entry.itemId]??0)+entry.count;
       count+=entry.count;gross+=entry.gross;tax+=entry.tax;
@@ -96,4 +102,41 @@ test('R4 opt-in shelf receipt cannot change sales, signed cash, inventory or RNG
     assert.equal(shelfSales.reduce((n,r)=>n+r.gross,0),old.shop.saletoday);
     assert.equal(shelfSales.reduce((n,r)=>n+r.tax,0),old.shop.taxtoday);
   }
+});
+
+test('R4 four original manual EVENTs change actual natural-sale POINT and rank, not inventory or proceeds (isolated)',async()=>{
+  const manual=reviewManualCommerceEvents({...sources,
+    rebelDsl:await readFile(path.join(root,'custom/inc-rebel-data.cgi'),'utf8'),
+    readSource:await readFile(path.join(root,'modern/tests/original-perl/inc-func.cgi'),'utf8')});
+  const rows=perl('original-normal-commerce-natural-probe.pl','--manual-events');
+  assert.equal(rows.length,8);
+  const beforeByCode=new Map();
+  for(const row of rows){
+    const shop=row.input,id=shop.showcase[0],base=review.saleRules[id];
+    const point=row.active?manual.rules[row.manualCode].find(x=>x.itemId===id).point:base.point;
+    const rule=row.active?reviewedManualSaleRule({reviewed:manual,rule:{...base,point},activeOrder:[row.manualCode]}):base;
+    const args={shop,rule,upkeepCosts:review.upkeepCosts,spanSeconds:3600,randomDraws:row.draws};
+    const actual=projectSharedNaturalSale({...args,recordShelfSales:true});
+    const {shelfSales,...withoutEvidence}=actual;
+    assert.deepEqual(withoutEvidence,projectSharedNaturalSale(args));
+    assert.equal(actual.drawsUsed,row.used,row.name);
+    for(const key of ['item','itemtoday','_sale_count_','money','rank','trush','saletoday','taxtoday'])
+      assert.deepEqual(actual.shop[key],row.output[key],row.name+' '+key);
+    assert.equal(shelfSales.length,1,row.name+' actual original sale');
+    assert.equal(shelfSales[0].effectivePoint,point);
+    assert.equal(typeof shelfSales[0].rankContribution,'string');
+    const rankContribution=Number(shelfSales[0].rankContribution);
+    assert.ok(Number.isFinite(rankContribution));
+    if(!row.active){
+      assert.ok(rankContribution>0);
+      beforeByCode.set(row.manualCode,actual);
+    }else{
+      const before=beforeByCode.get(row.manualCode);
+      assert.ok(before&&point===-100&&rankContribution<0);
+      assert.ok(actual.shop.rank<before.shop.rank);
+      assert.deepEqual(actual.soldByItem,before.soldByItem);
+      assert.equal(actual.shop.money,before.shop.money);
+    }
+  }
+  assert.equal(beforeByCode.size,4);
 });
