@@ -1,0 +1,75 @@
+# C-window-only diagnostic. Not a shared CI policy or a merge candidate.
+# Executes the already-existing strict repro on the exact batch-55 candidate.
+name: C audit - R1-HTTP-01 strict reproduction (PR 26 only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [migration/standard-street-s1]
+
+jobs:
+  strict-r1-http-01:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pinned candidate (not synthetic merge)
+        uses: actions/checkout@v4
+        with:
+          ref: '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/r1-http-01"
+          {
+            git rev-parse HEAD
+            git rev-parse 'HEAD^{tree}'
+            git --version
+            node --version
+            perl -v
+            uname -a
+            cat /etc/os-release
+            printf 'runner_os=%s runner_arch=%s\n' "$RUNNER_OS" "$RUNNER_ARCH"
+            git status --porcelain
+            git hash-object modern/scripts/r1-http-extra-fields-repro.mjs
+            git hash-object modern/tests/support/r1-http-audit-player.mjs
+            printf '%s\n' 'command: cd modern && node --test scripts/r1-http-extra-fields-repro.mjs'
+            printf '%s\n' 'Harness uses isolated temp saves, clears fixed time/RNG, and enables reviewed cross-period mode.'
+            test "$(git rev-parse HEAD)" = '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+            test "$(git rev-parse 'HEAD^{tree}')" = 'ede2b15cfcdb0077b026c2a25b2386a84eefd003'
+            test "$(git hash-object modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+            test "$(git hash-object modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$RUNNER_TEMP/r1-http-01/environment.log"
+      - name: Execute unchanged strict repro (failure remains failure)
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r1-http-01"
+          set +e
+          node --test scripts/r1-http-extra-fields-repro.mjs >"$out/stdout.log" 2>"$out/stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/exit-code.txt"
+          printf '%s\n' '--- STDOUT ---'
+          cat "$out/stdout.log"
+          printf '%s\n' '--- STDERR ---'
+          cat "$out/stderr.log"
+          exit "$status"
+      - name: Preserve full diagnostic output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-http-01-pinned-630e987
+          path: ${{ runner.temp }}/r1-http-01/
+          if-no-files-found: warn
+          retention-days: 30
