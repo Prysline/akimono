@@ -38,5 +38,18 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
   assert.ok(report.items[76].fullCommerce.sourceRoutes.some(x=>x.itemId===39&&x.useId===18));
   assert.ok(report.items[78].fullCommerce.sourceRoutes.some(x=>x.kind==='source-open-shop'&&x.count===5));
   assert.ok(report.events.filter(x=>x.compiled).length===17);
+  assert.deepEqual(report.summary.eventActivationCounts,{'natural-start':15,'external-zero-start':2,'source-use-manual':4,'disabled-no-reviewed-trigger':4});
+  for(const code of ['kill-ken','kill-yoroi','kill-tate','kill-tue']){
+    const e=report.events.find(x=>x.code===code);
+    assert.equal(e.compiled,false);
+    assert.equal(e.activation.kind,'source-use-manual');
+    assert.equal(e.activation.itemId,65);assert.equal(e.activation.useId,2);
+    assert.equal(e.activation.durationSeconds,28800);
+    assert.equal(e.activation.generatedItemFile,true);
+    assert.equal(e.activation.strictExpiry,true);
+    assert.equal(e.activation.declaredEndMessageEmitted,false);
+    assert.ok(e.activation.changedPoints.some(row=>row[2]===-400));
+    assert.match(e.runtimeAndPlayerEvidence,/formal USE.*unverified/);
+  }
   t.diagnostic('R4 full commerce audit '+JSON.stringify(report.summary));
 });

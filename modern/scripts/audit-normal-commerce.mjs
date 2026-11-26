@@ -136,11 +136,30 @@ export async function auditNormalCommerce(){
       eventCrossPeriodCasSaveReplayRestart:'requires scenario evidence',
     };
   }).sort((a,b)=>a.id-b.id);
-  const events=blocks.filter(b=>b.kind==='EVENT').map(b=>({
-    compiled:street.reviewedEventCatalog.declared.find(e=>e.code===one(b,'code'))?.compiled??null,
-    code:one(b,'code'),source:source(b),declaration:fields(b),
-    runtimeAndPlayerEvidence:'requires separate lifecycle and replay audit',
+  // START -1 removes an automatic catalog row, NOT its generated event
+  // ITEM file. Source #65/2 can explicitly install the four kill keys.
+  const manualOracle=JSON.parse(execFileSync('perl',['original-r4-manual-event-source-probe.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
   }));
+  const manualByCode=new Map(manualOracle.cases.map(c=>[c.code,c]));
+  const events=blocks.filter(b=>b.kind==='EVENT').map(b=>{
+    const code=one(b,'code'),record=street.reviewedEventCatalog.declared.find(e=>e.code===code);
+    const manual=manualByCode.get(code);
+    if(!record)throw new Error('missing original EVENT compiler metadata '+code);
+    const route=manual?'source-use-manual':record.startProba>0?'natural-start':
+      record.startProba===0?'external-zero-start':'disabled-no-reviewed-trigger';
+    return {code,source:source(b),declaration:fields(b),compiled:record.compiled,
+      compiler:{automaticCatalog:record.compiled,startProba:record.startProba,group:record.group,
+        baseTimeSeconds:record.baseTimeSeconds,plusTimeSeconds:record.plusTimeSeconds,
+        callbacks:record.callbacks,parameterRows:record.parameterRows},
+      activation:{kind:route,...(manual?{itemId:65,useId:2,durationSeconds:28800,
+        sourceOracle:manualOracle.scope,generatedItemFile:manual.generatedItemFile,
+        changedPoints:manual.changedPoints,strictExpiry:true,declaredEndMessageEmitted:false}:{}),
+        ...(record.startProba===0?{externalOwner:'R4 guild/army context'}:{})},
+      runtimeAndPlayerEvidence:manual?'isolated compiler/expiry evidence only; formal USE, EVENT overlay, HTTP/CAS/replay/disk unverified':
+        'requires separate lifecycle and replay audit',
+    };
+  });
   const globalCallbacks=blocks.filter(b=>b.kind.startsWith('FUNC')).map(b=>({
     kind:b.kind,source:source(b),
   }));
@@ -164,6 +183,7 @@ export async function auditNormalCommerce(){
       fullCommerceRegisteredUses:items.flatMap(x=>x.uses).filter(u=>u.fullCommerceRegistryRule).length,
       fullCommerceUnregisteredUses:items.flatMap(x=>x.uses.filter(u=>!u.fullCommerceRegistryRule).map(u=>({itemId:x.id,useId:u.useId,source:u.source}))),
       fullCommerceListedUses:items.flatMap(x=>x.uses).filter(u=>u.fullCommerceListedUse).length,
+      eventActivationCounts:Object.fromEntries(['natural-start','external-zero-start','source-use-manual','disabled-no-reviewed-trigger'].map(kind=>[kind,events.filter(e=>e.activation.kind===kind).length])),
       fullCommerceLimitedUses:[{itemId:62,useId:1,scope:'memory-only target shop; no single-shop HTTP target'}, {itemId:62,useId:2,scope:'no-guild callback only; positive member effects external'}],
       sourceRouteCaveat:'Static material closure ignores available time, money, career, EXP, point gates, exact RNG and external authorization; never proof of player acquisition.',
     },items,events,globalCallbacks};
