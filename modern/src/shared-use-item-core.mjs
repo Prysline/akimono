@@ -404,6 +404,7 @@ export function projectSharedUseItem({world,command,useItem}){
           inlineDairy.addMessages[index-original.multiItem.added.length]:
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
+      ...(useItem.reviewedSourceUseMessages===true?{originalResultNg:rule.resultNg??null}:{}),
       ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
          inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement||inlineLocalTarget||
          (inlineShowcase&&useItem.reviewedSourceLogs===true)?{

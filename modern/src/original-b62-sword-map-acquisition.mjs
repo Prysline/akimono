@@ -53,7 +53,7 @@ export function reviewOriginalB62SwordMap({
   for(const [k,expected]of [
     ['time','4h'],['exptime','2h'],['exp','2%'],['price','12000'],
     ['func','lostbook'],['param','100'],['funcb','_local_'],
-    ['name','去劍的市場收購'],['action','購買'],
+    ['name','去劍的市場收購'],['action','購買'],['ngmsg','甚麼都沒有得到…'],
   ]){
     if(val(use,k).length!==1||first(use,k)!==expected)
       fail('original map USE '+k+' source drift');
@@ -114,7 +114,7 @@ export function reviewOriginalB62SwordMap({
     mapPrice:10000,mapStockLimit:3,mapWholesaleLimit:3,
     mapBuyTimeSeconds:600,woodPrice:1200,woodStockLimit:600,
     mapUsePrice:12000,mapUseTimeSeconds:7200,
-    mapUseExp:20,callbackChance:100,
+    mapUseExp:20,callbackChance:100,mapResultNg:first(use,'ngmsg'),
     outputs:Object.freeze(mkItemIds.map((itemId,i)=>Object.freeze({
       itemId,probabilityPermille:chance[i],count:10,
     }))),

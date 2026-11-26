@@ -319,16 +319,26 @@ function updateUseEstimate(){
 }
 function renderUseResult(data,offer,catalog){
   const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
-  const tuples=rows=>(Array.isArray(rows)?rows:[])
-    .filter(row=>Array.isArray(row)&&row.length>=2&&row[1]>0)
+  const sourceMessages=Object.hasOwn(data,'originalResultNg');
+  const tuples=(rows,includeZero=false)=>(Array.isArray(rows)?rows:[])
+    .filter(row=>Array.isArray(row)&&row.length>=2&&(row[1]>0||(includeZero&&row[1]===0)))
     .map(([id,count])=>nameFor(id)+' × '+number(count)).join('、')||'無';
   text('use-result-name',offer.useName);
   text('use-result-count',number(data.effectiveCount));
   text('use-result-money',money(data.moneySpent));
   text('use-result-time',conciseTimeText(data.timeSpentSeconds));
   text('use-result-consumed',tuples(data.originalUseItem));
-  text('use-result-acquired',tuples(data.originalAddItem));
-  const resultMessage=(typeof data.originalFunctionReturn==='string'&&data.originalFunctionReturn)||
+  text('use-result-acquired',tuples(data.originalAddItem,sourceMessages));
+  // Frozen item-s selects resultok by additem row existence, not by
+  // retained amount (which may be zero after overflow).
+  const resultMessage=sourceMessages?[
+    data.originalFunctionReturn,
+    ...(Array.isArray(data.originalAddMsg)?data.originalAddMsg:[]),
+    Array.isArray(data.originalAddItem)&&data.originalAddItem.length>0?
+      data.originalResultOk:data.originalResultNg,
+    ...(Array.isArray(data.originalUseMsg)?data.originalUseMsg:[]),
+  ].filter(message=>typeof message==='string'&&message.length>0).join('；')||'操作已完成。':
+    (typeof data.originalFunctionReturn==='string'&&data.originalFunctionReturn)||
     data.originalResultOk||'操作已完成。';
   text('use-result-message',Number.isSafeInteger(data.moneyEarned)&&data.moneyEarned>0?
     '收入 '+money(data.moneyEarned)+'；'+resultMessage:resultMessage);

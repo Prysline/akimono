@@ -304,3 +304,27 @@ test('palace page uses the server audience quote and revision-only completion, n
   assert.match(script,/await call\('\/api\/palace-complete',\{expectedRevision:before\.world\.revision\}/);
   assert.match(adapter,/case '\/api\/palace-complete'/);
 });
+
+
+test('full commerce USE result shows original message branch and zero-retained output',async()=>{
+  const originalSubmit=await load('./original-perl/core-item-submit.cgi');
+  assert.match(originalSubmit,/if\(\$USE->\{result\}->\{additem\}\[0\]\)/);
+  assert.match(originalSubmit,/\$USE->\{result\}->\{message\}->\{resultok\}/);
+  assert.match(originalSubmit,/\$USE->\{result\}->\{message\}->\{resultng\}/);
+  const start=script.indexOf('function renderUseResult(');
+  const end=script.indexOf("\n$('inventory').addEventListener",start);
+  assert.ok(start>=0&&end>start);
+  const render=new Function('text','number','money','conciseTimeText',script.slice(start,end)+'\nreturn renderUseResult;');
+  const run=(data)=>{
+    const fields={};
+    render((id,value)=>fields[id]=value,String,String,String)(data,{useName:'測試'},[{itemId:16,name:'皮革加工入門'}]);
+    return fields;
+  };
+  const base={originalResultOk:'寫作完成',originalResultNg:'寫作失敗',effectiveCount:1,moneySpent:0,timeSpentSeconds:5400};
+  assert.equal(run({...base,originalAddItem:[]})['use-result-message'],'寫作失敗');
+  const success=run({...base,originalAddItem:[[16,0]]});
+  assert.equal(success['use-result-message'],'寫作完成');
+  assert.equal(success['use-result-acquired'],'皮革加工入門 × 0');
+  assert.equal(run({...base,originalAddItem:[[16,2]],originalFunctionReturn:'回呼',originalAddMsg:['取得訊息',null],originalUseMsg:['消耗訊息']})['use-result-message'],'回呼；取得訊息；寫作完成；消耗訊息');
+  assert.equal(run({originalResultOk:'舊 receipt',originalAddItem:[]})['use-result-message'],'舊 receipt');
+});

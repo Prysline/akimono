@@ -472,6 +472,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }))),
     limits:giftMap.limits,time:reviewedB62Map.mapUseTimeSeconds,
     exptime:3600,money:reviewedB62Map.mapUsePrice,
+    resultNg:reviewedB62Map.mapResultNg,
     jobTimeModifier:Object.freeze({job:'peddle',numerator:2,denominator:3}),
     requiresOwnedItem:true,
     ownedMaximum:reviewedB62Map.mapStockLimit,
@@ -498,6 +499,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const useItem=Object.freeze({
     ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({...args,review:expHashReview})}:{}),
     reviewedSignedCash:enableReviewedFullCommerce,
+    reviewedSourceUseMessages:enableReviewedFullCommerce,
     reviewedSourceLogs:commerceUseLogs!==null,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)

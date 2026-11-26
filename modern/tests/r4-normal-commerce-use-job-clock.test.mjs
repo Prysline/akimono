@@ -202,3 +202,45 @@ test('R4 full commerce quote uses original 72h stock-time ceiling and leaves leg
     assert.deepEqual(world,before);
   }
 });
+
+
+// Controlled source receipts, not formal player acquisition evidence.
+test('R4 USE receipt retains original no-output message and zero-retained overflow row',async()=>{
+  const input=await loadNormalCommerceAuditSources();
+  const street=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedFullCommerce:true});
+  const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:input.originalPeriodSource,adminSource:input.originalAdminInitSource,
+    readSource:input.originalDataReadSource,writeSource:input.originalDataWriteSource,
+    reviewedB41:street.reviewedB41,
+  }));
+  const repo=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+    worldId:'controlled-use-result-message',streetId:'standard-street',nowSeconds:1000000,period,
+  }),streetModule:street});
+  const run=(repository,kind,fields={})=>executeMemoryCommand({repository,streetModule:street,
+    command:{kind,expectedRevision:repository.read().revision,...fields}});
+  for(const [kind,fields] of [['initialize-source-market',{}],['open-shop',{shopId:1,ownerName:'來源測試',shopName:'受控書本'}]]){
+    const result=run(repo,kind,fields);assert.equal(result.ok,true,JSON.stringify(result.details));
+  }
+  assert.equal(street.useItem.getRule(14,0).resultNg,'甚麼都沒有得到…');
+  const seed=structuredClone(repo.read()),shop=seed.shops[0];
+  shop.item[9]=1;shop.item[1]=50;shop.time=seed.nowSeconds-5400;
+  for(const [draw,stock,expected,discarded] of [
+    [999999,0,[],[]],[0,0,[[16,5]],[]],[0,40,[[16,0]],[[16,5]]],
+  ]){
+    const initial=structuredClone(seed);initial.shops[0].item[15]=stock;
+    const trial=createSourceReviewedMemoryWorldAdapter({initialWorld:initial,streetModule:street});
+    const result=run(trial,'use-item',{shopId:1,itemId:10,useId:1,requestedCount:1,randomDraws:Array(5).fill(draw)});
+    assert.equal(result.ok,true,JSON.stringify(result.details));
+    assert.equal(result.details.originalResultOk,'『皮革加工入門』寫作完成了');
+    assert.equal(result.details.originalResultNg,'寫作失敗了…');
+    assert.deepEqual(result.details.originalAddItem,expected);
+    assert.deepEqual(result.details.discarded,discarded);
+    assert.deepEqual(result.details.originalUseItem,[[10,1],[2,50]]);
+    assert.equal(result.details.randomDrawsUsed,5);
+    assert.equal(result.details.timeSpentSeconds,5400);
+    assert.equal(trial.read().shops[0].exp['10'],20);
+    assert.equal(trial.read().shops[0].item[9],0);
+    assert.equal(trial.read().shops[0].item[1],0);
+    assert.equal(trial.read().shops[0].item[15],stock+(expected[0]?.[1]??0));
+  }
+});
