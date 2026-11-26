@@ -38,6 +38,7 @@ export function projectSharedNaturalSale({
     fail('multi-shelf source rules or EVENT overlay not reviewed');
 
   const active=[],market=new Map(),displayedTypes=new Set();
+  let sourceGroup=null,demandScanOpen=true;
   const sourceRule=id=>shelfCount===1?rule:saleRules?.[id]??null;
   for(let shelf=0;shelf<shelfCount;shelf++){
     const id=int(shop.showcase[shelf],'source shelf item');
@@ -57,6 +58,14 @@ export function projectSharedNaturalSale({
     const type=r.itemType??(shelfCount===1?'single-reviewed':'');
     if(!type)fail('multi-shelf source ITEM type not reviewed');
     displayedTypes.add(type);
+    // Frozen inc-turn first scans the specialty group and accumulates
+    // buypeoplebase in the SAME loop. The first unlike displayed type
+    // breaks that scan BEFORE its weight is counted, even with zero stock.
+    // GetMarketStatus and the subsequent sale loop still visit every shelf.
+    if(demandScanOpen){
+      if(sourceGroup!==null&&sourceGroup!==type)demandScanOpen=false;
+      else sourceGroup=type;
+    }
     const stock=int(shop.item[id-1],'source showcased stock');
     if(stock===0)continue;
     const exponent=shelf===0?4:3;
@@ -69,7 +78,7 @@ export function projectSharedNaturalSale({
     };
     existing.stock+=stock; // Original GetMarketStatus counts each occupied shelf
     existing.weightedPrice+=stock*listed;
-    existing.buypeoplebase+=weight;
+    if(demandScanOpen)existing.buypeoplebase+=weight;
     market.set(id,existing);
     active.push({shelf,id,listed,ratio,weight,rule:r});
   }
