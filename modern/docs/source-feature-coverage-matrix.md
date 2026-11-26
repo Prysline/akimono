@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 7 | 29 | 25 |
-| nodeDifferential | 7 | 29 | 25 |
+| perlOracle | 7 | 39 | 25 |
+| nodeDifferential | 7 | 39 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -29,3 +29,5 @@
 第四批補鏈：[打工／展示架／lostbook](r0-work-showcase-lostbook-evidence.md)：ITEM #13、#63 與 USE #13/0–1、#63/0–3 的隔離 callback 證據；#63/4–7 保留未證明狀態；B-30 不硬連具體配方。57 筆有詳細證據，正式正向下界不變。
 
 第五批補鏈：[打工／職業／乳製品／派對](r0-r2-work-career-dairy-party-evidence.md)：20 USE rows（#13/0–1、#25/0–1、#26/0、#77/0、#78/0–13）受控完整 source USE 差分，70 筆有詳細證據；正式正向下界不變，#26/1 hint 不升格。
+
+第六批補鏈：[採集／多次地圖／廣告](r0-r2-gathering-advertisement-repeat-evidence.md)：10 USE rows（#9/0–2、#12/0–3、#14/0、#62/0–1）受控完整 source USE 差分，80 筆有詳細證據；#62/1 formal HTTP false 保留，正式正向下界不變。

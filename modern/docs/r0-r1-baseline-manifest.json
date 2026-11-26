@@ -8768,17 +8768,129 @@
       "path": "modern/tests/r2-gathering-map-uses.test.mjs",
       "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "70–117 source rule、dry-run draws、compiled fields/creates、全 stock/market/EXP/time/money/receipt、mapDestroyed；118–130 #12/0–3 #9/0–2 七配方、兩 lostbook cases、material job first-use clock；131–148 缺 map/來源 drift 拒絕不變。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "地圖經 memory command 取得，但真時間／RNG／HTTP/v2 未驗；七配方差分不等同各自完整玩家驗收。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有拒絕／正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
+          "line": 38
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-gathering-map-uses.mjs",
+          "sha": "c7c64245e9dbe0206611f498c4c7f8dd3e8d20b8"
+        },
+        {
+          "path": "modern/src/shared-use-experience.mjs",
+          "sha": "87f3b2cee856949228c857f37f0b62c2f12b05f2"
+        },
+        {
+          "path": "modern/src/original-use-transaction-model.mjs",
+          "sha": "3ef8dfbcae1b520ca205cbfad1ecc4881de65fdb"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-gathering-use-probe.pl",
+          "sha": "26f94e87a056408daba5b62d64eba34d10dc5947"
+        }
+      ],
+      "fixtures": "memory init/open/#79/0 gift，直接將 time 設956800，job 與 randomDraws controlled；Perl GetBuffer/UseItem/MakeAmount/lostbook。",
+      "limitations": "地圖經 memory command 取得，但真時間／RNG／HTTP/v2 未驗；七配方差分不等同各自完整玩家驗收。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-gift-use-variants.test.mjs",
@@ -8992,33 +9104,241 @@
       "path": "modern/tests/r2-repeat-use-source.test.mjs",
       "sha": "e0b9532ce8cfb41a04f2ac63244cd2aa682e52d3",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "80–128 compare actual Perl offer time、count、stock、money、time、EXP、market、receipts、draws；129–154 5 EXP fixtures、四步 #14/0 sequence（7200/7128/7056 秒，20/40/60 EXP）；155–195 double-create/lostbook/cap/limit/financial/time clipping、原版拒絕 snapshot；197–209 peddle 1.5 clock。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "合法 memory 取得地圖不等同正式玩家；有注入／固定時鐘及 RNG、無 v2；不升格 P4/P5 之外的正式證據。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有拒絕／正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/shared-use-experience.mjs",
+          "sha": "87f3b2cee856949228c857f37f0b62c2f12b05f2"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-repeat-use-probe.pl",
+          "sha": "3fb1b80c5c2cf437f7d2a7b87f1554101e65117f"
+        }
+      ],
+      "fixtures": "memory init/open/#79/0 gift；固定 now=1000000，部分 fixture 注入 EXP、stock、money、time/job；controlled random samples，Perl GetBuffer/funcb/UseItem/LIMIT_EXP；job hook 以 source GetNumber 隔離。",
+      "limitations": "合法 memory 取得地圖不等同正式玩家；有注入／固定時鐘及 RNG、無 v2；不升格 P4/P5 之外的正式證據。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-self-advertisement-source.test.mjs",
       "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "55–110 #62/0 rule、EXP100、自耗、編譯字段及全狀態/receipts/logs/rand(1000)；111–123 五 rank × 四 draw 邊界、peddle、cap；124–144 缺 item/count2/缺或多 draw 不變；145–169 #62/1 memory-only、#62/2/#65/0–2 無規則及 source drift。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "僅 #62/0 差分；不能將 #62/1、#65 registry 檢查視為實際交易；非正式 RNG、取得、HTTP/v2。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有拒絕／正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
+          "line": 16
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-self-advertise-use.mjs",
+          "sha": "9ad78ab4f334a0c4c62ab1ec9dead4ce82917772"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-self-advertise-use-probe.pl",
+          "sha": "54d068e215f1990f640327f8a48472ff26b0e63e"
+        }
+      ],
+      "fixtures": "人工 #62、money100000、time956800、rank/job/EXP；rand override、log stub。",
+      "limitations": "僅 #62/0 差分；不能將 #62/1、#65 registry 檢查視為實際交易；非正式 RNG、取得、HTTP/v2。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-showcase-resize-discard-http.test.mjs",
@@ -9072,17 +9392,121 @@
       "path": "modern/tests/r2-target-advertisement-source.test.mjs",
       "sha": "1d35c84feb80cd9f718496163495013fa6e97090",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "56–126 人工兩店，5h、EXP0、原版自耗、actor/target stock/rank、money/time、market、receipt、log、revision+1、0 draw；127–133 七 rank 與 peddle 無倍率；134–169 invalid/own/missing target、stale、callback、guild/status/rank 等拒絕不變；170–181 source drift。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "受控 memory CAS，非正式 HTTP 授權、跨店持久化或 v2；現行正式 targetShopId 拒絕 flag 保留 false；不以 memory CAS 標記正式 cas。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有拒絕／正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
+          "line": 27
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-target-advertise-use.mjs",
+          "sha": "e848c1cc207cf2bb68daa6ca01f9d7cacb33c9c2"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-target-advertise-use-probe.pl",
+          "sha": "b5aca64e33b133e5da2a66b99fa79475e92097d9"
+        }
+      ],
+      "fixtures": "memory initialize/open 兩店，注入 #62、time、money/rank/job；Perl actual UseItem 和 target callback，WriteLog recording。",
+      "limitations": "受控 memory CAS，非正式 HTTP 授權、跨店持久化或 v2；現行正式 targetShopId 拒絕 flag 保留 false；不以 memory CAS 標記正式 cas。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2c-unified-market-http.test.mjs",
@@ -15811,15 +16235,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "12/0",
@@ -15850,8 +16276,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -15861,7 +16311,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -15874,15 +16333,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "12/1",
@@ -15913,8 +16374,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -15924,7 +16409,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -15937,15 +16431,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "12/2",
@@ -15976,8 +16472,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -15987,7 +16507,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -16000,15 +16529,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "12/3",
@@ -16039,8 +16570,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -16050,7 +16605,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -16201,15 +16765,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "9/0",
@@ -16240,8 +16806,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -16251,7 +16841,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -16264,15 +16863,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "9/1",
@@ -16303,8 +16904,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -16314,7 +16939,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -16327,15 +16961,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gathering-map-uses.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "9/2",
@@ -16366,8 +17002,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+              "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+              "startLine": 70,
+              "endLine": 130,
+              "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -16377,7 +17037,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gathering-map-uses.test.mjs",
+          "sha": "8815ba2c9ebd2fbace4cc7d8549a6b7ea6435f88",
+          "startLine": 70,
+          "endLine": 130,
+          "scope": "#9/0–2、#12/0–3 七原版採集 USE，產出、時耗、EXP、受控 RNG 與 lostbook 差分"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -16528,15 +17197,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-repeat-use-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "14/0",
@@ -16567,8 +17238,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#14/0 原版多次交易、EXP/職業時間、double-create/lostbook、受控 RNG 全欄差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-repeat-use-source.test.mjs",
+              "sha": "e0b9532ce8cfb41a04f2ac63244cd2aa682e52d3",
+              "startLine": 80,
+              "endLine": 209,
+              "scope": "#14/0 原版多次交易、EXP/職業時間、double-create/lostbook、受控 RNG 全欄差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#14/0 原版多次交易、EXP/職業時間、double-create/lostbook、受控 RNG 全欄差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-repeat-use-source.test.mjs",
+              "sha": "e0b9532ce8cfb41a04f2ac63244cd2aa682e52d3",
+              "startLine": 80,
+              "endLine": 209,
+              "scope": "#14/0 原版多次交易、EXP/職業時間、double-create/lostbook、受控 RNG 全欄差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -16578,7 +17273,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-repeat-use-source.test.mjs",
+          "sha": "e0b9532ce8cfb41a04f2ac63244cd2aa682e52d3",
+          "startLine": 80,
+          "endLine": 209,
+          "scope": "#14/0 原版多次交易、EXP/職業時間、double-create/lostbook、受控 RNG 全欄差分"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -20271,15 +20975,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "62/0",
@@ -20310,8 +21016,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#62/0 自家廣告成功／失敗、250 permille 邊界、原版交易及經驗／人氣差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+              "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+              "startLine": 55,
+              "endLine": 144,
+              "scope": "#62/0 自家廣告成功／失敗、250 permille 邊界、原版交易及經驗／人氣差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#62/0 自家廣告成功／失敗、250 permille 邊界、原版交易及經驗／人氣差分",
+          "refs": [
+            {
+              "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+              "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+              "startLine": 55,
+              "endLine": 144,
+              "scope": "#62/0 自家廣告成功／失敗、250 permille 邊界、原版交易及經驗／人氣差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20321,7 +21051,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 55,
+          "endLine": 144,
+          "scope": "#62/0 自家廣告成功／失敗、250 permille 邊界、原版交易及經驗／人氣差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -20334,15 +21073,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": false,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "記憶體跨店規則已註冊；正式 HTTP 拒絕 targetShopId，v2 多店保存拒絕",
       "owner": "R4 #18/#22；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-target-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "62/1",
@@ -20373,8 +21114,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#62/1 兩店 memory transaction／target rank、原版差分及原子拒絕（非正式 HTTP/v2）",
+          "refs": [
+            {
+              "path": "modern/tests/r2-target-advertisement-source.test.mjs",
+              "sha": "1d35c84feb80cd9f718496163495013fa6e97090",
+              "startLine": 67,
+              "endLine": 169,
+              "scope": "#62/1 兩店 memory transaction／target rank、原版差分及原子拒絕（非正式 HTTP/v2）"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#62/1 兩店 memory transaction／target rank、原版差分及原子拒絕（非正式 HTTP/v2）",
+          "refs": [
+            {
+              "path": "modern/tests/r2-target-advertisement-source.test.mjs",
+              "sha": "1d35c84feb80cd9f718496163495013fa6e97090",
+              "startLine": 67,
+              "endLine": 169,
+              "scope": "#62/1 兩店 memory transaction／target rank、原版差分及原子拒絕（非正式 HTTP/v2）"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20393,7 +21158,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-target-advertisement-source.test.mjs",
+          "sha": "1d35c84feb80cd9f718496163495013fa6e97090",
+          "startLine": 67,
+          "endLine": 169,
+          "scope": "#62/1 兩店 memory transaction／target rank、原版差分及原子拒絕（非正式 HTTP/v2）"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -33855,14 +34629,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 101,
-      "待補": 108
+      "有效": 105,
+      "待補": 104
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 62,
+    "currentSessionReviewed": 66,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -33914,7 +34688,8 @@
     "modern/docs/r0-work-showcase-lostbook-evidence.md",
     "modern/docs/r0-shared-helper-material-evidence.md",
     "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
-    "modern/docs/r0-r2-work-career-dairy-party-evidence.md"
+    "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
+    "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md"
   ],
   "integrationCiHistory": [
     {

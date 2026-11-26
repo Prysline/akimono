@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 101、歷史 24、待補 108。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 62 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 105、歷史 24、待補 104。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 66 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -165,16 +165,16 @@
 | r2-dairy-true-player-http.test.mjs | 歷史 | 舊 HTTP／CAS＋v1 recovery（固定時鐘/RNG） |
 | r2-declarative-use-effects.test.mjs | 待補 | 未完成語義審閱 |
 | r2-gathering-http-save.test.mjs | 待補 | 未完成語義審閱 |
-| r2-gathering-map-uses.test.mjs | 待補 | 未完成語義審閱 |
+| r2-gathering-map-uses.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2-gift-use-variants.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2-party-popup-source.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2-potion-lostbook-http.test.mjs | 待補 | 未完成語義審閱 |
-| r2-repeat-use-source.test.mjs | 待補 | 未完成語義審閱 |
-| r2-self-advertisement-source.test.mjs | 待補 | 未完成語義審閱 |
+| r2-repeat-use-source.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
+| r2-self-advertisement-source.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2-showcase-resize-discard-http.test.mjs | 待補 | 未完成語義審閱 |
 | r2-source-manufacturing-http-save.test.mjs | 待補 | 未完成語義審閱 |
 | r2-target-advertisement-local-http.test.mjs | 待補 | 未完成語義審閱 |
-| r2-target-advertisement-source.test.mjs | 待補 | 未完成語義審閱 |
+| r2-target-advertisement-source.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2c-unified-market-http.test.mjs | 待補 | 未完成語義審閱 |
 | r2d-unified-use-item.test.mjs | 待補 | 未完成語義審閱 |
 | r2e-source-buy-use-http-save.test.mjs | 待補 | 未完成語義審閱 |
