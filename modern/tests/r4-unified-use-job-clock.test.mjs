@@ -1,32 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFile} from 'node:fs/promises';
-const root=new URL('../../',import.meta.url);
-async function loadNormalCommerceAuditSources(){
- const sourcePaths={
- itemDsl:'custom/inc-item-data.cgi',rebelDsl:'custom/inc-rebel-data.cgi',originalConfigSource:'_config.cgi',
- originalAdminInitSource:'modern/tests/original-perl/core-inc-admin-func.cgi',
- originalDataReadSource:'modern/tests/original-perl/inc-func.cgi',
- originalDataWriteSource:'modern/tests/original-perl/write.cgi',
- originalTurnSource:'modern/tests/original-perl/inc-turn.cgi',
- originalWholeSource:'modern/tests/original-perl/whole.cgi',
- originalCompilerSource:'modern/tests/original-perl/inc-makeitem.cgi',
- originalBuySource:'modern/tests/original-perl/buy-s.cgi',
- originalBuyItemSource:'modern/tests/original-perl/item.cgi',
- originalBuyCalcSource:'modern/tests/original-perl/calc.cgi',
- originalMarketSource:'modern/tests/original-perl/market.cgi',
- originalItemSource:'modern/tests/original-perl/item.cgi',
- originalDetailSource:'modern/tests/original-perl/core-detail.cgi',
- originalPeriodSource:'modern/tests/original-perl/period.cgi',
- originalUseSource:'modern/tests/original-perl/use.cgi',
- originalItemHelperSource:'modern/tests/original-perl/core-inc-item.cgi',
- originalNewSource:'modern/tests/original-perl/new.cgi',
- originalCustomSource:'modern/tests/original-perl/pinned-custom.cgi',
- originalLogSource:'modern/tests/original-perl/pinned-log.cgi',
- };
- return Object.fromEntries(await Promise.all(Object.entries(sourcePaths).map(async([k,p])=>[k,await readFile(new URL(p,root),'utf8')])));
-}
+import {loadNormalCommerceAuditSources} from './support/r4-source-inputs.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {parseDsl} from '../src/parse-dsl.mjs';
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';

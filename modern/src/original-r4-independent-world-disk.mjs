@@ -8,6 +8,9 @@ import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {reviewOriginalCommerceLocale} from './original-r4-commerce-locale.mjs';
+import {reviewOriginalWholesaleBuyLog,projectOriginalWholesaleBuyLog} from './original-r4-buy-log.mjs';
+import {reviewOriginalShowcaseLog,projectOriginalShowcaseLog} from './original-r4-showcase-log.mjs';
 import {projectReviewedWholesaleVoucherLogRows} from './original-r4-wholesale-voucher.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
@@ -29,6 +32,11 @@ export function createIndependentDiskProjection({sources,sort,street}){
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
+  // Source log activation follows the existing staged market-commerce
+  // capability. Legacy adapter logs stay unchanged in the default mode.
+  const reviewedLocale=street.marketBuy?.reviewedVoucher?reviewOriginalCommerceLocale(sources):null;
+  const buyLog=reviewedLocale?reviewOriginalWholesaleBuyLog({...sources,catalog:street.catalog,reviewedLocale}):null;
+  const showcaseLog=reviewedLocale?reviewOriginalShowcaseLog({...sources,catalog:street.catalog,reviewedLocale}):null;
   function wire(world){
     if(!world.market||world.period.eventState===null)fail('known source market and events required');
     return serializePeriodPlay({...codec,world:{lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,
@@ -73,7 +81,11 @@ export function createIndependentDiskProjection({sources,sort,street}){
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
-    if(['edit-showcase','market-buy','use-item'].includes(command.kind))
+    const sourceShowcase=showcaseLog&&command.kind==='edit-showcase';
+    const sourceBuy=buyLog&&command.kind==='market-buy';
+    if(sourceShowcase)newRows.unshift(projectOriginalShowcaseLog({reviewed:showcaseLog,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
+    if(sourceBuy)newRows.unshift(projectOriginalWholesaleBuyLog({reviewed:buyLog,before:before.shops[0],command,receipt:applied.receipt,nowSeconds:now}));
+    if(!sourceShowcase&&!sourceBuy&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
     if(command.kind==='market-buy'&&street.marketBuy?.reviewedVoucher)newRows.unshift(...projectReviewedWholesaleVoucherLogRows({
       review:street.marketBuy.reviewedVoucher,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
