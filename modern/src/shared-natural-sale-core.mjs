@@ -35,7 +35,7 @@ export function projectSharedNaturalSale({
      !Array.isArray(randomDraws)||randomDraws.length>121||
      randomDraws.some(n=>!Number.isSafeInteger(n)||n<0||n>=1000000))
     fail('invalid source shop or draws');
-  // Explicit source-only opt-in. No existing runtime caller supplies it.
+  // Explicit reviewed tax context; absent in legacy runtime modes.
   if(lordTaxContext!==null)assertR4LordSaleTaxContext(lordTaxContext,shop.taxmode);
   const shelfCount=shop.showcase.length;
   if(shelfCount>1&&(rule!==null||!saleRules||

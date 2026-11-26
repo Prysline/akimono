@@ -14,7 +14,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=false,lordFiscal=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null}={}){
   assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
   assert.ok(Number.isSafeInteger(fundingWorkBudget)&&fundingWorkBudget>0);
   assert.ok(Array.isArray(fundingSaleItems)&&fundingSaleItems.every(id=>Number.isSafeInteger(id)&&id>=1&&id<=79));
@@ -32,7 +32,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
   async function boot(){
     stderr='';
     const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',AKIMONO_REVIEWED_REBEL_TIME:rebelTime?'1':'0',AKIMONO_REVIEWED_FULL_COMMERCE:fullCommerce?'1':'0'};
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',AKIMONO_REVIEWED_REBEL_TIME:rebelTime?'1':'0',AKIMONO_REVIEWED_FULL_COMMERCE:fullCommerce?'1':'0',AKIMONO_REVIEWED_LORD_FISCAL:lordFiscal?'1':'0'};
     if(now===null)delete env.AKIMONO_E2E_FIXED_NOW;
     else env.AKIMONO_E2E_FIXED_NOW=now;
     child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env,stdio:['ignore','pipe','pipe']});

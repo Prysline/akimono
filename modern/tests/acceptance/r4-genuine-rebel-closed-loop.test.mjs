@@ -16,6 +16,7 @@ import {parseArmyFile} from '../../src/original-r4-army-files.mjs';
 import {R4_EXTERNAL_COMMAND_HASH_POLICY} from '../../src/original-r4-perl-hash-replay.mjs';
 import {calculateSourceShopPoint} from '../../src/original-period-solo-sort.mjs';
 
+const lordFiscal=process.env.AKIMONO_TEST_LORD_FISCAL==='1';
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
 // Reuse the actual #22 four-category, buffered 120% commerce route.
 // Different source types cover the original specialty-demand break;
@@ -39,8 +40,8 @@ const missionRoutes={
   47:{book:21,useId:0,materials:[[5,20]]},
 };
 test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers, two-slice rebel CAS and durable replay',{timeout:3300000},async t=>{
-  let ticks=0,proceeds=0,maxPoint=0,missions=0,generation=0,fundsCheckpoint=false;
-  const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,fullCommerce:true,fundMarketWithWork:true,now:null,onTick(r,before){
+  let ticks=0,proceeds=0,maxPoint=0,missions=0,generation=0,fundsCheckpoint=false,fiscalSales=0,fiscalCredits=0;
+  const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,lordFiscal,fullCommerce:true,fundMarketWithWork:true,now:null,onTick(r,before){
     const old=before.shops[0],next=r.state.shop,d=r.details;
     assert.ok(++ticks<=2300,'bounded genuine time experiment exhausted');
     const sold=d.naturalSaleCount;
@@ -60,6 +61,18 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.deepEqual(byItem,d.soldByItem);
     const counts=rr=>{const out={};for(const row of rr)out[row.itemId]=(out[row.itemId]??0)+row.count;return out;};
     const gross=rr=>rr.reduce((n,row)=>n+row.gross,0);
+    if(lordFiscal&&d.lordTax){
+      for(const row of rows){
+        const context=d.lordTax[row.sliceIndex],base=r.state.showcaseOffers.find(q=>q.itemId===row.itemId).unitPrice;
+        let rate=row.gross/row.count/base-1,down=1;
+        if(rate>0)rate*=5;if(rate<0){down=1+rate;rate=0;}
+        assert.equal(row.tax,Math.trunc(row.gross*Math.min(99,Math.trunc((rate+context.userTaxRate)*down+0.5))/100));
+        if(context.userTaxRate>0&&row.tax>0)fiscalSales++;
+      }
+      const sumTax=rr=>rr.reduce((n,row)=>n+row.tax,0);
+      if(d.settlementReceipt){const tax=old.taxtoday+sumTax(boundaryRows);assert.equal(d.settlementReceipt.taxBeforeLedger,tax);assert.equal(d.settlementReceipt.cityTaxIn,tax);assert.equal(next.taxyesterday,tax);assert.equal(next.taxtoday,sumTax(residualRows));if(d.lordTax[0].townRateBefore>0&&tax>0)fiscalCredits++;}
+      else assert.equal(next.taxtoday,old.taxtoday+sumTax(rows));
+    }
     if(d.settlementReceipt){
       const q=d.settlementReceipt,bc=counts(boundaryRows),rc=counts(residualRows);
       assert.deepEqual(q.soldByItem,bc);
@@ -84,6 +97,11 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   }});
   const snapshot=()=>p.state.world;
   const shop=()=>p.state.shop;
+  if(lordFiscal){const before=snapshot(),history=p.state.historyCommands;
+    assert.equal(p.state.reviewedLordFiscal,true);assert.equal(p.state.lord,null);
+    const denied=await p.post('/api/lord-inside',{expectedRevision:before.revision,taxrate:'20',devem:'0',safem:'0'});
+    assert.equal(denied.ok,false);assert.deepEqual(snapshot(),before);assert.equal(p.state.historyCommands,history);
+  }
   const diagnostic=()=>JSON.stringify({revision:snapshot().revision,period:snapshot().period.settledCount,
     point:p.state.palace.point,maxPoint,rank:shop().rank,money:shop().money,profit:shop().profitstock,
     dignity:shop().dignity,mission:p.state.palace,ticks,proceeds,missions,population:snapshot().period.dtPeople,
@@ -516,12 +534,27 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.equal(won.period.town.leader,1);
     assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(won),true);
     assert.ok(won.period.disk.live['log0.cgi'].bytes.includes('成為了新的領主。'));
-    // Test actual ordinary operations as lord with original zero tax, not
-    // merely a state read. No unreviewed city treasury/tax mutation.
+    if(lordFiscal){
+      const prior=snapshot(),cash=shop().money,time=shop().time;
+      await command('/api/lord-inside',{taxrate:'20',devem:'123',safem:'456'});
+      assert.equal(p.state.lord.taxRate,20);assert.equal(town().money,prior.period.town.money);
+      assert.equal(town().devem,123);assert.equal(town().safem,456);assert.equal(shop().money,cash);assert.equal(shop().time,time);
+      for(const [mode,value] of [['free',1],['double',2],['normal','']]){
+        await command('/api/lord-tax-side',{targetShopId:1,mode});assert.equal(shop().taxmode,value);
+      }
+      await command('/api/lord-tax-side',{targetShopId:1,mode:'double'});
+      assert.ok(snapshot().period.disk.live['log0.cgi'].bytes.includes('領主%1は%2の税率を倍にしました。'));
+      await command('/api/lord-tax-reset');assert.equal(shop().taxmode,'');
+      assert.equal(snapshot().period.disk.lordTaxRate,20);assert.equal(snapshot().period.disk.live['play.cgi'].bytes.split('\n')[1].split(',')[3],'20');
+      const beforeRestart=snapshot(),loaded=await p.saveAndRestart(generation++);assert.deepEqual(loaded,beforeRestart);
+      assert.equal(p.state.lord.taxRate,20);assert.equal(shop().taxmode,'');
+    }
+    // Test actual ordinary operations as lord, not merely a state read.
     await p.enoughTime(p.quote(13,1).timePerUseSeconds);
     assert.equal(town().leader,1);
     const cash=shop().money,work=await p.use(13,1);
     assert.equal(work.details.moneyEarned,10000);assert.equal(shop().money,cash+10000);
+    if(lordFiscal){for(let n=0;fiscalSales===0;n++){assert.ok(n<37,'bounded genuine taxable sale');await economyTurn();}}
     const priorPeriod=snapshot().period.settledCount;
     for(let n=0;snapshot().period.settledCount===priorPeriod;n++){
       assert.ok(n<37,'bounded post-victory period');
@@ -529,12 +562,13 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     }
     assert.equal(snapshot().period.settledCount,priorPeriod+1);
     assert.equal(town().leader,1,'ordinary post-victory source period retains current leader');
+    if(lordFiscal){assert.ok(fiscalSales>0&&fiscalCredits>0,'actual fiscal receipt and period credit required');assert.equal(snapshot().period.disk.lordTaxRate,20);}
     const final=await p.saveAndRestart(generation++);
     assert.equal(final.period.town.leader,1);
     assert.equal(final.shops[0].showcasecount,4);
     assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(final),true);
     t.diagnostic('R4 genuine leader ACCEPTED '+JSON.stringify({leader:final.period.town.leader,
       town:final.period.town,revision:final.revision,period:final.period.settledCount,
-      missions,generation,cash:final.shops[0].money}));
+      missions,generation,cash:final.shops[0].money,...(lordFiscal?{fiscalSales,fiscalCredits,taxRate:final.period.disk.lordTaxRate}:{})}));
   });
 });

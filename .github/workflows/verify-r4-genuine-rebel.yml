@@ -35,7 +35,7 @@ jobs:
       - name: Isolated lord fiscal source differential (not genuine player)
         working-directory: modern
         run: |
-          node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs
+          node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs tests/r4-lord-fiscal-runtime.test.mjs
           node --test --test-name-pattern='R4 lord tax two-slice source differential' tests/r4-p3-pre-event-overlay.test.mjs
   genuine-rebel:
     runs-on: ubuntu-latest
@@ -59,3 +59,18 @@ jobs:
       - name: Run genuine player acceptance (no fixture or skip)
         working-directory: modern
         run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs tests/acceptance/r4-genuine-ring-inventory.test.mjs
+  genuine-lord-fiscal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine player wins lordship and operates nonzero fiscal policy
+        working-directory: modern
+        env:
+          AKIMONO_TEST_LORD_FISCAL: '1'
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs

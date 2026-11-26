@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 
 // Original source review for explicit, isolated natural sale tax contexts.
-// The live time/command/save controllers do not enable this capability.
+// Live controllers may enable this capability only in the independent fiscal mode.
 const pins={detail:'9a83d26fb29edee4032958f1e6de837a250f3384',
   item:'b39400d7dc0ab80062c392ae2bbc923e24ecacf8',
   turn:'b8a4980275f475a952846a8d6072fad45f8dff50'};
