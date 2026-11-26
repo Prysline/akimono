@@ -55,7 +55,8 @@ export function describeLordGuard({reviewed,fixture}){
   const canManage=t.money>0&&!rebellion;
   const exposeReason=rebellion?'rebellion':t.army<2000?'army':t.money<1000000?'funds':null;
   return {source:reviewed.source,committable:false,taxForecast,money:t.money,taxRate:fixture.taxRate,
-    devem:t.devem,safem:t.safem,army,unitUpkeep,upkeep,canHire:canManage,canFire:canManage,
+    devem:t.devem,safem:t.safem,army,sourceArmyHeadline:'',regularArmy:t.army,volunteerArmy:t.robina,
+    unitUpkeep,upkeep,canHire:canManage,canFire:canManage,
     hireOptions:canManage?options(Math.trunc(t.money/1200),'(資金最大)'):[],
     fireOptions:canManage?options(t.army,'(兵士最大)'):[],
     canExpose:exposeReason===null,exposeReason,targets:fixture.shops.map(s=>s.id)};

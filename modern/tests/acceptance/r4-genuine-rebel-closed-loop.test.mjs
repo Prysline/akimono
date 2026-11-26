@@ -416,9 +416,14 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   // The test must accept a genuine defeat as well as a genuine victory.
   await t.test('same legal player reaches source rebel outcome, persists it and resumes commerce',async()=>{
     let terminal=null;
+    // Original NOW checks rebel survivors <200 BEFORE subtracting guard losses.
+    // Hour-long steps can discard a real winning force (2500 vs 2000) at
+    // the last subtraction. Advance through normal 10-minute commands,
+    // preserving the first two-slice crossing, exact 2500 hire, and the
+    // same bounded 12-step terminal outcome/defeat recovery assertions.
     for(let n=0;Object.hasOwn(snapshot().period.eventState,'rebel');n++){
       assert.ok(n<12,'bounded real battle outcome '+diagnostic());
-      const prior=snapshot(),result=await p.tick(60),next=snapshot(),trace=result.details.sourceTrace;
+      const prior=snapshot(),result=await p.tick(10),next=snapshot(),trace=result.details.sourceTrace;
       assert.equal(trace.hashPolicy,R4_EXTERNAL_COMMAND_HASH_POLICY);
       assert.equal(trace.liveArmySha256,sha(prior.period.disk.live['army.cgi'].bytes));
       assert.equal(Object.hasOwn(next.shops[0],'army'),false);

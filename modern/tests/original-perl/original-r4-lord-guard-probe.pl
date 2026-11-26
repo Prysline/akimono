@@ -76,10 +76,16 @@ if(!$c){
  my($rate)=$disp=~/NAME=taxrate SIZE=5 VALUE="(\d+)"/;
  my($devem)=$disp=~/NAME=devem SIZE=10 VALUE="(\d+)"/;
  my($safem)=$disp=~/NAME=safem SIZE=10 VALUE="(\d+)"/;
- my($army)=$disp=~/<b>(\d+)人<\/b>/;
+ # Original "$army人" interpolates a different Unicode variable; preserve
+ # the rendered headline, then read the actual two labeled component counts.
+ my($headline,$regular,$volunteer)=$disp=~/<b>([^<]*)<\/b><small>（正規軍 (\d+)人，義勇軍 (\d+)人）/;
+ die 'original army view fields missing' unless defined($headline)&&defined($regular)&&defined($volunteer);
+ my $army=$regular+$volunteer;
  my($unit)=$disp=~/正規軍１人につき(\d+)/;
+ die 'original fiscal view fields missing' unless defined($rate)&&defined($devem)&&defined($safem)&&defined($unit);
  print encode_json({ok=>1,taxForecast=>$money[0],money=>$money[1],upkeep=>$money[2],
-  taxRate=>0+$rate,devem=>0+$devem,safem=>0+$safem,army=>0+$army,unitUpkeep=>0+$unit,
+  taxRate=>0+$rate,devem=>0+$devem,safem=>0+$safem,army=>0+$army,sourceArmyHeadline=>$headline,
+  regularArmy=>0+$regular,volunteerArmy=>0+$volunteer,unitUpkeep=>0+$unit,
   canHire=>defined(form('outside'))?JSON::PP::true:JSON::PP::false,
   canFire=>defined(form('outdel'))?JSON::PP::true:JSON::PP::false,
   canExpose=>defined(form('expose'))?JSON::PP::true:JSON::PP::false,
