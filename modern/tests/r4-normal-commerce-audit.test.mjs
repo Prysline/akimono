@@ -59,13 +59,13 @@ const head='a'.repeat(40),checkout='b'.repeat(40),base='ddd2f441ed5b36b8dcb94dea
 const steps=['Checkout source','Set up Node','Verify existing Standard Street DSL source audit','Verify pinned original Core source blobs','Verify four additional SHA-pinned original Core item-loader source blobs','Verify pinned untouched original Core admin initializer','Verify B-38 untouched original Core detail tax source blob','Run isolated original Perl Core tests'].map(name=>({name,conclusion:'success'}));
 const meta={head,base,checkout,pr:25,runId:1,jobId:2,steps,conclusion:'success'};
 // Explicit parser-only fixture. These are NOT GitHub run IDs or real Git objects.
-const gitRead=(...args)=>args[0]==='show'?base+' '+head:'c'.repeat(40);
+const gitRead=(...args)=>args[0]==='show'?base+' '+head:args[0]==='ls-tree'?'modern/tests/original-perl/fixture.t':'c'.repeat(40);
 const callback='R4 source-only FUNCBUY differential executes pinned Perl threshold, clipped payment, capacity and zero-log behavior';
 const auditJson=JSON.stringify({ok:true,hashes:[{name:'custom/inc-item-data.cgi',actual:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',expected:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',verified:true},{name:'custom/inc-rebel-data.cgi',actual:'923634e58a05beca9ab004515fc7669d53a1ba3a',expected:'923634e58a05beca9ab004515fc7669d53a1ba3a',verified:true}],actual:{items:79,uses:116,events:25,functions:7},issues:[]});
 const fakeLog=(rows=['ok 1 - '+callback],totals=['# tests 1','# pass 1','# fail 0','# cancelled 0','# skipped 0','# todo 0'])=>[
   'git log -1 --format=%H',checkout,...rows,'1..'+rows.length,...totals,
   '> node scripts/audit.mjs',auditJson,'> node scripts/demo-state.mjs','> node scripts/demo-original-nayuta-functurn.mjs',
-  '##[group]Run prove -v *.t','ok 1 - Perl only','1..1','All tests successful.','Files=1, Tests=1, 1 wallclock secs','Result: PASS'
+  '##[group]Run prove -v *.t','fixture.t .... ','ok 1 - Perl only','1..1','ok','All tests successful.','Files=1, Tests=1, 1 wallclock secs','Result: PASS'
 ].join('\n');
 test('acceptance parser requires complete Node and independent Perl TAP and refuses stale checkout or missing steps',()=>{
   const log=fakeLog();
@@ -79,6 +79,13 @@ test('acceptance parser requires complete Node and independent Perl TAP and refu
   assert.throws(()=>verifyAcceptanceRun({log,meta,head:'f'.repeat(40),gitRead}),/exact current/);
   assert.throws(()=>verifyAcceptanceRun({log:log.replace(checkout,'f'.repeat(40)),meta,head,gitRead}),/checkout mismatch/);
   assert.throws(()=>verifyAcceptanceRun({log,meta,head,gitRead:(...args)=>args[0]==='show'?base+' '+checkout:'c'.repeat(40)}),/exact current head tree/);
+  // Parser-only malformed prove transcripts: no row may be borrowed
+  // from another file to satisfy the overall summary.
+  assert.equal(parseAcceptanceTap(log.replace('ok 1 - Perl only','ok 2 - Perl only')).perlComplete,false);
+  assert.equal(parseAcceptanceTap(log.replace('1..1\nok\nAll tests successful.','1..1\nAll tests successful.')).perlComplete,false);
+  assert.equal(parseAcceptanceTap(log.replace('fixture.t .... ','fixture.t .... \nok 1 - duplicate\n1..1\nok\nfixture.t .... ')).perlComplete,false);
+  assert.equal(verifyAcceptanceRun({log,meta,head,gitRead:(...args)=>args[0]==='ls-tree'?
+    'modern/tests/original-perl/fixture.t\nmodern/tests/original-perl/missing.t':gitRead(...args)}).independentRunGreen,false);
   const dup=fakeLog(['ok 1 - '+callback,'ok 2 - '+callback],['# tests 2','# pass 2','# fail 0','# cancelled 0','# skipped 0','# todo 0']);
   assert.equal(parseAcceptanceTap(dup).rows.get(callback),'ambiguous');
   assert.equal(verifyAcceptanceRun({log:dup,meta,head,gitRead}).independentRunGreen,false);

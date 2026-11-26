@@ -117,16 +117,44 @@ export function parseAcceptanceTap(log){
   // Parse Perl only after its actual prove invocation. Never count Node TAP
   // rows, demo text or isolated "Result: PASS" as the complete Perl suite.
   const tail=ended<0?[]:lines.slice(ended+1);
+  const invocations=tail.filter(l=>/^##\[group\]Run prove -v \*\.t$/.test(l));
   const prove=tail.findIndex(l=>/^##\[group\]Run prove -v \*\.t$/.test(l));
   const perl=prove<0?[]:tail.slice(prove+1);
   const summaries=perl.filter(l=>/^Files=\d+, Tests=\d+,/.test(l));
   const summary=summaries.length===1?summaries[0].match(/^Files=(\d+), Tests=(\d+),/):null;
-  const plans=perl.filter(l=>/^1\.\.\d+$/.test(l));
-  const perlRows=perl.filter(l=>/^(?:not )?ok \d+\b/.test(l));
-  const perlComplete=!!summary&&Number(summary[1])>0&&Number(summary[2])>0&&
-    plans.length===Number(summary[1])&&plans.reduce((n,l)=>n+Number(l.slice(3)),0)===Number(summary[2])&&
-    perlRows.length===Number(summary[2])&&perlRows.every(l=>/^ok /.test(l)&&!/\s+# (?:SKIP|TODO)\b/i.test(l))&&
-    perl.filter(l=>l==='All tests successful.').length===1&&perl.filter(l=>l==='Result: PASS').length===1;
+  // A matching aggregate count is insufficient: prove must report each
+  // distinct tracked .t file, with sequential tests, its own plan and ok.
+  const perlFiles=new Map();
+  let file=null,perlValid=invocations.length===1,allSuccessful=false,resultPass=false;
+  for(const line of perl){
+    const header=line.match(/^(\S+\.t)\s+\.{2,}\s*$/);
+    const row=line.match(/^(not )?ok (\d+)\b/);
+    const plan=line.match(/^1\.\.(\d+)$/);
+    if(header){
+      if(file||allSuccessful||perlFiles.has(header[1]))perlValid=false;
+      file={name:header[1],count:0,plan:null};
+    }else if(row){
+      if(!file||file.plan!==null||row[1]||/\s+# (?:SKIP|TODO)\b/i.test(line))perlValid=false;
+      if(file&&Number(row[2])!==++file.count)perlValid=false;
+    }else if(plan){
+      if(!file||file.plan!==null||Number(plan[1])!==file.count||file.count===0)perlValid=false;
+      if(file)file.plan=Number(plan[1]);
+    }else if(/^ok\s*$/.test(line)){
+      if(!file||file.plan===null||file.plan!==file.count)perlValid=false;
+      if(file){perlFiles.set(file.name,file.count);file=null;}
+    }else if(line==='All tests successful.'){
+      if(file||allSuccessful||perlFiles.size===0)perlValid=false;
+      allSuccessful=true;
+    }else if(/^Files=\d+, Tests=\d+,/.test(line)){
+      if(!allSuccessful||resultPass)perlValid=false;
+    }else if(line==='Result: PASS'){
+      if(!allSuccessful||!summary||resultPass)perlValid=false;
+      resultPass=true;
+    }else if(/^Bail out!|^Dubious,|^Result: FAIL/.test(line))perlValid=false;
+  }
+  const perlComplete=perlValid&&!file&&allSuccessful&&resultPass&&!!summary&&
+    perlFiles.size===Number(summary[1])&&
+    [...perlFiles.values()].reduce((n,count)=>n+count,0)===Number(summary[2]);
   const auditAt=tail.indexOf('> node scripts/audit.mjs');
   const demoAt=tail.indexOf('> node scripts/demo-state.mjs');
   let sourceAudit=false;
@@ -142,7 +170,7 @@ export function parseAcceptanceTap(log){
     }catch{}
   }
   const demo=demoAt>=0&&tail.includes('> node scripts/demo-original-nayuta-functurn.mjs');
-  return {rows,totals,complete,checkout,perlComplete,sourceAudit,demo};
+  return {rows,totals,complete,checkout,perlComplete,perlFiles,sourceAudit,demo};
 }
 export function verifyAcceptanceRun({log,meta,head,gitRead=git}){
   // Metadata is retrieved outside this script from GitHub's actual run/job
@@ -156,6 +184,10 @@ export function verifyAcceptanceRun({log,meta,head,gitRead=git}){
   const tap=parseAcceptanceTap(log);
   if(tap.checkout.length!==1||tap.checkout[0]!==meta.checkout)throw new Error('job log checkout mismatch');
   const requiredSteps=['Checkout source','Set up Node','Verify existing Standard Street DSL source audit','Verify pinned original Core source blobs','Verify four additional SHA-pinned original Core item-loader source blobs','Verify pinned untouched original Core admin initializer','Verify B-38 untouched original Core detail tax source blob','Run isolated original Perl Core tests'];
+  const expectedPerlFiles=gitRead('ls-tree','-r','--name-only',head,'--','modern/tests/original-perl')
+    .split(/\r?\n/).filter(p=>/^modern\/tests\/original-perl\/[^/]+\.t$/.test(p)).map(p=>p.split('/').at(-1));
+  const exactPerlFiles=expectedPerlFiles.length>0&&expectedPerlFiles.length===tap.perlFiles.size&&
+    expectedPerlFiles.every(name=>tap.perlFiles.has(name));
   const allSteps=Array.isArray(meta.steps)&&meta.steps.every(s=>s.conclusion==='success')&&
     requiredSteps.every(name=>meta.steps.filter(s=>s.name===name).length===1);
   return {head,runId:meta.runId,jobId:meta.jobId,checkout:meta.checkout,tap,
@@ -163,7 +195,7 @@ export function verifyAcceptanceRun({log,meta,head,gitRead=git}){
     // job may expose per-test results but cannot pass the phase gate.
     independentRunGreen:meta.conclusion==='success'&&allSteps&&tap.complete&&
       tap.totals.fail===0&&tap.totals.skipped===0&&tap.totals.cancelled===0&&tap.totals.todo===0&&
-      tap.perlComplete&&tap.sourceAudit&&tap.demo&&[...tap.rows.values()].every(state=>state!=='ambiguous')};
+      tap.perlComplete&&exactPerlFiles&&tap.sourceAudit&&tap.demo&&[...tap.rows.values()].every(state=>state!=='ambiguous')};
 }
 export function buildNormalCommerceAcceptance(audit,evidence=null){
   if(JSON.stringify(audit.counts)!==JSON.stringify({items:79,uses:116,events:25,functions:7}))
