@@ -7135,33 +7135,81 @@
       "path": "modern/tests/original-perl/original-r4-rebel-period-now.t",
       "sha": "d61c6509fac1889df9145b390bbeda5f6d480d56",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（period→NOW 單切片）",
+      "originalSource": "modern/tests/original-perl/period.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "probe exit/JSON、八 cases；無領主仍消耗 START gate 100000，平靜2500/5000000/100000，新叛亂2500/5000000/100/100/5且首次NOW robinb8800/9400，延後仍 gate，延長後同切片鎮壓、既有 RIOT 用rand(5)。",
+      "executionPath": "Perl .t → original-r4-rebel-period-now-probe.pl → eval RebelRobin/period wrapper → actual END/START/NOW＋DSL NOW callback",
+      "risk": "period rebel trigger/extension、同片 NOW 與亂數順序；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。固定 NOW=start=1000000、3600 秒，人工兩店、CITY/RIOT/ARMY、單一 EVENT、明示 draws 及手工 periodDrawCount/nowDrawCount；原版直接依序呼叫兩片段，不執行中間市場/PLUS 或完整 inc-period、軍隊合併尾段、其他16 EVENT；ReadArmy/WriteArmy/GetMoneyString/l/PushLog 為 stub，非正式玩家/CAS/HTTP/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-rebel-period-now-evidence.md",
+          "line": 32
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-now-probe.pl",
+          "sha": "7c3c457073ec9548a4590cf7c66ae05aebfe5ad5"
+        }
+      ],
+      "fixtures": "八受控同城鎮/軍隊快照單切片",
+      "limitations": "固定 NOW=start=1000000、3600 秒，人工兩店、CITY/RIOT/ARMY、單一 EVENT、明示 draws 及手工 periodDrawCount/nowDrawCount；原版直接依序呼叫兩片段，不執行中間市場/PLUS 或完整 inc-period、軍隊合併尾段、其他16 EVENT；ReadArmy/WriteArmy/GetMoneyString/l/PushLog 為 stub，非正式玩家/CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-rebel-period-trigger.t",
       "sha": "bee642d7509a308a961bdfe8165be4f0f92d7368",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（period RebelRobin）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "probe exit/JSON、七 cases；未知領主零 draw、既有事件三日延長零 draw、平靜兩 draw、動盪 log、rand(100)略低於30啟動10000 bandits、恰30延後、舊 truthy expiry延長。",
+      "executionPath": "Perl .t → original-r4-rebel-period-trigger-probe.pl → eval exact RebelRobin sub＋extension wrapper",
+      "risk": "period rebel trigger/extension、同片 NOW 與亂數順序；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。固定 NOW=1000000，人工 town、leader membership、active expiry 與 millionth draws；僅 period.cgi RebelRobin 完整 sub 及 truthy extension wrapper；l/PushLog 為替代 helper，非完整 period/SortDT/資金結算、真時間、RNG、磁碟、CAS/HTTP/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-rebel-period-now-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-trigger-probe.pl",
+          "sha": "ceabcdfc948c4f154cd70af78b1f166612eb3d0f"
+        }
+      ],
+      "fixtures": "人工 CITY/leader membership、七案例",
+      "limitations": "固定 NOW=1000000，人工 town、leader membership、active expiry 與 millionth draws；僅 period.cgi RebelRobin 完整 sub 及 truthy extension wrapper；l/PushLog 為替代 helper，非完整 period/SortDT/資金結算、真時間、RNG、磁碟、CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-sorted-pre-event.t",
@@ -12571,43 +12619,141 @@
       "path": "modern/tests/r4-source-rebel-period-now.test.mjs",
       "sha": "a0725928fb89f3d511466b21b0f1c2b42122cf3c",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（period→NOW 單切片）",
+      "originalSource": "modern/tests/original-perl/period.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi；custom/inc-item-data.cgi；modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "八 cases 比 town/shops/RIOT/ARMY、expiry/eventState/persist、logs、draw ranges/count、tax、IO counts；noncommittable、輸入不變；兩次獨立 Perl probe 比範圍/event/town/log；缺 period review、stage drift、時鐘不同、draw少/多/錯 stage count 拒絕。",
+      "executionPath": "reviewR4RebelPeriodToNow；execFileSync combined probe → projectR4RebelPeriodToNow → period projector＋NOW projector",
+      "risk": "period rebel trigger/extension、同片 NOW 與亂數順序；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。固定 NOW=start=1000000、3600 秒，人工兩店、CITY/RIOT/ARMY、單一 EVENT、明示 draws 及手工 periodDrawCount/nowDrawCount；原版直接依序呼叫兩片段，不執行中間市場/PLUS 或完整 inc-period、軍隊合併尾段、其他16 EVENT；ReadArmy/WriteArmy/GetMoneyString/l/PushLog 為 stub，非正式玩家/CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 89
+        },
+        {
+          "path": "modern/docs/r0-r4-rebel-period-now-evidence.md",
+          "line": 23
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-now-probe.pl",
+          "sha": "7c3c457073ec9548a4590cf7c66ae05aebfe5ad5"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-period-trigger.mjs",
+          "sha": "37759a35429d92e41d5898ad2a54993cf01bdfb7"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-now.mjs",
+          "sha": "7136d883a00b49e43ab6756252b58f2d06f09b8b"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-period-to-now.mjs",
+          "sha": "fc3c80fb0956c562c17b5440374a3591f292ff46"
+        }
+      ],
+      "fixtures": "八人工同 CITY/兩店/單 rebel、固定 clock、明示 draws/分段數",
+      "limitations": "固定 NOW=start=1000000、3600 秒，人工兩店、CITY/RIOT/ARMY、單一 EVENT、明示 draws 及手工 periodDrawCount/nowDrawCount；原版直接依序呼叫兩片段，不執行中間市場/PLUS 或完整 inc-period、軍隊合併尾段、其他16 EVENT；ReadArmy/WriteArmy/GetMoneyString/l/PushLog 為 stub，非正式玩家/CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-rebel-period-trigger.test.mjs",
       "sha": "886c2e868fb44fd6b43e4f2c6d6eede309d5f43b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（period RebelRobin）",
+      "originalSource": "modern/tests/original-perl/period.cgi；custom/inc-item-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "七 cases 比 town/eventState/expiry/logs/draw ranges/count，noncommittable 與輸入不變；舊但 truthy 期限延至1259200、rand(100)恰30不觸發；兩次獨立 Perl probe；source drift、未審 NOW、draw不足/過量、leader不合、expiry0拒絕。",
+      "executionPath": "reviewOriginalCompiledEventCatalog → reviewR4RebelNow → reviewR4RebelPeriodTrigger；execFileSync Perl probe → projectR4RebelPeriodTrigger",
+      "risk": "period rebel trigger/extension、同片 NOW 與亂數順序；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。固定 NOW=1000000，人工 town、leader membership、active expiry 與 millionth draws；僅 period.cgi RebelRobin 完整 sub 及 truthy extension wrapper；l/PushLog 為替代 helper，非完整 period/SortDT/資金結算、真時間、RNG、磁碟、CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 88
+        },
+        {
+          "path": "modern/docs/r0-r4-rebel-period-now-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-trigger-probe.pl",
+          "sha": "ceabcdfc948c4f154cd70af78b1f166612eb3d0f"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-period-trigger.mjs",
+          "sha": "37759a35429d92e41d5898ad2a54993cf01bdfb7"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-now.mjs",
+          "sha": "7136d883a00b49e43ab6756252b58f2d06f09b8b"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        }
+      ],
+      "fixtures": "七人工城鎮案例、leader membership、固定時間與亂數",
+      "limitations": "固定 NOW=1000000，人工 town、leader membership、active expiry 與 millionth draws；僅 period.cgi RebelRobin 完整 sub 及 truthy extension wrapper；l/PushLog 為替代 helper，非完整 period/SortDT/資金結算、真時間、RNG、磁碟、CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-town-play.test.mjs",
@@ -37517,7 +37663,11 @@
         "modern/tests/b53-event-catalog-source.test.mjs",
         "modern/tests/original-perl/original-b53-event-catalog.t",
         "modern/tests/r4-source-rebel-now.test.mjs",
-        "modern/tests/original-perl/original-r4-rebel-now.t"
+        "modern/tests/original-perl/original-r4-rebel-now.t",
+        "modern/tests/r4-source-rebel-period-trigger.test.mjs",
+        "modern/tests/original-perl/original-r4-rebel-period-trigger.t",
+        "modern/tests/r4-source-rebel-period-now.test.mjs",
+        "modern/tests/original-perl/original-r4-rebel-period-now.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -37567,7 +37717,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家；另有七 period RebelRobin trigger/extension 及八 period→NOW 受控同切片差分；非完整 settlement/正式時間。",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -37596,12 +37746,40 @@
               "startLine": 1,
               "endLine": 39,
               "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-period-trigger.test.mjs",
+              "sha": "886c2e868fb44fd6b43e4f2c6d6eede309d5f43b",
+              "startLine": 1,
+              "endLine": 91,
+              "scope": "七個人工 CITY 的完整 RebelRobin sub/extension wrapper 原版差分；固定時間、明示 draws，非完整 period"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-rebel-period-trigger.t",
+              "sha": "bee642d7509a308a961bdfe8165be4f0f92d7368",
+              "startLine": 1,
+              "endLine": 33,
+              "scope": "七個人工 CITY 的完整 RebelRobin sub/extension wrapper 原版差分；固定時間、明示 draws，非完整 period"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-period-now.test.mjs",
+              "sha": "a0725928fb89f3d511466b21b0f1c2b42122cf3c",
+              "startLine": 1,
+              "endLine": 87,
+              "scope": "八個人工單 CITY/兩店 period wrapper→EVENT NOW 單切片；固定時間、分段 draws/IO stub，非完整 period/17 EVENT/正式玩家"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-rebel-period-now.t",
+              "sha": "d61c6509fac1889df9145b390bbeda5f6d480d56",
+              "startLine": 1,
+              "endLine": 38,
+              "scope": "八個人工單 CITY/兩店 period wrapper→EVENT NOW 單切片；固定時間、分段 draws/IO stub，非完整 period/17 EVENT/正式玩家"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家；另有七 period RebelRobin trigger/extension 及八 period→NOW 受控同切片差分；非完整 settlement/正式時間。",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -37616,6 +37794,20 @@
               "startLine": 1,
               "endLine": 93,
               "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-period-trigger.test.mjs",
+              "sha": "886c2e868fb44fd6b43e4f2c6d6eede309d5f43b",
+              "startLine": 1,
+              "endLine": 91,
+              "scope": "七個人工 CITY 的完整 RebelRobin sub/extension wrapper 原版差分；固定時間、明示 draws，非完整 period"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-period-now.test.mjs",
+              "sha": "a0725928fb89f3d511466b21b0f1c2b42122cf3c",
+              "startLine": 1,
+              "endLine": 87,
+              "scope": "八個人工單 CITY/兩店 period wrapper→EVENT NOW 單切片；固定時間、分段 draws/IO stub，非完整 period/17 EVENT/正式玩家"
             }
           ]
         },
@@ -37657,9 +37849,37 @@
           "startLine": 1,
           "endLine": 39,
           "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
+        },
+        {
+          "path": "modern/tests/r4-source-rebel-period-trigger.test.mjs",
+          "sha": "886c2e868fb44fd6b43e4f2c6d6eede309d5f43b",
+          "startLine": 1,
+          "endLine": 91,
+          "scope": "七個人工 CITY 的完整 RebelRobin sub/extension wrapper 原版差分；固定時間、明示 draws，非完整 period"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-trigger.t",
+          "sha": "bee642d7509a308a961bdfe8165be4f0f92d7368",
+          "startLine": 1,
+          "endLine": 33,
+          "scope": "七個人工 CITY 的完整 RebelRobin sub/extension wrapper 原版差分；固定時間、明示 draws，非完整 period"
+        },
+        {
+          "path": "modern/tests/r4-source-rebel-period-now.test.mjs",
+          "sha": "a0725928fb89f3d511466b21b0f1c2b42122cf3c",
+          "startLine": 1,
+          "endLine": 87,
+          "scope": "八個人工單 CITY/兩店 period wrapper→EVENT NOW 單切片；固定時間、分段 draws/IO stub，非完整 period/17 EVENT/正式玩家"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-period-now.t",
+          "sha": "d61c6509fac1889df9145b390bbeda5f6d480d56",
+          "startLine": 1,
+          "endLine": 38,
+          "scope": "八個人工單 CITY/兩店 period wrapper→EVENT NOW 單切片；固定時間、分段 draws/IO stub，非完整 period/17 EVENT/正式玩家"
         }
       ],
-      "evidenceScope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家；既有 compiler metadata 保留；正式 HTTP/v2/時間/RNG/CAS 未證明。"
+      "evidenceScope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家；既有 compiler metadata 保留；正式 HTTP/v2/時間/RNG/CAS 未證明。；追加七 period trigger/extension 及八單 EVENT period→NOW 同片受控差分；未執行全期結算。"
     },
     {
       "kind": "EVENT",
@@ -37972,14 +38192,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 131,
-      "待補": 70
+      "有效": 135,
+      "待補": 66
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 100,
+    "currentSessionReviewed": 104,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -38039,7 +38259,8 @@
     "modern/docs/r0-r4-declarative-event-evidence.md",
     "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
     "modern/docs/r0-r4-multi-event-hash-evidence.md",
-    "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md"
+    "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
+    "modern/docs/r0-r4-rebel-period-now-evidence.md"
   ],
   "integrationCiHistory": [
     {

@@ -124,3 +124,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 第十九批：[R4 多 EVENT/hash](r0-r4-multi-event-hash-evidence.md)，四檔有效；累計有效127、歷史32、待補74（159/233），收斂後逐檔審閱96；既有63中7覆核、56待覆核。七 EVENT 17-key 受控混合切片，非正式時間／callback／RNG/CAS/v2；詳細功能83，正式下界不變。
 
 第二十批：[R4 guildbattle END／rebel NOW](r0-r4-guildbattle-rebel-callback-evidence.md)，四檔有效；累計有效131、歷史32、待補70（163/233，70.0%），收斂後逐檔審閱100、既有待覆核56。兩 EVENT 追加單 key callback Oracle/Node 差分，人工外部狀態與 IO stub；83 詳細 rows、正式下界不變。新候選 CI 待驗；R1-HTTP-01 尚未實跑。
+
+第二十一批：[R4 RebelRobin period→NOW](r0-r4-rebel-period-now-evidence.md)，四檔有效；累計有效135、歷史32、待補66（167/233，71.7%），收斂後逐檔審閱104、既有待覆核56。rebel 七 trigger/extension、八 period→NOW 人工同片來源差分，非完整 period/軍隊結算/17 EVENT/正式時間。83 詳細 rows、正式下界不變。第二十批 CI 45814598758 queued，新候選待驗。

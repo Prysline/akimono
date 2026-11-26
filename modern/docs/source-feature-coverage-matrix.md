@@ -43,3 +43,5 @@
 第十一批：[R4 多 EVENT/hash](r0-r4-multi-event-hash-evidence.md)：七 EVENT 另補 17-key 混合切片 Oracle/差分；其餘十 key 僅 hash/gate，未驗 callback。83 詳細 rows、正式下界不變。
 
 第十二批：[R4 guildbattle END／rebel NOW](r0-r4-guildbattle-rebel-callback-evidence.md)：兩 EVENT 追加單 key callback Oracle/Node 差分，五／八受控案例；IO stub、固定時鐘與明示 draws，非外部磁碟、正式時間或玩家能力。83 詳細 rows、25 EVENT 限定 Oracle 下界及正式下界不變。
+
+第十三批：[R4 RebelRobin period→NOW](r0-r4-rebel-period-now-evidence.md)：rebel 七 trigger/extension、八 period→NOW 單切片受控 Oracle/Node 差分；非完整 settlement、軍隊磁碟、真時間/RNG/CAS/v2。83 詳細 rows、25 EVENT 限定 Oracle 下界及正式下界不變。
