@@ -346,7 +346,12 @@ function projectSourcePreEventSaleSlice({
         !isSourceShowcaseListedPrice(
           saleRules?.[itemId]?.unitPrice,shop.price[shelf])))||
     ![undefined,0].includes(shop.taxmode))
-    bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
+    bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported'+
+      (p3InventoryStage&&shop?'; rejected pre-EVENT fields '+JSON.stringify({
+        id:shop.id,status:shop.status,showcasecount:shop.showcasecount,showcase:shop.showcase,price:shop.price,
+        tool:shop.item?.[62],money:shop.money,rank:shop.rank,paytoday:shop.paytoday,saletoday:shop.saletoday,
+        taxtoday:shop.taxtoday,trush:shop.trush,costtoday:shop.costtoday,taxmode:shop.taxmode
+      }):''));
   if(p3InventoryStage)validateP3Inventory(shop,compiled,reviewed);
   // New R3 sword sales may not interpret B-41 unknown EVENT as empty.
   // Preserve historical R2 #10 behavior, but reject later sword turns
@@ -460,6 +465,15 @@ function projectSourcePreEventSaleSlice({
     if(conflict)periodDraws=basePeriodDraws+settlement.conflictTerritory.drawsUsed;
     if(settlement.shopExpiry?.expiredOwner||!settlement.shop||settlement.nonCommittable!==true)
       bad('source closure requires external archive/session transaction');
+    // Original period.cgi subtracts upkeep without flooring shop money.
+    // The current independent play codec and normal EVENT/BUY/USE stages
+    // only review nonnegative shop balances. Refuse the entire command,
+    // with actual source ledger values, rather than losing the reason in
+    // the residual slice's broad B41 guard (or silently forgiving debt).
+    if(settlement.shop.money<0)bad('source shop debt outside reviewed runtime: '+JSON.stringify({
+      cashBeforeLedger:newShop.money,maintenance:settlement.maintenance,
+      cashAfterLedger:settlement.shop.money,nowSeconds:boundary.commandNowSeconds
+    }));
     plusWorld={...world,shops:[settlement.shop],period:{...world.period,
       town:settlement.town,dtPeople:settlement.dtPeople}};
   }
