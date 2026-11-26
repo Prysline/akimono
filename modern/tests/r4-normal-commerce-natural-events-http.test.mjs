@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {parseDsl} from '../src/parse-dsl.mjs';
 import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
@@ -18,7 +19,7 @@ const meta={
   'plusdown-yakusou':[48,24,'藥草培育業者好像不肯批發藥草了。','藥草培育業者恢復了藥草批發'],
   'plusup-tetu':[12,12,'發現新的鐵礦脈','新的鐵礦脈已經關閉了'],
   'plusup-misuriru':[9,16,'發現新的秘銀礦脈','新的秘銀礦脈已經關閉了'],
-  'plusup-oriharukon':[6,18,'發現新的奧利哈鋼礦脈','奧利哈鋼礦脈已經關閉了'],
+  'plusup-oriharukon':[6,18,'發現新的奧利哈鋼礦脈','新的奧利哈鋼礦脈已經關閉了'],
 };
 const codes=Object.keys(meta);
 const ids=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
@@ -27,6 +28,21 @@ const boom=[[1,2],[30,2],[31,3],[32,2],[33,3],[34,4]];
 const plusEffects=[[1,'plusdown-yakusou',-180],[5,'plusup-tetu',720],[6,'plusup-misuriru',960],[7,'plusup-oriharukon',1200]];
 const own=(o,k)=>Object.hasOwn(o,k);
 const sorted=x=>[...x].sort();
+
+test('R4 durable EVENT HTTP oracle matches frozen DSL messages and durations',async ()=>{
+  const source=await readFile(new URL('../../custom/inc-item-data.cgi',import.meta.url),'utf8');
+  const parsed=parseDsl(source,'custom/inc-item-data.cgi');
+  assert.deepEqual(parsed.issues,[]);
+  for(const [code,[duration,extra,beginMsg,endMsg]] of Object.entries(meta)){
+    const blocks=parsed.blocks.filter(b=>b.kind==='EVENT'&&b.fields.code?.[0]?.value===code);
+    assert.equal(blocks.length,1,code);
+    const fields=blocks[0].fields;
+    assert.deepEqual(fields.startmsg.map(row=>row.value),[beginMsg],code+' START');
+    assert.deepEqual(fields.endmsg.map(row=>row.value),[endMsg],code+' END');
+    assert.equal(fields.basetime[0].value,duration+'h',code+' BASETIME');
+    assert.equal(fields.plustime[0].value,extra+'h',code+' PLUSTIME');
+  }
+});
 
 test('R4 genuine ten natural durable EVENT lifecycles, DataRead effects, logs and active/expired v2 restarts',async t=>{
   const files={itemDsl:'../../custom/inc-item-data.cgi',compilerSource:'./original-perl/inc-makeitem.cgi',
