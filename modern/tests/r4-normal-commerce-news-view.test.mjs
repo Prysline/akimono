@@ -34,10 +34,12 @@ test('R4 newspaper retains log0/log1 order and exact original literal query and 
  assert.equal(news.rows.length,26);assert.deepEqual(news.eventMessages,['治療劑相關商品人氣提升']);
  assert.ok(news.rows.every(row=>row.id===0||row.id===1));assert.ok(news.rows.every(row=>!row.message.includes('excluded')));
  assert.throws(()=>describeOriginalNews({reviewed,world:{...world,shops:[{id:2,status:1}]}}),/local owner/);
- const queries=[{}, {page:99}, {page:-1}, {keyword:'ALPHA [A]',page:99}, {mode:2,target:'店主'}, {keyword:'[a]'}, {target:'alpha'}, {keyword:'excluded'}, {mode:3,keyword:'[A]'}].map(q=>({mode:0,keyword:'',target:'',page:0,...q}));
- const expected=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({files,queries,sources:[sources.logSource,sources.newsPageSource,sources.newsTimeSource]})}));
- for(const [i,q] of queries.entries()){
+ const queries=[{}, {page:99}, {page:-1}, {keyword:'ALPHA [A]',page:99}, {mode:2,target:'店主'}, {keyword:'[a]'}, {target:'alpha'}, {keyword:'excluded'}, {mode:3,keyword:'[A]'}, {keyword:'0',target:'0'}].map(q=>({mode:0,keyword:'',target:'',page:0,...q}));
+ // Frozen ReadLog uses /o: each CGI request needs a fresh Perl process
+ // or the first interpolated keyword/mode/target remains compiled.
+ for(const q of queries){
+   const [expected]=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({files,queries:[q],sources:[sources.logSource,sources.newsPageSource,sources.newsTimeSource]})}));
    const result=queryOriginalNews(news,q);
-   assert.deepEqual({page:result.page,pageMax:result.pageMax,pagePrev:result.pagePrev,pageNext:result.pageNext,rows:result.rows.map(r=>({wire:r.wire,timeLabel:r.timeLabel,private:Number(r.private)}))},expected[i]);
+   assert.deepEqual({page:result.page,pageMax:result.pageMax,pagePrev:result.pagePrev,pageNext:result.pageNext,rows:result.rows.map(r=>({wire:r.wire,timeLabel:r.timeLabel,private:Number(r.private)}))},expected);
  }
 });

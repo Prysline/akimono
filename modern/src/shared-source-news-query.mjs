@@ -2,7 +2,9 @@
  * Receives only already authorized local rows; not an authentication API. */
 export function queryOriginalNews(source,{mode=0,keyword='',target='',page=0}={}){
  if(!Array.isArray(source?.rows)||![0,1,2,3].includes(mode)||typeof keyword!=='string'||typeof target!=='string'||!Number.isSafeInteger(page)||!Number.isSafeInteger(source.pageRows)||source.pageRows<1)throw new RangeError('source news query');
- const needle=keyword.toLowerCase();
+ // Perl false strings are empty and exactly '0'.
+ const needle=keyword==='0'?'':keyword.toLowerCase();
+ if(target==='0')target='';
  const found=source.rows.filter(row=>(!mode||row.mode===mode)&&(!needle||row.wire.toLowerCase().includes(needle))&&(!target||row.wire.includes(target)));
  // ReadLog returns one synthetic no-information display row when empty;
  // the view uses a placeholder instead of storing a fabricated log.
