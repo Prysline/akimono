@@ -44,8 +44,11 @@ test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal
   assert.equal(p.state.shop.job,'cow');
   // Bounded genuine production, no seed selection or client RNG. Sale of
   // excess milk funds upkeep and ordinary commands retain the owner session.
+  // A strict evidence run may observe 1920 genuine Bernoulli trials, not just 480.
+  // Never retry a failed assertion or select/replace a seed. No death is still a failure.
+  const batches=process.env.AKIMONO_TEST_REQUIRE_COW_DEATH==='1'?120:30;
   let opportunities=0;
-  for(let n=0;n<30;n++){
+  for(let n=0;n<batches;n++){
     if(p.stock(26)>100)await p.list(26);
     await p.enoughTime(p.quote(25,1).timePerUseSeconds*16+(p.state.shop.showcase[0]===26?600:0));
     await p.list(0);

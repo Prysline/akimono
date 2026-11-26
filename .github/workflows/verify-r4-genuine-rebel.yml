@@ -157,3 +157,14 @@ jobs:
         run: |
           prove tests/original-perl/original-r4-guild-peer-buy.t
           node --test tests/r4-guild-peer-buy-source.test.mjs
+
+  dragon-payment-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Actual original producer, consumer, crash and lock-domain race (not genuine player)
+        working-directory: modern/tests/original-perl
+        run: prove -v original-r4-dragon-pay-producer.t original-r4-dragon-payout-failure.t original-r4-dragon-pay-race.t
