@@ -148,3 +148,8 @@
 
 - 新審3檔有效：有效195、歷史32、待補6；固定233，分類收斂227/233（97.4%）；收斂後逐檔補審164，既有重審7、剩56；新增5獨立。
 - [逐檔證據](r0-world-use-market-fixtures-evidence.md)：兩次人工 A/B/C USE 同 interpreter 但重建 state、各次 seed，真原版 lostbook、wholesale/callback/EXP 順序；人工 #10 市場統計與 sc-s CGI，時間先於拒絕，commit/IO stub；人工批發定價/limit、#20/#25 手填 DSL 數值非 compiler 或合法取得。非正式玩家、HTTP/CAS/v2/Node 差分；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+
+### 第三十八批：peer trade 純投影／B-32 人工 USE 差分
+
+- 新審2檔有效：有效197、歷史32、待補4；固定233，分類收斂229/233（98.3%）；收斂後逐檔補審166，既有重審7、剩56；新增5獨立。
+- [逐檔證據](r0-peer-use-fixture-evidence.md)：peer #1/#40/#79 純記憶體投影，無 CAS；人工 stock/tax/time/RNG，非售完非法 rank -1 仍保留。B-32 三組兩步 Perl/Node、synthetic A/B/C、同 adapter 連續 CAS；shortage/time-gate 標題實際 COMMITTED、spoof 只改 worldId、no IO 只查 metadata、JSON 非 v2。無正式玩家、HTTP/v2；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。

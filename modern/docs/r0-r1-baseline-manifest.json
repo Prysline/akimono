@@ -10206,22 +10206,69 @@
       "path": "modern/tests/peer-trade-model.test.mjs",
       "sha": "d562f38d6098d041a678cb706f635b9f668dcc3b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Node 純記憶體 peer trade 投影（非 CAS）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi",
+      "assertions": "L36–212 #79 身分／wholesale-only FUNCBUY、資金稅帳庫存、cash/limit clipping、免費交易2倍時間、時間債、拒絕；L214–321 RNG 門檻/缺失/非法/throw、售完扣 rank；L331–504 #1/#40/#79 精確 metadata、雙品交易、identity/limit/stale 負例。",
+      "executionPath": "settleUnguildedPeerPurchase 純函式，回傳新 buyer/seller；無 Perl 子程序、WorldState CAS 或存檔。",
+      "risk": "peer 資產帳本／人工 USE 差分與拒絕原子性界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "不證正式玩家間交易／合法取得／真 RNG／v2；L139–147 stale #79 僅驗 buyer、seller price/item，非完整 seller snapshot；L314–320 明示非售完保留非法 rank -1，售完才拒絕；非全部負例逐欄原子。",
+      "reviewed": true,
       "documentReferences": [
         {
-          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
-          "line": 49
+          "path": "modern/docs/r0-peer-use-fixture-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/peer-trade-model.mjs",
+          "sha": "fb1a56e4f6b0e1a77f315b7b630940f626540127"
+        },
+        {
+          "path": "modern/src/economy-model.mjs",
+          "sha": "cd2974c1719594ca0f667bc56577e48e7a25e17e"
+        },
+        {
+          "path": "modern/src/item-limit-model.mjs",
+          "sha": "01df503fd093c6bb63e1972675c6012b5aef491f"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/parse-dsl.mjs",
+          "sha": "1e81a659e8f24ef0e4aa1124adb37e2c47aec234"
+        }
+      ],
+      "fixtures": "來源 model 開店產生 #79 初始券，人工展示售價；#1/#40 stock 手工置入，人工 tax10/time1200/now1000000；直接改 rank、money、time，注入 random。",
+      "limitations": "不證正式玩家間交易／合法取得／真 RNG／v2；L139–147 stale #79 僅驗 buyer、seller price/item，非完整 seller snapshot；L314–320 明示非售完保留非法 rank -1，售完才拒絕；非全部負例逐欄原子。",
+      "reviewScope": "完整測試、主要入口與 probe；共用 harness 前批審閱"
     },
     {
       "path": "modern/tests/period-experience-model.test.mjs",
@@ -15735,22 +15782,81 @@
       "path": "modern/tests/reviewed-use-fixture-street.test.mjs",
       "sha": "5ee976a32a324e27a192c03660da54ca16fe7d9e",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（人工 A/B/C＋記憶體 CAS）",
+      "originalSource": "modern/tests/original-perl/use.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/core-inc-item.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi",
+      "assertions": "L41–127 synthetic street 邊界、兩次 commit/rev2、callback 順序與 skip/no callback；L128–220 zero-count/stale/unknown/非法 bucket/shop/field/world；L222–260 JSON roundtrip/replay/shape/event；L262–317 三組兩步實際 Perl probe，Node projector 比所有列並同 adapter 連續 CAS 對比。",
+      "executionPath": "source-fixture-use 由 synthetic StreetModule / executeMemoryCommand；Perl probe 每次重建前次部分 state，原版 UseItem/MakeAmount、whole/calc/helper/lostbook。",
+      "risk": "peer 資產帳本／人工 USE 差分與拒絕原子性界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非正式 Standard Street；L140–155 標題 shortage/time-gate rejects 但實際 COMMITTED、snapshot 改變，不證拒絕；L213–220 只 spoof worldId、未獨立 spoof streetId；L256–260 僅 metadata/key 檢查非 IO spy；Perl ENOENT 可 skip；JSON snapshot 非 v2，無正式 HTTP、合法商品、真時鐘/RNG。",
+      "reviewed": true,
       "documentReferences": [
         {
-          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
-          "line": 40
+          "path": "modern/docs/r0-peer-use-fixture-evidence.md",
+          "line": 14
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-world-use-sequence-probe.pl",
+          "sha": "3c5874ecf7d09fabe837d5f9e870926b6418f474"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-use-fixture-street.mjs",
+          "sha": "5509b9a7b53ebb844a37e2b7cc366dfcab8c564a"
+        },
+        {
+          "path": "modern/src/original-integrated-use-lostbook-model.mjs",
+          "sha": "f5b2b14bf12f3f075e35b95718f0e8dc7e7be5e7"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        }
+      ],
+      "fixtures": "shop42/43、A/B/C、固定 now1000、Perl 各步 seed12/14，Node 取 floor(observed draw) 或人工 bucket。",
+      "limitations": "非正式 Standard Street；L140–155 標題 shortage/time-gate rejects 但實際 COMMITTED、snapshot 改變，不證拒絕；L213–220 只 spoof worldId、未獨立 spoof streetId；L256–260 僅 metadata/key 檢查非 IO spy；Perl ENOENT 可 skip；JSON snapshot 非 v2，無正式 HTTP、合法商品、真時鐘/RNG。",
+      "reviewScope": "完整測試、主要入口與 probe；共用 harness 前批審閱"
     },
     {
       "path": "modern/tests/source-audit.test.mjs",
@@ -41814,14 +41920,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 195,
-      "待補": 6
+      "有效": 197,
+      "待補": 4
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 164,
+    "currentSessionReviewed": 166,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -41898,7 +42004,8 @@
     "modern/docs/r0-r4-backup-data-write-disk-evidence.md",
     "modern/docs/r0-r4-town-play-evidence.md",
     "modern/docs/r0-ui-world-read-commit-evidence.md",
-    "modern/docs/r0-world-use-market-fixtures-evidence.md"
+    "modern/docs/r0-world-use-market-fixtures-evidence.md",
+    "modern/docs/r0-peer-use-fixture-evidence.md"
   ],
   "integrationCiHistory": [
     {

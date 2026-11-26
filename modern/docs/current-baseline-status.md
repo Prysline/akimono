@@ -248,3 +248,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 第33批 run 45826749043 / job 139932750970：success，HEAD `44b35c24ed74d64a832b667bf3afd696caa23e40`、實際 checkout `c782fa822d0d4a588b73ffa9ed58d9c37b52356d`、tree `2c23b96662fbab8d7ac4c10a70f6b8dceef014dc` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
 - 第34批 run 45827170541 / job 139934197653：success，HEAD `0e875d4cc00a6e48c281229c71e96606d4dcdaa2`、實際 checkout `67e11542ee9a53ec6bcf947682d4d6eec5141ea9`、tree `8750adc80c962d205a40a72a4ab556e0037cb631` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
 - 第32、35批及 bb44e26 最後查詢仍 in_progress；不替代新 HEAD 驗收。
+
+### 第三十八批：peer trade 純投影／B-32 人工 USE 差分
+
+- 新審2檔有效：有效197、歷史32、待補4；固定233，分類收斂229/233（98.3%）；收斂後逐檔補審166，既有重審7、剩56；新增5獨立。
+- [逐檔證據](r0-peer-use-fixture-evidence.md)：peer #1/#40/#79 純記憶體投影，無 CAS；人工 stock/tax/time/RNG，非售完非法 rank -1 仍保留。B-32 三組兩步 Perl/Node、synthetic A/B/C、同 adapter 連續 CAS；shortage/time-gate 標題實際 COMMITTED、spoof 只改 worldId、no IO 只查 metadata、JSON 非 v2。無正式玩家、HTTP/v2；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
