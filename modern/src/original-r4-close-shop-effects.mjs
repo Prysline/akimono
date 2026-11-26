@@ -153,11 +153,11 @@ export function projectR4CloseShopEffects({
     try{
       const env={...process.env};
       for(const k of ['PERL5OPT','PERL5LIB','PERLLIB','PERL_LOCAL_LIB_ROOT','PERL_MB_OPT','PERL_MM_OPT','PERL_HASH_SEED_DEBUG','PERL_UNICODE'])delete env[k];
-      costWire=execFileSync('perl',['-e','print 0+$ARGV[0]',String(shop.costtoday)],{
+      costWire=execFileSync('perl',['-e','print 0+$ARGV[0]','--',String(shop.costtoday)],{
         encoding:'utf8',env,timeout:3000,maxBuffer:256,stdio:['pipe','pipe','pipe'],
       });
     }catch{fail('native original fractional archive scalar unavailable')}
-    if(!/^-?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?$/i.test(costWire)||!Number.isFinite(Number(costWire)))
+    if(!/^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(costWire)||!Number.isFinite(Number(costWire)))
       fail('invalid native original fractional archive scalar');
   }
   const archiveScalar=reviewed.archiveFields.map(k=>k==='costtoday'&&costWire!==null?costWire:String(shop[k]??'')).join(',');

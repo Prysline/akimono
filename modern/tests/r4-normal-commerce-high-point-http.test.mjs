@@ -42,16 +42,6 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
   await p.use(79,1); // legal beginner books #15, #16, #17
   assert.equal(p.stock(16),1);assert.equal(p.stock(17),1);
   await p.market(13);await p.market(12);
-  // Construction uses starter #63. Work only provides cash, not sale points.
-  for(let n=0;;n++){
-    assert.ok(n<32,'four-shelf construction budget '+JSON.stringify(snapshot()));
-    await p.enoughTime(p.quote(63,3).timePerUseSeconds);
-    if(p.state.shop.money>=40000+Math.max(10000,Math.ceil(p.state.shop.costtoday)+10000))break;
-    await p.use(13,1);
-  }
-  await p.use(63,3);
-  assert.equal(p.state.shop.showcasecount,4);assert.equal(p.stock(63),0);
-
   // Source MakeAmount uses a nonnegative addition to count*0.8 for
   // count >= 20. Four distinct categories share no inventory; the first
   // shelf has original fourth-power demand, others third-power. At 120%
@@ -71,12 +61,31 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
       'actual source output #'+g.id);
     assert.equal(p.stock(g.book),1);
   }
-  for(const g of goods){
+  // First establish a revenue-producing shelf, then manufacture the
+  // other three lines at the original one-shelf upkeep rate. Expanding
+  // before any sale made the initial inventory consume the entire paid
+  // work budget on real low-population careers.
+  await produce(goods[0]);
+  assert.ok(p.stock(goods[0].id)>0);
+  await p.list(goods[0].id);
+  for(const g of goods.slice(1)){
     for(let n=0;p.stock(g.id)<target;n++){
       assert.ok(n<4,'source initial manufacturing budget #'+g.id);
+      if(p.stock(goods[0].id)<low)await produce(goods[0]);
       await produce(g);
     }
   }
+  // Preserve the original finite construction/work budget. Build only
+  // after sale stock exists, with enough action time for all four listings.
+  for(let n=0;;n++){
+    assert.ok(n<32,'four-shelf construction budget '+JSON.stringify(snapshot()));
+    if(p.stock(goods[0].id)<low)await produce(goods[0]);
+    await p.enoughTime(p.quote(63,3).timePerUseSeconds+4*600);
+    if(p.stock(goods[0].id)>0&&p.state.shop.money>=40000+Math.max(10000,Math.ceil(p.state.shop.costtoday)+10000))break;
+    await p.use(13,1);
+  }
+  await p.use(63,3);
+  assert.equal(p.state.shop.showcasecount,4);assert.equal(p.stock(63),0);
   async function display(ids,per=120){
     assert.equal(ids.length,4);
     // Gathering and action-time waits execute real natural sales on the
