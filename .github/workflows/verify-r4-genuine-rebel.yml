@@ -19,6 +19,8 @@ on:
       - 'modern/tests/b50-period-same-state-chain.test.mjs'
       - 'modern/tests/p4-dairy-death-and-save-security.test.mjs'
       - 'modern/tests/r4-guild-peer-buy-source.test.mjs'
+      - 'modern/tests/r4-joint-candidate-publication.test.mjs'
+      - 'modern/tests/support/r4-joint-candidate-*.mjs'
       - 'modern/tests/r4-lord-*.test.mjs'
       - 'modern/tests/support/r4-lord-*.mjs'
       - 'modern/tests/r4-perl-hash-replay.test.mjs'
@@ -168,3 +170,17 @@ jobs:
       - name: Actual original producer, consumer, crash and lock-domain race (not genuine player)
         working-directory: modern/tests/original-perl
         run: prove -v original-r4-dragon-pay-producer.t original-r4-dragon-payout-failure.t original-r4-dragon-pay-race.t
+
+  joint-publication-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated joint revision CAS, actual processes and crash replay (not genuine player)
+        working-directory: modern
+        run: node --test tests/r4-joint-candidate-publication.test.mjs
