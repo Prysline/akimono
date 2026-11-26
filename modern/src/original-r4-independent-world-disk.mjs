@@ -10,6 +10,7 @@ import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows,projectReviewedCommerceUseLogRows} from './original-r4-period-log-disk.mjs';
 import {capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
+import {reviewOriginalWholesaleBuyLog,projectOriginalWholesaleBuyLog} from './original-r4-buy-log.mjs';
 import {reviewOriginalShowcaseLog,projectOriginalShowcaseLog} from './original-r4-showcase-log.mjs';
 import {projectReviewedWholesaleVoucherLogRows} from './original-r4-wholesale-voucher.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
@@ -40,6 +41,7 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
   const showcaseLog=street.reviewedNormalCommerce&&sources.showcaseViewSource!=null?reviewOriginalShowcaseLog({...sources,catalog:street.catalog}):null;
+  const buyLog=street.reviewedNormalCommerce&&sources.buyFormSource!=null?reviewOriginalWholesaleBuyLog({...sources,catalog:street.catalog}):null;
   const palaceInputs=[sources.palaceViewSource,sources.palaceCommandSource,sources.palaceConfigSource];
   if(palaceInputs.some(s=>s!=null)&&palaceInputs.some(s=>s==null))fail('incomplete palace source set');
   const palace=palaceInputs.every(s=>s!=null)?reviewOriginalPalaceRules({
@@ -132,7 +134,9 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
     const sourceUseLogs=street.reviewedCommerceUseLogs&&command.kind==='use-item'&&Object.hasOwn(applied.receipt,'originalInlineLogCalls');
     const sourceShowcaseLog=showcaseLog&&command.kind==='edit-showcase';
     if(sourceShowcaseLog)newRows.unshift(projectOriginalShowcaseLog({reviewed:showcaseLog,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
-    if(!sourceUseLogs&&!sourceShowcaseLog&&['edit-showcase','market-buy','use-item'].includes(command.kind))
+    const sourceBuyLog=buyLog&&command.kind==='market-buy';
+    if(sourceBuyLog)newRows.unshift(projectOriginalWholesaleBuyLog({reviewed:buyLog,before:before.shops[0],command,receipt:applied.receipt,nowSeconds:now}));
+    if(!sourceUseLogs&&!sourceShowcaseLog&&!sourceBuyLog&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
     if(command.kind==='market-buy'&&street.marketBuy?.reviewedVoucher)newRows.unshift(...projectReviewedWholesaleVoucherLogRows({
       review:street.marketBuy.reviewedVoucher,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));

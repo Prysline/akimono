@@ -36,7 +36,8 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
       assert.equal(after.revision,before.revision+1);
       const row=[after.nowSeconds,0,1,'收到了市場贈送的禮物卷1枚'].join('\t')+'\n';
       const bytes=after.period.disk.live['log0.cgi'].bytes;
-      assert.ok(bytes.startsWith(row));
+      const purchaseRow=[after.nowSeconds,0,1,'購買市場的看門機器人1架@\\500,000(合計\\500,000)購買於/消費時間'+(offer.timeSeconds<60?String(offer.timeSeconds).padStart(2,'0')+'秒':Math.trunc(offer.timeSeconds/60)+'分')].join('\t')+'\n';
+      assert.ok(bytes.startsWith(row+purchaseRow));
       assert.equal(bytes.split(row).length-1,1);
       const disk=join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(after),'log0.cgi');
       assert.equal(await readFile(disk,'utf8'),bytes);
@@ -44,7 +45,7 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
       const stale=await p.post('/api/buy',cmd);assert.equal(stale.ok,false);
       assert.deepEqual(p.state.world,after);assert.equal(p.state.historyCommands,history);
       assert.equal(p.state.historyCheckpointRevision,checkpoint);
-      purchase={after,row,bytes};break;
+      purchase={after,row,purchaseRow,bytes};break;
     }
     if(p.state.shop.money<545000){
       assert.ok(works<120,'bounded actual work budget');
@@ -78,5 +79,6 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
   const retained=['log0.cgi','log1.cgi','log2.cgi'].map(n=>second.period.disk.live[n].bytes).join('');
   assert.equal(retained.split(purchase.row).length-1,1);
   assert.equal(retained.split(discardRow).length-1,1);
+  assert.equal(retained.split(purchase.purchaseRow).length-1,1);
   t.diagnostic(JSON.stringify({works,paid:500000,granted:1,revision:first.revision,secondRevision:second.revision}));
 });
