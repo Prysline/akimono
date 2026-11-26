@@ -75,7 +75,24 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
   }
   async function display(ids){
     assert.equal(ids.length,4);
-    await p.enoughTime(4*600);
+    // Gathering and action-time waits execute real natural sales on the
+    // existing shelves. Recheck inventory AFTER the last wait, before
+    // issuing any showcase commands, rather than assuming a prior fill
+    // survived. Replenish via the same legal production path; never retry
+    // a rejected showcase, reset the career or change its source draws.
+    for(let n=0;;n++){
+      assert.ok(n<16,'source showcase stock/time preparation budget '+JSON.stringify({ids,...snapshot()}));
+      await p.enoughTime(4*600);
+      const missing=[...new Set(ids)].filter(id=>p.stock(id)===0);
+      if(!missing.length)break;
+      t.diagnostic('source showcase replenishment '+JSON.stringify({missing,...snapshot()}));
+      for(const id of missing){
+        const product=goods.find(g=>g.id===id);
+        assert.ok(product,'requested non-revenue stock must be acquired before showcase #'+id);
+        await produce(product);
+      }
+    }
+    assert.ok(ids.every(id=>p.stock(id)>0));
     for(const [shelf,id] of ids.entries()){
       const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:id,per:120});
       assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
@@ -85,10 +102,10 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
   await display(goods.map(g=>g.id));
 
   const startClock=p.state.world.nowSeconds;
-  async function ready(useId,extraSeconds=0){
+  async function ready(useId,extraSeconds=0,requiredStock=[]){
     for(;;){
       checkPoint();
-      if(p.stock(65)&&p.quote(65,useId).canUse&&p.remaining()>=p.quote(65,useId).timePerUseSeconds+extraSeconds)return;
+      if(requiredStock.every(id=>p.stock(id)>0)&&p.stock(65)&&p.quote(65,useId).canUse&&p.remaining()>=p.quote(65,useId).timePerUseSeconds+extraSeconds)return;
       // Finite source periods and business decisions across all uses.
       // Do not reset world, clock, score or RNG.
       assert.ok(++steps<=maxSteps&&p.state.world.nowSeconds-startClock<=maxPeriods*129600,
@@ -221,7 +238,7 @@ for(const g of categories)test('R4 genuine #65/2 '+g.code+', negative natural sa
     // Fill each source category from actual production.
     for(const product of goods)if(p.stock(product.id)<64)await produce(product);
     await display(goods.map(x=>x.id));
-    await ready(2,4*600);
+    await ready(2,4*600,[g.wood]);
     assert.ok(p.state.shop.point>=20000);
     assert.ok(p.stock(g.id)>=160,'iron held off display until the source activation');
     // All four choices have the same source ITEMTYPE. The actual random
