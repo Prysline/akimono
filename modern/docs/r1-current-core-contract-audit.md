@@ -12,4 +12,10 @@
 | RNG／重播 | local-source-command-draws、r4-time-command-draws、reviewed-world-time-history；伺服器亂數，不能由 client 指定 | P3/P4/P5 v2；全部命令／EVENT 歷史支援待審 |
 | 持久化 | dev-local.mjs → createLocalWorldSaveStore；/api/save 僅 expectedGeneration/expectedRevision；akimono.local-world-save.v2、雙世代、HMAC checkpoint、retained prefix、fingerprint | P3～P5；legacy-* 僅測試隔離，拒絕 v1；非多人／外部 IO 全量證明 |
 | HTTP/UI | modern/scripts/dev-local.mjs、modern/local-ui/app.js；npm run dev:local | 全部路由負例及欄位待逐檔稽核 |
-#62/1、#62/2、#65/0–2、#63、正價 FUNCINIT 均需最新 runtime 核對，不以舊文件當現行完成證據。#22 正常經營，#18 外部來源適配，#16 公會龍族研究，#1 歷史來源。此批未建立新的 runtime 缺陷重現，未宣稱無缺陷。完整契約欄位、合法數值、順序及負例是後續退出門檻。
+#62/1、#62/2、#65/0–2、#63、正價 FUNCINIT 均需最新 runtime 核對，不以舊文件當現行完成證據。#22 正常經營，#18 外部來源適配，#16 公會龍族研究，#1 歷史來源。以下另列本輪來源缺陷與獨立重現，未修改 runtime。完整契約欄位、合法數值、順序及負例是後續退出門檻。
+
+## 第二批：正式入口補強
+- 新測試使用現行 `dev-local` 及既有 `genuinePlayer({now:null,crossPeriod:true})`，拒絕額外欄位、非法/stale revision、舊時間與供貨、禁止展示 #63；逐次比對 WorldState、歷史數、checkpoint revision、存檔世代，最後合法清架與 v2 重啟。尚待 exact HEAD CI。
+- Registry 稽核直接沿用現行 source wiring 與 compiler；`r1-formal-registry-audit.mjs` 固定 dev-local blob，輸出逐項註冊與編譯結果；不等同玩家可達。
+- #62/1 在 `standard-street-module.mjs` 的 declarativeUseIndex 有規則，但 `dev-local.mjs` /api/use 拒絕 targetShopId、多店預檢 403、/api/save 拒絕多店；#62/2、#65/0–2 尚無規則。#63 正式市場零價再取得 getRule=null，初始工具及 USE 擴建另計。
+- **R1-HTTP-01 來源缺口**：固定 dev-local 的 /api/initialize 不驗證 request key set；/api/open-shop 只取 ownerName/shopName/revision，伺服器強制 shopId=1，額外欄位被忽略而不是拒絕。/api/load 也沒有 key-set 檢查。這是嚴格 HTTP 契約不一致，並非已證明能注入資產或越權。獨立 `node --test scripts/r1-http-extra-fields-repro.mjs` 按應有拒絕行為斷言，現行來源預期暴露失敗；尚未實際執行。故不納入預期綠燈的 npm test，不改預期、不 skip、不修共享 runtime。R1 後續經授權修復；與 #18/#22 的外部／時間業務功能分離。load 額外欄位的重啟重現仍待補。

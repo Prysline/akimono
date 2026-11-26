@@ -5,7 +5,7 @@
 |---|---:|---:|---:|
 | 宣告 | 79 | 116 | 25 |
 | 編譯（已知 EVENT） | 待補 | 待補 | 17 |
-| registered（本批證據下界） | 1 | 9 | 0 |
+| registered（本批證據下界） | 1 | 10 | 0 |
 | perlOracle（本批證據下界） | 1 | 0 | 0 |
 | nodeDifferential（本批證據下界） | 1 | 0 | 0 |
 | lawfulAcquisition（本批證據下界） | 1 | 9 | 0 |
@@ -14,3 +14,5 @@
 | v2Restart（本批證據下界） | 1 | 9 | 0 |
 
 0 表示本批尚無逐項證據，不等於 runtime 不支援。null = 未核對。P1–P3 已驗收仍須逐項連結，不重做。Registry 不能代替合法取得／真 HTTP／reviewed time／v2。#22 目標範圍不能列為已完成。
+
+第二批：P1/P2/P3 歷史受控驗收逐項連結至 `priorAcceptance`（不將 P1/P2 legacy persistence 或 P3 固定起始時鐘當作本輪真時鐘）。#62/1 註冊但正式 HTTP 拒絕；#62/2、#65/0–2 無規則；#63 市場規則缺失。新增 Registry 測試將從正式 source wiring 列出全部 220 項目前註冊／編譯資訊；CI 結果未回收前，表內仍保留已核對證據下界，不把推測填入 null。

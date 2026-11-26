@@ -3981,15 +3981,15 @@
       "path": "modern/tests/game-core-contract.test.mjs",
       "sha": "e6e05fab415c1ee0b1ad76d5ec056000d612a920",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "歷史",
+      "evidenceLevel": "fixture",
+      "originalSource": "new.cgi / sc-s.cgi / item DSL",
+      "assertions": "能力宣告、revision、memory CAS、命令拒絕",
+      "executionPath": "B31 GameCore 記憶體契約；非正式 v2 HTTP",
+      "risk": "能力或 CAS 原子性退化",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
@@ -4060,15 +4060,15 @@
       "path": "modern/tests/market-buy-core.test.mjs",
       "sha": "56d39115e402654e89e88cb07d996199113f784e",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle / Node 差分",
+      "originalSource": "buy-s.cgi / whole.cgi / item.cgi；ITEM/FUNCB",
+      "assertions": "凍結 Perl 市場差分、Registry 動態報價、正式 core；另有 legacy 存檔隔離",
+      "executionPath": "market-buy-core；legacy 保存僅歷史證據",
+      "risk": "零價與價格、回呼、數量、交易原子性",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
@@ -5980,15 +5980,15 @@
       "path": "modern/tests/p3-v2-appraiser-skill.test.mjs",
       "sha": "fe677c0b24d72e3469698347c392e60271500b89",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #37/2",
+      "assertions": "合法熟練度與鑑定技能、v2 保存",
+      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "risk": "受控玩家履歷、技能／保存",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -5996,15 +5996,15 @@
       "path": "modern/tests/p3-v2-cross-period-long-history.test.mjs",
       "sha": "28afacafe4483317ff309cf9b66080809c9e2a1f",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "inc-turn.cgi / period.cgi",
+      "assertions": "跨期後 260 次操作及 v2 歷史",
+      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "risk": "受控玩家履歷、技能／保存",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6012,15 +6012,15 @@
       "path": "modern/tests/p3-v2-cross-period-nayuta.test.mjs",
       "sha": "9372b12a733f3a754bd3d6aa5df407fe7f34db26",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #66/3 / lostbook / inc-turn.cgi",
+      "assertions": "合法材料、自然販售、lostbook、跨期及 v2",
+      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "risk": "受控玩家履歷、技能／保存",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6044,15 +6044,15 @@
       "path": "modern/tests/p3-v2-high-forge-20.test.mjs",
       "sha": "eb230be88be9c794bedba396def73c49acc30f65",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #20 USE；use.cgi / FUNCB / EXP",
+      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
+      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "risk": "來源配方、職業轉移及歷史重播",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6060,15 +6060,15 @@
       "path": "modern/tests/p3-v2-high-forge-21.test.mjs",
       "sha": "8fa40869f69dd704c2f251fc3132b0a641dffc5a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #21 USE；use.cgi / FUNCB / EXP",
+      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
+      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "risk": "來源配方、職業轉移及歷史重播",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6076,15 +6076,15 @@
       "path": "modern/tests/p3-v2-high-forge-22.test.mjs",
       "sha": "0ca2eccf11144c714afc8478ba566a8aa918bfee",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #22 USE；use.cgi / FUNCB / EXP",
+      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
+      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "risk": "來源配方、職業轉移及歷史重播",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6092,15 +6092,15 @@
       "path": "modern/tests/p3-v2-high-forge-23.test.mjs",
       "sha": "8acb692f6e4a0c3e13d7151c2552bbc5470bdcd4",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #23 USE；use.cgi / FUNCB / EXP",
+      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟",
+      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "risk": "來源配方、職業轉移及歷史重播",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6108,15 +6108,15 @@
       "path": "modern/tests/p3-v2-high-forge-66.test.mjs",
       "sha": "ae6f58c0a212c544504128d6c9c5172b6d8ea932",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #66 USE；use.cgi / FUNCB / EXP",
+      "assertions": "合法採礦、轉職、材料／NEED、EXP、tier gate、雙世代重啟；66/3 另由 nayuta 測試涵蓋",
+      "executionPath": "dev-local → p3-high-forge → genuinePlayer（預設固定起始時鐘）",
+      "risk": "來源配方、職業轉移及歷史重播",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6124,15 +6124,15 @@
       "path": "modern/tests/p3-v2-two-checkpoint-rotations.test.mjs",
       "sha": "0bf1624b7416406d827bd2abdabb08833fc3d7c2",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "reviewed history / v2",
+      "assertions": "超過 256 次合法操作、checkpoint 輪替及重啟",
+      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "risk": "受控玩家履歷、技能／保存",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -6140,15 +6140,15 @@
       "path": "modern/tests/p3-v2-written-accessory-book.test.mjs",
       "sha": "ac68b622f62850b2cc0f059bf7e3fb9851c4ffc8",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
+      "originalSource": "ITEM #10/3、#66/0",
+      "assertions": "合法寫書與製作、正式 v2 保存",
+      "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
+      "risk": "受控玩家履歷、技能／保存",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -7117,15 +7117,15 @@
       "path": "modern/tests/r4-reviewed-time-http-history.test.mjs",
       "sha": "786c8af79556d45af1fd290d50579b1c53dbb699",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "受控 HTTP/CAS",
+      "originalSource": "inc-turn.cgi / period.cgi / inc-makeitem.cgi",
+      "assertions": "正式 reviewed-time 路由、跨期限制、歷史保存與拒絕",
+      "executionPath": "dev-local；固定起始時鐘；非本輪真時鐘",
+      "risk": "時間入口、歷史重播與期末",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
     },
@@ -7553,15 +7553,15 @@
       "path": "modern/tests/source-audit.test.mjs",
       "sha": "b03dc6f5227f6172b60d166bcb8cc07c8d12c11f",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "靜態來源",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi",
+      "assertions": "DSL parser 保留宣告、Perl 原文、來源校驗",
+      "executionPath": "parse-dsl / source audit",
+      "risk": "DSL 漂移或遺失原始宣告",
+      "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
+      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
@@ -7786,8 +7786,8 @@
       "status": "待補",
       "evidenceLevel": "稽核工具",
       "originalSource": "固定 tree、DSL 與既有編譯器",
-      "assertions": "清冊、來源 blob、證據分級",
-      "executionPath": "node --test",
+      "assertions": "清冊完整性、來源 SHA、證據標籤、正式 Registry 註冊、真時鐘 HTTP/CAS 拒絕與 v2 重啟",
+      "executionPath": "獨立 audit 與正式 dev-local（新增測試待本 PR CI）",
       "risk": "漏測、證據誤升級",
       "disposition": "保留",
       "reason": "本輪新增；待 exact HEAD CI",
@@ -8551,7 +8551,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 9,
+        "scope": "既有受控製藥驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8572,7 +8577,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 9,
+        "scope": "既有受控製藥驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8593,7 +8603,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 9,
+        "scope": "既有受控製藥驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8614,7 +8629,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 9,
+        "scope": "既有受控製藥驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8635,7 +8655,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 9,
+        "scope": "既有受控製藥驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p1-advanced-medicine-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -8845,7 +8870,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-66.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8866,7 +8896,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-66.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8887,7 +8922,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-66.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8908,7 +8948,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-cross-period-nayuta.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -8950,7 +8995,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-20.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8971,7 +9021,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-20.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -8992,7 +9047,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-20.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9013,7 +9073,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-20.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -9055,7 +9120,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-21.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9076,7 +9146,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-21.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9097,7 +9172,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-21.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9118,7 +9198,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-21.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -9160,7 +9245,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-22.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9181,7 +9271,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-22.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9202,7 +9297,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-22.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9223,7 +9323,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-22.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -9265,7 +9370,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-23.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9286,7 +9396,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-23.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9307,7 +9422,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-23.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -9328,7 +9448,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 17,
+        "scope": "已合併 P3；正式 HTTP/v2，固定起始時鐘；合法玩家操作但不升級為本輪真時鐘驗收",
+        "path": "modern/tests/p3-v2-high-forge-23.test.mjs"
+      }
     },
     {
       "kind": "ITEM",
@@ -10558,14 +10683,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": true,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
-      "http": null,
+      "http": false,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "待覆核：跨店／外部權限",
+      "status": "記憶體跨店規則已註冊；正式 HTTP 拒絕 targetShopId，v2 多店保存拒絕",
       "owner": "R4 #18/#22；外部 #16",
       "evidence": []
     },
@@ -10579,14 +10704,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": false,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "待覆核：跨店／外部權限",
+      "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
       "evidence": []
     },
@@ -10671,14 +10796,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": false,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "初始合法持有；市場再取得待審",
+      "status": "初始合法持有；市場零價再取得未註冊；擴建 USE 與市場取得不同",
       "owner": "R4 #22",
       "evidence": []
     },
@@ -10881,14 +11006,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": false,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "待覆核：跨店／外部權限",
+      "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
       "evidence": []
     },
@@ -10902,14 +11027,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": false,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "待覆核：跨店／外部權限",
+      "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
       "evidence": []
     },
@@ -10923,14 +11048,14 @@
       "declared": true,
       "compiled": null,
       "eventStart": null,
-      "registered": null,
+      "registered": false,
       "perlOracle": null,
       "nodeDifferential": null,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
-      "status": "待覆核：跨店／外部權限",
+      "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
       "evidence": []
     },
@@ -11604,7 +11729,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11625,7 +11755,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11646,7 +11781,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11667,7 +11807,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11688,7 +11833,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11709,7 +11859,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11730,7 +11885,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11751,7 +11911,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11772,7 +11937,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11793,7 +11963,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11814,7 +11989,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11835,7 +12015,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11856,7 +12041,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "USE",
@@ -11877,7 +12067,12 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": []
+      "evidence": [],
+      "priorAcceptance": {
+        "pr": 10,
+        "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
+        "path": "modern/tests/p2-career-persistence-http.test.mjs"
+      }
     },
     {
       "kind": "ITEM",

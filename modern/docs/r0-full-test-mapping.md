@@ -1,5 +1,5 @@
 # R0 全量測試清冊（第一批）
-正式基線 233 檔（148 JS、85 Perl .t）；另本輪新增 1 檔。逐檔可機讀欄位在 [manifest](r0-r1-baseline-manifest.json) tests。5 有效、3 歷史、226 待補（含新檔）。文件引用僅提示；未完成逐檔語義審閱一律待補，不以檔名、CI 綠燈推斷證據。
+正式基線 233 檔（148 JS、85 Perl .t）；另本輪新增 1 檔。逐檔可機讀欄位在 [manifest](r0-r1-baseline-manifest.json) tests。18 有效、4 歷史、212 待補（含新檔）。文件引用僅提示；未完成逐檔語義審閱一律待補，不以檔名、CI 綠燈推斷證據。
 原有 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 映射保留。legacy v1 隔離測試不等同現行玩家驗收。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -28,11 +28,11 @@
 | b62-real-sword-market-map-sale-cas.test.mjs | 待補 | 未完成語義審閱 |
 | b63-source-all-sword-map-outcomes-cas.test.mjs | 待補 | 未完成語義審閱 |
 | economy-model.test.mjs | 待補 | 未完成語義審閱 |
-| game-core-contract.test.mjs | 待補 | 未完成語義審閱 |
+| game-core-contract.test.mjs | 歷史 | fixture |
 | item-limit-model.test.mjs | 待補 | 未完成語義審閱 |
 | local-original-ui-layout.test.mjs | 待補 | 未完成語義審閱 |
 | local-source-text.test.mjs | 待補 | 未完成語義審閱 |
-| market-buy-core.test.mjs | 待補 | 未完成語義審閱 |
+| market-buy-core.test.mjs | 有效 | Perl Oracle / Node 差分 |
 | original-admin-sparse-market.test.mjs | 待補 | 未完成語義審閱 |
 | original-inline-work-showcase-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-integrated-use-lostbook-model.test.mjs | 待補 | 未完成語義審閱 |
@@ -140,17 +140,17 @@
 | p2-career-persistence-http.test.mjs | 歷史 | 歷史 HTTP |
 | p3-forging-persistence-http.test.mjs | 待補 | 未完成語義審閱 |
 | p3-pre-event-inventory.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-appraiser-skill.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-cross-period-long-history.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-cross-period-nayuta.test.mjs | 待補 | 未完成語義審閱 |
+| p3-v2-appraiser-skill.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-cross-period-long-history.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-cross-period-nayuta.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
 | p3-v2-cross-period-ordinary-multishelf.test.mjs | 有效 | HTTP/CAS |
-| p3-v2-high-forge-20.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-high-forge-21.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-high-forge-22.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-high-forge-23.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-high-forge-66.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-two-checkpoint-rotations.test.mjs | 待補 | 未完成語義審閱 |
-| p3-v2-written-accessory-book.test.mjs | 待補 | 未完成語義審閱 |
+| p3-v2-high-forge-20.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-high-forge-21.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-high-forge-22.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-high-forge-23.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-high-forge-66.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-two-checkpoint-rotations.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
+| p3-v2-written-accessory-book.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
 | p4-dairy-death-and-save-security.test.mjs | 有效 | HTTP/CAS |
 | p4-dairy-v2-player-http.test.mjs | 有效 | HTTP/CAS |
 | p5-book-work-market-source.test.mjs | 有效 | Perl Oracle |
@@ -203,7 +203,7 @@
 | r4-period-high-exp-tech-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-real-close-source-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-perl-hash-replay.test.mjs | 待補 | 未完成語義審閱 |
-| r4-reviewed-time-http-history.test.mjs | 待補 | 未完成語義審閱 |
+| r4-reviewed-time-http-history.test.mjs | 有效 | 受控 HTTP/CAS |
 | r4-sorted-pre-event.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-archive-disk-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-guild-ledger.test.mjs | 待補 | 未完成語義審閱 |
@@ -226,7 +226,7 @@
 | r4-source-world-transition-cas-guard.test.mjs | 待補 | 未完成語義審閱 |
 | reviewed-gift-map-use.test.mjs | 待補 | 未完成語義審閱 |
 | reviewed-use-fixture-street.test.mjs | 待補 | 未完成語義審閱 |
-| source-audit.test.mjs | 待補 | 未完成語義審閱 |
+| source-audit.test.mjs | 有效 | 靜態來源 |
 | standard-init.test.mjs | 待補 | 未完成語義審閱 |
 | standard-street-model.test.mjs | 待補 | 未完成語義審閱 |
 | wholesale-turn-model.test.mjs | 待補 | 未完成語義審閱 |
