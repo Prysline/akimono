@@ -149,3 +149,14 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - run 45812881914 / job 139884994194：success，實際 checkout `161420e6fe1a81bfbc1503171cb6680109e1b14c`，tree `62f97bbcd1341a7e9202dda33facb9239f840a4a` 等於 HEAD `85882a1fa1d5f9aa6797507448e4296792a7bd60` tree。
 - run 45813274369 / job 139886364325：success，實際 checkout `145516bf05207275c62b51d34ed5fa62ad0a37b2`，tree `9a5c64ecd7f56d50e0ff3b8496ddb5cee243e50c` 等於 HEAD `3ddcb0ca6890a14d5039a52bfd23f8b3458ad83a` tree。
 - 兩 run 實際 JS 1350 tests / 1349 pass / 0 fail / 0 cancelled / 1 skip（P4 actual cow mortality: save before replacing, reload, NEED denial, legal replacement；No cow death occurred in bounded real player experiment），Perl 2456/2456、85檔 PASS；DSL/source pins 全通過。固定測試已存在 conditional skip；不是新確認程式故障，也不證該兩次死亡後完整鏈。先前 1350/1350 不替代這兩 run 或更新候選。
+
+### 第 26 批：R4 SortDT pre-EVENT 單店排序
+
+- 新審 2 檔：有效 155、歷史 32、待補 46；固定分母 233，分類收斂 187/233（80.3%）；累計另逐檔審閱 124 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-sorted-pre-event-evidence.md)：memory #10 買入/上架→受控 R3/R4 純 stage，Node R3 shop→原版 GetDTPoint/SortDT；單店點數差分、costtoday <1e-12、反轉 EVENT order fixture。null EVENT 負例傳錯 review 欄位，不獨立證明該 guard；未改原斷言。非原版整鏈、多店排序、正式跨期/玩家/CAS/HTTP/v2。83 詳細功能列及正式下界不變。未本地重跑，Git DNS 仍失敗，R1-HTTP-01 未實跑；新候選 CI 待核。
+
+### CI 補核：第17及19批
+
+- run 45813093496 / job 139885734085：success，HEAD `acc414314ef38cfb7f88af8148300954123e2427`、實際 checkout `d1fb90e7875af8d5bb314bc9db0e316cbe154611`，tree `47b3a37d9de7e133ee4ff2bcb3696e4d1ea3da6e` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- run 45813568842 / job 139887380057：success，HEAD `ed54848fc26e5800532b1b24001972b986df9a41`、實際 checkout `4e37acc8760eeaf78f69ff7f5045c9b78986c663`，tree `90eab3330c1b20f26944fae87f70b15e1aea13f7` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第16/18批 conditional skip 紀錄保留；第20–25批本次 API 查詢仍 in_progress，不能認列成功。
