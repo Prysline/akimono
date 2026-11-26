@@ -15010,6 +15010,21 @@
       "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
+    },
+    {
+      "path": "modern/tests/r1-http-persistence-contract.test.mjs",
+      "sha": null,
+      "status": "待補",
+      "evidenceLevel": "正式 HTTP／v2 負向與競爭回歸",
+      "originalSource": "modern/scripts/dev-local.mjs；現行 GameCore 與 v2",
+      "assertions": "18 次拒絕後完整 world/history/generation/disk SHA256 不變；同 revision 丟棄二擇一、同 generation 存檔二擇一、合法存檔重啟相等",
+      "executionPath": "正式 dev-local；隔離真初始化/開店，HTTP，真初始時鐘與 RNG",
+      "risk": "拒絕污染、重複扣除、世代覆寫",
+      "disposition": "新候選 CI 待驗，非新增商品正向驗收",
+      "reason": "本輪新增，尚未執行",
+      "reviewed": true,
+      "documentReferences": [],
+      "realPlayer": false
     }
   ],
   "testCounts": {
@@ -15018,7 +15033,7 @@
       "有效": 51,
       "待補": 164
     },
-    "added": 2,
+    "added": 3,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],

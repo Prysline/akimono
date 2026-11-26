@@ -22,3 +22,8 @@
 
 ## 已回收的來源 CI
 #23 run 45746112640：1336/1336、Perl 2456/2456；Registry 診斷七 capability 與全部 220 rows 已回填。#24 run 45754245430：1332/1332、Perl 2456/2456；三項正式啟動拒絕通過。兩者 checkout tree 分別等於各自 HEAD tree，整合候選仍須重驗。R1-HTTP-01 尚無本輪執行結果。
+
+## R1-HTTP-01 補全與 v2 負向回歸（本輪，待執行）
+固定正式 dev-local blob 的 367–437 行：initialize 不檢查 key set；open-shop 只取 ownerName/shopName/revision 且 server shopId=1；load 僅檢查 live world 是否存在並讀合法 saveStore.load()。buy/use/discard/save/reset 有 exact key set；showcase 有允許欄位與必填/二選一；advance-reviewed-time exactKeys。舊時間、supply、多人預檢直接拒絕。此為來源確認，尚非本輪 HTTP 實際觀察或資產注入證明。
+獨立 `node --test scripts/r1-http-extra-fields-repro.mjs` 增加空 body 合法 control、open-shop 合法 control、相同合法 v2 保存兩次重啟 load control/probe。逐次記錄實際 status/response、world/revision/history/generation 與保存檔 SHA256；保留預期 4xx、狀態不變的嚴格斷言，不加入預期綠燈的 npm test。
+新 `r1-http-persistence-contract.test.mjs`：18 組非法/衝突 HTTP 請求逐次比對完整 world、history、checkpoint、generation、磁碟 hash；同 revision 丟棄與同 generation 保存競爭只一次提交，重啟一致。只合法初始化/開店，無注入；尚未取得本候選 CI。RNG 不另宣稱已驗：world 不變不等於獨立觀測 RNG 呼叫次數。

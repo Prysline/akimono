@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 51、歷史 18、待補 164。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 6 份，並非全量重審。新增 2 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 51、歷史 18、待補 164。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 6 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -241,3 +241,5 @@
 ## 候選新增（不列入正式基線）
 - modern/tests/r0-r1-baseline-audit.test.mjs：稽核工具；#23 已有 CI，整合候選待驗。
 - modern/tests/r1-formal-startup-legacy-rejection.test.mjs：正式入口負向回歸；#24 已有 CI，整合候選待驗。
+
+- modern/tests/r1-http-persistence-contract.test.mjs：正式 HTTP/v2 負向及競爭回歸，整合候選待驗。

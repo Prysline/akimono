@@ -7,6 +7,6 @@
 P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、P5 #21 已正式合併。#1/#16/#18/#22 皆 open Draft；#22 疊在 #18，非正式能力。未新增第二套交易、時間或存檔。
 
 ## 收斂 #23 / #24
-已按 exact recursive tree 核對 626 blobs、44 frozen、233 baseline tests 的 path/SHA；兩 Draft 變更路徑互不重疊。B56 證據重疊一次，46 有效、17 歷史、170 待補；新增 2 測試分列。原始 CI checkout tree 逐一查證等於各自候選 tree，詳見 manifest provenance。整合候選尚未驗收。
+已按 exact recursive tree 核對 626 blobs、44 frozen、233 baseline tests 的 path/SHA；兩 Draft 變更路徑互不重疊。B56 證據重疊一次，46 有效、17 歷史、170 待補；新增 3 測試分列（含本輪 HTTP/v2 負向補件）。原始 CI checkout tree 逐一查證等於各自候選 tree，詳見 manifest provenance。整合候選尚未驗收。
 
 本輪補審 6 檔（詳見 [補件](r0-source-guard-economy-lock-evidence.md)）；更新為 51 有效、18 歷史、164 待補；先前 63 份仍需最終覆核。
