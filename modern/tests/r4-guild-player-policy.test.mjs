@@ -1,0 +1,58 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {authorizeGuildPlayerAction as authorize} from '../src/original-r4-guild-player-policy.mjs';
+import {reviewGuildEntry,projectGuildEntry} from '../src/original-r4-guild-entry.mjs';
+import {reviewGuildPersonnel,projectGuildPersonnel} from '../src/original-r4-guild-personnel.mjs';
+import {reviewGuildEstablishment,projectGuildEstablishment} from '../src/original-r4-guild-establishment.mjs';
+const read=name=>readFileSync(new URL('./original-perl/pinned-'+name+'.cgi',import.meta.url),'utf8');
+const entry=reviewGuildEntry({reader:read('gd-m'),entry:read('inc-gd-entry')});
+const personnel=reviewGuildPersonnel({personnel:read('gd-e'),user:read('membership-user')});
+const establishment=reviewGuildEstablishment({handler:read('gd-b'),sub:read('sub'),config:read('config')});
+const shop=(id,guild,dignity)=>({id,guild,dignity,shopname:'shop'+id,user:{keep:1}});
+const definition={name:'Red',member:'member',leadt:'alpha',leader:1,representatives:{beta:1,alpha:2}};
+const fixture=(over={})=>({revision:7,street:'alpha',shops:[shop(4,'',15),shop(2,'red',0),shop(1,'red',16),shop(3,'',16),shop(5,'red',0)],definitions:{red:definition},guildbattle:false,directory:{alpha:[1,2,3,4,5],beta:[1,8]},...over});
+const ctx=(snapshot,shopId,command,over={})=>({snapshot,actorRef:{street:snapshot.street,shopId},expectedRevision:7,command,...over});
+const ok=(s,i,c)=>{const input=ctx(s,i,c),before=structuredClone(input),r=authorize(input);assert.equal(r.actorId,i);assert.equal(r.committable,false);assert.deepEqual(input,before);return r};
+const no=(s,i,c,pattern,over={})=>{const input=ctx(s,i,c,over),before=structuredClone(input);assert.throws(()=>authorize(input),pattern);assert.deepEqual(input,before)};
+const make={kind:'make',code:'blue',representatives:{}};
+const edit={kind:'edit',code:'red',representatives:{alpha:5,beta:8}};
+const grant={kind:'grant',selections:{beta:1}};
+const join={kind:'join',guild:'red'};
+const leave={kind:'leave',confirmation:'leave'};
+const name={kind:'name',targetId:5,title:'title'};
+const fire={kind:'fire',targetId:5,confirmation:'leave'};
+test('R4 approved normal player guild flow: dignity, leadership, directory and battle restrictions',()=>{
+  const s=fixture(),battle=fixture({guildbattle:true});
+  ok(s,3,make);no(s,4,make,/dignity 16/);no(s,1,make,/unaffiliated/);no(s,3,{...make,representatives:{alpha:2}},/no representative/);
+  ok(s,1,edit);no(s,2,edit,/headquarters/);no(s,1,{...edit,code:'blue'},/own guild/);no(s,1,{...edit,representatives:{beta:5}},/directory/);
+  ok(s,1,grant);ok(s,2,grant);no(s,5,grant,/leader or local/);no(battle,1,grant,/battle/);no(s,1,{kind:'grant',selections:{alpha:3,beta:1}},/one invitation/);no(s,1,{kind:'grant',selections:{beta:5}},/directory/);
+  ok(s,3,join);no(battle,3,join,/battle/);no(s,5,join,/affiliated/);no(s,3,{...join,guild:'missing'},/definition unavailable/);
+  ok(s,2,leave);ok(s,5,leave);no(s,1,leave,/leave unavailable/);no(battle,5,leave,/leave unavailable/);no(s,3,leave,/leave unavailable/);
+  // gd-e personnel forms have no battle guard. Do not generalize leave restriction to fire/name.
+  ok(battle,2,name);ok(battle,1,fire);no(s,5,name,/personnel requires/);no(s,2,{...fire,targetId:1},/headquarters leader/);no(s,2,{...name,targetId:3},/same-street/);
+  const remote=fixture({street:'beta',shops:[shop(1,'red',0),shop(8,'red',0)]});
+  ok(remote,1,grant);ok(remote,1,leave);no(remote,1,edit,/headquarters/);
+});
+test('R4 policy resolves stable current actor, refuses stale revision and cannot authorize foreign street by local numeric ID',()=>{
+  const s=fixture();no(s,1,edit,/revision/,{expectedRevision:6});no(s,1,edit,/context required/,{actorRef:{street:'beta',shopId:1}});no(s,99,edit,/not active/);
+  no(fixture({shops:[...s.shops,shop(1,'red',16)]}),1,edit,/active shop row/);
+  no(fixture({guildbattle:undefined}),1,grant,/context required/);
+  no(fixture({definitions:{red:{...definition,leader:5}}}),1,edit,/headquarters/);
+  ok(fixture({shops:[...s.shops].reverse()}),1,edit);
+});
+test('R4 policy composes existing source effects without changing raw handler differences',()=>{
+  const s=fixture(),battle=fixture({guildbattle:true}),actor=i=>s.shops.find(r=>r.id===i);
+  const entryInput={reviewed:entry,street:'alpha',actor:actor(1),definitions:s.definitions,townOrder:['alpha','beta'],entryText:'',now:1000000,guildbattle:true,command:grant};
+  assert.match(projectGuildEntry(entryInput).entryText,/,beta,1,red\n$/);no(battle,1,grant,/battle/);
+  const personInput={reviewed:personnel,street:'alpha',shops:s.shops,definitions:s.definitions,actorId:1,command:leave};
+  assert.equal(projectGuildPersonnel(personInput).shops.find(r=>r.id===1).guild,'');no(s,1,leave,/leave unavailable/);
+  const fields={name:'Blue',shortname:'Blue',dealrate:'10',feerate:'500',member:'member',comment:'welcome',appeal:'activity',needed:'apply',url:''};
+  const cmd={...make,mode:'make',fields,imageBase64:'R0lGODlh',mime:'image/gif'};
+  const estInput={reviewed:establishment,street:'alpha',actor:actor(4),townOrder:['alpha','beta'],existing:{definitionText:null,imageBase64:null},command:cmd};
+  assert.equal(projectGuildEstablishment(estInput).actor.guild,'blue');no(s,4,make,/dignity 16/);
+  const ticket=ok(s,3,make);assert.equal(projectGuildEstablishment({...estInput,actor:actor(ticket.actorId)}).actor.guild,'blue');
+  const inviteTicket=ok(s,1,grant);assert.match(projectGuildEntry({...entryInput,actor:actor(inviteTicket.actorId),guildbattle:false}).entryText,/,beta,1,red\n$/);
+  const leaveTicket=ok(s,5,leave);assert.equal(projectGuildPersonnel({...personInput,actorId:leaveTicket.actorId}).shops.find(r=>r.id===5).guild,'');
+  const nameTicket=ok(battle,2,name);assert.equal(projectGuildPersonnel({...personInput,actorId:nameTicket.actorId,command:name}).shops.find(r=>r.id===5).user._so_e,'title');
+});
