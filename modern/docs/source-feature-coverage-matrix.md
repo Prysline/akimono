@@ -125,3 +125,8 @@
 
 - 新審2檔有效：有效197、歷史32、待補4；固定233，分類收斂229/233（98.3%）；收斂後逐檔補審166，既有重審7、剩56；新增5獨立。
 - [逐檔證據](r0-peer-use-fixture-evidence.md)：peer #1/#40/#79 純記憶體投影，無 CAS；人工 stock/tax/time/RNG，非售完非法 rank -1 仍保留。B-32 三組兩步 Perl/Node、synthetic A/B/C、同 adapter 連續 CAS；shortage/time-gate 標題實際 COMMITTED、spoof 只改 worldId、no IO 只查 metadata、JSON 非 v2。無正式玩家、HTTP/v2；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+
+### 第三十九批：R2 declarative／unified USE
+
+- 新審2檔有效：有效199、歷史32、待補2；固定233，分類收斂231/233（99.1%）；收斂後逐檔補審168，既有重審7、剩56；新增5獨立。
+- [逐檔證據](r0-r2-declarative-unified-use-evidence.md)：69 distinct recipe IDs 受控 Perl/Node、人工材料/EXP/job/time/draw，並非合法取得；#26/0 僅 metadata/drift。Unified #79 六例只驗 probe 長度，#14 六分支逐值差分、受控初始券換地圖、memory CAS 拒絕；非完整 compiler/CGI/HTTP/v2。R1 逐項尚待另行連結，詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 暫不變。

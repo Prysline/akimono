@@ -10850,17 +10850,97 @@
       "path": "modern/tests/r2-declarative-use-effects.test.mjs",
       "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（人工配方材料＋記憶體 CAS）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "L46–163 初始化/開店、人工 stock/EXP/job/time/money、Perl probe 與 Node CAS 對比 compiled time/EXP/cost/uses/creates、stock/wholesale/EXP/time/money/paytoday、receipt/draws；L165–276 31 USE #10/37/39、NEED/job、drift、路徑 metadata；L278–398 #15/16/17、#20–23 與 lostbook；L399–521 #66、#35/36、#26/1–2、#27–29 及單次／乳牛和牛奶不足拒絕。",
+      "executionPath": "原版 GetBuffer/GetItemNumber/ClearBuffer、UseItem/MakeAmount/CheckWholeStore、原版 lostbook；job rate 依來源公式手套用；Node use-item 由 GameCore memory adapter。",
+      "risk": "共用 USE／前置條件／材料／EXP／回呼與記憶體拒絕回歸",
+      "disposition": "保留限定來源回歸；不升格正式玩家",
+      "reason": "69 distinct recipe IDs 的受控成功對比（不等於全部 branch）；#26/0 僅 inline metadata/drift，不執行飲用；完整 compiler/generated _job_use、真時鐘/RNG、HTTP/v2 與各配方合法取得未證。缺 owned book 與 nocount>1 只測 Node 拒絕；路徑列舉不是實際取得，#37/3 等上游標示需依現行入口再覆核。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-declarative-unified-use-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/shared-use-item-core.mjs",
+          "sha": "e70886a4401a28b31c683aa6aeb70f6d4cd9149e"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-declarative-use-probe.pl",
+          "sha": "9ad1b09823edee54a25201949596063169553d91"
+        },
+        {
+          "path": "modern/src/original-use-transaction-model.mjs",
+          "sha": "3ef8dfbcae1b520ca205cbfad1ecc4881de65fdb"
+        },
+        {
+          "path": "modern/src/shared-use-effect-plan.mjs",
+          "sha": "84cb57cf88b1127029b583811d9ee41a9e357535"
+        },
+        {
+          "path": "modern/src/shared-use-experience.mjs",
+          "sha": "87f3b2cee856949228c857f37f0b62c2f12b05f2"
+        }
+      ],
+      "fixtures": "固定 now1000000，人工庫存與前置 EXP、job、money100000、time956800；依 Node dry projector 決定 draw 數量、固定 500000 或 lostbook 0；單店。",
+      "limitations": "69 distinct recipe IDs 的受控成功對比（不等於全部 branch）；#26/0 僅 inline metadata/drift，不執行飲用；完整 compiler/generated _job_use、真時鐘/RNG、HTTP/v2 與各配方合法取得未證。缺 owned book 與 nocount>1 只測 Node 拒絕；路徑列舉不是實際取得，#37/3 等上游標示需依現行入口再覆核。",
+      "reviewScope": "完整測試、主要 Perl probes、共用 harness/入口定位；未重新實跑"
     },
     {
       "path": "modern/tests/r2-gathering-http-save.test.mjs",
@@ -12078,22 +12158,89 @@
       "path": "modern/tests/r2d-unified-use-item.test.mjs",
       "sha": "77dd66c1f26c88e05d1893fe8eaa46e8f75b1f82",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控取得與記憶體 CAS）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "L47–92 memory initialize/open、#79→#14、單一 Registry 與舊 alias 拒絕；L94–126 #79 probe 長度6，#14 六分支比五劍/地圖/EXP、receipt/draws，Node 自有 money/time/paytoday 差額；L128–172 #79 clipping、無材料、未知 USE/欄位、draw 長度/界限、stale、money/time/EXP/地圖缺失 snapshot；L174–197 helper 缺失及 callback drift。",
+      "executionPath": "原版 gift probe 與 B63 compiler/funcb/UseItem/lostbook；Node initialize/open、use-item 記憶體 CAS，六分支各新 repo。",
+      "risk": "共用 USE／前置條件／材料／EXP／回呼與記憶體拒絕回歸",
+      "disposition": "保留限定來源回歸；不升格正式玩家",
+      "reason": "#79 六例在本檔僅 assert length，並非逐列 Oracle 對比；#14 比輸出與 receipt，money/time/paytoday 是 Node 差額而非 Perl 全狀態直接對等；Perl pre-callback 由 probe 手動呼叫，非完整 CGI，六分支非連續 EXP。受控 memory CAS 非正式 HTTP/v2 或真 RNG。",
+      "reviewed": true,
       "documentReferences": [
         {
-          "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
-          "line": 13
+          "path": "modern/docs/r0-r2-declarative-unified-use-evidence.md",
+          "line": 14
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/shared-use-item-core.mjs",
+          "sha": "e70886a4401a28b31c683aa6aeb70f6d4cd9149e"
+        },
+        {
+          "path": "modern/tests/original-perl/original-gift-map-use-probe.pl",
+          "sha": "803179a5f298230f9100d7b51630778d2332fa25"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b63-sword-map-all-outcomes-probe.pl",
+          "sha": "7e714209f73ff278be122fbce39f410963efa104"
+        }
+      ],
+      "fixtures": "#79 由受控開店初始券換地圖，不手填 Node #14；固定 now1000000、Perl 原版 #14 probe 人工 money/time/地圖與受控 draws；負向人工 corrupt state。",
+      "limitations": "#79 六例在本檔僅 assert length，並非逐列 Oracle 對比；#14 比輸出與 receipt，money/time/paytoday 是 Node 差額而非 Perl 全狀態直接對等；Perl pre-callback 由 probe 手動呼叫，非完整 CGI，六分支非連續 EXP。受控 memory CAS 非正式 HTTP/v2 或真 RNG。",
+      "reviewScope": "完整測試、主要 Perl probes、共用 harness/入口定位；未重新實跑"
     },
     {
       "path": "modern/tests/r2e-source-buy-use-http-save.test.mjs",
@@ -41920,14 +42067,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 197,
-      "待補": 4
+      "有效": 199,
+      "待補": 2
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 166,
+    "currentSessionReviewed": 168,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -42005,7 +42152,8 @@
     "modern/docs/r0-r4-town-play-evidence.md",
     "modern/docs/r0-ui-world-read-commit-evidence.md",
     "modern/docs/r0-world-use-market-fixtures-evidence.md",
-    "modern/docs/r0-peer-use-fixture-evidence.md"
+    "modern/docs/r0-peer-use-fixture-evidence.md",
+    "modern/docs/r0-r2-declarative-unified-use-evidence.md"
   ],
   "integrationCiHistory": [
     {
