@@ -53,3 +53,46 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
   }
   t.diagnostic('R4 full commerce audit '+JSON.stringify(report.summary));
 });
+
+import {parseAcceptanceTap,verifyAcceptanceRun,buildNormalCommerceAcceptance} from '../scripts/audit-normal-commerce-acceptance.mjs';
+const head='a'.repeat(40),checkout='b'.repeat(40),base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
+const steps=['Checkout source','Set up Node','Verify existing Standard Street DSL source audit','Verify pinned original Core source blobs','Verify four additional SHA-pinned original Core item-loader source blobs','Verify pinned untouched original Core admin initializer','Verify B-38 untouched original Core detail tax source blob','Run isolated original Perl Core tests'].map(name=>({name,conclusion:'success'}));
+const meta={head,base,checkout,pr:25,runId:1,jobId:2,steps,conclusion:'success'};
+// Explicit parser-only fixture. These are NOT GitHub run IDs or real Git objects.
+const gitRead=(...args)=>args[0]==='show'?base+' '+head:'c'.repeat(40);
+const callback='R4 source-only FUNCBUY differential executes pinned Perl threshold, clipped payment, capacity and zero-log behavior';
+const auditJson=JSON.stringify({ok:true,hashes:[{actual:'d'.repeat(40),expected:'d'.repeat(40)},{actual:'e'.repeat(40),expected:'e'.repeat(40)}],actual:{items:79,uses:116,events:25,functions:7},issues:[]});
+const fakeLog=(rows=['ok 1 - '+callback],totals=['# tests 1','# pass 1','# fail 0','# cancelled 0','# skipped 0','# todo 0'])=>[
+  'git log -1 --format=%H',checkout,...rows,'1..'+rows.length,...totals,
+  '> node scripts/audit.mjs',auditJson,'> node scripts/demo-state.mjs','> node scripts/demo-original-nayuta-functurn.mjs',
+  '##[group]Run prove -v *.t','ok 1 - Perl only','1..1','All tests successful.','Files=1, Tests=1, 1 wallclock secs','Result: PASS'
+].join('\n');
+test('acceptance parser requires complete Node and independent Perl TAP and refuses stale checkout or missing steps',()=>{
+  const log=fakeLog();
+  const verified=verifyAcceptanceRun({log,meta,head,gitRead});
+  assert.equal(verified.independentRunGreen,true);
+  assert.equal(verified.tap.rows.has('Perl only'),false);
+  assert.equal(parseAcceptanceTap(log.replace('ok 1 - '+callback+'\n','')).complete,false);
+  assert.equal(verifyAcceptanceRun({log:log.replace('ok 1 - Perl only\n',''),meta,head,gitRead}).independentRunGreen,false);
+  assert.equal(verifyAcceptanceRun({log,meta:{...meta,steps:steps.slice(1)},head,gitRead}).independentRunGreen,false);
+  assert.equal(verifyAcceptanceRun({log,meta:{...meta,steps:[...steps,steps[0]]},head,gitRead}).independentRunGreen,false);
+  assert.throws(()=>verifyAcceptanceRun({log,meta,head:'f'.repeat(40),gitRead}),/exact current/);
+  assert.throws(()=>verifyAcceptanceRun({log:log.replace(checkout,'f'.repeat(40)),meta,head,gitRead}),/checkout mismatch/);
+  assert.throws(()=>verifyAcceptanceRun({log,meta,head,gitRead:(...args)=>args[0]==='show'?base+' '+checkout:'c'.repeat(40)}),/exact current head tree/);
+  const dup=fakeLog(['ok 1 - '+callback,'ok 2 - '+callback],['# tests 2','# pass 2','# fail 0','# cancelled 0','# skipped 0','# todo 0']);
+  assert.equal(parseAcceptanceTap(dup).rows.get(callback),'ambiguous');
+  assert.equal(verifyAcceptanceRun({log:dup,meta,head,gitRead}).independentRunGreen,false);
+  const skip=fakeLog(['ok 1 - '+callback+' # SKIP no evidence'],['# tests 1','# pass 0','# fail 0','# cancelled 0','# skipped 1','# todo 0']);
+  assert.equal(parseAcceptanceTap(skip).rows.get(callback),'skipped');
+  assert.equal(verifyAcceptanceRun({log:skip,meta,head,gitRead}).independentRunGreen,false);
+});
+test('acceptance ledger distinguishes source-only FUNCBUY from genuine acquisition and never promotes missing evidence',async()=>{
+  const report=await auditNormalCommerce();
+  const result=buildNormalCommerceAcceptance(report,verifyAcceptanceRun({log:fakeLog(),meta,head,gitRead}));
+  const buy=result.functions.find(f=>f.kind==='FUNCBUY').evidence;
+  assert.equal(buy.sourceDifferential.status,'passed');
+  assert.equal(buy.sourceDifferential.scope,'source-only');
+  assert.equal(buy.status,'not-proven');
+  assert.equal(result.items[63].wholesaleAcquisition.status,'not-proven');
+  assert.equal(result.phaseComplete,false);
+});
