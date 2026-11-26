@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 import {createIndependentArmyProjection} from '../src/original-r4-independent-army.mjs';
 import {isReviewedOrdinaryCommand} from '../src/reviewed-ordinary-command-policy.mjs';
+import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
+import {encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const sources={armyViewSource:read('./original-perl/pinned-army-view.cgi'),
   armyCommandSource:read('./original-perl/pinned-army-s.cgi'),armyFileSource:read('./original-perl/pinned-army.cgi'),
@@ -55,7 +57,25 @@ test('genuine fresh HTTP player cannot hire/fire or inject army assets; save/res
     assert.deepEqual(p.state.world,before);assert.equal(p.state.historyCommands,history);
     assert.equal(Object.hasOwn(p.state.world.period.disk.live,'army.cgi'),false);
   }
-  await p.saveAndRestart(0);
+  const first=await p.saveAndRestart(0);
   assert.deepEqual(p.state.world,before);assert.equal(p.state.army.count,0);
   assert.equal(p.state.army.canHire,false);
+  await p.tick(1);
+  const second=await p.saveAndRestart(1);
+  // Adversarial test: stage a correctly hashed, structurally canonical
+  // army generation (dignity may legitimately decay to zero). The actual
+  // player has no recruitment history, so mere disk integrity cannot
+  // authorize its soldiers. Reuse the real two-slot v2 recovery path.
+  await p.rejectForgedLatest(first,record=>{
+    const forged=JSON.parse(record.world);
+    forged.period.disk.live['army.cgi']={bytes:'1,500\n\n',mtime:forged.nowSeconds};
+    const disk=createIndependentPeriodDiskStore({directory:p.directory});
+    assert.equal(disk.stage(forged),true);
+    assert.equal(disk.verify(forged),true);
+    assert.equal(Object.hasOwn(forged.period.disk.backup,'army.cgi'),false);
+    record.world=encodeMemorySnapshot(forged);
+  },{restore:true});
+  assert.deepEqual(p.state.world,second);
+  assert.equal(p.state.army.count,0);
+  assert.equal(Object.hasOwn(p.state.world.period.disk.live,'army.cgi'),false);
 });
