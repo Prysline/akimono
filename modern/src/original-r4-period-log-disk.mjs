@@ -2,6 +2,7 @@
  * Explicit isolated source fixture, not a production logging/commit API.
  */
 import {createHash} from 'node:crypto';
+import {isR4IndependentCloseReview} from './original-r4-independent-close-candidate.mjs';
 import {readFile,writeFile,lstat,realpath,rename} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -32,10 +33,10 @@ function row(time,mode,id,msg,armyConflictLog=false){
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
  * identity fixtures as the original probe, not real localization/currency.
  */
-export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false}){
+export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false,r4CloseReview=null}){
   check(reviewed);
   if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
-     (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||result.actualCloseEffect||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
+     (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||(result.actualCloseEffect&&(!isR4IndependentCloseReview(r4CloseReview)||result.shop!==null||result.actualCloseEffect.closed!==true))||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
   const count=shop.rankingcount+1,p=result.prize,head='本次優勝';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
   const calls=[
@@ -83,14 +84,15 @@ export function projectReviewedEventLogRows({reviewed,logs,nowSeconds}){
     return row(nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]);
   }).reverse();
 }
-export function projectCrossPeriodLogRows({reviewed,candidate}){
+export function projectCrossPeriodLogRows({reviewed,candidate,r4CloseReview=null}){
   check(reviewed);
   if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
   const calls=[];
   for(const slice of candidate.evidence.slices){
     if(slice.dateupdate===1){
       const {periodLogInput,settlement}=slice.preEvent;
-      calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true}));
+      if(settlement!==null)calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true,r4CloseReview}));
+      else if(!isR4IndependentCloseReview(r4CloseReview)||slice.preEvent.shops.length!==0||slice.preEvent.receipt.periodDraws!==0)fail('unreviewed skipped settlement');
     }
     for(const call of slice.eventLogs){
       if(!Array.isArray(call)||![3,4,5].includes(call.length))fail('unreviewed EVENT log call');

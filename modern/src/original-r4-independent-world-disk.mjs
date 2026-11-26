@@ -3,6 +3,8 @@
  * No original account/session, dragon or guild membership is manufactured.
  */
 import {createHash} from 'node:crypto';
+import {isR4IndependentCloseReview} from './original-r4-independent-close-candidate.mjs';
+import {reviewR4CloseShopArchiveSource,projectR4CloseShopArchiveGeneration} from './original-r4-close-shop-archive-file.mjs';
 import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r4-period-play-file.mjs';
 import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
@@ -25,7 +27,11 @@ export function independentCandidateWorld(world){
   return {...world,period:{...period,state:period.state===R4_SETTLED_STATE?CANDIDATE:period.state}};
 }
 function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
-export function createIndependentDiskProjection({sources,sort,street}){
+export function createIndependentDiskProjection({sources,sort,street,r4CloseReview=null}){
+  if(r4CloseReview!==null&&(!isR4IndependentCloseReview(r4CloseReview)||!street.reviewedNormalCommerce))fail('reviewed local closure required');
+  const archive=r4CloseReview===null?null:reviewR4CloseShopArchiveSource(sources);
+  const archiveName='log/delete.cgi',oldArchiveName='log/delete-old.cgi';
+  const hasClosed=world=>Boolean(archive&&Object.hasOwn(world.period.disk?.live??{},archiveName));
   if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
   const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,signedCash:street.reviewedNormalCommerce!==undefined,manualCommerce:street.reviewedManualCommerceEvents??null}),
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
@@ -57,7 +63,9 @@ export function createIndependentDiskProjection({sources,sort,street}){
     if(world.revision===0&&world.market===null){if(d!==undefined)fail('fresh world has no disk');return true;}
     if(!exact(d,palace?'source,live,backup,generations,townData':'source,live,backup,generations')||d.source!==R4_INDEPENDENT_DISK||!Array.isArray(d.generations)||d.generations.length!==3)fail('independent disk envelope required');
     const hasArmy=Boolean(army)&&Object.hasOwn(d.live??{},'army.cgi');
-    validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi',...(hasArmy?['army.cgi']:[])],world.nowSeconds);
+    const closed=hasClosed(world),oldArchive=Object.hasOwn(d.live??{},oldArchiveName);
+    if((closed&&(world.shops.length!==0||world.period.settledCount<1))||(oldArchive&&!closed))fail('archive requires closed local career');
+    validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi',...(hasArmy?['army.cgi']:[]),...(closed?[archiveName]:[]),...(oldArchive?[oldArchiveName]:[])],world.nowSeconds);
     if(army)army.validate(world);
     const town=palace?d.townData:{};
     if(palace)validatePalaceTown({...palaceArgs,town});
@@ -67,7 +75,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
     if(Buffer.byteLength(JSON.stringify(d))>100000)fail('independent source file history capacity');
     return true;
   }
-  function finalize({before,command,applied,logRows=[]}){
+  function finalize({before,command,applied,logRows=[],closeEffect=null}){
     const now=applied.nowSeconds??before.nowSeconds;
     const raw=applied.period??before.period;
     const {disk:unused,...period}=raw;
@@ -86,6 +94,10 @@ export function createIndependentDiskProjection({sources,sort,street}){
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
     const old=before.period.disk;
+    if(hasClosed(before)&&command.kind==='open-shop')fail('closed local career cannot reuse original shop id');
+    const closes=before.shops.length===1&&shops.length===0;
+    if(closes!==(closeEffect!==null))fail('shop removal requires exact CloseShop effect');
+    if(closes&&(!archive||!old||command.kind!=='advance-reviewed-world-time'||period.settledCount!==before.period.settledCount+1||closeEffect.shop?.id!==before.shops[0].id||closeEffect.deletedSessions?.length!==0||closeEffect.remainingSessions?.length!==0||Object.hasOwn(old.live,'army.cgi')))fail('local closure requires no external account/session or army context');
     let town=palace?(old?.townData??{}):{};
     const newRows=[...logRows];
     if(command.kind===PALACE_COMMAND){
@@ -125,6 +137,14 @@ export function createIndependentDiskProjection({sources,sort,street}){
       const crossings=period.settledCount-before.period.settledCount;
       if(![0,1].includes(crossings))fail('one source boundary per command');
       const live={...old.live};
+      if(closes){
+        // The independent local adapter has no CGI request identity or
+        // original subdata/session directory. Do not manufacture either.
+        const projected=projectR4CloseShopArchiveGeneration({reviewed:archive,effect:closeEffect,nowSeconds:now,
+          previous:live[archiveName]??null,previousOld:live[oldArchiveName]??null,
+          scriptName:'',remoteAddress:'',remoteHost:'',trueIp:'',user:''});
+        live[archiveName]=projected.live;if(projected.old!==null)live[oldArchiveName]=projected.old;
+      }
       if(ARMY_COMMANDS.includes(command.kind))live['army.cgi']=entry(applied.armyBytes,now);
       // period.cgi copies the prior LIVE files, not the new settled play.
       const generations=crossings?[Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])),...old.generations.slice(0,2)]:old.generations;
@@ -144,6 +164,6 @@ export function createIndependentDiskProjection({sources,sort,street}){
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+  return Object.freeze({validate,finalize,hasClosed,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate,r4CloseReview}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }
