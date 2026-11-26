@@ -116,3 +116,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 第十五批 [sparse PLUS](r0-sparse-plus-evidence.md) 補審6檔：111有效、32歷史、90待補（143/233）；收斂後補審80、既有待覆核56。B35/36/37 原版受控 PLUS／cap 差分，明示 ITEM #1/#10/#40 補鏈，82 筆功能有詳細證據；79槽向量不當作正式商品取得，正式正向下界不變。新候選 CI 待驗。
 
 第十六批 [自然販售／#70 FUNCTURN](r0-natural-sale-functurn-evidence.md) 補審4檔：115有效、32歷史、86待補（147/233）；收斂後補審84、既有待覆核56。ITEM #10/#70 受控來源 Oracle／差分補鏈，83 筆有詳細證據；正式取得/HTTP/v2 下界不變。前候選 CI 45809746831 已核對 checkout 同 tree、1350 JS／2456 Perl 通過；新候選待驗。
+
+第十七批 [R4 EVENT declarative／PARAM](r0-r4-declarative-event-evidence.md) 補審4檔：119有效、32歷史、82待補（151/233）；收斂後補審88、既有待覆核56。9 EVENT 純 PARAM 差分、其中7單 key END/START 生命週期；25 metadata 下界不變，83 筆功能有詳細證據；正式下界不變。新候選待 CI。
