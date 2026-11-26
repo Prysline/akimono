@@ -8,17 +8,23 @@ import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
 import {reviewOriginalUseJobFallback} from '../src/reviewed-use-job-fallback.mjs';
 
 // Clock-only oracle: execute the frozen compiler's actual JOB emission
-// block and frozen CheckUseItem on fresh USE rows. The base clocks are
-// controlled inputs, not a test of the entire ITEM compiler or callbacks.
+// block and frozen CheckUseItem on fresh USE rows. Base clocks now come
+// independently from frozen DSL TIME/EXPTIME and GetNumber, not the JS registry.
+// This still is not the entire ITEM compiler or callback oracle.
 const perl=[
   'use utf8;use JSON::PP;no strict;no warnings;',
   'local $/;my $in=decode_json(<STDIN>);',
   '$g_define=$in->{define};',
   'eval $in->{helpers};die $@ if $@;',
   'eval $in->{check};die $@ if $@;',
+  'eval $in->{calc};die $@ if $@;',
   'eval ("sub emit_job {my(\\$use)=\\@_;my \\$s=\\x27\\x27;".$in->{emit}." return \\$s;}");die $@ if $@;',
   'my @out;',
   'for my $item (@{$in->{items}}){',
+  '  for my $row (@{$item->{uses}}){',
+  '    $row->{time}=int(GetNumber($row->{rawTime})*$g_define->{itemusetimerate});',
+  '    $row->{exptime}=defined($row->{rawExpTime})?int(GetNumber($row->{rawExpTime})*$g_define->{itemusetimerate}):$row->{time};',
+  '  }',
   '  my $generated=join("",map{emit_job($_)}@{$item->{uses}});',
   '  die "source JOB compiler errors" if @errormsg;',
   '  $generated=~s/[\\t\\n]//g;$generated=~s/\\0/\\n/g;',
@@ -27,7 +33,8 @@ const perl=[
   '    @item::USE=map{{no=>$_->{no},time=>$_->{time},exptime=>$_->{exptime},use=>[]}}@{$item->{uses}};',
   '    $DT={job=>$job,item=>[]};my $u=$item::USE[$row->{no}];',
   '    die "clock fixture denied" unless CheckUseItem($u)==1;',
-  '    push @out,[$item->{id},$row->{no},$job,0+$u->{time},0+$u->{exptime}];',
+  '    $u->{itemno}=$item->{id};my @seconds;for my $exp (0,1,500,999,1000){$DT->{exp}{$item->{id}}=$exp;push @seconds,0+GetItemUseTime($u);}',
+  '    push @out,[$item->{id},$row->{no},$job,0+$u->{time},0+$u->{exptime},\\@seconds];',
   '  }}',
   '  for my $job (@{$in->{jobs}}){for my $row (@{$item->{uses}}){',
   '    my $name="item::_job_use_".$row->{no}."_".$job."_";undef &$name if defined &$name;',
@@ -54,6 +61,7 @@ test('R4 full commerce USE job fallback matches frozen compiler emission and Che
   const define=Object.fromEntries([
     ...def.fields.job.map(row=>{const [code,name]=row.value.split(/\s+/);return ['job-'+code,name]}),
     ...def.fields.set.map(row=>row.value.split(/\s+/)),
+    ['itemusetimerate',def.fields.itemusetimerate[0].value],
   ]);
   const jobs=['',...def.fields.job.map(row=>row.value.split(/\s+/)[0])];
   const items=[];
@@ -68,7 +76,9 @@ test('R4 full commerce USE job fallback matches frozen compiler emission and Che
       assert.deepEqual(rule.fallbackJobTimeModifier,reviewed.get(id,no));
       if(rule.fallbackJobTimeModifier)fallbackCount++;
       assert.equal(legacy.useItem.getRule(id,no)?.fallbackJobTimeModifier,undefined);
-      return {no,time:rule.time,exptime:rule.exptime,job:(block.fields.job??[]).map(x=>x.value.trim().split(/\s+/).join('\t'))};
+      assert.equal(block.fields.time.length,1);
+      assert.ok(!block.fields.exptime||block.fields.exptime.length===1&&block.fields.exptime[0].line>block.fields.time[0].line);
+      return {no,rawTime:block.fields.time[0].value,rawExpTime:block.fields.exptime?.[0]?.value??null,job:(block.fields.job??[]).map(x=>x.value.trim().split(/\s+/).join('\t'))};
     })});
   }
   assert.equal(fallbackCount,51);
@@ -78,15 +88,16 @@ test('R4 full commerce USE job fallback matches frozen compiler emission and Che
   assert.ok(start>=0&&end>start,'original job emission block');
   const oracle=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({
     define,jobs,items,helpers:subSource(compiler,'GetNumber')+'\n'+subSource(compiler,'GetJobCode'),
-    check:subSource(input.originalUseSource,'CheckUseItem'),emit:compiler.slice(start,end),
+    check:subSource(input.originalUseSource,'CheckUseItem'),calc:subSource(input.originalBuyCalcSource,'GetItemUseTime'),emit:compiler.slice(start,end),
   })}));
   assert.equal(oracle.length,116*9);
   const offers=new Map(jobs.map(job=>[job,full.listUseOffers({shops:[{job,exp:{},item:Array(79).fill(0),time:0,money:0}],events:null,nowSeconds:100000})]));
-  for(const [id,no,job,base,trained] of oracle){
+  for(const [id,no,job,base,trained,seconds] of oracle){
     const rule=full.useItem.getRule(id,no);
-    for(const experience of [0,1,500,999,1000]){
+    for(const [i,experience] of [0,1,500,999,1000].entries()){
       const actual=originalSourceUseClock({rule,job,experience});
       assert.deepEqual(actual,{base,trained,seconds:base-Math.trunc((base-trained)*experience/1000)},id+':'+no+':'+job+':'+experience);
+      assert.equal(actual.seconds,seconds[i],id+':'+no+':'+job+':'+experience+' original GetItemUseTime');
     }
     const offer=offers.get(job).find(x=>x.itemId===id&&x.useId===no);
     assert.equal(offer?.timePerUseSeconds,base,id+':'+no+':'+job+' quote');
