@@ -22,6 +22,9 @@ test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and t
   assert.equal(q.price,0);assert.equal(q.timeSeconds,600);
   await p.enoughTime(q.timeSeconds);
   q=p.state.marketOffers.find(x=>x.itemId===63);
+  assert.equal(q.form.source,'r4-frozen-buy-form.v1');
+  assert.equal(q.form.available,true);
+  assert.deepEqual(q.form.options,[{count:1,label:'1（倉庫最多）'}]);
   const before=p.state.world,cmd={expectedRevision:before.revision,itemId:63,requestedCount:2,marketShelf:q.shelf,expectedPrice:q.price};
   const bought=await p.post('/api/buy',cmd);
   assert.equal(bought.code,'COMMITTED',JSON.stringify(bought.details));

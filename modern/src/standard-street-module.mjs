@@ -1,3 +1,4 @@
+import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
@@ -176,7 +177,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalTurnSource=null,originalWholeSource=null,originalConfigSource=null,
   originalCompilerSource=null,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
-  originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
+  originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,originalBuyFormSource=null,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
   coreLocaleSource=null,localLocaleSource=null,localeLoaderSource=null,
@@ -351,6 +352,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedMarketCommerce,
     }):null;
   if(enableReviewedMarketCommerce&&(!buyRegistry||originalItemHelperSource===null))bad('market commerce requires frozen voucher sources');
+  // Read-only form uses the same quote and never grants purchase authority.
+  const reviewedBuyForm=enableReviewedMarketCommerce&&originalBuyFormSource!==null?
+    reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,
+      calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource}):null;
   const reviewedVoucher=enableReviewedMarketCommerce?reviewOriginalWholesaleVoucher({itemDsl,buySource:originalBuySource,helperSource:originalItemHelperSource}):null;
   if(reviewedVoucher&&(giftMap.limits[78]?.limit!==reviewedVoucher.limit||giftMap.limits[78]?.wslimit!==0))bad('reviewed #79 capacity');
   const marketBuy=Object.freeze({
@@ -880,7 +885,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       const canBuy=Boolean(quote&&marketBuy.validateWorld(world)&&
         shop?.id===1&&shop.status===1&&
         shop.item[entry.shopIndex]<entry.stockLimit);
-      return Object.freeze({
+      const offer={
         itemId,name:entry.itemName,itemCode:entry.itemCode,
         price:quote?.price??null,timeSeconds:quote?.timeSeconds??null,
         basePrice:entry.basePrice,marketStock,shelf,
@@ -888,7 +893,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         classification:entry.classification,source:entry.source,
         reason:entry.reason??(rule?null:'unsupported original source semantics'),
         canBuy,
-      });
+      };
+      return Object.freeze(reviewedBuyForm?{...offer,form:describeOriginalBuyForm({
+        reviewed:reviewedBuyForm,offer,shop,nowSeconds:world.nowSeconds,
+      })}:offer);
     },
     listMarketOffers(world){
       if(!buyRegistry||!validateSourceSparseMarket(world?.market))
