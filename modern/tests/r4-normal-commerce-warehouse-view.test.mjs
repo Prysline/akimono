@@ -61,6 +61,12 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
    assert.equal(byId.get(40).compiledCost,120);assert.equal(byId.get(65).supplyPoint,100);
    const oracle=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({source:input.originalMarketSource,people:world.period.dtPeople,shop,items:numeric,boom,boomIds:[1]})}));
    assert.equal(view.marketItems.length,79);
+   assert.equal(view.marketItems.find(x=>x.itemId===9).saleWarning,'not-listable');
+   assert.equal(view.marketItems.find(x=>x.itemId===65).saleWarning,'no-sales');
+   assert.equal(view.marketItems.find(x=>x.itemId===1).saleWarning,boom?null:'rare-sales');
+   assert.equal(view.marketItems.find(x=>x.itemId===40).saleWarning,null);
+   const shelves=street.describeShowcase(world);
+   assert.deepEqual(shelves.rows.map(x=>[x.shelf,x.itemId,x.taxRate,x.tax]),[[0,40,0,0],[1,40,3,54],[2,1,0,0],[3,65,0,0]]);
    assert.deepEqual(view.survey.map(x=>x.itemId).sort((a,b)=>a-b),[1,40,65]);
    for(const row of view.marketItems){
      const expected=oracle[row.itemId-1];

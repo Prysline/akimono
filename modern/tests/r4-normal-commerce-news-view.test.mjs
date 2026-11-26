@@ -23,7 +23,7 @@ const perl=[
 ].join('\n');
 test('R4 newspaper retains log0/log1 order and exact original literal query and page limits',async()=>{
  const input=await loadNormalCommerceAuditSources();
- const sources={newsViewSource:input.originalNewsViewSource,newsHtmlSource:input.originalNewsHtmlSource,newsPageSource:input.originalNewsPageSource,newsTimeSource:input.originalNewsTimeSource,logSource:input.originalLogSource,configSource:input.originalConfigSource,itemDsl:input.itemDsl,rebelDsl:input.rebelDsl,compilerSource:input.originalCompilerSource};
+ const sources={newsViewSource:input.originalNewsViewSource,newsHtmlSource:input.originalNewsHtmlSource,newsPageSource:input.originalNewsPageSource,newsTimeSource:input.originalNewsTimeSource,logSource:input.originalLogSource,configSource:input.originalConfigSource,itemDsl:input.itemDsl,rebelDsl:input.rebelDsl,compilerSource:input.originalCompilerSource,ownerMainSource:input.originalOwnerMainSource};
  const reviewed=reviewOriginalNews(sources);
  assert.throws(()=>reviewOriginalNews({...sources,newsViewSource:sources.newsViewSource+'\n'}),/source drift/);
  const log0=Array.from({length:28},(_,i)=>[1000-i,i%4,i%7===0?2:i%2,'店主 Alpha [a] '+i].join('\t')+'\n').join('');
@@ -31,6 +31,8 @@ test('R4 newspaper retains log0/log1 order and exact original literal query and 
  const world={nowSeconds:1000,shops:[{id:1,status:1,shopname:'店主'}],period:{eventState:{'boom-posyon':1100},disk:{live:Object.fromEntries(Object.entries(files).map(([k,bytes])=>[k+'.cgi',{bytes}]))}}};
  const before=structuredClone(world),news=describeOriginalNews({reviewed,world});
  assert.deepEqual(world,before);
+ assert.deepEqual(news.recentRows,news.rows.filter(r=>r.wire.includes('店主')).slice(0,10));
+ assert.equal(news.recentRows.length,10);
  assert.equal(news.rows.length,26);assert.deepEqual(news.eventMessages,['治療劑相關商品人氣提升']);
  assert.ok(news.rows.every(row=>row.id===0||row.id===1));assert.ok(news.rows.every(row=>!row.message.includes('excluded')));
  assert.throws(()=>describeOriginalNews({reviewed,world:{...world,shops:[{id:2,status:1}]}}),/local owner/);

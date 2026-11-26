@@ -366,3 +366,12 @@ test('source newspaper shows authorized bulletin rows with literal query, privat
  assert.match(script,/queryOriginalNews\(source,newsQuery\)/);
  assert.match(script,/p\.textContent=row\.private/);
 });
+
+
+test('source shelf tax and owner event/topic and special sale warnings are visible',()=>{
+ for(const id of ['shop-shelf-tax-heading','shop-shelf-maintenance','shop-recent-title','shop-recent-rows','item-sale-warning'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(adapter,/showcaseView:world&&streetModule\.describeShowcase/);
+ assert.match(script,/s\.showcaseView\?\.rows\[index\]/);
+ assert.match(script,/source\?\.recentRows/);
+ assert.match(script,/status\?\.saleWarning/);
+});
