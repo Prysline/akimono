@@ -107,7 +107,9 @@ export function parseAcceptanceTap(log){
     const start=block.indexOf('{'),end=block.lastIndexOf('}');
     try{
       const report=JSON.parse(block.slice(start,end+1));
-      sourceAudit=report.ok===true&&report.hashes?.length===2&&report.hashes.every(h=>h.expected===h.actual&&sha(h.actual))&&
+      sourceAudit=report.ok===true&&report.hashes?.length===2&&report.hashes.every(h=>h.expected===h.actual&&h.verified===true)&&
+        report.hashes.some(h=>h.name==='custom/inc-item-data.cgi'&&h.actual==='7a18185e98b32aee82ca1ce30d6f3c395157dbcb')&&
+        report.hashes.some(h=>h.name==='custom/inc-rebel-data.cgi'&&h.actual==='923634e58a05beca9ab004515fc7669d53a1ba3a')&&
         report.actual?.items===79&&report.actual?.uses===116&&report.actual?.events===25&&report.actual?.functions===7&&report.issues?.length===0;
     }catch{}
   }

@@ -56,7 +56,7 @@ test('R3 original Perl executable arithmetic covers six ITEMS and four original-
 for(const original of oracle.cases){
   test('R3 real Perl inc-turn/market vs ONE GameCore calculator: #'+
     original.itemId+' stock '+original.originalStock+
-    (original.displayed?' shown':' not shown'),()=>{
+    (original.displayed?' shown':' not shown')+'; source draw '+original.consumedSamples.slice(0,2).join('/'),()=>{
     const id=original.itemId;
     const rule=street.reviewedB41.saleRules[id];
     assert.equal(rule.unitPrice,original.originalPrice);

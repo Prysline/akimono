@@ -61,7 +61,7 @@ const meta={head,base,checkout,pr:25,runId:1,jobId:2,steps,conclusion:'success'}
 // Explicit parser-only fixture. These are NOT GitHub run IDs or real Git objects.
 const gitRead=(...args)=>args[0]==='show'?base+' '+head:'c'.repeat(40);
 const callback='R4 source-only FUNCBUY differential executes pinned Perl threshold, clipped payment, capacity and zero-log behavior';
-const auditJson=JSON.stringify({ok:true,hashes:[{actual:'d'.repeat(40),expected:'d'.repeat(40)},{actual:'e'.repeat(40),expected:'e'.repeat(40)}],actual:{items:79,uses:116,events:25,functions:7},issues:[]});
+const auditJson=JSON.stringify({ok:true,hashes:[{name:'custom/inc-item-data.cgi',actual:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',expected:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',verified:true},{name:'custom/inc-rebel-data.cgi',actual:'923634e58a05beca9ab004515fc7669d53a1ba3a',expected:'923634e58a05beca9ab004515fc7669d53a1ba3a',verified:true}],actual:{items:79,uses:116,events:25,functions:7},issues:[]});
 const fakeLog=(rows=['ok 1 - '+callback],totals=['# tests 1','# pass 1','# fail 0','# cancelled 0','# skipped 0','# todo 0'])=>[
   'git log -1 --format=%H',checkout,...rows,'1..'+rows.length,...totals,
   '> node scripts/audit.mjs',auditJson,'> node scripts/demo-state.mjs','> node scripts/demo-original-nayuta-functurn.mjs',
