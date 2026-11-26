@@ -41,3 +41,5 @@
 第十批：[R4 B50 公會帳本／跨期磁碟](r0-r4-b50-disk-ledger-evidence.md) 為共用 period/guild/IO 來源層；不硬映射 guildbattle、人工 EVENT codec 或商品取得，83詳細 rows 與正式下界不變。
 
 第十一批：[R4 多 EVENT/hash](r0-r4-multi-event-hash-evidence.md)：七 EVENT 另補 17-key 混合切片 Oracle/差分；其餘十 key 僅 hash/gate，未驗 callback。83 詳細 rows、正式下界不變。
+
+第十二批：[R4 guildbattle END／rebel NOW](r0-r4-guildbattle-rebel-callback-evidence.md)：兩 EVENT 追加單 key callback Oracle/Node 差分，五／八受控案例；IO stub、固定時鐘與明示 draws，非外部磁碟、正式時間或玩家能力。83 詳細 rows、25 EVENT 限定 Oracle 下界及正式下界不變。

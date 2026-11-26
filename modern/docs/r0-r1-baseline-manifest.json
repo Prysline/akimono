@@ -6798,17 +6798,41 @@
       "path": "modern/tests/original-perl/original-r4-guildbattle-end.t",
       "sha": "18e0b663f511d73417d597734483c4c413093681",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（單 EVENT END）",
+      "originalSource": "custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "probe exit/JSON、五 cases、beta 勝出、三依賴各一次、單 log/單 START draw；期限等於切片末仍 active 無 END 或 draw；START=0 無外部啟動不持久。",
+      "executionPath": "Perl .t → original-r4-guildbattle-end-probe.pl → exact DSL END body＋inc-turn END/START",
+      "risk": "公會勝負／領地／END/START gate；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔審閱原版 probe、來源與 Node 執行路徑。單一人工注入 guildbattle、固定 1000000/3600、明示 millionth draws；ReadGuild/ReadGuildData/SetTownData/RequireFile 為 stub、唯一最高公會金額；非實際公會檔案、同額 tie、戰事啟動、全域 hash、正式 CAS/HTTP/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guildbattle-end-probe.pl",
+          "sha": "ed5a2e07a9ee383e2ac730c8bd79a78c41c72ad3"
+        }
+      ],
+      "fixtures": "人工公會快照、固定 clock、明示 draws",
+      "limitations": "單一人工注入 guildbattle、固定 1000000/3600、明示 millionth draws；ReadGuild/ReadGuildData/SetTownData/RequireFile 為 stub、唯一最高公會金額；非實際公會檔案、同額 tie、戰事啟動、全域 hash、正式 CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-mixed-instant-gate.t",
@@ -7067,17 +7091,45 @@
       "path": "modern/tests/original-perl/original-r4-rebel-now.t",
       "sha": "8e1ea651a06a70b153c51bb85ecd2daae17e9247",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（單 EVENT NOW）",
+      "originalSource": "custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/period.cgi",
+      "assertions": "probe exit/JSON、八 cases；鎮壓刪 event/log/零 draw，增援與戰鬥兩 draw，RIOT 3000→1800，新領主2、外敵領主0/tax0/店金1210，rand(100) 恰75與稍高分界 robinb 1300/1900，雙倍時間兩 draw。",
+      "executionPath": "Perl .t → original-r4-rebel-now-probe.pl → exact DSL NOW body＋inc-turn END/START/NOW",
+      "risk": "反亂／軍隊／領主／城鎮資金／稅與 NOW gate；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔審閱原版 probe、來源與 Node 執行路徑。人工 active rebel、固定時鐘/3600 秒、兩店／明示 town/RIOT/ARMY 與 millionth draws；ReadArmy/WriteArmy/GetMoneyString 為 stub，returnCode 為 probe 常值 0 而非獨立擷取；period 僅 marker 檢查、非實際跨期啟動／多 EVENT／軍隊磁碟／正式 CAS/HTTP/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
+          "line": 32
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-now-probe.pl",
+          "sha": "8005e94578bcf1e10c93f49c3a1987bc46e4c252"
+        }
+      ],
+      "fixtures": "人工兩店/城鎮/RIOT/ARMY、固定 clock、明示 draws",
+      "limitations": "人工 active rebel、固定時鐘/3600 秒、兩店／明示 town/RIOT/ARMY 與 millionth draws；ReadArmy/WriteArmy/GetMoneyString 為 stub，returnCode 為 probe 常值 0 而非獨立擷取；period 僅 marker 檢查、非實際跨期啟動／多 EVENT／軍隊磁碟／正式 CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-rebel-period-now.t",
@@ -12366,22 +12418,57 @@
       "path": "modern/tests/r4-source-guildbattle-end.test.mjs",
       "sha": "7e90c466895924de409120770f9288a24ea04bd6",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（單 EVENT END）",
+      "originalSource": "custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "五 cases 比較期限、persist/expired、dominion、排序後 guild records、logs、三依賴呼叫、draw ranges/count、group、noncommittable、輸入不變；兩次獨立 Perl process 比 log/ranges；body drift、最高金額 tie、空 guild、缺 draws、負期限拒絕。",
+      "executionPath": "createStandardStreetModule → reviewR4GuildbattleEnd；execFileSync Perl probe → projectR4GuildbattleEnd",
+      "risk": "公會勝負／領地／END/START gate；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔審閱原版 probe、來源與 Node 執行路徑。單一人工注入 guildbattle、固定 1000000/3600、明示 millionth draws；ReadGuild/ReadGuildData/SetTownData/RequireFile 為 stub、唯一最高公會金額；非實際公會檔案、同額 tie、戰事啟動、全域 hash、正式 CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 78
+        },
+        {
+          "path": "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guildbattle-end-probe.pl",
+          "sha": "ed5a2e07a9ee383e2ac730c8bd79a78c41c72ad3"
+        },
+        {
+          "path": "modern/src/original-r4-guildbattle-end.mjs",
+          "sha": "888231c04e3295975b7fbcde6e5d981a4720b608"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        }
+      ],
+      "fixtures": "人工三公會／兩公會、唯一最高金額、固定 clock、五 cases",
+      "limitations": "單一人工注入 guildbattle、固定 1000000/3600、明示 millionth draws；ReadGuild/ReadGuildData/SetTownData/RequireFile 為 stub、唯一最高公會金額；非實際公會檔案、同額 tie、戰事啟動、全域 hash、正式 CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-period-backup-tail.test.mjs",
@@ -12424,22 +12511,61 @@
       "path": "modern/tests/r4-source-rebel-now.test.mjs",
       "sha": "56827b22d970dc39353f3dc089e4c406e0050cd3",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（單 EVENT NOW）",
+      "originalSource": "custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/period.cgi",
+      "assertions": "實際八 cases（標題 six 非實際數量）；比期限/persist、town/shops/RIOT/ARMY/tax、logs、read/write counts、draw ranges/count、returnCode；noncommittable、輸入不變；兩次獨立 probe 比 town/log/ranges；body drift、過期、draw 耗盡/超量、無效 RIOT 拒絕。",
+      "executionPath": "createStandardStreetModule → reviewR4RebelNow；execFileSync Perl probe → projectR4RebelNow",
+      "risk": "反亂／軍隊／領主／城鎮資金／稅與 NOW gate；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔審閱原版 probe、來源與 Node 執行路徑。人工 active rebel、固定時鐘/3600 秒、兩店／明示 town/RIOT/ARMY 與 millionth draws；ReadArmy/WriteArmy/GetMoneyString 為 stub，returnCode 為 probe 常值 0 而非獨立擷取；period 僅 marker 檢查、非實際跨期啟動／多 EVENT／軍隊磁碟／正式 CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 84
+        },
+        {
+          "path": "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
+          "line": 23
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-now-probe.pl",
+          "sha": "8005e94578bcf1e10c93f49c3a1987bc46e4c252"
+        },
+        {
+          "path": "modern/src/original-r4-rebel-now.mjs",
+          "sha": "7136d883a00b49e43ab6756252b58f2d06f09b8b"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        }
+      ],
+      "fixtures": "人工兩店／城鎮／軍隊與 active rebel、八 cases",
+      "limitations": "人工 active rebel、固定時鐘/3600 秒、兩店／明示 town/RIOT/ARMY 與 millionth draws；ReadArmy/WriteArmy/GetMoneyString 為 stub，returnCode 為 probe 常值 0 而非獨立擷取；period 僅 marker 檢查、非實際跨期啟動／多 EVENT／軍隊磁碟／正式 CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-rebel-period-now.test.mjs",
@@ -37389,7 +37515,9 @@
       "owner": "R4 #22 / #18；外部 #16",
       "evidence": [
         "modern/tests/b53-event-catalog-source.test.mjs",
-        "modern/tests/original-perl/original-b53-event-catalog.t"
+        "modern/tests/original-perl/original-b53-event-catalog.t",
+        "modern/tests/r4-source-rebel-now.test.mjs",
+        "modern/tests/original-perl/original-r4-rebel-now.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -37439,7 +37567,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -37454,12 +37582,26 @@
               "startLine": 21,
               "endLine": 48,
               "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-now.test.mjs",
+              "sha": "56827b22d970dc39353f3dc089e4c406e0050cd3",
+              "startLine": 1,
+              "endLine": 93,
+              "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-rebel-now.t",
+              "sha": "8e1ea651a06a70b153c51bb85ecd2daae17e9247",
+              "startLine": 1,
+              "endLine": 39,
+              "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -37467,6 +37609,13 @@
               "startLine": 21,
               "endLine": 48,
               "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/r4-source-rebel-now.test.mjs",
+              "sha": "56827b22d970dc39353f3dc089e4c406e0050cd3",
+              "startLine": 1,
+              "endLine": 93,
+              "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
             }
           ]
         },
@@ -37494,9 +37643,23 @@
           "startLine": 8,
           "endLine": 32,
           "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        },
+        {
+          "path": "modern/tests/r4-source-rebel-now.test.mjs",
+          "sha": "56827b22d970dc39353f3dc089e4c406e0050cd3",
+          "startLine": 1,
+          "endLine": 93,
+          "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-rebel-now.t",
+          "sha": "8e1ea651a06a70b153c51bb85ecd2daae17e9247",
+          "startLine": 1,
+          "endLine": 39,
+          "scope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家"
         }
       ],
-      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
+      "evidenceScope": "單一人工 active rebel NOW，八案例；town/RIOT/ARMY stub、固定時鐘及 draws，非正式玩家；既有 compiler metadata 保留；正式 HTTP/v2/時間/RNG/CAS 未證明。"
     },
     {
       "kind": "EVENT",
@@ -37519,7 +37682,9 @@
       "owner": "R4 #22 / #18；外部 #16",
       "evidence": [
         "modern/tests/b53-event-catalog-source.test.mjs",
-        "modern/tests/original-perl/original-b53-event-catalog.t"
+        "modern/tests/original-perl/original-b53-event-catalog.t",
+        "modern/tests/r4-source-guildbattle-end.test.mjs",
+        "modern/tests/original-perl/original-r4-guildbattle-end.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -37569,7 +37734,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -37584,12 +37749,26 @@
               "startLine": 21,
               "endLine": 48,
               "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/r4-source-guildbattle-end.test.mjs",
+              "sha": "7e90c466895924de409120770f9288a24ea04bd6",
+              "startLine": 1,
+              "endLine": 99,
+              "scope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-guildbattle-end.t",
+              "sha": "18e0b663f511d73417d597734483c4c413093681",
+              "startLine": 1,
+              "endLine": 31,
+              "scope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -37597,6 +37776,13 @@
               "startLine": 21,
               "endLine": 48,
               "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/r4-source-guildbattle-end.test.mjs",
+              "sha": "7e90c466895924de409120770f9288a24ea04bd6",
+              "startLine": 1,
+              "endLine": 99,
+              "scope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家"
             }
           ]
         },
@@ -37624,9 +37810,23 @@
           "startLine": 8,
           "endLine": 32,
           "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        },
+        {
+          "path": "modern/tests/r4-source-guildbattle-end.test.mjs",
+          "sha": "7e90c466895924de409120770f9288a24ea04bd6",
+          "startLine": 1,
+          "endLine": 99,
+          "scope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-guildbattle-end.t",
+          "sha": "18e0b663f511d73417d597734483c4c413093681",
+          "startLine": 1,
+          "endLine": 31,
+          "scope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家"
         }
       ],
-      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
+      "evidenceScope": "單一人工 active guildbattle END/START，五案例；唯一最高金額、IO stub、固定時間及 draws，非正式玩家；既有 compiler metadata 保留；正式 HTTP/v2/時間/RNG/CAS 未證明。"
     }
   ],
   "counts": {
@@ -37772,14 +37972,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 127,
-      "待補": 74
+      "有效": 131,
+      "待補": 70
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 96,
+    "currentSessionReviewed": 100,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -37838,7 +38038,8 @@
     "modern/docs/r0-natural-sale-functurn-evidence.md",
     "modern/docs/r0-r4-declarative-event-evidence.md",
     "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
-    "modern/docs/r0-r4-multi-event-hash-evidence.md"
+    "modern/docs/r0-r4-multi-event-hash-evidence.md",
+    "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md"
   ],
   "integrationCiHistory": [
     {

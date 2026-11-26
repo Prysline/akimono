@@ -69,3 +69,5 @@
 
 ## R4 B50 隔離 period／guild 磁碟契約覆核
 [第十八批證據](r0-r4-b50-disk-ledger-evidence.md) 對應四份固定基線測試：原版實際 temp disk／受控兩期、guild income reset、stage/live 邊界、備份/關店/log/session 與 DataRead，原版第三 rename 與 Node 第四 rename 注入失敗後 recovery，Node receipt 拒絕 stage/已搬檔變更。此為 noncommittable 隔離 adapter；前置 IO 副作用不受正式 WorldState CAS 保證，不宣稱 v2/跨程序/斷電安全。#18/#16/#22 外部依賴不變。
+
+第二十批：[R4 guildbattle END／rebel NOW](r0-r4-guildbattle-rebel-callback-evidence.md)，四檔有效；累計有效131、歷史32、待補70（163/233，70.0%），收斂後逐檔審閱100、既有待覆核56。兩 EVENT 追加單 key callback Oracle/Node 差分，人工外部狀態與 IO stub；83 詳細 rows、正式下界不變。新候選 CI 待驗；R1-HTTP-01 尚未實跑。
