@@ -144,7 +144,10 @@ for(let count=1;count<=8;count++){
         settlement=q;
       }
     }});
-    await p.use(79,0);await p.use(79,1);
+    // The source starter grant is five vouchers; the beginner book
+    // exchange consumes all five. Obtain the gathering map by real market
+    // purchase rather than attempting a second incompatible exchange.
+    await p.use(79,1);
     // Manufacture rather than wait for a large random wholesale delivery.
     await p.gather(1,10);await p.use(15,0);
     assert.ok(p.stock(30)>=10);

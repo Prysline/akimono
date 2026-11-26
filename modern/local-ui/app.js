@@ -203,12 +203,30 @@ function renderItemInfo(s){
       reason.textContent='（'+(row.reason??'目前不可執行')+'）';
       li.append(reason);
       for(const route of row.materialRoutes??[]){
-        if(route.missing<=0||route.kind!=='source-rank-one-prize')continue;
+        if(route.missing<=0)continue;
         const hint=document.createElement('small');
         hint.className='muted';
-        hint.textContent=route.name+'：跨期排行第一名隨機獎品（'+
-          route.rankOnePrize.choices.length+'/'+route.rankOnePrize.totalChoices+
-          ' 種結果；非保證取得）';
+        const providerName=provider=>{
+          const q=(s.useOffers??[]).find(x=>x.itemId===provider.itemId&&x.useId===provider.useId);
+          return q? q.itemName+'／'+q.useName:'商品 #'+provider.itemId+'／操作 '+provider.useId;
+        };
+        let message;
+        if(route.kind==='source-rank-one-prize'){
+          message='跨期排行第一名隨機獎品（'+route.rankOnePrize.choices.length+'/'+
+            route.rankOnePrize.totalChoices+' 種結果；非保證取得）';
+        }else if(route.kind==='registered-use'&&route.provider){
+          message='可嘗試 '+providerName(route.provider)+'（產量及成功率依原版規則）';
+        }else if(route.kind==='upstream-use-not-ready'){
+          message='製作條件未齊：'+route.providerCandidates.map(q=>
+            providerName(q)+'：'+(q.reason??'請確認可用次數')).join('；');
+        }else if(route.kind==='market-stock'){
+          message='市場有貨；請確認實際報價、資金與行動時間';
+        }else if(route.kind==='source-plus'){
+          message='原版市場補貨週期 '+route.sourcePlus+'；實際到貨依時間與亂數';
+        }else{
+          message='目前未找到可用的單店取得提示';
+        }
+        hint.textContent=route.name+'：'+message;
         li.append(hint);
       }
       if(Number.isSafeInteger(row.missingMaterialId)){
