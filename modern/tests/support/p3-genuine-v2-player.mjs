@@ -16,7 +16,9 @@ const ok=(r,code='COMMITTED')=>{
 };
 export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,onTick=null,onPurchase=null}={}){
   assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
-  const fundingReserve=fundMarketWithWork?45000:0;
+  // Test strategy reserve, not a game parameter. Retain cash for pending
+  // source upkeep as well as the next purchase; it never enters the server.
+  const fundingReserve=()=>fundMarketWithWork?Math.max(45000,Math.ceil(state.shop.costtoday??0)+10000):0;
   let fundingWorks=0;
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
@@ -118,7 +120,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     while(needed>0){
       const offer=state.marketOffers.find(x=>x.itemId===id);
       const plan=planGenuineMarketStep({offer,owned:stock(id),needed,partial,money:state.shop.money,
-        remaining:remaining(),reserve:id===13?0:fundingReserve});
+        remaining:remaining(),reserve:id===13?0:fundingReserve()});
       reasonCounts[plan.kind+':'+(plan.reason??'')]=(reasonCounts[plan.kind+':'+(plan.reason??'')]??0)+1;
       assert.ok(++attempts<=240,'live market budget exhausted '+context(offer,plan));
       if(plan.kind==='buy'){
@@ -132,7 +134,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       if(plan.kind==='time'){
         await enoughTime(plan.seconds);continue;
       }
-      if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(!offer&&state.shop.money<fundingReserve&&stock(13)))){
+      if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(!offer&&state.shop.money<fundingReserve()&&stock(13)))){
         await earnMarketFunds();continue;
       }
       if(plan.kind==='fund'){
@@ -150,7 +152,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     const useId={5:0,6:1,7:2}[id];assert.ok(useId!==undefined);
     for(let n=0;stock(id)<count;n++){
       assert.ok(n<200,'source mining budget #'+id+' target '+count+' actual '+stock(id));
-      if(fundMarketWithWork&&state.shop.money<fundingReserve)await earnMarketFunds();
+      while(fundMarketWithWork&&state.shop.money<fundingReserve())await earnMarketFunds();
       if(!stock(9))await market(9);
       await use(9,useId);
     }

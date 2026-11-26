@@ -9,10 +9,13 @@ test('market player reports actual liquidity, not clock exhaustion, for #66 fail
   assert.equal(planGenuineMarketStep({...base,money:50000,reserve:45000}).kind,'fund');
   assert.equal(planGenuineMarketStep({...base,money:95000,reserve:45000}).kind,'buy');
   assert.equal(planGenuineMarketStep({...base,money:50000,remaining:599}).kind,'time');
-  assert.equal(planGenuineMarketStep({...base,offer:null}).reason,'no-buyable-source-offer');
+  assert.equal(planGenuineMarketStep({...base,offer:null}).reason,'no-source-offer');
+  assert.equal(planGenuineMarketStep({...base,offer:{...offer,canBuy:false,marketStock:0}}).reason,'source-market-empty');
+  assert.equal(planGenuineMarketStep({...base,offer:{...offer,canBuy:false}}).reason,'source-rule-unavailable');
+  assert.throws(()=>planGenuineMarketStep({...base,offer:{...offer,price:null}}),/invalid live source market quote/);
   assert.equal(planGenuineMarketStep({...base,needed:2}).reason,'insufficient-quantity');
   assert.equal(planGenuineMarketStep({...base,needed:2,partial:true,money:50000}).quantity,1);
-  assert.equal(planGenuineMarketStep({...base,owned:20}).reason,'source-stock-or-carrying-limit');
+  assert.equal(planGenuineMarketStep({...base,owned:20,offer:{...offer,canBuy:false}}).reason,'source-carrying-limit');
   assert.equal(planGenuineMarketStep({...base,money:-100000,reserve:45000,offer:{...offer,price:0}}).kind,'buy');
   assert.equal(legalMarketWaitMinutes({crossPeriod:false,boundary:59}),0);
   assert.equal(legalMarketWaitMinutes({crossPeriod:false,boundary:61}),1);

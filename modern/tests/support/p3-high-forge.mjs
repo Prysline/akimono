@@ -16,7 +16,10 @@ export async function highForge(t,book){
   if(crossPeriod){
     // Acquire the fixed-price book and career guide before tying up cash
     // and incurring maintenance on hundreds of units of ore.
-    await p.market(13);await p.market(book);await p.market(78);
+    await p.market(13);
+    const work=await p.use(13,1);
+    assert.equal(work.details.moneyEarned,10000);
+    await p.market(book);await p.market(78);
   }
   // Mining before the legitimate career change supplies raw stock and donor EXP.
   // Use the deeper mines for each scarce ore, not forged EXP or wholesale.
@@ -34,8 +37,8 @@ export async function highForge(t,book){
     for(let n=0;;n++){
       assert.ok(n<24,'source mining EXP after real settlement decay');
       await p.enoughTime(p.quote(78,r.career).timePerUseSeconds);
-      if(p.exp(9)>=200)break;
-      await p.ore(5,p.stock(5)+1);
+      if(p.exp(9)>=200&&p.remaining()>=p.quote(78,r.career).timePerUseSeconds)break;
+      if(p.exp(9)<200)await p.ore(5,p.stock(5)+1);
     }
   }
   const earned=p.exp(9);
@@ -56,9 +59,11 @@ export async function highForge(t,book){
         if(id===8)await p.stones(count,r.products);else await p.ore(id,count);
       }
       await p.enoughTime(p.quote(book,useId).timePerUseSeconds);
-      if(useId===0||p.exp(book)>=r.gates[useId-1])break;
-      assert.ok(crossPeriod,'unexpected EXP loss in non-crossing route');
-      await craft(0);
+      const readyExp=useId===0||p.exp(book)>=r.gates[useId-1];
+      const readyTime=p.remaining()>=p.quote(book,useId).timePerUseSeconds;
+      if(readyExp&&readyTime)break;
+      assert.ok(crossPeriod,'unexpected EXP or quote change in non-crossing route');
+      if(!readyExp)await craft(0);
     }
     if(checkpoint){
       // Save after all legitimate gates and materials are ready, not at the
