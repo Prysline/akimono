@@ -103,9 +103,13 @@ export async function stageB50PeriodDisk({directory,reviews,periods,logContext})
   await writeFile(ready,JSON.stringify(receipt)+'\n',{flag:'wx'});
   return {steps,guild,backup,play,log,world,committable:false,worldStateWritten:false};
 }
-export async function commitB50PeriodDisk({directory,reviewed,recover=false}){
+export async function commitB50PeriodDisk(args){return commitPeriodDisk(args,false)}
+export async function commitR4ExternalCrossPeriodDisk(args){return commitPeriodDisk(args,true)}
+async function commitPeriodDisk({directory,reviewed,recover=false},externalRebel){
+  const expectedFiles=externalRebel?['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','play.cgi']:['guild.cgi','guildbal.cgi','log0.cgi','play.cgi'];
   const root=await rootFor(directory),attempt=path.join(root,'period-attempt'),marker=path.join(root,'commit.cgi'),ready=path.join(root,'period-ready'),stage=await realDir(path.join(root,'stage'));
   if(!(await lstat(attempt)).isFile())fail('period attempt required');
+  if(((await regular(attempt))==='R4 external crossing source attempt\n')!==externalRebel)fail('attempt mode mismatch');
   const markerStat=await exists(marker);
   if(typeof recover!=='boolean'||Boolean(markerStat)!==recover)fail('explicit recovery mode must match marker');
   if(!await exists(ready))fail('incomplete stage: no ready receipt');

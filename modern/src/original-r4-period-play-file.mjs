@@ -44,17 +44,18 @@ function wireArray(a,k,n){
   return a.map(v=>integer(v,k)).join(',');
 }
 const normalEvents=new Set(['boom-posyon','ken-sale','tate-sale','yoroi-sale','tue-sale','plusdown-yakusou','plusup-tetu','plusup-misuriru','plusup-oriharukon','happy']);
-function eventWire(events){
-  if(!plain(events)||Object.keys(events).length>normalEvents.size)fail('known EVENT map required');
+const allowedEvent=(code,externalRebel)=>normalEvents.has(code)||(externalRebel&&code==='rebel');
+function eventWire(events,externalRebel){
+  if(!plain(events)||Object.keys(events).length>normalEvents.size+(externalRebel?1:0))fail('known EVENT map required');
   return Object.entries(events).flatMap(([code,until])=>{
-    if(!normalEvents.has(code))fail('unreviewed EVENT '+code);
+    if(!allowedEvent(code,externalRebel))fail('unreviewed EVENT '+code);
     return [code,String(integer(until,'EVENT expiry',1))];
   }).join(',');
 }
-function readEvents(line){
+function readEvents(line,externalRebel){
   if(line==='')return {};
   const a=line.split(','),out={};if(a.length%2)fail('invalid EVENT pairs');
-  for(let i=0;i<a.length;i+=2){if(!normalEvents.has(a[i])||Object.hasOwn(out,a[i]))fail('duplicate or unknown EVENT');out[a[i]]=integer(a[i+1],'EVENT expiry',1);}
+  for(let i=0;i<a.length;i+=2){if(!allowedEvent(a[i],externalRebel)||Object.hasOwn(out,a[i]))fail('duplicate or unknown EVENT');out[a[i]]=integer(a[i+1],'EVENT expiry',1);}
   return out;
 }
 function sparseWire(world){
@@ -62,13 +63,13 @@ function sparseWire(world){
   if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||p.stock.some((v,i)=>v!==world.wholesale[i]))fail('sparse wholesale numeric view mismatch');
   return p.originalCsv;
 }
-export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false}={}){
-  if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||ordinaryMultiShelf&&!crossPeriod)fail('explicit cross-period wire opt-in');
+export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,externalRebel=false}={}){
+  if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||ordinaryMultiShelf&&!crossPeriod||typeof externalRebel!=='boolean'||externalRebel&&!crossPeriod)fail('explicit cross-period wire opt-in');
   // DataWrite joins the actual arrays; DataRead splits both full arrays.
   // This only extends ordinary disk encoding, not the single-shelf time gate.
   if(ordinaryMultiShelf&&(!sources.writeSource.includes('join(",",@{$DT->{showcase}})')||!sources.writeSource.includes('join(",",@{$DT->{price}})')||!sources.incFuncSource.includes('@DT{qw(showcase price)}=map{[split(/,/,$_)]}@list[0,1];')))fail('source showcase wire drift');
   const data=reviewR4DataWriteFiles(sources);
-  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf});reviews.add(r);return r;
+  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,...(externalRebel?{externalRebel:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
 export function serializePeriodPlay({reviewed,townReview,world}){
@@ -76,7 +77,7 @@ export function serializePeriodPlay({reviewed,townReview,world}){
   if(!plain(world)||!plain(world.events)||(!reviewed.crossPeriod&&Object.keys(world.events).length!==0)||!Array.isArray(world.shops)||world.shops.length>1)fail('explicit empty EVENT and zero/one active shop required');
   const lines=[String(integer(world.lasttime,'lasttime',1)),
     [integer(world.people,'people'),integer(world.nextid,'nextid',1),safeText(world.blockip,'blockip'),integer(world.taxRate,'taxRate'),reviewed.stateFields.map(k=>integer(world.state?.[k],k)).join(':')].join(','),
-    reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
+    reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events,reviewed.externalRebel===true):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
   if(world.shops.length){
     const s=world.shops[0];
     const shelves=integer(s.showcasecount,'showcasecount',1);
@@ -100,7 +101,7 @@ export function parsePeriodPlay({reviewed,townReview,bytes}){
   if(![6,8].includes(rows.length)||(!reviewed.crossPeriod&&rows[3]!=='')||rows[5]!=='//')fail('unreviewed play layout or EVENT');
   const h=rows[1].split(',');if(h.length!==5)fail('world header');
   const values=h[4].split(':');if(values.length!==11)fail('state fields');
-  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:integer(h[3],'taxRate'),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3]):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
+  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:integer(h[3],'taxRate'),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3],reviewed.externalRebel===true):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
   if(rows.length===8){
     const cols=rows[6].split(',');if(cols.length!==32)fail('shop fields');
     const s=Object.fromEntries(reviewed.shopFields.map((k,i)=>[k,textFields.has(k)||reviewed.crossPeriod&&k==='job'||k==='rankingyesterday'&&cols[i]===''?cols[i]:k==='costtoday'?Number(decimal(cols[i],reviewed.crossPeriod)):integer(cols[i],k,k==='profitstock'?-Number.MAX_SAFE_INTEGER:0)]));
