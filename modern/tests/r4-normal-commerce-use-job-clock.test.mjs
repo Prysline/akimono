@@ -128,7 +128,21 @@ test('R4 controlled gathering fallback shares quote, exact time gate, USE effect
   const seeded=structuredClone(repo.read());
   seeded.shops[0].item[8]=1;seeded.shops[0].job='material';seeded.shops[0].exp={'9':500};
   seeded.shops[0].time=seeded.nowSeconds-1500;
-  const cmd={shopId:1,itemId:9,useId:1,requestedCount:1,randomDraws:[0,0,0,999999]};
+  const cmd={shopId:1,itemId:9,useId:1,requestedCount:1,randomDraws:[0,0,0,0,0,0,999999]};
+  // Original MakeAmount uses one Bernoulli draw per unit below 20,
+  // and exactly two draws for the Gaussian-like branch at 20 or more.
+  const sourceProbe=JSON.parse(execFileSync('perl',['-e',[
+    'use JSON::PP;no warnings;our($i,@t);',
+    'BEGIN{*CORE::GLOBAL::rand=sub{die "draw exhausted" if $i>=@t;return $t[$i++]*($_[0]//1);};}',
+    'local $/;my $in=decode_json(<STDIN>);@t=map{$_/1000000}@{$in->{draws}};$i=0;',
+    'eval $in->{make};die $@ if $@;',
+    'my @out=map { [$_->[0],MakeAmount($_->[1],$_->[2])] } @{$in->{creates}};',
+    'my $lost=rand(1000)<10;print encode_json({outputs=>\\@out,draws=>$i,lost=>$lost?1:0});',
+  ].join('\n')],{encoding:'utf8',input:JSON.stringify({
+    make:subSource(input.originalUseSource,'MakeAmount'),draws:cmd.randomDraws,
+    creates:[[5,3,800],[6,20,600],[7,1,800]],
+  })}));
+  assert.deepEqual(sourceProbe,{outputs:[[5,3],[6,12],[7,1]],draws:7,lost:0});
   const denied=structuredClone(seeded);denied.shops[0].time++;
   const short=createSourceReviewedMemoryWorldAdapter({initialWorld:denied,streetModule:street});
   assert.equal(street.listUseOffers(short.read()).find(x=>x.itemId===9&&x.useId===1).canUse,false);
@@ -141,12 +155,12 @@ test('R4 controlled gathering fallback shares quote, exact time gate, USE effect
   const result=run(enough,'use-item',cmd);
   assert.equal(result.ok,true,JSON.stringify(result.details));
   assert.equal(result.code,'COMMITTED');assert.equal(result.details.timeSpentSeconds,1500);
-  assert.equal(result.details.effectiveCount,1);assert.equal(result.details.randomDrawsUsed,4);
+  assert.equal(result.details.effectiveCount,1);assert.equal(result.details.randomDrawsUsed,7);
   const after=enough.read();
   assert.equal(after.revision,before.revision+1);assert.equal(after.nowSeconds,before.nowSeconds);
   assert.equal(after.shops[0].time,after.nowSeconds);assert.equal(after.shops[0].exp['9'],520);
   assert.equal(after.shops[0].item[8],1);
-  for(const [id,n] of [[5,3],[6,20],[7,1]])assert.equal(after.shops[0].item[id-1],before.shops[0].item[id-1]+n);
+  for(const [id,n] of sourceProbe.outputs)assert.equal(after.shops[0].item[id-1],before.shops[0].item[id-1]+n);
   assert.equal(after.shops[0].money,before.shops[0].money);
   const stale=executeMemoryCommand({repository:enough,streetModule:street,command:{kind:'use-item',expectedRevision:before.revision,...cmd}});
   assert.equal(stale.code,'REVISION_CONFLICT');assert.deepEqual(enough.read(),after);

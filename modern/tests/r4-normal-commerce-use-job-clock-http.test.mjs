@@ -33,7 +33,7 @@ test('R4 controlled HTTP material fallback survives real period and two v2 repla
     const seconds=verifyQuote(),before=p.state.world,shop=before.shops[0];
     assert.equal(p.quote(9,1).canUse,true);
     const history=p.state.historyCommands;
-    await p.deny(9,1,{randomDraws:[0,0,0,999999]});
+    await p.deny(9,1,{randomDraws:[0,0,0,0,0,0,999999]});
     await p.deny(9,1,{expectedRevision:before.revision-1});
     assert.equal(p.state.historyCommands,history);
     const result=await p.use(9,1);
@@ -44,7 +44,7 @@ test('R4 controlled HTTP material fallback survives real period and two v2 repla
     assert.equal(p.exp(9),Math.min(1000,(shop.exp['9']??0)+20));
     assert.equal(p.stock(9),shop.item[8]-(result.details.mapDestroyed?1:0));
     assert.equal(p.state.shop.money,shop.money);
-    assert.equal(result.details.randomDrawsUsed,4);
+    assert.equal(result.details.randomDrawsUsed,7);
     verifyQuote();
   }
   await mine();
