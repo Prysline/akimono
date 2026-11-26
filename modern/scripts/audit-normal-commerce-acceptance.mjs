@@ -16,6 +16,9 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  rawRoutes:'R4 genuine all mining and mountain maps, sword-market doubled and lostbook, paid work and eight raw material sales',
+  basicSales:'R4 genuine six basic equipment and six source book/tool natural sales with dual v2 reload',
+  individualPrizes:'R4 genuine source rank prizes, individual celebration USEs and sales, ten-voucher advanced books and voucher sale',
   advancedDismantling:'R4 genuine #39/3-11 advanced dismantling, all sixteen manufactured components, robot recovery, natural sales and v2 reload',
   naturalInstant:'R4 genuine five instant natural EVENT effects, repeated shelves, lottery payment and v2 replay',
   mortality:'R4 genuine full commerce cow mortality, persisted NEED denial, lawful replacement and fermentation',
@@ -47,6 +50,9 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.rawRoutes],acquire:[1,2,3,4,5,6,7,8,9,12,13,14],showcase:[1,2,3,4,5,6,7,8],sale:[1,2,3,4,5,6,7,8],uses:['9:0','9:1','9:2','12:0','12:1','12:2','12:3','13:1','14:0','79:0']},
+  {tests:[title.basicSales],acquire:[15,16,17,40,45,46,51,52,57,62,66,78],showcase:[15,16,17,40,45,46,51,52,57,62,66,78],sale:[15,16,17,40,45,46,51,52,57,62,66,78]},
+  {tests:[title.individualPrizes],acquire:[20,21,22,23,27,28,29,79],showcase:[27,28,29,79],sale:[27,28,29,79],uses:['27:0','28:0','29:0','79:2']},
   {tests:[title.advancedDismantling],acquire:[38,39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61,64,65],showcase:[39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61],sale:[39,41,42,43,44,47,48,49,50,53,54,55,56,58,59,60,61],uses:['37:3',...Array.from({length:9},(_,i)=>'39:'+(i+3))]},
   {tests:[title.naturalInstant],acquire:[11],events:['manbiki','goutou','getmoney','getpop','loto']},
   {tests:[title.mortality],uses:['25:1','26:1','79:4']},
