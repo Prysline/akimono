@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 135、歷史 32、待補 66。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 104 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 140、歷史 32、待補 61。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 109 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -86,9 +86,9 @@
 | original-perl/original-r4-dynamic-population-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-event-hash-order.t | 有效 | Perl Oracle（hash 觀測） |
 | original-perl/original-r4-event-item-param.t | 有效 | Perl Oracle（原版 PARAM compiler） |
-| original-perl/original-r4-guild-file-edge.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-guild-files.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-guild-period-fee.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-guild-file-edge.t | 有效 | Perl Oracle（公會檔案邊界） |
+| original-perl/original-r4-guild-files.t | 有效 | Perl Oracle（隔離公會磁碟） |
+| original-perl/original-r4-guild-period-fee.t | 有效 | Perl Oracle（單店會費呼叫） |
 | original-perl/original-r4-guildbattle-end.t | 有效 | Perl Oracle（單 EVENT END） |
 | original-perl/original-r4-mixed-instant-gate.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-mixed-support-gate.t | 待補 | 未完成語義審閱 |
@@ -214,8 +214,8 @@
 | r4-source-close-shop-effects.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-data-write-files.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-dragon-balance.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-guild-files.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-guild-period-fee.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-guild-files.test.mjs | 有效 | Perl Oracle／Node 差分（隔離公會磁碟） |
+| r4-source-guild-period-fee.test.mjs | 有效 | Perl Oracle／Node 差分（單店會費呼叫） |
 | r4-source-guildbattle-end.test.mjs | 有效 | Perl Oracle／Node 差分（單 EVENT END） |
 | r4-source-period-backup-tail.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-period-shop-expiry.test.mjs | 待補 | 未完成語義審閱 |

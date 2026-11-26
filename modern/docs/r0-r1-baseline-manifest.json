@@ -6750,49 +6750,145 @@
       "path": "modern/tests/original-perl/original-r4-guild-file-edge.t",
       "sha": "f2a3496bd7037698f1a6f875c760fa0020b1ac4b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（公會檔案邊界）",
+      "originalSource": "modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/period.cgi",
+      "assertions": "missing ledger 空、malformed money12/in undef、invalid dealrate nope仍生成；負 treasury 刪 config、移除 transient guild、in/out歸零，舊 loaded definition仍在、重讀後消失；mtime相等/較新/較舊為0/1/0。",
+      "executionPath": "Perl .t → original-r4-guild-file-edge-probe.pl → actual guild/config + period reset + inc-turn mtime",
+      "risk": "公會定義／舊 keys／stage/live recovery／mtime／來源寬鬆解析；非正式玩家",
+      "disposition": "保留；不得升格正式公會／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。原版隔離磁碟與直接 eval period reset/mtime 片段；missing/malformed/invalid rate/負庫款與舊 definition 為來源觀測，不代表正式 runtime 漏洞。Node 僅對實際測試的 malformed/rate/missing 等拒絕與 mtime 差分，不宣告全部原版行為等價；非完整 period/正式 v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guild-files-fee-evidence.md",
+          "line": 23
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-file-edge-probe.pl",
+          "sha": "1a8190b45600ebf4729127b8066ab76c18b4f372"
+        }
+      ],
+      "fixtures": "實際 temp disk、缺檔、malformed row、invalid config、alpha money=-1、mtime100/101/99",
+      "limitations": "原版隔離磁碟與直接 eval period reset/mtime 片段；missing/malformed/invalid rate/負庫款與舊 definition 為來源觀測，不代表正式 runtime 漏洞。Node 僅對實際測試的 malformed/rate/missing 等拒絕與 mtime 差分，不宣告全部原版行為等價；非完整 period/正式 v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-guild-files.t",
       "sha": "10f2958a01ea1f97dc047917555e482a7a26c059",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離公會磁碟）",
+      "originalSource": "modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/write.cgi",
+      "assertions": "pipe close 成功及 JSON decode；old keys alpha/old、generated alpha/beta、HTML escape、alpha money1080/in127/out48、清除被移除 guild及_so_e、兩 log、部分 rename 待一檔、recover。",
+      "executionPath": "Perl .t → original-r4-guild-files-probe.pl → pinned guild/guildsub、ReadConfig/GetString、DataCommitOrAbort",
+      "risk": "公會定義／舊 keys／stage/live recovery／mtime／來源寬鬆解析；非正式玩家",
+      "disposition": "保留；不得升格正式公會／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。隔離 temp 目錄、人工 config/ledger/shop、原版 GetPath/OpenAndCheck/RenameAndCheck/l/PushLog wrapper；實際 stage/live rename、原版注入第2 rename失敗、Node 以目標目錄阻擋第2 rename，恢復非 rollback；只比語義、非原版 hash/rename順序、正式 v2/全域原子/CAS/跨程序。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guild-files-fee-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-files-probe.pl",
+          "sha": "9830328ca2ab1b645f4eee2d30cc14ba34ce868f"
+        }
+      ],
+      "fixtures": "人工公會設定、帳本、兩店、實際隔離 stage/live",
+      "limitations": "隔離 temp 目錄、人工 config/ledger/shop、原版 GetPath/OpenAndCheck/RenameAndCheck/l/PushLog wrapper；實際 stage/live rename、原版注入第2 rename失敗、Node 以目標目錄阻擋第2 rename，恢復非 rollback；只比語義、非原版 hash/rename順序、正式 v2/全域原子/CAS/跨程序。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-guild-period-fee.t",
       "sha": "3607ffc42154a1e7145d4240032381737163ffce",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（單店會費呼叫）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "probe exit/JSON、七 cases；無 guild 零 call、零費仍 call、atk960/def450、800k sales 50‰=40000且def482、fraction fee456、def1000 cap、atk1→0、shop money=-39990。",
+      "executionPath": "Perl .t → original-r4-guild-period-fee-probe.pl → eval exact per-shop dues block",
+      "risk": "會費、攻防與店金帳本；非持久化",
+      "disposition": "保留；不得升格正式公會／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。七單店人工 money/saleyesterday/feeRate/atk/def；原版 eval period dues block，EditGuildMoney 只記呼叫；非實際帳本寫入或整期多成員重複衰減；負店金為來源片段，不代表正式玩家可負債；noncommittable，非 HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guild-files-fee-evidence.md",
+          "line": 41
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-period-fee-probe.pl",
+          "sha": "885114d1920b8c1adda4328158d6e82e6e03f034"
+        }
+      ],
+      "fixtures": "人工單店與 guild 狀態，EditGuildMoney call stub",
+      "limitations": "七單店人工 money/saleyesterday/feeRate/atk/def；原版 eval period dues block，EditGuildMoney 只記呼叫；非實際帳本寫入或整期多成員重複衰減；負店金為來源片段，不代表正式玩家可負債；noncommittable，非 HTTP/CAS/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-guildbattle-end.t",
@@ -12429,38 +12525,117 @@
       "path": "modern/tests/r4-source-guild-files.test.mjs",
       "sha": "92311b606d11e0104e1ea9e303a45b8bf65e2274",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（隔離公會磁碟）",
+      "originalSource": "modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/period.cgi",
+      "assertions": "七 subtests：新增 beta/移除 old、ReadConfig escaping、舊 ledger keys、語義 stage/live、membership/user field/log；第2 rename失敗留 marker/一檔並 recover；無 marker abort、壞 config/缺 ledger、incomplete stage 拒絕；穩定 membership 第二輪 reload；原版 malformed/負庫款/invalid rate 與 Node 拒絕；三 mtime 邊界及缺 generated file。",
+      "executionPath": "reviewGuildFiles SHA pins → stageGuildFiles/commitGuildFiles/guildRebuildNeeded；execFileSync guild-files/edge probes",
+      "risk": "公會定義／舊 keys／stage/live recovery／mtime／來源寬鬆解析；非正式玩家",
+      "disposition": "保留；不得升格正式公會／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。隔離 temp 目錄、人工 config/ledger/shop、原版 GetPath/OpenAndCheck/RenameAndCheck/l/PushLog wrapper；實際 stage/live rename、原版注入第2 rename失敗、Node 以目標目錄阻擋第2 rename，恢復非 rollback；只比語義、非原版 hash/rename順序、正式 v2/全域原子/CAS/跨程序。 原版隔離磁碟與直接 eval period reset/mtime 片段；missing/malformed/invalid rate/負庫款與舊 definition 為來源觀測，不代表正式 runtime 漏洞。Node 僅對實際測試的 malformed/rate/missing 等拒絕與 mtime 差分，不宣告全部原版行為等價；非完整 period/正式 v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-guild-files-fee-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-files-probe.pl",
+          "sha": "9830328ca2ab1b645f4eee2d30cc14ba34ce868f"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-file-edge-probe.pl",
+          "sha": "1a8190b45600ebf4729127b8066ab76c18b4f372"
+        },
+        {
+          "path": "modern/src/original-r4-guild-files.mjs",
+          "sha": "0a3db9a0d8056986674ea5424d0e5ab72777d239"
+        },
+        {
+          "path": "modern/src/original-r4-guild-ledger-file.mjs",
+          "sha": "218a4dacefdeed7096f200a8fed01d07d37f031c"
+        }
+      ],
+      "fixtures": "alpha/old/beta 人工 configs、兩 shops、+120/-40/0 edits、stable 第二輪 -20/+1；實際 temp disk",
+      "limitations": "隔離 temp 目錄、人工 config/ledger/shop、原版 GetPath/OpenAndCheck/RenameAndCheck/l/PushLog wrapper；實際 stage/live rename、原版注入第2 rename失敗、Node 以目標目錄阻擋第2 rename，恢復非 rollback；只比語義、非原版 hash/rename順序、正式 v2/全域原子/CAS/跨程序。 原版隔離磁碟與直接 eval period reset/mtime 片段；missing/malformed/invalid rate/負庫款與舊 definition 為來源觀測，不代表正式 runtime 漏洞。Node 僅對實際測試的 malformed/rate/missing 等拒絕與 mtime 差分，不宣告全部原版行為等價；非完整 period/正式 v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-guild-period-fee.test.mjs",
       "sha": "31251ca9ae24e8c44bbeb22d0ac0ffc370a8e977",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（單店會費呼叫）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "七 cases 比 shop/guild/具體 EditGuildMoney call，noncommittable、輸入不變；fee456 截斷、def1000上限、負店金；兩次獨立 Perl process；source drift、null/不符 membership、rate1001、NaN、無公會卻附 guild 拒絕。",
+      "executionPath": "reviewR4GuildFee；execFileSync original-r4-guild-period-fee-probe.pl → projectR4GuildFee",
+      "risk": "會費、攻防與店金帳本；非持久化",
+      "disposition": "保留；不得升格正式公會／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。七單店人工 money/saleyesterday/feeRate/atk/def；原版 eval period dues block，EditGuildMoney 只記呼叫；非實際帳本寫入或整期多成員重複衰減；負店金為來源片段，不代表正式玩家可負債；noncommittable，非 HTTP/CAS/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 111
+        },
+        {
+          "path": "modern/docs/r0-r4-guild-files-fee-evidence.md",
+          "line": 32
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-guild-period-fee-probe.pl",
+          "sha": "885114d1920b8c1adda4328158d6e82e6e03f034"
+        },
+        {
+          "path": "modern/src/original-r4-guild-period-fee.mjs",
+          "sha": "bc53f9a9f788e2d497837c70e37cef7dfd1d8e05"
+        }
+      ],
+      "fixtures": "人工單店/公會、七 case，含零費與負錢",
+      "limitations": "七單店人工 money/saleyesterday/feeRate/atk/def；原版 eval period dues block，EditGuildMoney 只記呼叫；非實際帳本寫入或整期多成員重複衰減；負店金為來源片段，不代表正式玩家可負債；noncommittable，非 HTTP/CAS/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-guildbattle-end.test.mjs",
@@ -38192,14 +38367,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 135,
-      "待補": 66
+      "有效": 140,
+      "待補": 61
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 104,
+    "currentSessionReviewed": 109,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -38260,7 +38435,8 @@
     "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
     "modern/docs/r0-r4-multi-event-hash-evidence.md",
     "modern/docs/r0-r4-guildbattle-rebel-callback-evidence.md",
-    "modern/docs/r0-r4-rebel-period-now-evidence.md"
+    "modern/docs/r0-r4-rebel-period-now-evidence.md",
+    "modern/docs/r0-r4-guild-files-fee-evidence.md"
   ],
   "integrationCiHistory": [
     {
