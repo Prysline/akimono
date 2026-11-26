@@ -6,7 +6,7 @@ let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
-let lastPricingItemId=null;
+let lastPricingItemId=null,lastDiscardItemId=null;
 let palaceSubmitting=false,armySubmitting=false,sweepSubmitting=false;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
@@ -169,8 +169,17 @@ function renderItemInfo(s){
     shop.item[item.itemId-1]>0&&
     !item.flagRaw.split('|').includes('notrash'));
   $('discard-form').hidden=!shop||!item;
-  $('discard-count').max=String(shop&&item?
-    shop.item[item.itemId-1]:0);
+  const discardQuote=(s.discardOffers??[]).find(o=>o.itemId===item?.itemId);
+  $('discard-choice-label').hidden=!s.reviewedDiscard;
+  const discardOptions=$('discard-options'),discardCount=$('discard-count'),oldChoice=discardOptions.value;
+  discardOptions.replaceChildren();
+  for(const [count,label] of [[0,'請選擇'],...(discardQuote?.options??[]).map(o=>[o.count,o.label])]){
+    const option=document.createElement('option');option.value=String(count);option.textContent=label;discardOptions.append(option);
+  }
+  if(lastDiscardItemId!==item?.itemId){discardCount.value=s.reviewedDiscard?'':'1';lastDiscardItemId=item?.itemId;}
+  else if([...discardOptions.options].some(o=>o.value===oldChoice))discardOptions.value=oldChoice;
+  if(s.reviewedDiscard)discardCount.removeAttribute('max');
+  else discardCount.max=String(shop&&item?shop.item[item.itemId-1]:0);
   $('discard-submit').disabled=!canDiscard;
   text('discard-note',!canDiscard?
     '此商品不可丟棄或沒有持有數量。':
@@ -402,7 +411,7 @@ function renderSweep(s){
   $('sweep-form').hidden=!q?.canSweep;
   $('sweep-submit').disabled=sweepSubmitting||!q?.canSweep;
   text('sweep-status',!q?'請先開店，並啟用正常經營模式。':q.garbage<10000?'目前店裡沒有明顯的垃圾。':
-    '目前有相當於 '+number(q.garbageKg)+' kg 的垃圾。全部清理約需 '+conciseTimeText(q.estimatedSeconds)+'。'+(q.availableHours<1?' 行動時間不足。':''));
+    '目前有相當於 '+number(q.garbageKg)+' kg 的垃圾。全部清理約需 '+(q.estimatedHours<24?number(q.estimatedHours)+' 小時':number(Math.trunc(q.estimatedHours/24))+' 日')+'。'+(q.availableHours<1?' 行動時間不足。':''));
   const options=$('sweep-options'),selected=options.value;options.replaceChildren();
   for(const [hours,label] of [[0,'請選擇'],...(q?.options??[]).map(o=>[o.hours,o.label])]){
     const option=document.createElement('option');option.value=String(hours);option.textContent=label;options.append(option);
@@ -827,18 +836,20 @@ $('shelf-price-custom').addEventListener('input',syncShelfCalculatedPrice);
 $('discard-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const itemId=selectedItemId;
-  const count=Number($('discard-count').value);
+  const count=Number($('discard-count').value||(snapshot?.reviewedDiscard?$('discard-options').value:0));
   const item=catalogItem(snapshot,itemId),shop=snapshot?.shop;
-  if(!item||!shop||!Number.isSafeInteger(count)||count<1||
-    count>shop.item[itemId-1]||item.flagRaw.split('|').includes('notrash')){
+  if(!item||!shop||!Number.isSafeInteger(count)||count<1||shop.item[itemId-1]<1||
+    (!snapshot.reviewedDiscard&&count>shop.item[itemId-1])||item.flagRaw.split('|').includes('notrash')){
     feedback('丟棄數量不正確或此商品不可丟棄。',null,true);
     return;
   }
-  if(!confirm('確定丟棄 '+item.name+' × '+number(count)+
+  if(!confirm('確定丟棄 '+item.name+' × '+number(Math.min(count,shop.item[itemId-1]))+
     '？丟棄後無法復原，且不消耗行動時間。'))return;
   await call('/api/discard',{
     expectedRevision:snapshot.world.revision,itemId,count,
-  },'丟棄商品：'+item.name);
+  },'丟棄商品：'+item.name,data=>{
+    if(snapshot?.reviewedDiscard){feedback(data.details.originalMessage,data.details);$('discard-count').value='';$('discard-options').value='0';}
+  });
 });
 $('showcase-form').addEventListener('submit',async event=>{
   event.preventDefault();

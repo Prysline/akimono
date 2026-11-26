@@ -4,7 +4,7 @@ import {independentCandidateWorld} from './original-r4-independent-world-disk.mj
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
 import {reviewOriginalSweep,describeOriginalSweep,projectOriginalSweep} from './original-r4-sweep.mjs';
-import {reviewOriginalDiscard,projectOriginalDiscard} from './original-r4-discard.mjs';
+import {reviewOriginalDiscard,listOriginalDiscardOffers,projectOriginalDiscard} from './original-r4-discard.mjs';
 import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 /**
@@ -704,7 +704,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     sourceMaxShowcasePrice:model.maxMoney,
     catalog,
     reviewedGiftMapUse:giftMap,
-    ...(reviewedDiscard?{reviewedDiscard:true}:{}),
+    ...(reviewedDiscard?{reviewedDiscard:true,listDiscardOffers:world=>listOriginalDiscardOffers({reviewed:reviewedDiscard,world})}:{}),
     ...(reviewedSweep?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:reviewedSweep,world})}:{}),
     reviewedBootstrap,
     reviewedSparsePlus,

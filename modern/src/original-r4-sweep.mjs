@@ -39,7 +39,7 @@ export function describeOriginalSweep({reviewed,world}){
    options.push({hours:n,label:labels.get(n)});prior=n;
  }
  const cleanPercent=Math.min(100,Math.trunc(garbage/50000));
- return {garbage,garbageKg:Math.trunc(garbage/10000),estimatedSeconds:garbage>=10000?estimatedSeconds:0,availableHours:Math.max(0,availableHours),canSweep,options,stockBlocked:garbage>5000000,cleanPercent,
+ return {garbage,garbageKg:Math.trunc(garbage/10000),estimatedSeconds:garbage>=10000?estimatedSeconds:0,estimatedHours:garbage>=10000?cleanHours:0,availableHours:Math.max(0,availableHours),canSweep,options,stockBlocked:garbage>5000000,cleanPercent,
    cleanLabel:cleanPercent>=80?'垃圾屋':cleanPercent>=60?'髒亂':cleanPercent>=40?'普通':cleanPercent>=20?'乾淨':'漂亮'};
 }
 export function projectOriginalSweep({reviewed,world,command}){

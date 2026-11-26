@@ -328,3 +328,14 @@ test('full commerce USE result shows original message branch and zero-retained o
   assert.equal(run({...base,originalAddItem:[[16,2]],originalFunctionReturn:'回呼',originalAddMsg:['取得訊息',null],originalUseMsg:['消耗訊息']})['use-result-message'],'回呼；取得訊息；寫作完成；消耗訊息');
   assert.equal(run({originalResultOk:'舊 receipt',originalAddItem:[]})['use-result-message'],'舊 receipt');
 });
+
+
+test('source discard and sweep use server quotes, original controls and strict revision contracts',()=>{
+  assert.match(html,/data-tab="sweep"/);
+  for(const id of ['discard-options','sweep-form','sweep-options','sweep-hours','sweep-report','stock-trash-warning','stock-list-content','shop-info-clean'])assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(script,/discardQuote=\(s\.discardOffers\?\?\[\]\)/);
+  assert.match(script,/if\(s\.reviewedDiscard\)discardCount\.removeAttribute\('max'\)/);
+  assert.match(script,/\$\('stock-list-content'\)\.hidden=Boolean\(q\?\.stockBlocked\)/);
+  assert.match(script,/call\('\/api\/sweep',\{expectedRevision:before\.world\.revision,requestedHours\}/);
+  assert.match(adapter,/exactKeys\(body,'expectedRevision,requestedHours'\)/);
+});

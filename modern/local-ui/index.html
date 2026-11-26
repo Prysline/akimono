@@ -235,8 +235,9 @@
       <div class="discard-section">
         <h3 class="sub-title">丟棄商品</h3>
         <form id="discard-form" class="inline-form">
-          <label>丟棄數量
-            <input type="number" id="discard-count" min="1" step="1" value="1" required>
+          <label id="discard-choice-label" hidden>丟棄數量 <select id="discard-options"><option value="0">請選擇</option></select></label>
+          <label>數量
+            <input type="number" id="discard-count" min="1" step="1" value="1">
           </label>
           <button type="submit" id="discard-submit" class="secondary">丟棄</button>
         </form>

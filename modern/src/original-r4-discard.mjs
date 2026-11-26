@@ -21,6 +21,21 @@ export function reviewOriginalDiscard(sources){
   });
   const reviewed=Object.freeze({items:Object.freeze(items)});reviews.add(reviewed);return reviewed;
 }
+export function listOriginalDiscardOffers({reviewed,world}){
+  if(!reviews.has(reviewed))fail('source review required');
+  const shop=world?.shops?.length===1?world.shops[0]:null;
+  if(shop?.status!==1||shop.id!==1)return [];
+  return reviewed.items.filter(item=>safe(shop.item?.[item.id-1])&&shop.item[item.id-1]>0&&!item.flag.includes('t')).map(item=>{
+    const owned=shop.item[item.id-1],human=item.flag.includes('h'),options=[];
+    let prior=0;
+    for(const n of [1,10,100,1000,10000,owned].sort((a,b)=>a-b)){
+      if(n>owned||n===prior)break;
+      options.push({count:n,label:n===owned?n+(human?'（全員）':'（全部）'):String(n)});
+      prior=n;
+    }
+    return {itemId:item.id,owned,human,options};
+  });
+}
 export function projectOriginalDiscard({reviewed,world,command}){
   if(!reviews.has(reviewed)||command.kind!=='discard-item'||command.shopId!==1||world.shops?.length!==1||
      !Number.isSafeInteger(command.itemId)||command.itemId<1||command.itemId>79||!safe(command.count)||!command.count||

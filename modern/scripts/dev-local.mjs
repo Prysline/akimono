@@ -200,6 +200,8 @@ function state(){
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
     army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
     sweep:world&&streetModule.reviewedSweep?streetModule.describeSweep(world):null,
+    reviewedDiscard:streetModule.reviewedDiscard===true,
+    discardOffers:world&&streetModule.reviewedDiscard?streetModule.listDiscardOffers(world):[],
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
