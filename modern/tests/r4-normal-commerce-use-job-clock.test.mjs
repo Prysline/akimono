@@ -92,3 +92,51 @@ test('R4 full commerce USE job fallback matches frozen compiler emission and Che
     assert.equal(offer?.timePerUseSeconds,base,id+':'+no+':'+job+' quote');
   }
 });
+
+import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,executeMemoryCommand} from '../src/game-core-contract.mjs';
+import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed} from '../src/original-period-world-seed.mjs';
+
+// Explicit controlled inventory/job/EXP fixture. Real StreetModule and
+// GameCore USE + source-reviewed memory CAS; not player/HTTP/disk evidence.
+test('R4 controlled gathering fallback shares quote, exact time gate, USE effects and CAS',async()=>{
+  const input=await loadNormalCommerceAuditSources();
+  const street=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedFullCommerce:true});
+  const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:input.originalPeriodSource,adminSource:input.originalAdminInitSource,
+    readSource:input.originalDataReadSource,writeSource:input.originalDataWriteSource,
+    reviewedB41:street.reviewedB41,
+  }));
+  const repo=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+    worldId:'controlled-job-fallback',streetId:'standard-street',nowSeconds:1000000,period,
+  }),streetModule:street});
+  const run=(repository,kind,fields={})=>executeMemoryCommand({repository,streetModule:street,
+    command:{kind,expectedRevision:repository.read().revision,...fields}});
+  for(const [kind,fields] of [['initialize-source-market',{}],['open-shop',{shopId:1,ownerName:'來源測試',shopName:'受控礦山'}]]){
+    const result=run(repo,kind,fields);assert.equal(result.ok,true,JSON.stringify(result.details));
+  }
+  const seeded=structuredClone(repo.read());
+  seeded.shops[0].item[8]=1;seeded.shops[0].job='material';seeded.shops[0].exp={'9':500};
+  seeded.shops[0].time=seeded.nowSeconds-1500;
+  const cmd={shopId:1,itemId:9,useId:1,requestedCount:1,randomDraws:[0,0,0,999999]};
+  const denied=structuredClone(seeded);denied.shops[0].time++;
+  const short=createSourceReviewedMemoryWorldAdapter({initialWorld:denied,streetModule:street});
+  assert.equal(street.listUseOffers(short.read()).find(x=>x.itemId===9&&x.useId===1).canUse,false);
+  const beforeShort=short.read();
+  assert.equal(run(short,'use-item',cmd).ok,false);
+  assert.deepEqual(short.read(),beforeShort);
+  const enough=createSourceReviewedMemoryWorldAdapter({initialWorld:seeded,streetModule:street});
+  const before=enough.read(),quote=street.listUseOffers(before).find(x=>x.itemId===9&&x.useId===1);
+  assert.equal(quote.timePerUseSeconds,1500);assert.equal(quote.canUse,true);
+  const result=run(enough,'use-item',cmd);
+  assert.equal(result.ok,true,JSON.stringify(result.details));
+  assert.equal(result.code,'COMMITTED');assert.equal(result.details.timeSpentSeconds,1500);
+  assert.equal(result.details.effectiveCount,1);assert.equal(result.details.randomDrawsUsed,4);
+  const after=enough.read();
+  assert.equal(after.revision,before.revision+1);assert.equal(after.nowSeconds,before.nowSeconds);
+  assert.equal(after.shops[0].time,after.nowSeconds);assert.equal(after.shops[0].exp['9'],520);
+  assert.equal(after.shops[0].item[8],1);
+  for(const [id,n] of [[5,3],[6,20],[7,1]])assert.equal(after.shops[0].item[id-1],before.shops[0].item[id-1]+n);
+  assert.equal(after.shops[0].money,before.shops[0].money);
+  const stale=executeMemoryCommand({repository:enough,streetModule:street,command:{kind:'use-item',expectedRevision:before.revision,...cmd}});
+  assert.equal(stale.code,'REVISION_CONFLICT');assert.deepEqual(enough.read(),after);
+});
