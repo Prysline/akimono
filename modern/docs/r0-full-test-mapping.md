@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 51、歷史 18、待補 164。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 6 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 54、歷史 20、待補 159。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 11 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -126,7 +126,7 @@
 | original-perl/world-data.t | 待補 | 未完成語義審閱 |
 | original-perl/world-one-shop.t | 待補 | 未完成語義審閱 |
 | original-perl/world-read-safety.t | 待補 | 未完成語義審閱 |
-| original-perl/world-shop-history.t | 待補 | 未完成語義審閱 |
+| original-perl/world-shop-history.t | 有效 | 原版 Perl Oracle／受控 DataRead |
 | original-shared-use-callback-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-sparse-all-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-sparse-multi-plus.test.mjs | 待補 | 未完成語義審閱 |
@@ -202,14 +202,14 @@
 | r4-period-full-tail-close-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-high-exp-tech-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-real-close-source-chain.test.mjs | 待補 | 未完成語義審閱 |
-| r4-perl-hash-replay.test.mjs | 待補 | 未完成語義審閱 |
+| r4-perl-hash-replay.test.mjs | 有效 | 來源差分／受控 RNG |
 | r4-reviewed-time-http-history.test.mjs | 有效 | 受控 HTTP/CAS |
 | r4-sorted-pre-event.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-archive-disk-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-guild-ledger.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-period-disk.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-backup-disk.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-cas-http-save-restart.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-cas-http-save-restart.test.mjs | 歷史 | legacy HTTP／雙世代 fixture |
 | r4-source-close-shop-archive-file.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-close-shop-effects.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-data-write-files.test.mjs | 待補 | 未完成語義審閱 |
@@ -223,7 +223,7 @@
 | r4-source-rebel-period-now.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-rebel-period-trigger.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-town-play.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-world-transition-cas-guard.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-world-transition-cas-guard.test.mjs | 歷史 | 舊 CAS／nonCommittable 與 legacy store |
 | reviewed-gift-map-use.test.mjs | 待補 | 未完成語義審閱 |
 | reviewed-use-fixture-street.test.mjs | 待補 | 未完成語義審閱 |
 | source-audit.test.mjs | 有效 | 靜態來源 |
@@ -235,7 +235,7 @@
 | world-lock-contract.test.mjs | 歷史 | 純投影／歷史檔鎖 fixture |
 | world-one-shop-parser.test.mjs | 待補 | 未完成語義審閱 |
 | world-read-preflight.test.mjs | 待補 | 未完成語義審閱 |
-| world-shop-history-model.test.mjs | 待補 | 未完成語義審閱 |
+| world-shop-history-model.test.mjs | 有效 | 來源守門／純 parser |
 | world-wholesale-codec.test.mjs | 待補 | 未完成語義審閱 |
 
 ## 候選新增（不列入正式基線）
