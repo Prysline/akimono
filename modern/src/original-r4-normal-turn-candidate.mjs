@@ -1,3 +1,4 @@
+import {resolveR4ExactPreEventPrefix} from './r4-exact-pre-event-prefix.mjs';
 /** Candidate shared normal-turn projection. Still NOT a command or commit.
  * Connects the same source pre-EVENT and full 17-key EVENT engine; does not
  * write a WorldState, issue a player action, or persist a proof by itself.
@@ -27,20 +28,10 @@ export function projectR4NormalTurnCandidate({world,minutes,street,reviewedR4,re
     reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
     reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
     reviewedR4,reviewedDataRead,activeOrder:hash.activeOrder,normalCommerce};
-  // Existing exact-consumption projectors are pure. Find the unique prefix,
-  // only extending on their explicit missing-draw errors, never on another
-  // boundary violation. The caller cannot supply or select RNG.
-  let pre=null;
-  const samples=[];
-  for(let n=0;n<=maxDraws;n++){
-    try{pre=projectR4SortedInventoryPreEventTurn({...args,randomDraws:samples});break;}
-    catch(e){
-      if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
-      if(n===maxDraws)fail('pre-EVENT draw budget exhausted');
-      samples.push(tape.unit(n));
-    }
-  }
-  if(!pre||pre.receipt.totalDraws!==samples.length)fail('pre-EVENT exact draw accounting');
+  // Exact source projector, fixed indexed tape. Binary search changes only
+  // the number of pure projections, not the accepted prefix or event index.
+  const {pre,samples}=resolveR4ExactPreEventPrefix({maxDraws,unit:tape.unit,
+    project:randomDraws=>projectR4SortedInventoryPreEventTurn({...args,randomDraws})});
   const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:hash.activeOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,normalCommerce});
   let finalOrder=null;
   const event=projectOriginalR4MultiEventFixture({

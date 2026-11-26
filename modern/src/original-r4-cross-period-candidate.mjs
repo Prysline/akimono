@@ -1,3 +1,4 @@
+import {resolveR4ExactPreEventPrefix} from './r4-exact-pre-event-prefix.mjs';
 /** Source-only crossing command candidate. One DataRead overlay and
  * native hash mutation lineage; one server tape spans both source slices.
  * The B50 disk tail/commit is NOT yet included. Never publish as WorldState.
@@ -58,17 +59,9 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initialHash.initialOrder}};
     const project=!plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:i===0?projectR4BoundaryPreEventCandidate:
       a=>projectR4ResidualPreEventCandidate({...a,originWorld:world});
-    let pre=null;const samples=[];
-    for(let n=0;n<=maxDraws;n++){
-      try{pre=project({...args,randomDraws:samples});break;}
-      catch(e){
-        if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
-        if(n===maxDraws)fail('pre-EVENT draw budget exhausted');
-        samples.push(tape.unit(used+n));
-      }
-    }
-    if(!pre||pre.receipt.totalDraws!==samples.length||pre.nowSeconds!==cursor.nowSeconds+part.timespanSeconds)
-      fail('exact source slice and draw accounting');
+    const {pre,samples}=resolveR4ExactPreEventPrefix({maxDraws,unit:index=>tape.unit(used+index),
+      project:randomDraws=>project({...args,randomDraws})});
+    if(pre.nowSeconds!==cursor.nowSeconds+part.timespanSeconds)fail('exact source slice and draw accounting');
     used+=samples.length;
     if(part.dateupdate===1){settlement=pre.settlement;if(!settlement?.shop)fail('missing source settlement');}
     let finalHash=null;
