@@ -16,7 +16,7 @@ import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
 import {projectR4NormalTurnCandidate,R4_NORMAL_TURN_PROJECTION} from './original-r4-normal-turn-candidate.mjs';
-import {reviewNormalCommerceItems,validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
+import {reviewNormalCommerceItems,validateNormalCommerceInventory,capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
@@ -34,7 +34,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   if(typeof enableReviewedFullCommerce!=='boolean')fail('explicit full commerce review');
   const normalCommerce=enableReviewedFullCommerce?reviewNormalCommerceItems(sources):null;
-  if(normalCommerce!==null)street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
+  if(normalCommerce!==null){
+    if(!sources.writeSource.includes('$DT->{money}=$MAX_MONEY if $DT->{money}>$MAX_MONEY;'))fail('original DataWrite money cap required');
+    street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
+  }
+  const capApplied=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>capReviewedCommerceCash(s,normalCommerce))};
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
   const sorted=reviewR4SortedPreEvent(sources);
@@ -85,7 +89,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         !/^[1-9][0-9]*$/.test(id)||Number(id)>79||
         !Number.isSafeInteger(n)||n<0||n>1000)||Object.values(exp).reduce((a,b)=>a+b,0)>3600)
         fail('ordinary source EXP bounds');
-      if(normalCommerce!==null)validateTimeShop(shop);
+      if(normalCommerce!==null){validateTimeShop(shop);if(!Number.isSafeInteger(shop.money)||shop.money>normalCommerce.maxMoney)fail('source committed cash bound');}
     }
     return true;
   }
@@ -126,7 +130,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const {shops,market,period,nowSeconds,evidence}=candidate;
     // Separate reviewed command adapter owns the complete successor and
     // exact CAS recheck. Never pass a partial noncommittable proposal to Core.
-    if(!disk)validate({...world,shops,market,period,nowSeconds,revision:world.revision+1});
+    if(!disk)validate({...world,shops:capApplied({shops}).shops,market,period,nowSeconds,revision:world.revision+1});
     validateTimeShop(shops[0]);
     const {preEventReceipt,...trace}=evidence;
     const applied={shops,market,period,nowSeconds,receipt:{
@@ -139,18 +143,18 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       totalDraws:evidence.preEventDraws.length+evidence.eventSamples.length,
       scope:'source-reviewed local single-shop nonsettling normal time; no external special EVENT or 36h settlement',
     }};
-    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):applied;
+    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):capApplied(applied);
   }
   const wrapped=Object.freeze({...street,
     capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
-    ...(disk?{finalizeReviewedTransition({before,command,applied}){
+    ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
       if(!allowedOrdinary(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
-      return disk.finalize({before,command,applied});
+      return disk?disk.finalize({before,command,applied}):capApplied(applied);
     }}:{}),
     validateReviewedWorldTimeState:validate,
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){

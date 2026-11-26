@@ -336,7 +336,7 @@ function projectSourcePreEventSaleSlice({
     (!reviewedB62Map&&
       shop.paytoday%(reviewed.ticketSourceReviewed?1000:5000)!==0)))||
     !Number.isSafeInteger(shop.paytoday)||shop.paytoday<0||
-    !Number.isSafeInteger(shop.money)||shop.money<0||
+    !Number.isSafeInteger(shop.money)||(normalCommerce===null&&shop.money<0)||
     !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000||
     !Number.isSafeInteger(shop.trush??0)|| (shop.trush??0)<0||
     !Number.isFinite(shop.costtoday)||shop.costtoday<0||
@@ -403,7 +403,7 @@ function projectSourcePreEventSaleSlice({
   const natural=projectSharedNaturalSale({
     shop,rule,saleRules:shop.showcasecount>1?(overlay?.saleRules??saleRules):null,
     upkeepCosts,
-    spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,
+    spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,reviewedSignedCash:normalCommerce!==null,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
   });
   const sold=natural.sold;

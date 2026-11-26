@@ -97,7 +97,8 @@ export function projectSharedUseItem({world,command,useItem}){
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
   world.market.wholesale.forEach((n,i)=>int(n,'wholesale '+i));
-  for(const key of ['money','paytoday','time','rank'])int(shop[key],key);
+  int(shop.money,'money',useItem.reviewedSignedCash===true?-Number.MAX_SAFE_INTEGER:0);
+  for(const key of ['paytoday','time','rank'])int(shop[key],key);
   if(rule.singleUseOnly&&command.requestedCount!==1)
     fail('unreviewed original multiple USE');
   const expRecord=shop.exp??{};
@@ -289,7 +290,7 @@ export function projectSharedUseItem({world,command,useItem}){
       rule,shop:nextShop,count:original.count,random,
     });
     if(!inlineWork||!Number.isSafeInteger(inlineWork.moneyAfter)||
-       inlineWork.moneyAfter<0||
+       (useItem.reviewedSignedCash!==true&&inlineWork.moneyAfter<0)||
        inlineWork.moneyBefore!==nextShop.money||
        inlineWork.earned!==(rule.useId===0?3000:10000)*original.count||
        !Array.isArray(inlineWork.logCalls))

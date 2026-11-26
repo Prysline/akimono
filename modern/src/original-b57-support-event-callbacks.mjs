@@ -106,8 +106,7 @@ export function projectOriginalSupportEventCallback({
   if(expanded!==null)validateNormalCommerceInventory(shop,reviewedInventory.compiled,expanded);
   if(!shop||shop.id!==1||shop.status!==1||
      typeof shop.shopname!=='string'||!shop.shopname||
-     !Number.isSafeInteger(shop.money)||shop.money<0||
-     shop.money>MAX_MONEY||
+     !Number.isSafeInteger(shop.money)||(expanded===null&&(shop.money<0||shop.money>MAX_MONEY))||
      !Number.isSafeInteger(shop.rank)||shop.rank<0||
      shop.rank>10000||
      !Array.isArray(shop.item)||shop.item.length!==79||

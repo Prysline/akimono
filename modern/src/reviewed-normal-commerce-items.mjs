@@ -39,6 +39,8 @@ export function reviewNormalCommerceItems(sources){
   const parsed=parseDsl(sources.itemDsl,'custom/inc-item-data.cgi');
   if(parsed.issues.length||parsed.counts.items!==79)fail('79 ITEM declarations');
   const define=parsed.blocks.find(b=>b.kind==='DEFINE');
+  const maxMoney=literal(one(define,'maxmoney'),'MAX_MONEY');
+  if(maxMoney!==999999999)fail('source MAX_MONEY drift');
   const types=new Map(Array.from({length:11},(_,i)=>[one(define,'type'+i),i]));
   if(types.size!==11)fail('source type definitions');
   const items=[],saleRules={},upkeepCosts={};
@@ -85,10 +87,16 @@ export function reviewNormalCommerceItems(sources){
   if(items.length!==79||Array.from({length:79},(_,i)=>items[i]).some(x=>!x))
     fail('contiguous original ITEM ids');
   const review=Object.freeze({source:'r4-normal-commerce-frozen-item-metadata.v1',
-    items:Object.freeze(items),saleRules:Object.freeze(saleRules),
+    maxMoney,items:Object.freeze(items),saleRules:Object.freeze(saleRules),
     upkeepCosts:Object.freeze(upkeepCosts)});
   reviewedCatalogs.add(review);
   return review;
+}
+
+/** Source DataWrite caps only above MAX_MONEY, never below zero. */
+export function capReviewedCommerceCash(shop,reviewed){
+  if(!reviewedCatalogs.has(reviewed)||!Number.isSafeInteger(shop.money))fail('source cash');
+  return {...shop,money:Math.min(reviewed.maxMoney,shop.money)};
 }
 
 /** Shape-only source proof. A stocked ITEM or EXP key is not a grant:

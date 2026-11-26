@@ -18,7 +18,7 @@ const int=(v,s,min=0)=>{
 export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
-  popDownRate=5,baseUpkeep=0,
+  popDownRate=5,baseUpkeep=0,reviewedSignedCash=false,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -86,7 +86,8 @@ export function projectSharedNaturalSale({
   const rankBefore=int(shop.rank,'rank');
   const temprank=rankBefore+(displayedTypes.size===1?1000:0);
   const item=[...shop.item],itemtoday={...shop.itemtoday};
-  let money=int(shop.money,'money');
+  const cashMin=reviewedSignedCash?-Number.MAX_SAFE_INTEGER:0;
+  let money=int(shop.money,'money',cashMin);
   let trush=int(shop.trush??0,'trush');
   let saletoday=int(shop.saletoday,'saletoday');
   let taxtoday=int(shop.taxtoday??0,'taxtoday');
@@ -143,7 +144,7 @@ export function projectSharedNaturalSale({
       if(taxRate<0){taxDown=taxRate+1;taxRate=0;}
       taxRate=Math.min(99,Math.trunc(taxRate*taxDown+0.5));
       const tax=int(Math.trunc(proceeds*taxRate/100),'sale tax');
-      money=int(money+proceeds-tax,'money after sale');
+      money=int(money+proceeds-tax,'money after sale',cashMin);
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
       taxtoday=int(taxtoday+tax,'taxtoday after sale');

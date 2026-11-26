@@ -105,7 +105,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       const offer=state.marketOffers.find(x=>x.itemId===id);
       if(offer?.canBuy){
         const quantity=Math.min(needed,offer.marketStock,offer.limit-stock(id));
-        if(quantity>0&&(partial||quantity===needed)&&state.shop.money>=offer.price*quantity&&remaining()>=offer.timeSeconds){
+        if(quantity>0&&(partial||quantity===needed)&&(offer.price===0||state.shop.money>=offer.price*quantity)&&remaining()>=offer.timeSeconds){
           const before=state.world;
           const result=await command('/api/buy',{itemId:id,requestedCount:quantity,marketShelf:offer.shelf,expectedPrice:offer.price});
           assert.equal(result.details.purchasedCount,quantity);
@@ -113,11 +113,11 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
           needed-=quantity;
           continue;
         }
-        if(quantity>0&&state.shop.money>=offer.price*quantity&&remaining()<offer.timeSeconds){
+        if(quantity>0&&(offer.price===0||state.shop.money>=offer.price*quantity)&&remaining()<offer.timeSeconds){
           await enoughTime(offer.timeSeconds);continue;
         }
       }
-      if(offer&&state.shop.money<offer.price*Math.min(needed,offer.marketStock)){
+      if(offer&&offer.price>0&&state.shop.money<offer.price*Math.min(needed,offer.marketStock)){
         const product=sell.find(item=>stock(item)>0);
         if(product)await list(product);
       }

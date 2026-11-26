@@ -50,3 +50,39 @@ test('R4 full commerce player expands, lists mixed/repeated items, sells, settle
   assert.equal(last.shops[0].showcasecount,1);
   await p.tick(1);
 });
+
+test('R4 eight shelves charge original maintenance; negative cash survives v2 and zero-cost commerce',async t=>{
+  const boundaries=[];
+  const purchases=[];
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,
+    onTick(r,before){
+      if(r.details.settlementReceipt)boundaries.push({shelves:before.shops[0].showcasecount,...r.details.settlementReceipt});
+    },
+    onPurchase(r,before,offer){
+      purchases.push({id:offer.itemId,price:offer.price,before:before.shops[0].money,after:r.state.shop.money});
+    }});
+  await p.market(13);
+  await p.use(63,7);
+  assert.equal(p.state.shop.showcasecount,8);
+  assert.equal(p.stock(63),0);
+  for(let n=0;p.state.shop.money>=0&&n<145;n++)await p.tick(60);
+  assert.ok(boundaries.some(b=>b.shelves===8&&b.maintenance>=128000&&b.cashAfterLedger<0));
+  assert.ok(p.state.shop.money<0,'eight shelves must not clamp negative cash to zero');
+  const debt=p.state.shop.money;
+  const saved=await p.saveAndRestart(0);
+  assert.equal(saved.shops[0].money,debt);
+  // No debt injection or free-time fixture. A zero-price book already
+  // obtained through the actual market can earn money with an ordinary USE.
+  await p.enoughTime(14400);
+  const before=p.state.shop.money;
+  const earned=await p.use(13,0);
+  assert.equal(earned.details.moneyEarned,3000);
+  assert.equal(p.state.shop.money,before+3000);
+  await p.market(63);
+  const purchase=purchases.find(p=>p.id===63);
+  assert.equal(purchase.price,0);
+  assert.equal(purchase.after,purchase.before);
+  assert.equal(p.stock(63),1);
+  await p.saveAndRestart(1);
+  await p.tick(1);
+});

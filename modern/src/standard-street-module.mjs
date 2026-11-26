@@ -346,6 +346,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedFullCommerce,
     }):null;
   const marketBuy=Object.freeze({
+    reviewedSignedCash:enableReviewedFullCommerce,
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
@@ -472,6 +473,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
   const useItem=Object.freeze({
+    reviewedSignedCash:enableReviewedFullCommerce,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:
@@ -772,7 +774,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           const timeMaximum=shop&&actualTime>0?
             Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
           const moneyMaximum=shop&&rule.money>0?
-            Math.floor(shop.money/rule.money):Number.MAX_SAFE_INTEGER;
+            Math.max(0,Math.floor(shop.money/rule.money)):Number.MAX_SAFE_INTEGER;
           const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
             const available=shop.item[input.itemId-1]??0;
             // NEED/proba=0 is a holding requirement, not consumption per use.
@@ -809,7 +811,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             missing?'材料不足：'+
               (model.items.find(item=>item.id===missing.itemId)?.name??
                 '未知材料')+'需要 '+missing.count+' 件':
-            shop.money<rule.money?'資金不足':
+            (rule.money>0||!enableReviewedFullCommerce)&&shop.money<rule.money?'資金不足':
             shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
           return Object.freeze({

@@ -7,6 +7,7 @@ import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r
 import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
+import {capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
@@ -25,7 +26,7 @@ export function independentCandidateWorld(world){
 function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
 export function createIndependentDiskProjection({sources,sort,street}){
   if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
-  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true}),
+  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,signedCash:street.reviewedNormalCommerce!==undefined}),
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
@@ -74,7 +75,8 @@ export function createIndependentDiskProjection({sources,sort,street}){
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
       if(['edit-showcase','market-buy','use-item',PALACE_COMMAND].includes(command.kind))next.lastlogin=now;
-      return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
+      const sorted=projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
+      return street.reviewedNormalCommerce===undefined?sorted:capReviewedCommerceCash(sorted,street.reviewedNormalCommerce);
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
     const old=before.period.disk;
