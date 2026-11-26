@@ -369,3 +369,7 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ## C 第55批：R1 最後16列與執行環境
 
 [最後16列詳細證據及 HTTP 執行環境](r1-final-feature-evidence-and-http-environment.md)：204→220/220（含8個 alias/Registry 缺口列），限定 ITEM Oracle/Node 74、USE108、EVENT25；正式下界7/12/0不變。R0 233/233不變。strict repro 環境受阻、未實跑，R5未執行。新 HEAD 待 CI。
+
+## C 第57批：最新 CI／R1-HTTP-01 狀態
+
+[第57批 exact CI、缺陷及 P5 資金證據](r1-ci-defect-and-p5-funds-evidence-20261127.md)：第50批歷史紅燈保留，第51–56批一般 CI exact tree 成功（JS 0 fail，52/54/55 各1牛死亡未命中；Perl2456/2456）。R1-HTTP-01 第56批專用 CI 已實跑，3/3 拒絕契約失敗，已回報 D #27；不證資產注入。使用者指定 GitHub CI，本機 DNS 非主要阻礙。P5 六次後續成功，歷史根因仍待證；不降斷言、不改平衡。R0/R1 詳細索引與正式驗收下界不變，R5 未啟動。

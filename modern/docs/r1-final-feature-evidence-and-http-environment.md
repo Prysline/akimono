@@ -31,3 +31,7 @@
 - 原 strict `modern/scripts/r1-http-extra-fields-repro.mjs` @ e43339680eda08d30ebc9a5c70f56635361ace12，正式 dev-local 子程序、隔離 temp disk、無 time/RNG 注入；initialize/open-shop/load 三路由 extra fields；預期 4xx、ok false、全 snapshot/磁碟不變與合法對照。靜態查閱不是 runtime 證據；未確認越權、資產注入或契約失敗。
 - 可行資源：提供確切候選 SHA 的完整 git bundle/checkout archive（含凍結來源、modern 與原測試），放入可讀本地環境後核對 SHA/tree/每 blob，執行 cd modern && node --test scripts/r1-http-extra-fields-repro.mjs，保存 Node/Perl/OS、命令、stdout/stderr/exit、snapshot 及 SHA/tree；或具合法 checkout 權限的隔離 runner 執行同命令。前者不需改任何分支/CI；後者若需新 workflow/驗證分支，須另確認權限與 D 的跨窗責任，不能假定 D 有額外資源。未改一般 CI，不將預期 red 混入 green。
 - 目前分類：環境受阻；不阻擋其他功能證據覆核。R5 尚未執行，無新確認 runtime 缺陷。
+
+## C 第57批：最新 CI／R1-HTTP-01 狀態
+
+[第57批 exact CI、缺陷及 P5 資金證據](r1-ci-defect-and-p5-funds-evidence-20261127.md)：第50批歷史紅燈保留，第51–56批一般 CI exact tree 成功（JS 0 fail，52/54/55 各1牛死亡未命中；Perl2456/2456）。R1-HTTP-01 第56批專用 CI 已實跑，3/3 拒絕契約失敗，已回報 D #27；不證資產注入。使用者指定 GitHub CI，本機 DNS 非主要阻礙。P5 六次後續成功，歷史根因仍待證；不降斷言、不改平衡。R0/R1 詳細索引與正式驗收下界不變，R5 未啟動。

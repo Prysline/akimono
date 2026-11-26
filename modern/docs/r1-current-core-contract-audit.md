@@ -227,3 +227,7 @@
 
 - `modern/docs/r0-r1-pr23-pr24-reconciliation.md`：#23 11路徑、#24 3路徑逐項收錄核對；233 pins/220 declarations、舊 known flags/evidence 保留，補回6檔9筆舊文件引用，B56 僅計一次。#24 42列 status/realPlayer/blob 一致，三補件 blob 相同。兩 PR 不關閉，待新 CI 與使用者/D 決定。
 - #44/45 CI 45851995042、45852340690 success，job 140020465192/140021659118；checkout compare files=[]；JS1350/1350、Perl2456/2456，無 fail/skip/cancel；tree 未獨立取得。R1-HTTP-01 未實跑，87/220 詳細列暫不變，新 HEAD 待驗。
+
+## C 第57批：最新 CI／R1-HTTP-01 狀態
+
+[第57批 exact CI、缺陷及 P5 資金證據](r1-ci-defect-and-p5-funds-evidence-20261127.md)：第50批歷史紅燈保留，第51–56批一般 CI exact tree 成功（JS 0 fail，52/54/55 各1牛死亡未命中；Perl2456/2456）。R1-HTTP-01 第56批專用 CI 已實跑，3/3 拒絕契約失敗，已回報 D #27；不證資產注入。使用者指定 GitHub CI，本機 DNS 非主要阻礙。P5 六次後續成功，歷史根因仍待證；不降斷言、不改平衡。R0/R1 詳細索引與正式驗收下界不變，R5 未啟動。

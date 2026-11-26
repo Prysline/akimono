@@ -73,3 +73,109 @@ jobs:
           path: ${{ runner.temp }}/r1-http-01/
           if-no-files-found: warn
           retention-days: 30
+
+  p5-historical-funds-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact historical failed candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 'e4771dc5c21663509777e6c351436f05732ed105'
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify checkout and original test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/p5-funds"
+          {
+            git rev-parse HEAD
+            git rev-parse 'HEAD^{tree}'
+            git --version
+            node --version
+            perl -v
+            uname -a
+            cat /etc/os-release
+            git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs
+            git hash-object modern/tests/support/p3-genuine-v2-player.mjs
+            test "$(git rev-parse HEAD)" = 'e4771dc5c21663509777e6c351436f05732ed105'
+            test "$(git rev-parse 'HEAD^{tree}')" = '44de9a170cf71cbc75c137b06215d2626411017a'
+            test "$(git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+            test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$RUNNER_TEMP/p5-funds/environment.log"
+      - name: Run original P5 file without modifications
+        id: original
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p5-funds"
+          set +e
+          node --test tests/p5-book-work-v2-player-http.test.mjs >"$out/original-stdout.log" 2>"$out/original-stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original-stdout.log"
+          cat "$out/original-stderr.log"
+          exit "$status"
+      - name: Observe funds in a separate fresh run (temporary diagnostic copy only)
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p5-funds"
+          trace=tests/p5-audit-funds-observation.mjs
+          test ! -e "$trace"
+          trap 'rm -f "$trace"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const original='tests/p5-book-work-v2-player-http.test.mjs';
+          let src=readFileSync(original,'utf8');
+          function appendOnce(line,addition){
+            if(src.split(line).length!==2)throw Error('diagnostic anchor not unique: '+line);
+            src=src.replace(line,line+'\n'+addition);
+          }
+          appendOnce('let nonWorkFunds=100000,totalPaid=0,workFundedPurchase=null;',
+            "  t.after(()=>t.diagnostic('P5_AUDIT_FINAL '+JSON.stringify({nonWorkFunds,totalPaid,workFundedPurchase,purchases,works})));");
+          appendOnce('nonWorkFunds+=Math.max(0,r.state.shop.money-before.shops[0].money);',
+            "      t.diagnostic('P5_AUDIT_TICK '+JSON.stringify({revision:r.state.world.revision,period:r.state.world.period.settledCount,before:before.shops[0].money,after:r.state.shop.money,nonWorkFunds,totalPaid,sourceTrace:r.state.shop.money>before.shops[0].money?r.details.sourceTrace:null}));");
+          appendOnce('totalPaid+=d.totalPaid;',
+            "      t.diagnostic('P5_AUDIT_BUY '+JSON.stringify({revision:r.state.world.revision,itemId:d.itemId,count:d.purchasedCount,paid:d.totalPaid,totalPaid,nonWorkFunds,before:old.money,after:after.money}));");
+          appendOnce('nonWorkFunds+=Math.max(0,p.state.shop.money-beforeCareerMoney);',
+            "  t.diagnostic('P5_AUDIT_CAREER '+JSON.stringify({before:beforeCareerMoney,after:p.state.shop.money,nonWorkFunds,totalPaid}));");
+          // Add a pre-assertion diagnostic without removing or altering any assertion.
+          const anchor="  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');";
+          if(src.split(anchor).length!==2)throw Error('proof anchor');
+          src=src.replace(anchor,"  t.diagnostic('P5_AUDIT_PROOF '+JSON.stringify({nonWorkFunds,totalPaid,workFundedPurchase,period:p.state.world.period.settledCount,money:p.state.shop.money,revision:p.state.world.revision,works,purchases}));\n"+anchor);
+          writeFileSync('tests/p5-audit-funds-observation.mjs',src,{flag:'wx'});
+          NODE
+          git diff --no-index -- tests/p5-book-work-v2-player-http.test.mjs "$trace" >"$out/diagnostic-only.diff" || test "$?" = 1
+          cat "$out/diagnostic-only.diff"
+          set +e
+          node --test --test-name-pattern='P5 new player:' "$trace" >"$out/observation-stdout.log" 2>"$out/observation-stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          cat "$out/observation-stdout.log"
+          cat "$out/observation-stderr.log"
+          rm -f "$trace"
+          test "$(git hash-object tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve original and observation outputs separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p5-funds-pinned-e4771dc
+          path: ${{ runner.temp }}/p5-funds/
+          if-no-files-found: warn
+          retention-days: 30

@@ -56324,6 +56324,161 @@
         "pass": 2456
       },
       "pins": "DSL/source pins passed; compare files=[]; checkout tree not separately retrieved"
+    },
+    {
+      "head": "e4771dc5c21663509777e6c351436f05732ed105",
+      "tree": "44de9a170cf71cbc75c137b06215d2626411017a",
+      "checkout": "b75ea1e071692ee12bf5f32a12f6e0f87b61f4ef",
+      "checkoutTree": "44de9a170cf71cbc75c137b06215d2626411017a",
+      "run": 45856279714,
+      "job": 140035384424,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1348,
+        "fail": 1,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": "not run after JS failure",
+      "pins": "not run after JS failure",
+      "failed": "P5 new player: real purchases must exceed all non-work funds; historical cause unresolved",
+      "skipped": "P4 actual cow mortality: no death observed in bounded real player experiment"
+    },
+    {
+      "head": "1b5ea7b1a4fb802fd6937066ce89939919879a88",
+      "tree": "b376709e715e313e03f6e0e346e79dab30f94acd",
+      "checkout": "a2ad0ddf24ae9c5501774aaadbe40373162f9491",
+      "checkoutTree": "b376709e715e313e03f6e0e346e79dab30f94acd",
+      "run": 45857315261,
+      "job": 140038977718,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked"
+    },
+    {
+      "head": "c5220eb0e31502bb91ef7ec45662f3ae04021c0c",
+      "tree": "0e6cd005b21b614cdcbcad9633160ca49473022d",
+      "checkout": "e9643354f9ceceab335f10b43ae56a3322f28576",
+      "checkoutTree": "0e6cd005b21b614cdcbcad9633160ca49473022d",
+      "run": 45861136133,
+      "job": 140052158415,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1349,
+        "fail": 0,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked",
+      "skipped": "P4 actual cow mortality: no death observed in bounded real player experiment"
+    },
+    {
+      "head": "cc837fbb1bfa0dbceac61e9064dd2fc8cf7fb5e0",
+      "tree": "2e8625418576c08fb63a34f932f89c3de70b2cd4",
+      "checkout": "bc2ce388dff3adc8fb704974d5425811472ddc7e",
+      "checkoutTree": "2e8625418576c08fb63a34f932f89c3de70b2cd4",
+      "run": 45861418600,
+      "job": 140053131515,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked"
+    },
+    {
+      "head": "6f406e3a1ba53f66c08186bfa174108189960e98",
+      "tree": "0f6de9cacf0c4cabf6718b129811f3b98c98f7af",
+      "checkout": "e8260836ff65e412c59737d1ec97f628862d768e",
+      "checkoutTree": "0f6de9cacf0c4cabf6718b129811f3b98c98f7af",
+      "run": 45861727981,
+      "job": 140054189503,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1349,
+        "fail": 0,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked",
+      "skipped": "P4 actual cow mortality: no death observed in bounded real player experiment"
+    },
+    {
+      "head": "630e98795ef957272e49c8a7cabb5c6f1ce992b2",
+      "tree": "ede2b15cfcdb0077b026c2a25b2386a84eefd003",
+      "checkout": "e3121ca24dcd04209d8e56de61ce88b07e05e5e2",
+      "checkoutTree": "ede2b15cfcdb0077b026c2a25b2386a84eefd003",
+      "run": 45862211525,
+      "job": 140055850815,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1349,
+        "fail": 0,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked",
+      "skipped": "P4 actual cow mortality: no death observed in bounded real player experiment"
+    },
+    {
+      "head": "7357484d3fe2a86df2e3d629e42558504c86c037",
+      "tree": "6c98038fee54570e53734c1912f0855b6fab326d",
+      "checkout": "d6fbb5d889a03869126360059a056a30f8bae95a",
+      "checkoutTree": "6c98038fee54570e53734c1912f0855b6fab326d",
+      "run": 45873580009,
+      "job": 140094903799,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; exact checkout tree independently checked"
     }
   ],
   "evidenceLayerSchema": {
@@ -56344,5 +56499,34 @@
       "v2Restart"
     ],
     "semantics": "14 個工作證據欄；null=未完成逐項證明，不等於不支援；registry ITEM 特指 market-buy registry，false 不代表不能製作或使用；正式證據僅限定路徑。不得把候選 CI 綠當全矩陣完成。"
-  }
+  },
+  "diagnosticCiHistory": [
+    {
+      "id": "R1-HTTP-01",
+      "head": "630e98795ef957272e49c8a7cabb5c6f1ce992b2",
+      "tree": "ede2b15cfcdb0077b026c2a25b2386a84eefd003",
+      "checkout": "630e98795ef957272e49c8a7cabb5c6f1ce992b2",
+      "checkoutTree": "ede2b15cfcdb0077b026c2a25b2386a84eefd003",
+      "workflowHead": "7357484d3fe2a86df2e3d629e42558504c86c037",
+      "run": 45873580066,
+      "job": 140094903740,
+      "conclusion": "failure",
+      "js": {
+        "total": 3,
+        "pass": 0,
+        "fail": 3,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "exitCode": 1,
+      "artifact": 15143791536,
+      "classification": "confirmed HTTP extra-fields rejection contract defect on pinned candidate; no asset injection demonstrated",
+      "routes": [
+        "initialize",
+        "open-shop",
+        "load"
+      ],
+      "evidence": "modern/docs/r1-ci-defect-and-p5-funds-evidence-20261127.md"
+    }
+  ]
 }
