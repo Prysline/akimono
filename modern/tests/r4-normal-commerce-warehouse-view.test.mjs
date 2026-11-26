@@ -6,6 +6,7 @@ import {loadNormalCommerceAuditSources} from '../scripts/audit-normal-commerce.m
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,executeMemoryCommand} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed} from '../src/original-period-world-seed.mjs';
+import {calculateSourceMarketStatus} from '../src/shared-source-market-status.mjs';
 import {originalMarketBalance} from '../src/original-r4-warehouse-view.mjs';
 
 // Actual frozen compiler numeric ITEM metadata and original GetMarketStatus,
@@ -20,7 +21,7 @@ const perl=[
  'if($in->{boom}){for my $id (@{$in->{boomIds}}){$ITEM[$id]{popular}=int($ITEM[$id]{popular}/1.5)}}',
  'GetMarketStatus();my @rows;',
  'for my $id (1..79){my $it=$ITEM[$id];my $p=$it->{uppoint}||10;',
- 'push @rows,{id=>$id,stock=>0+$it->{todaystock},price=>0+$it->{marketprice},point=>$p,graph=>GetMarketStatusGraph($p,1)};}',
+ 'push @rows,{id=>$id,stock=>0+$it->{todaystock},price=>0+$it->{marketprice},point=>$p,graph=>GetMarketStatusGraph($p,1),rawPoint=>0+$it->{uppoint},low=>0+$it->{marketpricelow},high=>0+$it->{marketpricehigh},today=>0+$it->{todaysale},yesterday=>0+$it->{yesterdaysale},survey=>exists($marketitemlist{$id})?1:0};}',
  'print encode_json(\\@rows);',
 ].join('\n');
 test('R4 warehouse retail status follows original weighted shelves and active EVENT with pure read-only state',async()=>{
@@ -30,6 +31,8 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
  assert.equal(typeof street.describeWarehouse,'function');
  assert.equal(createStandardStreetModule(input).describeWarehouse,undefined);
  assert.throws(()=>createStandardStreetModule({...opts,originalMarketSource:input.originalMarketSource+'\n'}),/source drift/);
+ assert.throws(()=>createStandardStreetModule({...opts,originalMarketSurveySource:input.originalMarketSurveySource+'\n'}),/source drift marketSurveySource/);
+ assert.ok(input.originalMarketSurveySource.includes('values(%marketitemlist)'));
  const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({periodSource:input.originalPeriodSource,adminSource:input.originalAdminInitSource,readSource:input.originalDataReadSource,writeSource:input.originalDataWriteSource,reviewedB41:street.reviewedB41}));
  const repo=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({worldId:'controlled-warehouse-view',streetId:street.id,nowSeconds:1000000,period}),streetModule:street});
  for(const [kind,fields] of [['initialize-source-market',{}],['open-shop',{shopId:1,ownerName:'來源測試',shopName:'受控倉庫'}]]){
@@ -57,6 +60,19 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
    assert.equal(byId.get(40).displayedStock,20);assert.equal(byId.get(40).marketPrice,1500);
    assert.equal(byId.get(40).compiledCost,120);assert.equal(byId.get(65).supplyPoint,100);
    const oracle=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({source:input.originalMarketSource,people:world.period.dtPeople,shop,items:numeric,boom,boomIds:[1]})}));
+   assert.equal(view.marketItems.length,79);
+   assert.deepEqual(view.survey.map(x=>x.itemId).sort((a,b)=>a-b),[1,40,65]);
+   for(const row of view.marketItems){
+     const expected=oracle[row.itemId-1];
+     assert.deepEqual([row.displayedStock,row.marketPrice??0,row.supplyPoint,row.lowestPrice??0,row.highestPrice??0,row.soldToday,row.soldYesterday],[expected.stock,expected.price,expected.rawPoint,expected.low,expected.high,expected.today,expected.yesterday]);
+     assert.equal(view.survey.some(x=>x.itemId===row.itemId),Boolean(expected.survey));
+     if(row.displayedStock){
+       const shared=calculateSourceMarketStatus({stock:row.displayedStock,weightedPrice:row.itemId===40?30000:row.displayedStock*row.marketPrice,popular:row.popularSeconds,population:world.period.dtPeople,saleSpeed:12});
+       assert.deepEqual(shared,{marketprice:row.marketPrice,uppoint:row.supplyPoint});
+     }
+   }
+   assert.equal(view.marketItems.find(x=>x.itemId===41).supplyPoint,0);
+   assert.deepEqual(view.marketItems.find(x=>x.itemId===41).balance,{label:'不足',percent:110});
    for(const row of view.rows){
      const expected=oracle[row.itemId-1];
      assert.deepEqual([row.displayedStock,row.marketPrice??0,row.supplyPoint],[expected.stock,expected.price,expected.point]);
@@ -65,12 +81,12 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
      assert.equal(row.compiledCost,numeric[row.itemId-1].cost);
    }
    world.shops[0].trush=5000000;assert.equal(street.describeWarehouse(world).blocked,false);
-   world.shops[0].trush++;assert.deepEqual(street.describeWarehouse(world).rows,[]);
+   world.shops[0].trush++;const blocked=street.describeWarehouse(world);assert.deepEqual(blocked.rows,[]);assert.deepEqual(blocked.survey,view.survey);
  }
 });
 test('source retail balance thresholds and mobile percentage preserve original discontinuities',()=>{
- assert.deepEqual([10,90,91,100,109,110,1000].map(originalMarketBalance),[
-  {label:'不足',percent:100},{label:'不足',percent:20},{label:'平衡',percent:null},
+ assert.deepEqual([0,10,90,91,100,109,110,1000].map(originalMarketBalance),[
+  {label:'不足',percent:110},{label:'不足',percent:100},{label:'不足',percent:20},{label:'平衡',percent:null},
   {label:'平衡',percent:null},{label:'平衡',percent:null},{label:'飽和',percent:11},{label:'飽和',percent:100},
  ]);
 });

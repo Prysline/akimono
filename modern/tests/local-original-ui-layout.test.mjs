@@ -349,3 +349,11 @@ test('source balance view displays source-ledger maintenance, historical taxes, 
   assert.match(script,/money\(balance\.accruedMaintenance\)\+' \+ '\+money\(balance\.shelfMaintenance\)/);
   assert.match(script,/text\('balance-founded',balance\.foundedLabel\)/);
 });
+
+
+test('original market survey and product detail use server market status, separate from wholesale offers',()=>{
+ assert.match(html,/data-tab="survey"/);
+ for(const id of ['market-survey-rows','item-market-price','item-market-low','item-market-high','item-market-balance'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(script,/s\.warehouse\?\.survey/);
+ assert.match(script,/s\.warehouse\?\.marketItems\?\.find/);
+});

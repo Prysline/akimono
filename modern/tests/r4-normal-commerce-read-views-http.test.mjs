@@ -8,10 +8,12 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.balance.source,'r4-frozen-inc-info-independent.v1');
  assert.equal(p.state.balance.shelfMaintenance,0);
  assert.equal(p.state.balance.foundedLabel,'00秒');
- assert.equal(row(79).count,5);assert.equal(row(79).marketPrice,null);
+ assert.equal(row(79).count,5);assert.equal(row(79).marketPrice,null);assert.deepEqual(p.state.warehouse.survey,[]);
  await p.use(79,0);assert.equal(p.stock(9),1);assert.equal(row(9).count,1);assert.equal(row(9).storage,true);
  await p.list(79);
  assert.equal(row(79).displayedStock,p.stock(79));assert.equal(row(79).marketPrice,10000);
+ assert.deepEqual(p.state.warehouse.survey.map(x=>x.itemId),[79]);
+ assert.equal(p.state.warehouse.survey[0].lowestPrice,10000);assert.equal(p.state.warehouse.survey[0].highestPrice,10000);
  const before=structuredClone({warehouse:p.state.warehouse,balance:p.state.balance});
  const first=await p.saveAndRestart(0);
  assert.deepEqual({warehouse:p.state.warehouse,balance:p.state.balance},before);
