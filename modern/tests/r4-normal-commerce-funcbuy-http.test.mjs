@@ -17,7 +17,7 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
     if(p.stock(79)===10){await p.discard(79,1);continue;}
     if(offer?.canBuy&&offer.marketStock>0&&offer.price===500000&&p.state.shop.money>=offer.price+45000){
       if(p.remaining()<offer.timeSeconds){await p.enoughTime(offer.timeSeconds);continue;}
-      const before=p.state.world,history=p.state.historyCommands;
+      const before=p.state.world;
       const cmd={expectedRevision:before.revision,itemId:64,requestedCount:2,marketShelf:offer.shelf,expectedPrice:offer.price};
       const r=await p.post('/api/buy',cmd);
       assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
@@ -40,8 +40,10 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
       assert.equal(bytes.split(row).length-1,1);
       const disk=join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(after),'log0.cgi');
       assert.equal(await readFile(disk,'utf8'),bytes);
+      const history=p.state.historyCommands,checkpoint=p.state.historyCheckpointRevision;
       const stale=await p.post('/api/buy',cmd);assert.equal(stale.ok,false);
-      assert.deepEqual(p.state.world,after);assert.equal(p.state.historyCommands,history+1);
+      assert.deepEqual(p.state.world,after);assert.equal(p.state.historyCommands,history);
+      assert.equal(p.state.historyCheckpointRevision,checkpoint);
       purchase={after,row,bytes};break;
     }
     if(p.state.shop.money<545000){
