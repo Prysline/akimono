@@ -30,6 +30,8 @@ import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-dis
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
 const reviewedRebelTime=process.env.AKIMONO_REVIEWED_REBEL_TIME==='1';
 if(reviewedRebelTime&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('反亂審閱模式需要跨期及明確獨立存檔目錄');
+// Explicit real HTTP candidate; existing v2 player mode stays compatible.
+const reviewedFullCommerce=process.env.AKIMONO_REVIEWED_FULL_COMMERCE==='1';
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -38,7 +40,8 @@ const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
-const [
+// Bind source names to paths directly: adding a source cannot shift the next input.
+const {
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
   originalConfigSource,originalCompilerSource,originalBuySource,
@@ -46,29 +49,38 @@ const [
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,
-  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
-]=await Promise.all([
-  'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
-  'modern/tests/original-perl/core-inc-admin-func.cgi',
-  'modern/tests/original-perl/inc-func.cgi',
-  'modern/tests/original-perl/write.cgi',
-  'modern/tests/original-perl/inc-turn.cgi',
-  'modern/tests/original-perl/whole.cgi','_config.cgi',
-  'modern/tests/original-perl/inc-makeitem.cgi',
-  'modern/tests/original-perl/buy-s.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/calc.cgi',
-  'modern/tests/original-perl/market.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/core-detail.cgi',
-  'modern/tests/original-perl/period.cgi',
-  'modern/tests/original-perl/use.cgi',
-  'modern/tests/original-perl/core-inc-item.cgi',
-  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
-  'modern/tests/original-perl/pinned-palace.cgi','modern/tests/original-perl/pinned-palace-s.cgi','custom/inc-palace.cgi',
-  'modern/tests/original-perl/pinned-army-view.cgi','modern/tests/original-perl/pinned-army-s.cgi','modern/tests/original-perl/pinned-army.cgi',
-].map(readPinnedSource));
+}=Object.fromEntries(await Promise.all(Object.entries({
+  itemDsl:'custom/inc-item-data.cgi',
+  rebelDsl:'custom/inc-rebel-data.cgi',
+  originalAdminInitSource:'modern/tests/original-perl/core-inc-admin-func.cgi',
+  originalDataReadSource:'modern/tests/original-perl/inc-func.cgi',
+  originalDataWriteSource:'modern/tests/original-perl/write.cgi',
+  originalTurnSource:'modern/tests/original-perl/inc-turn.cgi',
+  originalWholeSource:'modern/tests/original-perl/whole.cgi',
+  originalConfigSource:'_config.cgi',
+  originalCompilerSource:'modern/tests/original-perl/inc-makeitem.cgi',
+  originalBuySource:'modern/tests/original-perl/buy-s.cgi',
+  originalBuyItemSource:'modern/tests/original-perl/item.cgi',
+  originalBuyCalcSource:'modern/tests/original-perl/calc.cgi',
+  originalMarketSource:'modern/tests/original-perl/market.cgi',
+  originalItemSource:'modern/tests/original-perl/item.cgi',
+  originalDetailSource:'modern/tests/original-perl/core-detail.cgi',
+  originalPeriodSource:'modern/tests/original-perl/period.cgi',
+  originalUseSource:'modern/tests/original-perl/use.cgi',
+  originalItemHelperSource:'modern/tests/original-perl/core-inc-item.cgi',
+  originalNewSource:'modern/tests/original-perl/new.cgi',
+  originalCustomSource:'modern/tests/original-perl/pinned-custom.cgi',
+  originalLogSource:'modern/tests/original-perl/pinned-log.cgi',
+  originalPalaceViewSource:'modern/tests/original-perl/pinned-palace.cgi',
+  originalPalaceCommandSource:'modern/tests/original-perl/pinned-palace-s.cgi',
+  originalPalaceConfigSource:'custom/inc-palace.cgi',
+  originalShowcaseSource:'modern/tests/original-perl/sc-s.cgi',
+  originalArmyViewSource:'modern/tests/original-perl/pinned-army-view.cgi',
+  originalArmyCommandSource:'modern/tests/original-perl/pinned-army-s.cgi',
+  originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
+}).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
@@ -80,6 +92,7 @@ const streetModule=createStandardStreetModule({
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedRebelTime:reviewedRebelTime,
 });
 if(!['initialize-source-market','open-shop',
@@ -125,8 +138,9 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
-       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource],
+       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
+       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -192,8 +206,9 @@ function state(){
       }),
     useOffers:streetModule.listUseOffers(world),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(world?.shops?.[0]?.showcasecount===1?
-       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
+    reviewedFullCommerce,
+    showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?
+       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{}))
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
         const owned=shop?.item?.[rule.itemId-1]??0;
@@ -204,7 +219,7 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店',reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
+    capabilities:['建立來源世界','原版開店',reviewedFullCommerce?'來源審閱的多架時間推進候選':reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
@@ -306,7 +321,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='advertise-self'?1:
+      inline==='advertise-self'||inline==='local-self-rumor'||inline==='local-self-industry-rumor'?1:
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
@@ -465,8 +480,10 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      if(Object.hasOwn(body,'targetShopId'))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const rule=streetModule.useItem.getRule(body.itemId,body.useId);
+      const localTarget=rule?.localSelfTarget===true;
+      if(Object.hasOwn(body,'targetShopId')&&(!localTarget||body.targetShopId!==1))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',...(localTarget?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -481,7 +498,7 @@ async function api(req,res,url){
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
-        ...(randomDraws.length?{randomDraws}:{})});
+        ...(localTarget?{targetShopId:1}:{}),...(randomDraws.length?{randomDraws}:{})});
       break;
     }
     case '/api/palace-complete': {
@@ -524,8 +541,8 @@ async function api(req,res,url){
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
       const p3Shelf=repo.read().shops[0]?.showcasecount===1;
-      const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
-        streetModule.reviewedB41?.saleRules?.[itemId])??null;
+      const sourceRule=(streetModule.reviewedNormalCommerce?.saleRules[itemId]??(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
+        streetModule.reviewedB41?.saleRules?.[itemId]))??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const keys=Object.keys(body);

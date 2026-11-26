@@ -100,3 +100,47 @@ test('opt-in R4 conflict endpoints require actual soldiers, exact requests and r
   assert.equal(p.state.armyConflict.canStart,false);
   assert.equal(Object.hasOwn(p.state.world.period.eventState,'rebel'),false);
 });
+
+test('R4 combined full commerce and rebellion flags retain real four-shelf sales, boundary and save provenance',async t=>{
+  let total=0,boundaryReceipt=null;
+  const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,fullCommerce:true,now:null,fundMarketWithWork:true,
+    onTick(r,before){
+      const d=r.details,old=before.shops[0];
+      assert.ok(Array.isArray(d.shelfSales));
+      assert.equal(d.shelfSales.reduce((n,x)=>n+x.count,0),d.naturalSaleCount);
+      for(const row of d.shelfSales){
+        assert.equal(row.itemId,old.showcase[row.shelf]);
+        assert.equal(row.gross,row.count*old.price[row.shelf]);
+      }
+      if(old.showcasecount===4){total+=d.naturalSaleCount;if(d.settlementReceipt)boundaryReceipt=d.settlementReceipt;}
+    }});
+  assert.equal(p.state.reviewedRebelTime,true);assert.equal(p.state.reviewedFullCommerce,true);
+  await p.use(79,1);
+  await p.market(13);await p.market(12);
+  await p.gather(1,10);await p.use(15,0);
+  for(let n=0;;n++){
+    assert.ok(n<40,'source construction funding budget');
+    await p.enoughTime(p.quote(63,3).timePerUseSeconds);
+    if(p.state.shop.money>=40000+Math.max(10000,Math.ceil(p.state.shop.costtoday)+10000))break;
+    await p.use(13,1);
+  }
+  await p.use(63,3);
+  assert.equal(p.state.shop.showcasecount,4);
+  await p.enoughTime(2400);
+  for(let shelf=0;shelf<4;shelf++){
+    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:30,per:100});
+    assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+  }
+  for(let n=0;(!boundaryReceipt||total===0)&&n<37;n++)await p.tick(60);
+  assert.ok(total>0&&boundaryReceipt,'real sale and four-shelf settlement');
+  assert.equal(boundaryReceipt.maintenance,Math.trunc(Number(boundaryReceipt.costBeforeLedger))+8000);
+  const before=p.state.world,history=p.state.historyCommands;
+  const denied=await p.post('/api/army-start-rebellion',{expectedRevision:before.revision,confirmation:'rebel'});
+  assert.equal(denied.ok,false);assert.deepEqual(p.state.world,before);assert.equal(p.state.historyCommands,history);
+  const saved=await p.saveAndRestart(0);
+  assert.deepEqual(saved,before);assert.deepEqual(saved.shops[0].showcase,[30,30,30,30]);
+  assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(saved),true);
+  assert.equal(p.state.army.count,0);
+  await p.tick(1);
+  assert.equal(p.state.shop.showcasecount,4);
+});

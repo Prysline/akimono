@@ -6,7 +6,8 @@ import {createHash} from 'node:crypto';
 import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r4-period-play-file.mjs';
 import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
-import {reviewPeriodLog,projectCrossPeriodLogRows,projectExternalCrossPeriodLogRows,projectReviewedArmyConflictLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
+import {reviewPeriodLog,projectCrossPeriodLogRows,projectExternalCrossPeriodLogRows,projectReviewedArmyConflictLogRows,projectReviewedEventLogRows,projectReviewedCommerceUseLogRows} from './original-r4-period-log-disk.mjs';
+import {capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
 import {ARMY_COMMANDS,CONFLICT_COMMANDS,createIndependentArmyProjection} from './original-r4-independent-army.mjs';
@@ -26,7 +27,7 @@ export function independentCandidateWorld(world){
 function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
 export function createIndependentDiskProjection({sources,sort,street,externalRebel=false}){
   if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
-  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,externalRebel}),
+  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,externalRebel,signedCash:street.reviewedNormalCommerce!==undefined,manualCommerce:street.reviewedManualCommerceEvents??null}),
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource,...(externalRebel?{armyCommand:sources.armyCommandSource}:{})});
@@ -81,7 +82,8 @@ export function createIndependentDiskProjection({sources,sort,street,externalReb
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
       if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS,...(externalRebel?CONFLICT_COMMANDS:[])].includes(command.kind))next.lastlogin=now;
-      return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
+      const sorted=projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
+      return street.reviewedNormalCommerce===undefined?sorted:capReviewedCommerceCash(sorted,street.reviewedNormalCommerce);
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
     const old=before.period.disk;
@@ -122,9 +124,13 @@ export function createIndependentDiskProjection({sources,sort,street,externalReb
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
-    if(['edit-showcase','market-buy','use-item'].includes(command.kind))
+    const sourceUseLogs=street.reviewedCommerceUseLogs&&command.kind==='use-item'&&Object.hasOwn(applied.receipt,'originalInlineLogCalls');
+    if(!sourceUseLogs&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
     if(newRows.some(s=>typeof s!=='string'||!(conflictAction?/^\d+\t[0123]\t\d+\t[^\r\n\t]*\n$/:/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/).test(s)))fail('bounded log rows');
+    // Only the reviewed item's callback may contribute mode 3. General
+    // EVENT, palace, army, and adapter log input keeps its original guard.
+    if(sourceUseLogs)newRows.unshift(...projectReviewedCommerceUseLogRows({reviewed:street.reviewedCommerceUseLogs,rule:street.useItem.getRule(command.itemId,command.useId),command,receipt:applied.receipt,nowSeconds:now}));
     let d;
     if(!old){
       if(command.kind!=='initialize-source-market'||before.revision!==0)fail('only fresh source initialization');

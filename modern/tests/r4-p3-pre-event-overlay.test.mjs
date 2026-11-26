@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -9,6 +10,7 @@ import {createPeriodMemoryWorld,createMemoryWorldAdapter,
   executeMemoryCommand,applyGameCommand,createSourceReviewedMemoryWorldAdapter} from '../src/game-core-contract.mjs';
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
+import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
 
 import {reviewR4SortedPreEvent,projectR4SortedInventoryPreEventTurn} from '../src/original-r4-sorted-pre-event.mjs';
@@ -746,7 +748,9 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
     reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
     reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
     reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
-  for(const {armed,commerce} of [{armed:false,commerce:false},{armed:true,commerce:false},{armed:true,commerce:true}]){
+  const fullReview=reviewNormalCommerceItems({itemDsl:source.itemDsl,compilerSource:source.originalCompilerSource,turnSource:source.originalTurnSource,showcaseSource:readFileSync(new URL('./original-perl/sc-s.cgi',import.meta.url),'utf8')});
+  const expandedPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true,reviewedRebelNow:external.rebel,includeReviewedMultiShelf:true});
+  for(const {armed,commerce,multi=false} of [{armed:false,commerce:false},{armed:true,commerce:false},{armed:true,commerce:true},{armed:true,commerce:true,multi:true}]){
     const {repository}=fresh(true),world=structuredClone(repository.read());
     world.nowSeconds=commerce?1153800:1155580;
     world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
@@ -755,9 +759,10 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
       eventState:commerce?{'ken-sale':1200000,happy:1200000,rebel:1200000}:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
     Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
     if(commerce){world.shops[0].item[39]=100;world.shops[0].showcase=[40];world.shops[0].price=[900];}
+    if(multi){const shop=world.shops[0];shop.item[62]=0;shop.item[40]=100;shop.showcasecount=2;shop.showcase=[40,41];shop.price=[900,1125];}
     const liveArmyBytes=armed?'1,4000\n1\n':'\n\n';
-    const input={world,minutes:commerce?60:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
-      reviewedEvents,reviewedPeriod,liveArmyBytes};
+    const input={world,minutes:commerce?60:1,street:multi?{...street,reviewedNormalCommerce:fullReview}:street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
+      reviewedEvents,reviewedPeriod:multi?expandedPeriod:reviewedPeriod,liveArmyBytes};
     const before=JSON.stringify(world),got=projectR4ExternalCrossPeriodCandidate(input);
     assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
     assert.equal(got.nowSeconds,commerce?1157400:1155640);
@@ -767,7 +772,7 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
     const actual=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
       cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
       env:{...process.env,PERL_HASH_SEED:got.evidence.seed,PERL_PERTURB_KEYS:'0'},
-      input:JSON.stringify({externalCandidate:true,liveArmyBytes,eventWire:Object.entries(world.period.eventState).flat().join(','),
+      input:JSON.stringify({externalCandidate:true,fullCommerce:multi,liveArmyBytes,eventWire:Object.entries(world.period.eventState).flat().join(','),
         startSeconds:world.nowSeconds,shop:world.shops[0],csv:world.market.originalWholesaleCsv,
         settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:got.nowSeconds},
         slices:slices.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
@@ -803,7 +808,9 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
         'same original ITEM survives both source slices; no DataRead reset');
       assert.ok(slices[0].preEvent.receipt.naturalSaleCount>0);
       assert.ok(slices[1].preEvent.receipt.naturalSaleCount>0);
-      assert.equal(slices[1].preEvent.receipt.naturalSaleCount,actual.slices[1].preEvent.shop.itemtoday[40]);
+      if(multi){for(const [id,n] of Object.entries(slices[1].preEvent.receipt.soldByItem))assert.equal(n,actual.slices[1].preEvent.shop.itemtoday[id]);
+        assert.equal(slices[1].preEvent.receipt.shelfSales.reduce((n,x)=>n+x.count,0),slices[1].preEvent.receipt.naturalSaleCount);
+      }else assert.equal(slices[1].preEvent.receipt.naturalSaleCount,actual.slices[1].preEvent.shop.itemtoday[40]);
     }
     assert.equal(JSON.stringify(world),before);
     assert.deepEqual(projectR4ExternalCrossPeriodCandidate(input),got);

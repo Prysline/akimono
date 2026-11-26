@@ -8,12 +8,20 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {planGenuineMarketStep,legalMarketWaitMinutes,chooseGenuineFundingSale} from './genuine-market-plan.mjs';
 const cwd=fileURLToPath(new URL('../../',import.meta.url));
 const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=false,onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null}={}){
+  assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
+  assert.ok(Number.isSafeInteger(fundingWorkBudget)&&fundingWorkBudget>0);
+  assert.ok(Array.isArray(fundingSaleItems)&&fundingSaleItems.every(id=>Number.isSafeInteger(id)&&id>=1&&id<=79));
+  // Test strategy reserve, not a game parameter. Retain cash for pending
+  // source upkeep as well as the next purchase; it never enters the server.
+  const fundingReserve=()=>fundMarketWithWork?Math.max(45000,Math.ceil(state.shop.costtoday??0)+10000):0;
+  let fundingWorks=0;
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
   const stop=async()=>{
@@ -24,7 +32,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
   async function boot(){
     stderr='';
     const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',AKIMONO_REVIEWED_REBEL_TIME:rebelTime?'1':'0'};
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',AKIMONO_REVIEWED_REBEL_TIME:rebelTime?'1':'0',AKIMONO_REVIEWED_FULL_COMMERCE:fullCommerce?'1':'0'};
     if(now===null)delete env.AKIMONO_E2E_FIXED_NOW;
     else env.AKIMONO_E2E_FIXED_NOW=now;
     child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env,stdio:['ignore','pipe','pipe']});
@@ -79,7 +87,8 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
       if(remaining()>=offer.timePerUseSeconds*count)break;
       await enoughTime(offer.timePerUseSeconds*count);
     }
-    const result=await command('/api/use',{itemId:id,useId,requestedCount:count});
+    const offer=quote(id,useId);
+    const result=await command('/api/use',{itemId:id,useId,requestedCount:count,...(offer.targetShopId?{targetShopId:offer.targetShopId}:{})});
     assert.equal(result.details.effectiveCount,count);
     return result;
   }
@@ -97,37 +106,61 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
     await command('/api/showcase',{itemId:id,shelf:0,per:100});
     assert.equal(state.shop.showcase[0],id);
   }
+  async function earnMarketFunds(purpose){
+    assert.ok(fundMarketWithWork&&fundingWorks<fundingWorkBudget,'legal source work funding budget '+JSON.stringify({
+      purpose,fundingWorks,fundingWorkBudget,money:state.shop.money,reserve:fundingReserve(),
+      costtoday:state.shop.costtoday,period:state.world.period.settledCount,
+      exp:state.shop.exp,surplus:fundingSaleItems.map(id=>[id,stock(id)])}));
+    const sale=chooseGenuineFundingSale({currentItem:state.shop.showcase[0],stock,surplusItems:fundingSaleItems});
+    if(sale!==null)await list(sale);
+    if(!stock(13))await market(13);
+    const result=await use(13,1);
+    fundingWorks++;
+    assert.equal(result.details.moneyEarned,10000,'real P5 work receipt');
+    return result;
+  }
   async function market(id,count=1,{partial=false,sell=[]}={}){
-    // Every refill advances full reviewed source time; purchases use live quotes.
     let needed=count,attempts=0;
+    const reasonCounts={};
+    const context=(offer,plan)=>JSON.stringify({id,needed,owned:stock(id),money:state.shop.money,
+      offer:offer?{price:offer.price,stock:offer.marketStock,limit:offer.limit,timeSeconds:offer.timeSeconds,canBuy:offer.canBuy}:null,
+      plan,reasonCounts,boundary:boundary(),remaining:remaining(),period:state.world.period.settledCount,fundingWorks});
     while(needed>0){
-      if(crossPeriod)assert.ok(++attempts<=240,'live market budget exhausted #'+id+' '+JSON.stringify({stock:stock(id),money:state.shop.money,period:state.world.period.settledCount}));
       const offer=state.marketOffers.find(x=>x.itemId===id);
-      if(offer?.canBuy){
-        const quantity=Math.min(needed,offer.marketStock,offer.limit-stock(id));
-        if(quantity>0&&(partial||quantity===needed)&&state.shop.money>=offer.price*quantity&&remaining()>=offer.timeSeconds){
-          const before=state.world;
-          const result=await command('/api/buy',{itemId:id,requestedCount:quantity,marketShelf:offer.shelf,expectedPrice:offer.price});
-          assert.equal(result.details.purchasedCount,quantity);
-          if(onPurchase)onPurchase(result,before,offer);
-          needed-=quantity;
-          continue;
-        }
-        if(quantity>0&&state.shop.money>=offer.price*quantity&&remaining()<offer.timeSeconds){
-          await enoughTime(offer.timeSeconds);continue;
-        }
+      const plan=planGenuineMarketStep({offer,owned:stock(id),needed,partial,money:state.shop.money,
+        remaining:remaining(),reserve:id===13?0:fundingReserve()});
+      reasonCounts[plan.kind+':'+(plan.reason??'')]=(reasonCounts[plan.kind+':'+(plan.reason??'')]??0)+1;
+      assert.ok(++attempts<=240,'live market budget exhausted '+context(offer,plan));
+      if(plan.kind==='buy'){
+        const before=state.world;
+        const result=await command('/api/buy',{itemId:id,requestedCount:plan.quantity,marketShelf:offer.shelf,expectedPrice:offer.price});
+        assert.equal(result.details.purchasedCount,plan.quantity);
+        if(onPurchase)onPurchase(result,before,offer);
+        needed-=plan.quantity;
+        continue;
       }
-      if(offer&&state.shop.money<offer.price*Math.min(needed,offer.marketStock)){
+      if(plan.kind==='time'){
+        await enoughTime(plan.seconds);continue;
+      }
+      if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(!offer&&state.shop.money<fundingReserve()&&stock(13)))){
+        await earnMarketFunds({kind:'market',id,needed,plan});continue;
+      }
+      if(plan.kind==='fund'){
         const product=sell.find(item=>stock(item)>0);
+        // Without a funded strategy or a sale source, waiting for a fixed
+        // price cannot create the missing cash. Report the actual obstacle.
         if(product)await list(product);
       }
-      await tick(crossPeriod?60:Math.min(60,Math.floor((boundary()-1)/60)));
+      const minutes=legalMarketWaitMinutes({crossPeriod,boundary:boundary()});
+      assert.ok(minutes>=1,'market blocked at source period boundary '+context(offer,plan));
+      await tick(minutes);
     }
   }
   async function ore(id,count){
     const useId={5:0,6:1,7:2}[id];assert.ok(useId!==undefined);
     for(let n=0;stock(id)<count;n++){
       assert.ok(n<200,'source mining budget #'+id+' target '+count+' actual '+stock(id));
+      while(fundMarketWithWork&&state.shop.money<fundingReserve())await earnMarketFunds({kind:'ore',id,count});
       if(!stock(9))await market(9);
       await use(9,useId);
     }
@@ -237,5 +270,6 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
+  assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);
+  return {directory,get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
 }

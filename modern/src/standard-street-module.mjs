@@ -1,4 +1,9 @@
+import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
+import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
+import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
+import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
+import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
@@ -178,6 +183,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
+  originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedRebelTime=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
@@ -185,12 +191,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
   if(typeof enableReviewedRebelTime!=='boolean'||enableReviewedRebelTime&&!enableReviewedCrossPeriod)bad('external time requires reviewed crossing');
-  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
-  const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
-  const rebelOrdinaryReview=enableReviewedRebelTime?reviewR4RebelOrdinaryContext({...r4Sources,buySource:originalBuySource,useSource:originalUseSource}):null;
+  if(typeof enableReviewedFullCommerce!=='boolean'||enableReviewedFullCommerce&&!enableReviewedNormalTime)bad('full commerce requires reviewed normal time');
+  const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
+  const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources,{includeReviewedManualCommerce:enableReviewedFullCommerce&&enableReviewedCrossPeriod}):null;
+  const rebelOrdinaryReview=enableReviewedRebelTime?reviewR4RebelOrdinaryContext({...r4Sources,buySource:originalBuySource,useSource:originalUseSource},{includeReviewedManualCommerce:enableReviewedFullCommerce}):null;
   const knownOrdinaryEvents=world=>(ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod}))||
     (rebelOrdinaryReview!==null&&validateR4RebelOrdinaryContext({reviewed:rebelOrdinaryReview,world}));
+  const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    reviewCommerceUseLogs({helperSource:originalItemHelperSource,logSource:originalLogSource,configSource:originalConfigSource}):null;
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
+  const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    reviewOriginalTopPrize({itemDsl,model,originalAddItemSource:originalUseSource,
+      periodSource:originalPeriodSource,includeReviewedMultiShelf:true}):null;
   if(model.maxMoney!==SOURCE_STANDARD_STREET_MAX_MONEY)
     bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
@@ -346,9 +358,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
       itemSource:originalBuyItemSource,
-      globalBuyCallback:reviewedGlobalBuyCallback,
+      globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedFullCommerce,
     }):null;
   const marketBuy=Object.freeze({
+    reviewedSignedCash:enableReviewedFullCommerce,
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
@@ -425,10 +438,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  // Only the authenticated local shop is a legal HTTP target. Preserve
+  // the existing two-shop memory rule separately outside this mode.
+  const localTargetUses=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    compileReviewedLocalTargetUses({sources:r4Sources,model,limits:giftMap.limits,targetAdvertiseUse,manualCommerce:ordinaryEventReview?.manual??null}):[];
+  const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
-    targetAdvertiseUse,
+    targetAdvertiseUse,...(noGuildAdvertiseUse?[noGuildAdvertiseUse]:[]),...localTargetUses,
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -474,7 +492,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
+  const expHashReview=enableReviewedFullCommerce?reviewUseExpHash({useSource:originalUseSource,readSource:originalDataReadSource}):null;
   const useItem=Object.freeze({
+    ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({...args,review:expHashReview})}:{}),
+    reviewedSignedCash:enableReviewedFullCommerce,
+    reviewedSourceLogs:commerceUseLogs!==null,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:
@@ -496,7 +518,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           sourceUse.sourceFile+':'+sourceUse.sourceLine:
         'original ITEM has no reviewed USE #'+useId;
     },
-    runInlineCallback({rule,shop,count,random,targetShop}){
+    runInlineCallback({rule,shop,count,random,targetShop,world}){
+      if(localTargetUses.includes(rule))return projectReviewedLocalTargetUse({rule,shop,count,random,world});
+      if(noGuildAdvertiseUse&&rule===noGuildAdvertiseUse)return projectOriginalNoGuildAdvertisement({rule,shop,count});
       if(rule===targetAdvertiseUse){
         if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
           bad('unreviewed original target advertisement');
@@ -533,7 +557,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectOriginalBookWorkCallback({
           money:shop.money,param1:amount,count,
           shopId:shop.id,shopName:shop.shopname,
-          moneyPrefix:'¥',moneySuffix:'',
+          moneyPrefix:commerceUseLogs?.moneyPrefix??'¥',moneySuffix:commerceUseLogs?.moneySuffix??'',
         });
       }
       if(dairyInlineUses.includes(rule)){
@@ -671,6 +695,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedMarketBuy11,
     reviewedB41,
     reviewedEventCatalog,
+    ...(commerceUseLogs?{reviewedCommerceUseLogs:commerceUseLogs}:{}),
+    ...(ordinaryEventReview?.manual?{reviewedManualCommerceEvents:ordinaryEventReview.manual}:{}),
     reviewedInstantEventCallbacks,
     reviewedSupportEventCallbacks,
     reviewedLoto,
@@ -701,61 +727,16 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0)||knownOrdinaryEvents(world));
-      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
+      const rules=[giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse,selfAdvertiseUse].filter(Boolean)
-        .map(rule=>{
+        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse,...localTargetUses].filter(Boolean);
+      const offers=rules.map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
           const materials=rule.uses.length?
             rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
             (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
-          // Read-only source-backed acquisition hints; never synthesize
-          // inventory, wholesale stock, or a new player transaction.
-          // A positive PLUS is a replenishment possibility, not a promise
-          // of an in-stock purchase or sufficient funds.
-          const materialRoutes=Object.freeze(materials.map(row=>{
-            const sourceItem=model.items.find(item=>item.id===row.itemId);
-            const ownedCount=shop?.item?.[row.itemId-1]??0;
-            const missingCount=Math.max(0,row.count-ownedCount);
-            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
-            const buyRule=buyRegistry?.getRule(row.itemId)??null;
-            const plus=sourceItem?.plusRaw??'';
-            const replenishes=Boolean(buyRule&&
-              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
-            const providers=[giftUseRule,...giftUseVariants,
-              swordUseRule,...declarativeUses,...gatheringUses,
-              ...dairyInlineUses,...bookWorkUses,
-              ...careerChangeUses,partyUse,
-              selfAdvertiseUse].filter(provider=>
-                provider?.creates?.some(output=>
-                  output.itemId===row.itemId&&output.countPerUse>0)||
-                (row.itemId===26&&provider?.itemId===25&&
-                 provider.inlineCallback?.kind==='milk-cow'));
-            const availableProvider=providers.find(provider=>
-              provider.uses.every(input=>
-                (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&
-              (!provider.requiresOwnedItem||
-                (shop?.item?.[provider.itemId-1]??0)>=1));
-            const kind=missingCount===0?'owned':
-              buyRule&&marketStock>=missingCount?'market-stock':
-              availableProvider?'registered-use':
-              replenishes?'source-plus':
-              providers.length?'upstream-use-not-ready':
-              'source-acquisition-not-implemented';
-            return Object.freeze({
-              itemId:row.itemId,name:sourceItem?.name??'未知商品',
-              required:row.count,owned:ownedCount,missing:missingCount,
-              marketStock,kind,sourcePlus:replenishes?plus:null,
-              provider:kind==='registered-use'?Object.freeze({
-                itemId:availableProvider.itemId,useId:availableProvider.useId,
-              }):null,
-              providerCandidates:providers.map(p=>Object.freeze({
-                itemId:p.itemId,useId:p.useId,
-              })),
-            });
-          }));
           const priorExp=shop?.exp;
           const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
@@ -775,7 +756,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           const timeMaximum=shop&&actualTime>0?
             Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
           const moneyMaximum=shop&&rule.money>0?
-            Math.floor(shop.money/rule.money):Number.MAX_SAFE_INTEGER;
+            Math.max(0,Math.floor(shop.money/rule.money)):Number.MAX_SAFE_INTEGER;
           const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
             const available=shop.item[input.itemId-1]??0;
             // NEED/proba=0 is a holding requirement, not consumption per use.
@@ -812,26 +793,82 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             missing?'材料不足：'+
               (model.items.find(item=>item.id===missing.itemId)?.name??
                 '未知材料')+'需要 '+missing.count+' 件':
-            shop.money<rule.money?'資金不足':
+            (rule.money>0||!enableReviewedFullCommerce)&&shop.money<rule.money?'資金不足':
             shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
           return Object.freeze({
             itemId:rule.itemId,useId:rule.useId,
             itemName:sourceName,useName:rule.name,
-            owned,materials,materialRoutes,moneyPerUse:rule.money,
+            owned,materials,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
             proficiency:exp,requiredProficiency:rule.needExperience??0,maxUseCount,maxUseCountReason,
             missingMaterialId:missing?.itemId??null,
             firstUseOnly:Boolean(rule.firstUseOnly),
             singleUseOnly:Boolean(rule.singleUseOnly),
+            ...(rule.localSelfTarget===true?{targetShopId:shop?.id??null,targetShopName:shop?.shopname??null}:{}),
             randomSampleRequired:Boolean(rule.beforeCallback)||
                Boolean(rule.inlineCallback&&
-                 rule.inlineCallback.kind!=='showcase-resize')||
+                 !['showcase-resize','advertise-no-guild','local-self-advertise-other','local-self-theft'].includes(rule.inlineCallback.kind))||
                [...rule.uses,...rule.creates].some(x=>
                  x.probabilityPermille>0&&x.probabilityPermille<1000),
             supported:true,canUse:reason===null,reason,
             source:rule.source,sourceFile:rule.sourceFile,
           });
+        });
+      const byUse=new Map(offers.map(q=>[q.itemId+':'+q.useId,q]));
+      return Object.freeze(offers.map(offer=>{
+          // Read-only source-backed acquisition hints; never synthesize
+          // inventory, wholesale stock, or a new player transaction.
+          // A positive PLUS is a replenishment possibility, not a promise
+          // of an in-stock purchase or sufficient funds.
+          const materialRoutes=Object.freeze(offer.materials.map(row=>{
+            const sourceItem=model.items.find(item=>item.id===row.itemId);
+            const ownedCount=shop?.item?.[row.itemId-1]??0;
+            const missingCount=Math.max(0,row.count-ownedCount);
+            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
+            const buyRule=buyRegistry?.getRule(row.itemId)??null;
+            const plus=sourceItem?.plusRaw??'';
+            const replenishes=Boolean(buyRule&&
+              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
+            const providers=rules.filter(provider=>
+                provider?.creates?.some(output=>
+                  output.itemId===row.itemId&&output.countPerUse>0)||
+                (row.itemId===26&&provider?.itemId===25&&
+                 provider.inlineCallback?.kind==='milk-cow'));
+            // Match the actual read-only USE offer, not just material stock.
+            // EXP, point, time, money and other source gates remain authoritative.
+            const providerOffer=provider=>byUse.get(provider.itemId+':'+provider.useId);
+            const availableProvider=providers.find(provider=>{
+              const q=providerOffer(provider);
+              return q?.canUse===true&&q.maxUseCount>0;
+            });
+            const prizeChoices=rankOnePrize?.topChoices.filter(choice=>choice.itemId===row.itemId)??[];
+            const kind=missingCount===0?'owned':
+              buyRule&&marketStock>=missingCount?'market-stock':
+              availableProvider?'registered-use':
+              replenishes?'source-plus':
+              prizeChoices.length?'source-rank-one-prize':
+              providers.length?'upstream-use-not-ready':
+              'source-acquisition-not-implemented';
+            return Object.freeze({
+              itemId:row.itemId,name:sourceItem?.name??'未知商品',
+              required:row.count,owned:ownedCount,missing:missingCount,
+              marketStock,kind,sourcePlus:replenishes?plus:null,
+              ...(prizeChoices.length?{rankOnePrize:Object.freeze({
+                choices:Object.freeze(prizeChoices.map(choice=>Object.freeze({index:choice.index,count:choice.count}))),
+                totalChoices:rankOnePrize.topChoices.length,
+              })}:{}),
+              provider:kind==='registered-use'?Object.freeze({
+                itemId:availableProvider.itemId,useId:availableProvider.useId,
+              }):null,
+              providerCandidates:providers.map(p=>Object.freeze({
+                itemId:p.itemId,useId:p.useId,
+                canUse:providerOffer(p)?.canUse===true,
+                reason:providerOffer(p)?.reason??null,
+              })),
+            });
+          }));
+          return Object.freeze({...offer,materialRoutes});
         }));
     },
     // R2-C read-only common wholesale offer projection: identical Registry,
@@ -1050,5 +1087,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedRebelTime}):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedFullCommerce,enableReviewedRebelTime}):base;
 }

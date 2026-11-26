@@ -55,17 +55,17 @@ export function quoteCompiledWholesaleRule(rule,marketStock,shop=null){
   // buy-s.cgi halves the original 1200s TIME_SEND_ITEM to 600s.
   const multiplier=zero?1:Math.max(0.5,Math.min(2,2-price/base));
   let timeSeconds=Math.trunc(rule.marketTimeSeconds*multiplier);
-  // P5 zero-price transport includes the reviewed original FUNCINIT prelude
-  // before buy-s.cgi halves TimeSendItem. Positive-price policies are unchanged.
-  if(zero&&shop!==null){
-    const transport=rule.zeroPriceTransport;
+  // Source FUNCINIT precedes buy-s.cgi's wholesale halving and GetTimeDeal.
+  // Full commerce includes the same transport modifiers for positive prices.
+  if(shop!==null&&(zero||rule.sourceTransport)){
+    const transport=rule.sourceTransport??rule.zeroPriceTransport;
     if(!transport||!Array.isArray(shop.item)||
       !Number.isSafeInteger(shop.item[transport.appraiserIndex])||shop.item[transport.appraiserIndex]<0)
       fail('invalid zero-price source transport context');
     let originalSend=rule.marketTimeSeconds*2;
     if(shop.item[transport.appraiserIndex]>0)originalSend=Math.trunc(originalSend/4*3);
     if(shop.job===transport.job)originalSend=Math.trunc(originalSend/2);
-    timeSeconds=Math.trunc(originalSend/2);
+    timeSeconds=Math.trunc(Math.trunc(originalSend/2)*multiplier);
   }
   if(!Number.isSafeInteger(timeSeconds)||timeSeconds<0)
     fail('unsafe original GetTimeDeal time');
@@ -77,8 +77,9 @@ function sourceMarker(text,fragment){
 }
 export function compileStandardStreetMarketBuyRegistry({
   itemDsl,rebelDsl,model,compiled,compilerSource,buySource,
-  wholeSource,itemSource,globalBuyCallback=null,
+  wholeSource,itemSource,globalBuyCallback=null,includeReviewedShowcaseTool=false,
 }){
+  if(typeof includeReviewedShowcaseTool!=='boolean')fail('explicit showcase tool source review');
   if(!Array.isArray(model?.items)||model.items.length!==79||
      !Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     fail('79 audited items and compiled stock limits required');
@@ -123,6 +124,7 @@ export function compileStandardStreetMarketBuyRegistry({
     init[0].raw.includes("$TIME_SEND_ITEM=int($TIME_SEND_ITEM/2) if $DT->{job} eq 'peddle';")&&
     model.items.some(x=>x.id===24&&x.code==='skill-mekiki'&&x.name==='行家的精隨')?
     Object.freeze({appraiserIndex:23,job:'peddle'}):null;
+  if(includeReviewedShowcaseTool&&zeroTransport===null)fail('original FUNCINIT transport review required');
   const sourceItems=[...main.blocks,...rebel.blocks]
     .filter(b=>b.kind==='ITEM');
   if(sourceItems.length!==79)fail('original ITEM count');
@@ -147,14 +149,15 @@ export function compileStandardStreetMarketBuyRegistry({
     const rawBase=one(block,'base')?.value??null;
     const callback=one(block,'funcb');
     const price=Number(priceRow.value);
-    // P5: admit only the explicitly reviewed fixed-zero book source, not
-    // every zero PRICE (e.g. #63 remains unsupported). The shared engine
-    // sees a source rule, never a special ITEM-number purchase path.
-    const zeroPriceReviewed=block.file===ITEM_SOURCE&&itemId===13&&
-      item.code==='book-work'&&priceRow.value==='0'&&limitRow.value==='1/1'&&
-      limit.limit===1&&limit.wslimit===1&&one(block,'plus')?.value==='10h'&&
-      one(block,'pop')?.value==='0'&&one(block,'flag')?.value==='noshowcase'&&
-      rawBase===null&&!callback&&zeroTransport!==null;
+    // P5 book and explicitly reviewed source #63 tool share one exact
+    // fixed-zero buy-s/GetTimeDeal/FUNCINIT path; no blanket zero-price grant.
+    const zeroIdentity=itemId===13&&item.code==='book-work'&&
+      one(block,'plus')?.value==='10h'&&one(block,'flag')?.value==='noshowcase'||
+      includeReviewedShowcaseTool&&itemId===63&&item.code==='edit-showcase'&&
+      one(block,'plus')?.value==='1d'&&one(block,'flag')?.value==='noshowcase|norequest';
+    const zeroPriceReviewed=block.file===ITEM_SOURCE&&zeroIdentity&&
+      priceRow.value==='0'&&limitRow.value==='1/1'&&limit.limit===1&&limit.wslimit===1&&
+      one(block,'pop')?.value==='0'&&rawBase===null&&!callback&&zeroTransport!==null;
     let reason=null,classification='common-static';
     if(!/^[0-9]+$/.test(priceRow.value)||!Number.isSafeInteger(price))
       reason='unreviewed original PRICE at '+block.file+':'+priceRow.line;
@@ -193,6 +196,7 @@ export function compileStandardStreetMarketBuyRegistry({
       pricePolicy:Object.freeze(pricePolicy),
       stockLimit:limit.limit,wholesaleLimit:limit.wslimit,
       marketTimeSeconds,
+      ...(includeReviewedShowcaseTool?{sourceTransport:zeroTransport}:{}),
       ...(zeroPriceReviewed?{zeroPriceReviewed:true,zeroPriceTransport:zeroTransport}:{}),
       callbackSource:callback?block.file+':'+callback.line:null,
       globalBuyCallback,classification,reason,
@@ -222,6 +226,7 @@ export function compileStandardStreetMarketBuyRegistry({
         stockLimit:e.stockLimit,
         ...(e.zeroPriceReviewed?{zeroPriceReviewed:true,wholesaleLimit:e.wholesaleLimit,
           zeroPriceTransport:e.zeroPriceTransport}:{}),
+        ...(e.sourceTransport?{sourceTransport:e.sourceTransport}:{}),
         marketTimeSeconds:e.marketTimeSeconds,
         source:e.source,
         scope:e.classification==='common-static'?

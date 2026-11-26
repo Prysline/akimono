@@ -2,6 +2,7 @@
  * registries still own every item, callback and RNG gate. No acquisition
  * authority; the independent disk owner must validate the full wire and
  * authenticated command lineage and reproject each exact CAS successor. */
+import {R4_MANUAL_COMMERCE_EVENT_CODES} from './original-r4-manual-commerce-events.mjs';
 import {createHash} from 'node:crypto';
 import {reviewR4ExternalPreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
 import {independentCandidateWorld,R4_INDEPENDENT_DISK,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
@@ -11,7 +12,7 @@ const pins={detailSource:'9a83d26fb29edee4032958f1e6de837a250f3384',
   buySource:'6ba8df9a733ed16c490389414cd94934fe1185ca',
   useSource:'1bf4537cc41e344c144d840d43175c4c232765bb'};
 const fail=m=>{throw new RangeError('R4 rebel ordinary context: '+m)};
-export function reviewR4RebelOrdinaryContext(sources){
+export function reviewR4RebelOrdinaryContext(sources,options={}){
   for(const [name,sha] of Object.entries(pins)){
     const s=sources[name];
     if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)
@@ -23,7 +24,7 @@ export function reviewR4RebelOrdinaryContext(sources){
      !sources.buySource.includes('GetUserTaxRate($DTS,$DTTaxrate)')||
      !sources.useSource.includes('$count=0 if ($USE->{needevent} && !$DTevent{$USE->{needevent}});'))
     fail('source tax/event gate drift');
-  const data=reviewR4ExternalPreEventItemOverlay(sources);
+  const data=reviewR4ExternalPreEventItemOverlay(sources,options);
   const r=Object.freeze({data,committable:false});
   reviews.add(r);return r;
 }
@@ -49,6 +50,6 @@ export function validateR4RebelOrdinaryContext({reviewed,world}){
     // The rebel DSL has no ITEM PARAM. The only supported ordinary ITEM
     // overlays remain the same three previously-reviewed sale/PLUS fields.
     // No additional USE recipes or event-dependent callback is admitted.
-    return order.every(code=>code==='happy'||reviewed.data.params.rules[code].every(r=>['popular','point','plus'].includes(r.field)));
+    return order.every(code=>code==='happy'||(reviewed.data.manual&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code))||reviewed.data.params.rules[code].every(r=>['popular','point','plus'].includes(r.field)));
   }catch{return false}
 }

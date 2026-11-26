@@ -21,8 +21,10 @@ export function isReviewedOrdinaryCommand(c,street){
     case 'discard-item':return exact(c,common+'itemId,count')&&int(c.itemId,1,79)&&int(c.count,1);
     case 'use-item':{
       const draws=Object.hasOwn(c,'randomDraws');
-      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':''))&&int(c.itemId,1,79)&&int(c.useId)&&
-        Boolean(street.useItem?.getRule(c.itemId,c.useId))&&int(c.requestedCount,1)&&
+      const rule=int(c.itemId,1,79)&&int(c.useId)?street.useItem?.getRule(c.itemId,c.useId):null;
+      const localTarget=rule?.localSelfTarget===true;
+      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':'')+(localTarget?',targetShopId':''))&&
+        Boolean(rule)&&(!localTarget||c.targetShopId===c.shopId)&&int(c.requestedCount,1)&&
         (!draws||(Array.isArray(c.randomDraws)&&c.randomDraws.length>=1&&c.randomDraws.length<=128&&c.randomDraws.every(n=>int(n,0,999999))));
     }
     default:return false;

@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {projectSharedUseItem} from './shared-use-item-core.mjs';
 import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
 /** Opt-in source-reviewed local normal-time command and exact CAS reviewer.
  * No crossing settlement, external special EVENT context, arbitrary draw or
@@ -18,6 +19,7 @@ import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
 import {projectR4NormalTurnCandidate,R4_NORMAL_TURN_PROJECTION} from './original-r4-normal-turn-candidate.mjs';
+import {reviewNormalCommerceItems,validateNormalCommerceInventory,capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
@@ -42,28 +44,36 @@ function sourceSettlementReceipt(evidence){
     expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
 }
 const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
-export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedRebelTime=false}){
+export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedFullCommerce=false,enableReviewedRebelTime=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
-  const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
+  if(typeof enableReviewedFullCommerce!=='boolean')fail('explicit full commerce review');
+  const normalCommerce=enableReviewedFullCommerce?reviewNormalCommerceItems(sources):null;
+  if(normalCommerce!==null){
+    if(!sources.writeSource.includes('$DT->{money}=$MAX_MONEY if $DT->{money}>$MAX_MONEY;'))fail('original DataWrite money cap required');
+    street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
+  }
+  const capApplied=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>capReviewedCommerceCash(s,normalCommerce))};
+  const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
+  const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources,{includeReviewedManualCommerce:enableReviewedFullCommerce&&enableReviewedCrossPeriod});
   const sorted=reviewR4SortedPreEvent(sources);
-  const hash=reviewR4HashPolicy(sources);
+  const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
     compiledCatalog:street.reviewedEventCatalog,reviewedParams:data.params,itemDsl:sources.itemDsl,turnSource:sources.turnSource,readSource:sources.readSource});
   const events=reviewOriginalR4MultiEventFixture({
     compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
-    reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
+    reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword,reviewedManualCommerce:data.manual??null});
   if(typeof enableReviewedRebelTime!=='boolean'||enableReviewedRebelTime&&!enableReviewedCrossPeriod)fail('external time requires reviewed crossing disk');
-  const externalData=enableReviewedRebelTime?reviewR4ExternalPreEventItemOverlay(sources):null;
+  const externalData=enableReviewedRebelTime?reviewR4ExternalPreEventItemOverlay(sources,{includeReviewedManualCommerce:enableReviewedFullCommerce}):null;
   const externalEvents=externalData?reviewOriginalR4MultiEventFixture({
     compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
-    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:externalData.rebel}):null;
+    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:externalData.rebel,reviewedManualCommerce:externalData.manual??null}):null;
   const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,externalRebel:enableReviewedRebelTime}):null;
   const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k))||(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(k));
-  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true}):null;
-  const externalPeriod=externalData?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,reviewedRebelNow:externalData.rebel}):null;
+  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce}):null;
+  const externalPeriod=externalData?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,reviewedRebelNow:externalData.rebel}):null;
   const needsExternal=period=>Object.hasOwn(period.eventState??{},'rebel')||period.town?.leader!==0;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
@@ -104,6 +114,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         !/^[1-9][0-9]*$/.test(id)||Number(id)>79||
         !Number.isSafeInteger(n)||n<0||n>1000)||Object.values(exp).reduce((a,b)=>a+b,0)>3600)
         fail('ordinary source EXP bounds');
+      if(normalCommerce!==null){validateTimeShop(shop);if(!Number.isSafeInteger(shop.money)||shop.money>normalCommerce.maxMoney)fail('source committed cash bound');}
     }
     return true;
   }
@@ -111,7 +122,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     if(!isReviewedWorldTimeCommand(command)||command.expectedRevision!==world.revision)fail('exact reviewed time command and revision');
     validate(world);
     if(world.shops.length!==1)fail('reviewed time requires one shop');
-    validateP3Inventory(world.shops[0],street.reviewedGiftMapUse,street.reviewedB41);
+    validateTimeShop(world.shops[0]);
     const input=disk?independentCandidateWorld(world):world;
     const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod};
     const crossing=disk&&projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+command.minutes*60}).crossesSettlement;
@@ -124,10 +135,13 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       const sourceTrace=projectExternalTimeTrace(candidate);
       const saleReceipt=projectExternalSaleReceipt(candidate);
       const settlementReceipt=sourceSettlementReceipt(evidence);
-      if(settlementReceipt)settlementReceipt.soldByItem=saleReceipt.sliceSales.find(s=>s.dateupdate===1).soldByItem;
+      if(settlementReceipt){settlementReceipt.soldByItem=saleReceipt.sliceSales.find(s=>s.dateupdate===1).soldByItem;
+        if(normalCommerce!==null){const boundary=evidence.slices.find(s=>s.dateupdate===1).preEvent;
+          settlementReceipt.shelfSales=boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0}));settlementReceipt.costBeforeLedger=String(boundary.periodLogInput.shop.costtoday);}}
+      const shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
       return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,armyBytes:stagedArmyBytes,receipt:{
         action:REVIEWED_WORLD_TIME_COMMAND,source:candidate.source,minutes:command.minutes,elapsedSeconds:command.minutes*60,
-        ...saleReceipt,
+        ...saleReceipt,...(normalCommerce!==null?{shelfSales}:{}),
         itemTurnAffectedSlices:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0),
         settlementReceipt,sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
         scope:'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
@@ -136,13 +150,26 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       const candidate=(world.period.settledCount>0?projectR4SettledPeriodCandidate:projectR4CrossPeriodCandidate)(args);
       const {shops,market,period,nowSeconds,evidence}=candidate;
       if(candidate.source!==R4_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete crossing source candidate required');
-      validateP3Inventory(shops[0],street.reviewedGiftMapUse,street.reviewedB41);
+      validateTimeShop(shops[0]);
       const trace={drawPolicy:evidence.drawPolicy,hashPolicy:evidence.hashPolicy,seed:evidence.seed,interpreter:evidence.interpreter,slices:evidence.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,logs:s.eventLogs}))};
       // Compact source-derived receipts for actual player acceptance. These
       // are derived from the same reviewed candidate, not a second formula.
       const itemTurnAffectedSlices=evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0);
-      const settlementReceipt=sourceSettlementReceipt(evidence);
-      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
+      const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
+      const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
+        naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
+        ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem,
+          shelfSales:boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0})),
+          // Preserve the exact round-trippable decimal, not a fractional JSON
+          // number outside GameCore's receipt integer contract.
+          costBeforeLedger:String(boundary.periodLogInput.shop.costtoday)}:{}),
+        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
+        saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
+        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
+        expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
+      const soldByItem={},shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
+      if(normalCommerce!==null)for(const slice of evidence.slices)for(const [id,n] of Object.entries(slice.preEvent.receipt.soldByItem))soldByItem[id]=(soldByItem[id]??0)+n;
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem,shelfSales}:{}),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
     }
     const candidate=projectR4NormalTurnCandidate(args);
     if(candidate.source!==R4_NORMAL_TURN_PROJECTION||candidate.committable!==false||
@@ -152,19 +179,21 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const {shops,market,period,nowSeconds,evidence}=candidate;
     // Separate reviewed command adapter owns the complete successor and
     // exact CAS recheck. Never pass a partial noncommittable proposal to Core.
-    if(!disk)validate({...world,shops,market,period,nowSeconds,revision:world.revision+1});
-    validateP3Inventory(shops[0],street.reviewedGiftMapUse,street.reviewedB41);
+    if(!disk)validate({...world,shops:capApplied({shops}).shops,market,period,nowSeconds,revision:world.revision+1});
+    validateTimeShop(shops[0]);
     const {preEventReceipt,...trace}=evidence;
     const applied={shops,market,period,nowSeconds,receipt:{
       action:REVIEWED_WORLD_TIME_COMMAND,source:R4_NORMAL_TURN_PROJECTION,
       minutes:command.minutes,elapsedSeconds:command.minutes*60,
       naturalSaleCount:preEventReceipt.naturalSaleCount,
+      ...(normalCommerce!==null?{soldByItem:preEventReceipt.soldByItem,
+        shelfSales:preEventReceipt.shelfSales.map(row=>({...row,sliceIndex:0}))}:{}),
       itemTurnAffectedSlices:preEventReceipt.itemCallbackStage.itemTurnAffectedShops,settlementReceipt:null,
       sourceTrace:trace,preEventDrawCount:evidence.preEventDraws.length,
       totalDraws:evidence.preEventDraws.length+evidence.eventSamples.length,
       scope:'source-reviewed local single-shop nonsettling normal time; no external special EVENT or 36h settlement',
     }};
-    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):applied;
+    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):capApplied(applied);
   }
   const wrapped=Object.freeze({...street,
     capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[]),...(enableReviewedRebelTime?CONFLICT_COMMANDS:[])]),
@@ -173,11 +202,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     ...(enableReviewedRebelTime?{reviewedRebelTime:true,describeConflict:world=>{validate(world);requireProvenance(world);return disk.describeConflict(world);}}:{}),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
-    ...(disk?{finalizeReviewedTransition({before,command,applied}){
+    ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
       if(!allowedOrdinary(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
-      return disk.finalize({before,command,applied});
+      return disk?disk.finalize({before,command,applied}):capApplied(applied);
     }}:{}),
     validateReviewedWorldTimeState:validate,
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
@@ -214,7 +243,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
         else if(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(command.kind))applied=disk.applyConflict(before,command);
         else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
-        else{
+        else if(command.kind==='use-item'&&street.useItem?.getRule(command.itemId,command.useId)?.inlineCallback?.kind==='local-self-industry-rumor'){
+          if(command.expectedRevision!==before.revision)fail('manual EVENT USE revision');
+          // Recompute shared USE directly; outer reviewer owns period mutation.
+          applied=projectSharedUseItem({world:before,command,useItem:street.useItem});
+        }else{
           const result=applyGameCommand({world:before,command,streetModule:street});
           if(!result.ok)fail('source ordinary replay rejected');
           applied={shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details};

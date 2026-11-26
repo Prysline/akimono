@@ -8,7 +8,8 @@ import {projectOriginalR4TimeSlices} from './original-r4-time-slices.mjs';
 import {projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {resolveR4ExternalCommandHashOrders} from './original-r4-perl-hash-replay.mjs';
 import {projectR4TerritoryMixedRebelSlice} from './original-r4-territory-mixed-rebel-slice.mjs';
-import {createR4CrossPeriodDraws} from './r4-time-command-draws.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
+import {createR4CrossPeriodDraws,R4_FULL_CROSS_SLICE_DRAWS} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
 import {R4_SORTED_PRE_EVENT_SOURCE} from './original-r4-sorted-pre-event.mjs';
 export const R4_EXTERNAL_CROSS_PERIOD_CANDIDATE='r4-external-rebel-cross-period-candidate.v1';
@@ -27,7 +28,9 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
      typeof balJob!=='string'||!balJob||typeof balName!=='string'||!balName||
      !sameOrder(reviewedEvents.eventCodes,reviewedHash?.declarationOrder??[]))
     fail('reviewed single-shop external candidate, no tax-rate or persisted DT.army');
-  const tape=createR4CrossPeriodDraws({world,minutes});
+  const normalCommerce=street.reviewedNormalCommerce??null;
+  const maxDraws=normalCommerce===null?125:R4_FULL_CROSS_SLICE_DRAWS;
+  const tape=createR4CrossPeriodDraws({world,minutes,fullCommerce:normalCommerce!==null});
   const plan=projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,
     lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+minutes*60});
   const candidateSettled=world.period?.state==='source-cross-period-candidate-not-committed';
@@ -35,7 +38,7 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
     fail('crossing or settled source candidate required');
   const initial=resolveR4ExternalCommandHashOrders({reviewed:reviewedHash,world,minutes,expectedInterpreter});
   const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initial.initialOrder,
-    saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled,externalCandidate:true});
+    saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled,externalCandidate:true,normalCommerce});
   const steps=[],slices=[];
   let cursor=world,hash=initial,used=0,pendingArmyBytes=null,currentTax=taxRate,transientArmy=null;
   for(const [i,part] of plan.effectiveSlices.entries()){
@@ -44,17 +47,17 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
       reviewedB59Iron:street.reviewedB59Iron,reviewedB60Happy:street.reviewedB60Happy,
       reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
       reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
-      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,
+      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initial.initialOrder}};
     const project=!plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:
       i===0?a=>projectR4BoundaryPreEventCandidate({...a,conflictNames:{balJob,balName}}):
       a=>projectR4ResidualPreEventCandidate({...a,originWorld:world});
     const preSamples=[];let pre=null;
-    for(let n=0;n<=125;n++){
+    for(let n=0;n<=maxDraws;n++){
       try{pre=project({...args,randomDraws:preSamples});break;}
       catch(e){
         if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
-        if(n===125)fail('pre-EVENT draw budget exhausted');
+        if(n===maxDraws)fail('pre-EVENT draw budget exhausted');
         preSamples.push(tape.unit(used+n));
       }
     }
@@ -78,7 +81,7 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
       items:overlay.baseItems,shop:{...pre.shops[0],army:transientArmy},startSeconds:cursor.nowSeconds,
       spanSeconds:part.timespanSeconds,activeUntilSeconds:events,activeHashOrderFixture:priorOrder,
       eventHashOrderFixture:initial.eventOrder,taxRate:currentTax,balJob,balName,liveArmyBytes,pendingArmyBytes,
-      reviewedSubminute:true,reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse},
+      reviewedSubminute:true,reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse,normalCommerce},
       randomDrawProvider:(index,range)=>range===LOTO_RANGE?tape.lottery(used+index):tape.unit(used+index),
       resolveNowOrder:({expired,started,activeUntilSeconds})=>{
         op={periodRebel,expired:[...expired],started:started.map(code=>[code,activeUntilSeconds[code]]),nowDeleted:[]};
@@ -99,7 +102,8 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
       eventState:Object.fromEntries(hash.nextPriorOrder.map(code=>[code,event.activeUntilSeconds[code]]))};
     const {army,...persistedShop}=event.shop;
     transientArmy=army;
-    validateP3Inventory(persistedShop,street.reviewedGiftMapUse,street.reviewedB41);
+    if(normalCommerce===null)validateP3Inventory(persistedShop,street.reviewedGiftMapUse,street.reviewedB41);
+    else validateNormalCommerceInventory(persistedShop,street.reviewedGiftMapUse,normalCommerce);
     used+=mixed.drawsUsed;pendingArmyBytes=mixed.stagedArmyBytes;currentTax=mixed.taxRate;
     slices.push({dateupdate:part.dateupdate,spanSeconds:part.timespanSeconds,startSeconds:cursor.nowSeconds,
       preEvent:pre,preEventDraws:preSamples,periodRebel,activeOrder:[...priorOrder],eventOrder:[...initial.eventOrder],

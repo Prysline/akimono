@@ -9,6 +9,8 @@ import path,{join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
+import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from '../src/reviewed-guild-advertise-no-guild-use.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createMemoryWorld,createMemoryWorldAdapter,
   executeMemoryCommand,validateMemoryWorld,encodeMemorySnapshot}
@@ -166,4 +168,28 @@ test('R2 #62 source inline and job declaration changes are rejected',()=>{
     assert.throws(()=>createStandardStreetModule({...sources,itemDsl:changed}),
       /source|advertis|drift|original/i);
   }
+});
+
+test('R4 #62/2 no-guild branch matches frozen UseItem consumption and message; no member effects authorized',()=>{
+  const rule=compileReviewedNoGuildAdvertiseUse({itemDsl:sources.itemDsl,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),limits:street.reviewedGiftMapUse.limits});
+  const customStreet={...street,useItem:{...street.useItem,getRule:(id,u)=>id===62&&u===2?rule:street.useItem.getRule(id,u),
+    runInlineCallback:args=>args.rule===rule?projectOriginalNoGuildAdvertisement(args):street.useItem.runInlineCallback(args)}};
+  const initial=fresh(),stock=[...initial.shops[0].item];stock[61]=1;
+  const world=validateMemoryWorld({...initial,shops:[{...initial.shops[0],guild:'',item:stock,rank:5010,job:'peddle',exp:{62:100},time:956800}]});
+  const oracle=JSON.parse(execFileSync('perl',['original-r2-self-advertise-use-probe.pl',JSON.stringify({
+    itemId:62,useId:2,stock,exp:{62:100},rank:5010,job:'peddle',wholesale:world.market.wholesale,money:world.shops[0].money,paytoday:world.shops[0].paytoday,time:956800,nowSeconds:world.nowSeconds,requestedCount:1,randomDraws:[],
+  })],{cwd:join(root,'modern/tests/original-perl'),encoding:'utf8',timeout:30000}));
+  const repo=createMemoryWorldAdapter(world);
+  const result=executeMemoryCommand({repository:repo,streetModule:customStreet,command:{kind:'use-item',expectedRevision:world.revision,shopId:1,itemId:62,useId:2,requestedCount:1}});
+  assert.equal(result.code,'COMMITTED',JSON.stringify(result.details));
+  const after=result.world.shops[0];
+  assert.equal(after.time,oracle.result.time);assert.equal(after.time-world.shops[0].time,28800);
+  assert.deepEqual(after.item,oracle.result.stock);assert.equal(after.item[61],0);
+  assert.deepEqual(after.exp,oracle.result.exp);assert.equal(after.rank,oracle.result.rank);
+  assert.equal(after.money,oracle.result.money);assert.equal(after.paytoday,oracle.result.paytoday);
+  assert.deepEqual(result.world.market.wholesale,oracle.result.wholesale);
+  assert.equal(result.details.originalFunctionReturn,oracle.result.functionReturn);
+  assert.deepEqual(result.details.originalInlineLogCalls,[]);
+  assert.equal(result.details.randomDrawsUsed,0);
+  assert.throws(()=>projectOriginalNoGuildAdvertisement({rule,shop:{...after,guild:'existing'},count:1}),/no-guild branch/);
 });

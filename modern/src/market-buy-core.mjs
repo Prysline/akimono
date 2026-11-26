@@ -112,7 +112,8 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   if(command.marketShelf!==shelf||command.expectedPrice!==price)
     fail('stale wholesale shelf or price');
 
-  const money=safe(shop.money,'shop money');
+  const cashMin=marketBuy.reviewedSignedCash===true?-Number.MAX_SAFE_INTEGER:0;
+  const money=safe(shop.money,'shop money',cashMin);
   const paytoday=safe(shop.paytoday,'shop paytoday');
   const originalTime=safe(shop.time,'shop time');
   const remaining=safe(world.nowSeconds,'world time')-originalTime;
@@ -126,7 +127,7 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   const total=checkedProduct(count,price,'purchase total');
   const timeBase=remaining>259200?world.nowSeconds-259200:originalTime;
   const updatedShop={...shop,item:[...shop.item],
-    money:safe(money-total,'post-buy money'),
+    money:safe(money-total,'post-buy money',cashMin),
     paytoday:checkedSum(paytoday,total,'post-buy paytoday'),
     time:checkedSum(timeBase,timeCost,'post-buy action time')};
   updatedShop.item[shopIndex]=checkedSum(owned,count,'post-buy item stock');
@@ -134,11 +135,15 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   updatedWholesale[wholesaleIndex]=safe(inMarket-count,
     'post-buy wholesale stock');
 
+  // The source taxes the synthetic wholesale seller, not the buyer. Retain
+  // actual GetSaleTax in the receipt without charging it twice.
+  const tax=marketBuy.reviewedSignedCash===true&&price>0?Math.trunc(total*Math.min(99,Math.trunc(Math.max(0,price/rule.unitPrice-1)*5+0.5))/100):0;
+  const sourceTax=price===0?0:tax;
   const receipt={
     action:MARKET_BUY_COMMAND,shopId:shop.id,itemId:rule.itemId,
     source:rule.source,scope:rule.scope??'source-reviewed subset',
     requestedCount:command.requestedCount,purchasedCount:count,
-    unitPrice:price,totalPaid:total,tax:0,marketShelf:shelf,
+    unitPrice:price,totalPaid:total,tax:sourceTax,marketShelf:shelf,
     timeConsumedSeconds:timeCost,moneyBefore:money,
     moneyAfter:updatedShop.money,paytodayBefore:paytoday,
     paytodayAfter:updatedShop.paytoday,stockBefore:owned,

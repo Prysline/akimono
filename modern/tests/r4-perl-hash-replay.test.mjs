@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {reviewR4HashPolicy,resolveR4HashOrders,r4HashSeed,resolveR4ExternalCommandHashOrders} from '../src/original-r4-perl-hash-replay.mjs';
-import {createR4TimeDraws} from '../src/r4-time-command-draws.mjs';
+import {createR4TimeDraws,createR4CrossPeriodDraws,R4_FULL_PRE_EVENT_DRAWS,R4_FULL_CROSS_SLICE_DRAWS} from '../src/r4-time-command-draws.mjs';
 import {LOTO_RANGE} from '../src/original-b58-loto-startfunc.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const dir=path.join(root,'modern/tests/original-perl');
@@ -53,6 +53,13 @@ test('R4 time RNG is restart-reproducible and domain-separated, and lottery cove
   assert.ok(tape.some(([,loto])=>loto.result>=1000000),'lottery cannot be limited to 1e6 integer outcomes');
   assert.throws(()=>a.unit(221),/range/);
   assert.throws(()=>a.lottery(-1),/range/);
+  const expanded=createR4TimeDraws({world,minutes:60,fullCommerce:true});
+  assert.equal(expanded.unit(220),a.unit(220));
+  assert.doesNotThrow(()=>expanded.unit(R4_FULL_PRE_EVENT_DRAWS+99));
+  assert.throws(()=>expanded.unit(R4_FULL_PRE_EVENT_DRAWS+100),/range/);
+  const cross=createR4CrossPeriodDraws({world,minutes:60,fullCommerce:true});
+  assert.doesNotThrow(()=>cross.unit(2*(R4_FULL_CROSS_SLICE_DRAWS+100)-1));
+  assert.throws(()=>cross.unit(2*(R4_FULL_CROSS_SLICE_DRAWS+100)),/range/);
 });
 
 test('external replay retains period assignment, pre-NOW traversal and post-NOW deletion across two source slices',()=>{
