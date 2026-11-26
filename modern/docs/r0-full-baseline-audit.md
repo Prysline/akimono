@@ -41,3 +41,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 前候選 [45804660497](https://github.com/Prysline/akimono/actions/runs/45804660497) job 139856600728：HEAD `1d3d112e3b5897e7c013ee5d8cf5906c12151c5a`、實際 checkout `c8bbf30ac5e0d6aa2f5dc321f8878dc0c76be121`，tree `41fce2eb2ef4c8ffcdb8cf9bca2c3f5cdf90c8c6` 相同。JS 1350/1350、0 fail/skip/cancelled、Perl 2456/2456（85 .t）、DSL/pins steps 全 success。僅該固定候選；本批新 HEAD 待驗。
 
 [打工／展示架／lostbook](r0-work-showcase-lostbook-evidence.md) 4 檔已逐檔審閱，83 有效、24 歷史、126 待補（107/233），收斂後補審44、既有待覆核56。57 項已有精確測試證據；B-27 兩種打工與展示架1–4 callback probe 補鏈，5–8 不升格；B-30 合成 A/B/C 不硬映射正式 USE。正式 lawfulAcquisition/HTTP/v2 下界不變。R1-HTTP-01 strict repro 未實跑；本批無 runtime 修改。
+
+第十批 [共用回呼／helper／材料與產出](r0-shared-helper-material-evidence.md) 補審 6 檔，89 有效、24 歷史、120 待補（113/233）；收斂後補審50，既有待覆核56。保留 B-26 stub、B-29 exact helper、B-22 數字片段的區分；沒有新增具體 ITEM/USE 正向旗標；未執行本批 CI。

@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 83、歷史 24、待補 126。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 44 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 89、歷史 24、待補 120。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 50 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -37,9 +37,9 @@
 | original-inline-work-showcase-model.test.mjs | 有效 | Perl Oracle／Node 差分（純 callback 投影） |
 | original-integrated-use-lostbook-model.test.mjs | 有效 | Perl Oracle／Node 差分（合成完整 USE 順序） |
 | original-item-dynamic-loading-model.test.mjs | 有效 | Perl Oracle／Node 差分（虛擬 require） |
-| original-item-helper-model.test.mjs | 待補 | 未完成語義審閱 |
+| original-item-helper-model.test.mjs | 有效 | Perl Oracle／Node 差分（隔離 helper） |
 | original-market-buy10.test.mjs | 有效 | 混合：Perl Oracle／Node 差分＋歷史 HTTP/CAS |
-| original-multi-item-use-model.test.mjs | 待補 | 未完成語義審閱 |
+| original-multi-item-use-model.test.mjs | 有效 | 純 Node 投影／來源守門（材料與產出） |
 | original-natural-sale-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-nayuta-functurn.test.mjs | 待補 | 未完成語義審閱 |
 | original-perl/backup-safety.t | 有效 | 原版 Perl Oracle／不安全歷史語義 |
@@ -70,9 +70,9 @@
 | original-perl/original-gift-map-use.t | 有效 | 原版 Perl Oracle（隔離 compiler／Core） |
 | original-perl/original-inline-work-showcase.t | 有效 | Perl Oracle（原版隔離 callback） |
 | original-perl/original-item-callback-contract.t | 有效 | 靜態來源守門（Perl Test::More） |
-| original-perl/original-item-helpers.t | 待補 | 未完成語義審閱 |
+| original-perl/original-item-helpers.t | 有效 | Perl Oracle（隔離 helper） |
 | original-perl/original-market-buy10.t | 有效 | 原版 Perl Oracle（隔離 CGI） |
-| original-perl/original-multi-item-use.t | 待補 | 未完成語義審閱 |
+| original-perl/original-multi-item-use.t | 有效 | Perl Oracle（材料與產出片段） |
 | original-perl/original-natural-sale-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-nayuta-functurn.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-b50-guild-ledger.t | 待補 | 未完成語義審閱 |
@@ -108,7 +108,7 @@
 | original-perl/original-r4-sorted-pre-event.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-time-slices.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-town-play.t | 待補 | 未完成語義審閱 |
-| original-perl/original-shared-callbacks.t | 待補 | 未完成語義審閱 |
+| original-perl/original-shared-callbacks.t | 有效 | Perl Oracle（外部呼叫 stub） |
 | original-perl/original-sparse-all-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-sparse-multi-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-sparse-wholesale-plus.t | 待補 | 未完成語義審閱 |
@@ -127,7 +127,7 @@
 | original-perl/world-one-shop.t | 待補 | 未完成語義審閱 |
 | original-perl/world-read-safety.t | 待補 | 未完成語義審閱 |
 | original-perl/world-shop-history.t | 有效 | 原版 Perl Oracle／受控 DataRead |
-| original-shared-use-callback-model.test.mjs | 待補 | 未完成語義審閱 |
+| original-shared-use-callback-model.test.mjs | 有效 | Perl Oracle／Node 差分（外部呼叫 stub） |
 | original-sparse-all-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-sparse-multi-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-sparse-wholesale-plus.test.mjs | 待補 | 未完成語義審閱 |

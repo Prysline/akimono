@@ -4667,22 +4667,57 @@
       "path": "modern/tests/original-item-helper-model.test.mjs",
       "sha": "7b25c30cc6030144d56eb8e01bd21bbcadc5ecb1",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（隔離 helper）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "26–70 pin 四個 helper 及 lostbook；72–176 stock clamp、負值、overlimit、result append、零數量；178–228 nested lostbook 與嚴格門檻；230–254 fixture validation/immutability；256–279 27個原版觀察逐欄比對。",
+      "executionPath": "projectOriginalItemHelper / projectOriginalLostbookWithCoreItemHelper → Perl probe",
+      "risk": "真正 helper 片段，不是 outer USE、合法取得或現行 RNG；負值異常不等於正式漏洞。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 38
+        },
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-item-helper-model.mjs",
+          "sha": "6e3050c51c39a2a8a6c207fa7f59c2b3810700e3"
+        },
+        {
+          "path": "modern/src/original-shared-use-callback-model.mjs",
+          "sha": "aa32b07876489415c753d07a702710fd1072c6b8"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/tests/original-perl/original-item-helper-probe.pl",
+          "sha": "45beb2efe65f0f85aa3505a963faf0ec874cba47"
+        }
+      ],
+      "fixtures": "人工 itemNo、stock、limit、count、observed draw；Perl 缺失可 skip。",
+      "limitations": "真正 helper 片段，不是 outer USE、合法取得或現行 RNG；負值異常不等於正式漏洞。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-market-buy10.test.mjs",
@@ -4764,22 +4799,49 @@
       "path": "modern/tests/original-multi-item-use-model.test.mjs",
       "sha": "19476de4528183003bbf8bf1d44b4507721a7da1",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "純 Node 投影／來源守門（材料與產出）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "41–57 原版 consume→create→一次市場→callback；59–121 原版數字、重複輸出零 row、overflow、uncoded item、負庫存；123–185 共享 RNG 順序、cap 與多店；186–214 fixture 拒絕、immutable、無 transaction。",
+      "executionPath": "projectOriginalMultiItemUse → projectOriginalMakeAmount",
+      "risk": "本檔不直接執行 Perl；相鄰 .t 是獨立原版證據而非本檔自動逐欄差分。無前置 gate、金錢、時間、callback、正式 RNG/v2。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 36
+        },
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 25
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-multi-item-use-model.mjs",
+          "sha": "dcc5f0fef376388f570370cb15b9bc3412fd270b"
+        },
+        {
+          "path": "modern/src/original-use-outcomes-model.mjs",
+          "sha": "b6bc7c0ba6c8973017b7191d1236c7756ce12aba"
+        }
+      ],
+      "fixtures": "人工三槽兩店，固定正 count，注入 replay draws。",
+      "limitations": "本檔不直接執行 Perl；相鄰 .t 是獨立原版證據而非本檔自動逐欄差分。無前置 gate、金錢、時間、callback、正式 RNG/v2。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-natural-sale-plus.test.mjs",
@@ -5691,17 +5753,41 @@
       "path": "modern/tests/original-perl/original-item-helpers.t",
       "sha": "f9e1be8339032c1e7754eee44451e851c2fe550d",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 helper）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "13–45 source body；47–104 helper clamp、negative count、overlimit；109–176 result arrays append/零負；179–236 lostbook 真 helper、stock/money/time/EXP、seed 與閾值。",
+      "executionPath": "OriginalItemHelperHarness::bootstrap / subcall / lostbook → source extracted functions",
+      "risk": "無真正 loader、CGI、log、存檔、正式交易。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 15
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        }
+      ],
+      "fixtures": "人工 $DT/$USE，seed，隔離 package。",
+      "limitations": "無真正 loader、CGI、log、存檔、正式交易。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-market-buy10.t",
@@ -5771,17 +5857,36 @@
       "path": "modern/tests/original-perl/original-multi-item-use.t",
       "sha": "a5d26b3ac82ce8d9e295561cc6ff1e8749299a97",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（材料與產出片段）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "20–43 擷取 MakeAmount/材料產出 loop 並 require whole；73–107 stock、use/add/trash、一次 market 及空 list；114–140 seeded stochastic next rand 與故意 overdraw 的負庫存。",
+      "executionPath": "eval run_pinned_multi_item → 原版 CheckWholeStore / MakeAmount",
+      "risk": "非完整 USE 或正式配方；不能以負庫存 fixture 判定正式入口接受超量。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 35
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 recipe、三槽兩店、seed；跳過前置 eligibility。",
+      "limitations": "非完整 USE 或正式配方；不能以負庫存 fixture 判定正式入口接受超量。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-natural-sale-plus.t",
@@ -6389,17 +6494,32 @@
       "path": "modern/tests/original-perl/original-shared-callbacks.t",
       "sha": "750a690ec929b65a773602ac5e00abd4d62868d8",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（外部呼叫 stub）",
+      "originalSource": "custom/inc-item-data.cgi",
+      "assertions": "23–51 擷取、編譯兩 source callbacks；66–96 lostbook 0/負/seed 與 arguments、stock unchanged；100–138 popup rank cap、負值、訊息與 log arguments、money/time/EXP unchanged。",
+      "executionPath": "eval exact @@FUNCITEM lostbook/popup",
+      "risk": "真正 Core item helper 未執行（與 B-29 區別）；無整體交易、loader、CGI、persist。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 55
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "合成 $DT/$USE/@ITEM，UseItem/WriteLog recording stub。",
+      "limitations": "真正 Core item helper 未執行（與 B-29 區別）；無整體交易、loader、CGI、persist。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-sparse-all-plus.t",
@@ -6803,22 +6923,45 @@
       "path": "modern/tests/original-shared-use-callback-model.test.mjs",
       "sha": "c3d5d4dc1ac286403339545ef9d58071939a880a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（外部呼叫 stub）",
+      "originalSource": "custom/inc-item-data.cgi",
+      "assertions": "22–30 pin lostbook/popup；32–69 strict draw、UseItem arguments、不宣稱 stock；71–123 popup rank cap、負值、pre-cap message、log order、無其他 mutation；125–141 fixture guards；143–170 12個 Perl cases 逐欄比對。",
+      "executionPath": "projectOriginalLostbook / projectOriginalPopup → source-extracted Perl probe",
+      "risk": "只證明呼叫與回傳／rank 算式，不證明真庫存扣除或真 log；不映射具體正式 USE。",
+      "disposition": "保留限定共用語義；逐配方／正式 gate 另證",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 38
+        },
+        {
+          "path": "modern/docs/r0-shared-helper-material-evidence.md",
+          "line": 45
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-shared-use-callback-model.mjs",
+          "sha": "aa32b07876489415c753d07a702710fd1072c6b8"
+        },
+        {
+          "path": "modern/tests/original-perl/original-shared-callback-probe.pl",
+          "sha": "b0fe9adfc9c74a35c10cca8833b1b0fc7ffc1e3b"
+        }
+      ],
+      "fixtures": "人工 item、rank、param、draw，UseItem / WriteLog recording stub；Perl 缺失可 skip。",
+      "limitations": "只證明呼叫與回傳／rank 算式，不證明真庫存扣除或真 log；不映射具體正式 USE。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-sparse-all-plus.test.mjs",
@@ -32425,14 +32568,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 83,
-      "待補": 126
+      "有效": 89,
+      "待補": 120
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 44,
+    "currentSessionReviewed": 50,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -32481,7 +32624,8 @@
     "modern/docs/r0-admin-callback-loader-evidence.md",
     "modern/docs/r1-event-gift-oracle-evidence.md",
     "modern/docs/r0-gift-market-oracle-evidence.md",
-    "modern/docs/r0-work-showcase-lostbook-evidence.md"
+    "modern/docs/r0-work-showcase-lostbook-evidence.md",
+    "modern/docs/r0-shared-helper-material-evidence.md"
   ],
   "integrationCiHistory": [
     {
