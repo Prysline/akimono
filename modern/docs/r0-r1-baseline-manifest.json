@@ -7178,17 +7178,57 @@
       "path": "modern/tests/original-perl/original-r4-period-all-finance-source.t",
       "sha": "2bc3a3b90cf71bbaad780494ebfc5ae82e479406",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期財務 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi",
+      "assertions": "L10–46 probe exit0/JSON、兩 cases、fee525/0、atk960→921、def450→405、dignity23/23、dragon -500、payyesterday517、兩 drapay file consumed、rankingcount2。",
+      "executionPath": "frozen SortDT → period pre-backup prefix → FUNCUPDATE/AddItem/DragonBalance in one Perl process",
+      "risk": "跨期龍賽累計、會費及爵位、財務順序與外部IO邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "逐檔讀取來源、斷言與執行路徑；原版同一 Perl process 持續兩期；Node 每次使用該期 Oracle input 而非獨立接續前一 Node output。固定 NOW_TIME/4 draws/人工店鋪與公會；原版真隔離 drapay file consume，Node 純 payoutText。EditGuildMoney/WriteLog/PushLog stub，CloseShop 禁止，backup/session/MakeGuildFile tail 未執行，不證公會金庫、龍賽生成、正式時鐘/玩家/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-all-finance-evidence.md",
+          "line": 12
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-all-finance-source-probe.pl",
+          "sha": "94be24a0dcba6544a706767abddad39ff805850e"
+        }
+      ],
+      "fixtures": "人工 shop 1、guild-a feeRate50/atk1000/def500、payout +500/-1000、dignity26、cost17.875、now1000000/1129600、award/dignity/2 territory draws",
+      "limitations": "原版同一 Perl process 持續兩期；Node 每次使用該期 Oracle input 而非獨立接續前一 Node output。固定 NOW_TIME/4 draws/人工店鋪與公會；原版真隔離 drapay file consume，Node 純 payoutText。EditGuildMoney/WriteLog/PushLog stub，CloseShop 禁止，backup/session/MakeGuildFile tail 未執行，不證公會金庫、龍賽生成、正式時鐘/玩家/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／finance probe／period prefix、原版 DSL callback 與 Node phase/ledger/dragon/dignity/guild"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-backup-tail.t",
@@ -12845,17 +12885,81 @@
       "path": "modern/tests/r4-period-all-finance-same-world-chain.test.mjs",
       "sha": "1eec551dc62ab38740eb07b7f89f3da298b42355",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（單店兩期財務 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi",
+      "assertions": "L60–103 exact shop/town/population/point/guildContext/call edits、525/0 fee、atk960→921、def450→405、dragon -500、dignity23、payyesterday517；L105–114兩次 Perl process 比對；L116–138未review guild/缺會員/錯id/rate1001/committable真拒絕與輸入不變。",
+      "executionPath": "Perl finance probe → per-case input → projectOriginalSoloPeriodPhaseChain (opt-in dragon/dignity/guild)",
+      "risk": "跨期龍賽累計、會費及爵位、財務順序與外部IO邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "逐檔讀取來源、斷言與執行路徑；原版同一 Perl process 持續兩期；Node 每次使用該期 Oracle input 而非獨立接續前一 Node output。固定 NOW_TIME/4 draws/人工店鋪與公會；原版真隔離 drapay file consume，Node 純 payoutText。EditGuildMoney/WriteLog/PushLog stub，CloseShop 禁止，backup/session/MakeGuildFile tail 未執行，不證公會金庫、龍賽生成、正式時鐘/玩家/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-all-finance-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-all-finance-source-probe.pl",
+          "sha": "94be24a0dcba6544a706767abddad39ff805850e"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b50-period-chain-probe.pl",
+          "sha": "f069ead5a3857f578c2ed2682ede26ce83536b82"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        },
+        {
+          "path": "modern/src/original-r4-period-dignity-decay.mjs",
+          "sha": "624948a17862f66c25b73fdafd5f10717180a309"
+        },
+        {
+          "path": "modern/src/original-r4-guild-period-fee.mjs",
+          "sha": "bc53f9a9f788e2d497837c70e37cef7dfd1d8e05"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        }
+      ],
+      "fixtures": "人工 shop 1、guild-a feeRate50/atk1000/def500、payout +500/-1000、dignity26、cost17.875、now1000000/1129600、award/dignity/2 territory draws",
+      "limitations": "原版同一 Perl process 持續兩期；Node 每次使用該期 Oracle input 而非獨立接續前一 Node output。固定 NOW_TIME/4 draws/人工店鋪與公會；原版真隔離 drapay file consume，Node 純 payoutText。EditGuildMoney/WriteLog/PushLog stub，CloseShop 禁止，backup/session/MakeGuildFile tail 未執行，不證公會金庫、龍賽生成、正式時鐘/玩家/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／finance probe／period prefix、原版 DSL callback 與 Node phase/ledger/dragon/dignity/guild"
     },
     {
       "path": "modern/tests/r4-period-dragon-dignity-same-world-chain.test.mjs",
@@ -39945,14 +40049,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 156,
-      "待補": 45
+      "有效": 158,
+      "待補": 43
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 125,
+    "currentSessionReviewed": 127,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -40019,7 +40123,8 @@
     "modern/docs/r0-r4-mixed-loto-happy-iron-sword-guild-rebel-evidence.md",
     "modern/docs/r0-r4-clock-population-plus-evidence.md",
     "modern/docs/r0-r4-sorted-pre-event-evidence.md",
-    "modern/docs/r0-r4-p3-pre-event-overlay-evidence.md"
+    "modern/docs/r0-r4-p3-pre-event-overlay-evidence.md",
+    "modern/docs/r0-r4-period-all-finance-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -40180,6 +40285,27 @@
       "checkout": "4e37acc8760eeaf78f69ff7f5045c9b78986c663",
       "run": 45813568842,
       "job": 139887380057,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "57dfd4d950fd93854a757367f3fc34f4c7ad1348",
+      "tree": "beefcbf6efcca540f32280c5d8490ad574c0884e",
+      "checkout": "8de14457b5c31055f9abb9a097c86c3cd0123137",
+      "run": 45815056839,
+      "job": 139892525015,
       "conclusion": "success",
       "js": {
         "total": 1350,
