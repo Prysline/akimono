@@ -5,6 +5,9 @@ import {execFileSync} from 'node:child_process';
 import {loadNormalCommerceAuditSources} from '../scripts/audit-normal-commerce.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from '../src/original-r4-buy-form.mjs';
+import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from '../src/original-r4-buy-detail.mjs';
+import {parseDsl} from '../src/parse-dsl.mjs';
+import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
 import {reviewOriginalWholesaleBuyLog,projectOriginalWholesaleBuyLog} from '../src/original-r4-buy-log.mjs';
 const extract=(s,name)=>{
  const start=s.indexOf('sub '+name+'\n'),end=s.indexOf('\n}',start);
@@ -57,5 +60,41 @@ test('source wholesale log message matches original buy-s code before callbacks 
   const row=projectOriginalWholesaleBuyLog({reviewed,before,command,receipt,nowSeconds});
   assert.deepEqual([row],run(perl,{receipt,nowSeconds,item:{name:i.name,scale:i.scaleRaw,flag:''}}));
   assert.throws(()=>projectOriginalWholesaleBuyLog({reviewed,before,command,receipt:{...receipt,totalPaid:receipt.totalPaid+1},nowSeconds}),/source buy receipt/);
+ }
+});
+
+test('source buy detail matches frozen buy.cgi and GetString: 79 ITEM texts, POP boundaries, human and storage flags',async()=>{
+ const input=await loadNormalCommerceAuditSources();
+ const source={buyFormSource:input.originalBuyFormSource,wholeSource:input.originalWholeSource,compilerSource:input.originalCompilerSource,itemDsl:input.itemDsl};
+ const reviewed=reviewOriginalBuyDetail(source);
+ assert.throws(()=>reviewOriginalBuyDetail({...source,buyFormSource:source.buyFormSource+'\n'}),/source drift/);
+ const numeric=reviewNormalCommerceItems({...source,showcaseSource:input.originalShowcaseSource,turnSource:input.originalTurnSource});
+ const blocks=parseDsl(input.itemDsl,'custom/inc-item-data.cgi').blocks.filter(b=>b.kind==='ITEM');
+ const cases=blocks.map(b=>{const field=k=>b.fields[k]?.[0]?.value??'';const id=Number(field('no'));return {id,name:field('name'),scale:field('scale'),info:field('info'),flag:numeric.items[id-1].flag,popular:numeric.items[id-1].popular};});
+ for(const popular of [0,1,800000,800001])for(const flag of ['', 's','h','sh'])cases.push({...cases[39],popular,flag});
+ const perl=[
+  'use utf8;use JSON::PP;no strict;no warnings;local $/;my $in=decode_json(<STDIN>);',
+  'sub DataRead{} sub CheckUserPass{} sub RequireFile{} sub OutSkin{} sub GetTagImgGuild{} sub GetTagImgItemType{} sub GetTime2HMS{}',
+  'sub OutError {die $_[0]} sub CheckShowCaseNumber {$_[1]} sub CheckShowCaseItem {return($case->{id},123,7)}',
+  'sub GetWholeStore {return {shopname=>"市場"}} sub CheckGuild {return(0,0,0)} sub GetTimeDeal {600} sub GetMoneyString {$_[0]} sub GetStockTime {3600}',
+  'sub l {$_[0]}',
+  extract(input.originalCompilerSource,'GetString'),
+  'my @out;for $case (@{$in->{cases}}){$disp="";%msg=();$DT={item=>[],money=>1000};$DT->{item}[$case->{id}-1]=2;$ITEM[$case->{id}]={%$case,limit=>10};for(qw(name scale info)){$ITEM[$case->{id}]{$_}=GetString($case->{$_});}$Q{buy}="0!0!".$case->{id};$MAX_MONEY=999999999;($TB,$TR,$TDB,$TD,$TRE,$TBE)=("<table>","<tr><th>","","</th><td>","</td></tr>","</table>");eval $in->{source};die $@ if $@;push @out,$disp;}print encode_json(\\@out);',
+ ].join('\n');
+ const expected=run(perl,{source:source.buyFormSource,cases});
+ for(const [i,c] of cases.entries()){
+  const item={...numeric.items[c.id-1],flag:c.flag};
+  const offer={itemId:c.id,name:c.name,price:123,marketStock:7,owned:2,form:{available:false}};
+  const d=describeOriginalBuyDetail({reviewed,offer,item,popular:c.popular}),html=expected[i];
+  assert.ok(html.includes('<tr><th>店名</th><td>'+d.shopName+'</td></tr>'));
+  assert.ok(html.includes('<tr><th>'+(d.nameLabel==='名字'?'名前':'商品')+'</th><td>'+d.name+'</td></tr>'));
+  assert.ok(html.includes('<tr><th></th><td>'+d.info+'</td></tr>'));
+  assert.ok(html.includes('<tr><th>価格</th><td>@'+d.price+'</td></tr>'));
+  assert.ok(html.includes('<tr><th>販売在庫数</th><td>'+d.marketStock+d.scale+'</td></tr>'));
+  assert.ok(html.includes('<tr><th>自店保有数</th><td>'+d.owned+d.scale+'</td></tr>'));
+  const warning=html.includes('この商品は陳列してもほとんど売れません')?'rare-sales':html.includes('この商品は陳列しても売れません')?'no-sales':null;
+  assert.equal(d.saleWarning,warning,JSON.stringify(c));
+  assert.ok(html.includes("VALUE='"+(d.actionLabel==='雇用'?'雇う':'買う')+"'"));
+  assert.equal(offer.form.available,false,'warning is not a transaction gate');
  }
 });

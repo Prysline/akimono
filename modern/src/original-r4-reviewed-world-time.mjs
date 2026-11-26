@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
 import {reviewR4IndependentCloseCandidate} from './original-r4-independent-close-candidate.mjs';
 import {projectSharedUseItem} from './shared-use-item-core.mjs';
 import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
@@ -17,7 +18,7 @@ import {reviewOriginalShowcaseView,describeOriginalShowcase} from './original-r4
 import {reviewOriginalNews,describeOriginalNews} from './original-r4-news-view.mjs';
 import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
 import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
-import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay,validateR4OrdinaryEventContext} from './original-r4-pre-event-item-overlay.mjs';
 import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
@@ -49,6 +50,19 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
   const warehouse=normalCommerce&&sources.stockViewSource!=null?reviewOriginalWarehouse(sources):null;
+  const buyDetail=normalCommerce&&sources.buyFormSource!=null?reviewOriginalBuyDetail(sources):null;
+  function buyDetailOverlay(world){
+    if(!buyDetail||world?.shops?.[0]?.id!==1||world.shops[0].status!==1||world.shops[0].guild)return null;
+    const input=disk?independentCandidateWorld(world):world;
+    if(!validateR4OrdinaryEventContext({reviewed:data,world:input,candidateSettled:Boolean(disk)}))return null;
+    return projectR4PreEventItemOverlay({reviewed:data,world:input,activeOrder:Object.keys(input.period.eventState),saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled:Boolean(disk),normalCommerce});
+  }
+  function addBuyDetail(offer,overlay){
+    if(!overlay)return offer;
+    const item=normalCommerce.items[offer.itemId-1];
+    const detail=describeOriginalBuyDetail({reviewed:buyDetail,offer,item,popular:overlay.saleRules[offer.itemId]?.popularSeconds??item.popular});
+    return detail?Object.freeze({...offer,detail}):offer;
+  }
   const balanceInputs=[sources.balanceViewSource,sources.infoViewSource];
   if(balanceInputs.some(s=>s!=null)&&balanceInputs.some(s=>s==null))fail('incomplete original balance source set');
   const balance=normalCommerce&&balanceInputs.every(s=>s!=null)?reviewOriginalBalanceView(sources):null;
@@ -181,6 +195,15 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     reviewedOwnerClosure:Boolean(closeReview),
+    ...(buyDetail?{quoteMarketOffer(world,itemId){
+      const offer=street.quoteMarketOffer(world,itemId);
+      return addBuyDetail(offer,buyDetailOverlay(world));
+    },listMarketOffers(world){
+      const offers=street.listMarketOffers(world);
+      if(!offers.length)return offers;
+      const overlay=buyDetailOverlay(world);
+      return Object.freeze(offers.map(offer=>addBuyDetail(offer,overlay)));
+    }}:{}),
     ...(showcaseView?{describeShowcase(world){
       if(!world?.shops?.length)return null;
       validate(world);

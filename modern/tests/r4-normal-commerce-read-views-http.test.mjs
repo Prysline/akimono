@@ -43,3 +43,19 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.news.rows[0].message,'從展示架1下架了。');
  assert.equal(p.state.news.rows[0].private,true);
 });
+
+test('R4 wholesale detail uses actual market quote and follows purchase/reload without extra authority',async t=>{
+ let purchased=false;
+ const p=await genuinePlayer(t,{now:'896401',crossPeriod:true,fullCommerce:true,onPurchase(r,before,offer){
+  if(offer.itemId!==78)return;
+  assert.deepEqual(offer.detail,{source:'r4-frozen-buy-detail.v1',shopName:'市場',name:'轉職指南',nameLabel:'商品',info:'對於那些想換工作的人',scale:'組',price:offer.price,marketStock:offer.marketStock,owned:offer.owned,saleWarning:null,actionLabel:'購買'});
+  assert.equal(r.details.unitPrice,offer.detail.price);
+  assert.equal(r.state.world.shops[0].item[77],offer.detail.owned+1);
+  purchased=true;
+ }});
+ await p.market(78);assert.equal(purchased,true);
+ const current=p.state.marketOffers.find(x=>x.itemId===78);
+ if(current){assert.equal(current.detail.owned,p.stock(78));assert.equal(current.detail.marketStock,current.marketStock);assert.equal(current.detail.price,current.price);}
+ const before=structuredClone(p.state.marketOffers);
+ await p.saveAndRestart(0);assert.deepEqual(p.state.marketOffers,before);
+});

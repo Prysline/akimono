@@ -402,3 +402,11 @@ test('source market list pages keep full server offer identity and original page
  assert.match(script,/sourcePageNumbers\(page\.page,page\.pageMax\)/);
  assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
 });
+
+test('source wholesale details present server ITEM text and warnings without changing purchase identity',()=>{
+ assert.match(script,/if\(offer\.detail\)/);
+ assert.match(script,/d\.info\.split/);
+ assert.match(script,/d\.saleWarning/);
+ assert.match(script,/offer\.detail\?\.actionLabel/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});

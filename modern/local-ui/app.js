@@ -524,7 +524,25 @@ function renderMarketOffers(s){
       td.textContent=String(value);tr.append(td);
       return td;
     };
-    cell(offer.name);
+    const product=cell(offer.name);
+    if(offer.detail){
+      const d=offer.detail,details=document.createElement('details'),summary=document.createElement('summary');
+      summary.textContent='進貨明細';details.append(summary);
+      const row=(label,value)=>{const el=document.createElement('div');el.textContent=label+'：'+value;details.append(el);};
+      row('店名',d.shopName);row(d.nameLabel,d.name);
+      const info=document.createElement('div');
+      // The only frozen ITEM info markup is B; never inject arbitrary HTML.
+      let bold=false;
+      for(const part of d.info.split(/(<\/?B>)/i)){
+        if(/^<B>$/i.test(part)){bold=true;continue;}
+        if(/^<\/B>$/i.test(part)){bold=false;continue;}
+        const span=document.createElement(bold?'strong':'span');span.textContent=part;info.append(span);
+      }
+      details.append(info);
+      row('價格','@'+money(d.price));row('販售庫存數',number(d.marketStock)+d.scale);row('自店持有數',number(d.owned)+d.scale);
+      if(d.saleWarning){const warning=document.createElement('div');warning.textContent=d.saleWarning==='no-sales'?'※這個產品即使陳列了也無法販售':'※這個產品即使陳列了也很難販售';details.append(warning);}
+      product.append(details);
+    }
     cell(offer.price===null?'—':money(offer.price));
     cell(offer.marketStock);
     cell(offer.owned+'／'+offer.limit);
@@ -550,7 +568,7 @@ function renderMarketOffers(s){
     const button=document.createElement('button');
     button.type='button';button.className='primary';
     button.dataset.marketBuy=String(offer.itemId);
-    button.textContent=available?'購買':offer.form?.reason??(offer.reason?'不支援':'暫不可買');
+    button.textContent=available?(offer.detail?.actionLabel??'購買'):offer.form?.reason??(offer.reason?'不支援':'暫不可買');
     button.disabled=!available;
     button.title=offer.form?.reason??offer.reason??(offer.marketStock===0?'市場缺貨':
       !shop?'請先開店':'來源市場或持有上限暫不可交易');
