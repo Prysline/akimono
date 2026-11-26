@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 105、歷史 32、待補 96。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 74 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 111、歷史 32、待補 90。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 80 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -109,9 +109,9 @@
 | original-perl/original-r4-time-slices.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-town-play.t | 待補 | 未完成語義審閱 |
 | original-perl/original-shared-callbacks.t | 有效 | Perl Oracle（外部呼叫 stub） |
-| original-perl/original-sparse-all-plus.t | 待補 | 未完成語義審閱 |
-| original-perl/original-sparse-multi-plus.t | 待補 | 未完成語義審閱 |
-| original-perl/original-sparse-wholesale-plus.t | 待補 | 未完成語義審閱 |
+| original-perl/original-sparse-all-plus.t | 有效 | Perl Oracle（受控 PLUS） |
+| original-perl/original-sparse-multi-plus.t | 有效 | Perl Oracle（受控 PLUS） |
+| original-perl/original-sparse-wholesale-plus.t | 有效 | Perl Oracle（受控 PLUS） |
 | original-perl/original-use-eligibility.t | 有效 | Perl Oracle（合成 eligibility） |
 | original-perl/original-use-experience-transaction.t | 有效 | Perl Oracle（無回呼經驗尾段） |
 | original-perl/original-use-outcomes.t | 有效 | Perl Oracle（機率與產出片段） |
@@ -128,9 +128,9 @@
 | original-perl/world-read-safety.t | 待補 | 未完成語義審閱 |
 | original-perl/world-shop-history.t | 有效 | 原版 Perl Oracle／受控 DataRead |
 | original-shared-use-callback-model.test.mjs | 有效 | Perl Oracle／Node 差分（外部呼叫 stub） |
-| original-sparse-all-plus.test.mjs | 待補 | 未完成語義審閱 |
-| original-sparse-multi-plus.test.mjs | 待補 | 未完成語義審閱 |
-| original-sparse-wholesale-plus.test.mjs | 待補 | 未完成語義審閱 |
+| original-sparse-all-plus.test.mjs | 有效 | Perl Oracle／Node 差分（受控 PLUS） |
+| original-sparse-multi-plus.test.mjs | 有效 | Perl Oracle／Node 差分（受控 PLUS） |
+| original-sparse-wholesale-plus.test.mjs | 有效 | Perl Oracle／Node 差分（受控 PLUS） |
 | original-standard-callback-inventory.test.mjs | 有效 | 靜態來源回呼清冊 |
 | original-use-eligibility-model.test.mjs | 有效 | Perl Oracle／Node 差分（合成 eligibility） |
 | original-use-experience-transaction-model.test.mjs | 有效 | Perl Oracle／Node 差分（無回呼經驗尾段） |

@@ -6525,64 +6525,189 @@
       "path": "modern/tests/original-perl/original-sparse-all-plus.t",
       "sha": "98fb73f44fc9aabc30716c3baece39757bfe7004",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "15–43：59/20、GetTime、負值 cap、#10 stock、CSV 與 RNG；45–59：連續 cap、defined indices、#9/#62 時間值。",
+      "executionPath": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm::run",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-37 實讀斷言及 harness/probe；固定 now=1000000；60/600/3600 秒受控 PLUS；所有 79 槽數值比較；非完整 turn、售貨、callback 或正式存檔。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 18
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 12
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "固定 now=1000000；60/600/3600 秒受控 PLUS；所有 79 槽數值比較；非完整 turn、售貨、callback 或正式存檔。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
       "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "10–30：stock [0,1,0,0]、4 draws、defined [0,9,39,78]、79 CSV；31–52：重複／cap 與人工 seed [19,1,9,0]、RNG order。",
+      "executionPath": "modern/tests/original-perl/OriginalSparseMultiPlusHarness.pm::run",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-36 實讀斷言及 harness/probe；其餘76 PLUS 人工歸零；人工正 stock 不算合法取得；非完整 turn/clock/CGI/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 41
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 26
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseMultiPlusHarness.pm",
+          "sha": "8ad7f23be7f7d337c9936a76a288b6c6e0b0591e"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "其餘76 PLUS 人工歸零；人工正 stock 不算合法取得；非完整 turn/clock/CGI/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-sparse-wholesale-plus.t",
       "sha": "603162e9c9f4b24b949de874e0594f1c144cda78",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "10–30：#10 60秒 +1、draw 1、槽 [9,78]、CSV 0/empty；31–43：再次 stock2、cap10，保持 sparse indices。",
+      "executionPath": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm::run",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-35 實讀斷言及 harness/probe；僅 #10 active PLUS；79槽 cap 是原版 CheckWholeStore，不是全商品合法供給／買入證明。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 41
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 40
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "僅 #10 active PLUS；79槽 cap 是原版 CheckWholeStore，不是全商品合法供給／買入證明。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-use-eligibility.t",
@@ -7051,64 +7176,237 @@
       "path": "modern/tests/original-sparse-all-plus.test.mjs",
       "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "48–75：79 槽 GetTime 與59 PLUS／20 absent、編譯漂移拒絕；77–114：三次 memory command 與 Perl 完整 stock/CSV/defined slots/draws 比較；115–161：缺／多／非法 draws、stale、未初始化或錯誤 world 原子拒絕；163–174：合法 gift 後供給。",
+      "executionPath": "execFileSync modern/tests/original-perl/original-sparse-all-plus-probe.pl；createStandardStreetModule + executeMemoryCommand",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-37 實讀斷言及 harness/probe；固定 now=1000000；60/600/3600 秒受控 PLUS；所有 79 槽數值比較；非完整 turn、售貨、callback 或正式存檔。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 18
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-all-plus-probe.pl",
+          "sha": "6d6b8f6c29677199e35b691c25636702e2afa813"
+        },
+        {
+          "path": "modern/src/original-sparse-all-plus.mjs",
+          "sha": "c5bce229da9f5efefdd4aa062eb0676945d9fdd7"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "固定 now=1000000；60/600/3600 秒受控 PLUS；所有 79 槽數值比較；非完整 turn、售貨、callback 或正式存檔。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-sparse-multi-plus.test.mjs",
       "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "44–61：#1/#10/#40 固定 seconds 與 source gate；62–99：1/1/2 draws、-1/+1/-1、Perl stock/CSV/defined slots 與重複 cap；100–113：人工正 stock 驗負 PLUS；114–145：非法 span/draw/revision/unknown/uninitialized 原子拒絕。",
+      "executionPath": "execFileSync modern/tests/original-perl/original-sparse-multi-plus-probe.pl；createStandardStreetModule + executeMemoryCommand",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-36 實讀斷言及 harness/probe；其餘76 PLUS 人工歸零；人工正 stock 不算合法取得；非完整 turn/clock/CGI/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 41
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 19
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseMultiPlusHarness.pm",
+          "sha": "8ad7f23be7f7d337c9936a76a288b6c6e0b0591e"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-multi-plus-probe.pl",
+          "sha": "05301954bd0c3e12f53fdb48918f8a2cd8177824"
+        },
+        {
+          "path": "modern/src/original-sparse-multi-plus.mjs",
+          "sha": "712f34d275ee3e7a4db78c9e37cd9f844c43e87f"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "其餘76 PLUS 人工歸零；人工正 stock 不算合法取得；非完整 turn/clock/CGI/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-sparse-wholesale-plus.test.mjs",
       "sha": "4f5ae6ea011475d5e2d06f2b7b233e91223f0a55",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "49–72：#10 optional capability、population 500000、max users 50、pins；73–102：memory reviewed-sparse-plus 與 Perl stock/CSV/defined slots/draw、連續 cap；103–127：非法／額外／重複 draws、stale／未初始化原子拒絕。",
+      "executionPath": "execFileSync modern/tests/original-perl/original-sparse-wholesale-plus-probe.pl；createStandardStreetModule + executeMemoryCommand",
+      "risk": "受控供給、sparse CSV、原版 cap、draw consumption；不代表完整時間或正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "B-35 實讀斷言及 harness/probe；僅 #10 active PLUS；79槽 cap 是原版 CheckWholeStore，不是全商品合法供給／買入證明。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 41
+        },
+        {
+          "path": "modern/docs/r0-sparse-plus-evidence.md",
+          "line": 33
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-wholesale-plus-probe.pl",
+          "sha": "4bfbb64db44aa0226d71de5c0f234fa156c335d4"
+        },
+        {
+          "path": "modern/src/original-sparse-wholesale-plus.mjs",
+          "sha": "0f67742545a77813e7d217a340836ccd2ba30f20"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "受控 randomDraws、memory stock、固定時間",
+      "limitations": "僅 #10 active PLUS；79槽 cap 是原版 CheckWholeStore，不是全商品合法供給／買入證明。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-standard-callback-inventory.test.mjs",
@@ -11735,7 +12033,10 @@
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
         "modern/tests/original-market-buy10.test.mjs",
-        "modern/tests/original-perl/original-market-buy10.t"
+        "modern/tests/original-perl/original-market-buy10.t",
+        "modern/tests/original-sparse-multi-plus.test.mjs",
+        "modern/tests/original-perl/original-sparse-multi-plus.t",
+        "modern/tests/original-sparse-all-plus.test.mjs"
       ],
       "registryEvidence": {
         "kind": "ITEM",
@@ -11801,6 +12102,27 @@
               "startLine": 8,
               "endLine": 29,
               "scope": "原版 buy-s.cgi probe 5000G/600s、stock、stub commit 和拒絕"
+            },
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+              "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+              "startLine": 10,
+              "endLine": 52,
+              "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
             }
           ]
         },
@@ -11814,6 +12136,20 @@
               "startLine": 34,
               "endLine": 89,
               "scope": "受控 PLUS 供給、market-buy 與 Perl stock/money/time/CSV 差分"
+            },
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
             }
           ]
         },
@@ -11841,6 +12177,27 @@
           "startLine": 8,
           "endLine": 29,
           "scope": "原版 buy-s.cgi probe 5000G/600s、stock、stub commit 和拒絕"
+        },
+        {
+          "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+          "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+          "startLine": 44,
+          "endLine": 113,
+          "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+          "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+          "startLine": 10,
+          "endLine": 52,
+          "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-sparse-all-plus.test.mjs",
+          "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+          "startLine": 48,
+          "endLine": 114,
+          "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
         }
       ]
     },
@@ -18284,15 +18641,19 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-sparse-multi-plus.test.mjs",
+        "modern/tests/original-perl/original-sparse-multi-plus.t",
+        "modern/tests/original-sparse-all-plus.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "40",
@@ -18340,8 +18701,53 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn",
+          "refs": [
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+              "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+              "startLine": 10,
+              "endLine": 52,
+              "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn",
+          "refs": [
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -18351,7 +18757,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+          "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+          "startLine": 44,
+          "endLine": 113,
+          "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+          "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+          "startLine": 10,
+          "endLine": 52,
+          "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-sparse-all-plus.test.mjs",
+          "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+          "startLine": 48,
+          "endLine": 114,
+          "scope": "ITEM #40 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -20844,15 +21273,19 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-sparse-multi-plus.test.mjs",
+        "modern/tests/original-perl/original-sparse-multi-plus.t",
+        "modern/tests/original-sparse-all-plus.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "1",
@@ -20900,8 +21333,53 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn",
+          "refs": [
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+              "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+              "startLine": 10,
+              "endLine": 52,
+              "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn",
+          "refs": [
+            {
+              "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+              "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+              "startLine": 44,
+              "endLine": 113,
+              "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-sparse-all-plus.test.mjs",
+              "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+              "startLine": 48,
+              "endLine": 114,
+              "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20911,7 +21389,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-sparse-multi-plus.test.mjs",
+          "sha": "6cc452350295346cf1059a5f55a05e4f9c146dca",
+          "startLine": 44,
+          "endLine": 113,
+          "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-perl/original-sparse-multi-plus.t",
+          "sha": "b0e69ee586dccea40fb7e8f5a09bb0fa234dbf30",
+          "startLine": 10,
+          "endLine": 52,
+          "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-sparse-all-plus.test.mjs",
+          "sha": "4223cad41dbcfffa912eed4d0dd7eb938be025fc",
+          "startLine": 48,
+          "endLine": 114,
+          "scope": "ITEM #1 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -35218,14 +35719,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 105,
-      "待補": 96
+      "有效": 111,
+      "待補": 90
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 74,
+    "currentSessionReviewed": 80,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -35279,7 +35780,8 @@
     "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
     "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
     "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
-    "modern/docs/r0-legacy-r2-r3-http-evidence.md"
+    "modern/docs/r0-legacy-r2-r3-http-evidence.md",
+    "modern/docs/r0-sparse-plus-evidence.md"
   ],
   "integrationCiHistory": [
     {

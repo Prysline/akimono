@@ -51,3 +51,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 第十三批 [採集／多次地圖／廣告](r0-r2-gathering-advertisement-repeat-evidence.md) 補審4檔：105有效、24歷史、104待補（129/233）；收斂後補審66、既有待覆核56。10 USE rows 新增原版交易差分，80 rows 有詳細證據；#62/1 memory-only 保留正式 HTTP 拒絕。新候選 CI 待驗。
 
 第十四批 [R2/R3 歷史 HTTP/v1](r0-legacy-r2-r3-http-evidence.md) 補審8檔：105有效、32歷史、96待補（137/233）；收斂後補審74、既有待覆核56。全部 spawn legacy server、fixed clock/RNG；B43 v1、兩店診斷與原版差分不升格，正式功能下界不變。R1-HTTP-01 嚴格腳本仍獨立、未實跑；本機 git ls-remote 再次 DNS 失敗，不以包裝預期失敗測試取得 npm 綠燈。
+
+第十五批 [sparse PLUS](r0-sparse-plus-evidence.md) 補審6檔：111有效、32歷史、90待補（143/233）；收斂後補審80、既有待覆核56。B35/36/37 原版受控 PLUS／cap 差分，明示 ITEM #1/#10/#40 補鏈，82 筆功能有詳細證據；79槽向量不當作正式商品取得，正式正向下界不變。新候選 CI 待驗。
