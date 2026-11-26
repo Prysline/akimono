@@ -27,6 +27,9 @@ import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntim
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+// Temporary D integration gate, not full commerce or an alternate save authority.
+const reviewedMarketCommerce=process.env.AKIMONO_REVIEWED_MARKET_COMMERCE==='1';
+if(reviewedMarketCommerce&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('reviewed market commerce requires crossing and explicit save directory');
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -71,7 +74,7 @@ const streetModule=createStandardStreetModule({
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
-  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -115,7 +118,8 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource],
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1']:[])],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -206,6 +210,7 @@ function state(){
       reviewedCrossPeriod?'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
     disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
     reviewedCrossPeriod,
+    reviewedMarketCommerce,
     reviewedTimeMode:true,
     historyCommands:careerProof?.commands.length??null,
     historyCheckpointRevision:careerProof?.checkpoint?.revision??null,

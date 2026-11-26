@@ -1,3 +1,4 @@
+import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
@@ -175,12 +176,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
-  enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
+  enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
+  // D9 market-only staging capability. Live use needs the same crossing
+  // history/disk authority; isolated source differential tests may use base.
+  if(typeof enableReviewedMarketCommerce!=='boolean'||enableReviewedMarketCommerce&&enableReviewedNormalTime&&!enableReviewedCrossPeriod)bad('market commerce requires reviewed crossing');
   const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
@@ -340,9 +344,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
       itemSource:originalBuyItemSource,
-      globalBuyCallback:reviewedGlobalBuyCallback,
+      globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedMarketCommerce,
     }):null;
+  if(enableReviewedMarketCommerce&&(!buyRegistry||originalItemHelperSource===null))bad('market commerce requires frozen voucher sources');
+  const reviewedVoucher=enableReviewedMarketCommerce?reviewOriginalWholesaleVoucher({itemDsl,buySource:originalBuySource,helperSource:originalItemHelperSource}):null;
+  if(reviewedVoucher&&(giftMap.limits[78]?.limit!==reviewedVoucher.limit||giftMap.limits[78]?.wslimit!==0))bad('reviewed #79 capacity');
   const marketBuy=Object.freeze({
+    ...(reviewedVoucher?{reviewedVoucher,runBuyCallback:args=>runReviewedWholesaleVoucher({...args,review:reviewedVoucher})}:{}),
+    reviewedSignedCash:enableReviewedMarketCommerce,
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},

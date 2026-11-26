@@ -1074,3 +1074,29 @@ test('D4 controlled shared wholesale tax hook preserves buyer accounting and rej
   assert.equal(free.details.tax,0);assert.equal(seen,1);
   assert.equal(encodeMemorySnapshot(world),before);
 });
+
+test('D9 actual StreetModule reviewed market adapter enables voucher callback, keeps default denial and rejects source drift',async()=>{
+  const helper=await read('modern/tests/original-perl/core-inc-item.cgi');
+  const candidate=createStandardStreetModule({...src,originalItemHelperSource:helper,enableReviewedMarketCommerce:true});
+  assert.equal(candidate.marketBuy.getRule(63).zeroPriceReviewed,true);
+  assert.equal(street.marketBuy.getRule(63),null);
+  assert.throws(()=>createStandardStreetModule({...src,originalItemHelperSource:helper+' ',enableReviewedMarketCommerce:true}),/source drift/);
+  assert.throws(()=>createStandardStreetModule({...src,enableReviewedMarketCommerce:true}),/frozen voucher sources/);
+  const initial=seed().repository.read();
+  const wholesale=[...initial.market.wholesale];wholesale[63]=1;
+  const defined=[...new Set([...initial.market.sparseWrittenSlots,63])].sort((a,b)=>a-b);
+  const slots=new Set(defined);
+  const market={...initial.market,wholesale,sparseWrittenSlots:defined,sourceWriteShape:'whole-store-79',
+    originalWholesaleCsv:Array.from({length:79},(_,i)=>slots.has(i)?String(wholesale[i]):'').join(',')};
+  const world={...initial,market,shops:[{...initial.shops[0],money:600000}]};
+  const q=candidate.quoteMarketOffer(world,64),cmd=buyCommand(world,64,q,2);
+  const before=encodeMemorySnapshot(world);
+  const denied=apply(world,cmd,street);assert.equal(denied.ok,false);assert.deepEqual(denied.world,world);
+  const result=apply(world,cmd,candidate);
+  assert.equal(result.ok,true,JSON.stringify(result.details));
+  assert.equal(result.details.totalPaid,500000);assert.equal(result.details.purchasedCount,1);
+  assert.equal(result.world.shops[0].money,100000);
+  assert.equal(result.world.shops[0].item[78],world.shops[0].item[78]+1);
+  assert.deepEqual(result.details.originalBuyLogCalls,[[0,1,'收到了市場贈送的禮物卷1枚']]);
+  assert.equal(encodeMemorySnapshot(world),before);
+});

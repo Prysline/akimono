@@ -8,6 +8,7 @@ import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {projectReviewedWholesaleVoucherLogRows} from './original-r4-wholesale-voucher.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
 const CANDIDATE='source-cross-period-candidate-not-committed';
@@ -74,6 +75,8 @@ export function createIndependentDiskProjection({sources,sort,street}){
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
     if(['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
+    if(command.kind==='market-buy'&&street.marketBuy?.reviewedVoucher)newRows.unshift(...projectReviewedWholesaleVoucherLogRows({
+      review:street.marketBuy.reviewedVoucher,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
     if(newRows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('bounded log rows');
     let d;
     if(!old){
