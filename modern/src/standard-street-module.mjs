@@ -3,6 +3,7 @@ import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
+import {reviewOriginalDiscard,projectOriginalDiscard} from './original-r4-discard.mjs';
 import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 /**
@@ -184,6 +185,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalUserSource=null,originalErrorSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
+  originalDiscardFormSource=null,originalDiscardSubmitSource=null,
   originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
@@ -205,6 +207,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
+  const discardInputs=[originalDiscardFormSource,originalDiscardSubmitSource];
+  if(discardInputs.some(s=>s!==null)&&discardInputs.some(s=>s===null))bad('incomplete original discard source set');
+  const reviewedDiscard=enableReviewedFullCommerce&&discardInputs.every(s=>s!==null)?reviewOriginalDiscard({
+    ...r4Sources,formSource:originalDiscardFormSource,submitSource:originalDiscardSubmitSource,calcSource:originalBuyCalcSource,catalog,limits:giftMap.limits,
+  }):null;
   const sources=[originalAdminInitSource,originalDataReadSource,originalDataWriteSource];
   if(sources.some(x=>x!==null)&&sources.some(x=>x===null))
     bad('incomplete frozen original bootstrap sources');
@@ -689,6 +696,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     sourceMaxShowcasePrice:model.maxMoney,
     catalog,
     reviewedGiftMapUse:giftMap,
+    ...(reviewedDiscard?{reviewedDiscard:true}:{}),
     reviewedBootstrap,
     reviewedSparsePlus,
     reviewedMultiPlus,
@@ -1043,6 +1051,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         integer(command.shopId,'shopId',1);
         integer(command.itemId,'itemId',1);
         integer(command.count,'count',1);
+        if(reviewedDiscard)return projectOriginalDiscard({reviewed:reviewedDiscard,world,command});
         const idx=world.shops.findIndex(s=>s.id===command.shopId);
         if(idx<0)bad('unknown shop');
         const shop=world.shops[idx];

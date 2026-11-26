@@ -43,6 +43,8 @@ const locations=[
  ['originalArmyViewSource','modern/tests/original-perl/pinned-army-view.cgi'],
  ['originalArmyCommandSource','modern/tests/original-perl/pinned-army-s.cgi'],
  ['originalArmyFileSource','modern/tests/original-perl/pinned-army.cgi'],
+ ['originalDiscardFormSource','modern/tests/original-perl/core-inc-item-throw.cgi'],
+ ['originalDiscardSubmitSource','modern/tests/original-perl/core-item-t.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));

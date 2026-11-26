@@ -49,6 +49,7 @@ const {
   originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalDiscardFormSource,originalDiscardSubmitSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -80,6 +81,8 @@ const {
   originalArmyViewSource:'modern/tests/original-perl/pinned-army-view.cgi',
   originalArmyCommandSource:'modern/tests/original-perl/pinned-army-s.cgi',
   originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
+  originalDiscardFormSource:'modern/tests/original-perl/core-inc-item-throw.cgi',
+  originalDiscardSubmitSource:'modern/tests/original-perl/core-item-t.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -92,6 +95,7 @@ const streetModule=createStandardStreetModule({
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalDiscardFormSource,originalDiscardSubmitSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -140,6 +144,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
        originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
        originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalDiscardFormSource,originalDiscardSubmitSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });

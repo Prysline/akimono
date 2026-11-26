@@ -89,7 +89,8 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
         next={pass:'',comment:'',remoteaddr:'',guild:'',blocklogin:'',nocheckip:'',job:'',
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
-      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS].includes(command.kind))next.lastlogin=now;
+      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS].includes(command.kind)||
+         (street.reviewedDiscard===true&&command.kind==='discard-item'))next.lastlogin=now;
       const sorted=projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
       return street.reviewedNormalCommerce===undefined?sorted:capReviewedCommerceCash(sorted,street.reviewedNormalCommerce);
     });
@@ -121,6 +122,10 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
+    if(street.reviewedDiscard===true&&command.kind==='discard-item'){
+      if(applied.receipt.source!=='r4-frozen-item-t-no-guild.v1'||applied.receipt.shopId!==1||typeof applied.receipt.originalMessage!=='string')fail('source discard log identity');
+      newRows.unshift([now,0,1,applied.receipt.originalMessage].join('\t')+'\n');
+    }
     const sourceUseLogs=street.reviewedCommerceUseLogs&&command.kind==='use-item'&&Object.hasOwn(applied.receipt,'originalInlineLogCalls');
     if(!sourceUseLogs&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
