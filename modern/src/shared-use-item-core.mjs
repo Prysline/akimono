@@ -405,11 +405,12 @@ export function projectSharedUseItem({world,command,useItem}){
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
       ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
-         inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement||inlineLocalTarget?{
+         inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement||inlineLocalTarget||
+         (inlineShowcase&&useItem.reviewedSourceLogs===true)?{
         originalInlineLogCalls:(inlineLocalTarget?.logCalls??inlineTargetAdvertisement?.logCalls??inlineNoGuildAdvertisement?.logCalls??
           inlineAdvertisement?.logCalls??inlineParty?.logCalls??
           inlineCareer?.logCalls??inlineDairy?.logCalls??
-          inlineWork.logCalls),
+          inlineShowcase?.logCalls??inlineWork.logCalls),
       }:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,

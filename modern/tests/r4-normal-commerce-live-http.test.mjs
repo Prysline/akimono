@@ -173,6 +173,9 @@ for(let count=1;count<=8;count++){
     assert.equal(p.quote(63,count-1).canUse,true);
     const prior=p.state.shop,resize=await p.use(63,count-1);
     assert.equal(resize.details.effectiveCount,1);
+    assert.deepEqual(resize.details.originalInlineLogCalls,[[0,1,'展示架已經改成'+count+'個了'],[3,0,p.state.shop.shopname+'的展示架已經變成'+count+'個了']]);
+    const resizeLogs=resize.details.originalInlineLogCalls.map(row=>[p.state.world.nowSeconds,...row].join('\t')+'\n').reverse().join('');
+    assert.ok(p.state.world.period.disk.live['log0.cgi'].bytes.startsWith(resizeLogs));
     assert.equal(p.stock(63),0);assert.equal(p.state.shop.money,prior.money-count*10000);
     assert.deepEqual(p.state.shop.showcase,Array(count).fill(0));
     assert.deepEqual(p.state.shop.price,Array(count).fill(0));

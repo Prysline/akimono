@@ -121,3 +121,34 @@ export function projectReviewedArmyConflictLogRows({reviewed,candidate,nowSecond
     return row(nowSeconds,...call,true);
   }).reverse();
 }
+
+/** Full-commerce-only review of actual item::WriteLog (three arguments),
+ * distinct from main::WriteLog's older four-argument compatibility wrapper.
+ * The frozen item helper delegates to PushLog with the same mode/id/msg.
+ */
+const commerceLogReviews=new WeakSet();
+export function reviewCommerceUseLogs({helperSource,logSource,configSource}){
+  for(const [s,sha] of [[helperSource,'bb0244748088be0c5f1d24de7f9f7f05225278cb'],[logSource,pins.log],[configSource,pins.config]]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source commerce log drift');
+  }
+  if(!helperSource.includes('main::PushLog($_[0],$_[1],$_[2]);')||
+     !logSource.includes('unshift(@LOG,"$NOW_TIME\\t$mode\\t$id\\t$msg\\n");'))fail('source commerce WriteLog/PushLog bridge');
+  const r=Object.freeze({source:'r4-frozen-item-writelog-three-argument.v1',moneyPrefix:'\\',moneySuffix:''});
+  commerceLogReviews.add(r);return r;
+}
+export function projectReviewedCommerceUseLogRows({reviewed,rule,command,receipt,nowSeconds}){
+  if(!commerceLogReviews.has(reviewed)||command?.kind!=='use-item'||command.shopId!==1||
+     rule?.supported!==true||rule.itemId!==command.itemId||rule.useId!==command.useId||
+     receipt?.action!=='use-item'||receipt.shopId!==command.shopId||
+     receipt.itemId!==command.itemId||receipt.useId!==command.useId||receipt.source!==rule.source||
+     !receipt.callbackOrder?.includes('source-inline-callback'))fail('reviewed commerce callback log identity');
+  const kinds=['book-work','showcase-resize','career-change','milk-cow','drink-milk','party-popularity',
+    'advertise-self','advertise-no-guild','local-self-advertise-other','local-self-rumor','local-self-theft','local-self-industry-rumor'];
+  const calls=receipt.originalInlineLogCalls;
+  if(!kinds.includes(rule.inlineCallback?.kind)||!Array.isArray(calls)||calls.length>79)fail('reviewed commerce callback log shape');
+  return calls.map(call=>{
+    if(!Array.isArray(call)||call.length!==3||![0,2,3].includes(call[0])||
+      call[1]!== (call[0]===0?command.shopId:0))fail('reviewed commerce callback log target');
+    return row(nowSeconds,...call,true);
+  }).reverse();
+}

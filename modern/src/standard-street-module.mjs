@@ -3,6 +3,7 @@ import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
+import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
@@ -192,6 +193,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources,{includeReviewedManualCommerce:enableReviewedFullCommerce&&enableReviewedCrossPeriod}):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
+  const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    reviewCommerceUseLogs({helperSource:originalItemHelperSource,logSource:originalLogSource,configSource:originalConfigSource}):null;
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewOriginalTopPrize({itemDsl,model,originalAddItemSource:originalUseSource,
@@ -489,6 +492,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const useItem=Object.freeze({
     ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({...args,review:expHashReview})}:{}),
     reviewedSignedCash:enableReviewedFullCommerce,
+    reviewedSourceLogs:commerceUseLogs!==null,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:
@@ -549,7 +553,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         return projectOriginalBookWorkCallback({
           money:shop.money,param1:amount,count,
           shopId:shop.id,shopName:shop.shopname,
-          moneyPrefix:'¥',moneySuffix:'',
+          moneyPrefix:commerceUseLogs?.moneyPrefix??'¥',moneySuffix:commerceUseLogs?.moneySuffix??'',
         });
       }
       if(dairyInlineUses.includes(rule)){
@@ -687,6 +691,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedMarketBuy11,
     reviewedB41,
     reviewedEventCatalog,
+    ...(commerceUseLogs?{reviewedCommerceUseLogs:commerceUseLogs}:{}),
     ...(ordinaryEventReview?.manual?{reviewedManualCommerceEvents:ordinaryEventReview.manual}:{}),
     reviewedInstantEventCallbacks,
     reviewedSupportEventCallbacks,

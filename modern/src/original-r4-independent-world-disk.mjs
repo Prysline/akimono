@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r4-period-play-file.mjs';
 import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
-import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
+import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows,projectReviewedCommerceUseLogRows} from './original-r4-period-log-disk.mjs';
 import {capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
@@ -108,9 +108,13 @@ export function createIndependentDiskProjection({sources,sort,street}){
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
-    if(['edit-showcase','market-buy','use-item'].includes(command.kind))
+    const sourceUseLogs=street.reviewedCommerceUseLogs&&command.kind==='use-item'&&Object.hasOwn(applied.receipt,'originalInlineLogCalls');
+    if(!sourceUseLogs&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
     if(newRows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('bounded log rows');
+    // Only the reviewed item's callback may contribute mode 3. General
+    // EVENT, palace, army, and adapter log input keeps its original guard.
+    if(sourceUseLogs)newRows.unshift(...projectReviewedCommerceUseLogRows({reviewed:street.reviewedCommerceUseLogs,rule:street.useItem.getRule(command.itemId,command.useId),command,receipt:applied.receipt,nowSeconds:now}));
     let d;
     if(!old){
       if(command.kind!=='initialize-source-market'||before.revision!==0)fail('only fresh source initialization');

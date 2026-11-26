@@ -43,6 +43,8 @@ test('R4 genuine #65 zero-POP listing and #62 self advertisement survive source 
   const rank=p.state.shop.rank,priorExp=p.exp(62),use=await p.use(62,0);
   assert.equal(p.stock(62),0);
   assert.equal(use.details.experienceGain,100);
+  const logged=use.details.originalInlineLogCalls.map(row=>[p.state.world.nowSeconds,...row].join('\t')+'\n').reverse().join('');
+  assert.ok(p.state.world.period.disk.live['log0.cgi'].bytes.startsWith(logged),'original callback log order including mode 3');
   assert.equal(p.exp(62),priorExp+100);
   const up=Math.trunc(500*(2-rank/5000));
   assert.ok([Math.min(10000,rank+up),Math.max(1000,rank-up)].includes(p.state.shop.rank));
@@ -50,7 +52,8 @@ test('R4 genuine #65 zero-POP listing and #62 self advertisement survive source 
   assert.ok(settlements.some(x=>Object.hasOwn(x.expAfterLedger,'62')),'#62 EXP survives a real source ledger');
   assert.equal(p.stock(65),1);
   assert.equal(sales[65]??0,0);
-  await p.saveAndRestart(1);
+  const saved=await p.saveAndRestart(1);
+  assert.ok(['log0.cgi','log1.cgi','log2.cgi'].some(k=>saved.period.disk.live[k].bytes.includes(logged)),'actual source advertisement log survives save and restart');
   t.diagnostic(JSON.stringify({item65Sales:sales[65]??0,advertisementExp:p.exp(62),beforeWork:moneyBefore,finalMoney:p.state.shop.money,settlements:settlements.length}));
 });
 
