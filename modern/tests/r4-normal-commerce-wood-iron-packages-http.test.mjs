@@ -9,14 +9,14 @@ import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0}){
   assert.equal(p.stock(id),0,'no pre-existing package');
   assert.ok(components.every(x=>p.stock(x)>=10));
-  assert.equal(p.stock(39),1);
+  assert.ok(p.stock(39)>=1);
   const offer=p.quote(39,useId);
   assert.ok(offer?.canUse||offer?.timePerUseSeconds>p.remaining(),'source package eligibility');
   await p.enoughTime(offer.timePerUseSeconds);
   const prior=p.state.shop,receipt=await p.use(39,useId);
   assert.equal(receipt.details.effectiveCount,1);
   assert.equal(receipt.details.experienceGain,10);
-  assert.equal(p.stock(39),0);
+  assert.equal(p.stock(39),prior.item[38]-1);
   for(const x of components)assert.equal(p.stock(x),prior.item[x-1]-10,'material #'+x);
   assert.equal(p.stock(id),10);
   assert.ok(p.state.showcaseOffers.some(o=>o.itemId===id&&o.owned===10));
@@ -168,9 +168,20 @@ test('R4 genuine #74 steel equipment package from four trained production books,
 test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sales and four v2 generations',async t=>{
   const sales75={},loss75={},sales76={},loss76={};
   const watch75=onSale(sales75,loss75,75),watch76=onSale(sales76,loss76,76);
+  // One finite budget for all four careers, eight advanced recipes and
+  // actual source book loss replacements. Previous CI exhausted 120 works
+  // at the fourth career or the second packing tool. Allow at most 60
+  // 10000-G works per career on average (240 total), not a retry of a world.
+  // The unused basic iron products are saleable funding stock, never the
+  // eight advanced components reserved for #75/#76.
   const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,
+    fundingWorkBudget:240,fundingSaleItems:[41,47,53,58],
     onTick(r,before){watch75(r,before);watch76(r,before);}});
   await p.use(79,0);await p.use(79,3);await p.market(13);
+  // Acquire both consumable tools while the shop has low carrying costs.
+  // They have no source COST; no second market wait after the first sale.
+  await p.market(39,2,{partial:true});
+  assert.equal(p.stock(39),2);
   await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
   await p.use(37,0);assert.equal(p.stock(18),1);
   await p.market(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
@@ -216,11 +227,13 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
         // exposing the protected packing materials to EVENT losses.
         if(p.stock(basic)>0)await p.list(basic);
       }
-      t.diagnostic(JSON.stringify({book,product,held:p.stock(product),exp:p.exp(book),period:p.state.world.period.settledCount}));
+      t.diagnostic(JSON.stringify({book,product,held:p.stock(product),exp:p.exp(book),period:p.state.world.period.settledCount,
+        money:p.state.shop.money,costtoday:p.state.shop.costtoday,fundingWorks:p.fundingWorks}));
     }
   }
-  await p.market(39);
   await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0});
-  await p.market(39);
+  assert.equal(p.stock(39),1);
   await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2});
+  assert.equal(p.stock(39),0);
+  t.diagnostic(JSON.stringify({fundingWorks:p.fundingWorks,finalMoney:p.state.shop.money,period:p.state.world.period.settledCount}));
 });

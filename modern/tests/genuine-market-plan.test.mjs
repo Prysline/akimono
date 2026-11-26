@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {planGenuineMarketStep,legalMarketWaitMinutes} from './support/genuine-market-plan.mjs';
+import {planGenuineMarketStep,legalMarketWaitMinutes,chooseGenuineFundingSale} from './support/genuine-market-plan.mjs';
 const offer={canBuy:true,price:50000,marketStock:1,limit:20,timeSeconds:600};
 const base={offer,owned:0,needed:1,partial:false,money:41761,remaining:70063};
 test('market player reports actual liquidity, not clock exhaustion, for #66 failure evidence',()=>{
@@ -20,4 +20,15 @@ test('market player reports actual liquidity, not clock exhaustion, for #66 fail
   assert.equal(legalMarketWaitMinutes({crossPeriod:false,boundary:59}),0);
   assert.equal(legalMarketWaitMinutes({crossPeriod:false,boundary:61}),1);
   assert.equal(legalMarketWaitMinutes({crossPeriod:true,boundary:59}),60);
+});
+
+test('long genuine funding strategy sells only declared surplus and retains live showcases',()=>{
+  const held={41:0,47:7,53:12,58:0,43:10,75:9};
+  const stock=id=>held[id]??0,surplusItems=[41,47,53,58];
+  assert.equal(chooseGenuineFundingSale({currentItem:0,stock,surplusItems}),47);
+  assert.equal(chooseGenuineFundingSale({currentItem:41,stock,surplusItems}),47);
+  assert.equal(chooseGenuineFundingSale({currentItem:53,stock,surplusItems}),null);
+  assert.equal(chooseGenuineFundingSale({currentItem:75,stock,surplusItems}),null);
+  assert.equal(chooseGenuineFundingSale({currentItem:0,stock,surplusItems:[41,58]}),null);
+  assert.equal(held[43],10);
 });

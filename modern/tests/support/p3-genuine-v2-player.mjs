@@ -8,14 +8,16 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {planGenuineMarketStep,legalMarketWaitMinutes} from './genuine-market-plan.mjs';
+import {planGenuineMarketStep,legalMarketWaitMinutes,chooseGenuineFundingSale} from './genuine-market-plan.mjs';
 const cwd=fileURLToPath(new URL('../../',import.meta.url));
 const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null}={}){
   assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
+  assert.ok(Number.isSafeInteger(fundingWorkBudget)&&fundingWorkBudget>0);
+  assert.ok(Array.isArray(fundingSaleItems)&&fundingSaleItems.every(id=>Number.isSafeInteger(id)&&id>=1&&id<=79));
   // Test strategy reserve, not a game parameter. Retain cash for pending
   // source upkeep as well as the next purchase; it never enters the server.
   const fundingReserve=()=>fundMarketWithWork?Math.max(45000,Math.ceil(state.shop.costtoday??0)+10000):0;
@@ -104,8 +106,13 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     await command('/api/showcase',{itemId:id,shelf:0,per:100});
     assert.equal(state.shop.showcase[0],id);
   }
-  async function earnMarketFunds(){
-    assert.ok(fundMarketWithWork&&fundingWorks<120,'legal source work funding budget');
+  async function earnMarketFunds(purpose){
+    assert.ok(fundMarketWithWork&&fundingWorks<fundingWorkBudget,'legal source work funding budget '+JSON.stringify({
+      purpose,fundingWorks,fundingWorkBudget,money:state.shop.money,reserve:fundingReserve(),
+      costtoday:state.shop.costtoday,period:state.world.period.settledCount,
+      exp:state.shop.exp,surplus:fundingSaleItems.map(id=>[id,stock(id)])}));
+    const sale=chooseGenuineFundingSale({currentItem:state.shop.showcase[0],stock,surplusItems:fundingSaleItems});
+    if(sale!==null)await list(sale);
     if(!stock(13))await market(13);
     const result=await use(13,1);
     fundingWorks++;
@@ -136,7 +143,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
         await enoughTime(plan.seconds);continue;
       }
       if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(!offer&&state.shop.money<fundingReserve()&&stock(13)))){
-        await earnMarketFunds();continue;
+        await earnMarketFunds({kind:'market',id,needed,plan});continue;
       }
       if(plan.kind==='fund'){
         const product=sell.find(item=>stock(item)>0);
@@ -153,7 +160,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     const useId={5:0,6:1,7:2}[id];assert.ok(useId!==undefined);
     for(let n=0;stock(id)<count;n++){
       assert.ok(n<200,'source mining budget #'+id+' target '+count+' actual '+stock(id));
-      while(fundMarketWithWork&&state.shop.money<fundingReserve())await earnMarketFunds();
+      while(fundMarketWithWork&&state.shop.money<fundingReserve())await earnMarketFunds({kind:'ore',id,count});
       if(!stock(9))await market(9);
       await use(9,useId);
     }
@@ -248,5 +255,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
+  return {directory,get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
 }

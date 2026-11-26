@@ -239,7 +239,7 @@ test('R2 material routes distinguish owned, real market PLUS, registered upstrea
   assert.equal(source(10,0,32).kind,'source-plus');
   const soul=source(39,0,38);
   assert.equal(soul.kind,'upstream-use-not-ready');
-  assert.deepEqual(soul.providerCandidates,[{itemId:37,useId:3,canUse:false,reason:'尚未持有使用此功能的商品'}]);
+  assert.deepEqual(soul.providerCandidates,[{itemId:37,useId:3,canUse:false,reason:'材料不足：修行套組需要 1 件'}]);
   // Route descriptions must not mutate the original shop or wholesale state.
   assert.deepEqual(street.listUseOffers(world),offers);
   assert.equal(world.shops[0].item[7],0);
