@@ -1,4 +1,6 @@
 # P4 #25／#26 酪農與乳製品持久化來源審閱（2026-11-26）
+
+> **2026-11-26 正式結果更新：** P4 PR #20 已正式合併：merge `a9654531c64a82be19c135a9b806ff9ef5fa5a73`、PR HEAD `0aeaca696e533d3616b6f3b517fa47afbf6d1ff6`、tree `7e0e4909cd2569db438bdebc16c435c70f5627ef`。[CI 45653296366](https://github.com/Prysline/akimono/actions/runs/45653296366) exact HEAD、實際 checkout `a39f5f027eccc43997e0824c1af1704c658754d3` 同 tree：JavaScript 1325/1325（0 失敗、0 跳過）、Perl 2456/2456（85 .t）、DSL 與凍結 source blob 稽核成功。 真玩家 P4 診斷：自然販售 #25=1、#26=18、#35=1、#36=1；死亡 2、禮券牛 11、排名獎禮券 7、結算 3、checkpoint 385、retained prefixes 3、revision 222→407。以下保留原候選歷史文字，不再代表正式 P4 未驗收。
  
 狀態：**候選、尚未驗收**。正式 migration 開工 HEAD `8a10b5b5b860e55e62b8d41d03e6d58c430dacf6`；與 #17 merge `3b927866b4749aad3ffc583a9cf12bf3fb9eb783` 相較僅 14 個 Markdown 路徑。#19 CI 45577439072 成功。只改 P4 所需 modern/tests、modern/docs；不合併 R4 研究，不改凍結 Perl/DSL、main、固定 refs 或正式玩家引擎。新測試尚須目標 PR exact HEAD、checkout tree 和完整 CI。
  

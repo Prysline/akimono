@@ -8,8 +8,12 @@ export function isReviewedOrdinaryCommand(c,street){
   switch(c.kind){
     case 'complete-palace-mission':return street.reviewedPalace===true&&exact(c,'expectedRevision,kind,shopId');
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
-    case 'market-buy':return exact(c,common+'itemId,requestedCount,marketShelf,expectedPrice')&&
-      int(c.itemId,1,79)&&Boolean(street.marketBuyRegistry?.getRule(c.itemId))&&int(c.requestedCount,1)&&int(c.marketShelf,0,79)&&int(c.expectedPrice,1);
+    case 'market-buy':{
+      const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;
+      return exact(c,common+'itemId,requestedCount,marketShelf,expectedPrice')&&
+        Boolean(rule)&&int(c.requestedCount,1)&&int(c.marketShelf,0,79)&&
+        (rule.zeroPriceReviewed===true?c.expectedPrice===0:int(c.expectedPrice,1));
+    }
     case 'edit-showcase':return exact(c,common+'shelf,itemId,per,priceOverride')&&int(c.shelf,0,7)&&int(c.itemId,0,79)&&int(c.per,1,200)&&int(c.priceOverride,0,999999999);
     case 'discard-item':return exact(c,common+'itemId,count')&&int(c.itemId,1,79)&&int(c.count,1);
     case 'use-item':{
