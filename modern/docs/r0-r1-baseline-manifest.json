@@ -4602,22 +4602,77 @@
       "path": "modern/tests/original-market-buy10.test.mjs",
       "sha": "4b293c64cc786f800ea2e25104b2bca5cc5e522b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "混合：Perl Oracle／Node 差分＋歷史 HTTP/CAS",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/buy-s.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "空市場拒絕；受控 PLUS 後 #10 5000G、600秒、庫存/稀疏 CSV/支付差分、rev 2→3→4；錯 count/價格/貨架不變、無金錢拒絕；legacy UI markup 與 /api/supply、buy stale replay",
+      "executionPath": "executeMemoryCommand → reviewed-sparse-all-plus → market-buy；另 spawn tests/support/legacy-dev-local.mjs",
+      "risk": "保留差分與歷史 UI／CAS 證據；舊 /api/supply 非正式入口，無正式玩家重啟、真 RNG 或現行 UI 操作證據。",
+      "disposition": "保留限定證據；正式玩家、CAS/v2 另證；正常經營 #22",
+      "reason": "本批固定 blob 逐檔語義閱讀；未執行本批測試，既有 CI 屬先前 tree",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 16
+        },
+        {
+          "path": "modern/docs/r0-gift-market-oracle-evidence.md",
+          "line": 29
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        },
+        {
+          "path": "modern/tests/support/legacy-dev-local.mjs",
+          "sha": "992a03097c4631ad7ee58c928942547d994724b3"
+        }
+      ],
+      "fixtures": "固定時間、Perl 供給 draws、零現金注入；legacy temp save dir 與 HTML/CSS/JS 字串檢查",
+      "limitations": "保留差分與歷史 UI／CAS 證據；舊 /api/supply 非正式入口，無正式玩家重啟、真 RNG 或現行 UI 操作證據。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-multi-item-use-model.test.mjs",
@@ -5375,17 +5430,57 @@
       "path": "modern/tests/original-perl/original-gift-map-use.t",
       "sha": "b0d7fc060e596edd99998861c2cb1191b7e51b73",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（隔離 compiler／Core）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/calc.cgi",
+      "assertions": "編譯 #79/0、1800秒、2券與3地圖；time→wholesale→common、無 callback；重複消耗、第三次不足不改 stock/money/time、requested3→2、滿地圖容量仍消耗且 additem=0",
+      "executionPath": "OriginalGiftMapUseHarness::compile/run → 固定 GetBuffer/ClearBuffer/UseItem/CheckWholeStore",
+      "risk": "原版配方、結果順序與截斷是有效 Oracle；不證明正式玩家取得或 v2/CAS。",
+      "disposition": "保留限定證據；正式玩家、CAS/v2 另證；正常經營 #22",
+      "reason": "本批固定 blob 逐檔語義閱讀；未執行本批測試，既有 CI 屬先前 tree",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-gift-market-oracle-evidence.md",
+          "line": 17
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "固定初始 shop/time/money/stock、人工79槽 market；隔離 compiler subroutines，非 top-level CGI/disk",
+      "limitations": "原版配方、結果順序與截斷是有效 Oracle；不證明正式玩家取得或 v2/CAS。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-inline-work-showcase.t",
@@ -5458,22 +5553,65 @@
       "path": "modern/tests/original-perl/original-market-buy10.t",
       "sha": "e72d5898574d82566eb16b24819cff79c1952fe8",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（隔離 CGI）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/buy-s.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "PLUS 補貨；空市場／零錢／count 0 不 commit；成功 commit=1、95000G、paid5000、stock1、time957400、market-1、79槽CSV",
+      "executionPath": "perl original-market-buy10-probe.pl → do buy-s.cgi；實際 calc/item/whole",
+      "risk": "commit 次數為 stub 計數，不證明磁碟原子性、正式 auth、CAS 或 v2。",
+      "disposition": "保留限定證據；正式玩家、CAS/v2 另證；正常經營 #22",
+      "reason": "本批固定 blob 逐檔語義閱讀；未執行本批測試，既有 CI 屬先前 tree",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 16
+        },
+        {
+          "path": "modern/docs/r0-gift-market-oracle-evidence.md",
+          "line": 41
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        }
+      ],
+      "fixtures": "固定 supply draws、固定 shop；DataWrite/DataCommitOrAbort、Lock、auth、guild、CGI render stub",
+      "limitations": "commit 次數為 stub 計數，不證明磁碟原子性、正式 auth、CAS 或 v2。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-multi-item-use.t",
@@ -7825,17 +7963,73 @@
       "path": "modern/tests/r2-gift-use-variants.test.mjs",
       "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/calc.cgi",
+      "assertions": "#79/1–4 registry 無 callback；逐變體比較 count、全部庫存/wholesale、money/time/paytoday、use/add rows/messages；#79/2 初始5券 count0 且 snapshot 不變",
+      "executionPath": "createStandardStreetModule → initialize-source-market/open-shop → executeMemoryCommand(use-item)；Perl GetBuffer/UseItem probe",
+      "risk": "4 分支有效受控差分；#79/2 正向非合法取得，未證正式 HTTP/真時間/RNG/CAS/v2。",
+      "disposition": "保留限定證據；正式玩家、CAS/v2 另證；正常經營 #22",
+      "reason": "本批固定 blob 逐檔語義閱讀；未執行本批測試，既有 CI 屬先前 tree",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-gift-market-oracle-evidence.md",
+          "line": 53
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-gift-use-variants-probe.pl",
+          "sha": "82acbbcc66996ae5dfd750e3de40820bf9e6bda1"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        }
+      ],
+      "fixtures": "固定 now=1000000；memory；#79/2 正向直接注入10券，Perl stock/wholesale fixture",
+      "limitations": "4 分支有效受控差分；#79/2 正向非合法取得，未證正式 HTTP/真時間/RNG/CAS/v2。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-party-popup-source.test.mjs",
@@ -9048,22 +9242,77 @@
       "path": "modern/tests/reviewed-gift-map-use.test.mjs",
       "sha": "50a463b24ec0752c003a4abf8c88ef8d5f1febad",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/calc.cgi",
+      "assertions": "來源 #79/0：2券換 #12/#9/#14 各1，1800秒、0金錢／EXP；三次序列第三次拒絕、count 0／stale revision／非法 callback／錯 market fixture、全 stock 與六個 Perl cases 差分、cap、snapshot deterministic；編譯漂移拒絕",
+      "executionPath": "compileReviewedGiftMapUse → executeMemoryCommand / createMemoryWorldAdapter；Perl probe",
+      "risk": "受控 source recipe 與 memory CAS，不是現行 HTTP、真時鐘、RNG、正式 v2 或合法市場初始化。",
+      "disposition": "保留限定證據；正式玩家、CAS/v2 另證；正常經營 #22",
+      "reason": "本批固定 blob 逐檔語義閱讀；未執行本批測試，既有 CI 屬先前 tree",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 19
+        },
+        {
+          "path": "modern/docs/r0-gift-market-oracle-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/original-gift-map-use-probe.pl",
+          "sha": "803179a5f298230f9100d7b51630778d2332fa25"
+        }
+      ],
+      "fixtures": "固定 now=1000000；人工79槽零 wholesale、滿倉注入、memory snapshot；Perl runtime 不在時可 skip",
+      "limitations": "受控 source recipe 與 memory CAS，不是現行 HTTP、真時鐘、RNG、正式 v2 或合法市場初始化。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/reviewed-use-fixture-street.test.mjs",
@@ -9538,15 +9787,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-market-buy10.test.mjs",
+        "modern/tests/original-perl/original-market-buy10.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "10",
@@ -9594,8 +9846,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "原版隔離 buy-s.cgi / controlled PLUS，commit stub，非正式磁碟",
+          "refs": [
+            {
+              "path": "modern/tests/original-market-buy10.test.mjs",
+              "sha": "4b293c64cc786f800ea2e25104b2bca5cc5e522b",
+              "startLine": 34,
+              "endLine": 89,
+              "scope": "受控 PLUS 供給、market-buy 與 Perl stock/money/time/CSV 差分"
+            },
+            {
+              "path": "modern/tests/original-perl/original-market-buy10.t",
+              "sha": "e72d5898574d82566eb16b24819cff79c1952fe8",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "原版 buy-s.cgi probe 5000G/600s、stock、stub commit 和拒絕"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控 memory stock/money/time/sparse CSV 差分，legacy HTTP 不列正式",
+          "refs": [
+            {
+              "path": "modern/tests/original-market-buy10.test.mjs",
+              "sha": "4b293c64cc786f800ea2e25104b2bca5cc5e522b",
+              "startLine": 34,
+              "endLine": 89,
+              "scope": "受控 PLUS 供給、market-buy 與 Perl stock/money/time/CSV 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -9605,7 +9888,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-market-buy10.test.mjs",
+          "sha": "4b293c64cc786f800ea2e25104b2bca5cc5e522b",
+          "startLine": 34,
+          "endLine": 89,
+          "scope": "受控 PLUS 供給、market-buy 與 Perl stock/money/time/CSV 差分"
+        },
+        {
+          "path": "modern/tests/original-perl/original-market-buy10.t",
+          "sha": "e72d5898574d82566eb16b24819cff79c1952fe8",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "原版 buy-s.cgi probe 5000G/600s、stock、stub commit 和拒絕"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28077,15 +28376,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gift-use-variants.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "79/1",
@@ -28116,8 +28417,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28127,7 +28452,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 74,
+          "endLine": 104,
+          "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28140,15 +28474,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gift-use-variants.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "79/2",
@@ -28179,10 +28515,53 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。正向注入10券；初始5券拒絕。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。正向注入10券；初始5券拒絕。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "受控材料 gate，初始5券不足；10券正向為注入",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 105,
+              "endLine": 116,
+              "scope": "初始5券：Perl count0、Node SOURCE_BOUNDARY_REJECTED 與 snapshot 不變"
+            },
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -28190,7 +28569,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 74,
+          "endLine": 104,
+          "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+        },
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 105,
+          "endLine": 116,
+          "scope": "初始5券：Perl count0、Node SOURCE_BOUNDARY_REJECTED 與 snapshot 不變"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28203,15 +28598,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gift-use-variants.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "79/3",
@@ -28242,8 +28639,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28253,7 +28674,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 74,
+          "endLine": 104,
+          "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28266,8 +28696,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -28276,7 +28706,8 @@
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
         "modern/tests/p4-dairy-v2-player-http.test.mjs",
-        "modern/tests/p4-dairy-death-and-save-security.test.mjs"
+        "modern/tests/p4-dairy-death-and-save-security.test.mjs",
+        "modern/tests/r2-gift-use-variants.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -28308,8 +28739,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控固定時間 memory 與原版 Perl 差分；非正式玩家。初始5券。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "初始券及真期末獎券合法兌牛；count 與牛 delta、雙代結果；死亡後替補另證",
@@ -28546,6 +29001,13 @@
           "startLine": 37,
           "endLine": 91,
           "scope": "死亡後存檔、NEED、合法補牛與復原"
+        },
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 74,
+          "endLine": 104,
+          "scope": "逐 #79/1–4 執行 Perl probe 與 memory use-item，逐欄差分；#79/2 注入10券"
         }
       ],
       "evidenceScope": "不宣稱所有 gift variants"
@@ -31424,14 +31886,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 74,
-      "待補": 135
+      "有效": 79,
+      "待補": 130
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 35,
+    "currentSessionReviewed": 40,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -31478,7 +31940,8 @@
     "modern/docs/r1-v2-security-evidence.md",
     "modern/docs/r0-init-wholesale-exp-use-evidence.md",
     "modern/docs/r0-admin-callback-loader-evidence.md",
-    "modern/docs/r1-event-gift-oracle-evidence.md"
+    "modern/docs/r1-event-gift-oracle-evidence.md",
+    "modern/docs/r0-gift-market-oracle-evidence.md"
   ],
   "integrationCiHistory": [
     {

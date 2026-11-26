@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 74、歷史 24、待補 135。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 35 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 79、歷史 24、待補 130。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 40 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -38,7 +38,7 @@
 | original-integrated-use-lostbook-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-item-dynamic-loading-model.test.mjs | 有效 | Perl Oracle／Node 差分（虛擬 require） |
 | original-item-helper-model.test.mjs | 待補 | 未完成語義審閱 |
-| original-market-buy10.test.mjs | 待補 | 未完成語義審閱 |
+| original-market-buy10.test.mjs | 有效 | 混合：Perl Oracle／Node 差分＋歷史 HTTP/CAS |
 | original-multi-item-use-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-natural-sale-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-nayuta-functurn.test.mjs | 待補 | 未完成語義審閱 |
@@ -67,11 +67,11 @@
 | original-perl/original-b62-sword-map-use.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b63-sword-map-all-outcomes.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-full-use-lostbook.t | 待補 | 未完成語義審閱 |
-| original-perl/original-gift-map-use.t | 待補 | 未完成語義審閱 |
+| original-perl/original-gift-map-use.t | 有效 | 原版 Perl Oracle（隔離 compiler／Core） |
 | original-perl/original-inline-work-showcase.t | 待補 | 未完成語義審閱 |
 | original-perl/original-item-callback-contract.t | 有效 | 靜態來源守門（Perl Test::More） |
 | original-perl/original-item-helpers.t | 待補 | 未完成語義審閱 |
-| original-perl/original-market-buy10.t | 待補 | 未完成語義審閱 |
+| original-perl/original-market-buy10.t | 有效 | 原版 Perl Oracle（隔離 CGI） |
 | original-perl/original-multi-item-use.t | 待補 | 未完成語義審閱 |
 | original-perl/original-natural-sale-plus.t | 待補 | 未完成語義審閱 |
 | original-perl/original-nayuta-functurn.t | 待補 | 未完成語義審閱 |
@@ -166,7 +166,7 @@
 | r2-declarative-use-effects.test.mjs | 待補 | 未完成語義審閱 |
 | r2-gathering-http-save.test.mjs | 待補 | 未完成語義審閱 |
 | r2-gathering-map-uses.test.mjs | 待補 | 未完成語義審閱 |
-| r2-gift-use-variants.test.mjs | 待補 | 未完成語義審閱 |
+| r2-gift-use-variants.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | r2-party-popup-source.test.mjs | 待補 | 未完成語義審閱 |
 | r2-potion-lostbook-http.test.mjs | 待補 | 未完成語義審閱 |
 | r2-repeat-use-source.test.mjs | 待補 | 未完成語義審閱 |
@@ -224,7 +224,7 @@
 | r4-source-rebel-period-trigger.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-town-play.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-world-transition-cas-guard.test.mjs | 歷史 | 舊 CAS／nonCommittable 與 legacy store |
-| reviewed-gift-map-use.test.mjs | 待補 | 未完成語義審閱 |
+| reviewed-gift-map-use.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | reviewed-use-fixture-street.test.mjs | 待補 | 未完成語義審閱 |
 | source-audit.test.mjs | 有效 | 靜態來源 |
 | standard-init.test.mjs | 有效 | 來源宣告／靜態 parser |

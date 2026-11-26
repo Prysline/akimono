@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 5 | 1 | 25 |
-| nodeDifferential | 5 | 1 | 25 |
+| perlOracle | 6 | 5 | 25 |
+| nodeDifferential | 6 | 5 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -23,3 +23,5 @@
 第二批補鏈：[EVENT metadata／gift Oracle](r1-event-gift-oracle-evidence.md)：25 EVENT 原版數字／時間 compiler metadata 與 Node exact 差分、#79/0 與四 ITEM 受控 gift Oracle。上表 perlOracle/nodeDifferential 為限定證據數，EVENT 的25不代表任何 EVENT callback/runtime 玩家驗收；HTTP/v2/合法取得正式下界未改。新增 14 層 schema、頂層／層級 flag 一致、測試 SHA/行號/分類、HTTP/v2真玩家 gate 與六個負例；待新候選 CI。
 
 #79/0 的 source 1000 permille 僅歸於條件；正式 RNG 實測仍為 null。正式 HTTP/command/CAS/v2 正向欄位禁止只引用靜態來源。
+
+第三批補鏈：[禮物卷／市場](r0-gift-market-oracle-evidence.md)：ITEM #10、USE #79/1–4 五筆受控差分，其中 #79/4 既有真玩家證據保留；#79/2 正向注入10券不算合法取得。詳細證據行數：52 筆功能記錄；正式 lawfulAcquisition/HTTP/v2 下界不變。
