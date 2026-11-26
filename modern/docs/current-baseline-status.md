@@ -275,3 +275,7 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 
 - 八檔既有有效分類維持：有效200、歷史33、待補0；固定233、分類100%；新逐檔170，既有63重審15、剩48；實際逐檔累計185/233（79.4%）。
 - [逐檔證據](r0-b44-b47-rereview-evidence.md)：B44 原版 ledger 79槽但77槽人工9999，#10/#79 手填 cap；B45 原版 prize callback＋AddItem/排名計數，ITEMNO regex 代換，WriteLog stub，JS no-op DSL mutation 不算 drift；B46 同 Perl interpreter 兩次無領袖 territory，Node 每次 Oracle input、非兩期完整結算；B47 單店 SortDT/GetDTPoint 四例，two-sales 人工帳。均非正式 HTTP/v2/CAS、完整 period。R1 詳細87與限定/正式下界不變。
+
+### CI 補核：前窗 CI evidence commit
+
+- run 45828097169 / job 139937397025：success，HEAD `bb44e2600e8e021840309bfb2597ab8c30ab7462`、實際 checkout `c2b5daeb2248960c376d9c954a1b6cd0ddd8da09`、tree `9a5e68318a5a9a9d1a5b400f9fc65cd15506283f` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。P4 actual cow mortality 本次實際 ok，保留第16/18批 skip 歷史。第36–39批最後查詢 in_progress，第40–41批 queued，新 HEAD 未驗。
