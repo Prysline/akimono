@@ -16,6 +16,9 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  careers:'R4 genuine fourteen #78 career changes transfer earned donor EXP and persist across two v2 generations',
+  dismantle:'R4 genuine #37/3 dismantling skill and #39/0-2 recycle manufactured equipment with dual v2 reload',
+  writing:'R4 genuine #10/0-3 write four source books with materials, production RNG and dual v2 reload',
   medicine:'R4 genuine medicine #15 all five recipes, #30-34 natural sales and two v2 generations',
   dairy:'R4 genuine dairy #25-26 all USEs, #35-36 consumption, natural sales and two v2 generations',
   extra:'R4 genuine #65 zero-POP listing and #62 self advertisement survive source time, EXP and v2 reload',
@@ -38,6 +41,9 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.careers],acquire:[12,78],uses:['12:0',...Array.from({length:14},(_,i)=>'78:'+i)]},
+  {tests:[title.dismantle],acquire:[37,38,39,40,45,46,51,52,57],uses:['37:3','39:0','39:1','39:2','16:0','16:1','17:0','17:1','17:2','17:3']},
+  {tests:[title.writing],acquire:[10,15,16,17,66],uses:['10:0','10:1','10:2','10:3']},
   {tests:[title.medicine],acquire:[1,15,16,17,30,31,32,33,34],showcase:[30,31,32,33,34],sale:[30,31,32,33,34],uses:['15:0','15:1','15:2','15:3','15:4','79:1']},
   {tests:[title.dairy],acquire:[25,26,35,36,78],showcase:[25,26,35,36],sale:[25,26,35,36],uses:['25:0','25:1','26:0','26:1','26:2','35:0','36:0','78:11','79:4']},
   {tests:[title.funcbuy],acquire:[64,79]},

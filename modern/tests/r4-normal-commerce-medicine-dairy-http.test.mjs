@@ -219,3 +219,124 @@ test('R4 genuine dairy #25-26 all USEs, #35-36 consumption, natural sales and tw
   assert.equal(second.shops[0].job,'cow');assert.equal(second.shops[0].showcase[0],25);
   t.diagnostic(JSON.stringify({cowExchanges,prizes:prizes.length,milkCounts,deaths,sales,first:first.revision,second:second.revision}));
 });
+
+
+test('R4 genuine fourteen #78 career changes transfer earned donor EXP and persist across two v2 generations',async t=>{
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true});
+  const careers=[[15,'drug'],[16,'tool'],[17,'tool'],[66,'tool'],[20,'weapon'],[21,'armor'],[22,'armor'],[23,'weapon'],[9,'material'],[12,'material'],[10,'book'],[25,'cow'],[14,'peddle'],[0,'']];
+  const donors=[9,10,12,14,15,16,17,66,20,21,22,23,25],results=[];
+  await p.market(13);
+  await p.deny(78,0);
+  for(const [useId,[target,job]] of careers.entries()){
+    await p.market(78);
+    if(!p.stock(12))await p.market(12);
+    if(p.stock(1)>100)await p.discard(1,p.stock(1)-100);
+    const earned=await checkedUse(p,12,0);
+    assert.ok(earned.d.experienceGain>0,'earned donor EXP');
+    const {shop,d,request}=await checkedUse(p,78,useId);
+    const expected={...shop.exp},initial=expected[target]??0;
+    let moved=0,deleted=0;
+    assert.ok((expected[12]??0)>0,'real donor survived time acquisition');
+    if(target){
+      // Frozen Perl compares donor ITEM ID with target EXP VALUE.
+      for(const id of donors){
+        const value=expected[id]??0;
+        if(!value||id===initial)continue;
+        moved+=value;deleted++;delete expected[id];
+      }
+      expected[target]=Math.min(1000,initial+Math.trunc(moved/2));
+    }
+    assert.deepEqual(p.state.shop.exp,expected);
+    assert.equal(p.state.shop.job,job);
+    assert.equal(p.stock(78),0);
+    assert.deepEqual(d.originalUseItem,[[78,1]]);
+    assert.equal(d.randomDrawsUsed,0);
+    assert.equal(d.timeSpentSeconds,10800);
+    assert.equal(d.originalInlineLogCalls.length,target?deleted+1:0);
+    assert.match(d.originalFunctionReturn,/職業變成「.+」了$/);
+    await stale(p,request);
+    results.push({useId,target,job,moved,revision:p.state.world.revision});
+    if(useId===6)await p.saveAndRestart(0);
+  }
+  const second=await p.saveAndRestart(1);
+  assert.equal(second.shops[0].job,'');
+  t.diagnostic(JSON.stringify({results,second:second.revision,fundingWorks:p.fundingWorks}));
+});
+
+async function manufactureBasic(p,id,target){
+  const recipes={40:[17,0,3,20],57:[17,1,3,20],45:[16,0,2,24],51:[16,1,2,24],46:[17,2,4,10],52:[17,3,4,10]};
+  const [book,useId,material,amount]=recipes[id];
+  for(let n=0;p.stock(id)<target;n++){
+    assert.ok(n<20,'basic manufacturing budget #'+id);
+    await p.gather(material,amount);
+    const {d}=await checkedUse(p,book,useId);
+    assert.ok(d.originalUseItem.some(([i,q])=>i===material&&q===amount));
+    assert.ok(d.acquired.some(x=>x.itemId===id));
+  }
+}
+
+test('R4 genuine #37/3 dismantling skill and #39/0-2 recycle manufactured equipment with dual v2 reload',async t=>{
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true});
+  await p.use(79,1);await p.market(13);
+  await p.market(39);await p.deny(39,0);
+  for(const id of [40,57,45,51])await manufactureBasic(p,id,30);
+  await p.market(37);
+  const learned=await checkedUse(p,37,3);
+  assert.equal(p.stock(38),1);
+  for(const id of [40,57,45,51])assert.equal(p.stock(id),learned.shop.item[id-1]-20);
+  assert.equal(p.stock(37),0);
+  const first=await p.saveAndRestart(0);
+  assert.equal(first.shops[0].item[37],1);
+  const receipts=[];
+  for(const [useId,ids,output] of [[0,[40,57],3],[1,[45,51],2],[2,[46,52],3]]){
+    for(const id of ids)await manufactureBasic(p,id,10);
+    if(!p.stock(39))await p.market(39);
+    const {shop,d,request}=await checkedUse(p,39,useId);
+    for(const id of ids)assert.equal(p.stock(id),shop.item[id-1]-10);
+    assert.equal(p.stock(39),shop.item[38]-1);
+    assert.equal(p.stock(38),1);
+    const generated=d.acquired.find(x=>x.itemId===output);
+    assert.equal(generated?.attemptedCount,50);
+    assert.equal(generated?.probabilityPermille,800);
+    assert.ok(generated.produced>0);
+    assert.equal(p.stock(output),shop.item[output-1]+generated.produced);
+    await stale(p,request);
+    receipts.push({useId,output,produced:generated.produced});
+  }
+  await p.saveAndRestart(1);
+  t.diagnostic(JSON.stringify({receipts,fundingWorks:p.fundingWorks}));
+});
+
+test('R4 genuine #10/0-3 write four source books with materials, production RNG and dual v2 reload',async t=>{
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true});
+  await p.market(13);
+  const recipes=[[0,15,[[1,30],[30,10],[32,10]]],[1,16,[[2,50]]],[2,17,[[3,50],[4,10]]],[3,66,[[5,20],[6,5],[7,5]]]];
+  const results=[];
+  for(const [useId,id,materials] of recipes){
+    assert.equal(p.stock(id),0);
+    for(let n=0;p.stock(id)===0;n++){
+      assert.ok(n<20,'writing production budget #'+id);
+      if(!p.stock(10))await p.market(10);
+      for(const [mat,qty] of materials){
+        if(mat<=4)await p.gather(mat,qty);
+        else if(mat<=7)await p.ore(mat,qty);
+        else if(p.stock(mat)<qty)await p.market(mat,qty-p.stock(mat),{partial:true});
+      }
+      const {shop,d,request}=await checkedUse(p,10,useId);
+      assert.equal(p.stock(10),shop.item[9]-1);
+      for(const [mat,qty] of materials)assert.equal(p.stock(mat),shop.item[mat-1]-qty);
+      const generated=d.acquired.find(x=>x.itemId===id);
+      assert.equal(generated?.attemptedCount,5);
+      assert.equal(generated?.probabilityPermille,400);
+      assert.equal(p.stock(id),shop.item[id-1]+generated.produced);
+      if(useId===3)for(const need of [16,17])assert.equal(p.stock(need),shop.item[need-1]);
+      assert.equal(d.experienceGain,Math.min(20,1000-(shop.exp?.['10']??0)));
+      await stale(p,request);
+      results.push({useId,id,produced:generated.produced});
+    }
+    if(useId===1)await p.saveAndRestart(0);
+  }
+  const second=await p.saveAndRestart(1);
+  for(const [,id] of recipes)assert.ok(second.shops[0].item[id-1]>0);
+  t.diagnostic(JSON.stringify({results,fundingWorks:p.fundingWorks}));
+});
