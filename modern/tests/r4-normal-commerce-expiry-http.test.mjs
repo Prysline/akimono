@@ -45,7 +45,7 @@ test('R4 genuine absent owner closes at source settlement, archives once, reload
   assert.equal(receipt.closureReceipt.reason,'経営者不在');
   assert.deepEqual(receipt.closureReceipt.deletedSessions,[]);
   assert.deepEqual(receipt.closureReceipt.remainingSessions,[]);
-  assert.equal(receipt.settlementReceipt.cashAfterLedger,-receipt.settlementReceipt.maintenance);
+  assert.equal(receipt.settlementReceipt.cashAfterLedger,0-receipt.settlementReceipt.maintenance);
   assert.equal(receipt.settlementReceipt.rankingCount,beforeClose.shops[0].rankingcount+1);
   assert.equal(receipt.closureReceipt.archiveHash.interpreter,receipt.sourceTrace.interpreter);
   assert.equal(receipt.closureReceipt.archiveHash.seed,receipt.sourceTrace.seed);
