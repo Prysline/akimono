@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 import {auditPlayer} from './support/r1-http-audit-player.mjs';
 
 test('R1 formal HTTP: malformed and stale commands do not alter live state or saved bytes',async t=>{
@@ -34,9 +38,24 @@ test('R1 formal HTTP: malformed and stale commands do not alter live state or sa
  assert.deepEqual(await p.snapshot(),before);
 });
 
+const sha=value=>createHash('sha256').update(value).digest('hex');
+// The v2 slot is the publication pointer. A successful preflight is allowed
+// to materialize exactly the committed world's immutable period-file layout.
+function projectedPeriodFiles(world){
+ const d=world.period.disk,root='reviewed-period-files-v1/'+sha(JSON.stringify(d))+'/';
+ const out={};
+ function collect(prefix,files){
+  for(const [name,file] of Object.entries(files))out[root+prefix+name]=sha(file.bytes);
+ }
+ collect('',d.live);collect('backup/',d.backup);
+ d.generations.forEach((g,i)=>{if(g!==null)collect('backup'+(i+1)+'/',g);});
+ return out;
+}
+
 test('R1 same-revision competing discard and same-generation competing saves commit once',async t=>{
  const p=await auditPlayer(t),s=await p.open(),rev=s.world.revision;
  assert.ok(s.shop.item[78]>=2,'legitimate starting vouchers');
+ await p.command('/api/save',{expectedRevision:rev,expectedGeneration:0},'SAVED');
  const body={expectedRevision:rev,itemId:79,count:1};
  const before=await p.snapshot();
  const results=await Promise.all([p.post('/api/discard',body),p.post('/api/discard',body)]);
@@ -51,7 +70,15 @@ test('R1 same-revision competing discard and same-generation competing saves com
  assert.equal(after.world.period.settledCount,before.world.period.settledCount);
  assert.equal(after.historyCommands,before.historyCommands+1);
  assert.equal(after.generation,before.generation);
- assert.deepEqual(after.disk,before.disk);
+ // Preserve every prior file, including the generation-one publication
+ // pointer; only the exact successor's materialized files may be added.
+ assert.deepEqual(after.disk,{...before.disk,...projectedPeriodFiles(after.world)});
+ for(const [name,hash] of Object.entries(before.disk))assert.equal(after.disk[name],hash,name);
+ assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(after.world),true);
+ assert.equal(Object.hasOwn(after.disk,'world-a.json'),false);
+ const stale=await p.post('/api/discard',body);
+ assert.equal(stale.status,409);assert.equal(stale.body.ok,false);
+ assert.deepEqual(await p.snapshot(),after,'isolated losing revision must not stage or mutate files');
  const save={expectedRevision:rev+1,expectedGeneration:after.generation};
  const saves=await Promise.all([p.post('/api/save',save),p.post('/api/save',save)]);
  assert.equal(saves.filter(r=>r.body.code==='SAVED').length,1);
@@ -60,6 +87,16 @@ test('R1 same-revision competing discard and same-generation competing saves com
  assert.equal(saved.generation,after.generation+1);
  assert.deepEqual(saved.world,after.world);
  assert.equal(saved.historyCommands,after.historyCommands);
+ const wire=await readFile(join(p.directory,'world-a.json'),'utf8'),record=JSON.parse(wire);
+ assert.equal(record.format,'akimono.local-world-save.v2');
+ assert.equal(record.generation,2);
+ assert.deepEqual(JSON.parse(record.world),after.world);
+ assert.equal(record.sha256,sha(JSON.stringify([record.format,record.generation,record.world,record.careerProof])));
+ assert.deepEqual(saved.disk,{...after.disk,'world-a.json':sha(wire)});
+ const staleSave=await p.post('/api/save',save);
+ assert.ok(staleSave.status>=400&&staleSave.status<500);
+ assert.equal(staleSave.body.ok,false);
+ assert.deepEqual(await p.snapshot(),saved,'isolated losing generation must preserve all bytes');
  await p.stop();await p.boot();await p.command('/api/load',{},'LOADED');
  assert.deepEqual(await p.snapshot(),saved);
 });

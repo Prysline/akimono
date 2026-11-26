@@ -16265,14 +16265,28 @@
       "status": "待補",
       "evidenceLevel": "正式 HTTP／v2 負向與競爭回歸",
       "originalSource": "modern/scripts/dev-local.mjs；現行 GameCore 與 v2",
-      "assertions": "18 次拒絕後完整 world/history/generation/disk SHA256 不變；同 revision 丟棄二擇一、同 generation 存檔二擇一、合法存檔重啟相等",
+      "assertions": "18 拒絕全 snapshot 不變；已發布 gen1 後同 revision 丟棄二擇一、僅精確 successor immutable period files 可新增且舊檔不變、原版 file bytes/mtime verify；同 generation 保存二擇一、僅 gen2 slot 新增、checksum/world 核對；另逐次 stale revision/generation 全 snapshot 不變；重啟相等",
       "executionPath": "正式 dev-local；隔離真初始化/開店，HTTP，真初始時鐘與 RNG",
       "risk": "拒絕污染、重複扣除、世代覆寫",
       "disposition": "新候選 CI 待驗，非新增商品正向驗收",
-      "reason": "本輪新增，尚未執行",
+      "reason": "CI 45760668915：18 組負例通過；競爭測試誤要求成功 preflight 不產生 immutable files，失敗。修正測試邊界，候選待驗。",
       "reviewed": true,
       "documentReferences": [],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/src/r4-independent-period-disk-store.mjs",
+          "sha": "81f79e8cccc5e395ff9b295d7d55f1118fb50db9"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        }
+      ]
     },
     {
       "path": "modern/tests/r1-v2-fresh-negative-replay.test.mjs",
@@ -16298,7 +16312,7 @@
       "executionPath": "auditPlayer 正式 dev-local 真初始時鐘，合法兩代 v2，僅負向寫磁碟",
       "risk": "fresh replay, corrupt generation, invalid command/EVENT, all-invalid overwrite",
       "disposition": "待候選 CI；不作已通過或新增正向 feature 證明",
-      "reason": "本輪新增，尚未執行",
+      "reason": "exact prior candidate CI 45760668915, subtest 736 passed; latest candidate CI pending",
       "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
@@ -16359,5 +16373,30 @@
     "modern/docs/r0-limit-world-codec-evidence.md",
     "modern/docs/r0-p3-mixed-path-evidence.md",
     "modern/docs/r1-v2-security-evidence.md"
+  ],
+  "integrationCiHistory": [
+    {
+      "head": "ee961fd68e93c5063b584b903eb108488a1a1278",
+      "tree": "d7c682305829cbc2a8d0765f3ba8f4f0067a2812",
+      "checkout": "85a5fdf242b05a7c6a3b35bca2e1dac9c0eb5075",
+      "run": 45760668915,
+      "job": 139709632418,
+      "conclusion": "failure",
+      "js": {
+        "total": 1342,
+        "pass": 1340,
+        "fail": 1,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "failed": "R1 same-revision competing discard and same-generation competing saves commit once",
+      "skipped": "P4 actual cow mortality: no death observed in bounded experiment",
+      "passedNew": [
+        "R0/R1 inventory matches actual tests, frozen source blobs and DSL declarations",
+        "R1 formal HTTP malformed and stale commands",
+        "R1 formal fresh v2 negative replay"
+      ]
+    }
   ]
 }
