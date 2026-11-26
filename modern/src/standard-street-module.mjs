@@ -1,6 +1,7 @@
 import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
 import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
+import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
@@ -191,6 +192,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
+  const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
+    reviewOriginalTopPrize({itemDsl,model,originalAddItemSource:originalUseSource,
+      periodSource:originalPeriodSource,includeReviewedMultiShelf:true}):null;
   if(model.maxMoney!==SOURCE_STANDARD_STREET_MAX_MONEY)
     bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
@@ -744,16 +748,22 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
                 (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&
               (!provider.requiresOwnedItem||
                 (shop?.item?.[provider.itemId-1]??0)>=1));
+            const prizeChoices=rankOnePrize?.topChoices.filter(choice=>choice.itemId===row.itemId)??[];
             const kind=missingCount===0?'owned':
               buyRule&&marketStock>=missingCount?'market-stock':
               availableProvider?'registered-use':
               replenishes?'source-plus':
+              prizeChoices.length?'source-rank-one-prize':
               providers.length?'upstream-use-not-ready':
               'source-acquisition-not-implemented';
             return Object.freeze({
               itemId:row.itemId,name:sourceItem?.name??'未知商品',
               required:row.count,owned:ownedCount,missing:missingCount,
               marketStock,kind,sourcePlus:replenishes?plus:null,
+              ...(prizeChoices.length?{rankOnePrize:Object.freeze({
+                choices:Object.freeze(prizeChoices.map(choice=>Object.freeze({index:choice.index,count:choice.count}))),
+                totalChoices:rankOnePrize.topChoices.length,
+              })}:{}),
               provider:kind==='registered-use'?Object.freeze({
                 itemId:availableProvider.itemId,useId:availableProvider.useId,
               }):null,

@@ -202,6 +202,15 @@ function renderItemInfo(s){
       reason.className='muted';
       reason.textContent='（'+(row.reason??'目前不可執行')+'）';
       li.append(reason);
+      for(const route of row.materialRoutes??[]){
+        if(route.missing<=0||route.kind!=='source-rank-one-prize')continue;
+        const hint=document.createElement('small');
+        hint.className='muted';
+        hint.textContent=route.name+'：跨期排行第一名隨機獎品（'+
+          route.rankOnePrize.choices.length+'/'+route.rankOnePrize.totalChoices+
+          ' 種結果；非保證取得）';
+        li.append(hint);
+      }
       if(Number.isSafeInteger(row.missingMaterialId)){
         const debug=document.createElement('small');
         debug.className='dev-panel dev-raw-value';

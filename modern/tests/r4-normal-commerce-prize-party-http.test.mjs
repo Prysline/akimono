@@ -23,6 +23,15 @@ test('R4 genuine rank prizes produce #77 party goods, actual popup and natural s
         prizes.push({...prize,period:r.state.world.period.settledCount});
       }
     }});
+  // Read-only HTTP hint before collection: never award an item or choose RNG.
+  const initial=p.quote(39,18);
+  for(const id of required){
+    assert.equal(p.stock(id),0);
+    const route=initial.materialRoutes.find(row=>row.itemId===id);
+    assert.equal(route.kind,'source-rank-one-prize');
+    assert.equal(route.missing,1);
+    assert.deepEqual(route.rankOnePrize,{choices:[{index:id-21,count:1}],totalChoices:9});
+  }
   await p.market(13);
   assert.ok(required.every(id=>p.stock(id)===0)||prizes.length>0);
   const ready=()=>required.every(id=>p.stock(id)===1);
