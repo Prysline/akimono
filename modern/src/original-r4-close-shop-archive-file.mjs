@@ -20,6 +20,7 @@ const blob=text=>createHash('sha1').update(
   'blob '+Buffer.byteLength(text,'utf8')+'\0'
 ).update(text,'utf8').digest('hex');
 
+const archiveReviews=new WeakSet();
 export function reviewR4CloseShopArchiveSource({errorSource,userSource}) {
   if(typeof errorSource!=='string'||blob(errorSource)!==PINNED.error ||
      typeof userSource!=='string'||blob(userSource)!==PINNED.user)
@@ -29,12 +30,13 @@ export function reviewR4CloseShopArchiveSource({errorSource,userSource}) {
      !errorSource.includes('if (stat($fn))[7]>$LOG_SIZE_MAX;')) {
     fail('frozen user no-op and error logging behavior changed');
   }
-  return Object.freeze({
+  const reviewed=Object.freeze({
     source:R4_CLOSE_ARCHIVE_SOURCE,committable:false,
     logMaxBytes:30000,file:'delete.cgi',
     setUserDataIsNoop:true,
     actualSandboxLogIO:true,
   });
+  archiveReviews.add(reviewed);return reviewed;
 }
 function validateEffect(reviewed,effect) {
   if(reviewed?.source!==R4_CLOSE_ARCHIVE_SOURCE ||
@@ -81,7 +83,18 @@ export async function appendR4CloseShopArchiveSandbox({
     await rename(live,old);
     rotated=true;
   }
-  const row=[
+  const row=archiveRow({effect,nowSeconds,scriptName,remoteAddress,remoteHost,trueIp,user});
+  await appendFile(live,row,{encoding:'utf8'});
+  return Object.freeze({
+    source:reviewed.source,archiveFile:'delete.cgi',
+    bytesAppended:Buffer.byteLength(row),rotated,
+    committable:false,worldStateWritten:false,
+  });
+}
+
+function archiveRow({effect,nowSeconds,scriptName,remoteAddress,remoteHost,trueIp,user}){
+  if(!Number.isSafeInteger(nowSeconds)||nowSeconds<1)fail('source timestamp required');
+  return [
     String(nowSeconds),
     ctx(scriptName,'SCRIPT_NAME'),
     ctx(remoteAddress,'REMOTE_ADDR'),
@@ -90,10 +103,15 @@ export async function appendR4CloseShopArchiveSandbox({
     ctx(user,'USER'),
     effect.archived,
   ].join('\t')+'\n';
-  await appendFile(live,row,{encoding:'utf8'});
-  return Object.freeze({
-    source:reviewed.source,archiveFile:'delete.cgi',
-    bytesAppended:Buffer.byteLength(row),rotated,
-    committable:false,worldStateWritten:false,
-  });
+ }
+/** Pure immutable generation projection. The owner of the local CAS publishes
+ * these bytes together with play and log files; no external append occurs. */
+export function projectR4CloseShopArchiveGeneration({reviewed,effect,previous=null,previousOld=null,nowSeconds,...context}){
+  if(!archiveReviews.has(reviewed))fail('pinned archive review required');
+  validateEffect(reviewed,effect);
+  for(const entry of [previous,previousOld])if(entry!==null&&(!entry||typeof entry.bytes!=='string'||!Number.isSafeInteger(entry.mtime)||entry.mtime<0||entry.mtime>nowSeconds))fail('prior archive entry required');
+  if(previousOld!==null&&previous===null)fail('old archive requires current archive');
+  const row=archiveRow({effect,nowSeconds,...context});
+  const rotated=previous!==null&&Buffer.byteLength(previous.bytes)>reviewed.logMaxBytes;
+  return {live:{bytes:(rotated?'':previous?.bytes??'')+row,mtime:nowSeconds},old:rotated?{...previous}:previousOld,rotated};
 }

@@ -58,3 +58,11 @@ D4 `1a3d5d157a49757cc2c339db04f5aad2e5d0ee93` / tree `b26f4e048be901783478296c75
 - 三個 storage reader 的 lstat regular/nlink、O_NOFOLLOW/O_NONBLOCK、fstat dev/ino/nlink 與大小/權限/內容原 guard 保留。period disk target 已存在便 verify，內部 ENOENT 不當新 generation。回讀核對 local slot 完全等 B，checkpoint readBounded 與 period verify/stage security block 等 B；不收錄外部 checkpoint hash policy 或 army layout（待外部閉包）。A closed archive layout 未接線，後續須同時保留本批安全防線。
 - 選取 B support `rejectDamagedLatestDisk` 完整 helper 到現 D test support；另新建 `r4-unified-save-security.test.mjs`，沿用既有 P3 crossing HTTP 入口和真 source history，人工破壞 newest materialized files/slot、缺列、錯 bytes、hardlink，驗證 prior generation recovery/無修復/恢復第二世代。POSIX FIFO 子程序硬逾時（Windows 明示 skip），覆蓋 save slot、checkpoint key、period source file；另 checkpoint key hardlink。檔案故障注入與人工 disk/key fixture 是受控安全測試，不是正式玩家證據。待 CI 執行；無本機 Node/Perl。
 - 只改三個安全 runtime、test support、新測試、manifest；無存檔 schema 或來源、workflow、正式基線、他窗變更；不承諾跨 runtime fingerprint 相容。不降低既有測試斷言。
+
+## D6-CLOSE-SOURCE｜關店封存來源閉包候選（非正式接線）
+
+起點 D5 `2c6a2a356c42b4c19750d27fcc1e48230339669c` / tree `a6904a6464097cc05d5e74d7a0c8d7c2555b2083`；D4/D5 CI 仍待證。本批不依賴 D4 市場新 mode 或 D5 存檔安全實作，選擇性收錄 A `d533b8c876c5bba6a70f69c501dc44c1ee5d33c0` 的關店封存來源閉包，無正式 runtime activation。A native archive hash review 及三個受控差分測試 exact blob 97929ed7cd0a97b013f7991287ce15d7198d12b2 / 379a48b17e7b6a48a2a417aff23be870f05d05ed；r4HashSeed 既有 D 匯出與 A seed 定義一致，未收錄其他 EVENT hash 變更。四份 source pins 及 error/probe pins 回讀一致。
+
+- full commerce CloseShop effects opt-in（561725d9dc0d2eb5141b6b84c1e381b04587f261）及額外受控八架 signed cash/多 key archive oracle（7550e9622aaec30571d608536bc87fd063cb4063）、Node 測試（d4cee803e7ceeaed25928a2ad8e63748afa14720）；保留原三案例及 legacy <=1 map guard，原版 CloseShop / SortDT / DataWrite 不修改。source-only projector 接受 oracle 觀察到的 permutation，不能直接由玩家傳入或宣稱可信 runtime order；正式 closure 必須由 native command-start seed/replay 生成並驗證，user map 未審閱保持拒絕。
+- 來源 archive projector（93d49fa1adc06221f5dc7c50b7ad2b2c6acb7d9e）保留 sandbox writer，增加 immutable byte projection；受控 Perl 真實 UTF8 archive append/rotate 差分，保留 A 對既有兩測試新增的 byte/mtime 斷言；另加 pure boundary 30000 bytes 嚴格大於、old/current 關係與輸入不變。刻意未接 A archive disk layout 或收錄其依賴 layout 的磁碟測試；D5 安全閉包 CI 後再適配 archive 與 B army layout、安全拒絕、CAS/HTTP/v2。原版與 workflow 不變。
+- 八個路徑（兩新檔，六修改），所有新功能候選待 D6 CI。沒有正式關店、磁碟 publication、session unlink 或玩家驗收完成宣告。無本機 repo，未補跑 Node/Perl；既有 D4/D5 CI 必須獨立核證。

@@ -9,7 +9,7 @@ import {
   reviewR4CloseShopEffects,projectR4CloseShopEffects,
 } from '../src/original-r4-close-shop-effects.mjs';
 import {
-  reviewR4CloseShopArchiveSource,appendR4CloseShopArchiveSandbox,
+  reviewR4CloseShopArchiveSource,appendR4CloseShopArchiveSandbox,projectR4CloseShopArchiveGeneration,
   R4_CLOSE_ARCHIVE_SOURCE,
 } from '../src/original-r4-close-shop-archive-file.mjs';
 
@@ -62,6 +62,13 @@ test('R4 full frozen CloseShop+WriteErrorLog actually append/rotate archived byt
         assert.equal(result.committable,false);
         assert.equal(result.worldStateWritten,false);
         assert.equal(result.rotated,row.kind==='rotate');
+        const previous=row.input.logPrior===null?null:{bytes:row.input.logPrior,mtime:row.context.nowSeconds-1};
+        const projected=projectR4CloseShopArchiveGeneration({reviewed,effect,previous,...row.context});
+        assert.equal(projected.live.bytes,row.output.liveLog,'immutable archive generation matches actual frozen Perl bytes');
+        assert.equal(projected.live.mtime,row.context.nowSeconds);
+        assert.equal(projected.rotated,row.kind==='rotate');
+        assert.equal(projected.old?.bytes??null,row.output.oldLog);
+        if(projected.rotated)assert.equal(projected.old.mtime,previous.mtime);
         const log=await readFile(path.join(logDir,'delete.cgi'),'utf8');
         assert.equal(log,row.output.liveLog,
           row.kind+' real UTF8 original Perl and Node log bytes');
@@ -114,4 +121,24 @@ test('R4 original error/user frozen source drift, fake committable and unsafe lo
     }),/isolated temporary sandbox/);
     await assert.rejects(stat(path.join(dir,'log','delete.cgi')),{code:'ENOENT'});
   } finally {await rm(dir,{recursive:true,force:true});}
+});
+
+// Pure projection only: do not stage or publish a closed WorldState until
+// the shared disk/close integration is reviewed with the B safety guards.
+test('D6 immutable archive projection preserves exact UTF8 rotation boundary and rejects unreviewed prior state',()=>{
+  const row=oracle().cases[0];
+  const effect=projectR4CloseShopEffects({reviewed:reviewedClose,shopId:1,shop:row.input.shop,reason:row.input.reason,sessionFileNames:[]});
+  const now=row.context.nowSeconds,prior={bytes:'界'.repeat(10000),mtime:now-2},old={bytes:'previous rotation',mtime:now-3};
+  const before=structuredClone({prior,old});
+  const append=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:prior,previousOld:old,...row.context});
+  assert.equal(append.rotated,false);
+  assert.equal(append.live.bytes,prior.bytes+row.output.liveLog);
+  assert.deepEqual(append.old,old);
+  const rotate=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:{...prior,bytes:prior.bytes+'a'},previousOld:old,...row.context});
+  assert.equal(rotate.rotated,true);assert.equal(rotate.live.bytes,row.output.liveLog);
+  assert.equal(rotate.old.mtime,prior.mtime);
+  assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed:{...reviewed},effect,...row.context}),/pinned archive review/);
+  assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed,effect,previousOld:old,...row.context}),/old archive requires current archive/);
+  assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed,effect,previous:{...prior,mtime:now+1},...row.context}),/prior archive entry/);
+  assert.deepEqual({prior,old},before);
 });
