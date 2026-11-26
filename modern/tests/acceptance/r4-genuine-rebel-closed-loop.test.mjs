@@ -263,6 +263,23 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.ok(p.state.palace.owned>=task.count);
   }
 
+  async function completeMission(){
+    const task=p.state.palace,before=shop(),world=snapshot();
+    assert.ok(task.point>=20000&&task.canComplete);
+    const result=await command('/api/palace-complete');
+    assert.equal(result.details.point,task.point);
+    assert.equal(result.details.missionIndex,task.index);
+    assert.equal(result.details.itemId,task.itemId);
+    assert.equal(result.details.consumedCount,task.count);
+    assert.equal(shop().item[task.itemId-1],before.item[task.itemId-1]-task.count);
+    assert.equal(shop().dignity,before.dignity+1);
+    assert.equal(snapshot().period.disk.townData.evt,String(result.details.nextMissionIndex));
+    assert.equal(snapshot().nowSeconds,world.nowSeconds);
+    missions++;
+    reserved=null;
+    t.diagnostic('R4 genuine palace completion '+JSON.stringify(result.details)+' '+diagnostic());
+  }
+
   assert.equal(shop().money,100000);
   assert.equal(shop().dignity,0);
   assert.equal(p.state.palace.index,0);
@@ -312,20 +329,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     // Use the actual source eligibility now, not after gratuitous time
     // passage or waiting for the full army reserve. The original command
     // has no time charge; a fresh subsequent quote selects the next task.
-    const task=p.state.palace,before=shop(),world=snapshot();
-    assert.ok(task.point>=20000&&task.canComplete);
-    const result=await command('/api/palace-complete');
-    assert.equal(result.details.point,task.point);
-    assert.equal(result.details.missionIndex,task.index);
-    assert.equal(result.details.itemId,task.itemId);
-    assert.equal(result.details.consumedCount,task.count);
-    assert.equal(shop().item[task.itemId-1],before.item[task.itemId-1]-task.count);
-    assert.equal(shop().dignity,before.dignity+1);
-    assert.equal(snapshot().period.disk.townData.evt,String(result.details.nextMissionIndex));
-    assert.equal(snapshot().nowSeconds,world.nowSeconds);
-    missions++;
-    reserved=null;
-    t.diagnostic('R4 genuine palace completion '+JSON.stringify(result.details)+' '+diagnostic());
+    await completeMission();
   }
   assert.ok(missions>=3&&shop().dignity>=3&&shop().money>=2500000);
   assert.equal(shop().showcasecount,4,'same legal expanded shop enters rebellion');
@@ -435,5 +439,102 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(resumed),true);
     t.diagnostic('R4 genuine battle outcome ACCEPTED '+JSON.stringify({terminal,leader:outcome.period.town.leader,
       army:army.bytes,revision:resumed.revision,period:resumed.period.settledCount,generation}));
+  });
+  // Keep the independently verified first battle and its genuine outcome.
+  // If the same player lost, regroup through actual economy/palace/hiring
+  // commands and challenge the current city once, with a sufficient army.
+  // Never reset identity, town, RNG, soldiers, dignity or save history.
+  await t.test('same legal player wins leadership and continues source economy across a later settlement',async()=>{
+    const town=()=>snapshot().period.town;
+    const target=()=>Math.max(2500,town().army+town().robina+Math.max(1000,town().robinb+800));
+    const active=()=>Object.hasOwn(snapshot().period.eventState,'rebel');
+    const guardCount=()=>town().army+town().robina;
+    assert.ok(!active(),'first source outcome must be settled');
+    if(town().leader!==1){
+      assert.equal(town().leader,0);
+      for(let n=0;;n++){
+        assert.ok(n<1000,'genuine victory preparation budget '+diagnostic());
+        assert.ok(!active()&&town().leader===0,'no unrelated leader or forced rebel');
+        const required=target(),additional=Math.max(0,required-p.state.army.count);
+        if(p.state.army.maximum<required){
+          assert.ok(missions<25,'genuine additional dignity budget '+diagnostic());
+          await missionStock();await scoreAndCash(100000);
+          await completeMission();continue;
+        }
+        if(shop().money<additional*1000+250000){await economyTurn();continue;}
+        if(p.remaining()<4200){await p.enoughTime(4200);continue;}
+        // Fight within the current period so guard treasury settlement does
+        // not change the just-checked force ratio or trigger a new NPC event.
+        // Source guards lose at least int(span/3), plus rand(5) each step.
+        // Ten-minute steps limit discarded militia overflow at phase changes.
+        const plannedSeconds=(Math.ceil(town().robina/200)+Math.ceil(town().army/200)+3)*600;
+        if(p.boundary()<=plannedSeconds){
+          await economyTurn();continue;
+        }
+        if(additional){
+          assert.ok(p.state.army.canHire&&p.state.army.hireMaximum>=additional);
+          const old=shop(),priorCount=p.state.army.count;
+          const hire=await command('/api/army-hire',{requestedCount:additional});
+          assert.equal(hire.details.count,additional);
+          assert.equal(hire.details.cost,additional*1000);
+          assert.equal(shop().money,old.money-additional*1000);
+          assert.equal(p.state.army.count,priorCount+additional);
+        }
+        assert.ok(p.state.army.count>=required&&p.state.armyConflict.canStart);
+        assert.equal(p.state.army.riot,false);
+        const pre=snapshot(),count=p.state.army.count;
+        const battle=await command('/api/army-start-rebellion',{confirmation:'rebel'});
+        assert.equal(battle.details.armyBefore,count);
+        assert.equal(battle.details.armyAfter,count);
+        assert.equal(snapshot().period.eventState.rebel,pre.nowSeconds+259200);
+        t.diagnostic('R4 genuine victory attempt '+JSON.stringify({count,guard:guardCount(),
+          town:town(),point:p.state.palace.point,dignity:shop().dignity,cash:shop().money}));
+        await p.saveAndRestart(generation++);
+        for(let step=0;active();step++){
+          assert.ok(step<Math.ceil(plannedSeconds/600),'bounded real victory fight '+diagnostic());
+          assert.ok(p.boundary()>600,'no unplanned settlement in victory fight');
+          const before=snapshot(),r=await p.tick(10),after=snapshot();
+          assert.equal(r.details.sourceTrace.hashPolicy,R4_EXTERNAL_COMMAND_HASH_POLICY);
+          assert.equal(r.details.sourceTrace.liveArmySha256,sha(before.period.disk.live['army.cgi'].bytes));
+          assert.equal(r.details.sourceTrace.slices.at(-1).stagedArmySha256,sha(after.period.disk.live['army.cgi'].bytes));
+          assert.equal(Object.hasOwn(shop(),'army'),false);
+          if(!active()){
+            assert.ok(r.details.sourceTrace.slices.flatMap(s=>s.logs)
+              .some(row=>row[2]==='護衛軍被叛軍殲滅了。領主被趕出了城堡。'),'actual guard defeat');
+            assert.equal(town().leader,1,'source player victory, not suppressed or NPC victory');
+          }
+        }
+        break;
+      }
+    }
+    assert.equal(town().leader,1);assert.equal(active(),false);
+    assert.ok(town().army>=200,'surviving rebels become actual city guards');
+    assert.equal(p.state.army.riot,false);assert.equal(p.state.army.count,0);
+    assert.equal(p.state.armyConflict.isLeader,true);
+    assert.equal(p.state.armyConflict.canStart,false,'current lord cannot start own rebellion');
+    const won=await p.saveAndRestart(generation++);
+    assert.equal(won.period.town.leader,1);
+    assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(won),true);
+    assert.ok(won.period.disk.live['log0.cgi'].bytes.includes('成為了新的領主。'));
+    // Test actual ordinary operations as lord with original zero tax, not
+    // merely a state read. No unreviewed city treasury/tax mutation.
+    await p.enoughTime(p.quote(13,1).timePerUseSeconds);
+    assert.equal(town().leader,1);
+    const cash=shop().money,work=await p.use(13,1);
+    assert.equal(work.details.moneyEarned,10000);assert.equal(shop().money,cash+10000);
+    const priorPeriod=snapshot().period.settledCount;
+    for(let n=0;snapshot().period.settledCount===priorPeriod;n++){
+      assert.ok(n<37,'bounded post-victory period');
+      await economyTurn();
+    }
+    assert.equal(snapshot().period.settledCount,priorPeriod+1);
+    assert.equal(town().leader,1,'ordinary post-victory source period retains current leader');
+    const final=await p.saveAndRestart(generation++);
+    assert.equal(final.period.town.leader,1);
+    assert.equal(final.shops[0].showcasecount,4);
+    assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(final),true);
+    t.diagnostic('R4 genuine leader ACCEPTED '+JSON.stringify({leader:final.period.town.leader,
+      town:final.period.town,revision:final.revision,period:final.period.settledCount,
+      missions,generation,cash:final.shops[0].money}));
   });
 });
