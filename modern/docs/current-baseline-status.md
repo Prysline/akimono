@@ -228,3 +228,12 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 第29批 run 45824384633 / job 139924653702：success，HEAD `4f855a10a908cd37e3a93ce1fcf45feae9b54596`、實際 checkout `cf0ed17acb13d9496cdf725e7ce29049228c3bef`、tree `bdc4bd9c8f5838ab206a29602fb487fa6820e51b` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - 第30批 run 45824834094 / job 139926235251：success，HEAD `a33b920e1256f2cdc33924c22a2c68b6d1f2e16c`、實際 checkout `f0061b9789777e98c23c64990958ae1c885675e4`、tree `9d535d3761a744111277bf393bf7fe898200db79` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - 第31–35批最後查詢仍 in_progress：45825399615、45826374794、45826749043、45827170541、45827783268；不替代新 HEAD 驗收。
+
+### 第三十六批：UI 靜態回歸／原版 world 讀寫及提交
+
+- 新審 5 檔有效：有效192、歷史32、待補9；固定233，分類收斂224/233（96.1%）；收斂後逐檔補審161，既有重新覆核7，剩56；候選新增5獨立。
+- [逐檔證據](r0-ui-world-read-commit-evidence.md)：UI 為靜態字串/CSS/handler wiring，非瀏覽器或 HTTP/CAS；原版 DataRead 真隔離檔，非數字保留、缺 // / CRLF sentinel 需 alarm、duplicate ID 覆蓋及缺 payload 接受。DataWrite 無店 stage，人工 stock 變更，未 commit；DataCommitOrAbort 真隔離 rename、第二次注入失敗後 recovery、原版 selector wildcard，非多檔 atomic。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。Git DNS 仍失敗，R1-HTTP-01 未實跑。
+
+### CI 補核：第31批
+
+- run 45825399615 / job 139928131564：success，HEAD `afce18b527f3af777d4fdadfd8d968656b3a5aa5`、實際 checkout `79a8fedb61f5e2bbfeb497ed84552d82cf90ace5`、tree `4a1b80e0cbac00a01c1143bbdf973ef7bc9710dd` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。第32–35批與 bb44e26 查詢仍 in_progress；不替代新 HEAD 驗收。

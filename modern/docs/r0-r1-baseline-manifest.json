@@ -4264,17 +4264,44 @@
       "path": "modern/tests/local-original-ui-layout.test.mjs",
       "sha": "76088699f86859e00a14d620ba3e1ab0e0be63d6",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "靜態 UI／handler wiring 回歸",
+      "originalSource": "無原版直接執行；現行 UI 靜態檔",
+      "assertions": "L14–147 導覽、明細、balance、CSS、狀態列與存讀檔位置；L150–238 展示架、USE、時間及 discard wiring；L241–293 dev-only、返回、售價同步。",
+      "executionPath": "讀取四檔文字，regex/includes/順序斷言，無瀏覽器執行。",
+      "risk": "UI 誤將 wiring 當正式功能",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "不證明實際渲染、事件、HTTP 成功、CAS 或 v2；L66–69 舊 supply/advance-time 只檢查字串存在，正式 handler 舊時間回409（dev-local L530–531）；不可將標題 live commands 當現行可用能力。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-ui-world-read-commit-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [],
+      "executionSources": [
+        {
+          "path": "modern/local-ui/index.html",
+          "sha": "ddca95478eec6bc957d1bd646b07eaf6724fbabf"
+        },
+        {
+          "path": "modern/local-ui/app.js",
+          "sha": "e11a43e604398f636b3aed47c70d7c9afef51f14"
+        },
+        {
+          "path": "modern/local-ui/style.css",
+          "sha": "6fdfb42e08afdb9615a4db11fdd547fa1e301e2c"
+        },
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        }
+      ],
+      "fixtures": "靜態字串、無玩家 fixture。",
+      "limitations": "不證明實際渲染、事件、HTTP 成功、CAS 或 v2；L66–69 舊 supply/advance-time 只檢查字串存在，正式 handler 舊時間回409（dev-local L530–531）；不可將標題 live commands 當現行可用能力。",
+      "reviewScope": "完整測試；對應固定來源與斷言範圍核對"
     },
     {
       "path": "modern/tests/local-source-text.test.mjs",
@@ -8643,65 +8670,125 @@
       "path": "modern/tests/original-perl/world-commit.t",
       "sha": "4a8fd57c24de341509ba7c06a5684baa95a04f69",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離多檔 marker／rename）",
+      "originalSource": "modern/tests/original-perl/write.cgi",
+      "assertions": "L91–139 normal/abort/recovery/stale marker；L141–164 注入第二次 rename failure 後恢復；L166–181 非字面 .cgi 選擇與空 stage marker。",
+      "executionPath": "原版 DataCommitOrAbort L4–35，真隔離 stage/live；GetPath/OpenAndCheck/RenameAndCheck stub，正常呼叫 OS rename，第二次注入 die。",
+      "risk": "world 讀寫／隔離提交／資料完整性",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "中途部分提交而非 atomic；原版 L9 regex 未 escape，strangexcgi 也匹配；無真 lock、fsync、斷電、正式 CAS/v2，未驗每一種 readdir 順序。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-ui-world-read-commit-evidence.md",
+          "line": 41
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 world/bags bytes、notes.txt、marker。",
+      "limitations": "中途部分提交而非 atomic；原版 L9 regex 未 escape，strangexcgi 也匹配；無真 lock、fsync、斷電、正式 CAS/v2，未驗每一種 readdir 順序。",
+      "reviewScope": "完整測試；對應固定來源與斷言範圍核對"
     },
     {
       "path": "modern/tests/original-perl/world-data.t",
       "sha": "56d6fcf6de5bd0359176f0498ad77f92b81f3d5a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 DataWrite stage）",
+      "originalSource": "modern/tests/original-perl/write.cgi",
+      "assertions": "L18–63 初始化及 fresh backup；L74–96 兩次 DataWrite，79 stock 槽、ID-1、metadata/event/town/分隔符、人工 #10 7→8。",
+      "executionPath": "原版 DataWrite L45–89；真隔離 UTF-8 stage file，GetPath/OpenAndCheck/SortDT/AutoVar stand-ins，LOCKED 空。",
+      "risk": "world 讀寫／隔離提交／資料完整性",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "不執行 DataRead、commit、真鎖、備份或 Node 差分；DataFilesBackup stub 宣稱不應走，但 require 原版 write.cgi 會重定義該 sub，不能當成獨立 guard；未斷言 lasttime utime 結果。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-ui-world-read-commit-evidence.md",
+          "line": 32
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "無店、無 EVENT，固定時間，fresh backup 避開備份；lasttime path 未建立。",
+      "limitations": "不執行 DataRead、commit、真鎖、備份或 Node 差分；DataFilesBackup stub 宣稱不應走，但 require 原版 write.cgi 會重定義該 sub，不能當成獨立 guard；未斷言 lasttime utime 結果。",
+      "reviewScope": "完整測試；對應固定來源與斷言範圍核對"
     },
     {
       "path": "modern/tests/original-perl/world-one-shop.t",
       "sha": "e7b33c9a3486aab47c4672b0f337d9c912a8a5ae",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 DataRead 店家結構）",
+      "originalSource": "modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L42–60 擷取原版及32 header 欄；L62–98 人工兩行店家；L100–146 單店、無 town、兩店、重複 ID、opaque town、缺 payload。",
+      "executionPath": "原版 DataRead L233–299，真暫存檔；AutoVar recorder/stub、GetDTPoint 固定77、alarm 2s。",
+      "risk": "world 讀寫／隔離提交／資料完整性",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "重複 ID 接受且 index 覆蓋（L282），缺 payload 仍計入店家；不驗原版 AutoVar 真解碼、認證、point 計算或正式多店/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-ui-world-read-commit-evidence.md",
+          "line": 23
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 shop header、syntheticPass、payload；無 EVENT。",
+      "limitations": "重複 ID 接受且 index 覆蓋（L282），缺 payload 仍計入店家；不驗原版 AutoVar 真解碼、認證、point 計算或正式多店/v2。",
+      "reviewScope": "完整測試；對應固定來源與斷言範圍核對"
     },
     {
       "path": "modern/tests/original-perl/world-read-safety.t",
       "sha": "205dec43ce77014fa380b09c9d18e7af6200c2d6",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 DataRead 負例）",
+      "originalSource": "modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L54–84 原樣擷取 DataRead 與 alarm；L86–107 missing/empty/最小 world；L109–140 非數字 stock/population、缺 //、CRLF sentinel、空 stock。",
+      "executionPath": "原版 DataRead L233–299，真暫存檔 read、外部 GetPath/OutError/GetDTPoint/AutoVar stub。",
+      "risk": "world 讀寫／隔離提交／資料完整性",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "缺 // 或 // CRLF 由外部 1s alarm 截止（來源 L258）；原版非數字資料未驗證；不證正式 Node guard、HTTP/v2 或 rollback。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-ui-world-read-commit-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 minimal world，無店、無 EVENT。",
+      "limitations": "缺 // 或 // CRLF 由外部 1s alarm 截止（來源 L258）；原版非數字資料未驗證；不證正式 Node guard、HTTP/v2 或 rollback。",
+      "reviewScope": "完整測試；對應固定來源與斷言範圍核對"
     },
     {
       "path": "modern/tests/original-perl/world-shop-history.t",
@@ -41645,14 +41732,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 187,
-      "待補": 14
+      "有效": 192,
+      "待補": 9
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 156,
+    "currentSessionReviewed": 161,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -41727,7 +41814,8 @@
     "modern/docs/r0-r4-close-shop-archive-evidence.md",
     "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
     "modern/docs/r0-r4-backup-data-write-disk-evidence.md",
-    "modern/docs/r0-r4-town-play-evidence.md"
+    "modern/docs/r0-r4-town-play-evidence.md",
+    "modern/docs/r0-ui-world-read-commit-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -42119,6 +42207,27 @@
       "checkout": "f0061b9789777e98c23c64990958ae1c885675e4",
       "run": 45824834094,
       "job": 139926235251,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "afce18b527f3af777d4fdadfd8d968656b3a5aa5",
+      "tree": "4a1b80e0cbac00a01c1143bbdf973ef7bc9710dd",
+      "checkout": "79a8fedb61f5e2bbfeb497ed84552d82cf90ace5",
+      "run": 45825399615,
+      "job": 139928131564,
       "conclusion": "success",
       "js": {
         "total": 1350,

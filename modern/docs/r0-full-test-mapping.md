@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 187、歷史 32、待補 14。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 156 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 192、歷史 32、待補 9。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 161 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -30,7 +30,7 @@
 | economy-model.test.mjs | 有效 | 純投影／來源公式 |
 | game-core-contract.test.mjs | 歷史 | fixture |
 | item-limit-model.test.mjs | 有效 | 來源守門／純編譯 |
-| local-original-ui-layout.test.mjs | 待補 | 未完成語義審閱 |
+| local-original-ui-layout.test.mjs | 有效 | 靜態 UI／handler wiring 回歸 |
 | local-source-text.test.mjs | 有效 | 來源守門／記憶體負向 |
 | market-buy-core.test.mjs | 有效 | Perl Oracle / Node 差分 |
 | original-admin-sparse-market.test.mjs | 有效 | Perl Oracle／Node 差分（舊 memory CAS） |
@@ -122,10 +122,10 @@
 | original-perl/period-stock-use.t | 有效 | Perl Oracle（固定片段） |
 | original-perl/showcase-market.t | 待補 | 未完成語義審閱 |
 | original-perl/whole-store.t | 待補 | 未完成語義審閱 |
-| original-perl/world-commit.t | 待補 | 未完成語義審閱 |
-| original-perl/world-data.t | 待補 | 未完成語義審閱 |
-| original-perl/world-one-shop.t | 待補 | 未完成語義審閱 |
-| original-perl/world-read-safety.t | 待補 | 未完成語義審閱 |
+| original-perl/world-commit.t | 有效 | Perl Oracle（隔離多檔 marker／rename） |
+| original-perl/world-data.t | 有效 | Perl Oracle（隔離 DataWrite stage） |
+| original-perl/world-one-shop.t | 有效 | Perl Oracle（隔離 DataRead 店家結構） |
+| original-perl/world-read-safety.t | 有效 | Perl Oracle（隔離 DataRead 負例） |
 | original-perl/world-shop-history.t | 有效 | 原版 Perl Oracle／受控 DataRead |
 | original-shared-use-callback-model.test.mjs | 有效 | Perl Oracle／Node 差分（外部呼叫 stub） |
 | original-sparse-all-plus.test.mjs | 有效 | Perl Oracle／Node 差分（受控 PLUS） |
