@@ -106,9 +106,9 @@ test('R4 eight shelves charge original maintenance; negative cash survives v2 an
 // the original tax branch; #32 is another medicine, #10 a different type.
 const shelfCosts=[0,2000,4000,8000,16000,32000,64000,128000];
 for(let count=1;count<=8;count++){
-  test('R4 genuine '+count+'-shelf construction, sequential sale/tax and exact maintenance across two v2 generations',async t=>{
+  test('R4 genuine '+count+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations',async t=>{
     const layout=([30,32,30,10,32,10,30,32]).slice(0,count);
-    let ready=false,settlement=null,positiveTax=0;const sales={};
+    let ready=false,settlement=null,positiveTax=0,afterShrink=false,shrunkSettlement=null;const sales={};
     const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick(r,before){
       const d=r.details,shop=before.shops[0],rows=d.shelfSales;
       assert.ok(Array.isArray(rows),'formal per-shelf source receipt');
@@ -146,6 +146,13 @@ for(let count=1;count<=8;count++){
         assert.equal(shop.showcasecount,count);
         settlement=q;
       }
+      if(afterShrink&&d.settlementReceipt){
+        const q=d.settlementReceipt;
+        assert.equal(shop.showcasecount,1);
+        assert.equal(q.maintenance,Math.trunc(Number(q.costBeforeLedger))+shelfCosts[0]);
+        assert.equal(q.cashBeforeLedger-q.cashAfterLedger,q.maintenance);
+        shrunkSettlement=q;
+      }
     }});
     // The source starter grant is five vouchers; the beginner book
     // exchange consumes all five. Obtain the gathering map by real market
@@ -160,13 +167,16 @@ for(let count=1;count<=8;count++){
     const quote=p.quote(63,count-1);
     assert.equal(quote.moneyPerUse,count*10000);
     assert.equal(quote.timePerUseSeconds,count*1800);
-    // Earn the construction fee and reserve using genuine #13 work;
-    // recheck after every wait because the period can charge upkeep.
+    // Earn both construction fees, the shrink fee and a conservative
+    // three-period large-shelf reserve BEFORE expanding. At size eight,
+    // upkeep may exceed full-time work income; trying to earn the same
+    // reserve only after expansion could trap the real player in debt.
+    const resizeReserve=2*count*10000+10000+3*shelfCosts[count-1];
     for(let n=0;;n++){
-      assert.ok(n<40,'source construction funding budget '+JSON.stringify({count,money:p.state.shop.money,period:p.state.world.period.settledCount}));
+      assert.ok(n<72,'source construction funding budget '+JSON.stringify({count,money:p.state.shop.money,resizeReserve,period:p.state.world.period.settledCount}));
       await p.enoughTime(p.quote(63,count-1).timePerUseSeconds);
       const reserve=Math.max(10000,Math.ceil(p.state.shop.costtoday)+10000);
-      if(p.state.shop.money>=quote.moneyPerUse+reserve)break;
+      if(p.state.shop.money>=resizeReserve+reserve)break;
       const work=await p.use(13,1);
       assert.equal(work.details.moneyEarned,10000);
     }
@@ -199,6 +209,62 @@ for(let count=1;count<=8;count++){
     assert.deepEqual(second.shops[0].showcase,layout);
     assert.deepEqual(second.shops[0].price,first.shops[0].price);
     assert.ok(second.period.settledCount>first.period.settledCount);
-    t.diagnostic(JSON.stringify({shelves:count,layout,sales,positiveTax,maintenance:settlement.maintenance,revision:second.revision}));
+    // The same player (and the same save history) must obtain a new tool.
+    // The source shrink splices showcase/price, never the shared inventory.
+    ready=false;
+    async function resizeTo(target){
+      assert.equal(p.stock(63),0);
+      await p.deny(63,target-1);
+      await p.market(63);
+      assert.equal(p.stock(63),1);
+      const q=p.quote(63,target-1);
+      assert.equal(q.moneyPerUse,target*10000);
+      assert.equal(q.timePerUseSeconds,target*1800);
+      await p.enoughTime(q.timePerUseSeconds);
+      assert.equal(p.quote(63,target-1).canUse,true);
+      const prior=p.state.shop,revision=p.state.world.revision,now=p.state.world.nowSeconds;
+      const r=await p.use(63,target-1);
+      assert.equal(r.details.effectiveCount,1);
+      assert.equal(r.details.moneySpent,target*10000);
+      assert.equal(r.details.timeSpentSeconds,target*1800);
+      assert.equal(p.state.shop.money,prior.money-target*10000);
+      assert.equal(p.state.shop.paytoday,prior.paytoday+target*10000);
+      assert.equal(p.state.shop.showcasecount,target);
+      const expectedItems=[...prior.item];expectedItems[62]--;
+      assert.deepEqual(p.state.shop.item,expectedItems,'resize must not discard inventory');
+      const expectedShowcase=prior.showcase.slice(0,target),expectedPrice=prior.price.slice(0,target);
+      while(expectedShowcase.length<target){expectedShowcase.push(0);expectedPrice.push(0);}
+      assert.deepEqual(p.state.shop.showcase,expectedShowcase);
+      assert.deepEqual(p.state.shop.price,expectedPrice);
+      assert.deepEqual(r.details.originalInlineLogCalls,[[0,1,'展示架已經改成'+target+'個了'],[3,0,p.state.shop.shopname+'的展示架已經變成'+target+'個了']]);
+      const logBytes=r.details.originalInlineLogCalls.map(row=>[now,...row].join('\t')+'\n').reverse().join('');
+      assert.ok(p.state.world.period.disk.live['log0.cgi'].bytes.startsWith(logBytes));
+      const committed=p.state.world;
+      const stale=await p.post('/api/use',{expectedRevision:revision,itemId:63,useId:target-1,requestedCount:1});
+      assert.equal(stale.ok,false);
+      assert.deepEqual(p.state.world,committed);
+      await p.deny(63,target-1);
+      return {expectedShowcase,expectedPrice,logBytes};
+    }
+    const shrunk=await resizeTo(1);
+    assert.deepEqual(shrunk.expectedShowcase,layout.slice(0,1));
+    const third=await p.saveAndRestart(2);
+    assert.deepEqual(third.shops[0].showcase,shrunk.expectedShowcase);
+    assert.deepEqual(third.shops[0].price,shrunk.expectedPrice);
+    assert.ok(third.period.disk.live['log0.cgi'].bytes.startsWith(shrunk.logBytes));
+    afterShrink=true;
+    for(let n=0;!shrunkSettlement&&n<37;n++)await p.tick(60);
+    assert.ok(shrunkSettlement,'next real period must charge only one shelf');
+    afterShrink=false;
+    const regrown=await resizeTo(count);
+    assert.deepEqual(regrown.expectedShowcase,[layout[0],...Array(count-1).fill(0)]);
+    assert.deepEqual(regrown.expectedPrice,[shrunk.expectedPrice[0],...Array(count-1).fill(0)]);
+    const fourth=await p.saveAndRestart(3);
+    assert.deepEqual(fourth.shops[0].showcase,regrown.expectedShowcase);
+    assert.deepEqual(fourth.shops[0].price,regrown.expectedPrice);
+    assert.ok(fourth.period.disk.live['log0.cgi'].bytes.startsWith(regrown.logBytes));
+    await p.tick(1);
+    t.diagnostic(JSON.stringify({shelves:count,layout,sales,positiveTax,maintenance:settlement.maintenance,
+      shrunkMaintenance:shrunkSettlement.maintenance,regrown:fourth.shops[0].showcase,revision:fourth.revision,generations:4}));
   });
 }
