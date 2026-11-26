@@ -13,14 +13,15 @@ const goods=[
   {id:51,book:16,useId:1,raw:2,input:24,output:32},
 ];
 
-test('R4 genuine 20000 points from four-type natural commerce, #65 self-theft and rumor, two v2 generations',async t=>{
+async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
   let gross=0,tax=0,saleCount=0,steps=0,bestPoint=0,lastPeriod=-1;
   const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,
-    onTick(r){
+    onTick(r,before){
       const rows=r.details.shelfSales;
       assert.ok(Array.isArray(rows));
       assert.equal(rows.reduce((sum,row)=>sum+row.count,0),r.details.naturalSaleCount);
       for(const row of rows){gross+=row.gross;tax+=row.tax;saleCount+=row.count;}
+      if(onTick)onTick(r,before);
     }});
   const snapshot=()=>({point:p.state.shop.point,rank:p.state.shop.rank,money:p.state.shop.money,
     profitstock:p.state.shop.profitstock,saletoday:p.state.shop.saletoday,
@@ -72,21 +73,25 @@ test('R4 genuine 20000 points from four-type natural commerce, #65 self-theft an
       await produce(g);
     }
   }
-  await p.enoughTime(4*600);
-  for(const [shelf,g] of goods.entries()){
-    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:g.id,per:120});
-    assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+  async function display(ids){
+    assert.equal(ids.length,4);
+    await p.enoughTime(4*600);
+    for(const [shelf,id] of ids.entries()){
+      const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:id,per:120});
+      assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+    }
+    assert.deepEqual(p.state.shop.showcase,ids);
   }
-  assert.deepEqual(p.state.shop.showcase,goods.map(g=>g.id));
+  await display(goods.map(g=>g.id));
 
   const startClock=p.state.world.nowSeconds;
-  async function ready(useId){
+  async function ready(useId,extraSeconds=0){
     for(;;){
       checkPoint();
-      if(p.stock(65)&&p.quote(65,useId).canUse)return;
-      // At most twelve source periods and 700 business decisions across
-      // BOTH forbidden books. Do not reset world, clock, score or RNG.
-      assert.ok(++steps<=700&&p.state.world.nowSeconds-startClock<=12*129600,
+      if(p.stock(65)&&p.quote(65,useId).canUse&&p.remaining()>=p.quote(65,useId).timePerUseSeconds+extraSeconds)return;
+      // Finite source periods and business decisions across all uses.
+      // Do not reset world, clock, score or RNG.
+      assert.ok(++steps<=maxSteps&&p.state.world.nowSeconds-startClock<=maxPeriods*129600,
         'source commercial point/market/time budget #65/'+useId+' '+JSON.stringify(snapshot()));
       const offer=p.state.marketOffers.find(x=>x.itemId===65);
       const reserve=Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000);
@@ -101,8 +106,13 @@ test('R4 genuine 20000 points from four-type natural commerce, #65 self-theft an
       else await p.tick(60);
     }
   }
+  return {p,ready,produce,display,snapshot};
+}
+
+test('R4 genuine 20000 points from four-type natural commerce, #65 self-theft and rumor, two v2 generations',async t=>{
+  const {p,ready,snapshot}=await highPointPlayer(t);
   await ready(1);
-  assert.ok(gross>0&&saleCount>0&&p.state.shop.point>=20000);
+  assert.ok(snapshot().gross>0&&snapshot().saleCount>0&&p.state.shop.point>=20000);
   const beforeTheft=p.state.shop,priorTown=p.state.world.period.town,priorEvents=p.state.world.period.eventState;
   const theft=await p.use(65,1);
   assert.equal(theft.details.originalFunctionReturn,'無法從自己店裡偷東西。偷竊失敗了。');
@@ -137,4 +147,115 @@ test('R4 genuine 20000 points from four-type natural commerce, #65 self-theft an
   assert.equal(second.shops[0].item[64],0);
   assert.ok(second.period.disk.live['log0.cgi'].bytes.startsWith(logged));
   t.diagnostic('genuine #65/0 '+JSON.stringify({beforePoint:beforeRumor.point,success,after:snapshot()}));
+});
+
+/** One actual player exercises all four original manual EVENTs in a fixed
+ * business order. The player legally chooses the displayed category, not
+ * a random index. Every shelf belongs to that category, so every source
+ * random index is valid. No world reset, injected points, or selected RNG.
+ */
+test('R4 genuine #65/2 four industry rumors, negative natural sales, exact expiry and eight v2 generations',async t=>{
+  let active=null;
+  const {p,ready,produce,display,snapshot}=await highPointPlayer(t,{maxSteps:2200,maxPeriods:36,
+    onTick(r,before){
+      if(!active)return;
+      const trace=r.details.sourceTrace;
+      const orders=trace.slices?trace.slices.map(x=>x.activeOrder):[trace.activeOrder];
+      for(const row of r.details.shelfSales){
+        if(row.itemId!==active.id)continue;
+        const overlay=orders[row.sliceIndex].includes(active.code);
+        if(overlay){
+          assert.equal(row.effectivePoint,-100);
+          assert.ok(Number(row.rankContribution)<=0);
+          active.negative+=Number(row.rankContribution);
+          active.during+=row.count;
+        }else{
+          assert.ok(row.effectivePoint>0);
+          assert.ok(Number(row.rankContribution)>=0);
+          active.after+=row.count;
+        }
+      }
+      // Manual START=-1 has no compiled %EVENT END message. The
+      // original DataRead overlay lasts for the whole current slice.
+      const logs=trace.slices?trace.slices.flatMap(x=>x.logs):trace.logs;
+      assert.ok(!logs.some(row=>String(row[2]).includes(active.endMessage)));
+    }});
+  // Source skills, not gifted/injected EXP or material flags.
+  await p.market(37);await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
+  await p.use(37,0);assert.equal(p.stock(18),1);
+  await p.market(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
+  const categories=[
+    {code:'kill-ken',id:41,book:20,wood:40,endMessage:'反劍運動已經平息了'},
+    {code:'kill-yoroi',id:53,book:22,wood:51,endMessage:'反鎧運動已經平息了'},
+    {code:'kill-tate',id:47,book:21,wood:45,endMessage:'反盾運動已經平息了'},
+    {code:'kill-tue',id:58,book:23,wood:57,endMessage:'反杖運動已經平息了'},
+  ];
+  let generation=0;
+  async function iron(g,target){
+    for(let n=0;p.stock(g.id)<target;n++){
+      assert.ok(n<12,'industry iron source manufacturing budget '+g.code+' '+JSON.stringify(snapshot()));
+      if(!p.stock(g.book))await p.market(g.book);
+      const count=Math.min(6,Math.max(1,Math.ceil((target-p.stock(g.id))/16)));
+      await p.ore(5,20*count);
+      if(g.book===23)await p.stones(2*count);
+      const r=await p.use(g.book,0,count);
+      assert.equal(r.details.effectiveCount,count);
+      assert.ok(r.details.originalUseItem.some(([id,n])=>id===5&&n===20*count));
+      assert.ok(r.details.originalAddItem.some(([id,n])=>id===g.id&&n>=16*count));
+    }
+  }
+  for(const g of categories){
+    assert.equal(p.state.world.period.eventState[g.code],undefined);
+    await iron(g,160);
+    // Restore all normal revenue lines before building the next 20000
+    // points. Fill each source category from actual production.
+    for(const product of goods)if(p.stock(product.id)<64)await produce(product);
+    await display(goods.map(x=>x.id));
+    await ready(2,4*600);
+    assert.ok(p.state.shop.point>=20000);
+    assert.ok(p.stock(g.id)>=160,'iron held off display until the source activation');
+    // All four choices have the same source ITEMTYPE. The actual random
+    // shelf selection is still consumed by the real #65/2 callback.
+    await display([g.id,g.wood,g.wood,g.wood]);
+    assert.equal(p.quote(65,2).canUse,true);
+    const before=p.state.shop,now=p.state.world.nowSeconds,events=p.state.world.period.eventState;
+    const done=await p.use(65,2);
+    const until=now+28800;
+    assert.deepEqual(done.details.manualEventActivation,{code:g.code,expiresAtSeconds:until});
+    assert.equal(done.details.randomDrawsUsed,1);
+    assert.equal(done.details.moneySpent,50000);assert.equal(done.details.experienceGain,50);
+    assert.equal(done.details.targetShopId,1);assert.equal(p.stock(65),0);
+    assert.equal(p.state.shop.money,before.money-50000);
+    assert.equal(p.state.shop.paytoday,before.paytoday+50000);
+    assert.equal(p.state.shop.rank,before.rank);
+    assert.deepEqual(done.details.originalInlineLogCalls.map(row=>row.slice(0,2)),[[0,1],[2,0]]);
+    const logged=done.details.originalInlineLogCalls.map(row=>[now,...row].join('\t')+'\n').reverse().join('');
+    assert.ok(p.state.world.period.disk.live['log0.cgi'].bytes.startsWith(logged));
+    assert.equal(p.state.world.period.eventState[g.code],until);
+    for(const [key,value] of Object.entries(events))assert.equal(p.state.world.period.eventState[key],value);
+    active={...g,during:0,after:0,negative:0};
+    const activated=await p.saveAndRestart(generation++);
+    assert.equal(activated.period.eventState[g.code],until);
+    assert.ok(activated.period.disk.live['log0.cgi'].bytes.startsWith(logged));
+    for(let n=0;n<8;n++){
+      await p.tick(60);
+      assert.equal(p.state.world.period.eventState[g.code],until,'source END uses strict less-than, including equality');
+    }
+    assert.equal(p.state.world.nowSeconds,until);
+    assert.ok(active.during>0,'actual natural iron sales during EVENT '+JSON.stringify(active));
+    assert.ok(active.negative<0,'actual negative rank contribution '+JSON.stringify(active));
+    await p.tick(1);
+    assert.equal(p.state.world.nowSeconds,until+60);
+    assert.equal(p.state.world.period.eventState[g.code],undefined);
+    // If stock really sold out, manufacture replacement normally. Never
+    // count the final pre-END slice as a post-expiry positive sale.
+    if(p.stock(g.id)<20)await iron(g,40);
+    for(let n=0;!active.after&&n<12;n++)await p.tick(60);
+    assert.ok(active.after>0,'actual post-END base POINT sale '+JSON.stringify(active));
+    const expired=await p.saveAndRestart(generation++);
+    assert.equal(expired.period.eventState[g.code],undefined);
+    t.diagnostic('genuine #65/2 '+JSON.stringify({...active,until,revision:expired.revision,point:p.state.shop.point}));
+    active=null;
+  }
+  assert.equal(generation,8);
 });
