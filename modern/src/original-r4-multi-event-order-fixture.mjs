@@ -25,6 +25,20 @@ import {R4_GUILDBATTLE_END_SOURCE,projectR4GuildbattleEndCallback}
 import {R4_REBEL_NOW_SOURCE,projectR4RebelNow}
   from './original-r4-rebel-now.mjs';
 
+import {createHash} from 'node:crypto';
+const emptyEventReviews=new WeakSet();
+/** Empty @DT still traverses the complete source EVENT hash.
+ * Source-pinned opt-in for the independent normal EVENT domain only.
+ */
+export function reviewR4EmptyStreetEvents({itemDsl,turnSource}){
+  for(const [s,sha] of [[itemDsl,'7a18185e98b32aee82ca1ce30d6f3c395157dbcb'],[turnSource,'b8a4980275f475a952846a8d6072fad45f8dff50']]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)
+      throw new RangeError('R4 empty street EVENT source drift');
+  }
+  const r=Object.freeze({source:'r4-empty-street-original-events',committable:false});
+  emptyEventReviews.add(r);return r;
+}
+
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
 const safe=(n,s)=>{if(!Number.isSafeInteger(n)||n<0)fail(s);return n;};
@@ -178,7 +192,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null}){
+  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null,r4EmptyStreetReview=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -208,10 +222,15 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
-  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null&&shop!==null)||
+  const emptyStreet=r4EmptyStreetReview!==null;
+  if(emptyStreet&&(!emptyEventReviews.has(r4EmptyStreetReview)||shop!==null||
+     !reviewed.support||!reviewed.instant||!reviewed.loto||!reviewed.happy||
+     reviewed.rebel!==null||reviewed.guildbattle!==null))
+    fail('reviewed empty street EVENT domain required');
+  if(!emptyStreet&&((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null&&shop!==null)||
      ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null||reviewed.happy!==null||reviewed.rebel!==null)&&
        (!shop||shop.id!==1||shop.status!==1||
-        !Array.isArray(shop.item)||shop.item.length!==79)))
+        !Array.isArray(shop.item)||shop.item.length!==79))))
     fail('supported callback requires one real source shop');
   if(((reviewed.guildbattle!==null&&
        (own(activeUntilSeconds,'guildbattle')||guildContext!==null))&&(
@@ -369,6 +388,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        reviewed.support!==null){
       // The frozen source STARTFUNC returns 0: it consumes one rand(1000),
       // logs a message on hit, and reserves neither group nor DTevent.
+      if(emptyStreet){supportCallbacks.push(code);continue;}
       const sample=peek(1000);
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
@@ -386,6 +406,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       // Actual frozen source: each callback scans the reviewed one shop;
       // first rand(1000) decides hit, and robot-protected manbiki consumes
       // a SECOND rand(1000). If source STARTFUNC returns 0, do not hold group.
+      if(emptyStreet){instantCallbacks.push(code);continue;}
       const firstSample=peek(1000);
       const firstValue=draw(1000);
       const takesRobotDraw=code==='manbiki'&&
@@ -408,6 +429,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     }else if(code==='loto'&&reviewed.loto!==null){
       // Consume exactly one original rand(6096454) per owned ticket, in
       // the same sequence as the other 17 hash-gated event callbacks.
+      if(emptyStreet){
+        // Source WriteLog precedes foreach @DT; the announcement remains.
+        lotoCallbacks.push(code);logs.push([2,0,'抽獎卷的開獎開始了']);continue;
+      }
       const count=nextShop?.item?.[10];
       if(!Number.isSafeInteger(count)||count<0||count>50)
         fail('source lotto ticket count out of bounds');
@@ -443,6 +468,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       fail('exact Perl post-START active EVENT hash order (pre-NOW EVENT hash traversal) required');
     for(const code of nowOrder){
       if(code==='happy'){
+        if(emptyStreet){happyNowCallbacks.push(code);continue;}
         const range=Math.trunc(Math.min(spanSeconds,
           reviewed.happy.maxNowSpanSeconds)/36);
         if(range<1&&!reviewedSubminute)fail('source happy NOWFUNC rand(0) not reviewed');
@@ -525,7 +551,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
     ...(randomDrawProvider===null?{}:{consumedSamples:Object.freeze(consumed)}),
     ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null?{}:{
-      shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
+      shop:emptyStreet?null:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),

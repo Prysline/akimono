@@ -9,7 +9,7 @@ import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
 import {reviewR4EventItemParams} from '../src/original-r4-event-item-param.mjs';
 import {reviewOriginalR4DeclarativeEventCycle}
   from '../src/original-r4-declarative-event-cycle.mjs';
-import {reviewOriginalR4MultiEventFixture,projectOriginalR4MultiEventFixture}
+import {reviewOriginalR4MultiEventFixture,projectOriginalR4MultiEventFixture,reviewR4EmptyStreetEvents}
   from '../src/original-r4-multi-event-order-fixture.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -136,4 +136,27 @@ test('R4 happy rejects missing source review, NOW order, bad time, missing draws
     reviewed,...source,spanSeconds:0,
   }),/unsupported source span/);
   assert.equal(JSON.stringify(source),before);
+});
+
+test('R4 empty street normal EVENT preserves actual source gates, no per-shop draws and lottery announcement',()=>{
+  const empty=reviewR4EmptyStreetEvents({itemDsl:src.itemDsl,turnSource:src.originalTurnSource});
+  const cases=original().emptyStreetCases;
+  assert.equal(cases.length,3);
+  for(const row of cases){
+    assert.equal(row.input.shop,null);
+    assert.throws(()=>projectOriginalR4MultiEventFixture({reviewed,...row.input}),/one real source shop/);
+    assert.throws(()=>projectOriginalR4MultiEventFixture({reviewed,...row.input,r4EmptyStreetReview:{...empty}}),/empty street EVENT/);
+    const got=projectOriginalR4MultiEventFixture({reviewed,...row.input,r4EmptyStreetReview:empty});
+    assert.equal(got.shop,null);
+    assert.deepEqual(got.activeUntilSeconds,row.output.activeUntilSeconds);
+    assert.deepEqual(got.logs,row.output.logs);
+    assert.deepEqual(got.randomDrawRanges,row.output.randomDrawRanges);
+    assert.deepEqual(got.dataReadItems,row.output.dataReadItems);
+    assert.equal(got.drawsUsed,row.output.drawsUsed);
+    assert.equal(got.committable,false);
+    assert.ok(!got.randomDrawRanges.includes(1000));
+    assert.ok(!got.randomDrawRanges.includes(100));
+    assert.ok(!got.randomDrawRanges.includes(6096454));
+  }
+  assert.deepEqual(cases[0].output.logs.filter(x=>x[2]==='抽獎卷的開獎開始了'),[[2,0,'抽獎卷的開獎開始了']]);
 });
