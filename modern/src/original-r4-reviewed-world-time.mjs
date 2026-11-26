@@ -13,6 +13,7 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
+import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
 import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
 import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
@@ -46,6 +47,9 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
   const warehouse=normalCommerce&&sources.stockViewSource!=null?reviewOriginalWarehouse(sources):null;
+  const balanceInputs=[sources.balanceViewSource,sources.infoViewSource];
+  if(balanceInputs.some(s=>s!=null)&&balanceInputs.some(s=>s==null))fail('incomplete original balance source set');
+  const balance=normalCommerce&&balanceInputs.every(s=>s!=null)?reviewOriginalBalanceView(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
   const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
@@ -171,6 +175,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     reviewedOwnerClosure:Boolean(closeReview),
+    ...(balance?{describeBalance(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      return describeOriginalBalance({reviewed:balance,world});
+    }}:{}),
     ...(warehouse?{describeWarehouse(world){
       if(!world?.shops?.length)return null;
       validate(world);

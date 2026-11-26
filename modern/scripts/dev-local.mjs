@@ -51,6 +51,7 @@ const {
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -87,6 +88,8 @@ const {
   originalSweepFormSource:'modern/tests/original-perl/core-sweep.cgi',
   originalSweepSubmitSource:'modern/tests/original-perl/core-sweep-s.cgi',
   originalStockViewSource:'modern/tests/original-perl/core-stock.cgi',
+  originalBalanceViewSource:'modern/tests/original-perl/core-balance.cgi',
+  originalInfoViewSource:'modern/tests/original-perl/core-inc-info.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -101,6 +104,7 @@ const streetModule=createStandardStreetModule({
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -151,6 +155,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
        originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
   originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
@@ -204,6 +209,7 @@ function state(){
     discardOffers:world&&streetModule.reviewedDiscard?streetModule.listDiscardOffers(world):[],
     marketOffers,
     warehouse:world&&streetModule.describeWarehouse?streetModule.describeWarehouse(world):null,
+    balance:world&&streetModule.describeBalance?streetModule.describeBalance(world):null,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])

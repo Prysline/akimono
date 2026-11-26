@@ -529,6 +529,21 @@ function showState(s){
   const hasPriorPeriod=Boolean(w?.period?.settledCount>0);
   text('balance-prev-sales',hasPriorPeriod?money(shop?.saleyesterday):'尚未決算');
   text('balance-prev-paid',hasPriorPeriod?money(shop?.payyesterday):'尚未決算');
+  const balance=s.balance;
+  $('balance-source-extra').hidden=!balance;
+  if(balance){
+    text('balance-founded',conciseTimeText(balance.foundedSeconds));
+    text('balance-cost',money(balance.accruedMaintenance)+' + '+money(balance.shelfMaintenance));
+    text('balance-prev-cost',money(balance.previousMaintenance));
+    text('balance-prev-tax',money(balance.previousTax));
+    text('balance-base-tax',number(balance.baseTaxRate)+'%'+balance.taxModeLabel);
+    text('balance-exp',number(balance.totalExperiencePercent)+'%');
+    text('balance-job',balance.jobName);
+    text('balance-dignity',balance.dignityName+'（經驗值 '+number(balance.dignity)+' pt）');
+    text('balance-wins',number(balance.rankingCount)+' 次');
+    text('balance-clean',s.sweep?.cleanLabel??'—');
+  }
+  text('balance-note',balance?'維護費依原版分列累計與展示架固定費；多人排行及公會費仍由外部系統提供。':'其他店舖資訊尚未開放。');
   text('market-source',w?.market?.source??'尚未初始化');
   // Prices, shelf and eligibility are derived from the same Registry used by
   // HTTP/GameCore, never a browser-side copied item whitelist.
