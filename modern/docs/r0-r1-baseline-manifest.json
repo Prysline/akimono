@@ -4744,8 +4744,8 @@
       "status": "歷史",
       "evidenceLevel": "fixture",
       "originalSource": "new.cgi / sc-s.cgi / item DSL",
-      "assertions": "能力宣告、revision、memory CAS、命令拒絕",
-      "executionPath": "B31 GameCore 記憶體契約；非正式 v2 HTTP",
+      "assertions": "L45–107 source marker、79/116/25 raw metadata、freeze/unsupported；L109–254 初始化/開店/上架/清架 pure apply、immutable/錯 command/street/revision；L255–314 真 memory commit/連續2次/同 rev 競爭/invalid transition；L315–402 memory encode/decode、malformed snapshot/command、malicious module mutation、街道中立與 deterministic replay。",
+      "executionPath": "createMemoryWorld → applyGameCommand/executeMemoryCommand/createMemoryWorldAdapter；僅 DSL supplied 的 StandardStreet subset。",
       "risk": "能力或 CAS 原子性退化",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
@@ -4754,9 +4754,15 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 15
+        },
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "limitations": "固定 now1000000、舊 memory schema；L45–49 只寬鬆 regex/marker，不是 SHA pin；raw metadata nonexecuting，無 market/event、HTTP/disk/v2。兩提案真 CAS 只同程序 sequential，非並行程序。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/item-limit-model.test.mjs",
@@ -4924,8 +4930,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle / Node 差分",
       "originalSource": "buy-s.cgi / whole.cgi / item.cgi；ITEM/FUNCB",
-      "assertions": "凍結 Perl 市場差分、Registry 動態報價、正式 core；另有 legacy 存檔隔離",
-      "executionPath": "market-buy-core；legacy 保存僅歷史證據",
+      "assertions": "L109–315 Registry #10/11/14、受控 pure projection、真 sequential CAS、clamp/stale/hook fixture/time cap、legacy 3代存檔；L318–445 36歷史 Perl cases（#14 static fixture）及 global/item hook；L448–638 #39三案差分、legacy 2代/registry guard、#1/14 BASE多股量 quote；L641–803 #12/14 動態16案差分、人工#1 carryover、#64 FUNCBUY fail-closed、guild/EVENT、registry；L805–843 舊 command 排除/regex；L845–864 #25 controlled refusals；L867–943 P5 #13 16案差分與 zero-price guard。",
+      "executionPath": "source market-buy registry / applyGameCommand / executeMemoryCommand / legacy store；5個明示 Perl probes（R2-A、R2-B39、pricehalf、dynamic、P5）及 supply probe。",
       "risk": "零價與價格、回呼、數量、交易原子性",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
@@ -4934,9 +4940,15 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 11
+        },
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 13
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "limitations": "原版 buy-s auth/lock/read/write/commit 多為 stubs/counters；36案 #14 使用特意保留 static quote fixture，不能作正式動態價格；#1 stock carryover、#64 rich/stock、#25 cap 皆人工，不算合法取得。cash/cap clamp #10 同時市場供貨有限，未隔離原因；多數拒絕 pure apply，非 CAS；synthetic hook 只契約順序、#64 voucher 實際拒絕。legacy disk 非正式 v2，無 HTTP；未逐項重讀全部探針，只核對上述 probe 的 stub/source 路徑段落。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/original-admin-sparse-market.test.mjs",
@@ -10320,14 +10332,21 @@
       "status": "歷史",
       "evidenceLevel": "歷史 HTTP",
       "originalSource": "custom/inc-item-data.cgi #15",
-      "assertions": "歷史 B-43 五配方與存檔",
-      "executionPath": "歷史隔離測試入口",
+      "assertions": "L19–85 legacy boot、HTTP use/save/denial；L86–172 無人工正向資產、gift/#12 gather、買#15、五USE、EXP200/220/600/660、高藥/ether/elixir、gen1/2 各真 Node restart/load；L174–187 stale generation/負count；L189–221 4種 checksum-correct forgery或壞checksum，真啟動回退gen1。",
+      "executionPath": "spawn tests/support/legacy-dev-local.mjs → /api/initialize/open-shop/use/supply/buy/save/load → B43 slots；HTTP state exact。",
       "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
       "reason": "固定測試內容與來源／PR 證據",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 21
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "固定 AKIMONO_E2E_FIXED_NOW=1000000 與 DETERMINISTIC_RNG=1，並非原版自然 RNG/時鐘；legacy B43 checksum 無正式 v2 HMAC/inner checkpoint；負向 isolated disk rewrite 非玩家注入。拒絕只比 world，未逐槽比 bytes；無 browser。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p2-career-persistence-http.test.mjs",
@@ -10336,14 +10355,21 @@
       "status": "歷史",
       "evidenceLevel": "歷史 HTTP",
       "originalSource": "custom/inc-item-data.cgi #78",
-      "assertions": "歷史 B-43 轉職、熟練度及存檔",
-      "executionPath": "歷史隔離測試入口",
+      "assertions": "L17–109 legacy boot/HTTP helpers/rehash；L110–208 合法操作取得材料/轉 cow EXP25=20→30、奶/2400s、轉 drug EXP15=15→35→55、兩真重啟；7種 job/EXP/product/proof/history/RNG/checksum forgery 回退；L209–242 13職業與 release、各 save/reset；L244–278 P1 legacy anchor/career proof、HTTP forgedProof拒、第二代重啟。",
+      "executionPath": "spawn legacy-dev-local.mjs，固定 clock/RNG，HTTP /api/use/supply/buy/save/load/reset，B43 career proof。",
       "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
       "reason": "固定測試內容與來源／PR 證據",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 29
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "positive 不人工注入，但 deterministic fixture/legacy disk；13 choices 每次 reset 的新世界，不是同玩家全長程；只第一職業測解除，13職業各未逐一 restart。legacy SHA checksum/proof 非正式 v2 HMAC；負向磁碟手改僅隔離攻擊 fixture；非真 RNG、browser。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p3-forging-persistence-http.test.mjs",
@@ -10996,14 +11022,21 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle",
       "originalSource": "custom/inc-item-data.cgi #13; buy-s.cgi, whole.cgi, calc.cgi, item.cgi",
-      "assertions": "16 市場案例：0 價、數量、時間、稅與回呼順序",
-      "executionPath": "隔離 Perl Oracle；非玩家",
+      "assertions": "L6–49 原版16案，7成功9拒絕；零價/零稅/cash/paytoday/gift 不變，職業/鑑定 time600/300/450/225、cap/wholesale、callback stage、成功 log 與拒絕無寫/無log。",
+      "executionPath": "Perl p5-book-work-market-oracle.pl → fixed buy-s.cgi transaction 與 BASE compiler fragments；Node .test 檢查 oracle，無 Node market transaction（另 market-buy-core L867–943）。",
       "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
       "reason": "固定測試內容與來源／PR 證據",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 37
+        }
+      ],
+      "realPlayer": false,
+      "limitations": "原版 oracle auth/lock/IO stub、commit/write counter、人工狀態、tax固定0；非 formal market/HTTP/CAS；held 與 sold-out 都 marketBefore0，未單獨隔離 owned cap；log 為收集非持久化。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/p5-book-work-v2-player-http.test.mjs",
@@ -17074,8 +17107,8 @@
       "status": "有效",
       "evidenceLevel": "靜態來源",
       "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi",
-      "assertions": "DSL parser 保留宣告、Perl 原文、來源校驗",
-      "executionPath": "parse-dsl / source audit",
+      "assertions": "L11–20 synthetic ITEM/USE/need/use/get 與 owner line；L22–29 synthetic Perl raw 保存不 eval；L31–41 實際兩 DSL parse、79/116/25/7 counts、ID1–79、首 ITEM no10、zero audit issues。",
+      "executionPath": "parseDsl/validateStandardStreet；讀兩凍結 DSL。",
       "risk": "DSL 漂移或遺失原始宣告",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
       "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
@@ -17084,9 +17117,15 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 34
+        },
+        {
+          "path": "modern/docs/r0-core-market-legacy-http-rereview-evidence.md",
+          "line": 45
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "limitations": "僅結構 parser/declaration，不是 compiler 或 runtime；第一案 ownerItemLine 不直接驗 owner ID join；未驗 SHA/所有 raw byte 相等、全部 USE/EVENT 可執行。",
+      "reviewScope": "既有分類的逐檔語義重新覆核"
     },
     {
       "path": "modern/tests/standard-init.test.mjs",
@@ -43137,7 +43176,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 47
+    "reReviewedBaseline": 53
   },
   "provenance": [
     {
@@ -43224,7 +43263,8 @@
     "modern/docs/r0-b54-b56-rereview-evidence.md",
     "modern/docs/r0-b57-b58-rereview-evidence.md",
     "modern/docs/r0-b59-b60-rereview-evidence.md",
-    "modern/docs/r0-b61-b63-rereview-evidence.md"
+    "modern/docs/r0-b61-b63-rereview-evidence.md",
+    "modern/docs/r0-core-market-legacy-http-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 47 份已重新逐檔覆核（其餘 16 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 53 份已重新逐檔覆核（其餘 10 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -283,3 +283,9 @@
 - 六檔維持3有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審47、剩16；實際逐檔217/233（93.1%）。
 - [逐檔證據](r0-b61-b63-rereview-evidence.md)：B61 真 PARAM compiler fragment/人工200木刀 buyer prep，Node #10 店只 preview；B62 #14 market/use得10#40，Node active/normal sale 5vs2，非原版獨立售出差分；B63 六種 first-use 受控 Perl/Node 差分，真 memory acquisition，legacy save、未上架五劍持有，非全部正式取得/銷售。B62/B63 負例多位於 already-used/EXP20 state，未隔離各 guard。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - B41–63 的 #24 42列既有證據完成本輪重新覆核；仍需其他16檔與 #23 全語義收斂，未結案。新 HEAD 待驗，strict repro 未實跑。
+
+### 第四十九批：Core／市場／歷史 HTTP／來源稽核
+
+- 六檔維持3有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審53、剩10；實際逐檔223/233（95.7%）。
+- [逐檔證據](r0-core-market-legacy-http-rereview-evidence.md)：B31 舊 memory contract；共用 market 36歷史/3普通/16動態/P5 16案、BASE quote、synthetic hook、人工 carryover/資產、legacy disk；P1/P2 真 HTTP 子程序/重啟但固定 clock/RNG/legacy checksum；P5 Perl 零價書籍16案、IO stub；DSL structure 不代表 runtime。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- 剩餘 P3 9檔及 R4 reviewed-time HTTP history 1檔；新 HEAD 待驗，strict repro 未實跑。
