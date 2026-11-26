@@ -19,7 +19,7 @@ export function reviewOriginalWarehouse(sources){
 }
 export function originalMarketBalance(per){
  if(!safe(per)||per<10||per>1000)fail('source supply point');
- return per>=110?{label:'飽和',percent:Math.trunc(per/10)}:per<=90?{label:'不足',percent:110-per}:{label:'均衡',percent:null};
+ return per>=110?{label:'飽和',percent:Math.trunc(per/10)}:per<=90?{label:'不足',percent:110-per}:{label:'平衡',percent:null};
 }
 export function describeOriginalWarehouse({reviewed,world,normalCommerce,overlay,order,limits}){
  if(!reviews.has(reviewed)||!isReviewedNormalCommerceItems(normalCommerce)||!overlay?.saleRules||world?.shops?.length!==1||!safe(world.period?.dtPeople)||world.period.dtPeople===0||!Array.isArray(order)||order.length!==79||new Set(order).size!==79||!Array.isArray(limits)||limits.length!==79)fail('source view inputs');

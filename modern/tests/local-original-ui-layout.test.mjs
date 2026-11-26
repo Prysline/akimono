@@ -46,7 +46,7 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/costRaw:item\?\.costRaw/);
   assert.match(html,/class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP/);
   assert.match(html,/<th>持有／上限<\/th><th>熟練度<\/th>/);
-  assert.match(html,/<th>數量／上限<\/th><th>售出／前期<\/th><th>熟練度<\/th><th>陳列<\/th><th>販售行情<\/th><th>供需<\/th>/);
+  assert.match(html,/<th>數量／上限<\/th><th>售出／前期<\/th><th>熟練度<\/th><th>陳列<\/th><th>市價<\/th><th>供需平衡<\/th>/);
   assert.match(html,/id="warehouse-type"/);
   assert.match(adapter,/warehouse:world&&streetModule\.describeWarehouse/);
   assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);

@@ -60,7 +60,7 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
    for(const row of view.rows){
      const expected=oracle[row.itemId-1];
      assert.deepEqual([row.displayedStock,row.marketPrice??0,row.supplyPoint],[expected.stock,expected.price,expected.point]);
-     const label={飽和:'飽和',不足:'不足',均衡:'均衡'}[row.balance.label];
+     const label={飽和:'飽和',不足:'不足',平衡:'均衡'}[row.balance.label];
      assert.equal(label+(row.balance.percent===null?' ':'  '+row.balance.percent+'%'),expected.graph);
      assert.equal(row.compiledCost,numeric[row.itemId-1].cost);
    }
@@ -70,7 +70,7 @@ test('R4 warehouse retail status follows original weighted shelves and active EV
 });
 test('source retail balance thresholds and mobile percentage preserve original discontinuities',()=>{
  assert.deepEqual([10,90,91,100,109,110,1000].map(originalMarketBalance),[
-  {label:'不足',percent:100},{label:'不足',percent:20},{label:'均衡',percent:null},
-  {label:'均衡',percent:null},{label:'均衡',percent:null},{label:'飽和',percent:11},{label:'飽和',percent:100},
+  {label:'不足',percent:100},{label:'不足',percent:20},{label:'平衡',percent:null},
+  {label:'平衡',percent:null},{label:'平衡',percent:null},{label:'飽和',percent:11},{label:'飽和',percent:100},
  ]);
 });
