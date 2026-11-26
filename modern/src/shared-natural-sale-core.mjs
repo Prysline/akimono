@@ -50,7 +50,8 @@ export function projectSharedNaturalSale({
     }
     const r=sourceRule(id);
     if(!r||r.itemId!==id||int(r.unitPrice,'source base price',1)<1||
-       listed<1||int(r.popularSeconds,'source popularity',1)<1||
+       listed<1||int(r.popularSeconds,'source popularity')<0||
+       (r.popularSeconds===0&&(id!==65||r.zeroPopularReviewed!==true))||
        int(r.point,'source point')<0||id>79)
       fail('displayed ITEM price or rule not source reviewed');
     if(shelfCount===1&&rule?.itemId!==id)
@@ -98,8 +99,9 @@ export function projectSharedNaturalSale({
   const seed=population*saleSpeed/3/50;
   for(const status of market.values()){
     status.marketprice=Math.trunc(status.weightedPrice/status.stock);
-    status.uppoint=Math.max(10,Math.min(1000,
-      Math.trunc(status.stock/seed*sourcePopular(status.rule))));
+    const popular=sourcePopular(status.rule);
+    status.uppoint=popular===0?100:Math.max(10,Math.min(1000,
+      Math.trunc(status.stock/seed*popular)));
   }
 
   let sold=0,rankUp=0,rankDown=0;
@@ -112,7 +114,10 @@ export function projectSharedNaturalSale({
     const status=market.get(id);
     const rankWeight=temprank<100?99:temprank;
     if(temprank===0)fail('unreviewed zero-rank source shop normalization');
-    const visitors=population*saleSpeed/sourcePopular(r)*
+    // Frozen inc-turn skips buypeople assignment when POP is zero.
+    // The item still contributes to the display group and upkeep above.
+    const popular=sourcePopular(r);
+    const visitors=popular===0?0:population*saleSpeed/popular*
       spanSeconds/86400 * weight/(status.buypeoplebase+1)*
       (rankWeight/temprank);
     let saleRank=ratio;
