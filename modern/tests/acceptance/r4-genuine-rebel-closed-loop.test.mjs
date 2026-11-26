@@ -17,6 +17,8 @@ import {R4_EXTERNAL_COMMAND_HASH_POLICY} from '../../src/original-r4-perl-hash-r
 import {calculateSourceShopPoint} from '../../src/original-period-solo-sort.mjs';
 
 const lordFiscal=process.env.AKIMONO_TEST_LORD_FISCAL==='1';
+const lordGuard=process.env.AKIMONO_TEST_LORD_GUARD==='1';
+assert.ok(!lordGuard||lordFiscal,'guard acceptance requires fiscal mode');
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
 // Reuse the actual #22 four-category, buffered 120% commerce route.
 // Different source types cover the original specialty-demand break;
@@ -575,5 +577,73 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     t.diagnostic('R4 genuine leader ACCEPTED '+JSON.stringify({leader:final.period.town.leader,
       town:final.period.town,revision:final.revision,period:final.period.settledCount,
       missions,generation,cash:final.shops[0].money,...(lordFiscal?{fiscalSales,fiscalCredits,taxRate:final.period.disk.lordTaxRate}:{})}));
+  });
+  if(lordGuard)await t.test('same genuine lord accumulates source taxes, hires and fires city guards, and executes eligible expose',async()=>{
+    const town=()=>snapshot().period.town;
+    const checkAuthority=()=>{assert.equal(town().leader,1);assert.ok(!Object.hasOwn(snapshot().period.eventState,'rebel'));assert.ok(p.state.lord);};
+    checkAuthority();
+    // This is a real player strategy, not a state injection: collect double
+    // 40% source tax from our own four shelves, zero discretionary budgets,
+    // and remove the standing payroll only after the original funds gate.
+    await command('/api/lord-inside',{taxrate:'40',devem:'0',safem:'0'});
+    await command('/api/lord-tax-side',{targetShopId:1,mode:'double'});
+    const deny=async(route,body)=>{
+      const before=snapshot(),history=p.state.historyCommands;
+      const r=await p.post(route,body);assert.equal(r.ok,false);
+      assert.deepEqual(snapshot(),before);assert.equal(p.state.historyCommands,history);
+    };
+    await deny('/api/lord-outside',{expectedRevision:snapshot().revision-1,cnt1:1,cnt2:0});
+    await deny('/api/lord-expose',{expectedRevision:snapshot().revision,targetShopId:2});
+    const creditStart=fiscalCredits,periodStart=snapshot().period.settledCount;
+    async function collectUntil(ready){
+      for(let n=0;!ready();n++){
+        assert.ok(n<900&&snapshot().period.settledCount-periodStart<24,'bounded genuine guard treasury '+diagnostic()+' '+JSON.stringify(town()));
+        checkAuthority();
+        if(shop().money<Math.ceil(shop().costtoday)+30000){
+          await p.enoughTime(p.quote(13,1).timePerUseSeconds);
+          const earned=await p.use(13,1);assert.equal(earned.details.moneyEarned,10000);
+        }else await economyTurn();
+      }
+      checkAuthority();
+    }
+    const military=async(kind,cnt1,cnt2,count)=>{
+      const prior=snapshot(),b=town(),cash=shop().money,time=shop().time;
+      const result=await command('/api/lord-'+kind,{cnt1,cnt2});
+      const hiring=kind==='outside',delta=hiring?count:-count;
+      assert.equal(result.details.count,count);assert.equal(result.details.cost,hiring?count*1200:0);
+      assert.equal(town().army,b.army+delta);assert.equal(town().money,b.money-(hiring?count*1200:0));
+      assert.equal(town().robina,b.robina);assert.equal(town().safety,b.safety);
+      assert.equal(shop().money,cash);assert.equal(shop().time,time);assert.equal(snapshot().nowSeconds,prior.nowSeconds);
+      assert.deepEqual(snapshot().period.disk.live['army.cgi'],prior.period.disk.live['army.cgi']);
+      assert.deepEqual(snapshot().period.disk.live['log0.cgi'],prior.period.disk.live['log0.cgi']);
+      assert.equal(p.state.lord.regularArmy,town().army);
+      assert.deepEqual(await p.saveAndRestart(generation++),snapshot());
+      assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(snapshot()),true);
+    };
+    if(town().money<1200)await deny('/api/lord-outside',{expectedRevision:snapshot().revision,cnt1:1,cnt2:0});
+    await collectUntil(()=>town().money>=2400);
+    assert.ok(fiscalCredits>creditStart||town().money>=2400,'source tax-funded treasury');
+    await military('outside',2,1,1); // text input overrides preset
+    const all=town().army;
+    await military('outdel',all+1,0,all); // original cap; no refund
+    assert.equal(town().army,0);
+    await deny('/api/lord-expose',{expectedRevision:snapshot().revision,targetShopId:1});
+    // Accumulate the full source fee plus the 2000 real city guards.
+    await collectUntil(()=>town().money>=3400000&&shop().rank>=2000);
+    assert.ok(fiscalCredits>creditStart);
+    await military('outside',2000,0,2000);
+    assert.equal(p.state.lord.canExposeTarget,true);
+    const prior=snapshot(),b=town(),rank=shop().rank,cash=shop().money,time=shop().time;
+    const result=await command('/api/lord-expose',{targetShopId:1});
+    assert.equal(result.details.cost,1000000);assert.equal(town().money,b.money-1000000);
+    assert.equal(town().army,2000);assert.equal(town().safety,Math.min(10000,b.safety+500));
+    assert.equal(shop().rank,Math.trunc(rank/10));assert.equal(shop().money,cash);assert.equal(shop().time,time);
+    assert.equal(snapshot().nowSeconds,prior.nowSeconds);
+    assert.deepEqual(snapshot().period.disk.live['army.cgi'],prior.period.disk.live['army.cgi']);
+    assert.ok(snapshot().period.disk.live['log0.cgi'].bytes.includes('領主'+shop().name+'は'+shop().shopname+'に対して取り締まりを行いました。'));
+    const after=snapshot();assert.deepEqual(await p.saveAndRestart(generation++),after);
+    assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(after),true);
+    assert.equal(p.state.lord.canExposeTarget,false,'post-expose rank/funds gate');
+    t.diagnostic('R4 genuine lord guard ACCEPTED '+JSON.stringify({town:town(),rankBefore:rank,rankAfter:shop().rank,revision:after.revision,period:after.period.settledCount,fiscalCredits,generation}));
   });
 });
