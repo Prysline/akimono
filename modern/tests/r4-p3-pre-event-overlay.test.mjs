@@ -1039,10 +1039,10 @@ test('R4 opt-in external CAS refuses structurally valid rebel assets without acq
     projectSharedMarketBuy({world:normalFixture,command:buy,marketBuy:crossStreet.marketBuy}));
   for(const mutate of [
     w=>delete w.period.disk.live['army.cgi'],
-    w=>{w.period.disk.live['army.cgi'].bytes='1,4000\\n2\\n';},
+    w=>{w.period.disk.live['army.cgi'].bytes='1,4000\n2\n';},
     w=>{w.shops[0].taxmode=2;},
     w=>{w.period.eventState.guildbattle=w.nowSeconds+100;},
-    w=>{const lines=w.period.disk.live['play.cgi'].bytes.split('\\n'),h=lines[1].split(',');h[3]='3';lines[1]=h.join(',');w.period.disk.live['play.cgi'].bytes=lines.join('\\n');}
+    w=>{const lines=w.period.disk.live['play.cgi'].bytes.split('\n'),h=lines[1].split(',');h[3]='3';lines[1]=h.join(',');w.period.disk.live['play.cgi'].bytes=lines.join('\n');}
   ]){
     const bad=structuredClone(rebelFixture);mutate(bad);
     assert.equal(crossStreet.marketBuy.validateWorld(bad),false);
