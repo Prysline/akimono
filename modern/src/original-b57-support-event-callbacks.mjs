@@ -5,6 +5,7 @@
  * The original GetMoneyString formatting is deliberately stubbed in oracle.
  */
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
 
 export const B57_SUPPORT_SOURCE='b57-original-getmoney-getpop-startfunc';
 const MAX_MONEY=999999999;
@@ -92,7 +93,7 @@ export function reviewOriginalSupportEventCallbacks({
   });
 }
 export function projectOriginalSupportEventCallback({
-  reviewed,shop,eventCode,randomDraws,
+  reviewed,shop,eventCode,randomDraws,reviewedInventory=null,
 }){
   if(reviewed?.source!==B57_SUPPORT_SOURCE||
      reviewed.gateIncluded!==false||
@@ -101,6 +102,8 @@ export function projectOriginalSupportEventCallback({
     fail('original callback source contract required');
   const spec=expected[eventCode];
   if(!spec)fail('unreviewed support event '+eventCode);
+  const expanded=reviewedInventory?.normalCommerce??null;
+  if(expanded!==null)validateNormalCommerceInventory(shop,reviewedInventory.compiled,expanded);
   if(!shop||shop.id!==1||shop.status!==1||
      typeof shop.shopname!=='string'||!shop.shopname||
      !Number.isSafeInteger(shop.money)||shop.money<0||
@@ -109,9 +112,8 @@ export function projectOriginalSupportEventCallback({
      shop.rank>10000||
      !Array.isArray(shop.item)||shop.item.length!==79||
      shop.item.some(n=>!Number.isSafeInteger(n)||n<0)||
-     !Array.isArray(shop.showcase)||shop.showcase.length!==1||
-     shop.showcasecount!==1||
-     !Array.isArray(shop.price)||shop.price.length!==1)
+     (expanded===null&&(!Array.isArray(shop.showcase)||shop.showcase.length!==1||
+       shop.showcasecount!==1||!Array.isArray(shop.price)||shop.price.length!==1)))
     fail('reviewed real source single-shop money/popularity boundary');
   if(!Array.isArray(randomDraws)||randomDraws.length!==1||
      randomDraws.some(x=>!Number.isSafeInteger(x)||x<0||x>=1000000))

@@ -5,6 +5,9 @@
  */
 import {createHash} from 'node:crypto';
 import {parseDsl} from './parse-dsl.mjs';
+import {isSourceShowcaseListedPrice} from './shared-showcase-price.mjs';
+
+const reviewedCatalogs=new WeakSet();
 
 const fail=s=>{throw new RangeError('R4 normal commerce ITEM: '+s);};
 const pins={
@@ -80,7 +83,37 @@ export function reviewNormalCommerceItems(sources){
   }
   if(items.length!==79||Array.from({length:79},(_,i)=>items[i]).some(x=>!x))
     fail('contiguous original ITEM ids');
-  return Object.freeze({source:'r4-normal-commerce-frozen-item-metadata.v1',
+  const review=Object.freeze({source:'r4-normal-commerce-frozen-item-metadata.v1',
     items:Object.freeze(items),saleRules:Object.freeze(saleRules),
     upkeepCosts:Object.freeze(upkeepCosts)});
+  reviewedCatalogs.add(review);
+  return review;
+}
+
+/** Shape-only source proof. A stocked ITEM or EXP key is not a grant:
+ * authorized commands, CAS and history replay must establish provenance.
+ * A valid zero-stock shelf may persist after a sale or theft.
+ */
+export function validateNormalCommerceInventory(shop,compiled,reviewed){
+  if(!reviewedCatalogs.has(reviewed))fail('actual frozen ITEM review required');
+  if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||
+     !Array.isArray(compiled?.limits)||compiled.limits.length!==79||
+     compiled.limits.some(row=>!Number.isSafeInteger(row?.limit)||row.limit<0)||
+     shop.item.some((n,i)=>!Number.isSafeInteger(n)||n<0||n>compiled.limits[i].limit)||
+     !['','drug','tool','weapon','armor','material','book','peddle','cow'].includes(shop.job??''))
+    fail('source holding cap, career or stock shape');
+  if(!Number.isSafeInteger(shop.showcasecount)||shop.showcasecount<1||shop.showcasecount>8||
+     !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
+     shop.showcase.length!==shop.showcasecount||shop.price.length!==shop.showcasecount||
+     shop.showcase.some((id,i)=>!Number.isSafeInteger(id)||id<0||id>79||
+       (id===0?shop.price[i]!==0:
+        !isSourceShowcaseListedPrice(reviewed.saleRules[id]?.unitPrice,shop.price[i]))))
+    fail('source showcase shape, flag or listed price');
+  const exp=shop.exp??{};
+  if(typeof exp!=='object'||Array.isArray(exp)||
+     Object.entries(exp).some(([id,n])=>!/^[1-9][0-9]*$/.test(id)||Number(id)>79||
+       !Number.isSafeInteger(n)||n<0||n>1000)||
+     Object.values(exp).reduce((a,b)=>a+b,0)>3600)
+    fail('source ITEM EXP or LIMIT_EXP');
+  return true;
 }

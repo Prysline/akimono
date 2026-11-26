@@ -356,7 +356,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
         reviewed:reviewed.support,eventCode:code,shop:nextShop,
-        randomDraws:[sample],
+        randomDraws:[sample],reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==1)

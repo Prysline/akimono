@@ -26,3 +26,7 @@
 ## 全商品 ITEM 編譯與零 POP 展示來源差分（第二輪）
 
 新增 reviewed-normal-commerce-items.mjs（凍結 DSL、GetBuffer、sc-s.cgi、inc-turn SHA pin）與原版 GetBuffer TYPE/FLAG harness；逐項比對79筆 PRICE/POP/POINT/COST/TYPE/FLAG，不另建販售算法。來源 sc-s.cgi 只禁止 flag s、無貨、非法索引／售價；不要求正 POP。#65 禁斷之書可展示但原版 inc-turn 跳過 buypeople 設定；GetMarketStatus 的零 POP uppoint=100；仍參與專門店／陳列維持費。共用 R3 core 對精確來源 #65 零 POP 新規則作零自然需求處理，保留舊無來源證明零 POP 拒絕。67種原版可展示商品（66正 POP + #65 零 POP）、另兩案混合多架原版 natural 差分，共69案；不是 HTTP、CAS、EVENT 或 v2 驗收。全量 source metadata 待接既有 R4 正式控制器（P5 同時改 B41，不能覆蓋）。原版候選 c5d233d0 CI 45727278671 runner checkout ab63927，1372 JS / 2778 Perl/94 檔全通過（16案多架決算隔離）；本輪新增候選尚待CI。另已確認 B57 支援 EVENT 仍固定單架、正常/跨期 pre-event RNG 上限121/125只夠單架（8架自然最多24 draw + rank + #70 + 118 PLUS，必須擴充而不改既有 tape prefix），後續正式整合必須逐接點修正。
+
+## 多架 EVENT 來源回呼接點
+
+新增明確 full ITEM review 的共用 shape validation（1–8架、原版上架flag與價格、79持有上限、全部canonical ITEM EXP key/1000個別/3600總量、職業），不授權取得或跳過CAS/history。保留原 P3 受控 guard。B55 manbiki/goutou 改為原版逐架扣除，重複商品用前架扣後庫存與各架價格累計，不去重；機器人仍整店保護、RNG與return不變。B57 getmoney/getpop 依相同新review接多架，既有舊呼叫行為不變。既有 source oracle 支援獨立 --multi-shelf 選項，8個偷竊/強盜案例、1–8架×2補助/人氣16案例；未刪除或降低舊斷言。R4 EVENT fixture 傳相同 reviewedInventory 至支援 callback，未開啟正式 runtime full review。待 CI。#13取得/打工仍由P5主責，shape接受不代表另行實作；CAS/HTTP/UI仍未開放多架時間。
