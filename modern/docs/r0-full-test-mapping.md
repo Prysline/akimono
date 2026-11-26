@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 46、歷史 17、待補 170。B56 重疊去重；既有分類為第一批證據，並非本輪全量重審。新增 2 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 51、歷史 18、待補 164。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 6 份，並非全量重審。新增 2 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -27,11 +27,11 @@
 | b61-source-sword-demand-live-cas.test.mjs | 歷史 | Perl 差分＋fixture CAS |
 | b62-real-sword-market-map-sale-cas.test.mjs | 歷史 | Perl 差分＋fixture CAS |
 | b63-source-all-sword-map-outcomes-cas.test.mjs | 歷史 | Perl 差分＋fixture CAS |
-| economy-model.test.mjs | 待補 | 未完成語義審閱 |
+| economy-model.test.mjs | 有效 | 純投影／來源公式 |
 | game-core-contract.test.mjs | 歷史 | fixture |
 | item-limit-model.test.mjs | 待補 | 未完成語義審閱 |
 | local-original-ui-layout.test.mjs | 待補 | 未完成語義審閱 |
-| local-source-text.test.mjs | 待補 | 未完成語義審閱 |
+| local-source-text.test.mjs | 有效 | 來源守門／記憶體負向 |
 | market-buy-core.test.mjs | 有效 | Perl Oracle / Node 差分 |
 | original-admin-sparse-market.test.mjs | 待補 | 未完成語義審閱 |
 | original-inline-work-showcase-model.test.mjs | 待補 | 未完成語義審閱 |
@@ -42,9 +42,9 @@
 | original-multi-item-use-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-natural-sale-plus.test.mjs | 待補 | 未完成語義審閱 |
 | original-nayuta-functurn.test.mjs | 待補 | 未完成語義審閱 |
-| original-perl/backup-safety.t | 待補 | 未完成語義審閱 |
-| original-perl/baseline.t | 待補 | 未完成語義審閱 |
-| original-perl/lock-safety.t | 待補 | 未完成語義審閱 |
+| original-perl/backup-safety.t | 有效 | 原版 Perl Oracle／不安全歷史語義 |
+| original-perl/baseline.t | 有效 | 原版 Perl Oracle |
+| original-perl/lock-safety.t | 有效 | 原版 Perl Oracle／歷史鎖 |
 | original-perl/new-store.t | 待補 | 未完成語義審閱 |
 | original-perl/original-admin-sparse-market.t | 待補 | 未完成語義審閱 |
 | original-perl/original-b41-real-sale.t | 有效 | Perl Oracle（受控） |
@@ -232,7 +232,7 @@
 | wholesale-turn-model.test.mjs | 待補 | 未完成語義審閱 |
 | world-backup-preflight.test.mjs | 待補 | 未完成語義審閱 |
 | world-commit-plan.test.mjs | 待補 | 未完成語義審閱 |
-| world-lock-contract.test.mjs | 待補 | 未完成語義審閱 |
+| world-lock-contract.test.mjs | 歷史 | 純投影／歷史檔鎖 fixture |
 | world-one-shop-parser.test.mjs | 待補 | 未完成語義審閱 |
 | world-read-preflight.test.mjs | 待補 | 未完成語義審閱 |
 | world-shop-history-model.test.mjs | 待補 | 未完成語義審閱 |

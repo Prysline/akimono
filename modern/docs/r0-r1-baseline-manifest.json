@@ -4116,22 +4116,51 @@
       "path": "modern/tests/economy-model.test.mjs",
       "sha": "f6f7d9bd3623217741fd13c264e8190407c6d5d3",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "純投影／來源公式",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、_config.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "排序價格 50/30/1、庫存可逆且不變；多店限額與負絕對 cap；報價 count/cash/tax/time、拒 stale/self/guild；36h 邊界含零尾、時間守恆；profit 950、EXP 465、維持費順序；七 fractional IDs、0.5/1.5 cap、metadata drift 拒絕",
+      "executionPath": "projectWholeStore/checkWholeStockCaps/quoteUnguildedPurchase/segmentAccountingPeriods/rollShopLedgerSubset/compiledFractionalWholesaleById",
+      "risk": "價格排序、限額取整、稅／時間、帳本次序",
+      "disposition": "保留純投影；#22 與 #18/#16 正式交易另證",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 49
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "fixtures": "手製 compiled map、直接庫存現金、固定 now；peer quote 與 ledger 子集不提交",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "手製 compiled map、直接庫存現金、固定 now；peer quote 與 ledger 子集不提交"
     },
     {
       "path": "modern/tests/game-core-contract.test.mjs",
@@ -4195,22 +4224,75 @@
       "path": "modern/tests/local-source-text.test.mjs",
       "sha": "00a1bdd65d5153f97c7abc8b0f14839c15189a18",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "來源守門／記憶體負向",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi、_config.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/buy-s.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/calc.cgi",
+      "assertions": "實際 LF 轉 CRLF 再正規化相等；lone CR/null 拒絕；改 admin init 來源標記拒絕；初始化開店資金 100000、市場空、revision=2",
+      "executionPath": "normalizeLocalSourceText → createStandardStreetModule → createMemoryWorldAdapter / executeMemoryCommand",
+      "risk": "跨平台換行誤拒或實質漂移被隱藏",
+      "disposition": "保留來源守門，正式完整 wiring 另證；R1",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 33
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        }
+      ],
+      "fixtures": "固定 now=1000000、memory world、歷史 reviewed-sparse-all-plus capability；無 HTTP/v2",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "固定 now=1000000、memory world、歷史 reviewed-sparse-all-plus capability；無 HTTP/v2"
     },
     {
       "path": "modern/tests/market-buy-core.test.mjs",
@@ -4426,49 +4508,80 @@
       "path": "modern/tests/original-perl/backup-safety.t",
       "sha": "3cef1da29c92c9744c1595079deecaa42406503a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle／不安全歷史語義",
+      "originalSource": "modern/tests/original-perl/write.cgi",
+      "assertions": "空 LOCKED 可通過；失去 owned path 拒絕且無 staging；五類備份複製；缺來源截斷舊備份，缺目的地不 abort；fresh mtime 跳過；staged 第一行 lasttime",
+      "executionPath": "require write.cgi → CheckLockStatus/DataFilesBackup/DataWrite",
+      "risk": "把原版不安全備份當可靠恢復、誤改 staging 順序",
+      "disposition": "保留不安全 Oracle；R4 外部 IO #18，不當 v2 安全保證",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "fixtures": "File::Temp、固定 NOW_TIME、OpenAndCheck/SortDT/AutoVar/log stub；非完整原版交易或 v2",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "File::Temp、固定 NOW_TIME、OpenAndCheck/SortDT/AutoVar/log stub；非完整原版交易或 v2"
     },
     {
       "path": "modern/tests/original-perl/baseline.t",
       "sha": "a400acd7749408733a1697f7a63fdb5f4c0358c9",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle",
+      "originalSource": "modern/tests/original-perl/calc.cgi、modern/tests/original-perl/item.cgi",
+      "assertions": "31 斷言：時間上限 259200、負耗時拒絕、EXP 折扣與 expold 優先；交易時間倍率 0.5–2、溢折價稅及 99% cap；金錢 0..999999999、int、數量 clamp、非法／無庫存商品拒絕",
+      "executionPath": "require calc.cgi/item.cgi → GetStockTime/UseTime/EditTime/EditMoney/GetItemUseTime/GetTimeDeal/GetSaleTax/CheckCount/CheckItemNo",
+      "risk": "原版時間、現金、稅、商品檢查公式漂移",
+      "disposition": "保留 Oracle；R1 schema/atomicity 與 #22 定價另證",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        }
+      ],
+      "fixtures": "Perl globals、固定 NOW_TIME、OutError/l stub、直接 DT/ITEM；無 CGI server/v2",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "Perl globals、固定 NOW_TIME、OutError/l stub、直接 DT/ITEM；無 CGI server/v2"
     },
     {
       "path": "modern/tests/original-perl/lock-safety.t",
       "sha": "5f7c1b95ffa2eb1a9062ef5f209f0a03a5d35635",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle／歷史鎖",
+      "originalSource": "modern/tests/original-perl/lock.cgi",
+      "assertions": "實際 rename ownership、巢狀 depth、只一次 recovery；過期鎖接管、近期 busy；checked rename/open 成功與失敗；失敗 unlock 保留 path/depth=0、不重造 anchor",
+      "executionPath": "require lock.cgi → Lock/UnLock/RenameAndCheck/OpenAndCheck",
+      "risk": "誤解原版 lock recovery、失敗釋鎖或重試",
+      "disposition": "保留 Oracle；現行 v2 CAS/generation 非原版檔鎖；#18",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/lock.cgi",
+          "sha": "84382170f1b7f70348c4e2a91bf30b1d1043b964"
+        }
+      ],
+      "fixtures": "File::Temp、固定 1000/60、REMOTE_ADDR、DataCommitOrAbort/log/OutError stub；無跨程序競爭",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "File::Temp、固定 1000/60、REMOTE_ADDR、DataCommitOrAbort/log/OutError stub；無跨程序競爭"
     },
     {
       "path": "modern/tests/original-perl/new-store.t",
@@ -7968,22 +8081,39 @@
       "path": "modern/tests/world-lock-contract.test.mjs",
       "sha": "755ba39992f95192f63f0c47dc7d3b3b4d1c2f2a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "歷史",
+      "evidenceLevel": "純投影／歷史檔鎖 fixture",
+      "originalSource": "modern/tests/original-perl/lock.cgi、modern/tests/original-perl/write.cgi、_config.cgi",
+      "assertions": "5 rename/6 open、200ms 等待；首鎖 recovery、nested 不 rename、失敗 release depth=0 保 path；60s inclusive；拒 traversal/重複/不安全 timestamp、矛盾 probe；immutable",
+      "executionPath": "reviewStaleWorldLocks/projectWorldLockTransition/projectCheckedRenameAttempts/projectCheckedOpenAttempts",
+      "risk": "把舊檔鎖投影當現行互斥或實際 FS 成功",
+      "disposition": "保留歷史 contract；#18 外部 IO，R1 v2 負例獨立",
+      "reason": "本輪讀取固定 blob 測試全文與相關入口；區分來源／投影與正式玩家驗收",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 50
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/lock.cgi",
+          "sha": "84382170f1b7f70348c4e2a91bf30b1d1043b964"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "fixtures": "固定 now/timeout、字串 lock 名、布林 rename/open probe；無磁碟或多程序；非 v2",
+      "reviewScope": "本輪逐檔語義；非全量功能結案",
+      "limitations": "固定 now/timeout、字串 lock 名、布林 rename/open probe；無磁碟或多程序；非 v2"
     },
     {
       "path": "modern/tests/world-one-shop-parser.test.mjs",
@@ -14884,14 +15014,15 @@
   ],
   "testCounts": {
     "baseline": {
-      "歷史": 17,
-      "有效": 46,
-      "待補": 170
+      "歷史": 18,
+      "有效": 51,
+      "待補": 164
     },
     "added": 2,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
-    ]
+    ],
+    "currentSessionReviewed": 6
   },
   "provenance": [
     {
