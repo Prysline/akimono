@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {calculateSourceSaleTax} from '../src/shared-source-sale-tax.mjs';
 import {fileURLToPath} from 'node:url';
 import {reviewR4LordSaleTax,createR4LordSaleTaxContext,projectR4LordSaleTax}
   from '../src/original-r4-lord-sale-tax.mjs';
@@ -89,4 +90,17 @@ test('D7 frozen wholesale seller has no buyer taxmode and native BASE/tax result
    assert.deepEqual(projectR4LordSaleTax({context,count:row.count,gross:native.gross,basePrice:row.basePrice}),
      {userTaxRate:native.userTaxRate,taxRate:native.taxRate,tax:native.tax},JSON.stringify(row));
  }
+});
+
+test('D14 shared source sale tax matches exact frozen GetSaleTax for 270 total-price/count cases',()=>{
+ const cases=[];
+ for(const basePrice of [1,50,1200,10000,50000])
+  for(const count of [1,2,13])
+   for(const listed of [1,Math.ceil(basePrice/2),basePrice,Math.ceil(basePrice*1.1),basePrice*2,999999999])
+    for(const plusTaxRate of [0,7,20])cases.push({basePrice,count,totalPrice:listed*count,plusTaxRate});
+ const start=pins.item.indexOf('sub GetSaleTax\n'),end=pins.item.indexOf('\n}',start);
+ assert.ok(start>=0&&end>start);
+ const program='use JSON::PP;no strict;no warnings;local $/;my $in=decode_json(<STDIN>);'+pins.item.slice(start,end+2)+'\nmy @out;for my $x (@$in){$ITEM[1]{price}=$x->{basePrice};my($taxRate,$tax)=GetSaleTax(1,$x->{count},$x->{totalPrice},$x->{plusTaxRate});push @out,{taxRate=>$taxRate,tax=>$tax}}print encode_json(\\@out);';
+ const original=JSON.parse(execFileSync('perl',['-e',program],{encoding:'utf8',input:JSON.stringify(cases)}));
+ assert.equal(cases.length,270);assert.deepEqual(cases.map(calculateSourceSaleTax),original);
 });

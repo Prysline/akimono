@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {calculateSourceSaleTax} from './shared-source-sale-tax.mjs';
 
 // Original source review for explicit, isolated natural sale tax contexts.
 // Live controllers may enable this capability only in the independent fiscal mode.
@@ -42,10 +43,6 @@ export function projectR4LordSaleTax({context,count,gross,basePrice}){
      !uint(basePrice)||basePrice===0||gross>Math.floor(Number.MAX_SAFE_INTEGER/100))
     fail('positive safe natural-sale inputs required');
   // Preserve the original operation order: price is the total, not unit price.
-  let taxRate=gross/count/basePrice-1;
-  if(taxRate>0)taxRate*=5;
-  let taxDown=1;
-  if(taxRate<0){taxDown=taxRate+1;taxRate=0;}
-  taxRate=Math.min(99,Math.trunc((taxRate+context.userTaxRate)*taxDown+0.5));
-  return {userTaxRate:context.userTaxRate,taxRate,tax:Math.trunc(gross*taxRate/100)};
+  const result=calculateSourceSaleTax({basePrice,count,totalPrice:gross,plusTaxRate:context.userTaxRate});
+  return {userTaxRate:context.userTaxRate,...result};
 }
