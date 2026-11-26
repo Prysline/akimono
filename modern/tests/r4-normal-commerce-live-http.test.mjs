@@ -109,7 +109,7 @@ for(let count=1;count<=8;count++){
   test('R4 genuine '+count+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations',async t=>{
     const layout=([30,32,30,10,32,10,30,32]).slice(0,count);
     let ready=false,settlement=null,positiveTax=0,afterShrink=false,shrunkSettlement=null;const sales={};
-    const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,onTick(r,before){
+    const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,trace:true,onTick(r,before){
       const d=r.details,shop=before.shops[0],rows=d.shelfSales;
       assert.ok(Array.isArray(rows),'formal per-shelf source receipt');
       assert.equal(rows.reduce((sum,x)=>sum+x.count,0),d.naturalSaleCount);
@@ -164,6 +164,7 @@ for(let count=1;count<=8;count++){
     assert.ok(p.stock(30)>=10);
     if(layout.includes(32))await p.market(32,2,{partial:true});
     if(layout.includes(10))await p.market(10,2,{partial:true});
+    p.diagnostic('shelf-inputs-ready',{count});
     const quote=p.quote(63,count-1);
     assert.equal(quote.moneyPerUse,count*10000);
     assert.equal(quote.timePerUseSeconds,count*1800);
@@ -172,6 +173,7 @@ for(let count=1;count<=8;count++){
     // upkeep may exceed full-time work income; trying to earn the same
     // reserve only after expansion could trap the real player in debt.
     const resizeReserve=2*count*10000+10000+3*shelfCosts[count-1];
+    p.diagnostic('shelf-funding-begin',{count,resizeReserve});
     for(let n=0;;n++){
       assert.ok(n<72,'source construction funding budget '+JSON.stringify({count,money:p.state.shop.money,resizeReserve,period:p.state.world.period.settledCount}));
       await p.enoughTime(p.quote(63,count-1).timePerUseSeconds);
@@ -179,7 +181,9 @@ for(let count=1;count<=8;count++){
       if(p.state.shop.money>=resizeReserve+reserve)break;
       const work=await p.use(13,1);
       assert.equal(work.details.moneyEarned,10000);
+      if((n+1)%5===0)p.diagnostic('shelf-funding-progress',{count,works:n+1,resizeReserve});
     }
+    p.diagnostic('shelf-funding-complete',{count,resizeReserve});
     assert.equal(p.quote(63,count-1).canUse,true);
     const prior=p.state.shop,resize=await p.use(63,count-1);
     assert.equal(resize.details.effectiveCount,1);
@@ -215,7 +219,9 @@ for(let count=1;count<=8;count++){
     async function resizeTo(target){
       assert.equal(p.stock(63),0);
       await p.deny(63,target-1);
+      p.diagnostic('shelf-tool-wait',{count,target});
       await p.market(63);
+      p.diagnostic('shelf-tool-acquired',{count,target});
       assert.equal(p.stock(63),1);
       const q=p.quote(63,target-1);
       assert.equal(q.moneyPerUse,target*10000);
@@ -246,6 +252,7 @@ for(let count=1;count<=8;count++){
       await p.deny(63,target-1);
       return {expectedShowcase,expectedPrice,logBytes};
     }
+    p.diagnostic('shelf-large-period-verified',{count});
     const shrunk=await resizeTo(1);
     assert.deepEqual(shrunk.expectedShowcase,layout.slice(0,1));
     const third=await p.saveAndRestart(2);
@@ -256,6 +263,7 @@ for(let count=1;count<=8;count++){
     for(let n=0;!shrunkSettlement&&n<37;n++)await p.tick(60);
     assert.ok(shrunkSettlement,'next real period must charge only one shelf');
     afterShrink=false;
+    p.diagnostic('shelf-single-period-verified',{count});
     const regrown=await resizeTo(count);
     assert.deepEqual(regrown.expectedShowcase,[layout[0],...Array(count-1).fill(0)]);
     assert.deepEqual(regrown.expectedPrice,[shrunk.expectedPrice[0],...Array(count-1).fill(0)]);

@@ -14,7 +14,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null,trace=false}={}){
   assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
   assert.ok(Number.isSafeInteger(fundingWorkBudget)&&fundingWorkBudget>0);
   assert.ok(Array.isArray(fundingSaleItems)&&fundingSaleItems.every(id=>Number.isSafeInteger(id)&&id>=1&&id<=79));
@@ -23,7 +23,27 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
   const fundingReserve=()=>fundMarketWithWork?Math.max(45000,Math.ceil(state.shop.costtoday??0)+10000):0;
   let fundingWorks=0;
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
-  let child,url,state,stderr='';
+  let child,url,state,stderr='',requests=0;
+  const started=Date.now();
+  const context=()=>({requests,elapsedMs:Date.now()-started,revision:state?.world?.revision,
+    period:state?.world?.period?.settledCount,historyCommands:state?.historyCommands,
+    checkpointRevision:state?.historyCheckpointRevision,generation:state?.save?.generation,
+    money:state?.shop?.money,remaining:state?.shop?state.world.nowSeconds-state.shop.time:null});
+  const diagnostic=(phase,extra={})=>{if(trace)t.diagnostic(JSON.stringify({phase,...context(),...extra}));};
+  // Timeout is a test failure, never a retry or a new randomly generated player.
+  // Include response body consumption: a hung server must not hold CI forever.
+  async function request(route,options={}){
+    const begin=Date.now(),sequence=++requests;
+    try{
+      const response=await fetch(url+route,{...options,signal:AbortSignal.timeout(300000)});
+      const payload=await response.json();
+      const result=options.method==='POST'?{status:response.status,...payload}:payload;
+      if(Date.now()-begin>=10000||sequence%25===0)diagnostic('http-response',{route,sequence,durationMs:Date.now()-begin,code:result.code});
+      return result;
+    }catch(error){
+      throw Error('genuine HTTP request failed '+JSON.stringify({route,body:options.body,sequence,durationMs:Date.now()-begin,...context(),stderr:stderr.slice(-4000)}),{cause:error});
+    }
+  }
   const stop=async()=>{
     if(!child||child.exitCode!==null||child.signalCode!==null)return;
     await new Promise(resolve=>{child.once('exit',resolve);child.kill();});
@@ -44,11 +64,10 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       child.once('exit',code=>reject(Error('player exit '+code+': '+stderr)));
       child.once('error',reject);
     }),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('player startup timeout '+stderr)),15000);})]).finally(()=>clearTimeout(timer));
-    state=await(await fetch(url+'/api/state')).json();
+    state=await request('/api/state');
   }
   async function post(route,body={}){
-    const response=await fetch(url+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-    const result={status:response.status,...await response.json()};
+    const result=await request(route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     if(result.state)state=result.state;
     return result;
   }
@@ -142,7 +161,10 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       if(plan.kind==='time'){
         await enoughTime(plan.seconds);continue;
       }
-      if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(!offer&&state.shop.money<fundingReserve()&&stock(13)))){
+      // Frozen #63 is a zero-price tool (PLUS 1d, LIMIT 1/1). When
+      // it is absent, wait for real supply rather than earn an unrelated
+      // cash reserve; an eight-shelf shop can lose money doing that work.
+      if(fundMarketWithWork&&id!==13&&(plan.kind==='fund'||(id!==63&&!offer&&state.shop.money<fundingReserve()&&stock(13)))){
         await earnMarketFunds({kind:'market',id,needed,plan});continue;
       }
       if(plan.kind==='fund'){
@@ -182,13 +204,16 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     assert.equal(state.shop.time,before);
   }
   async function saveAndRestart(generation){
+    diagnostic('save-begin',{expectedGeneration:generation});
     const result=ok(await post('/api/save',{expectedRevision:state.world.revision,expectedGeneration:generation}),'SAVED');
+    diagnostic('save-committed');
     assert.equal(state.save.generation,generation+1);
     const snapshot=result.state.world;
-    await stop();await boot();ok(await post('/api/load'),'LOADED');
+    await stop();diagnostic('restart-stopped');await boot();diagnostic('restart-booted');ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,snapshot);
     assert.equal(state.save.format,'akimono.local-world-save.v2');
     assert.equal(state.save.generation,generation+1);
+    diagnostic('restart-verified');
     return snapshot;
   }
   async function rejectDamagedOldestPrefix(expected){
@@ -205,7 +230,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     try{
       // A live status read must recheck disk dependencies even if the slot
       // bytes are unchanged and its most recent prefix is intact.
-      const status=await(await fetch(url+'/api/state')).json();
+      const status=await request('/api/state');
       assert.equal(status.save.unreadable,true);
       await stop();await boot();
       const denied=await post('/api/load');assert.equal(denied.ok,false);
@@ -255,5 +280,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);
-  return {directory,get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
+  return {directory,diagnostic,get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
 }
