@@ -6502,17 +6502,49 @@
       "path": "modern/tests/original-perl/original-r4-close-shop-effects.t",
       "sha": "7854f42b3e67a08143a169f7d241a2074b441afe",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（CloseShop／真 session unlink）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-detail.cgi；_config.cgi",
+      "assertions": "L10–47 exit0/JSON；三 cases；status/money/rank 歸零，archive delete payload，1-alpha/1-beta 真 unlink、SetUserData call、缺 ID 不封存、inactive 仍 close、SortDT 空 active/index。",
+      "executionPath": "frozen CloseShop + temp sessions + SortDT",
+      "risk": "關店狀態、封存順序、真隔離 session 刪除、財務及 inactive prune",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工 singleton shop、隔離真 session 檔 unlink；SetUserData/WriteErrorLog 只記錄呼叫，封存文字不代表真 archive file；Node 純投影，無 Node unlink、DataWrite、正式 HTTP/CAS/v2。獨立 probe 的 SortDT 使用 GetDTPoint stub；DataWrite 只檢查 source filter，未執行。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-real-close-evidence.md",
+          "line": 24
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-close-shop-effects-probe.pl",
+          "sha": "ba05b500b25e5b7c4051a4714ab5ffe01163aa41"
+        }
+      ],
+      "fixtures": "同上述三 cases。",
+      "limitations": "人工 singleton shop、隔離真 session 檔 unlink；SetUserData/WriteErrorLog 只記錄呼叫，封存文字不代表真 archive file；Node 純投影，無 Node unlink、DataWrite、正式 HTTP/CAS/v2。獨立 probe 的 SortDT 使用 GetDTPoint stub；DataWrite 只檢查 source filter，未執行。",
+      "reviewScope": "完整測試／對應 probe／frozen CloseShop、SortDT 與 Node projection"
     },
     {
       "path": "modern/tests/original-perl/original-r4-data-files-backup.t",
@@ -7494,17 +7526,61 @@
       "path": "modern/tests/original-perl/original-r4-period-real-close-chain.t",
       "sha": "43cca73ad64da97f47faecabdc471c06f16085ee",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期真 CloseShop／財務／prune）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-detail.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L10–47 exit0/JSON、首期 active/EXP4695，次期 shop null/active0、closed status0/rank0/money1425、dragon1500、1-one/1-two 真 unlink、delete call、atk921、draws4/無技術遺失、drapay consumed。",
+      "executionPath": "frozen SortDT + period pre-backup prefix + actual CloseShop",
+      "risk": "關店狀態、封存順序、真隔離 session 刪除、財務及 inactive prune",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；同一 Perl process 兩期，Node 每期接收 Oracle input，非自行接續 Node output；人工 shop/stock/EXP/guild、固定 NOW_TIME 與 rand tape，真隔離 drapay/session unlink，Node 純投影。SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog 只記錄；EVENT 空，backup/session/MakeGuildFile 尾段未執行，不證正式玩家、時鐘/RNG、持久封存、HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-real-close-evidence.md",
+          "line": 46
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-real-close-chain-probe.pl",
+          "sha": "161244a68aa1fd20ee5fec659a1cd09bb0b71b7c"
+        }
+      ],
+      "fixtures": "同上；同一 Perl process。",
+      "limitations": "同一 Perl process 兩期，Node 每期接收 Oracle input，非自行接續 Node output；人工 shop/stock/EXP/guild、固定 NOW_TIME 與 rand tape，真隔離 drapay/session unlink，Node 純投影。SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog 只記錄；EVENT 空，backup/session/MakeGuildFile 尾段未執行，不證正式玩家、時鐘/RNG、持久封存、HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／frozen CloseShop、SortDT 與 Node projection"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-shop-expiry.t",
@@ -13561,17 +13637,69 @@
       "path": "modern/tests/r4-period-real-close-source-chain.test.mjs",
       "sha": "efaff855a9e72ed7c5fad91acf0c65d8ee99fb8b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（兩期真 CloseShop／財務／prune）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-detail.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L53–129 phase order、兩期 shop/town/point/guild/expiry/dragon/dignity/tech exact 差分；第二期 closed reference、archive/call/session 差分、status0/rank0/money1425/dragon1500/atk921/4 draws/無 tech loss；L131–141 重跑；L143–177 opt-in/inventory/path/hash/postTech/forged contract guard。",
+      "executionPath": "frozen SortDT + period pre-backup prefix + actual CloseShop; Node solo phase projection",
+      "risk": "關店狀態、封存順序、真隔離 session 刪除、財務及 inactive prune",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；同一 Perl process 兩期，Node 每期接收 Oracle input，非自行接續 Node output；人工 shop/stock/EXP/guild、固定 NOW_TIME 與 rand tape，真隔離 drapay/session unlink，Node 純投影。SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog 只記錄；EVENT 空，backup/session/MakeGuildFile 尾段未執行，不證正式玩家、時鐘/RNG、持久封存、HTTP/CAS/v2。 phase order 亦有 metadata 斷言；兩個 imported post-tech functions 未直接使用。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-real-close-evidence.md",
+          "line": 35
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-real-close-chain-probe.pl",
+          "sha": "161244a68aa1fd20ee5fec659a1cd09bb0b71b7c"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-effects.mjs",
+          "sha": "8ba642520d76dd9115acde71028554f24ece1261"
+        }
+      ],
+      "fixtures": "兩期 NOW1000000/1129600、payout500/1000、初 EXP5000、4/0 tech tape、五 session 名稱。",
+      "limitations": "同一 Perl process 兩期，Node 每期接收 Oracle input，非自行接續 Node output；人工 shop/stock/EXP/guild、固定 NOW_TIME 與 rand tape，真隔離 drapay/session unlink，Node 純投影。SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog 只記錄；EVENT 空，backup/session/MakeGuildFile 尾段未執行，不證正式玩家、時鐘/RNG、持久封存、HTTP/CAS/v2。 phase order 亦有 metadata 斷言；兩個 imported post-tech functions 未直接使用。",
+      "reviewScope": "完整測試／對應 probe／frozen CloseShop、SortDT 與 Node projection"
     },
     {
       "path": "modern/tests/r4-perl-hash-replay.test.mjs",
@@ -14076,17 +14204,53 @@
       "path": "modern/tests/r4-source-close-shop-effects.test.mjs",
       "sha": "0a6c288f9ce3fc57a65a18bba044c4dd4d7d0b36",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（CloseShop 真 session unlink、封存文字／SortDT）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-detail.cgi；_config.cgi",
+      "assertions": "L27–70 三 cases：archive pre-zero、status/money/rank、calls、session 名單及 immutable；L72–79 重跑；L81–114 source drift/多鍵 hash/path/reason/committable guards；L117–141 singleton prune 與空 DataWrite rows；L143–166 drift/forged prune。",
+      "executionPath": "frozen CloseShop + isolated temp sessions; SortDT (GetDTPoint stub); Node projection",
+      "risk": "關店狀態、封存順序、真隔離 session 刪除、財務及 inactive prune",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工 singleton shop、隔離真 session 檔 unlink；SetUserData/WriteErrorLog 只記錄呼叫，封存文字不代表真 archive file；Node 純投影，無 Node unlink、DataWrite、正式 HTTP/CAS/v2。獨立 probe 的 SortDT 使用 GetDTPoint stub；DataWrite 只檢查 source filter，未執行。 缺 ID fixture 無 shop；不證有其他 active shop 的多店排序。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-real-close-evidence.md",
+          "line": 13
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-close-shop-effects-probe.pl",
+          "sha": "ba05b500b25e5b7c4051a4714ab5ffe01163aa41"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-effects.mjs",
+          "sha": "8ba642520d76dd9115acde71028554f24ece1261"
+        }
+      ],
+      "fixtures": "money123456、rank88、九個 session 名稱；正常、無 ID、已 inactive。",
+      "limitations": "人工 singleton shop、隔離真 session 檔 unlink；SetUserData/WriteErrorLog 只記錄呼叫，封存文字不代表真 archive file；Node 純投影，無 Node unlink、DataWrite、正式 HTTP/CAS/v2。獨立 probe 的 SortDT 使用 GetDTPoint stub；DataWrite 只檢查 source filter，未執行。 缺 ID fixture 無 shop；不證有其他 active shop 的多店排序。",
+      "reviewScope": "完整測試／對應 probe／frozen CloseShop、SortDT 與 Node projection"
     },
     {
       "path": "modern/tests/r4-source-data-write-files.test.mjs",
@@ -40812,14 +40976,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 170,
-      "待補": 31
+      "有效": 174,
+      "待補": 27
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 139,
+    "currentSessionReviewed": 143,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -40889,7 +41053,8 @@
     "modern/docs/r0-r4-p3-pre-event-overlay-evidence.md",
     "modern/docs/r0-r4-period-all-finance-evidence.md",
     "modern/docs/r0-r4-dragon-period-evidence.md",
-    "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md"
+    "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+    "modern/docs/r0-r4-real-close-evidence.md"
   ],
   "integrationCiHistory": [
     {

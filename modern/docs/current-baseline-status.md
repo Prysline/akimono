@@ -199,3 +199,7 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ### CI 補核：第28批
 
 - run 45818228163 / job 139903387992：success，HEAD `d2870d55b0ee9b2a9ab5b92e396cd028d842146a`、實際 checkout `aa42c20422e4c112af7a68a42857ae38a9f30721`，tree `30f7ab262daf732b86c87ed92269612808591535` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。第29批 run 45824384633 查詢時 in_progress；不替代新 HEAD。
+
+### 第三十一批：真 CloseShop／兩期結算
+
+有效174、歷史32、待補27（206/233，88.4%）；收斂後逐檔補審143、原有分類重新覆核7（剩56）；候選新增5獨立計算。四份測試與兩份 probe 已逐檔實讀，見 [限定證據](r0-r4-real-close-evidence.md)。原版真隔離 session unlink、archive pre-zero 文字、status/money/rank 歸零、SortDT singleton prune；第二期 closed reference 仍結算 dragon1500、fee75、money1425、atk921，移除後不跑技術 rand。Node 每期 Oracle input，純投影；SetUserData/WriteErrorLog/EditGuildMoney 等外部呼叫記錄、DataWrite 未執行、備份尾段未跑。R1 詳細87，限定 ITEM14/USE39/EVENT25、正式取得/HTTP/v2 ITEM7/USE12/EVENT0 不變。CI29、30 本批查詢仍 in_progress，不繼承舊綠燈。
