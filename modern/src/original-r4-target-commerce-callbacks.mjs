@@ -10,6 +10,7 @@ const fail=s=>{throw new RangeError('R4 target commerce callback: '+s)};
 const reviews=new WeakSet();
 const pin=(s,sha)=>typeof s==='string'&&createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')===sha;
 const one=(b,k)=>b.fields[k]?.[0]?.value;
+const expNumber=s=>{if(!/^\d+%$/.test(s))fail('source EXP percent');return parseSourceNumber(s.slice(0,-1))*10;};
 const int=(n,min=0,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype;
 const copy=x=>structuredClone(x);
@@ -34,7 +35,7 @@ export function reviewTargetCommerceCallbacks(sources){
       rules[itemId+':'+useId]=Object.freeze({itemId,useId,time:parseSourceNumber(one(b,'time'))/2,
         exptime:parseSourceNumber(one(b,'exptime')??one(b,'time'))/2,
         money:parseSourceNumber(fields.price?.at(-1)?.value??'0'),
-        exp:parseSourceNumber(one(b,'exp')??'0'),needPoint:parseSourceNumber(one(b,'needpoint')??'0'),
+        exp:expNumber(one(b,'exp')??'0%'),needPoint:parseSourceNumber(one(b,'needpoint')??'0'),
         sourceLine:b.startLine,requiresTarget:itemId===65});
     }
   }
