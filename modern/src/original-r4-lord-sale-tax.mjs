@@ -8,6 +8,7 @@ const pins={detail:'9a83d26fb29edee4032958f1e6de837a250f3384',
 const reviews=new WeakSet(),contexts=new WeakSet();
 const fail=m=>{throw new RangeError('R4 lord sale tax: '+m);};
 const uint=n=>Number.isSafeInteger(n)&&n>=0;
+const mode=v=>v===undefined||v===''?0:v;
 const plain=o=>o!==null&&typeof o==='object'&&Object.getPrototypeOf(o)===Object.prototype;
 export function reviewR4LordSaleTax(sources){
   if(!plain(sources)||Object.keys(sources).sort().join(',')!=='detail,item,turn')fail('exact sources required');
@@ -21,19 +22,19 @@ export function reviewR4LordSaleTax(sources){
 }
 export function createR4LordSaleTaxContext({reviewed,townTaxRate,taxMode,eventState}){
   if(!reviews.has(reviewed))fail('source review required');
-  if(!uint(townTaxRate)||townTaxRate>40||![undefined,0,1,2].includes(taxMode))
+  if(!uint(townTaxRate)||townTaxRate>40||![undefined,'',0,1,2].includes(taxMode))
     fail('tax rate or mode');
   if(!plain(eventState)||Object.keys(eventState).some(k=>k!=='rebel')||
      (Object.hasOwn(eventState,'rebel')&&(!uint(eventState.rebel)||eventState.rebel===0)))
     fail('explicit calm or rebel-only EVENT state required');
   const userTaxRate=eventState.rebel||taxMode===1?0:taxMode===2?townTaxRate*2:townTaxRate;
   const context=Object.freeze({source:reviewed.source,committable:false,townTaxRate,
-    taxMode:taxMode??0,userTaxRate,rebellion:Boolean(eventState.rebel)});
+    taxMode:mode(taxMode),userTaxRate,rebellion:Boolean(eventState.rebel)});
   contexts.add(context);return context;
 }
 export function assertR4LordSaleTaxContext(context,taxMode){
-  if(!contexts.has(context)||(taxMode??0)!==context.taxMode||
-     ![undefined,0,1,2].includes(taxMode))fail('reviewed context must match shop tax mode');
+  if(!contexts.has(context)||mode(taxMode)!==context.taxMode||
+     ![undefined,'',0,1,2].includes(taxMode))fail('reviewed context must match shop tax mode');
 }
 export function projectR4LordSaleTax({context,count,gross,basePrice}){
   if(!contexts.has(context))fail('reviewed context required');

@@ -1,5 +1,5 @@
 /** Source-only full pre-EVENT + external rebel two-slice coordinator.
- * Separate from normal CAS/replay; zero city tax-rate, one active shop,
+ * Separate from normal CAS/replay; zero city tax-rate by default, one active shop,
  * no guild/dragon/closure or external save authority. Initial bytes may
  * be source fixture inputs. This never proves player acquisition.
  */
@@ -11,20 +11,21 @@ import {projectR4TerritoryMixedRebelSlice} from './original-r4-territory-mixed-r
 import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
 import {createR4CrossPeriodDraws,R4_FULL_CROSS_SLICE_DRAWS} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
+import {createR4LordSaleTaxContext} from './original-r4-lord-sale-tax.mjs';
 import {R4_SORTED_PRE_EVENT_SOURCE} from './original-r4-sorted-pre-event.mjs';
 export const R4_EXTERNAL_CROSS_PERIOD_CANDIDATE='r4-external-rebel-cross-period-candidate.v1';
 const fail=s=>{throw new RangeError('R4 external cross-period candidate: '+s)};
 const sameOrder=(a,b)=>a.join(',')===b.join(',');
 export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,reviewedR4,
   reviewedDataRead,reviewedHash,reviewedEvents,reviewedPeriod,liveArmyBytes,
-  taxRate=0,balJob='外敵',balName='首領',expectedInterpreter=null}){
+  taxRate=0,reviewedLordSaleTax=null,balJob='外敵',balName='首領',expectedInterpreter=null}){
   if(world?.schema!=='akimono.memory-world.v2'||world.events!==null||world.streetId!=='standard-street'||
      world.shops?.length!==1||world.shops[0].id!==1||world.shops[0].status!==1||
      Object.hasOwn(world.shops[0],'army')||reviewedR4?.source!==R4_SORTED_PRE_EVENT_SOURCE||
      !reviewedPeriod?.conflictTerritory||!reviewedDataRead?.rebel||!reviewedEvents?.rebel||
      reviewedEvents.guildbattle!==null||!reviewedEvents.support||!reviewedEvents.instant||
      !reviewedEvents.loto||!reviewedEvents.happy||!reviewedEvents.iron||!reviewedEvents.sword||
-     taxRate!==0||!(liveArmyBytes===null||typeof liveArmyBytes==='string')||
+     (reviewedLordSaleTax===null?taxRate!==0:!Number.isSafeInteger(taxRate)||taxRate<0||taxRate>40)||!(liveArmyBytes===null||typeof liveArmyBytes==='string')||
      typeof balJob!=='string'||!balJob||typeof balName!=='string'||!balName||
      !sameOrder(reviewedEvents.eventCodes,reviewedHash?.declarationOrder??[]))
     fail('reviewed single-shop external candidate, no tax-rate or persisted DT.army');
@@ -42,12 +43,19 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
   const steps=[],slices=[];
   let cursor=world,hash=initial,used=0,pendingArmyBytes=null,currentTax=taxRate,transientArmy=null;
   for(const [i,part] of plan.effectiveSlices.entries()){
+    // DataRead ITEM overlays remain frozen for both slices, but the original
+    // GetUserTaxRate reads live %DTevent and DTTaxrate at EACH actual sale.
+    // The complete EVENT map was independently validated by the overlay
+    // and callback lineage; only its rebel key participates in taxation.
+    const lordTaxContext=reviewedLordSaleTax===null?null:createR4LordSaleTaxContext({
+      reviewed:reviewedLordSaleTax,townTaxRate:currentTax,taxMode:cursor.shops[0].taxmode,
+      eventState:cursor.period.eventState.rebel?{rebel:cursor.period.eventState.rebel}:{}});
     const args={world:cursor,minutes,shopId:1,reviewed:street.reviewedB41,
       reviewedAllPlus:street.reviewedAllPlus,compiled:street.reviewedGiftMapUse,
       reviewedB59Iron:street.reviewedB59Iron,reviewedB60Happy:street.reviewedB60Happy,
       reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
       reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
-      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,
+      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,lordTaxContext,
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initial.initialOrder}};
     const project=!plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:
       i===0?a=>projectR4BoundaryPreEventCandidate({...a,conflictNames:{balJob,balName}}):
@@ -106,7 +114,9 @@ export function projectR4ExternalCrossPeriodCandidate({world,minutes,street,revi
     else validateNormalCommerceInventory(persistedShop,street.reviewedGiftMapUse,normalCommerce);
     used+=mixed.drawsUsed;pendingArmyBytes=mixed.stagedArmyBytes;currentTax=mixed.taxRate;
     slices.push({dateupdate:part.dateupdate,spanSeconds:part.timespanSeconds,startSeconds:cursor.nowSeconds,
-      preEvent:pre,preEventDraws:preSamples,periodRebel,activeOrder:[...priorOrder],eventOrder:[...initial.eventOrder],
+      preEvent:pre,preEventDraws:preSamples,periodRebel,
+      ...(lordTaxContext===null?{}:{lordTax:{townRateBefore:lordTaxContext.townTaxRate,userTaxRate:lordTaxContext.userTaxRate,
+        taxMode:lordTaxContext.taxMode,rebellionBefore:lordTaxContext.rebellion,townRateAfter:currentTax}}),activeOrder:[...priorOrder],eventOrder:[...initial.eventOrder],
       nowOrder:[...nowOrder],afterOrder:[...hash.nextPriorOrder],eventDrawRanges:mixed.randomDrawRanges,
       eventSamples:mixed.consumedSamples,eventLogs:mixed.logs,periodLogs:settlement?.conflictTerritory.logs??[],
       eventState:period.eventState,town:mixed.town,shop:persistedShop,transientArmy,armyRead:mixed.armyRead,stagedArmyBytes:pendingArmyBytes});

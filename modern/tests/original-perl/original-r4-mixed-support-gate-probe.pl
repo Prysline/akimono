@@ -650,7 +650,9 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
       $READ_ARMY++;$read->(@_);
     };
     *main::WriteArmy=sub{$WRITE_ARMY++;$write->(@_)};
-    $DTTaxrate=0;
+    # Explicit opt-in for the source-only lord tax differential.
+    $DTTaxrate=$in->{taxRate}//0;
+    die 'bounded lord tax rate' unless $DTTaxrate=~/^[0-9]+$/&&$DTTaxrate<=40;
   }
   die 'bounded actual boundary slices' unless ref($in->{slices})eq 'ARRAY'&&@{$in->{slices}}>=1&&@{$in->{slices}}<=2;
   @R4_MULTI_DRAWS=@{$in->{samples}};
@@ -664,6 +666,9 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
     my @prior=keys(%DTevent);
     @R4_MULTI_RANGES=();@LOG=();
     my $before=scalar(@R4_MULTI_DRAWS);
+    my $taxEvidence=exists($in->{taxRate})?{townRateBefore=>0+$DTTaxrate,
+      userTaxRate=>0+main::GetUserTaxRate($DT[0],$DTTaxrate),taxMode=>0+($DT[0]{taxmode}//0),
+      rebellionBefore=>$DTevent{rebel}?JSON::PP::true:JSON::PP::false}:undef;
     main::ActualPreEvent($span,$slice->{dateupdate});
     my $preCount=$before-scalar(@R4_MULTI_DRAWS);
     @prior=keys(%DTevent) if $external;
@@ -683,6 +688,7 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
       preEvent=>$pre,activeOrder=>[@prior],eventOrder=>[@runtimeHashKeys],nowOrder=>[@R4_NOW_KEYS],
       shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
       logs=>[@LOG],ranges=>[@R4_MULTI_RANGES],
+      ($taxEvidence?(lordTax=>{%$taxEvidence,townRateAfter=>0+$DTTaxrate}):()),
       ($external?(town=>$STATE,afterOrder=>[keys %DTevent],armyRead=>$READ_ARMY,
         transientArmy=>defined($DT[0]{army})?0+$DT[0]{army}:undef,
         liveArmyBytes=>$readBytes->($armyLive),

@@ -172,11 +172,14 @@ test('R4 original lord inside -> actual natural sales -> two original period pre
   const first=row.periods[0],second=row.periods[1];
   const { _sale_count_:temporary,...naturalShop}=natural;
   const firstInput={...first.input,shop:{...first.input.shop,...naturalShop}};
-  assert.deepEqual(firstInput.shop,first.input.shop,'exact sale-to-ledger input handoff');
+  // Perl JSON decimal output is not a lossless binary float transport.
+  assert.ok(Math.abs(firstInput.shop.costtoday-first.input.shop.costtoday)<1e-9);
+  assert.deepEqual({...firstInput.shop,costtoday:first.input.shop.costtoday},first.input.shop,'exact integer sale-to-ledger handoff');
   let previous=null;
   for(const [j,period] of row.periods.entries()){
    const input=j===0?firstInput:{...period.input,shop:previous.shop,town:previous.town,dtPeople:previous.dtPeople};
-   assert.deepEqual(input,period.input,'same-state period continuation');
+   if(j===0){assert.deepEqual({...input,shop:{...input.shop,costtoday:period.input.shop.costtoday}},period.input,'same-state source handoff');}
+   else assert.deepEqual(input,period.input,'same-state period continuation');
    const before=structuredClone(input);
    const got=projectOriginalSoloPeriodPhaseChain({reviewed:periodReview,...input});
    for(const k of ['shop','town','dtPeople','pointsBefore','pointsAfter'])assert.deepEqual(got[k],period.output[k],row.name+' '+k);

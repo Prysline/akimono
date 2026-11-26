@@ -819,6 +819,85 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
 });
 
 
+
+import {reviewR4LordSaleTax} from '../src/original-r4-lord-sale-tax.mjs';
+test('R4 lord tax two-slice source differential uses live EVENT and town rate after rebellion',()=>{
+  const external=reviewR4ExternalPreEventItemOverlay({itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,
+    compilerSource:source.originalCompilerSource,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,periodSource:source.originalPeriodSource});
+  const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true,reviewedRebelNow:external.rebel});
+  const reviewedEvents=reviewOriginalR4MultiEventFixture({
+    compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,
+    reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
+    reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
+    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
+  const reviewedLordSaleTax=reviewR4LordSaleTax({detail:source.originalDetailSource,
+    item:source.originalItemSource,turn:source.originalTurnSource});
+  const scenarios=[
+    {name:'suppressed-double',leader:1,army:10000,robina:2000,robinb:0,liveArmyBytes:'\n\n',taxMode:2,afterRate:40,afterUser:80,afterLeader:1},
+    {name:'suppressed-free',leader:1,army:10000,robina:2000,robinb:0,liveArmyBytes:'\n\n',taxMode:1,afterRate:40,afterUser:0,afterLeader:1},
+    {name:'continuing',leader:1,army:10000,robina:2000,robinb:0,liveArmyBytes:'1,4000\n1\n',taxMode:2,afterRate:40,afterUser:0,afterLeader:1},
+    {name:'npc-succession',leader:1,army:100,robina:0,robinb:5000,liveArmyBytes:'\n\n',taxMode:2,afterRate:0,afterUser:0,afterLeader:0},
+    {name:'player-succession',leader:0,army:0,robina:100,robinb:0,liveArmyBytes:'1,4000\n1\n',taxMode:0,afterRate:40,afterUser:40,afterLeader:1},
+  ];
+  for(const scenario of scenarios){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=1153800;
+    world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
+      lastSettledBoundarySeconds:1026000,dtPeople:350000,
+      town:{...world.period.town,leader:scenario.leader,money:5000000,develop:5001,safety:5001,
+        army:scenario.army,robina:scenario.robina,robinb:scenario.robinb,people:500000},
+      eventState:{'ken-sale':1200000,happy:1200000,rebel:1200000}};
+    const shop=world.shops[0];
+    Object.assign(shop,{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000,taxmode:scenario.taxMode});
+    shop.item[39]=100;shop.showcase=[40];shop.price=[900];
+    const input={world,minutes:60,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
+      reviewedEvents,reviewedPeriod,liveArmyBytes:scenario.liveArmyBytes,taxRate:40,reviewedLordSaleTax};
+    const before=JSON.stringify(world),got=projectR4ExternalCrossPeriodCandidate(input);
+    assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
+    const slices=got.evidence.slices;
+    assert.deepEqual(slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,1800],[0,1800]]);
+    const actual=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+      cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+      env:{...process.env,PERL_HASH_SEED:got.evidence.seed,PERL_PERTURB_KEYS:'0'},
+      input:JSON.stringify({externalCandidate:true,taxRate:40,liveArmyBytes:scenario.liveArmyBytes,
+        eventWire:Object.entries(world.period.eventState).flat().join(','),startSeconds:world.nowSeconds,
+        shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:got.nowSeconds},
+        slices:slices.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+        samples:slices.flatMap(s=>[...s.preEventDraws,...s.eventSamples])})}));
+    assert.deepEqual(actual.dataReadOrder,got.evidence.dataReadOrder,scenario.name);
+    assert.equal(slices[0].lordTax.userTaxRate,0);
+    assert.equal(slices[0].lordTax.townRateAfter,scenario.afterRate,scenario.name);
+    assert.equal(slices[1].lordTax.userTaxRate,scenario.afterUser,scenario.name);
+    assert.equal(got.taxRate,scenario.afterRate,scenario.name);
+    assert.equal(got.period.town.leader,scenario.afterLeader,scenario.name);
+    for(const [i,s] of slices.entries()){
+      const a=actual.slices[i];
+      assert.deepEqual(s.lordTax,a.lordTax,scenario.name+' '+i+' tax');
+      for(const k of ['activeOrder','eventOrder','nowOrder','afterOrder','eventState','town','transientArmy'])
+        assert.deepEqual(s[k],a[k],scenario.name+' '+i+' '+k);
+      assert.equal(s.preEvent.receipt.totalDraws,a.preEvent.preEventDrawCount);
+      assert.deepEqual(s.eventDrawRanges,a.ranges);
+      assert.deepEqual(s.eventLogs,a.logs);
+      assert.deepEqual(s.preEvent.market.wholesale,a.preEvent.wholesale);
+      for(const [k,v] of Object.entries(s.shop)){
+        if(k==='costtoday'){assert.ok(Math.abs(v-a.shop[k])<1e-8);continue;}
+        assert.deepEqual(v,a.shop[k],scenario.name+' '+i+' '+k);
+      }
+      if(scenario.afterUser>0&&i===1){
+        assert.ok(s.preEvent.receipt.naturalSaleCount>0,scenario.name+' residual actual sale');
+        assert.ok(s.shop.taxtoday>0,scenario.name+' residual actual tax');
+      }
+    }
+    assert.equal(JSON.stringify(world),before);
+    assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,reviewedLordSaleTax:null}),/no tax-rate/);
+    assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,reviewedLordSaleTax:{...reviewedLordSaleTax}}),/source review/);
+    assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,taxRate:41}),/no tax-rate/);
+  }
+});
+
 import {stageR4ExternalCrossPeriodDisk} from '../src/original-r4-cross-period-disk.mjs';
 import {commitR4ExternalCrossPeriodDisk} from '../src/original-r4-b50-period-disk.mjs';
 test('R4 two-slice external source fixture stages five files and recovers the same army/play/log transaction',async()=>{

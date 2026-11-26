@@ -11,6 +11,7 @@ import {R4_FULL_PRE_EVENT_DRAWS,R4_FULL_CROSS_SLICE_DRAWS} from './r4-time-comma
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
+import {assertR4LordSaleTaxContext} from './original-r4-lord-sale-tax.mjs';
 import {isSourceShowcaseListedPrice}
   from './shared-showcase-price.mjs';
 import {reviewR3ItemCallbackStage,projectR3ItemCallbackStage}
@@ -232,7 +233,7 @@ function projectSourcePreEventSaleSlice({
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
-  r4DataRead=null,normalCommerce=null,
+  r4DataRead=null,normalCommerce=null,lordTaxContext=null,
 },boundary=null){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -302,6 +303,12 @@ function projectSourcePreEventSaleSlice({
       reviewedDynamicPopulation:boundary!==null,
     }):null;
   const shop=world.shops[0];
+  if(lordTaxContext!==null){
+    if(boundary?.externalCandidate!==true||!r4DataRead||!p3InventoryStage||!reviewedEventTimeSlice)
+      bad('lord tax context requires external source candidate');
+    assertR4LordSaleTaxContext(lordTaxContext,shop.taxmode);
+    if(lordTaxContext.rebellion!==Boolean(world.period.eventState.rebel))bad('lord tax context must use live slice EVENT');
+  }
   if(p3InventoryStage&&(world.schema!==PERIOD_WORLD_SCHEMA||
      world.period.eventState===null||
      (overlay===null&&(!validateOriginalPeriodSeed(world.period)||activeKeys.length||reviewedEventTimeSlice||r4ReviewedSort!==null))))
@@ -358,7 +365,7 @@ function projectSourcePreEventSaleSlice({
       (itemId===0?shop.price[shelf]!==0:
         !isSourceShowcaseListedPrice(
           saleRules?.[itemId]?.unitPrice,shop.price[shelf])))||
-    ![undefined,0].includes(shop.taxmode))
+    (lordTaxContext===null&&![undefined,0].includes(shop.taxmode)))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported'+
       (p3InventoryStage&&shop?'; rejected pre-EVENT fields '+JSON.stringify({
         id:shop.id,status:shop.status,showcasecount:shop.showcasecount,showcase:shop.showcase,price:shop.price,
@@ -416,7 +423,7 @@ function projectSourcePreEventSaleSlice({
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
     shop,rule,saleRules:shop.showcasecount>1?(overlay?.saleRules??saleRules):null,
-    upkeepCosts,
+    upkeepCosts,lordTaxContext,
     spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,reviewedSignedCash:normalCommerce!==null,recordShelfSales:normalCommerce!==null,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
     ...(boundary?.dataReadWorld&&boundary.dataReadWorld!==world?{priorDemandShop:boundary.dataReadWorld.shops[0]}:{}),
