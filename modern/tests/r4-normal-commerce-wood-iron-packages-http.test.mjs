@@ -207,18 +207,21 @@ async function prepareAdvancedCapital(t,p){
   let steps=0,stonePurchases=0,lastPeriod=-1;
   const status=()=>({money:p.state.shop.money,stones:p.stock(8),exp16:p.exp(16),exp17:p.exp(17),
     period:p.state.world.period.settledCount,steps,stonePurchases,stock:goods.map(g=>[g.id,p.stock(g.id)])});
-  // 30 for the skill, 6 for one mid recipe, up to 20 for two high
-  // recipes, and 24 for source EXP recovery or additional batches.
-  // #8 PLUS is 6h; buy every affordable arrival during actual trade.
-  while(p.state.shop.money<3000000||p.stock(8)<80||p.exp(16)+p.exp(17)<1600){
-    assert.ok(++steps<=1800&&p.state.world.nowSeconds-start<=28*129600,
+  // Original #8 LIMIT 200/50 means a 200 holding limit, but
+  // CheckWholeStore caps this one-shop street (shop + wholesale) at 50.
+  // Accumulate at most 50 before the skill consumes 30, then refill.
+  // The source PLUS 6h is population-scaled, not a one-unit timer.
+  const stoneStreetCap=50;
+  while(p.state.shop.money<3000000||p.stock(8)<stoneStreetCap||p.exp(16)+p.exp(17)<1600){
+    assert.ok(++steps<=700&&p.state.world.nowSeconds-start<=12*129600,
       'advanced capital/stone supply budget '+JSON.stringify(status()));
     if(lastPeriod!==p.state.world.period.settledCount){
       lastPeriod=p.state.world.period.settledCount;t.diagnostic('advanced capital '+JSON.stringify(status()));
     }
-    if(p.stock(8)<80){
+    assert.ok(p.stock(8)+p.state.world.market.wholesale[7]<=stoneStreetCap,'source CheckWholeStore total #8 cap');
+    if(p.stock(8)<stoneStreetCap){
       const offer=p.state.marketOffers.find(x=>x.itemId===8);
-      const plan=planGenuineMarketStep({offer,owned:p.stock(8),needed:80-p.stock(8),partial:true,
+      const plan=planGenuineMarketStep({offer,owned:p.stock(8),needed:stoneStreetCap-p.stock(8),partial:true,
         money:p.state.shop.money,remaining:p.remaining(),reserve:reserve()});
       if(plan.kind==='buy'){
         await p.market(8,plan.quantity,{partial:true});stonePurchases+=plan.quantity;continue;
@@ -227,7 +230,9 @@ async function prepareAdvancedCapital(t,p){
     const g=goods.reduce((a,b)=>p.stock(a.id)<=p.stock(b.id)?a:b);
     if(p.stock(g.id)<64)await produce(g);else await p.tick(60);
   }
-  assert.ok(stonePurchases>=80);
+  assert.equal(stonePurchases,stoneStreetCap);
+  assert.equal(p.stock(8),stoneStreetCap);
+  assert.equal(p.state.world.market.wholesale[7],0);
   // Keep the showcases earning while procuring the skill materials and
   // the first career. The packing sale oracle requires a single shelf;
   // shrink later with a separately acquired original #63 tool.
@@ -253,7 +258,12 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
   await p.market(63);
   await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
   await p.market(37);await p.use(37,0);assert.equal(p.stock(18),1);
-  await p.market(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
+  await p.market(37);assert.equal(p.stock(8),50);
+  await p.use(37,1);assert.equal(p.stock(19),1);assert.equal(p.stock(8),20);
+  // Consuming the skill materials opens 30 slots for real PLUS supply.
+  // Refill while the donor EXP and multi-shelf revenue are still live.
+  await p.stones(50);assert.equal(p.stock(8),50);
+  assert.equal(p.state.world.market.wholesale[7],0);
   // Prepare the rare staff inputs before converting the donor EXP.
   // First finish the stone-dependent career, then the three iron-only
   // training routes. Do not reset/retry a world or select a draw.
@@ -280,8 +290,9 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
       const before=p.state.shop,previous=p.exp(book),out=basic+useId;
       assert.equal(p.quote(book,useId).canUse,true);
       const r=await p.use(book,useId);
-      assert.equal(r.details.experienceGain,20);
-      assert.equal(p.exp(book),previous+20);
+      const gain=Math.min(20,1000-previous);
+      assert.equal(r.details.experienceGain,gain);
+      assert.equal(p.exp(book),previous+gain);
       assert.equal(p.stock(oreId),before.item[oreId-1]-20);
       if(stone)assert.equal(p.stock(8),before.item[7]-stone);
       assert.ok(p.stock(out)>before.item[out-1],'original MakeAmount #'+out);
