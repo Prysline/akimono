@@ -9,6 +9,7 @@ import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
+import {ARMY_COMMANDS,createIndependentArmyProjection} from './original-r4-independent-army.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
 const CANDIDATE='source-cross-period-candidate-not-committed';
@@ -34,6 +35,9 @@ export function createIndependentDiskProjection({sources,sort,street}){
   const palace=palaceInputs.every(s=>s!=null)?reviewOriginalPalaceRules({
     viewSource:sources.palaceViewSource,handlerSource:sources.palaceCommandSource,
     configSource:sources.palaceConfigSource,readSource:sources.readSource}):null;
+  const armyInputs=[sources.armyViewSource,sources.armyCommandSource,sources.armyFileSource,sources.armyCalcSource];
+  if(armyInputs.some(s=>s!=null)&&armyInputs.some(s=>s==null))fail('incomplete army source set');
+  const army=armyInputs.every(s=>s!=null)?createIndependentArmyProjection(sources):null;
   const palaceArgs={reviewed:palace,townReview:codec.townReview};
   const applyPalace=(world,command)=>projectOriginalPalaceMission({...palaceArgs,world,command});
   function wire(world,town){
@@ -51,7 +55,9 @@ export function createIndependentDiskProjection({sources,sort,street}){
     const d=world.period.disk;
     if(world.revision===0&&world.market===null){if(d!==undefined)fail('fresh world has no disk');return true;}
     if(!exact(d,palace?'source,live,backup,generations,townData':'source,live,backup,generations')||d.source!==R4_INDEPENDENT_DISK||!Array.isArray(d.generations)||d.generations.length!==3)fail('independent disk envelope required');
-    validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi'],world.nowSeconds);
+    const hasArmy=Boolean(army)&&Object.hasOwn(d.live??{},'army.cgi');
+    validateFiles(d.live,[...backups,'guild.cgi','lasttime.cgi',...(hasArmy?['army.cgi']:[])],world.nowSeconds);
+    if(army)army.validate(world);
     const town=palace?d.townData:{};
     if(palace)validatePalaceTown({...palaceArgs,town});
     if(d.live['play.cgi'].bytes!==wire(world,town)||d.live['lasttime.cgi'].mtime!==world.nowSeconds||d.live['lasttime.cgi'].bytes!==''||d.live['guildbal.cgi'].bytes!==''||d.live['guild.cgi'].bytes!==guild)fail('live source bytes differ from world');
@@ -73,7 +79,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
         next={pass:'',comment:'',remoteaddr:'',guild:'',blocklogin:'',nocheckip:'',job:'',
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
-      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND].includes(command.kind))next.lastlogin=now;
+      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS].includes(command.kind))next.lastlogin=now;
       return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
@@ -86,6 +92,15 @@ export function createIndependentDiskProjection({sources,sort,street}){
       if(!same(expected.shops,applied.shops)||!same(expected.receipt,applied.receipt))fail('palace successor drift');
       town=expected.town;
       newRows.unshift([now,0,0,shops[0].shopname+'が王様の使命を達成しました。'].join('\t')+'\n');
+    }
+    if(ARMY_COMMANDS.includes(command.kind)){
+      if(!army||!old)fail('army source runtime required');
+      const expected=army.apply(before,command);
+      if(!same(expected.shops,applied.shops)||!same(expected.receipt,applied.receipt)||expected.armyBytes!==applied.armyBytes)fail('army successor drift');
+      const r=expected.receipt;
+      newRows.unshift([now,0,1,command.kind==='hire-army'?
+        '僱用矮人兵士 '+r.count+' 名，單價 '+r.unitPrice+'，合計 '+r.cost+'；消耗時間 40 分鐘。':
+        '解僱矮人兵士 '+r.count+' 名；消耗時間 10 分鐘。'].join('\t')+'\n');
     }
     const play=wire(after,town);
     // Local ordinary operation messages are explicit adapter logs, not a
@@ -104,6 +119,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
       const crossings=period.settledCount-before.period.settledCount;
       if(![0,1].includes(crossings))fail('one source boundary per command');
       const live={...old.live};
+      if(ARMY_COMMANDS.includes(command.kind))live['army.cgi']=entry(applied.armyBytes,now);
       // period.cgi copies the prior LIVE files, not the new settled play.
       const generations=crossings?[Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])),...old.generations.slice(0,2)]:old.generations;
       // DataWrite checks the original backup play mtime, before RenewLog.
@@ -122,6 +138,6 @@ export function createIndependentDiskProjection({sources,sort,street}){
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+  return Object.freeze({validate,finalize,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }
