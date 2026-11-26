@@ -8256,33 +8256,245 @@
       "path": "modern/tests/r2-book-work-source.test.mjs",
       "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "57–104 rule/compiled time、exptime、param 與 money/time/paytoday/rank/全 stock/market/EXP、receipts/logs、0 draws；105–115 #13/0–1 multi-count/peddle 與缺書拒絕 snapshot；116–127 source drift fail closed。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "不證明合法取得或真 clock、正式 HTTP/CAS/v2；原版工作 callback 之上另有完整原版隔離 transaction。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-book-work-uses.mjs",
+          "sha": "f1a0cb9c36030603d21660aa348c16c168b04d0b"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-book-work-use-probe.pl",
+          "sha": "1f91913a34d58c924f567aeeb790f9730f1a2e62"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalInlineCallbackHarness.pm",
+          "sha": "eb0c1c2d96fe6b23ec6539c7027370f9bfba3068"
+        }
+      ],
+      "fixtures": "先 memory initialize/open，再直接設書1、time956800、money100000、job；Perl GetBuffer/UseItem/_local_1 在 RAM，RequireFile/WriteLog stub。",
+      "limitations": "不證明合法取得或真 clock、正式 HTTP/CAS/v2；原版工作 callback 之上另有完整原版隔離 transaction。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-career-change-source.test.mjs",
       "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "56–118 規則3h、single-use、param1/4、消耗#78、原版 job/EXP/stock/money/time/market/receipt/log；119–125 全14 USE 各兩組 exp fixture；126–144 donor ID==target EXP 原版異常、cap/default；145–173 缺書/count2拒絕、source drift、offer 不贈送。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "14個選項皆有差分，但其前置經驗／書本非合法玩家取得；不證明每種職業的正式 HTTP、UI 或 v2。歷史 offers 111 不覆蓋現行 112。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
+          "line": 16
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-career-change-uses.mjs",
+          "sha": "eb6e730c7a00c6eb9c8fcc88b5ab9d0d5d7fde3f"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-career-use-probe.pl",
+          "sha": "e4fd66e9d61a3bd9d6fbf9a38ae7f80b09e3bea0"
+        }
+      ],
+      "fixtures": "直接置 #78、EXP、job、money100000、time956800；Perl exact GetBuffer/UseItem/inline；log/require stub。",
+      "limitations": "14個選項皆有差分，但其前置經驗／書本非合法玩家取得；不證明每種職業的正式 HTTP、UI 或 v2。歷史 offers 111 不覆蓋現行 112。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-career-true-player-http.test.mjs",
@@ -8344,17 +8556,121 @@
       "path": "modern/tests/r2-dairy-inline-source.test.mjs",
       "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "55–122 #25/0–1、#26/0 compiled fields/uses、stock/rank/EXP/money/paytoday/time/market/receipt/log/draws；123–139 milk/cow death、rank branches、缺牛拒絕 snapshot；140–165 drift、milk provider hint 不贈送；168–175 clipped count、milk cap、部分 mortality。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "非真 RNG、真 acquisition 或存檔；#26/1 只證 read-only material hint，不補其差分；不覆蓋現有 P4 正式證據。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
+          "line": 27
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-dairy-inline-uses.mjs",
+          "sha": "b7c51519b175dc98428957d00a5e3440070944ab"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-dairy-inline-use-probe.pl",
+          "sha": "9881d3f923da4605a347eca4f5512255ef27391c"
+        }
+      ],
+      "fixtures": "人工牛／奶、rank/job/money/time；注入 randomDraws，Perl CORE::GLOBAL::rand override；source extracted callbacks，log stub。",
+      "limitations": "非真 RNG、真 acquisition 或存檔；#26/1 只證 read-only material hint，不補其差分；不覆蓋現有 P4 正式證據。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-dairy-true-player-http.test.mjs",
@@ -8540,17 +8856,121 @@
       "path": "modern/tests/r2-party-popup-source.test.mjs",
       "sha": "d60246c6a42c1a15e3735443100dbead37fb9d32",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 memory）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、_config.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/buy-s.cgi",
+      "assertions": "54–102 #77/0 source time7200、param1000、消耗 gift、rank/stock/money/time/market/EXP/receipts/logs、0 draws；103–125 七個 rank 含 cap，缺 item/count2 snapshot 不變；126–145 drift 與 read-only offers。",
+      "executionPath": "createStandardStreetModule → executeMemoryCommand(use-item) 與 execFileSync 隔離 Perl probe",
+      "risk": "非真取得或正式時間/HTTP/v2；offer count111 為舊測試限定結果，不覆蓋現行 registry。",
+      "disposition": "保留逐 USE 限定差分；正式玩家另證，不覆蓋既有正向層",
+      "reason": "本批固定 blob 逐檔語義閱讀；未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
+          "line": 38
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/src/reviewed-party-use.mjs",
+          "sha": "acb1384f8094ecbf4b908fa065893cd76debe726"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r2-party-use-probe.pl",
+          "sha": "b49b225efe15cdb955c443d231c810ae7aa76286"
+        }
+      ],
+      "fixtures": "memory open 後直接塞 #77、rank/money100000/time956800；Perl exact GetBuffer/UseItem/popup；WriteLog recording。",
+      "limitations": "非真取得或正式時間/HTTP/v2；offer count111 為舊測試限定結果，不覆蓋現行 registry。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/r2-potion-lostbook-http.test.mjs",
@@ -20481,7 +20901,8 @@
       "evidence": [
         "modern/tests/p5-book-work-v2-player-http.test.mjs",
         "modern/tests/original-inline-work-showcase-model.test.mjs",
-        "modern/tests/original-perl/original-inline-work-showcase.t"
+        "modern/tests/original-perl/original-inline-work-showcase.t",
+        "modern/tests/r2-book-work-source.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -20530,6 +20951,13 @@
               "startLine": 44,
               "endLine": 93,
               "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/r2-book-work-source.test.mjs",
+              "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+              "startLine": 57,
+              "endLine": 115,
+              "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
             }
           ]
         },
@@ -20543,6 +20971,13 @@
               "startLine": 244,
               "endLine": 282,
               "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/r2-book-work-source.test.mjs",
+              "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+              "startLine": 57,
+              "endLine": 115,
+              "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
             }
           ]
         },
@@ -20885,6 +21320,13 @@
           "startLine": 44,
           "endLine": 93,
           "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+        },
+        {
+          "path": "modern/tests/r2-book-work-source.test.mjs",
+          "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+          "startLine": 57,
+          "endLine": 115,
+          "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
         }
       ],
       "evidenceScope": "無獨立逐 USE Perl 差分/UI；v2 history 命令與資金回放"
@@ -20911,7 +21353,8 @@
       "evidence": [
         "modern/tests/p5-book-work-v2-player-http.test.mjs",
         "modern/tests/original-inline-work-showcase-model.test.mjs",
-        "modern/tests/original-perl/original-inline-work-showcase.t"
+        "modern/tests/original-perl/original-inline-work-showcase.t",
+        "modern/tests/r2-book-work-source.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -20960,6 +21403,13 @@
               "startLine": 44,
               "endLine": 93,
               "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/r2-book-work-source.test.mjs",
+              "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+              "startLine": 57,
+              "endLine": 115,
+              "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
             }
           ]
         },
@@ -20973,6 +21423,13 @@
               "startLine": 244,
               "endLine": 282,
               "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/r2-book-work-source.test.mjs",
+              "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+              "startLine": 57,
+              "endLine": 115,
+              "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
             }
           ]
         },
@@ -21259,6 +21716,13 @@
           "startLine": 44,
           "endLine": 93,
           "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+        },
+        {
+          "path": "modern/tests/r2-book-work-source.test.mjs",
+          "sha": "7208bf7fbc429501eb7bc1582af175e500d1bb51",
+          "startLine": 57,
+          "endLine": 115,
+          "scope": "#13/0–1 受控完整 USE 原版差分，含 peddle、收入、時耗、所有庫存及 log arguments"
         }
       ],
       "evidenceScope": "無逐 USE Oracle/UI"
@@ -23722,8 +24186,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -23732,7 +24196,8 @@
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
         "modern/tests/p4-dairy-v2-player-http.test.mjs",
-        "modern/tests/p4-dairy-death-and-save-security.test.mjs"
+        "modern/tests/p4-dairy-death-and-save-security.test.mjs",
+        "modern/tests/r2-dairy-inline-source.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -23764,8 +24229,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法牛，普通擠奶；產量≤count*cows、死亡扣牛、EXP+10/count cap、action time、draw count+1",
@@ -24091,6 +24580,13 @@
           "startLine": 93,
           "endLine": 108,
           "scope": "fresh count clipping、無時間拒絕與雙代"
+        },
+        {
+          "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+          "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+          "startLine": 55,
+          "endLine": 139,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
         }
       ],
       "evidenceScope": "未逐項 Perl/UI；自然死亡專測為25/1"
@@ -24106,8 +24602,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -24116,7 +24612,8 @@
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
         "modern/tests/p4-dairy-v2-player-http.test.mjs",
-        "modern/tests/p4-dairy-death-and-save-security.test.mjs"
+        "modern/tests/p4-dairy-death-and-save-security.test.mjs",
+        "modern/tests/r2-dairy-inline-source.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -24148,8 +24645,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法牛，強力擠奶；產量≤2*count*cows、死亡扣牛、EXP/time/draw count；死亡後合法補牛重啟另證",
@@ -24419,6 +24940,13 @@
           "startLine": 37,
           "endLine": 91,
           "scope": "死亡後存檔、NEED、合法補牛與復原"
+        },
+        {
+          "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+          "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+          "startLine": 55,
+          "endLine": 139,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
         }
       ],
       "evidenceScope": "死亡須實際觀察；exact CI 45765900966 觀察1次"
@@ -24722,8 +25250,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -24732,7 +25260,8 @@
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
         "modern/tests/p4-dairy-v2-player-http.test.mjs",
-        "modern/tests/p4-dairy-death-and-save-security.test.mjs"
+        "modern/tests/p4-dairy-death-and-save-security.test.mjs",
+        "modern/tests/r2-dairy-inline-source.test.mjs"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -24764,8 +25293,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據",
+          "refs": [
+            {
+              "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+              "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+              "startLine": 55,
+              "endLine": 139,
+              "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法奶飲用 1/10/30，milk-count；rank <10上升、10不變、30下降；兩代完整世界 replay",
@@ -24979,6 +25532,13 @@
           "startLine": 260,
           "endLine": 265,
           "scope": "合法奶飲用 1/10/30，milk-count；rank <10上升、10不變、30下降；兩代完整世界 replay"
+        },
+        {
+          "path": "modern/tests/r2-dairy-inline-source.test.mjs",
+          "sha": "52b733b063bfc7d96ef1e160802f0e9bbfa038c7",
+          "startLine": 55,
+          "endLine": 139,
+          "scope": "#25/0–1 及 #26/0 受控完整原版 callback/交易與注入 RNG 差分，庫存/人氣/時間/收據"
         }
       ],
       "evidenceScope": "無 UI/獨立 Perl 差分"
@@ -27161,15 +27721,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-party-popup-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "77/0",
@@ -27200,8 +27762,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#77/0 受控 popup 完整原版交易差分，七種 rank、一次消耗、拒絕條件",
+          "refs": [
+            {
+              "path": "modern/tests/r2-party-popup-source.test.mjs",
+              "sha": "d60246c6a42c1a15e3735443100dbead37fb9d32",
+              "startLine": 54,
+              "endLine": 125,
+              "scope": "#77/0 受控 popup 完整原版交易差分，七種 rank、一次消耗、拒絕條件"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#77/0 受控 popup 完整原版交易差分，七種 rank、一次消耗、拒絕條件",
+          "refs": [
+            {
+              "path": "modern/tests/r2-party-popup-source.test.mjs",
+              "sha": "d60246c6a42c1a15e3735443100dbead37fb9d32",
+              "startLine": 54,
+              "endLine": 125,
+              "scope": "#77/0 受控 popup 完整原版交易差分，七種 rank、一次消耗、拒絕條件"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27211,7 +27797,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-party-popup-source.test.mjs",
+          "sha": "d60246c6a42c1a15e3735443100dbead37fb9d32",
+          "startLine": 54,
+          "endLine": 125,
+          "scope": "#77/0 受控 popup 完整原版交易差分，七種 rank、一次消耗、拒絕條件"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -27487,15 +28082,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27531,8 +28128,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27542,7 +28163,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27555,15 +28185,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27599,8 +28231,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27610,7 +28266,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27623,15 +28288,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27667,8 +28334,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27678,7 +28369,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27691,15 +28391,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27735,8 +28437,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27746,7 +28472,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27759,15 +28494,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27803,8 +28540,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27814,7 +28575,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27827,15 +28597,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27871,8 +28643,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27882,7 +28678,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27895,15 +28700,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -27939,8 +28746,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27950,7 +28781,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -27963,15 +28803,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -28007,8 +28849,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28018,7 +28884,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28031,15 +28906,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -28075,8 +28952,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28086,7 +28987,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28099,15 +29009,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -28143,8 +29055,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28154,7 +29090,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28167,15 +29112,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -28211,8 +29158,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28222,7 +29193,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -28235,8 +29215,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -28244,7 +29224,8 @@
       "status": "受控正式驗收（限定路徑；非全部回呼）",
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
-        "modern/tests/p4-dairy-v2-player-http.test.mjs"
+        "modern/tests/p4-dairy-v2-player-http.test.mjs",
+        "modern/tests/r2-career-change-source.test.mjs"
       ],
       "priorAcceptance": {
         "pr": 10,
@@ -28281,8 +29262,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法買指南，轉 cow、guide0，milking 3600→2400、job持久化",
@@ -28470,6 +29475,13 @@
           "startLine": 260,
           "endLine": 265,
           "scope": "合法買指南，轉 cow、guide0，milking 3600→2400、job持久化"
+        },
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
         }
       ],
       "evidenceScope": "不宣稱全部職業或完整 EXP 轉移"
@@ -28485,8 +29497,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -28494,7 +29506,8 @@
       "status": "受控正式驗收（限定路徑；非全部回呼）",
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
-        "modern/tests/p5-book-work-v2-player-http.test.mjs"
+        "modern/tests/p5-book-work-v2-player-http.test.mjs",
+        "modern/tests/r2-career-change-source.test.mjs"
       ],
       "priorAcceptance": {
         "pr": 10,
@@ -28531,8 +29544,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法買指南，轉 peddle、guide0，工作7200/14400→4800/9600；job兩代保存",
@@ -28671,6 +29708,13 @@
           "startLine": 200,
           "endLine": 208,
           "scope": "合法買指南，轉 peddle、guide0，工作7200/14400→4800/9600；job兩代保存"
+        },
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
         }
       ],
       "evidenceScope": "不宣稱其他職業/EXP transfer"
@@ -28686,15 +29730,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-career-change-source.test.mjs"
+      ],
       "priorAcceptance": {
         "pr": 10,
         "scope": "既有轉職／熟練度受控驗收；不是本輪正式 v2 真時鐘證明",
@@ -28730,8 +29776,32 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo",
+          "refs": [
+            {
+              "path": "modern/tests/r2-career-change-source.test.mjs",
+              "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+              "startLine": 56,
+              "endLine": 149,
+              "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28741,7 +29811,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-career-change-source.test.mjs",
+          "sha": "03dc0209cdba8e2cfa98cdd069c5725eb6d17d2d",
+          "startLine": 56,
+          "endLine": 149,
+          "scope": "#78/0–13 逐選項兩組 source transaction/EXP/job 差分，含消耗書、log、原版 typo"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -32776,14 +33855,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 97,
-      "待補": 112
+      "有效": 101,
+      "待補": 108
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 58,
+    "currentSessionReviewed": 62,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -32834,7 +33913,8 @@
     "modern/docs/r0-gift-market-oracle-evidence.md",
     "modern/docs/r0-work-showcase-lostbook-evidence.md",
     "modern/docs/r0-shared-helper-material-evidence.md",
-    "modern/docs/r0-use-gates-outcomes-experience-evidence.md"
+    "modern/docs/r0-use-gates-outcomes-experience-evidence.md",
+    "modern/docs/r0-r2-work-career-dairy-party-evidence.md"
   ],
   "integrationCiHistory": [
     {

@@ -45,3 +45,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 第十批 [共用回呼／helper／材料與產出](r0-shared-helper-material-evidence.md) 補審 6 檔，89 有效、24 歷史、120 待補（113/233）；收斂後補審50，既有待覆核56。保留 B-26 stub、B-29 exact helper、B-22 數字片段的區分；沒有新增具體 ITEM/USE 正向旗標；未執行本批 CI。
 
 第十一批 [USE 資格／交易／機率／經驗尾段](r0-use-gates-outcomes-experience-evidence.md) 補審8檔：97有效、24歷史、112待補（121/233）；收斂後補審58、既有待覆核56。B-21/B-23 Node 純投影與獨立 Perl Oracle 分開，B-24/B-25 有直接 probe 差分。均非正式玩家；功能矩陣正向下界不變。新候選 CI 待驗。
+
+第十二批 [打工／職業／乳製品／派對](r0-r2-work-career-dairy-party-evidence.md) 補審4檔：101有效、24歷史、108待補（125/233）；收斂後補審62、既有待覆核56。20 USE rows 新增或補強原版交易差分（其中14職業逐選項），70 rows 有詳細證據；受控注入、正式正向不變。新候選 CI 待驗。

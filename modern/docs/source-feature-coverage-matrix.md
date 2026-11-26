@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 7 | 11 | 25 |
-| nodeDifferential | 7 | 11 | 25 |
+| perlOracle | 7 | 29 | 25 |
+| nodeDifferential | 7 | 29 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -27,3 +27,5 @@
 第三批補鏈：[禮物卷／市場](r0-gift-market-oracle-evidence.md)：ITEM #10、USE #79/1–4 五筆受控差分，其中 #79/4 既有真玩家證據保留；#79/2 正向注入10券不算合法取得。詳細證據行數：52 筆功能記錄；正式 lawfulAcquisition/HTTP/v2 下界不變。
 
 第四批補鏈：[打工／展示架／lostbook](r0-work-showcase-lostbook-evidence.md)：ITEM #13、#63 與 USE #13/0–1、#63/0–3 的隔離 callback 證據；#63/4–7 保留未證明狀態；B-30 不硬連具體配方。57 筆有詳細證據，正式正向下界不變。
+
+第五批補鏈：[打工／職業／乳製品／派對](r0-r2-work-career-dairy-party-evidence.md)：20 USE rows（#13/0–1、#25/0–1、#26/0、#77/0、#78/0–13）受控完整 source USE 差分，70 筆有詳細證據；正式正向下界不變，#26/1 hint 不升格。
