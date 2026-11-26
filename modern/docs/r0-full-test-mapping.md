@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 123、歷史 32、待補 78。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 92 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 127、歷史 32、待補 74。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 96 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -84,7 +84,7 @@
 | original-perl/original-r4-declarative-event-cycle.t | 有效 | Perl Oracle（隔離 END/START） |
 | original-perl/original-r4-dragon-balance.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-dynamic-population-plus.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-event-hash-order.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-event-hash-order.t | 有效 | Perl Oracle（hash 觀測） |
 | original-perl/original-r4-event-item-param.t | 有效 | Perl Oracle（原版 PARAM compiler） |
 | original-perl/original-r4-guild-file-edge.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-guild-files.t | 待補 | 未完成語義審閱 |
@@ -92,7 +92,7 @@
 | original-perl/original-r4-guildbattle-end.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-mixed-instant-gate.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-mixed-support-gate.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-multi-event-order.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-multi-event-order.t | 有效 | Perl Oracle（17-key 受控切片） |
 | original-perl/original-r4-period-all-finance-source.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-period-backup-tail.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-period-dragon-chain.t | 待補 | 未完成語義審閱 |
@@ -191,8 +191,8 @@
 | r4-mixed-loto-gate.test.mjs | 待補 | 未完成語義審閱 |
 | r4-mixed-rebel-now-gate.test.mjs | 待補 | 未完成語義審閱 |
 | r4-mixed-support-gate.test.mjs | 待補 | 未完成語義審閱 |
-| r4-multi-event-order.test.mjs | 待補 | 未完成語義審閱 |
-| r4-original-event-hash-order.test.mjs | 待補 | 未完成語義審閱 |
+| r4-multi-event-order.test.mjs | 有效 | Perl Oracle／Node 差分（17-key 受控投影） |
+| r4-original-event-hash-order.test.mjs | 有效 | Perl Oracle（hash 觀測，JS wrapper） |
 | r4-original-time-slices.test.mjs | 待補 | 未完成語義審閱 |
 | r4-p3-pre-event-overlay.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-all-finance-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |

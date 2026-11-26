@@ -6638,22 +6638,57 @@
       "path": "modern/tests/original-perl/original-r4-event-hash-order.t",
       "sha": "b61e333d41b20cf13aaca3b707e95b58f115e008",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（hash 觀測）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "8–13：probe exit/JSON；15–29：25/17、原版 keys set、同 hash 重讀穩定、active fixture set、非完整 EVENT engine。",
+      "executionPath": "Perl .t → original-r4-event-hash-order-probe.pl → original compiler emitted initializer",
+      "risk": "EVENT hash 順序、group gate、受控 RNG 消耗；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。重建原版 compiler 的 13 欄 rows 並 eval emitted initializer；17-key keys 觀測、人工 active 三鍵；跨程序不要求排列相同或不同，非生命週期／callback／RNG／可重播正式世界。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 22
+        },
+        {
+          "path": "modern/docs/r0-r4-multi-event-hash-evidence.md",
+          "line": 29
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-event-hash-order-probe.pl",
+          "sha": "5c6dad6fb0d80affd2512bb4e040608cd3552475"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        }
+      ],
+      "fixtures": "人工 active 三鍵／原版 emitted initializer",
+      "limitations": "重建原版 compiler 的 13 欄 rows 並 eval emitted initializer；17-key keys 觀測、人工 active 三鍵；跨程序不要求排列相同或不同，非生命週期／callback／RNG／可重播正式世界。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-event-item-param.t",
@@ -6828,17 +6863,61 @@
       "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
       "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（17-key 受控切片）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "8–13：probe exit/JSON；15–29：17 keys、四切片、首次七 durable active、17-key traversal、draw count、次次 DataRead 七 active、ITEM 1 indexing。",
+      "executionPath": "Perl .t → original-r4-multi-event-order-probe.pl → eval frozen END/START/PARAM",
+      "risk": "EVENT hash 順序、group gate、受控 RNG 消耗；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。受控 79 ITEM、明示 millionth draws、四個 3600 秒切片含跳時；17-key gate／兩種 hash order 由同一 Perl process 提供，僅七 EVENT 有 durable START/END/PARAM；其他正 START 刻意 miss，零 START 僅 transient group；非完整 NOWFUNC／連續時間／period／WorldState/CAS/HTTP/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-multi-event-hash-evidence.md",
+          "line": 21
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order-probe.pl",
+          "sha": "4ebbf9ff6c571c1c7f8330652e0b310f5bee3c76"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "人工79 ITEM／四切片／同 Perl process order／明示 draws",
+      "limitations": "受控 79 ITEM、明示 millionth draws、四個 3600 秒切片含跳時；17-key gate／兩種 hash order 由同一 Perl process 提供，僅七 EVENT 有 durable START/END/PARAM；其他正 START 刻意 miss，零 START 僅 transient group；非完整 NOWFUNC／連續時間／period／WorldState/CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-all-finance-source.t",
@@ -11447,43 +11526,141 @@
       "path": "modern/tests/r4-multi-event-order.test.mjs",
       "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（17-key 受控投影）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "39–66：四切片全 ITEM、activeUntil、log 順序、draw range/count、前態連續與 committable=false；67–80：三次獨立原版程序各自提供 order 並比對 draw ranges/log；81–105：錯 permutation、rebel、缺多 draws、129600 span、group guard drift 拒絕，輸入不變。",
+      "executionPath": "execFileSync 原版 multi probe → projectOriginalR4MultiEventFixture",
+      "risk": "EVENT hash 順序、group gate、受控 RNG 消耗；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。受控 79 ITEM、明示 millionth draws、四個 3600 秒切片含跳時；17-key gate／兩種 hash order 由同一 Perl process 提供，僅七 EVENT 有 durable START/END/PARAM；其他正 START 刻意 miss，零 START 僅 transient group；非完整 NOWFUNC／連續時間／period／WorldState/CAS/HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 62
+        },
+        {
+          "path": "modern/docs/r0-r4-multi-event-hash-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order-probe.pl",
+          "sha": "4ebbf9ff6c571c1c7f8330652e0b310f5bee3c76"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/original-r4-multi-event-order-fixture.mjs",
+          "sha": "f8658ecd281cc5969f5b96f0ef6862a7ac8b8720"
+        },
+        {
+          "path": "modern/src/original-r4-declarative-event-cycle.mjs",
+          "sha": "5e16d220827eab8936f36b5f93c90c559c33e9da"
+        },
+        {
+          "path": "modern/src/original-r4-event-item-param.mjs",
+          "sha": "230ccd5bc0b6fe31eb18703d46d6a93692eeac62"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        }
+      ],
+      "fixtures": "人工79 ITEM／四切片／同 Perl process order／明示 draws",
+      "limitations": "受控 79 ITEM、明示 millionth draws、四個 3600 秒切片含跳時；17-key gate／兩種 hash order 由同一 Perl process 提供，僅七 EVENT 有 durable START/END/PARAM；其他正 START 刻意 miss，零 START 僅 transient group；非完整 NOWFUNC／連續時間／period／WorldState/CAS/HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-original-event-hash-order.test.mjs",
       "sha": "431663d92a2684b0c32455af066087efaab254df",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（hash 觀測，JS wrapper）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "13–25：25 declared/17 compiled、真 hash key set、未變更同 hash 順序、active fixture set、scope；26–38：四程序各自驗證 key set 與同程序穩定，不宣告跨程序順序關係。",
+      "executionPath": "execFileSync 原版 hash probe；JS 只核對 Oracle 結果，無 Node runtime 投影",
+      "risk": "EVENT hash 順序、group gate、受控 RNG 消耗；非正式玩家",
+      "disposition": "保留；不得升格正式 EVENT／HTTP/v2",
+      "reason": "逐檔覆核原版 probe、實際斷言及執行邊界。重建原版 compiler 的 13 欄 rows 並 eval emitted initializer；17-key keys 觀測、人工 active 三鍵；跨程序不要求排列相同或不同，非生命週期／callback／RNG／可重播正式世界。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 23
+        },
+        {
+          "path": "modern/docs/r0-r4-multi-event-hash-evidence.md",
+          "line": 13
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-event-hash-order-probe.pl",
+          "sha": "5c6dad6fb0d80affd2512bb4e040608cd3552475"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        }
+      ],
+      "fixtures": "人工 active 三鍵／原版 emitted initializer",
+      "limitations": "重建原版 compiler 的 13 欄 rows 並 eval emitted initializer；17-key keys 觀測、人工 active 三鍵；跨程序不要求排列相同或不同，非生命週期／callback／RNG／可重播正式世界。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-original-time-slices.test.mjs",
@@ -34025,7 +34202,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -34075,7 +34254,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -34118,12 +34297,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -34145,6 +34338,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -34200,6 +34400,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -34396,7 +34610,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -34446,7 +34662,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -34489,12 +34705,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -34516,6 +34746,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -34571,6 +34808,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -34600,7 +34851,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -34650,7 +34903,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -34693,12 +34946,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -34720,6 +34987,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -34775,6 +35049,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -34804,7 +35092,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -34854,7 +35144,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -34897,12 +35187,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -34924,6 +35228,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -34979,6 +35290,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -35528,7 +35853,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -35578,7 +35905,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -35621,12 +35948,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -35648,6 +35989,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -35703,6 +36051,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -35899,7 +36261,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -35949,7 +36313,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -35992,12 +36356,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -36019,6 +36397,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -36074,6 +36459,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -36103,7 +36502,9 @@
         "modern/tests/r4-event-item-param.test.mjs",
         "modern/tests/original-perl/original-r4-event-item-param.t",
         "modern/tests/r4-declarative-event-cycle.test.mjs",
-        "modern/tests/original-perl/original-r4-declarative-event-cycle.t"
+        "modern/tests/original-perl/original-r4-declarative-event-cycle.t",
+        "modern/tests/r4-multi-event-order.test.mjs",
+        "modern/tests/original-perl/original-r4-multi-event-order.t"
       ],
       "registryEvidence": {
         "kind": "EVENT",
@@ -36153,7 +36554,7 @@
         "registry": null,
         "perlOracle": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/original-perl/original-b53-event-catalog.t",
@@ -36196,12 +36597,26 @@
               "startLine": 8,
               "endLine": 26,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+              "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+              "startLine": 8,
+              "endLine": 29,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間",
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2；另有 九個 compiled PARAM EVENT 的原版 generated ITEM expressions／人工79 ITEM 純 overlay 差分；非生命週期或正式玩家；單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間；另有 17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay",
           "refs": [
             {
               "path": "modern/tests/b53-event-catalog-source.test.mjs",
@@ -36223,6 +36638,13 @@
               "startLine": 53,
               "endLine": 98,
               "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+            },
+            {
+              "path": "modern/tests/r4-multi-event-order.test.mjs",
+              "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+              "startLine": 39,
+              "endLine": 80,
+              "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
             }
           ]
         },
@@ -36278,6 +36700,20 @@
           "startLine": 8,
           "endLine": 26,
           "scope": "單 EVENT 原版 END/START＋DataRead overlay：四邊界及連續逐時 timeline；明示 draws、非17-key/global RNG/正式時間"
+        },
+        {
+          "path": "modern/tests/r4-multi-event-order.test.mjs",
+          "sha": "165f48cca58736cf4c85d8c4d7c589ee9f3b1edd",
+          "startLine": 39,
+          "endLine": 80,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-multi-event-order.t",
+          "sha": "96fe020a6df00d6de2893965966a0cff0caa89df",
+          "startLine": 8,
+          "endLine": 29,
+          "scope": "17-key Perl hash 受控四切片：七 EVENT 混合 START/END/PARAM，log 與 draw range/count；含跳時，非完整 callback／正式時間/RNG/replay"
         }
       ],
       "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
@@ -37336,14 +37772,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 123,
-      "待補": 78
+      "有效": 127,
+      "待補": 74
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 92,
+    "currentSessionReviewed": 96,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -37401,7 +37837,8 @@
     "modern/docs/r0-sparse-plus-evidence.md",
     "modern/docs/r0-natural-sale-functurn-evidence.md",
     "modern/docs/r0-r4-declarative-event-evidence.md",
-    "modern/docs/r0-r4-b50-disk-ledger-evidence.md"
+    "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
+    "modern/docs/r0-r4-multi-event-hash-evidence.md"
   ],
   "integrationCiHistory": [
     {

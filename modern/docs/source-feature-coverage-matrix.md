@@ -39,3 +39,5 @@
 第九批補鏈：[R4 EVENT declarative／PARAM](r0-r4-declarative-event-evidence.md)：九 EVENT 純 PARAM overlay，其中七 EVENT 單 key END/START 及 DataRead 連續時段差分；25 metadata 下界與83詳細 rows 不變。正式 HTTP/v2/合法取得仍不變，不能宣告 EVENT callback/runtime 已驗收。
 
 第十批：[R4 B50 公會帳本／跨期磁碟](r0-r4-b50-disk-ledger-evidence.md) 為共用 period/guild/IO 來源層；不硬映射 guildbattle、人工 EVENT codec 或商品取得，83詳細 rows 與正式下界不變。
+
+第十一批：[R4 多 EVENT/hash](r0-r4-multi-event-hash-evidence.md)：七 EVENT 另補 17-key 混合切片 Oracle/差分；其餘十 key 僅 hash/gate，未驗 callback。83 詳細 rows、正式下界不變。

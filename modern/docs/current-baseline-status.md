@@ -120,3 +120,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 第十七批 [R4 EVENT declarative／PARAM](r0-r4-declarative-event-evidence.md) 補審4檔：119有效、32歷史、82待補（151/233）；收斂後補審88、既有待覆核56。9 EVENT 純 PARAM 差分、其中7單 key END/START 生命週期；25 metadata 下界不變，83 筆功能有詳細證據；正式下界不變。新候選待 CI。
 
 第十八批 [R4 B50 公會帳本／跨期磁碟](r0-r4-b50-disk-ledger-evidence.md) 補審4檔：123有效、32歷史、78待補（155/233）；收斂後補審92、既有待覆核56。原版 temp disk、受控 period prefix/tail、guild ledger、stage/receipt/recovery，不等於正式 v2 或原子 WorldState；83 詳細 rows、正式下界不變。新候選待 CI。
+
+第十九批：[R4 多 EVENT/hash](r0-r4-multi-event-hash-evidence.md)，四檔有效；累計有效127、歷史32、待補74（159/233），收斂後逐檔審閱96；既有63中7覆核、56待覆核。七 EVENT 17-key 受控混合切片，非正式時間／callback／RNG/CAS/v2；詳細功能83，正式下界不變。
