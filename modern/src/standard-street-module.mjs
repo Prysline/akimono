@@ -1,3 +1,4 @@
+import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
 import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
@@ -425,10 +426,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
-    targetAdvertiseUse,
+    targetAdvertiseUse,...(noGuildAdvertiseUse?[noGuildAdvertiseUse]:[]),
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -500,6 +502,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original ITEM has no reviewed USE #'+useId;
     },
     runInlineCallback({rule,shop,count,random,targetShop}){
+      if(noGuildAdvertiseUse&&rule===noGuildAdvertiseUse)return projectOriginalNoGuildAdvertisement({rule,shop,count});
       if(rule===targetAdvertiseUse){
         if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
           bad('unreviewed original target advertisement');
@@ -707,7 +710,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse,selfAdvertiseUse].filter(Boolean)
+        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;

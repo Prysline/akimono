@@ -27,9 +27,10 @@ BEGIN {
 }
 sub item::WriteLog { push @main::LOGS,[@_];return 1; }
 my $in=JSON::PP->new->decode($ARGV[0]//'{}');
-die 'R2 original advertising only #62/0' unless
+die 'R2 original advertising only #62/0 or #62/2 no guild' unless
   ($in->{itemId}//0)==62&&defined($in->{useId})&&
-  $in->{useId}==0;
+  ($in->{useId}==0||$in->{useId}==2);
+my $noGuild=$in->{useId}==2;my $useIndex=$noGuild?3:1;
 OriginalGiftMapUseHarness::compile();
 OriginalFullUseLostbookHarness::bootstrap();
 my $compiler=OriginalGiftMapUseHarness::source('inc-makeitem.cgi');
@@ -50,10 +51,11 @@ my @uses=split(/^\s*\@\@USE[^\n]*(?:\n|$)/mi,$matched[0]);
 die 'R2 original #62 USE count drift' unless @uses==4;
 die 'R2 original #62 code drift' unless
   $uses[0]=~/^\s*code\s+cm(?:\s|$)/m;
-my($body)=$uses[1]=~
+my($body)=$uses[$useIndex]=~
   /^\s*func\s+_local_\s*\n([\s\S]*?)^\s*_local_\s*$/m;
 die 'R2 original advertising inline absent' unless defined $body;
-for my $token(
+if($noGuild){die 'no guild branch drift' unless index($body,"return '沒有加入商會無法進行商會廣告' if !\$DT->{guild};")>=0;}
+else{for my $token(
   'my $up=int(500*(2-$DT->{rank}/5000));',
   'if ( rand(1000)<250 ) {',
   '$DT->{rank}=1000 if $DT->{rank}<1000;',
@@ -63,7 +65,7 @@ for my $token(
 ){
   die 'R2 original advertising inline drift' unless
     index($body,$token)>=0;
-}
+}}
 my $wrapped="package item;use utf8;no strict;no warnings;\n".
   "sub r2_original_self_advertising {eval(<<'_eval_code_');\n".
   $body."\n_eval_code_\n}\n1;";
@@ -72,7 +74,7 @@ die "R2 advertising Perl body compilation failed: $@" unless $inline;
 $main::g_item={code=>'cm',no=>62,scale=>'包'};
 $main::g_use={no=>-1,exptime=>0};
 main::ClearBuffer('use');
-for my $raw(split(/\r?\n/,$uses[1])){
+for my $raw(split(/\r?\n/,$uses[$useIndex])){
   my $line=OriginalGiftMapUseHarness::line_for_compiler($raw);
   next unless defined $line;
   next unless $raw=~/^\s*(?:time|exp|exptime|job|scale|action|name|info|arg|use|func)\s/i;
@@ -81,7 +83,7 @@ for my $raw(split(/\r?\n/,$uses[1])){
 my $u=$main::g_use;
 die 'R2 advertising original compiled fields drift' unless
   $u->{itemno}==62&&$u->{no}==0&&
-  $u->{time}==18000&&$u->{exp}==100&&
+  $u->{time}==($noGuild?28800:18000)&&$u->{exp}==($noGuild?0:100)&&
   ($u->{func}//'')eq'_local_1';
 my @materials=map{
   my @p=split(/\t/,$_,-1);
@@ -104,7 +106,7 @@ $main::MAX_ITEM=79;
 $main::USER='r2-self-advertising-oracle';
 my $exp=$in->{exp}||{};
 $main::DT={
-  id=>1,status=>1,job=>$in->{job}//'',point=>0,
+  id=>1,status=>1,guild=>'',job=>$in->{job}//'',point=>0,
   rank=>$in->{rank}//5010,money=>$in->{money}//100000,
   paytoday=>$in->{paytoday}//0,time=>$in->{time}//956800,
   exp=>{%$exp},item=>[@$stock],
@@ -121,7 +123,7 @@ my $runtime={
   result=>{create=>[],function=>'r2_original_self_advertising'},
   arg=>{targetidx=>0},
 };
-if(($main::DT->{job}//'')eq'peddle'){
+if(!$noGuild&&($main::DT->{job}//'')eq'peddle'){
   my($job,$formula)=split(/\t/,$u->{job}[0]);
   die 'R2 source peddler time formula drift' unless
     $job eq'行腳商人'&&$formula eq'times/job_peddle_time_rate';
