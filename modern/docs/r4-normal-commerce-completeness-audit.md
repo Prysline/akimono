@@ -8,7 +8,7 @@
 
 ## 已核對的具體缺口
 
-- original-b41-playable-sale.mjs：P3 目前只有 #10、25–26、30–36、40–61、67–70 共36項時間販售規則。65個正值 POP 中未納入者為 #1–8、15–17、20–23、27–29、39、62、64、66、71–79。精確缺口以矩陣輸出為準；#64 正值 POP 但 noshowcase|onlysend，必須與合法上架能力分開。#77、#79 未寫 POP，原版 PRICE 自動給正值（1440000、72000），不能視為0。
+- original-b41-playable-sale.mjs：P3 目前只有 #10、25–26、30–36、40–61、67–70 共36項時間販售規則。65個明寫正值 POP，另有 #77/#79 由 PRICE 編譯預設，合計67個編譯後正值 POP；31個未納入時間販售規則者為 #1–8、15–17、20–23、27–29、39、62、64、66、71–79。其中 #64 有明示禁上架，故不能當成31個均可售；精確缺口以矩陣輸出為準；#64 正值 POP 但 noshowcase|onlysend，必須與合法上架能力分開。#77、#79 未寫 POP，原版 PRICE 自動給正值（1440000、72000），不能視為0。
 - P3_TURN_IDS 缺 #13（P5）、62、65、71–77；#62 原版成本10000，市場 PLUS 5d、BASE 10/50；#62/0 自家廣告原版 EXP 10%，現代化 reviewed-self-advertise-use 編譯固定100 EXP，但 P3_EXP_IDS 未收62。#62/1 跨店與 /2 公會不能從單店授權推論。#65/0–2 尚須重新查實際外部依賴。
 - P3 validateP3Inventory 單架；projectSourcePreEventSaleSlice 多架 active EVENT 直接拒絕，即使 DataRead 已產生逐 ITEM saleRules，仍將未覆寫的 saleRules 傳入 R3 shared core。多架 receipt 有 soldByItem 但 controller settlement receipt 仍以 soldItemId 第一架為主。必須接通全商品、逐架、跨期與歷史。
 - 現有 OriginalR4PreEventHarness.pm 將全部 ITEM type 設為10，且跨期 oracle 只給前四架 SHOWCASE_COST。不能用這個未修改的 harness 聲稱異類商品多架專門店判定或5–8架跨期已驗。重用 frozen natural_source/compiled ITEM 與原版8階維持費，擴充獨立差分。

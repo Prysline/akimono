@@ -94,9 +94,11 @@ export async function auditNormalCommerce(){
   return {scope:'source declaration, original numeric compiler and reviewed registry/shape inspection only',
     counts:audit.actual,
     summary:{
+      explicitPositivePop:items.filter(x=>x.positivePop&&x.declaration.pop!==undefined).length,
       positivePop:items.filter(x=>x.positivePop).length,
       timeSaleRules:items.filter(x=>x.timeSaleRule!==null).length,
       positivePopMissingTimeSale:items.filter(x=>x.positivePop&&!x.timeSaleRule).map(x=>x.id),
+      positivePopWithoutExplicitPop:items.filter(x=>x.positivePop&&x.declaration.pop===undefined).map(x=>x.id),
       positivePopNoShowcase:items.filter(x=>x.positivePop&&x.sourceNoShowcase).map(x=>x.id),
       holdingShapeRejected:items.filter(x=>!x.timeHoldingShapeAccepted).map(x=>x.id),
       experienceShapeAccepted:items.filter(x=>x.timeExperienceShapeAccepted).map(x=>x.id),

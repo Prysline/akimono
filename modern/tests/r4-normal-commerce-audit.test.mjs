@@ -9,7 +9,9 @@ test('normal commerce audit enumerates original compiler, 79 ITEM, 116 USE, 25 E
   assert.equal(report.items.flatMap(x=>x.uses).length,116);
   assert.equal(new Set(report.events.map(x=>x.code)).size,25);
   assert.equal(report.globalCallbacks.length,7);
-  assert.equal(report.summary.positivePop,65);
+  assert.equal(report.summary.explicitPositivePop,65);
+  assert.equal(report.summary.positivePop,67);
+  assert.deepEqual(report.summary.positivePopWithoutExplicitPop,[77,79]);
   // Original #64 has positive POP but explicitly forbids a showcase.
   assert.deepEqual(report.summary.positivePopNoShowcase,[64]);
   assert.equal(report.items[63].sourceNoShowcase,true);
