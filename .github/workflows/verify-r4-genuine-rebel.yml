@@ -17,6 +17,7 @@ on:
       - 'modern/tests/r4-rebel-reviewed-runtime.test.mjs'
       - 'modern/tests/r4-source-rebel-now.test.mjs'
       - 'modern/tests/b50-period-same-state-chain.test.mjs'
+      - 'modern/tests/p4-dairy-death-and-save-security.test.mjs'
       - 'modern/tests/r4-lord-*.test.mjs'
       - 'modern/tests/support/r4-lord-*.mjs'
       - 'modern/tests/r4-perl-hash-replay.test.mjs'
@@ -92,3 +93,50 @@ jobs:
           AKIMONO_TEST_LORD_FISCAL: '1'
           AKIMONO_TEST_LORD_GUARD: '1'
         run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
+
+  genuine-lord-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record actual checkout
+        run: git log -1 --format='%H %T %P'
+      - name: Install pinned browser test dependency
+        working-directory: modern
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Genuine lord residence through Chromium (no fixture or skip)
+        working-directory: modern
+        env:
+          AKIMONO_TEST_LORD_FISCAL: '1'
+          AKIMONO_TEST_LORD_GUARD: '1'
+          AKIMONO_TEST_LORD_BROWSER: '1'
+          AKIMONO_LORD_BROWSER_ARTIFACTS: 'lord-browser-evidence'
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r4-genuine-lord-browser-evidence
+          path: modern/lord-browser-evidence
+          if-no-files-found: warn
+  genuine-cow-mortality-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require actual mortality and durable legal replacement
+        working-directory: modern
+        env:
+          AKIMONO_TEST_REQUIRE_COW_DEATH: '1'
+        run: node --test --test-name-pattern='P4 actual cow mortality' tests/p4-dairy-death-and-save-security.test.mjs

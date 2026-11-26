@@ -87,6 +87,7 @@ test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal
     return;
   }
   t.diagnostic('P4 NO DEATH OBSERVED: '+opportunities+' real RNG opportunities; no death acceptance');
+  if(process.env.AKIMONO_TEST_REQUIRE_COW_DEATH==='1')assert.fail('No cow death occurred in bounded real player experiment; missing genuine evidence');
   t.skip('No cow death occurred in bounded real player experiment');
 });
 

@@ -19,6 +19,8 @@ import {calculateSourceShopPoint} from '../../src/original-period-solo-sort.mjs'
 const lordFiscal=process.env.AKIMONO_TEST_LORD_FISCAL==='1';
 const lordGuard=process.env.AKIMONO_TEST_LORD_GUARD==='1';
 assert.ok(!lordGuard||lordFiscal,'guard acceptance requires fiscal mode');
+const lordBrowser=process.env.AKIMONO_TEST_LORD_BROWSER==='1';
+assert.ok(!lordBrowser||lordGuard,'browser acceptance requires the full genuine guard path');
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
 // Reuse the actual #22 four-category, buffered 120% commerce route.
 // Different source types cover the original specialty-demand break;
@@ -99,6 +101,8 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   }});
   const snapshot=()=>p.state.world;
   const shop=()=>p.state.shop;
+  const browser=lordBrowser?await (await import('../support/r4-lord-browser.mjs')).openLordBrowser(t,p):null;
+  if(browser)await browser.assertNonLord();
   if(lordFiscal){const before=snapshot(),history=p.state.historyCommands;
     assert.equal(p.state.reviewedLordFiscal,true);assert.equal(p.state.lord,null);
     const denied=await p.post('/api/lord-inside',{expectedRevision:before.revision,taxrate:'20',devem:'0',safem:'0'});
@@ -113,7 +117,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   async function command(route,body={}){
     bounded();
     const before=snapshot();
-    const r=await p.post(route,{expectedRevision:before.revision,...body});
+    const r=browser&&route.startsWith('/api/lord-')?await browser.command(route,body):await p.post(route,{expectedRevision:before.revision,...body});
     assert.equal(r.code,'COMMITTED',JSON.stringify({route,reason:r.details?.reason,error:r.error,state:diagnostic()}));
     assert.equal(snapshot().revision,before.revision+1);
     return r;
@@ -627,6 +631,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     const all=town().army;
     await military('outdel',all+1,0,all); // original cap; no refund
     assert.equal(town().army,0);
+    if(browser)await browser.assertExposeUnavailable();
     await deny('/api/lord-expose',{expectedRevision:snapshot().revision,targetShopId:1});
     // Accumulate the full source fee plus the 2000 real city guards.
     await collectUntil(()=>town().money>=3400000&&shop().rank>=2000);
@@ -644,6 +649,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     const after=snapshot();assert.deepEqual(await p.saveAndRestart(generation++),after);
     assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(after),true);
     assert.equal(p.state.lord.canExposeTarget,false,'post-expose rank/funds gate');
+    if(browser){await browser.assertExposeUnavailable();await browser.finish();}
     t.diagnostic('R4 genuine lord guard ACCEPTED '+JSON.stringify({town:town(),rankBefore:rank,rankAfter:shop().rank,revision:after.revision,period:after.period.settledCount,fiscalCredits,generation}));
   });
 });

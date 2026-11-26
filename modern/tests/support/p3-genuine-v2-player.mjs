@@ -271,5 +271,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,rebelTime=
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);
-  return {directory,get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
+  return {directory,get url(){return url},async refresh(){state=await(await fetch(url+'/api/state')).json();return state;},get state(){return state},get fundingWorks(){return fundingWorks},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
 }
