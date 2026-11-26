@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 import {planGenuineMarketStep} from './support/genuine-market-plan.mjs';
 
-async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0,expectedTools=1}){
+async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0,expectedTools=1,saleHours=36}){
   assert.equal(p.stock(id),0,'no pre-existing package');
   assert.ok(components.every(x=>p.stock(x)>=10));
   assert.equal(p.stock(39),expectedTools);
@@ -26,8 +26,11 @@ async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0
   await p.enoughTime(600);
   const listed=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf:0,itemId:id,per:10});
   assert.equal(listed.code,'COMMITTED',JSON.stringify(listed.details??listed.error));
-  for(let n=0;!sales[id]&&n<36;n++)await p.tick(60);
-  assert.ok(sales[id]>0,JSON.stringify({id,sales,held:p.stock(id),period:p.state.world.period.settledCount}));
+  // A rare package is not expected to sell within one 36h settlement.
+  // Advance one continuous real world, never replay a failed draw or
+  // replace event losses. The caller supplies a finite source-POP window.
+  for(let n=0;!sales[id]&&p.stock(id)>0&&n<saleHours;n++)await p.tick(60);
+  assert.ok(sales[id]>0,JSON.stringify({id,saleHours,sales,losses,held:p.stock(id),rank:p.state.shop.rank,period:p.state.world.period.settledCount}));
   // Losses from a real theft/robbery EVENT are not natural sales.
   // Reconcile both from the same command receipts before checking disk.
   assert.equal(p.stock(id),10-sales[id]-(losses[id]??0));
@@ -303,9 +306,9 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
   }
   await p.use(63,0);
   assert.equal(p.state.shop.showcasecount,1);
-  await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0,expectedTools:2});
+  await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0,expectedTools:2,saleHours:2*108});
   assert.equal(p.stock(39),1);
-  await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2});
+  await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2,saleHours:2*148});
   assert.equal(p.stock(39),0);
   t.diagnostic(JSON.stringify({fundingWorks:p.fundingWorks,finalMoney:p.state.shop.money,period:p.state.world.period.settledCount}));
 });
