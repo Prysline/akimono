@@ -78,14 +78,14 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
   const quote=(id,useId)=>state.useOffers.find(x=>x.itemId===id&&x.useId===useId);
   const boundary=()=>state.secondsUntilSettlement;
   async function tick(minutes){
-    assert.ok(minutes>=1&&minutes<=60&&(crossPeriod||minutes*60<boundary()),'source period budget exhausted: '+JSON.stringify({minutes,boundary:boundary(),remaining:remaining(),exp:state.shop.exp,stock:state.shop.item,money:state.shop.money}));
+    assert.ok(minutes>=1&&minutes<=60&&(crossPeriod||minutes*60<boundary()),'source period budget exhausted: '+JSON.stringify({minutes,boundary:boundary(),remaining:state.shop?remaining():null,exp:state.shop?.exp,stock:state.shop?.item,money:state.shop?.money}));
     const before=state.world;
     const nowSeconds=before.nowSeconds,revision=before.revision;
     const priorPeriods=state.world.period.settledCount,crosses=minutes*60>=boundary();
     const result=await command('/api/advance-reviewed-time',{minutes});
     assert.equal(state.world.nowSeconds,nowSeconds+minutes*60);
     assert.equal(state.world.revision,revision+1);
-    assert.equal(state.world.period.settledCount,priorPeriods+(crosses?1:0));
+    assert.equal(state.world.period.settledCount,priorPeriods+(crosses&&before.shops.length===1?1:0));
     if(onTick)onTick(result,before);
     return result;
   }

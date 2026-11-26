@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {reviewR4IndependentCloseCandidate} from './original-r4-independent-close-candidate.mjs';
 import {projectSharedUseItem} from './shared-use-item-core.mjs';
 import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
 /** Opt-in source-reviewed local normal-time command and exact CAS reviewer.
@@ -51,9 +52,12 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword,reviewedManualCommerce:data.manual??null});
-  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
+  const closeInputs=[sources.userSource,sources.errorSource];
+  if(enableReviewedCrossPeriod&&enableReviewedFullCommerce&&closeInputs.some(s=>s!=null)&&closeInputs.some(s=>s==null))fail('incomplete original closure sources');
+  const closeReview=enableReviewedCrossPeriod&&enableReviewedFullCommerce&&closeInputs.every(s=>s!=null)?reviewR4IndependentCloseCandidate(sources):null;
+  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,r4CloseReview:closeReview}):null;
   const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k));
-  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce}):null;
+  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,includeReviewedActualCloseShop:Boolean(closeReview),includeReviewedFullCommerceClose:Boolean(closeReview)}):null;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
   // initialize the crossing CAS adapter. Retain bounded canonical digests.
@@ -67,8 +71,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     if(disk){
       if(world.revision===0&&(world.market!==null||world.shops.length!==0||period.settledCount!==0||world.period.disk!==undefined))fail('revision zero requires fresh source seed');
       if(period.settledCount>0&&world.period.state!==R4_SETTLED_STATE)fail('committed settlement state required');
-      if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);
+      const latestBoundary=Math.floor((world.nowSeconds+10800)/129600)*129600-10800;
+      if(period.settledCount>0&&(disk.hasClosed(world)?period.lastSettledBoundarySeconds>latestBoundary:period.lastSettledBoundarySeconds!==latestBoundary))fail('settled clock lineage');
+      if(period.settledCount>0&&world.shops.length===0&&!disk.hasClosed(world))fail('empty settled world requires archived local career');
     }
     validateR4PreEventPeriod({reviewed:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk)});
     if(world.market===null){
@@ -98,21 +104,25 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   function propose(world,command){
     if(!isReviewedWorldTimeCommand(command)||command.expectedRevision!==world.revision)fail('exact reviewed time command and revision');
     validate(world);
-    if(world.shops.length!==1)fail('reviewed time requires one shop');
-    validateTimeShop(world.shops[0]);
+    if(world.shops.length!==1&&!disk?.hasClosed(world))fail('reviewed time requires one shop or archived local career');
+    for(const shop of world.shops)validateTimeShop(shop);
     const input=disk?independentCandidateWorld(world):world;
-    const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod};
+    const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod,...(closeReview?{r4CloseReview:closeReview,sessionFileNames:[]}: {})};
     const crossing=disk&&projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+command.minutes*60}).crossesSettlement;
     if(disk&&(crossing||world.period.settledCount>0)){
       const candidate=(world.period.settledCount>0?projectR4SettledPeriodCandidate:projectR4CrossPeriodCandidate)(args);
       const {shops,market,period,nowSeconds,evidence}=candidate;
       if(candidate.source!==R4_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete crossing source candidate required');
-      validateTimeShop(shops[0]);
+      for(const shop of shops)validateTimeShop(shop);
       const trace={drawPolicy:evidence.drawPolicy,hashPolicy:evidence.hashPolicy,seed:evidence.seed,interpreter:evidence.interpreter,slices:evidence.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,logs:s.eventLogs}))};
       // Compact source-derived receipts for actual player acceptance. These
       // are derived from the same reviewed candidate, not a second formula.
       const itemTurnAffectedSlices=evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0);
-      const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
+      const boundary=evidence.slices.find(s=>s.preEvent.settlement)?.preEvent;
+      const closeEffect=boundary?.settlement.actualCloseEffect??null;
+      const ledgerShop=boundary?.settlement.shop??boundary?.settlement.closedShop;
+      const closureReceipt=closeEffect?{shopId:closeEffect.shop.id,reason:'経営者不在',archiveHash:boundary.closeHashEvidence,
+        deletedSessions:closeEffect.deletedSessions,remainingSessions:closeEffect.remainingSessions}:null;
       const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
         naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
         ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem,
@@ -120,13 +130,13 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
           // Preserve the exact round-trippable decimal, not a fractional JSON
           // number outside GameCore's receipt integer contract.
           costBeforeLedger:String(boundary.periodLogInput.shop.costtoday)}:{}),
-        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
+        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:ledgerShop.money,
         saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
-        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
-        expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
+        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:ledgerShop.rankingcount,
+        expAfterLedger:ledgerShop.exp,cityTaxIn:boundary.settlement.town.in}:null;
       const soldByItem={},shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
       if(normalCommerce!==null)for(const slice of evidence.slices)for(const [id,n] of Object.entries(slice.preEvent.receipt.soldByItem))soldByItem[id]=(soldByItem[id]??0)+n;
-      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem,shelfSales}:{}),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem,shelfSales}:{}),itemTurnAffectedSlices,settlementReceipt,...(closeReview?{closureReceipt}:{}),sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate),closeEffect});
     }
     const candidate=projectR4NormalTurnCandidate(args);
     if(candidate.source!==R4_NORMAL_TURN_PROJECTION||candidate.committable!==false||
@@ -156,6 +166,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
+    reviewedOwnerClosure:Boolean(closeReview),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
     ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){
