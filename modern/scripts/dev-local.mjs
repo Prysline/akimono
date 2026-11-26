@@ -56,6 +56,7 @@ const {
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
+  originalMarketListSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -103,6 +104,7 @@ const {
   originalItemDetailViewSource:'modern/tests/original-perl/core-item-view.cgi',
   originalOwnerMainSource:'modern/tests/original-perl/core-main.cgi',
   originalBuyFormSource:'modern/tests/original-perl/core-buy-view.cgi',
+  originalMarketListSource:'modern/tests/original-perl/core-shop-m.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -122,6 +124,7 @@ const streetModule=createStandardStreetModule({
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
+  originalMarketListSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -177,6 +180,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
+  originalMarketListSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
@@ -229,6 +233,7 @@ function state(){
     reviewedDiscard:streetModule.reviewedDiscard===true,
     discardOffers:world&&streetModule.reviewedDiscard?streetModule.listDiscardOffers(world):[],
     marketOffers,
+    marketPageRows:streetModule.marketPageRows??null,
     warehouse:world&&streetModule.describeWarehouse?streetModule.describeWarehouse(world):null,
     balance:world&&streetModule.describeBalance?streetModule.describeBalance(world):null,
     news:world&&streetModule.describeNews?streetModule.describeNews(world):null,

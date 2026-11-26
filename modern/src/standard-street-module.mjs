@@ -191,7 +191,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   originalBalanceViewSource=null,originalInfoViewSource=null,originalMarketSurveySource=null,
   originalNewsViewSource=null,originalNewsHtmlSource=null,originalNewsPageSource=null,originalNewsTimeSource=null,
-  originalShowcaseViewSource=null,originalItemDetailViewSource=null,originalOwnerMainSource=null,originalBuyFormSource=null,
+  originalShowcaseViewSource=null,originalItemDetailViewSource=null,originalOwnerMainSource=null,originalBuyFormSource=null,originalMarketListSource=null,
   originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
@@ -205,7 +205,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewCommerceUseLogs({helperSource:originalItemHelperSource,logSource:originalLogSource,configSource:originalConfigSource}):null;
-  const buyForm=enableReviewedFullCommerce&&originalBuyFormSource!==null?reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource}):null;
+  const buyForm=enableReviewedFullCommerce&&originalBuyFormSource!==null?reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource,marketListSource:originalMarketListSource,pageSource:originalMarketListSource===null?null:originalNewsPageSource}):null;
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewOriginalTopPrize({itemDsl,model,originalAddItemSource:originalUseSource,
@@ -742,6 +742,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     },
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
+    ...(buyForm?.pageRows?{marketPageRows:buyForm.pageRows}:{}),
     useItem,
     // R2-E: read-only view of the SAME source-reviewed USE registry that
     // GameCore executes. This is UI affordance, never a second USE preflight.

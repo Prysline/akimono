@@ -59,6 +59,7 @@ const locations=[
  ['originalItemDetailViewSource','modern/tests/original-perl/core-item-view.cgi'],
  ['originalOwnerMainSource','modern/tests/original-perl/core-main.cgi'],
  ['originalBuyFormSource','modern/tests/original-perl/core-buy-view.cgi'],
+ ['originalMarketListSource','modern/tests/original-perl/core-shop-m.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));

@@ -1,4 +1,4 @@
-import {queryOriginalNews} from '/news-query.js';
+import {queryOriginalNews,sourcePage,sourcePageNumbers} from '/news-query.js';
 const $=id=>document.getElementById(id);
 const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
@@ -495,6 +495,69 @@ function renderNews(s){
 $('news-search').addEventListener('submit',e=>{e.preventDefault();newsQuery={mode:Number($('news-mode').value),keyword:$('news-keyword').value,target:$('news-target').value,page:0};renderNews(snapshot);});
 $('news-prev').addEventListener('click',()=>{newsQuery.page--;renderNews(snapshot);});
 $('news-next').addEventListener('click',()=>{newsQuery.page++;renderNews(snapshot);});
+let marketPage=0;
+function renderMarketOffers(s){
+  if(!s)return;
+  const w=s.world,shop=s.shop,offers=s.marketOffers??[];
+  const marketBody=$('market-offers');
+  marketBody.replaceChildren();
+  const page=s.marketPageRows?sourcePage(offers.length,s.marketPageRows,marketPage):null;
+  marketPage=page?.page??0;
+  const visible=page?offers.slice(page.start,page.end+1):offers;
+  for(const id of ['market-page-top','market-page-bottom']){
+    const nav=$(id);nav.replaceChildren();nav.hidden=!page||page.pageMax===0;
+    if(!page||page.pageMax===0)continue;
+    const link=(label,target,disabled=false)=>{const button=document.createElement('button');button.type='button';button.className='text-link';button.textContent=label;button.disabled=disabled;button.addEventListener('click',()=>{marketPage=target;renderMarketOffers(snapshot);});nav.append(button);};
+    link('≪',0);link('＜',page.pagePrev,page.pagePrev<0);
+    for(const n of sourcePageNumbers(page.page,page.pageMax))link(n===page.page?'['+(n+1)+']':String(n+1),n,n===page.page);
+    link('＞',page.pageNext,page.pageNext===0);link('≫',page.pageMax);
+  }
+  if(!visible.length){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=6;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
+    tr.append(td);marketBody.append(tr);
+  }else for(const offer of visible){
+    const tr=document.createElement('tr');
+    tr.dataset.marketItemId=String(offer.itemId);
+    const cell=value=>{
+      const td=document.createElement('td');
+      td.textContent=String(value);tr.append(td);
+      return td;
+    };
+    cell(offer.name);
+    cell(offer.price===null?'—':money(offer.price));
+    cell(offer.marketStock);
+    cell(offer.owned+'／'+offer.limit);
+    cell(Number.isSafeInteger(offer.timeSeconds)?
+      conciseTimeText(offer.timeSeconds):'—');
+    const tdAction=document.createElement('td');
+    const actions=document.createElement('div');
+    actions.className='market-actions';
+    const count=document.createElement('input');
+    count.type='number';count.min='1';count.step='1';count.value=offer.form?'':'1';
+    count.setAttribute('aria-label','#'+offer.itemId+' 購買數量');
+    count.dataset.marketCount=String(offer.itemId);
+    const available=offer.form?offer.form.available:offer.canBuy;
+    count.disabled=!available;
+    if(offer.form){
+      const presets=document.createElement('select');presets.dataset.marketPreset=String(offer.itemId);presets.setAttribute('aria-label',offer.name+' 進貨數量選項');
+      for(const choice of offer.form.options){const option=document.createElement('option');option.value=String(choice.count);option.textContent=choice.label;presets.append(option);}
+      presets.disabled=!available;
+      presets.addEventListener('change',()=>{count.value='';});
+      actions.append(presets);
+      count.placeholder='自訂';
+    }
+    const button=document.createElement('button');
+    button.type='button';button.className='primary';
+    button.dataset.marketBuy=String(offer.itemId);
+    button.textContent=available?'購買':offer.form?.reason??(offer.reason?'不支援':'暫不可買');
+    button.disabled=!available;
+    button.title=offer.form?.reason??offer.reason??(offer.marketStock===0?'市場缺貨':
+      !shop?'請先開店':'來源市場或持有上限暫不可交易');
+    actions.append(count,button);tdAction.append(actions);tr.append(tdAction);
+    marketBody.append(tr);
+  }
+}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -632,53 +695,7 @@ function showState(s){
   text('market-source',w?.market?.source??'尚未初始化');
   // Prices, shelf and eligibility are derived from the same Registry used by
   // HTTP/GameCore, never a browser-side copied item whitelist.
-  const marketBody=$('market-offers');
-  marketBody.replaceChildren();
-  if(!offers.length){
-    const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=6;td.textContent=w?'目前市場沒有商品':'請先建立商店或載入存檔';
-    tr.append(td);marketBody.append(tr);
-  }else for(const offer of offers){
-    const tr=document.createElement('tr');
-    tr.dataset.marketItemId=String(offer.itemId);
-    const cell=value=>{
-      const td=document.createElement('td');
-      td.textContent=String(value);tr.append(td);
-      return td;
-    };
-    cell(offer.name);
-    cell(offer.price===null?'—':money(offer.price));
-    cell(offer.marketStock);
-    cell(offer.owned+'／'+offer.limit);
-    cell(Number.isSafeInteger(offer.timeSeconds)?
-      conciseTimeText(offer.timeSeconds):'—');
-    const tdAction=document.createElement('td');
-    const actions=document.createElement('div');
-    actions.className='market-actions';
-    const count=document.createElement('input');
-    count.type='number';count.min='1';count.step='1';count.value=offer.form?'':'1';
-    count.setAttribute('aria-label','#'+offer.itemId+' 購買數量');
-    count.dataset.marketCount=String(offer.itemId);
-    const available=offer.form?offer.form.available:offer.canBuy;
-    count.disabled=!available;
-    if(offer.form){
-      const presets=document.createElement('select');presets.dataset.marketPreset=String(offer.itemId);presets.setAttribute('aria-label',offer.name+' 進貨數量選項');
-      for(const choice of offer.form.options){const option=document.createElement('option');option.value=String(choice.count);option.textContent=choice.label;presets.append(option);}
-      presets.disabled=!available;
-      presets.addEventListener('change',()=>{count.value='';});
-      actions.append(presets);
-      count.placeholder='自訂';
-    }
-    const button=document.createElement('button');
-    button.type='button';button.className='primary';
-    button.dataset.marketBuy=String(offer.itemId);
-    button.textContent=available?'購買':offer.form?.reason??(offer.reason?'不支援':'暫不可買');
-    button.disabled=!available;
-    button.title=offer.form?.reason??offer.reason??(offer.marketStock===0?'市場缺貨':
-      !shop?'請先開店':'來源市場或持有上限暫不可交易');
-    actions.append(count,button);tdAction.append(actions);tr.append(tdAction);
-    marketBody.append(tr);
-  }
+  renderMarketOffers(s);
   // Only the selected item's verified USE actions appear in item details.
   // No action is simulated in the browser.
   text('use-boundary','已接入來源審閱的禮物卷交換、劍市地圖重複使用與部分製作配方；尚未審閱的回呼、材料取得及存檔來源可能限制其他製作。');
