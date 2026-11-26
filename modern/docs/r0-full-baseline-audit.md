@@ -12,3 +12,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 本輪補審 6 檔（詳見 [補件](r0-source-guard-economy-lock-evidence.md)）；更新為 51 有效、18 歷史、164 待補；先前 63 份仍需最終覆核。
 
 第二批補審 5 檔（[hash/CAS/history](r0-hash-cas-history-evidence.md)），本輪共 11，去重分類 54 有效、20 歷史、159 待補；既有 63 份分類仍須最終覆核。
+
+第三批補審 6 檔（[LIMIT／world codec／備份與提交規劃](r0-limit-world-codec-evidence.md)）：4 有效、2 歷史；累計 58 有效、22 歷史、153 待補（80/233），收斂後補審 17 檔，原 63 檔待最終覆核。未增加正式玩家功能證據。

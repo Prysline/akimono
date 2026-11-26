@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 54、歷史 20、待補 159。B56 重疊去重；既有 63 份分類為第一批證據；本輪另逐檔審閱 11 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 58、歷史 22、待補 153。B56 重疊去重；既有 63 份分類為第一批證據；收斂後累計另逐檔審閱 17 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -29,7 +29,7 @@
 | b63-source-all-sword-map-outcomes-cas.test.mjs | 歷史 | Perl 差分＋fixture CAS |
 | economy-model.test.mjs | 有效 | 純投影／來源公式 |
 | game-core-contract.test.mjs | 歷史 | fixture |
-| item-limit-model.test.mjs | 待補 | 未完成語義審閱 |
+| item-limit-model.test.mjs | 有效 | 來源守門／純編譯 |
 | local-original-ui-layout.test.mjs | 待補 | 未完成語義審閱 |
 | local-source-text.test.mjs | 有效 | 來源守門／記憶體負向 |
 | market-buy-core.test.mjs | 有效 | Perl Oracle / Node 差分 |
@@ -230,13 +230,13 @@
 | standard-init.test.mjs | 待補 | 未完成語義審閱 |
 | standard-street-model.test.mjs | 待補 | 未完成語義審閱 |
 | wholesale-turn-model.test.mjs | 待補 | 未完成語義審閱 |
-| world-backup-preflight.test.mjs | 待補 | 未完成語義審閱 |
-| world-commit-plan.test.mjs | 待補 | 未完成語義審閱 |
+| world-backup-preflight.test.mjs | 歷史 | 舊備份／鎖純規劃 |
+| world-commit-plan.test.mjs | 歷史 | 舊 CGI commit 純規劃 |
 | world-lock-contract.test.mjs | 歷史 | 純投影／歷史檔鎖 fixture |
-| world-one-shop-parser.test.mjs | 待補 | 未完成語義審閱 |
-| world-read-preflight.test.mjs | 待補 | 未完成語義審閱 |
+| world-one-shop-parser.test.mjs | 有效 | 來源守門／純 parser |
+| world-read-preflight.test.mjs | 有效 | 來源守門／純 parser |
 | world-shop-history-model.test.mjs | 有效 | 來源守門／純 parser |
-| world-wholesale-codec.test.mjs | 待補 | 未完成語義審閱 |
+| world-wholesale-codec.test.mjs | 有效 | 來源守門／純 codec |
 
 ## 候選新增（不列入正式基線）
 - modern/tests/r0-r1-baseline-audit.test.mjs：稽核工具；#23 已有 CI，整合候選待驗。
