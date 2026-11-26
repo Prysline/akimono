@@ -5,6 +5,8 @@
  * The original period also has prize/ledger/callbacks/events/files; running
  * this function is NEVER sufficient to settle a live WorldState period.
  */
+import {createHash} from 'node:crypto';
+import {reviewR4RebelPeriodTrigger,projectR4RebelPeriodTrigger} from './original-r4-rebel-period-trigger.mjs';
 export const B46_TERRITORY_SOURCE='core-inc-period-unled-town-solo-territory';
 const names=Object.freeze(['leader','money','in','out','develop','devem',
   'safety','safem','army','robina','robinb']);
@@ -96,6 +98,26 @@ export function projectOriginalPeriodTerritory({
     fail('exact two original rand(200) values required');
   const draws=drawMillionths.map((v,i)=>safe(v,'rand draw '+i));
   if(draws.some(v=>v>=1000000))fail('rand must be less than one');
+  const {state,nextPeople,armyCost,guardsPenalty}=territoryBeforeRebel({old,people,shopCount,taxIn,draws});
+  state.army=safe(old.army+old.robina,'town militia transfer');
+  const insolvent=state.money<0;
+  if(insolvent){
+    state.army=Math.trunc(state.army/3);
+    state.money=0;
+  }
+  // Original RebelRobin returns immediately with no recognized leader.
+  // Original unled-town branch transfers all troops to robina.
+  state.robina=state.army;
+  state.army=0;
+  return Object.freeze({
+    town:Object.freeze(state),dtPeople:nextPeople,
+    armyCost,guardsPenalty,insolvent,
+    drawsUsed:2,source:reviewed.source,scope:reviewed.scope,
+  });
+}
+
+/** Shared exact territory prefix; caller owns the source and input gates. */
+function territoryBeforeRebel({old,people,shopCount,taxIn,draws}){
   const nextPeople=safe(24000*shopCount+100000+
     old.develop*30+old.safety*20,'next population');
   const state={...old,people};
@@ -115,19 +137,72 @@ export function projectOriginalPeriodTerritory({
     'town guard budget',-Number.MAX_SAFE_INTEGER);
   state.money=safe(state.money-state.out,'town treasury',
     -Number.MAX_SAFE_INTEGER);
-  state.army=safe(old.army+old.robina,'town militia transfer');
-  const insolvent=state.money<0;
-  if(insolvent){
-    state.army=Math.trunc(state.army/3);
-    state.money=0;
+  return {state,nextPeople,armyCost,guardsPenalty};
+}
+
+export const R4_TERRITORY_CONFLICT_SOURCE='r4-original-territory-rebel-full-fragment.v1';
+const conflictReviews=new WeakSet();
+const conflictPins={periodSource:'6183e88e9dd69a16606a1064c8084e9a1411dbd5',
+  adminSource:'2164b7e5abfea7a466235a8deba1543c2cc41515',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0'};
+export function reviewOriginalTerritoryConflict({periodSource,adminSource,readSource,bootstrapMeta,reviewedRebelNow}){
+  for(const [k,sha] of Object.entries(conflictPins)){
+    const src={periodSource,adminSource,readSource}[k];
+    if(typeof src!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(src)+'\0').update(src).digest('hex')!==sha)fail('frozen conflict territory source '+k);
   }
-  // Original RebelRobin returns immediately with no recognized leader.
-  // Original unled-town branch transfers all troops to robina.
-  state.robina=state.army;
-  state.army=0;
-  return Object.freeze({
-    town:Object.freeze(state),dtPeople:nextPeople,
-    armyCost,guardsPenalty,insolvent,
-    drawsUsed:2,source:reviewed.source,scope:reviewed.scope,
-  });
+  const base=reviewOriginalPeriodTerritory({periodSource,adminSource,readSource,bootstrapMeta,includeReviewedSaleTax:true});
+  const rebel=reviewR4RebelPeriodTrigger({periodSource,reviewedRebelNow});
+  // DTusercount is captured by DataRead, NOT recomputed from post-SortDT
+  // active IDs. The latter alone determines leader membership.
+  if(!readSource.includes('$DTusercount=$cnt;')||base.sourceFieldOrder.join(',')!==names.join(','))fail('source population/membership contract');
+  const r=Object.freeze({source:R4_TERRITORY_CONFLICT_SOURCE,committable:false,base,rebel});
+  conflictReviews.add(r);return r;
+}
+export function projectOriginalTerritoryConflict({reviewed,town,dtPeople,dtUserCount,activeShopIds,taxIn,nowSeconds,
+  activeUntilSeconds,drawMillionths,randomDrawProvider=null,balJob='外敵',balName='首領'}){
+  if(!conflictReviews.has(reviewed))fail('reviewed conflict territory required');
+  if(!Number.isSafeInteger(dtUserCount)||dtUserCount<0||!Array.isArray(activeShopIds)||
+     activeShopIds.length>dtUserCount||activeShopIds.some(id=>!Number.isSafeInteger(id)||id<1)||
+     new Set(activeShopIds).size!==activeShopIds.length)fail('explicit DataRead count and post-SortDT membership required');
+  const people=safe(dtPeople,'previous population',1);
+  safe(taxIn,'source tax income');
+  if(!town||typeof town!=='object'||Array.isArray(town)||Object.keys(town).some(k=>!names.includes(k)&&k!=='people')||
+     names.some(k=>!Object.hasOwn(town,k)))fail('town field contract');
+  const old=Object.fromEntries(names.map(k=>[k,safe(town[k],'town '+k,['money','out'].includes(k)?-Number.MAX_SAFE_INTEGER:0)]));
+  if(randomDrawProvider===null?
+     (!Array.isArray(drawMillionths)||drawMillionths.length<2||drawMillionths.length>5||
+      drawMillionths.some(x=>!Number.isSafeInteger(x)||x<0||x>=1000000)):
+     (typeof randomDrawProvider!=='function'||drawMillionths!==undefined))fail('exact source territory and RebelRobin draws');
+  const consumed=[],ranges=[];
+  const take=(index,range)=>{
+    if(index!==consumed.length||index>=5)fail('conflict territory RNG cursor');
+    const sample=randomDrawProvider(index,range);
+    if(!Number.isSafeInteger(sample)||sample<0||sample>=1000000)fail('invalid conflict territory RNG sample');
+    consumed.push(sample);ranges.push(range);return sample;
+  };
+  const draws=randomDrawProvider===null?drawMillionths.slice(0,2):[take(0,200),take(1,200)];
+  const {state,nextPeople,armyCost,guardsPenalty}=territoryBeforeRebel({old,people,shopCount:dtUserCount,taxIn,draws});
+  const leaderShopExists=activeShopIds.includes(old.leader);
+  const logs=[];
+  if(old.army+old.robina<10000)logs.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
+  // The treasury may be negative here. RebelRobin observes this intermediate
+  // value before insolvency clamps cash and before militia transfer.
+  const {people:transientPeople,...triggerTown}=state;
+  const trigger=projectR4RebelPeriodTrigger({reviewed:reviewed.rebel,nowSeconds,town:triggerTown,
+    leaderShopExists,activeUntilSeconds,balJob,balName,
+    ...(randomDrawProvider===null?{randomDraws:drawMillionths.slice(2)}:{randomDrawProvider:(index,range)=>take(index+2,range)})});
+  if(randomDrawProvider!==null&&(trigger.drawsUsed!==consumed.length-2||trigger.randomDrawRanges.some((range,i)=>ranges[i+2]!==range)))fail('conflict territory RNG evidence drift');
+  const next={...trigger.town,people:transientPeople};
+  logs.push(...trigger.logs);
+  next.army=safe(next.army+next.robina,'town militia transfer');
+  const insolvent=next.money<0;
+  if(insolvent){
+    logs.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
+    next.army=Math.trunc(next.army/3);next.money=0;
+  }
+  if(leaderShopExists)next.robina=0;
+  else {next.robina=next.army;next.army=0;}
+  return Object.freeze({source:reviewed.source,committable:false,town:next,dtPeople:nextPeople,
+    activeUntilSeconds:trigger.activeUntilSeconds,eventState:trigger.eventState,leaderShopExists,
+    armyCost,guardsPenalty,insolvent,triggerMode:trigger.mode,
+    logs,randomDrawRanges:[200,200,...trigger.randomDrawRanges],drawsUsed:2+trigger.drawsUsed});
 }

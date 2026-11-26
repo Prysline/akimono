@@ -176,7 +176,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null,reviewedSubminute=false}){
+  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -227,16 +227,21 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       !Array.isArray(rebelContext.riotIds)||
       !rebelContext.town||typeof rebelContext.town!=='object'||
       !rebelContext.armyById||typeof rebelContext.armyById!=='object'||
-      !Number.isInteger(rebelNowDrawCount)||
-      rebelNowDrawCount<0||rebelNowDrawCount>2))||
+      (randomDrawProvider===null?(!Number.isInteger(rebelNowDrawCount)||rebelNowDrawCount<0||rebelNowDrawCount>2):rebelNowDrawCount!==null)))||
      (reviewed.rebel===null&&
        (rebelContext!==null||rebelNowDrawCount!==null)))
     fail('explicit rebel army/city and bounded NOW RNG sample count required');
   if(typeof reviewedSubminute!=='boolean'||typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
      (resolveNowOrder!==null&&nowHashOrderFixture!==null))
     fail('invalid EVENT draw/order adapter');
-  if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||reviewed.rebel!==null||reviewed.guildbattle!==null))
-    fail('provider requires exact normal-event RNG and no external special callbacks');
+  if(typeof reviewedExternalDraws!=='boolean'||(reviewedExternalDraws&&(randomDrawProvider===null||reviewed.rebel===null)))
+    fail('explicit source fixture external draw opt-in requires reviewed rebel');
+  if(readRebelArmy!==null&&(!reviewedExternalDraws||typeof readRebelArmy!=='function'||
+     rebelContext.riotIds.length!==0||Object.keys(rebelContext.armyById).length!==0))
+    fail('lazy army source requires explicit empty placeholder and external fixture review');
+  if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||
+     (!reviewedExternalDraws&&(reviewed.rebel!==null||reviewed.guildbattle!==null))))
+    fail('provider requires exact normal-event RNG and no external special callbacks unless explicitly reviewed fixture');
   if(randomDrawProvider===null&&(!Array.isArray(randomDraws)||randomDraws.length>100||
      randomDraws.some(x=>!unit(x)&&!(exactTicketDraws&&ticket(x)))))
     fail('exact bounded original RNG sequence required');
@@ -444,9 +449,18 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         // Sample count only partitions the shared oracle RNG: the isolated
         // source-reviewed rebel callback still verifies exact 0/1/2 draws.
         if(!nextShop||typeof nextShop.name!=='string'||
-           !Number.isSafeInteger(nextShop.army))
+           !(nextShop.army===null||Number.isSafeInteger(nextShop.army)))
           fail('rebel NOW requires original named shop and army');
-        const samples=randomDraws.slice(used,used+rebelNowDrawCount);
+        if(readRebelArmy!==null){
+          const read=readRebelArmy();
+          if(!read||typeof read!=='object'||Object.keys(read).sort().join(',')!=='armyById,riotIds'||
+             !Array.isArray(read.riotIds)||!read.armyById||typeof read.armyById!=='object')
+            fail('explicit source army read result required');
+          nextRebel={...nextRebel,armyById:{...read.armyById},riotIds:[...read.riotIds]};
+        }
+        const samples=randomDrawProvider===null?randomDraws.slice(used,used+rebelNowDrawCount):null;
+        const beforeDraws=used;
+        const beforeRanges=ranges.length;
         const callback=projectR4RebelNow({
           reviewed:reviewed.rebel,
           startSeconds,spanSeconds,activeUntilSeconds:next.rebel,
@@ -456,13 +470,20 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
             army:nextShop.army}],
           riotIds:nextRebel.riotIds,armyById:nextRebel.armyById,
           taxRate:nextRebel.taxRate,balJob:nextRebel.balJob,
-          balName:nextRebel.balName,randomDraws:samples,
+          balName:nextRebel.balName,
+          ...(samples!==null?{randomDraws:samples}:{randomDrawProvider:(localIndex,range)=>{
+            if(localIndex!==used-beforeDraws)fail('rebel shared RNG cursor mismatch');
+            draw(range);
+            return consumed[used-1];
+          }}),
         });
-        if(callback.drawsUsed!==samples.length||
-           callback.randomDrawRanges.length!==samples.length||
+        if(samples!==null)for(const range of callback.randomDrawRanges)draw(range);
+        if(callback.drawsUsed!==used-beforeDraws||
+           callback.randomDrawRanges.length!==used-beforeDraws||
+           callback.randomDrawRanges.some((range,i)=>range!==ranges[beforeRanges+i])||
+           (samples!==null&&callback.drawsUsed!==samples.length)||
            callback.returnCode!==0)
           fail('original rebel NOW callback RNG and return mismatch');
-        for(const range of callback.randomDrawRanges)draw(range);
         nextShop={...nextShop,money:callback.shops[0].money,
           army:callback.shops[0].army};
         nextRebel={...nextRebel,town:callback.town,
@@ -478,7 +499,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     }
   }
   if(reviewed.rebel!==null&&rebelNowCallbacks.length===0&&
-     rebelNowDrawCount!==0)
+     randomDrawProvider===null&&rebelNowDrawCount!==0)
     fail('unreviewed rebel NOW RNG without active event');
   if(randomDrawProvider===null&&used!==randomDraws.length)fail('unused original RNG samples');
   return Object.freeze({

@@ -14,6 +14,7 @@ import {reviewR4RebelPeriodTrigger}
 import {reviewR4RebelPeriodToNow,projectR4RebelPeriodToNow,
   R4_REBEL_PERIOD_NOW_SOURCE}
   from '../src/original-r4-rebel-period-to-now.mjs';
+import {reviewR4ArmyConflict,projectR4ArmyConflictCommand} from '../src/original-r4-army-conflict.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const paths=[
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
@@ -125,4 +126,90 @@ test('actual original missing/truncated/odd/duplicate army reads differ from saf
   assert.equal(inactive.armyRead,false);assert.equal(inactive.staged,null);
   await assert.rejects(projectRebelArmySandbox({fileReview,directory,reviewed,input:o.cases[3].input}),{code:'ENOENT'});
   assert.deepEqual(await readdir(directory),[]);
+}));
+
+test('actual army-s start/join/guard commits lead to three real rebel NOW slices on the same army file',()=>sandbox(async directory=>{
+  const conflict=oracle().conflict;
+  const conflictReview=reviewR4ArmyConflict({
+    armyCommand:await readFile(path.join(sourceDir,'pinned-army-s.cgi'),'utf8'),army:armySource,
+    calc:await readFile(path.join(sourceDir,'calc.cgi'),'utf8'),
+    config:await readFile(path.join(root,'_config.cgi'),'utf8'),
+    view:await readFile(path.join(sourceDir,'pinned-army-view.cgi'),'utf8')
+  });
+  const ids=[1,2,3,4],live=path.join(directory,'army.cgi');
+  await writeFile(live,conflict.initial);
+  const modes={rebelon:'start-rebellion',rside:'join-rebellion',lside:'dispatch-guard'};
+  let world=null;
+  for(const row of conflict.commands){
+    if(world)assert.deepEqual(world,row.input.world);
+    else world=row.input.world;
+    const bytes=await readFile(live,'utf8');
+    assert.deepEqual(parseArmyFile(bytes,ids),parseArmyFile(row.input.armyBytes,ids));
+    const command={kind:modes[row.mode],expectedRevision:world.revision,shopId:row.id,
+      ...(row.mode==='lside'?{}:{confirmation:'rebel'})};
+    const p=projectR4ArmyConflictCommand({reviewed:conflictReview,world,armyBytes:bytes,command,requireFacility:true});
+    for(const k of ['shops','town','eventState'])assert.deepEqual(p[k],row.output[k],row.mode+' '+k);
+    assert.deepEqual(p.receipt.logs,row.output.logs);
+    assert.deepEqual(parseArmyFile(p.armyBytes,ids),parseArmyFile(row.output.armyBytes,ids));
+    await stageArmySandbox({reviewed:fileReview,directory,shopIds:ids,state:parseArmyFile(p.armyBytes,ids)});
+    assert.equal(await readFile(live,'utf8'),bytes);
+    await commitArmySandbox({reviewed:fileReview,directory});
+    world={...world,revision:world.revision+1,shops:p.shops,period:{town:p.town,eventState:p.eventState}};
+  }
+  assert.equal(world.period.town.army,10300);
+  assert.equal(world.period.town.robina,800);
+  assert.equal(world.period.town.safety,5400);
+  assert.deepEqual(parseArmyFile(await readFile(live,'utf8'),ids),{armyById:{2:4000,3:4000},riotIds:[2,3]});
+  const slim=world.shops.map(({id,name,shopname,money,army})=>({id,name,shopname,money,army}));
+  let last={town:world.period.town,shops:slim,activeUntilSeconds:world.period.eventState.rebel,taxRate:0};
+  for(const [i,row] of conflict.now.entries()){
+    for(const k of ['town','shops','activeUntilSeconds','taxRate'])assert.deepEqual(last[k],row.input[k],i+' '+k);
+    const before=await readFile(live,'utf8');
+    assert.deepEqual(parseArmyFile(before,ids),parseArmyFile(row.liveBefore,ids));
+    const {result,staged}=await projectRebelArmySandbox({fileReview,directory,reviewed:reviewedNow,
+      input:{...row.input,...last},mode:'now'});
+    for(const [k,v] of Object.entries(row.output))assert.deepEqual(result[k],v,i+' '+k);
+    assert.deepEqual(parseArmyFile(staged.bytes,ids),parseArmyFile(row.stage,ids));
+    assert.equal(await readFile(live,'utf8'),before);
+    if(i>=1)await commitArmySandbox({reviewed:fileReview,directory});
+    last={town:result.town,shops:result.shops,activeUntilSeconds:result.activeUntilSeconds,taxRate:result.taxRate};
+  }
+  assert.equal(conflict.now[0].output.armyById[2],2800);
+  assert.equal(conflict.now[1].output.armyById[2],2800,'second slice rereads live, not staged army');
+  assert.equal(conflict.now[2].output.armyById[2],1600,'next transaction reads committed army');
+  assert.deepEqual(parseArmyFile(await readFile(live,'utf8'),ids),parseArmyFile(conflict.final,ids));
+}));
+
+test('actual four committed rebel NOWs preserve zero-army RIOT and transient undef DT.army until suppression',()=>sandbox(async directory=>{
+  const z=oracle().zeroRiot,ids=[1,2],live=path.join(directory,'army.cgi');
+  await writeFile(live,z.initial);
+  let prior=null;
+  for(const [i,row] of z.steps.entries()){
+    const raw=await readFile(live,'utf8');
+    assert.deepEqual(parseArmyFile(raw,ids),parseArmyFile(row.liveBefore,ids));
+    const input=prior?{...row.input,town:prior.town,shops:prior.shops,activeUntilSeconds:prior.activeUntilSeconds,taxRate:prior.taxRate}:row.input;
+    for(const k of ['town','shops','activeUntilSeconds','taxRate'])assert.deepEqual(input[k],row.input[k],i+' '+k);
+    const {result,staged}=await projectRebelArmySandbox({fileReview,directory,reviewed:reviewedNow,input,mode:'now'});
+    for(const [k,v] of Object.entries(row.output)){
+      // Original WriteArmy mutates the Perl ARMY map by removing zeros;
+      // the pure NOW return is pre-write, compare the actual staged bytes.
+      if(k!=='armyById')assert.deepEqual(result[k],v,i+' '+k);
+    }
+    assert.deepEqual(parseArmyFile(staged.bytes,ids),{armyById:row.output.armyById,riotIds:row.output.riotIds});
+    assert.deepEqual(parseArmyFile(staged.bytes,ids),parseArmyFile(row.stage,ids));
+    assert.equal(await readFile(live,'utf8'),raw);
+    await commitArmySandbox({reviewed:fileReview,directory});
+    assert.deepEqual(parseArmyFile(await readFile(live,'utf8'),ids),parseArmyFile(row.liveAfter,ids));
+    prior=result;
+  }
+  const [a,b,c,d]=z.steps;
+  assert.deepEqual(parseArmyFile(a.stage,ids),{armyById:{1:2800},riotIds:[1,2]});
+  assert.equal(a.output.shops[1].army,500);
+  assert.equal(b.output.shops[1].army,null,'original undef is distinct from zero');
+  assert.equal(b.output.town.army,5200,'zero-soldier RIOT still adds 1200 guard loss');
+  assert.equal(c.output.town.army,2800);
+  assert.equal(d.output.activeUntilSeconds,null);
+  assert.equal(d.output.drawsUsed,0);
+  assert.equal(await readFile(live,'utf8'),'\n\n');
+  assert.equal(z.final,'\n\n');
 }));

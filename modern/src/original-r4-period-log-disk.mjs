@@ -7,22 +7,26 @@ import path from 'node:path';
 import os from 'node:os';
 const pins={log:'0f9143c49d1552233f27754e3937e1cdc2740f0a',period:'6183e88e9dd69a16606a1064c8084e9a1411dbd5',dsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',config:'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0'};
 const reviews=new WeakSet();
+const armyCommandPin='6f457b78f530e37aa0ff4074358a57797f5087e2';
 const fail=m=>{throw new RangeError('R4 period log: '+m)};
 export function reviewPeriodLog(sources){
   for(const [k,sha] of Object.entries(pins)){
     const s=sources[k];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+k);
   }
+  const armyConflictLog=Object.hasOwn(sources,'armyCommand');
+  if(armyConflictLog&&(typeof sources.armyCommand!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(sources.armyCommand)+'\0').update(sources.armyCommand).digest('hex')!==armyCommandPin))
+    fail('source drift armyCommand');
   const scales={};
   for(const block of sources.dsl.split(/^@@ITEM[ \t]*(?:#.*)?\r?\n/mi)){
     const id=block.match(/^\s*no\s+(\d+)\s*(?:#.*)?$/m)?.[1];
     const scale=block.match(/^\s*scale\s+([^\r\n#]+)/m)?.[1]?.trim();
     if(id&&scale)scales[id]=scale;
   }
-  const r=Object.freeze({scales:Object.freeze(scales),committable:false});reviews.add(r);return r;
+  const r=Object.freeze({scales:Object.freeze(scales),committable:false,...(armyConflictLog?{armyConflictLog:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
-function row(time,mode,id,msg){
-  if(!Number.isSafeInteger(time)||time<1||![0,1,2].includes(mode)||!Number.isSafeInteger(id)||id<0||typeof msg!=='string'||/[\r\n\t]/.test(msg))fail('unreviewed log row');
+function row(time,mode,id,msg,armyConflictLog=false){
+  if(!Number.isSafeInteger(time)||time<1||!(armyConflictLog?[0,1,2,3]:[0,1,2]).includes(mode)||!Number.isSafeInteger(id)||id<0||typeof msg!=='string'||/[\r\n\t]/.test(msg))fail('unreviewed log row');
   return [time,mode,id,msg].join('\t')+'\n';
 }
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
@@ -51,7 +55,7 @@ export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,in
 async function regular(p){const s=await lstat(p);if(!s.isFile())fail('regular log file required');return s}
 export async function renewPeriodLogDisk({reviewed,directory,rows,nowSeconds}){
   check(reviewed);
-  if(!Number.isSafeInteger(nowSeconds)||nowSeconds<1||!Array.isArray(rows)||!rows.length||rows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('explicit accumulated log rows required');
+  if(!Number.isSafeInteger(nowSeconds)||nowSeconds<1||!Array.isArray(rows)||!rows.length||rows.some(s=>typeof s!=='string'||!(reviewed.armyConflictLog?/^\d+\t[0123]\t\d+\t[^\r\n\t]*\n$/:/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/).test(s)))fail('explicit accumulated log rows required');
   const root=await realpath(directory);
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('isolated sandbox required');
   const stage=path.join(root,'stage');if(!(await lstat(stage)).isDirectory())fail('real stage required');
@@ -94,4 +98,26 @@ export function projectCrossPeriodLogRows({reviewed,candidate}){
     }
   }
   return calls.reverse();
+}
+
+/** Source conflict command log adapter; still a noncommittable candidate.
+ * Do not widen ordinary EVENT or formal CAS log acceptance. Original
+ * PushLog(3,0,...) is reserved here for reviewed join/volunteer commands.
+ */
+export function projectReviewedArmyConflictLogRows({reviewed,candidate,nowSeconds}){
+  check(reviewed);
+  if(reviewed.armyConflictLog!==true||candidate?.source!=='r4-frozen-army-conflict-command-candidate.v1'||
+     candidate.committable!==false||candidate.receipt?.source!==candidate.source||
+     candidate.receipt.committable!==false||!Array.isArray(candidate.receipt.logs))
+    fail('reviewed army conflict candidate required');
+  const {action,logs}=candidate.receipt;
+  if(!['start-rebellion','join-rebellion','dispatch-guard'].includes(action)||
+     logs.length>(1)||((action!=='dispatch-guard')&&logs.length!==1))
+    fail('original conflict log count');
+  const mode=action==='start-rebellion'?2:3;
+  return logs.map(call=>{
+    if(!Array.isArray(call)||call.length!==3||call[0]!==mode||call[1]!==0)
+      fail('original conflict log mode');
+    return row(nowSeconds,...call,true);
+  }).reverse();
 }

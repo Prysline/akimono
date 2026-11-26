@@ -66,26 +66,28 @@ export function reviewR4RebelPeriodTrigger({periodSource,reviewedRebelNow}){
 const names=['leader','money','in','out','develop','devem','safety','safem','army','robina','robinb'];
 export function projectR4RebelPeriodTrigger({
   reviewed,nowSeconds,town,leaderShopExists,activeUntilSeconds=null,
-  randomDraws,balJob='外敵',balName='首領'
+  randomDraws,randomDrawProvider=null,balJob='外敵',balName='首領'
 }){
   if(reviewed?.source!==R4_REBEL_PERIOD_SOURCE||
      reviewed.committable!==false||reviewed.activeSeconds!==259200||
      !safe(nowSeconds)||!safe(nowSeconds+259200)||
      !town||typeof town!=='object'||Array.isArray(town)||
      Object.keys(town).sort().join(',')!==names.slice().sort().join(',')||
-     names.some(k=>!safe(town[k]))||
+     names.some(k=>['money','out'].includes(k)?!Number.isSafeInteger(town[k]):!safe(town[k]))||
      typeof leaderShopExists!=='boolean'||
      (leaderShopExists&&town.leader===0)||
      (activeUntilSeconds!==null&&(!safe(activeUntilSeconds)||activeUntilSeconds===0))||
-     !Array.isArray(randomDraws)||randomDraws.length>3||
+     (randomDrawProvider===null?(!Array.isArray(randomDraws)||randomDraws.length>3):
+       (typeof randomDrawProvider!=='function'||randomDraws!==undefined))||
      typeof balJob!=='string'||!balJob||
      typeof balName!=='string'||!balName)
     fail('unreviewed period CITY, leader, active event or RNG');
   const nextTown={...town},logs=[],ranges=[];
   let used=0,mode='none',eventUntil=activeUntilSeconds;
   const draw=range=>{
-    if(used>=randomDraws.length)fail('original period RNG exhausted');
-    const value=randomDraws[used++];
+    if(used>=3||(randomDrawProvider===null&&used>=randomDraws.length))fail('original period RNG exhausted');
+    const value=randomDrawProvider===null?randomDraws[used]:randomDrawProvider(used,range);
+    used++;
     if(!safe(value)||value>=1000000)fail('invalid original RNG sample');
     ranges.push(range);
     return value*range/1000000;
@@ -111,7 +113,7 @@ export function projectR4RebelPeriodTrigger({
       logs.push([2,0,balJob+balName+'が攻める時機をうかがっているようです。']);
     }
   }
-  if(used!==randomDraws.length)fail('unused original period RNG samples');
+  if(randomDrawProvider===null&&used!==randomDraws.length)fail('unused original period RNG samples');
   return Object.freeze({
     source:reviewed.source,committable:false,
     town:Object.freeze(nextTown),activeUntilSeconds:eventUntil,
