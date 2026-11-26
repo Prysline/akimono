@@ -879,8 +879,8 @@ test('P5 frozen Perl zero-price book and shared market-buy differential (control
   assert.equal(start.market.wholesale[12],1);
   for(const c of oracle.cases){
     const shop={...start.shops[0],item:[...start.shops[0].item],
-      money:c.moneyBefore,paytoday:123,time:c.timeBefore};
-    shop.item[12]=c.ownedBefore;
+      money:c.moneyBefore,paytoday:123,time:c.timeBefore,job:c.job};
+    shop.item[12]=c.ownedBefore;shop.item[23]=c.appraiser;
     let market=start.market;
     if(c.marketBefore===0){
       const wholesale=[...market.wholesale];wholesale[12]=0;
@@ -892,7 +892,7 @@ test('P5 frozen Perl zero-price book and shared market-buy differential (control
     if(c.marketBefore){
       assert.equal(q.price,0,c.case);
       assert.equal(q.shelf,c.sourceShelf,c.case);
-      assert.equal(q.timeSeconds,600,c.case);
+      assert.equal(q.timeSeconds,c.trueMarketTimeSeconds,c.case);
     }else{
       assert.equal(q.price,null,c.case);
       assert.equal(q.canBuy,false,c.case);

@@ -83,14 +83,14 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   if(zero&&checkedSum(owned,inMarket,'zero-price street stock')>
       safe(rule.wholesaleLimit,'reviewed zero-price wholesale limit',1))
     fail('original zero-price total street stock cap');
-  const quote=marketBuy.quote({rule,marketStock:inMarket});
+  const quote=marketBuy.quote({rule,marketStock:inMarket,shop});
   if(inMarket>0&&(!quote||typeof quote!=='object'))
     fail('missing source-reviewed market quote');
   const price=inMarket>0?
     safe(quote.price,'reviewed actual market price',zero?0:1):null;
   const timeCost=inMarket>0?
     safe(quote.timeSeconds,'reviewed actual market time'):null;
-  if(zero&&(price!==0||timeCost!==rule.marketTimeSeconds))
+  if(zero&&(price!==0||timeCost<1||timeCost>rule.marketTimeSeconds))
     fail('invalid reviewed fixed zero-price quote');
 
   // The shelf is the rank among in-stock goods in original source sort order.

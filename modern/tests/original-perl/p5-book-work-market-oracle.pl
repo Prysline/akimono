@@ -23,7 +23,8 @@ sub UnLock {1}
 sub DataRead {1}
 sub DataWrite {$writes++;1}
 sub DataCommitOrAbort {$commits++;1}
-sub CheckUserPass {1}
+our $P5_INIT;
+sub CheckUserPass {$P5_INIT->();1}
 sub CheckGuild {(0,0,0)}
 sub GetUserTaxRate {0}
 sub CheckShowCaseNumber {
@@ -111,14 +112,23 @@ die 'P5 source book compilation drift' unless
   $ITEM[13]{limit}==1 && $ITEM[13]{wslimit}==1 &&
   !$ITEM[13]{pricehalf} && !$ITEM[13]{funcbuy} &&
   $supply->{plusSeconds}[12]==36000 && $supply->{numericWholesale}[12]==1;
+my ($init)=$source=~/^\@\@FUNCINIT\s*\n(.*?)(?=^\@\@FUNCITEM)/ms;
+die 'missing original FUNCINIT' unless defined $init;
+$init=~s/\@\@ITEMNO"行家的精隨"/24/g;
+die 'unexpected FUNCINIT macros' if $init=~/\@\@/;
+$P5_INIT=eval 'sub {'.$init.'}';
+die "cannot compile original FUNCINIT: $@" unless ref($P5_INIT) eq 'CODE';
 my @cases;
 for my $case ('success','zero-money','count-clamp','held','sold-out',
               'negative-price','stale-price','stale-shelf','wrong-item',
-              'zero-count','negative-count','future-clock','time-cap'){
+              'zero-count','negative-count','future-clock','time-cap',
+              'peddle','appraiser','peddle-appraiser'){
   $DT={id=>1,status=>1,money=>100000,paytoday=>123,saletoday=>0,
     taxtoday=>0,time=>854200,rank=>5010,item=>[(0)x79],
     showcasecount=>1,showcase=>[0],price=>[0],shopname=>'P5 source'};
   $DT->{item}[62]=1;$DT->{item}[78]=5;
+  $DT->{job}=$case=~/peddle/?'peddle':'';
+  $DT->{item}[23]=1 if $case=~/appraiser/;
   $DT->{money}=0 if $case eq 'zero-money';
   $DT->{time}=$NOW_TIME+1 if $case eq 'future-clock';
   $DT->{time}=$NOW_TIME-$MAX_STOCK_TIME-1 if $case eq 'time-cap';
@@ -137,7 +147,9 @@ for my $case ('success','zero-money','count-clamp','held','sold-out',
   my $quotedShelf=$shelf+($case eq 'stale-shelf'?1:0);
   my $requested=$case eq 'count-clamp'?99:$case eq 'zero-count'?0:$case eq 'negative-count'?-1:1;
   my $requestedItem=$case eq 'wrong-item'?10:13;
-  $TIME_SEND_ITEM=600;
+  $TIME_SEND_ITEM=1200;
+  $P5_INIT->();
+  $TIME_SEND_ITEM=int($TIME_SEND_ITEM/2);
   my $expectedTime=GetTimeDeal(0,13,1);
   my ($taxrate,$tax)=GetSaleTax(13,1,0,0);
   $TIME_SEND_ITEM=1200;$last_error='';
@@ -151,6 +163,7 @@ for my $case ('success','zero-money','count-clamp','held','sold-out',
   no warnings 'uninitialized';
   push @cases,{
     case=>$case,itemId=>$requestedItem,requestedCount=>$requested,
+    job=>$DT->{job},appraiser=>0+$DT->{item}[23],
     marketShelf=>$quotedShelf,sourceShelf=>$shelf,expectedPrice=>$quotedPrice,
     trueMarketPrice=>0,trueMarketTimeSeconds=>0+$expectedTime,
     taxRate=>0+$taxrate,tax=>0+$tax,actualTax=>$rendered?0+$item::BUY->{tax}:undef,

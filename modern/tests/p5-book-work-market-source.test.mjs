@@ -8,12 +8,13 @@ test('P5 frozen Perl zero-price book market transaction and total street cap',t=
     cwd:fileURLToPath(new URL('./original-perl/',import.meta.url)),
     encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024,
   }));
-  assert.equal(oracle.cases.length,13);
+  assert.equal(oracle.cases.length,16);
   for(const c of oracle.cases){
-    const accepted=['success','zero-money','count-clamp','time-cap'].includes(c.case);
+    const accepted=['success','zero-money','count-clamp','time-cap','peddle','appraiser','peddle-appraiser'].includes(c.case);
+    const seconds=({peddle:300,appraiser:450,'peddle-appraiser':225})[c.case]??600;
     assert.equal(c.accepted,accepted,c.case);
     assert.equal(c.trueMarketPrice,0,c.case);
-    assert.equal(c.trueMarketTimeSeconds,600,c.case);
+    assert.equal(c.trueMarketTimeSeconds,seconds,c.case);
     assert.equal(c.tax,0,c.case);
     assert.equal(c.taxRate,0,c.case);
     assert.equal(c.money,c.moneyBefore,c.case);
@@ -25,7 +26,7 @@ test('P5 frozen Perl zero-price book market transaction and total street cap',t=
       assert.equal(c.marketBefore,1,c.case);
       assert.equal(c.marketStock,0,c.case);
       assert.equal(c.actualTax,0,c.case);
-      assert.equal(c.time,Math.max(c.timeBefore,897400-259200)+600,c.case);
+      assert.equal(c.time,Math.max(c.timeBefore,897400-259200)+seconds,c.case);
       assert.equal(c.commits,1,c.case);
       assert.equal(c.writes,1,c.case);
       assert.deepEqual(c.stages,['item-init','global-after-account','source-market-write'],c.case);
@@ -33,7 +34,7 @@ test('P5 frozen Perl zero-price book market transaction and total street cap',t=
       assert.equal(c.logs[0][0],0,c.case);
       assert.equal(c.logs[0][1],1,c.case);
       assert.match(c.logs[0][2],/資金賺取方法/);
-      assert.match(c.logs[0][2],/600s/);
+      assert.ok(c.logs[0][2].includes(seconds+'s'),c.case);
     }else{
       assert.equal(c.stock,c.ownedBefore,c.case);
       assert.equal(c.marketStock,c.marketBefore,c.case);
