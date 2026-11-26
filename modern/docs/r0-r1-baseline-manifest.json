@@ -7322,17 +7322,41 @@
       "path": "modern/tests/original-perl/original-r4-period-backup-tail.t",
       "sha": "8c0a38c4209ef5aa4d508c1b9bafdb938ef58983",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle（真隔離三代備份與 session mtime）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi",
+      "assertions": "L10–15 probe 成功與兩期；L17–34 play 三代輪替；L35–49 expired/edge strict cutoff、每期 MakeGuildFile call、bare .cgi/CAPS.CGI/note.txt 保留。",
+      "executionPath": "同一 Perl process 兩期執行 frozen backup tail，真隔離磁碟",
+      "risk": "備份世代、session expiry、關店後尾段順序與磁碟/持久狀態界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與 probe/source 審閱；Perl .t 直接斷言 play，其他四檔有 Node 差分；GetPath 注入、MakeGuildFile recorder；未測缺檔/失敗/原子性。不是完整 period/正式備份。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
+          "line": 15
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-backup-tail-probe.pl",
+          "sha": "5247dc34ff07db135455558c0502d57ee2944b6c"
+        }
+      ],
+      "fixtures": "完整三代五檔，固定 NOW800000/929600；人工 active 和 mtime。",
+      "limitations": "Perl .t 直接斷言 play，其他四檔有 Node 差分；GetPath 注入、MakeGuildFile recorder；未測缺檔/失敗/原子性。不是完整 period/正式備份。",
+      "reviewScope": "完整測試／對應 probe／period tail 及 Node 純投影"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-dragon-chain.t",
@@ -7494,17 +7518,73 @@
       "path": "modern/tests/original-perl/original-r4-period-full-tail-close.t",
       "sha": "67008678e70d0046027477d92c21b21388cc54b8",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle（同程序兩期真關店與隔離備份尾段）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi；modern/tests/original-perl/write.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L10–15 probe 成功兩期；L17–34 cutoff、old/edge session、MakeGuildFile 呼叫及 play 跨代輪替；L35–42 首期活躍/第二期關店 prune、closed status0、第二期 draws4。",
+      "executionPath": "frozen period prefix＋backup tail 同程序執行兩次，真隔離文件",
+      "risk": "備份世代、session expiry、關店後尾段順序與磁碟/持久狀態界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與 probe/source 審閱；原版真 CloseShop session unlink 與 drapay read/unlink、三代磁碟 rotation；archive/公會/記錄 IO 仍 recorder，DataWrite 未跑；未在 .t 直接比對所有五檔/close payload，Node 差分另列。無正式玩家/時間/RNG/HTTP/CAS/v2 或原子存檔。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
+          "line": 35
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-full-tail-close-probe.pl",
+          "sha": "cb942ca6c6b8a2441e65e326b1e1df566a8f19f2"
+        }
+      ],
+      "fixtures": "人工 stock/EXP/guild/activeFiles/mtime；NOW1000000/1129600、固定 rand tape。",
+      "limitations": "原版真 CloseShop session unlink 與 drapay read/unlink、三代磁碟 rotation；archive/公會/記錄 IO 仍 recorder，DataWrite 未跑；未在 .t 直接比對所有五檔/close payload，Node 差分另列。無正式玩家/時間/RNG/HTTP/CAS/v2 或原子存檔。",
+      "reviewScope": "完整測試／對應 probe／period tail 及 Node 純投影"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
@@ -13557,17 +13637,93 @@
       "path": "modern/tests/r4-period-full-tail-close-chain.test.mjs",
       "sha": "46a81e2349e9e52034abc058be6d48c32b886a8f",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（兩期真關店＋真隔離備份尾段）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi；modern/tests/original-perl/write.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L56–116 opt-in phase metadata、兩期 shop/town/people/guild/close/closed ref/tech loss、五檔三代/mtime/cutoff/MakeGuildFile、無提交、不變 input；395200/524800 cutoff，首期 old.cgi、次期 edge.cgi；第二期 shop null；L117–129 重跑；L130–159 無 opt-in、null snapshot、NOW mismatch、partial files、forged reviewer。",
+      "executionPath": "同一 Perl process frozen period prefix＋backup tail eval，真 CloseShop/SortDT/drapay/session/backup；Node 每期 Oracle input，純投影",
+      "risk": "備份世代、session expiry、關店後尾段順序與磁碟/持久狀態界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與 probe/source 審閱；SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog/MakeGuildFile recorder。備份的是人工 prewritten play/log/guildbal，不是 DataWrite 序列化或關店後實際 log；Node 不寫磁碟、不自行串接下一期。未直接斷言 close archive payload、close session 清單、drawsUsed（Perl probe/ .t 有部份 guard）；兩個 post-tech imports 未直接使用。EVENT 空；非正式時間/RNG/玩家/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
+          "line": 25
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-full-tail-close-probe.pl",
+          "sha": "cb942ca6c6b8a2441e65e326b1e1df566a8f19f2"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-period-backup-tail.mjs",
+          "sha": "dea341ab09cf7d96e72d706c4678aed7944f65e9"
+        },
+        {
+          "path": "modern/src/original-r4-post-period-tech-loss.mjs",
+          "sha": "7f77f5178dc5cec18114488ccfc3229ddc019acc"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        }
+      ],
+      "fixtures": "NOW1000000/1129600、payout500/1000、固定4+4/4 draws；人工 stock/EXP/guild、兩個獨立 session/subdata 目錄；三代五檔，activeFiles 每期預先人工寫入。",
+      "limitations": "SetUserData/WriteErrorLog/EditGuildMoney/WriteLog/PushLog/MakeGuildFile recorder。備份的是人工 prewritten play/log/guildbal，不是 DataWrite 序列化或關店後實際 log；Node 不寫磁碟、不自行串接下一期。未直接斷言 close archive payload、close session 清單、drawsUsed（Perl probe/ .t 有部份 guard）；兩個 post-tech imports 未直接使用。EVENT 空；非正式時間/RNG/玩家/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／period tail 及 Node 純投影"
     },
     {
       "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
@@ -14656,17 +14812,45 @@
       "path": "modern/tests/r4-source-period-backup-tail.test.mjs",
       "sha": "dc4e749d9ecf0d39dc7225b7c481ce97d8241384",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（真隔離備份／純投影）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi",
+      "assertions": "L23–67 兩期五檔三代、刪除與保留 session 名稱/mtime、cutoff、MakeGuildFile 次數、非提交、input 不變；L68–74 跨 probe 重跑；L75–92 source marker drift；L93–112 七無效 fixture 與 forged committable。",
+      "executionPath": "原版 period.cgi backup tail 原文 eval；Perl tempfile 實際 rename/copy/stat/unlink；Node 純投影",
+      "risk": "備份世代、session expiry、關店後尾段順序與磁碟/持久狀態界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與 probe/source 審閱；Perl GetPath 注入，MakeGuildFile recorder；Node 不寫磁碟。未測 missing/partial generations、rename/copy/unlink failures、並發或大檔；Node 僅 marker reviewer 非完整 SHA、每檔4096字元/50 sessions 限制。對缺世代原版 mkdir 可能產生空目錄，Node null 與實際空目錄未驗差分。不證正式玩家/時鐘/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-backup-tail-probe.pl",
+          "sha": "5247dc34ff07db135455558c0502d57ee2944b6c"
+        },
+        {
+          "path": "modern/src/original-r4-period-backup-tail.mjs",
+          "sha": "dea341ab09cf7d96e72d706c4678aed7944f65e9"
+        }
+      ],
+      "fixtures": "三個已存在且五檔完整世代、人工 UTF-8 active；NOW800000/929600、mtime195199/195200、七 session；固定7天。",
+      "limitations": "Perl GetPath 注入，MakeGuildFile recorder；Node 不寫磁碟。未測 missing/partial generations、rename/copy/unlink failures、並發或大檔；Node 僅 marker reviewer 非完整 SHA、每檔4096字元/50 sessions 限制。對缺世代原版 mkdir 可能產生空目錄，Node null 與實際空目錄未驗差分。不證正式玩家/時鐘/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／period tail 及 Node 純投影"
     },
     {
       "path": "modern/tests/r4-source-period-shop-expiry.test.mjs",
@@ -41144,14 +41328,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 177,
-      "待補": 24
+      "有效": 181,
+      "待補": 20
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 146,
+    "currentSessionReviewed": 150,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -41223,7 +41407,8 @@
     "modern/docs/r0-r4-dragon-period-evidence.md",
     "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
     "modern/docs/r0-r4-real-close-evidence.md",
-    "modern/docs/r0-r4-close-shop-archive-evidence.md"
+    "modern/docs/r0-r4-close-shop-archive-evidence.md",
+    "modern/docs/r0-r4-period-backup-full-tail-evidence.md"
   ],
   "integrationCiHistory": [
     {
