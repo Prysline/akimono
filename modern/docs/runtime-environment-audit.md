@@ -63,3 +63,15 @@ npm run check:env 驗 Node major >=22、原生 perl -MConfig 指紋、JSON::PP �
 ## 驗證紀錄
 
 本批新增環境正向與缺 PATH 的負向測試；CI exact HEAD 待取得。已在獨立 Linux 工具環境確認 Node v22.16.0、Perl v5.40.1/x86_64-linux-gnu-thread-multi、上述常用 modules、prove、mkfifo 可用；本機 git clone/ls-remote DNS 失敗，無完整 repo，不能宣稱全套本機驗證或 Windows 實機已通過。
+
+## D18 更新：D14–D17 引入的依賴（尚未宣告功能 CI 通過）
+
+基準 D17 HEAD f3f6597f7fa486174d5c3b72da2783e04d622c02 / tree b6c057d725fdfb1a62b2f80e0bff489cf14ea346。上方 D9 清冊、數量與 D10 環境驗證紀錄保留為歷史快照，不作為現況計數。
+
+- D16：src/original-r4-use-exp-hash-replay.mjs:38–78 的 resolveR4UseExpOrder 已接入 reviewed normal-time USE 交易，非僅 Oracle。由 standard-street-module 提供審閱後的 resolver、shared-use-item-core 呼叫；只有熟練度上限重新分配遇平手時需要 native Perl。以現行 canonical EXP wire 的數字鍵次序重建 hash、命令導出 seed、固定 perturb=0；剔除繼承的 PERL* 變數，檢查實際子程序 Config interpreter 與啟動環境相同。歷史重播走相同 GameCore。不得用 JS sort 破除平手，也不宣稱 seed 是歷史 CGI 的原值。
+- D14：src/original-r4-manual-commerce-events.mjs:59–71 的 orderManualCommerceActivation 亦直接呼叫 Perl，但正式 command 尚未接線；來源候選與手動 EVENT 差分不能冒充已實作的啟動權限或完整事件 runtime。稽核工具分列 candidate-manual-activation-native-not-live。
+- D16：dev-local 先保留 checkRuntimeEnvironment 回傳 interpreter，傳入 USE resolver，再核對實際 checkpoint fingerprint 的 interpreter；若不一致，在 save store 初始化前拒絕。原 HMAC / retained history / fingerprint 皆保留。
+- D17：購買/陳列訊息所需雙層語系字典為靜態來源文字（新增 pinned-core-zh_TW.po，blob a512f6887cee214e66828769a382ad2b18bcd5b3；另讀原有 locale/zh_TW.po 與 custom/inc-locale.cgi），不是新的 Perl executable 或 Maketext runtime 呼叫。staged commerce mode 綁定這些來源 pins。預設模式及完整多商店/USE/其他日誌仍須依實際接線審閱。
+- D13 exact tree 已有 Node 1356/1356、Perl 2456/2456、0 skip/fail；C 窗 45892423052/job140158051496 以 D13 exact checkout 和獨立 strict 原測試 3/3 通過。D14–D17 仍以各自 exact tree 的實際 CI 為準，不能將 D13 綠燈移植到新版。新增依賴後須重跑 npm run audit:runtime-deps；本批未取得完整本機 checkout，未宣稱重新計數或 Windows 全套通過。
+
+長期移除 Perl 的退出條件增加 EXP tie ordering 與 manual activation 的獨立版本化差分、USE/CAS/雙世代及歷史重播驗證；本批不更換 backend、不放寬 checkpoint。D14–D17 來源/entrypoint 改動會改既有 fingerprint，舊 authenticated checkpoint 的跨版本遷移仍需另行審閱。

@@ -14,8 +14,9 @@ const rel=p=>relative(root,p).split(sep).join('/');
 const direct=/\b(?:execFile|spawn|fork|exec)(?:Sync)?\s*\(\s*['"]perl(?:\.exe)?['"]/;
 const perlMarker=/['"\x60]perl(?:\.exe)?['"\x60]|PERL_HASH_SEED|PERL_PERTURB_KEYS/;
 const httpMarker=/dev-local\.mjs|genuinePlayer|genuine-v2-player/;
-const nativeModules=new Set(['src/runtime-environment.mjs','src/reviewed-history-checkpoint-store.mjs','src/original-r4-perl-hash-replay.mjs']);
+const nativeModules=new Set(['src/runtime-environment.mjs','src/reviewed-history-checkpoint-store.mjs','src/original-r4-perl-hash-replay.mjs','src/original-r4-use-exp-hash-replay.mjs']);
 const pendingModules=new Set(['src/original-r4-close-archive-hash.mjs','src/original-r4-close-shop-effects.mjs']);
+const pendingManualModules=new Set(['src/original-r4-manual-commerce-events.mjs']);
 const paths=['src','scripts','tests'].flatMap(dir=>walk(join(root,dir)));
 const js=paths.filter(p=>/\.(mjs|js|cjs)$/.test(p));
 const hits=[];
@@ -29,11 +30,12 @@ for(const p of js){
     if(perlMarker.test(line))markerLines.push(i+1);
     if(httpMarker.test(line))httpLines.push(i+1);
     if(/node:child_process|(?:\bexecFile|\bspawn|\bfork)(?:Sync)?\s*\(/.test(line))processLines.push(i+1);
-    if(/checkRuntimeEnvironment|readNativePerlInterpreter|fingerprintReviewedCheckpointRuntime|resolveR4(?:Command)?HashOrders|resolveR4CloseArchiveHashOrders/.test(line))environmentLines.push(i+1);
+    if(/checkRuntimeEnvironment|readNativePerlInterpreter|fingerprintReviewedCheckpointRuntime|resolveR4(?:Command)?HashOrders|resolveR4CloseArchiveHashOrders|resolveR4UseExpOrder|orderManualCommerceActivation/.test(line))environmentLines.push(i+1);
   });
   if(!callLines.length&&!markerLines.length&&!httpLines.length&&!processLines.length&&!environmentLines.length)continue;
   const category=nativeModules.has(name)?'runtime-native-or-fingerprint':
     pendingModules.has(name)?'candidate-close-native-not-live':
+    pendingManualModules.has(name)?'candidate-manual-activation-native-not-live':
     name==='scripts/dev-local.mjs'?'runtime-entry':
     name==='scripts/check-env.mjs'?'environment-diagnostic':
     name.startsWith('scripts/demo-')?'demo-review':
