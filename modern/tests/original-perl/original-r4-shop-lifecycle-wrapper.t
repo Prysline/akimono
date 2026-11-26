@@ -383,7 +383,7 @@ for my $action(qw(restart cls)){
   my($aliceToken,$bobId)=two_shop_case();
   my %files=(
     "$DATA_DIR/army.cgi"=>"1,11,$bobId,22\n1,$bobId\n",
-    "$COMMON_DIR/guildbal.cgi"=>"7\tmoney\t12345\tin\t234\tout\t12\n",
+    "$DATA_DIR/guildbal.cgi"=>"7\tmoney\t12345\tin\t234\tout\t12\n",
     "$COMMON_DIR/7.pl"=>"fixture role file: intentionally opaque to lifecycle wrapper\n",
     "$COMMON_DIR/entry.cgi"=>"1,".($NOW_TIME+60).",$MYDIR,1,7\n2,".($NOW_TIME+60).",other,1,7\n3,".($NOW_TIME-1).",$MYDIR,1,7\n",
     "$COMMON_DIR/drapay-$MYDIR.cgi"=>"1\t90\n$bobId\t30\n",
