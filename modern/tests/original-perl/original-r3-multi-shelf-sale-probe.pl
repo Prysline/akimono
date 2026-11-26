@@ -59,7 +59,18 @@ my @cases=(
 # historical 16-case acceptance set. The second unlike type stops the
 # original demand-denominator scan, but does not stop sales.
 if(@ARGV){
-  die 'expected --mixed-type-audit' unless @ARGV==1 && $ARGV[0] eq '--mixed-type-audit';
+  die 'expected --mixed-type-audit or --lord-tax-audit' unless @ARGV==1 && ($ARGV[0] eq '--mixed-type-audit'||$ARGV[0] eq '--lord-tax-audit');
+  if($ARGV[0] eq '--lord-tax-audit'){
+    @cases=();
+    for my $shelves (2,4,8){
+      for my $policy ([0,0,0],[20,0,0],[40,1,0],[40,2,0],[40,2,1]){
+        my($tax,$mode,$rebel)=@$policy;
+        my @prices=map {$_%2==0?600:1800} 0..$shelves-1;
+        push @cases,{name=>"lord-tax-$shelves-$tax-$mode-$rebel",shown=>[(40)x$shelves],prices=>\@prices,
+          stocks=>{40=>40},draws=>[(500000)x24],taxRate=>$tax,taxMode=>$mode,rebel=>$rebel};
+      }
+    }
+  }else{
   @cases=(
     {name=>'mixed-type-break-positive-draw',shown=>[10,40],
      prices=>[5000,1200],stocks=>{10=>10,40=>10},
@@ -74,6 +85,7 @@ if(@ARGV){
      prices=>[5000,1200,0,1500,1200,0,1500,1200],stocks=>{10=>10,40=>10,41=>10},
      draws=>[0,500000,0,500000,0,500000,0]},
   );
+  }
 }
 my @rows;
 for my $case (@cases){
@@ -99,8 +111,8 @@ for my $case (@cases){
   $main::ITEM[79]{cost}=$voucher->{cost};
   $main::ITEM[63]{cost}=0;
   $main::MAX_ITEM=79;$main::DTpeople=500000;$main::MAX_USER=50;
-  $main::SALE_SPEED=12;$main::POP_DOWN_RATE=5;$main::DTTaxrate=0;
-  %main::DTevent=();
+  $main::SALE_SPEED=12;$main::POP_DOWN_RATE=5;$main::DTTaxrate=$case->{taxRate}//0;
+  %main::DTevent=$case->{rebel}?(rebel=>1259200):();
   my @item=(0)x79;
   for my $id(keys %{$case->{stocks}}){
     $item[$id-1]=$case->{stocks}{$id};
@@ -113,7 +125,7 @@ for my $case (@cases){
     item=>\@item,showcasecount=>scalar(@{$case->{shown}}),
     showcase=>[@{$case->{shown}}],price=>[@{$case->{prices}}],
     trush=>0,saletoday=>0,taxtoday=>0,costtoday=>0,
-    itemtoday=>{},itemyesterday=>{},taxmode=>0,
+    itemtoday=>{},itemyesterday=>{},taxmode=>$case->{taxMode}//0,
   });
   @main::DTwholestore=();
   my $span=1800;
@@ -124,6 +136,7 @@ for my $case (@cases){
   my ($shop,$used)=($main::DT[0],$main::B35_USED);
   push @rows,{
     name=>$case->{name},shown=>$case->{shown},prices=>$case->{prices},
+    (exists $case->{taxRate}?(taxRate=>$case->{taxRate},taxMode=>$case->{taxMode},rebel=>$case->{rebel}):()),
     startingStocks=>$case->{stocks},
     soldByItem=>{map{$_=>0+($shop->{itemtoday}{$_}//0)}(10,40,41)},
     stockAfter=>{map{$_=>0+$shop->{item}[$_-1]}(10,40,41)},

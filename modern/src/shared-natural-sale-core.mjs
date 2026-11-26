@@ -1,3 +1,4 @@
+import {assertR4LordSaleTaxContext,projectR4LordSaleTax} from './original-r4-lord-sale-tax.mjs';
 import {isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** R3 shared frozen inc-turn natural-sale arithmetic.
  * Works on one to eight source-reviewed shelves of one source shop.
@@ -20,6 +21,7 @@ export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
   popDownRate=5,baseUpkeep=0,priorDemandShop=null,reviewedSignedCash=false,recordShelfSales=false,
+  lordTaxContext=null,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -33,6 +35,8 @@ export function projectSharedNaturalSale({
      !Array.isArray(randomDraws)||randomDraws.length>121||
      randomDraws.some(n=>!Number.isSafeInteger(n)||n<0||n>=1000000))
     fail('invalid source shop or draws');
+  // Explicit source-only opt-in. No existing runtime caller supplies it.
+  if(lordTaxContext!==null)assertR4LordSaleTaxContext(lordTaxContext,shop.taxmode);
   const shelfCount=shop.showcase.length;
   if(shelfCount>1&&(rule!==null||!saleRules||
      typeof saleRules!=='object'||popularOverride!==null))
@@ -171,7 +175,8 @@ export function projectSharedNaturalSale({
       let taxDown=1;
       if(taxRate<0){taxDown=taxRate+1;taxRate=0;}
       taxRate=Math.min(99,Math.trunc(taxRate*taxDown+0.5));
-      const tax=int(Math.trunc(proceeds*taxRate/100),'sale tax');
+      const tax=int(lordTaxContext===null?Math.trunc(proceeds*taxRate/100):
+        projectR4LordSaleTax({context:lordTaxContext,count:take,gross:proceeds,basePrice:r.unitPrice}).tax,'sale tax');
       money=int(money+proceeds-tax,'money after sale',cashMin);
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
