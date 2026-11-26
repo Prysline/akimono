@@ -879,6 +879,7 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
         nowSeconds:result.nowSeconds,armyBytes:result.stagedArmyBytes,receipt:{action:command.kind,source:result.source,sourceTrace}},logRows:projection.externalLogs(result)});
       const runtimeAfter={...runtimeBefore,shops:finalized.shops,market:finalized.market,period:finalized.period,nowSeconds:result.nowSeconds,revision:world.revision+1};
       projection.validate(runtimeAfter);
+      assert.throws(()=>projection.finalize({before:runtimeBefore,command,applied:{shops:result.shops,market:result.market,period:result.period,nowSeconds:result.nowSeconds,armyBytes:'1,9999\n1\n',receipt:{action:command.kind,source:result.source,sourceTrace}},logRows:projection.externalLogs(result)}),/staged bytes mismatch/);
       for(const n of ['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])
         assert.equal(runtimeAfter.period.disk.live[n].bytes,sourceDisk.live[n],'immutable projection '+n);
       assert.equal(runtimeAfter.period.disk.live['lasttime.cgi'].mtime,sourceDisk.lasttimeMtime);
@@ -960,4 +961,46 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
       await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
     }finally{await rm(directory,{recursive:true,force:true});}
   }
+});
+
+// Actual source-approved commands establish the predecessor; the fabricated
+// successor is used only to prove rejection at the direct CAS boundary.
+test('R4 opt-in external CAS refuses structurally valid rebel assets without acquisition provenance',async()=>{
+  const crossStreet=createStandardStreetModule({...source,originalNewSource:await readPerl('new.cgi'),
+    originalCustomSource:await readPerl('pinned-custom.cgi'),originalLogSource:await readPerl('pinned-log.cgi'),
+    originalArmyViewSource:await readPerl('pinned-army-view.cgi'),originalArmyCommandSource:await readPerl('pinned-army-s.cgi'),
+    originalArmyFileSource:await readPerl('pinned-army.cgi'),
+    enableReviewedNormalTime:true,enableReviewedCrossPeriod:true,enableReviewedRebelTime:true});
+  const seed=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({periodSource:source.originalPeriodSource,
+    adminSource:source.originalAdminInitSource,readSource:source.originalDataReadSource,
+    writeSource:source.originalDataWriteSource,reviewedB41:crossStreet.reviewedB41}));
+  const repository=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+    worldId:'r4-external-cas-denial',streetId:crossStreet.id,nowSeconds:1025980,period:seed}),streetModule:crossStreet});
+  function command(kind,fields={}){
+    const result=executeMemoryCommand({repository,streetModule:crossStreet,command:{kind,expectedRevision:repository.read().revision,...fields}});
+    assert.equal(result.ok,true,JSON.stringify(result.details));return result;
+  }
+  command('initialize-source-market');
+  command('open-shop',{shopId:1,ownerName:'來源店主',shopName:'軍事拒絕實測'});
+  command('advance-reviewed-world-time',{minutes:1});
+  const before=repository.read();
+  assert.equal(before.period.settledCount,1);
+  assert.equal(crossStreet.describeConflict(before).canStart,false);
+  const attack={kind:'start-rebellion',expectedRevision:before.revision,shopId:1,confirmation:'rebel'};
+  assert.equal(applyGameCommand({world:before,streetModule:crossStreet,command:attack}).ok,false);
+  const forged=structuredClone(before);
+  forged.revision++;
+  forged.period.eventState.rebel=forged.nowSeconds+259200;
+  forged.period.disk.live['army.cgi']={bytes:'1,4000\n1\n',mtime:forged.nowSeconds};
+  const play=forged.period.disk.live['play.cgi'].bytes.split('\n');
+  play[3]=Object.entries(forged.period.eventState).flat().join(',');
+  forged.period.disk.live['play.cgi'].bytes=play.join('\n');
+  assert.equal(crossStreet.validateReviewedWorldTimeState(forged),true,'shape alone is not authority');
+  const rejected=repository.compareAndSwap({expectedRevision:before.revision,nextWorld:forged,command:attack});
+  assert.equal(rejected.ok,false);
+  assert.deepEqual(repository.read(),before);
+  assert.throws(()=>createSourceReviewedMemoryWorldAdapter({initialWorld:forged,streetModule:crossStreet}),/provenance/);
+  const injected={...attack,armyBytes:'1,4000\n1\n'};
+  assert.equal(applyGameCommand({world:before,streetModule:crossStreet,command:injected}).ok,false);
+  assert.deepEqual(repository.read(),before);
 });

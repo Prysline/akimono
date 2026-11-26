@@ -23,6 +23,7 @@ const sha=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
 const nullableSha=s=>s===null||sha(s);
 const armyDigest=world=>{const bytes=world.period?.disk?.live?.['army.cgi']?.bytes;return bytes===undefined?null:digest(bytes)};
 function externalTrace(t,result){
+  if(!Array.isArray(t.slices)||t.slices.some(s=>!sha(s.stateSha256)||!Array.isArray(s.periodLogs)||!Array.isArray(s.logs)))fail('complete external slice effects required');
   const trace={drawPolicy:t.drawPolicy,hashPolicy:t.hashPolicy,seed:t.seed,interpreter:t.interpreter,
     dataReadOrder:t.dataReadOrder,liveArmySha256:t.liveArmySha256,
     slices:t.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,periodRebel:s.periodRebel,
