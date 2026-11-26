@@ -4,13 +4,14 @@ import {independentCandidateWorld} from './original-r4-independent-world-disk.mj
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
 import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
+import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
  * Supplies DSL/source-backed item rules, market ordering/wire format, shop
  * creation and showcase constraints to the shared GameCore.
  * R2-A: common market-buy accounting runs in market-buy-core.mjs, NOT here.
  * Standard Street @@FUNCBUY voucher threshold is source-reviewed; buyers
- * above the threshold fail closed until its actual effect is implemented.
+ * above the threshold fail closed in legacy mode; full commerce requires a pinned effect.
  * R2-B: compiled ordinary market rules come from source ITEM data.
  * R2-C: source buying has one formal command and one GameCore engine; no legacy projections.
  * Original Perl is never evaluated by live Node game commands.
@@ -356,7 +357,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       itemSource:originalBuyItemSource,
       globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedFullCommerce,
     }):null;
+  const reviewedVoucher=enableReviewedFullCommerce&&buyRegistry&&originalItemHelperSource!==null?
+    reviewOriginalWholesaleVoucher({itemDsl,buySource:originalBuySource,helperSource:originalItemHelperSource}):null;
+  if(reviewedVoucher&&(giftMap.limits[78]?.limit!==reviewedVoucher.limit||giftMap.limits[78]?.wslimit!==0))bad('reviewed #79 capacity');
   const marketBuy=Object.freeze({
+    ...(reviewedVoucher?{reviewedVoucher,runBuyCallback:args=>runReviewedWholesaleVoucher({...args,review:reviewedVoucher})}:{}),
     reviewedSignedCash:enableReviewedFullCommerce,
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
@@ -397,8 +402,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         bad('original SetWholeStore write inconsistency');
       return next;
     },
-    // Original @@FUNCBUY voucher crosses 500000G only with a reviewed
-    // handler. Shared GameCore refuses an unknown nonzero callback effect.
+    // Legacy and missing source dependencies retain fail-closed FUNCBUY.
   });
 
   // R2-D: StreetModule compiles source-approved USE recipes and callbacks.
