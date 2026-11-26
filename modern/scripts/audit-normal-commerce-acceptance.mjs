@@ -16,6 +16,8 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  medicine:'R4 genuine medicine #15 all five recipes, #30-34 natural sales and two v2 generations',
+  dairy:'R4 genuine dairy #25-26 all USEs, #35-36 consumption, natural sales and two v2 generations',
   extra:'R4 genuine #65 zero-POP listing and #62 self advertisement survive source time, EXP and v2 reload',
   leather:'R4 genuine leather equipment package #71 manufacture, natural sale, two generations',
   wood:'R4 genuine #72 wooden equipment package uses all four crafted components, sells and survives two v2 generations',
@@ -36,6 +38,8 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.medicine],acquire:[1,15,16,17,30,31,32,33,34],showcase:[30,31,32,33,34],sale:[30,31,32,33,34],uses:['15:0','15:1','15:2','15:3','15:4','79:1']},
+  {tests:[title.dairy],acquire:[25,26,35,36,78],showcase:[25,26,35,36],sale:[25,26,35,36],uses:['25:0','25:1','26:0','26:1','26:2','35:0','36:0','78:11','79:4']},
   {tests:[title.funcbuy],acquire:[64,79]},
   {tests:[title.funcinit],acquire:[24,78],uses:['37:1','37:2','78:12']},
   {tests:[title.leather],acquire:[45,51,71],showcase:[71],sale:[71],uses:['16:0','16:1','39:12']},
