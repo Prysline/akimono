@@ -95,7 +95,7 @@ jobs:
         run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
 
   genuine-lord-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 65
     permissions:
       contents: read
