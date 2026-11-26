@@ -8,6 +8,10 @@ import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {parseDsl,validateStandardStreet} from '../src/parse-dsl.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
+import {compileStandardStreetMarketBuyRegistry} from '../src/standard-street-market-buy-registry.mjs';
+import {reviewNormalCommerceItems,validateNormalCommerceInventory} from '../src/reviewed-normal-commerce-items.mjs';
+import {reviewOriginalTopPrize} from '../src/original-period-top-prize.mjs';
 import {validateP3Inventory} from '../src/original-b41-playable-sale.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -30,6 +34,7 @@ const locations=[
  ['originalPeriodSource','modern/tests/original-perl/period.cgi'],
  ['originalUseSource','modern/tests/original-perl/use.cgi'],
  ['originalItemHelperSource','modern/tests/original-perl/core-inc-item.cgi'],
+ ['originalShowcaseSource','modern/tests/original-perl/sc-s.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));
@@ -58,6 +63,38 @@ export async function auditNormalCommerce(){
   if(!street.reviewedB41?.p3TurnItems||!street.marketBuyRegistry||!street.useItem)
     throw new Error('reviewed commerce registries unavailable');
   const turn=street.reviewedB41.p3TurnItems;
+  const model=loadStandardStreetModel(input.itemDsl,input.rebelDsl);
+  const full=reviewNormalCommerceItems({itemDsl:input.itemDsl,compilerSource:input.originalCompilerSource,showcaseSource:input.originalShowcaseSource,turnSource:input.originalTurnSource});
+  const fullMarket=compileStandardStreetMarketBuyRegistry({itemDsl:input.itemDsl,rebelDsl:input.rebelDsl,model,compiled:street.reviewedGiftMapUse,compilerSource:input.originalCompilerSource,buySource:input.originalBuySource,wholeSource:input.originalWholeSource,itemSource:input.originalBuyItemSource,globalBuyCallback:street.marketBuy.globalBuyCallback,includeReviewedShowcaseTool:true});
+  const prizes=reviewOriginalTopPrize({itemDsl:input.itemDsl,model,originalAddItemSource:input.originalUseSource,periodSource:input.originalPeriodSource,includeReviewedMultiShelf:true});
+  const producerRules=[];
+  for(const item of model.items){
+    const uses=blocks.filter(u=>u.kind==='USE'&&u.file===item.source&&u.ownerItemLine===item.line);
+    for(let useId=0;useId<uses.length;useId++){
+      const rule=street.useItem.getRule(item.id,useId);
+      if(!rule)continue;
+      const outputs=(rule.creates??[]).filter(o=>o.countPerUse>0&&o.probabilityPermille>0).map(o=>({itemId:o.itemId,count:o.countPerUse,probabilityPermille:o.probabilityPermille}));
+      if(rule.inlineCallback?.kind==='milk-cow')outputs.push({itemId:26,sourceCallback:'milk-cow'});
+      if(!outputs.length)continue;
+      producerRules.push({itemId:item.id,useId,source:source(uses[useId]),outputs,
+        requires:[...new Set([...(rule.requiresOwnedItem?[item.id]:[]),...(rule.uses??[]).map(o=>o.itemId)])],
+        money:rule.money,needJob:rule.needJob??'',needPoint:rule.needPoint??0,needExperience:rule.needExperience??0,needPopularity:rule.needPopularity??0});
+    }
+  }
+  const routes=id=>[
+    ...model.grants.filter(g=>g.id===id).map(g=>({kind:'source-open-shop',count:g.count})),
+    ...prizes.topChoices.filter(p=>p.itemId===id).map(p=>({kind:'source-rank-one-prize',index:p.index,count:p.count})),
+    ...(id===79?[{kind:'source-global-FUNCBUY',minTotal:street.marketBuy.globalBuyCallback.minTotal}]:[]),
+    ...(fullMarket.getRule(id)&&street.reviewedAllPlus.plusSeconds[id-1]>0?[{kind:'source-wholesale-plus',seconds:street.reviewedAllPlus.plusSeconds[id-1]}]:[]),
+    ...producerRules.filter(p=>p.outputs.some(o=>o.itemId===id)).map(p=>({kind:'registered-use-output',itemId:p.itemId,useId:p.useId,requires:p.requires,outputs:p.outputs.filter(o=>o.itemId===id),money:p.money,needJob:p.needJob,needPoint:p.needPoint,needExperience:p.needExperience,needPopularity:p.needPopularity,source:p.source})),
+  ];
+  const potential=new Set(model.items.filter(i=>routes(i.id).some(r=>['source-open-shop','source-rank-one-prize','source-wholesale-plus'].includes(r.kind))).map(i=>i.id));
+  for(let changed=true;changed;){changed=false;for(const p of producerRules)if(p.requires.every(id=>potential.has(id)))for(const o of p.outputs)if(!potential.has(o.itemId)){potential.add(o.itemId);changed=true;}}
+  const fullShape=(id,kind)=>{
+    const shop={item:Array(79).fill(0),showcasecount:1,showcase:[0],price:[0],job:'',exp:{}};
+    if(kind==='hold')shop.item[id-1]=1;else shop.exp[id]=1;
+    try{validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,full);return true;}catch(e){if(!(e instanceof RangeError))throw e;return false;}
+  };
   const items=blocks.filter(b=>b.kind==='ITEM').map(b=>{
     const id=Number(one(b,'no')), original=numeric[id-1];
     const flags=(one(b,'flag')??'').split('|').filter(Boolean);
@@ -69,6 +106,8 @@ export async function auditNormalCommerce(){
       // Positive compiled POP is not proof of an accessible showcase route.
       positivePop:original.popular>0,sourceNoShowcase:flags.includes('noshowcase'),
       marketBuyRule:street.marketBuyRegistry.getRule(id)!==null,
+      fullCommerce:{marketBuyRule:fullMarket.getRule(id)!==null,holdingShape:fullShape(id,'hold'),experienceShape:fullShape(id,'exp'),
+        upkeep:full.upkeepCosts[id],saleRule:full.saleRules[id]??null,sourceRoutes:routes(id),staticDependencyReachable:potential.has(id)},
       // These calls only probe the inventory guard, not a real transaction.
       timeHoldingShapeAccepted:shapeProbe(street,id,'hold'),
       timeExperienceShapeAccepted:shapeProbe(street,id,'exp'),
@@ -85,6 +124,7 @@ export async function auditNormalCommerce(){
     };
   }).sort((a,b)=>a.id-b.id);
   const events=blocks.filter(b=>b.kind==='EVENT').map(b=>({
+    compiled:street.reviewedEventCatalog.declared.find(e=>e.code===one(b,'code'))?.compiled??null,
     code:one(b,'code'),source:source(b),declaration:fields(b),
     runtimeAndPlayerEvidence:'requires separate lifecycle and replay audit',
   }));
@@ -103,6 +143,12 @@ export async function auditNormalCommerce(){
       holdingShapeRejected:items.filter(x=>!x.timeHoldingShapeAccepted).map(x=>x.id),
       experienceShapeAccepted:items.filter(x=>x.timeExperienceShapeAccepted).map(x=>x.id),
       registeredUses:items.flatMap(x=>x.uses).filter(x=>x.registryRule).length,
+      fullCommerceSaleRules:items.filter(x=>x.fullCommerce.saleRule!==null).length,
+      fullCommerceHoldingRejected:items.filter(x=>!x.fullCommerce.holdingShape).map(x=>x.id),
+      fullCommerceExpRejected:items.filter(x=>!x.fullCommerce.experienceShape).map(x=>x.id),
+      fullCommerceStaticDependencyMissing:items.filter(x=>!x.fullCommerce.staticDependencyReachable).map(x=>x.id),
+      unregisteredUses:items.flatMap(x=>x.uses.filter(u=>!u.registryRule).map(u=>({itemId:x.id,useId:u.useId,source:u.source}))),
+      sourceRouteCaveat:'Static material closure ignores available time, money, career, EXP, point gates, exact RNG and external authorization; never proof of player acquisition.',
     },items,events,globalCallbacks};
 }
 if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){
