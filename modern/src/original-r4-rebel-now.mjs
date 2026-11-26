@@ -52,7 +52,7 @@ export function reviewR4RebelNow({compiledCatalog,rebelDsl,turnSource,periodSour
 }
 export function projectR4RebelNow({
   reviewed,startSeconds,spanSeconds,activeUntilSeconds,town,shops,
-  riotIds,armyById,randomDraws,taxRate=0,balJob='外敵',balName='首領'
+  riotIds,armyById,randomDraws,randomDrawProvider=null,taxRate=0,balJob='外敵',balName='首領'
 }){
   if(reviewed?.source!==R4_REBEL_NOW_SOURCE||reviewed.committable!==false||
      !safe(startSeconds)||!safe(spanSeconds)||spanSeconds<1||
@@ -63,8 +63,9 @@ export function projectR4RebelNow({
      townKeys.some(x=>!safe(town[x]))||
      !Array.isArray(shops)||!shops.length||shops.length>100||
      !Array.isArray(riotIds)||!armyById||typeof armyById!=='object'||
-     Array.isArray(armyById)||!Array.isArray(randomDraws)||
-     randomDraws.length>2||!safe(taxRate)||
+     Array.isArray(armyById)||
+     (randomDrawProvider===null?(!Array.isArray(randomDraws)||randomDraws.length>2):
+       (typeof randomDrawProvider!=='function'||randomDraws!==undefined))||!safe(taxRate)||
      typeof balJob!=='string'||typeof balName!=='string')
     fail('unreviewed army/town/time/fixture');
   const city={...town},idMap=new Map();
@@ -88,8 +89,9 @@ export function projectR4RebelNow({
   let used=0,deleted=false,rate=taxRate,amount=0,rebels=0;
   const logs=[],ranges=[];
   const draw=r=>{
-    if(used>=randomDraws.length)fail('source rebel RNG exhausted');
-    const v=randomDraws[used++];
+    if(used>=2||(randomDrawProvider===null&&used>=randomDraws.length))fail('source rebel RNG exhausted');
+    const v=randomDrawProvider===null?randomDraws[used]:randomDrawProvider(used,r);
+    used++;
     if(!safe(v)||v>=1000000)fail('source rebel RNG sample invalid');
     ranges.push(r);return v*r/1000000;
   };
@@ -155,7 +157,7 @@ export function projectR4RebelNow({
       }
     }
   }
-  if(used!==randomDraws.length)fail('source rebel RNG samples unused');
+  if(randomDrawProvider===null&&used!==randomDraws.length)fail('source rebel RNG samples unused');
   if(Object.values(city).some(v=>!safe(v))||
      shopsOut.some(s=>!safe(s.money)||!(s.army===null||safe(s.army))))
     fail('source projected result not persistable');
