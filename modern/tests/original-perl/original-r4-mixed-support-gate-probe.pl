@@ -623,10 +623,14 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   my ($armyLive,$armyStage);
   my $readBytes=sub{my($file)=@_;open my $h,'<:raw',$file or die $!;my $s=do{local $/;<$h>};close $h;return $s};
   if($external){
-    die 'external candidate cannot access full disk harness' if $in->{disk};
     our $TEMP_DIR;
-    $TEMP_DIR="$callbackRoot/army-stage";make_path($TEMP_DIR);
-    $armyLive="$callbackRoot/army-live.cgi";$armyStage="$TEMP_DIR/army.cgi";
+    if($in->{disk}){
+      $armyLive="$OriginalR4CrossPeriodDiskHarness::root/army.cgi";
+    }else{
+      $TEMP_DIR="$callbackRoot/army-stage";make_path($TEMP_DIR);
+      $armyLive="$callbackRoot/army-live.cgi";
+    }
+    $armyStage="$TEMP_DIR/army.cgi";
     open my $h,'>:raw',$armyLive or die $!;print {$h} $in->{liveArmyBytes};close $h or die $!;
     my $path=\&main::GetPath;
     no warnings 'redefine';
@@ -687,7 +691,7 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   }
   die 'unused full-command source RNG' if @R4_MULTI_DRAWS;
   die 'wrong source command end' unless $cursor==$in->{settlement}{commandNowSeconds};
-  my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor):undef;
+  my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor,$external):undef;
   print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor,($disk?(disk=>$disk):())});
   exit 0;
 }

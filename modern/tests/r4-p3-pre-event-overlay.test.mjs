@@ -796,3 +796,106 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
     assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,taxRate:1}),/no tax-rate/);
   }
 });
+
+
+import {stageR4ExternalCrossPeriodDisk} from '../src/original-r4-cross-period-disk.mjs';
+import {commitR4ExternalCrossPeriodDisk} from '../src/original-r4-b50-period-disk.mjs';
+test('R4 two-slice external source fixture stages five files and recovers the same army/play/log transaction',async()=>{
+  const external=reviewR4ExternalPreEventItemOverlay({itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,
+    compilerSource:source.originalCompilerSource,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,periodSource:source.originalPeriodSource});
+  const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...boundarySources,includeReviewedSaleTax:true,reviewedRebelNow:external.rebel});
+  const reviewedEvents=reviewOriginalR4MultiEventFixture({
+    compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:source.originalTurnSource,
+    readSource:source.originalDataReadSource,reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,
+    reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
+    reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
+    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
+  for(const armed of [false,true]){
+    const {repository}=fresh(true),world=structuredClone(repository.read());
+    world.nowSeconds=1155580;
+    world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
+      lastSettledBoundarySeconds:1026000,dtPeople:350000,
+      town:{...world.period.town,leader:1,money:5000000,develop:5001,safety:5001,army:10000,robina:2000,people:500000},
+      eventState:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
+    Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
+    const liveArmyBytes=armed?'1,4000\n1\n':'\n\n';
+    const input={world,minutes:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
+      reviewedEvents,reviewedPeriod,liveArmyBytes};
+
+    Object.assign(world.shops[0],{pass:'',comment:'',remoteaddr:'',rankingcount:0,profitstock:0,taxmode:0,drmoney:0,trush:0,guild:'',nocheckip:'',job:'weapon',exp:{14:20,37:200},user:{first:'a',second:'b'},itemtoday:{10:1,40:2},itemyesterday:{41:1,42:2}});
+    const reviews={...diskReviews,play:reviewPeriodPlay({writeSource:source.originalDataWriteSource,incFuncSource:source.originalDataReadSource,detailSource:source.originalDetailSource,configSource:source.originalConfigSource},{crossPeriod:true,externalRebel:true})};
+    const codec={reviewed:reviews.play,townReview:reviews.town};
+    const initial={lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,state:world.period.town,town:{},events:world.period.eventState,wholesale:world.market.wholesale,wholesaleCsv:world.market.originalWholesaleCsv,shops:world.shops};
+    const initialPlay=serializePeriodPlay({...codec,world:initial});
+    assert.throws(()=>serializePeriodPlay({reviewed:diskReviews.play,townReview:reviews.town,world:initial}),/unreviewed EVENT/);
+    const result=projectR4ExternalCrossPeriodCandidate(input);
+    const e=result.evidence.slices;
+    const sourceDisk=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+      cwd:perlDir,encoding:'utf8',maxBuffer:8*1024*1024,
+      env:{...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'},
+      input:JSON.stringify({externalCandidate:true,liveArmyBytes,eventWire:wire(world.period.eventState),startSeconds:world.nowSeconds,shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+        settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:result.nowSeconds},
+        slices:e.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),samples:e.flatMap(s=>[...s.preEventDraws,...s.eventSamples]),disk:{initialPlay,nextid:100}})
+    })).disk;
+    const directory=await mkdtemp(path.join(os.tmpdir(),'akimono-r4-period-disk-'));
+    const put=(n,v)=>writeFile(path.join(directory,n),v);
+    const get=n=>readFile(path.join(directory,n),'utf8');
+    const backupNames=['log0.cgi','log1.cgi','log2.cgi','guildbal.cgi','play.cgi'];
+    try{
+      for(const n of ['stage','backup','backup1','backup2','backup3','common','session'])await mkdir(path.join(directory,n));
+      await put('play.cgi',initialPlay);await put('army.cgi',liveArmyBytes);
+      await put('guild.cgi',"use utf8;\n$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;%GUILD=();1;");
+      await put('guildbal.cgi','');await put('lasttime.cgi','clock');
+      for(let i=0;i<3;i++)await put('log'+i+'.cgi','live-'+i+'\n');
+      for(const g of ['',1,2,3])for(const n of backupNames)await put('backup'+g+'/'+n,'prior-'+g+'/'+n+'\n');
+      await utimes(path.join(directory,'backup/play.cgi'),world.nowSeconds-7200,world.nowSeconds-7200);
+      await utimes(path.join(directory,'log1.cgi'),world.nowSeconds-129600,world.nowSeconds-129600);
+      for(const n of ['old.cgi','edge.cgi','keep.txt']){
+        await put('session/'+n,'source session');
+        const time=result.nowSeconds-604800-(n==='old.cgi'?1:0);
+        await utimes(path.join(directory,'session',n),time,time);
+      }
+      const {liveArmyBytes:ignored,...commandArgs}=input;
+      await assert.rejects(stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs:input}),/actual live army/);
+      const stage=await stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs});
+      assert.equal(stage.committable,false);assert.equal(stage.worldStateWritten,false);
+      assert.equal(await get('army.cgi'),liveArmyBytes);
+      assert.equal(await get('play.cgi'),initialPlay);
+      assert.equal(await get('stage/army.cgi'),result.stagedArmyBytes);
+      for(const n of ['army.cgi','guild.cgi','guildbal.cgi','log0.cgi'])assert.equal(await get('stage/'+n),sourceDisk.stage[n],n);
+      const parse=bytes=>parsePeriodPlay({...codec,bytes});
+      const node=parse(stage.play.bytes),perl=parse(sourceDisk.stage['play.cgi']);
+      const cost=node.shops[0].costtoday;
+      assert.ok(Math.abs(cost-perl.shops[0].costtoday)<1e-8);
+      node.shops[0].costtoday=perl.shops[0].costtoday;
+      assert.deepEqual(node,perl);
+      assert.equal(stage.play.bytes.split('\n')[3],sourceDisk.stage['play.cgi'].split('\n')[3]);
+      assert.equal(sourceDisk.transientArmyPersisted,0);
+      assert.equal(Object.hasOwn(node.shops[0],'army'),false);
+      for(const [i,g] of sourceDisk.generations.entries())for(const n of backupNames)assert.equal(await get('backup'+(i+1)+'/'+n),g[n]);
+      for(const n of backupNames)assert.equal(await get('backup/'+n),sourceDisk.backup[n]);
+      assert.deepEqual((await readdir(path.join(directory,'session'))).sort(),sourceDisk.sessions);
+      await assert.rejects(commitB50PeriodDisk({directory,reviewed:reviews.external}),/attempt mode/);
+      const stagedArmy=await get('stage/army.cgi');
+      await put('stage/army.cgi','tampered');
+      await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}),/differs from ready receipt/);
+      await put('stage/army.cgi',stagedArmy);
+      const live=path.join(directory,'play.cgi');await rm(live);await mkdir(live);
+      await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}));
+      await assert.rejects(stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs}),/prior attempt/);
+      await assert.rejects(readPeriodPlay({...codec,directory}),/pending commit/);
+      await rm(live,{recursive:true});
+      await commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external,recover:true});
+      const loaded=await readPeriodPlay({...codec,directory});
+      assert.equal(loaded.shops[0].costtoday,cost);
+      loaded.shops[0].costtoday=perl.shops[0].costtoday;
+      assert.deepEqual(loaded,perl);
+      assert.deepEqual(loaded.events,sourceDisk.reloaded.events);
+      assert.deepEqual(loaded.state,sourceDisk.reloaded.state);
+      for(const n of ['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])assert.equal(await get(n),sourceDisk.live[n],n);
+      assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
+      await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
+    }finally{await rm(directory,{recursive:true,force:true});}
+  }
+});
