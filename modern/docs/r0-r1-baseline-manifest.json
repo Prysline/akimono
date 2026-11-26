@@ -28008,7 +28008,7 @@
         "lawfulAcquisition": null,
         "prerequisites": {
           "value": true,
-          "scope": "受控 memory：2券／次，第三次剩1拒絕；地圖cap fixture",
+          "scope": "受控 memory：2券／次，第三次剩1拒絕；地圖cap fixture；source USE/GET 1000 permille，正式 RNG 呼叫未逐項量測",
           "refs": [
             {
               "path": "modern/tests/original-admin-sparse-market.test.mjs",
@@ -28037,33 +28037,7 @@
         "http": null,
         "ui": null,
         "reviewedTime": null,
-        "rng": {
-          "value": true,
-          "scope": "編譯 source USE/GET 1000 permille；此受控來源不需隨機 outcome，未量測正式 RNG 呼叫",
-          "refs": [
-            {
-              "path": "modern/tests/original-admin-sparse-market.test.mjs",
-              "sha": "81db868d6972067ee708992e2134dde213699a01",
-              "startLine": 173,
-              "endLine": 219,
-              "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
-            },
-            {
-              "path": "modern/tests/original-admin-sparse-market.test.mjs",
-              "sha": "81db868d6972067ee708992e2134dde213699a01",
-              "startLine": 277,
-              "endLine": 328,
-              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
-            },
-            {
-              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
-              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
-              "startLine": 33,
-              "endLine": 106,
-              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
-            }
-          ]
-        },
+        "rng": null,
         "cas": null,
         "v2Restart": null
       },

@@ -91,3 +91,5 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 
 ## 已確認 checkpoint 內層隔離 CI
 [45794612974](https://github.com/Prysline/akimono/actions/runs/45794612974) job 139821957733，HEAD `f7a2c520d9a17fe66a6b08ec02073f61bdf3a1f8`、實際 checkout `0493bf2b80b4bd0677bccb92a00af91eb84a6c72` tree `1e66142f265ff0af160c3176b5107f09b6399f77` 相同。JS 1343/1343、0 fail/skip/cancelled，Perl 85 檔 2456/2456，所有 DSL/pin steps 成功。subtest 737 通過，八條 R1_INNER_GUARD 診斷逐一核對：inner MAC、fingerprint、interpreter、hash policy、draw policy、generation、anchor revision、origin；外層驗證先通過，再獨立指定原因及 HTTP 回退。P4 256 opportunities 觀察1 death、4 cows、rev216→221。僅固定前候選結果，新 HEAD 需重驗。R1-HTTP-01 獨立 strict repro 尚未執行；本機重新測 Git DNS 仍無法解析。
+
+本批 R1 25 EVENT metadata oracle 與 gift 受控差分已逐項連結；14層 schema 檢查及六項負例待最新 CI。R0 既有分類覆核7、餘56。正式 runtime 未改。Canonical manifest 超過 Contents API 1MiB 文字回傳界線，續作從固定 tree 的 manifest blob SHA 使用 GitHub blob API 讀取，不把空 content 誤判檔案遺失。

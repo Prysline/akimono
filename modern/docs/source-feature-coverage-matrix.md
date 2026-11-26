@@ -20,4 +20,6 @@
 ## 14 層證據工作欄與第一批補鏈
 220 rows 均新增 evidenceLayers（14 欄：declaration、compiled、registry、perlOracle、nodeDifferential、lawfulAcquisition、prerequisites、formalCommand、http、ui、reviewedTime、rng、cas、v2Restart）。僅已有證據的欄填值，未知保留 null；不是 220 項已完成。P4/P5 19 rows 已逐項補精確測試 SHA、行號、條件、命令、取得／結果、保存與限制，見 [真玩家逐項證據](r1-p4-p5-feature-evidence.md)。本批新增 6 ITEM、3 USE 的限定真玩家證據；ITEM 26/35/36/79 仍未註冊 market-buy，不能混稱不可取得。商品／USE 的全部原版差分、UI、未審時間與外部依賴仍待補。
 
-第二批補鏈：[EVENT metadata／gift Oracle](r1-event-gift-oracle-evidence.md)：25 EVENT 原版數字／時間 compiler metadata 與 Node exact 差分、#79/0 與四 ITEM 受控 gift Oracle。上表 perlOracle/nodeDifferential 為限定證據數，EVENT 的25不代表任何 EVENT callback/runtime 玩家驗收；HTTP/v2/合法取得正式下界未改。新增 14 層 schema、頂層／層級 flag 一致、測試 SHA/行號/分類、HTTP/v2真玩家 gate 與五個負例；待新候選 CI。
+第二批補鏈：[EVENT metadata／gift Oracle](r1-event-gift-oracle-evidence.md)：25 EVENT 原版數字／時間 compiler metadata 與 Node exact 差分、#79/0 與四 ITEM 受控 gift Oracle。上表 perlOracle/nodeDifferential 為限定證據數，EVENT 的25不代表任何 EVENT callback/runtime 玩家驗收；HTTP/v2/合法取得正式下界未改。新增 14 層 schema、頂層／層級 flag 一致、測試 SHA/行號/分類、HTTP/v2真玩家 gate 與六個負例；待新候選 CI。
+
+#79/0 的 source 1000 permille 僅歸於條件；正式 RNG 實測仍為 null。正式 HTTP/command/CAS/v2 正向欄位禁止只引用靜態來源。

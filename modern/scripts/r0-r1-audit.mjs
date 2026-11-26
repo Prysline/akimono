@@ -111,6 +111,7 @@ export async function checkAudit(m){
       if(requireReal)ok(layer.tests.some(r=>featureTests.get(r.path)?.realPlayer),'HTTP/v2 layer requires real player '+label+' '+k);
     }
     if(layer.source!==undefined)await pinRange(layer.source,label+' '+k,false);
+    if(requireReal)ok((layer.refs??[]).some(r=>featureTests.get(r.path)?.realPlayer)||(layer.tests??[]).some(r=>featureTests.get(r.path)?.realPlayer),'HTTP/v2 layer requires real player '+label+' '+k);
     if(!['compiled','registry'].includes(k))ok(layer.refs||layer.tests||layer.source,'missing layer evidence '+label+' '+k);
   }
   for(const r of x.detailedEvidence??[]){
