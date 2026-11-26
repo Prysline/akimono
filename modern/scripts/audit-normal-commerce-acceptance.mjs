@@ -16,6 +16,7 @@ const base='ddd2f441ed5b36b8dcb94deaa193764eab7f2d21';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
 const title={
+  mortality:'R4 genuine full commerce cow mortality, persisted NEED denial, lawful replacement and fermentation',
   accessories:'R4 genuine #66/0-3 accessory manufacture, #67-70 natural sales, positive FUNCTURN and lostbook with dual v2 reload',
   advancedWriting:'R4 genuine #10/4-7 advanced writing from crafted equipment and learned skills, natural sales and dual v2 reload',
   naturalDurable:'R4 genuine ten natural durable EVENT lifecycles, DataRead effects, logs and active/expired v2 restarts',
@@ -44,6 +45,7 @@ const title={
 const kill=code=>'R4 genuine #65/2 '+code+', negative natural sales, exact expiry and two v2 generations';
 const shelf=n=>'R4 genuine '+n+'-shelf construction, sale/tax, maintenance, shrink, tool reacquisition and regrowth across four v2 generations';
 const groups=[
+  {tests:[title.mortality],uses:['25:1','26:1','79:4']},
   {tests:[title.accessories],acquire:[18,19,24,66,67,68,69,70],showcase:[67,68,69,70],sale:[67,68,69,70],uses:['37:0','37:1','37:2','66:0','66:1','66:2','66:3','78:3','79:0','79:3']},
   {tests:[title.advancedWriting],acquire:[10,20,21,22,23,40,45,51,57],showcase:[20,21,22,23],sale:[20,21,22,23],uses:['10:1','10:4','10:5','10:6','10:7']},
   {tests:[title.naturalDurable],events:['happy','boom-posyon','ken-sale','tate-sale','yoroi-sale','tue-sale','plusdown-yakusou','plusup-tetu','plusup-misuriru','plusup-oriharukon']},
