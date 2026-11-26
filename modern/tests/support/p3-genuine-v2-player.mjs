@@ -13,7 +13,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,onTick=null,onPurchase=null}={}){
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
   const stop=async()=>{
@@ -24,7 +24,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   async function boot(){
     stderr='';
     const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0'};
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',AKIMONO_REVIEWED_FULL_COMMERCE:fullCommerce?'1':'0'};
     if(now===null)delete env.AKIMONO_E2E_FIXED_NOW;
     else env.AKIMONO_E2E_FIXED_NOW=now;
     child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env,stdio:['ignore','pipe','pipe']});
@@ -221,5 +221,6 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
+  assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);
   return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
 }

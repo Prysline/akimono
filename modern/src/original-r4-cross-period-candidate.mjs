@@ -7,7 +7,8 @@ import {projectOriginalR4TimeSlices} from './original-r4-time-slices.mjs';
 import {projectR4PreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalR4MultiEventFixture,R4_MULTI_EVENT_FIXTURE_SOURCE} from './original-r4-multi-event-order-fixture.mjs';
 import {resolveR4CommandHashOrders} from './original-r4-perl-hash-replay.mjs';
-import {createR4CrossPeriodDraws} from './r4-time-command-draws.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
+import {R4_FULL_CROSS_SLICE_DRAWS,createR4CrossPeriodDraws} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
 import {R4_SORTED_PRE_EVENT_SOURCE} from './original-r4-sorted-pre-event.mjs';
 export const R4_CROSS_PERIOD_CANDIDATE='r4-reviewed-cross-period-candidate.v1';
@@ -38,12 +39,14 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
     fail('reviewed independent single-shop source dependencies required');
   if(reviewedEvents.eventCodes.join(',')!==reviewedHash?.declarationOrder?.join(','))fail('EVENT catalog mismatch');
   const tape=createR4CrossPeriodDraws({world,minutes});
+  const normalCommerce=street.reviewedNormalCommerce??null;
+  const maxDraws=normalCommerce===null?125:R4_FULL_CROSS_SLICE_DRAWS;
   const plan=projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+minutes*60});
   if(plan.effectiveSlices.length<1||plan.effectiveSlices.length>2||(!plan.crossesSettlement&&!candidateSettled)||plan.effectiveSlices[0].dateupdate!==(plan.crossesSettlement?1:0))
     fail('one actual source settlement required');
   const initialHash=resolveR4CommandHashOrders({reviewed:reviewedHash,world,minutes,expectedInterpreter});
   validateR4PreEventPeriod({reviewed:reviewedDataRead,period:world.period,activeOrder:initialHash.initialOrder,candidateSettled});
-  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initialHash.initialOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled});
+  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initialHash.initialOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled,normalCommerce});
   const steps=[],slices=[];let cursor=world,hash=initialHash,used=0,settlement=null;
   for(const [i,part] of plan.effectiveSlices.entries()){
     const args={world:cursor,minutes,shopId:1,reviewed:street.reviewedB41,
@@ -51,16 +54,16 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       reviewedB59Iron:street.reviewedB59Iron,reviewedB60Happy:street.reviewedB60Happy,
       reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
       reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
-      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,
+      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initialHash.initialOrder}};
     const project=!plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:i===0?projectR4BoundaryPreEventCandidate:
       a=>projectR4ResidualPreEventCandidate({...a,originWorld:world});
     let pre=null;const samples=[];
-    for(let n=0;n<=125;n++){
+    for(let n=0;n<=maxDraws;n++){
       try{pre=project({...args,randomDraws:samples});break;}
       catch(e){
         if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
-        if(n===125)fail('pre-EVENT draw budget exhausted');
+        if(n===maxDraws)fail('pre-EVENT draw budget exhausted');
         samples.push(tape.unit(used+n));
       }
     }
@@ -73,7 +76,7 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       reviewed:reviewedEvents,items:overlay.baseItems,shop:pre.shops[0],
       startSeconds:cursor.nowSeconds,spanSeconds:part.timespanSeconds,activeUntilSeconds:cursor.period.eventState,
       activeHashOrderFixture:hash.nowOrder,eventHashOrderFixture:hash.eventOrder,
-      reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse},
+      reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse,normalCommerce},
       exactTicketDraws:true,reviewedSubminute:true,
       randomDrawProvider:(index,range)=>range===LOTO_RANGE?tape.lottery(used+index):tape.unit(used+index),
       resolveNowOrder:({expired,started,activeUntilSeconds})=>{
@@ -85,7 +88,8 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
     });
     if(!finalHash||!event.shop||event.committable!==false)fail('complete source EVENT successor required');
     used+=event.drawsUsed;
-    validateP3Inventory(event.shop,street.reviewedGiftMapUse,street.reviewedB41);
+    if(normalCommerce!==null)validateNormalCommerceInventory(event.shop,street.reviewedGiftMapUse,normalCommerce);
+    else validateP3Inventory(event.shop,street.reviewedGiftMapUse,street.reviewedB41);
     const period={...cursor.period,
       ...(part.dateupdate===1?{town:settlement.town,dtPeople:settlement.dtPeople,
         settledCount:cursor.period.settledCount+1,lastSettledBoundarySeconds:pre.nowSeconds,

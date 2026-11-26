@@ -176,13 +176,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
+  originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
-  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource};
+  if(typeof enableReviewedFullCommerce!=='boolean'||enableReviewedFullCommerce&&!enableReviewedNormalTime)bad('full commerce requires reviewed normal time');
+  const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
@@ -341,7 +343,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
       itemSource:originalBuyItemSource,
-      globalBuyCallback:reviewedGlobalBuyCallback,
+      globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedFullCommerce,
     }):null;
   const marketBuy=Object.freeze({
     globalBuyCallback:reviewedGlobalBuyCallback,
@@ -1045,5 +1047,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod}):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedFullCommerce}):base;
 }

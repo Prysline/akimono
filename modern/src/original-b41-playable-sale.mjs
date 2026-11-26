@@ -6,6 +6,8 @@
  * Original period settlement, other merchandise, auth/disk/multiplayer remain
  * unsupported. Time is advanced by an explicit isolated local test slice.
  */
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
+import {R4_FULL_PRE_EVENT_DRAWS,R4_FULL_CROSS_SLICE_DRAWS} from './r4-time-command-draws.mjs';
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
@@ -230,7 +232,7 @@ function projectSourcePreEventSaleSlice({
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
-  r4DataRead=null,
+  r4DataRead=null,normalCommerce=null,
 },boundary=null){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -240,7 +242,9 @@ function projectSourcePreEventSaleSlice({
   // The private boundary candidate is the only path allowed to request
   // an exact sub-minute source slice. Public/legacy callers still use minutes.
   const span=safe(boundary===null?minutes*60:boundary.spanSeconds,'timespan',1);
-  if(!Array.isArray(randomDraws)||randomDraws.length>(boundary===null?121:125)||
+  if(normalCommerce!==null&&(!p3InventoryStage||!r4ReviewedSort||!r4DataRead||!reviewedEventTimeSlice))bad('full commerce requires complete reviewed R4 stage');
+  const maxDraws=normalCommerce!==null?(boundary===null?R4_FULL_PRE_EVENT_DRAWS:R4_FULL_CROSS_SLICE_DRAWS):(boundary===null?121:125);
+  if(!Array.isArray(randomDraws)||randomDraws.length>maxDraws||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('exact shared original random samples must be integer millionths');
   if(!validateSourceSparseMarket(world?.market)||
@@ -255,7 +259,7 @@ function projectSourcePreEventSaleSlice({
     bad('source durable event contracts mismatch');
   // Source DataRead executes once per command, NOT once per time slice.
   const overlayWorld=boundary?.dataReadWorld??world;
-  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,candidateSettled:boundary?.candidateSettled===true});
+  const overlay=r4DataRead===null?null:projectR4PreEventItemOverlay({reviewed:r4DataRead.reviewed,world:overlayWorld,activeOrder:r4DataRead.activeOrder,saleReview:reviewed,plusReview:reviewedAllPlus,normalCommerce,candidateSettled:boundary?.candidateSettled===true});
   if(overlay!==null&&(!p3InventoryStage||!r4ReviewedSort||!reviewedEventTimeSlice))bad('R4 DataRead overlay requires full reviewed pre-EVENT stage');
   if(world.schema===PERIOD_WORLD_SCHEMA&&overlay===null&&
      !validateOriginalPeriodSeed(world.period)&&
@@ -302,15 +306,15 @@ function projectSourcePreEventSaleSlice({
      world.period.eventState===null||
      (overlay===null&&(!validateOriginalPeriodSeed(world.period)||activeKeys.length||reviewedEventTimeSlice||r4ReviewedSort!==null))))
     bad('P3 pre-EVENT projection requires known bootstrap and no active EVENT');
-  const saleRules=p3InventoryStage?reviewed.p3TurnItems?.rules:reviewed.saleRules;
-  const upkeepCosts=p3InventoryStage?reviewed.p3TurnItems?.costs:reviewed.upkeepCosts;
+  const saleRules=normalCommerce?.saleRules??(p3InventoryStage?reviewed.p3TurnItems?.rules:reviewed.saleRules);
+  const upkeepCosts=normalCommerce?.upkeepCosts??(p3InventoryStage?reviewed.p3TurnItems?.costs:reviewed.upkeepCosts);
   if(shop?.id!==shopId||shop.status!==1||
     (!Number.isSafeInteger(shop.showcasecount)||
       shop.showcasecount<1||shop.showcasecount>8)||
     shop.showcase?.length!==shop.showcasecount||
     shop.price?.length!==shop.showcasecount||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
-    (shop.showcasecount===1?shop.item[62]!==1:shop.item[62]!==0)||
+    (normalCommerce===null&&(shop.showcasecount===1?shop.item[62]!==1:shop.item[62]!==0))||
     (!p3InventoryStage&&(shop.item[78]!==5||
     shop.item.some((n,i)=>!(reviewedB63Map?
       [9,10,13,39,40,41,42,43,62,78]:reviewedB62Map?
@@ -347,7 +351,8 @@ function projectSourcePreEventSaleSlice({
           saleRules?.[itemId]?.unitPrice,shop.price[shelf])))||
     ![undefined,0].includes(shop.taxmode))
     bad('only source-reviewed #10 or source-acquired #40..44 inventory/shelf supported');
-  if(p3InventoryStage)validateP3Inventory(shop,compiled,reviewed);
+  if(normalCommerce!==null)validateNormalCommerceInventory(shop,compiled,normalCommerce);
+  else if(p3InventoryStage)validateP3Inventory(shop,compiled,reviewed);
   // New R3 sword sales may not interpret B-41 unknown EVENT as empty.
   // Preserve historical R2 #10 behavior, but reject later sword turns
   // until the original lifecycle has been source-reviewed.
@@ -388,7 +393,7 @@ function projectSourcePreEventSaleSlice({
     bad('reviewed B50 boundary candidate required');
   // B-41 has source-gated ownership/showcase/clock/EVENT preflight.
   // The six items now execute exactly the same GameCore sale math.
-  if(shop.showcasecount>1&&activeKeys.length)
+  if(normalCommerce===null&&shop.showcasecount>1&&activeKeys.length)
     bad('multi-shelf active EVENT overlay not source-reviewed');
   const rule=shop.showcasecount===1&&shop.showcase[0]?
     (overlay?.saleRules??saleRules)[shop.showcase[0]]:null;
@@ -396,7 +401,7 @@ function projectSourcePreEventSaleSlice({
     rule.itemId>=40&&rule.itemId<=44?
     Math.trunc(rule.popularSeconds/2):null;
   const natural=projectSharedNaturalSale({
-    shop,rule,saleRules:shop.showcasecount>1?saleRules:null,
+    shop,rule,saleRules:shop.showcasecount>1?(overlay?.saleRules??saleRules):null,
     upkeepCosts,
     spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
@@ -473,7 +478,7 @@ function projectSourcePreEventSaleSlice({
       action:'advance-source-time',source:B41_SOURCE,
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
-      ...(shop.showcasecount>1?{soldByItem:natural.soldByItem}:{}),
+      ...(shop.showcasecount>1||normalCommerce!==null?{soldByItem:natural.soldByItem}:{}),
       soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,

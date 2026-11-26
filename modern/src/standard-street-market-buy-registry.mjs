@@ -77,8 +77,9 @@ function sourceMarker(text,fragment){
 }
 export function compileStandardStreetMarketBuyRegistry({
   itemDsl,rebelDsl,model,compiled,compilerSource,buySource,
-  wholeSource,itemSource,globalBuyCallback=null,
+  wholeSource,itemSource,globalBuyCallback=null,includeReviewedShowcaseTool=false,
 }){
+  if(typeof includeReviewedShowcaseTool!=='boolean')fail('explicit showcase tool source review');
   if(!Array.isArray(model?.items)||model.items.length!==79||
      !Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     fail('79 audited items and compiled stock limits required');
@@ -147,14 +148,15 @@ export function compileStandardStreetMarketBuyRegistry({
     const rawBase=one(block,'base')?.value??null;
     const callback=one(block,'funcb');
     const price=Number(priceRow.value);
-    // P5: admit only the explicitly reviewed fixed-zero book source, not
-    // every zero PRICE (e.g. #63 remains unsupported). The shared engine
-    // sees a source rule, never a special ITEM-number purchase path.
-    const zeroPriceReviewed=block.file===ITEM_SOURCE&&itemId===13&&
-      item.code==='book-work'&&priceRow.value==='0'&&limitRow.value==='1/1'&&
-      limit.limit===1&&limit.wslimit===1&&one(block,'plus')?.value==='10h'&&
-      one(block,'pop')?.value==='0'&&one(block,'flag')?.value==='noshowcase'&&
-      rawBase===null&&!callback&&zeroTransport!==null;
+    // P5 book and explicitly reviewed source #63 tool share one exact
+    // fixed-zero buy-s/GetTimeDeal/FUNCINIT path; no blanket zero-price grant.
+    const zeroIdentity=itemId===13&&item.code==='book-work'&&
+      one(block,'plus')?.value==='10h'&&one(block,'flag')?.value==='noshowcase'||
+      includeReviewedShowcaseTool&&itemId===63&&item.code==='edit-showcase'&&
+      one(block,'plus')?.value==='1d'&&one(block,'flag')?.value==='noshowcase|norequest';
+    const zeroPriceReviewed=block.file===ITEM_SOURCE&&zeroIdentity&&
+      priceRow.value==='0'&&limitRow.value==='1/1'&&limit.limit===1&&limit.wslimit===1&&
+      one(block,'pop')?.value==='0'&&rawBase===null&&!callback&&zeroTransport!==null;
     let reason=null,classification='common-static';
     if(!/^[0-9]+$/.test(priceRow.value)||!Number.isSafeInteger(price))
       reason='unreviewed original PRICE at '+block.file+':'+priceRow.line;

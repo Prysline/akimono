@@ -28,6 +28,8 @@ import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntim
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+// Explicit real HTTP candidate; existing v2 player mode stays compatible.
+const reviewedFullCommerce=process.env.AKIMONO_REVIEWED_FULL_COMMERCE==='1';
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -44,7 +46,7 @@ const [
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,
-  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -63,7 +65,7 @@ const [
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
   'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
-  'modern/tests/original-perl/pinned-palace.cgi','modern/tests/original-perl/pinned-palace-s.cgi','custom/inc-palace.cgi',
+  'modern/tests/original-perl/pinned-palace.cgi','modern/tests/original-perl/pinned-palace-s.cgi','custom/inc-palace.cgi','modern/tests/original-perl/sc-s.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -75,6 +77,7 @@ const streetModule=createStandardStreetModule({
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
 if(!['initialize-source-market','open-shop',
@@ -120,7 +123,8 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource],
+       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
+       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -184,8 +188,9 @@ function state(){
       }),
     useOffers:streetModule.listUseOffers(world),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(world?.shops?.[0]?.showcasecount===1?
-       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
+    reviewedFullCommerce,
+    showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?
+       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{}))
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
         const owned=shop?.item?.[rule.itemId-1]??0;
@@ -196,7 +201,7 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店',reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
+    capabilities:['建立來源世界','原版開店',reviewedFullCommerce?'來源審閱的多架時間推進候選':reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
@@ -497,8 +502,8 @@ async function api(req,res,url){
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
       const p3Shelf=repo.read().shops[0]?.showcasecount===1;
-      const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
-        streetModule.reviewedB41?.saleRules?.[itemId])??null;
+      const sourceRule=(streetModule.reviewedNormalCommerce?.saleRules[itemId]??(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
+        streetModule.reviewedB41?.saleRules?.[itemId]))??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const keys=Object.keys(body);

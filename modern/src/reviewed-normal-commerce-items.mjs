@@ -8,6 +8,7 @@ import {parseDsl} from './parse-dsl.mjs';
 import {isSourceShowcaseListedPrice} from './shared-showcase-price.mjs';
 
 const reviewedCatalogs=new WeakSet();
+export const isReviewedNormalCommerceItems=review=>reviewedCatalogs.has(review);
 
 const fail=s=>{throw new RangeError('R4 normal commerce ITEM: '+s);};
 const pins={
