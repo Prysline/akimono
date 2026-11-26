@@ -375,3 +375,11 @@ test('source shelf tax and owner event/topic and special sale warnings are visib
  assert.match(script,/source\?\.recentRows/);
  assert.match(script,/status\?\.saleWarning/);
 });
+
+
+test('source market buy form retains source presets and server-only transaction identity',()=>{
+ assert.match(script,/offer\.form\?offer\.form\.available:offer\.canBuy/);
+ assert.match(script,/presets\.dataset\.marketPreset/);
+ assert.match(script,/requestedCount:requested/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
