@@ -1,0 +1,29 @@
+name: R4 genuine player rebellion acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'modern/src/**'
+      - 'modern/scripts/dev-local.mjs'
+      - 'modern/tests/support/p3-genuine-v2-player.mjs'
+      - 'modern/tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs'
+      - '.github/workflows/verify-r4-genuine-rebel.yml'
+
+jobs:
+  genuine-rebel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Record actual checkout
+        run: git log -1 --format='%H %T %P'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run genuine player acceptance (no fixture or skip)
+        working-directory: modern
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
