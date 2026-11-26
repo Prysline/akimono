@@ -82,7 +82,9 @@ export function verifyAcceptanceRun({log,meta,head,gitRead=git}){
     throw new Error('CI checkout is not the pinned base + exact current head tree');
   const tap=parseAcceptanceTap(log);
   if(tap.checkout.length!==1||tap.checkout[0]!==meta.checkout)throw new Error('job log checkout mismatch');
-  const allSteps=Array.isArray(meta.steps)&&meta.steps.length>0&&meta.steps.every(s=>s.conclusion==='success');
+  const requiredSteps=['Checkout source','Set up Node','Verify existing Standard Street DSL source audit','Verify pinned original Core source blobs','Verify four additional SHA-pinned original Core item-loader source blobs','Verify pinned untouched original Core admin initializer','Verify B-38 untouched original Core detail tax source blob','Run isolated original Perl Core tests'];
+  const allSteps=Array.isArray(meta.steps)&&meta.steps.every(s=>s.conclusion==='success')&&
+    requiredSteps.every(name=>meta.steps.filter(s=>s.name===name).length===1);
   return {head,runId:meta.runId,jobId:meta.jobId,checkout:meta.checkout,tap,
     // Actual job metadata AND its log must agree. A failed/unfinished
     // job may expose per-test results but cannot pass the phase gate.
@@ -101,13 +103,14 @@ export function buildNormalCommerceAcceptance(audit,evidence=null){
     id:i.id,code:i.code,source:i.source,
     compiler:check([title.compiler],'source-only'),
     acquisition:check(matching('acquire',i.id)),
+    ...(i.id===64?{blockedRoute:'500000 G wholesale purchase requires positive FUNCBUY implementation; rank-prize route separate'}:{}),
     showcase:i.sourceNoShowcase?{scope:'source-forbidden',status:'not-applicable'}:check(matching('showcase',i.id)),
     naturalSale:i.sourceNoShowcase||!i.positivePop?{scope:'source-no-natural-sale',status:'not-applicable'}:check(matching('sale',i.id)),
     // Source routes and shape support are not player history or proof.
     sourceRoutes:i.fullCommerce.sourceRoutes,
     uses:i.uses.map(u=>({useId:u.useId,source:u.source,registered:u.fullCommerceRegistryRule,
       evidence:check(matching('uses',i.id+':'+u.useId)),
-      ...(i.id===62&&u.useId===1||i.id===65&&u.useId<2?{blockedScope:'other-shop target not independently accepted'}:{}),
+      ...(i.id===62&&u.useId===1||i.id===65&&u.useId<=2?{blockedScope:'other-shop target not independently accepted'}:{}),
       ...(i.id===62&&u.useId===2?{blockedScope:'positive guild member effect not accepted'}:{})})),
   }));
   const events=audit.events.map(e=>({code:e.code,source:e.source,activation:e.activation.kind,
@@ -120,7 +123,9 @@ export function buildNormalCommerceAcceptance(audit,evidence=null){
       f.kind==='FUNCITEM'?check([title.advanced,title.party]):
       f.kind==='FUNCNEW'?check([title.resize]):
       f.kind==='FUNCINIT'?check(['R4 #63 source repeated zero-price purchase and positive FUNCINIT transport match actual frozen buy-s handler'],'source-only'):
-      f.kind==='FUNCBUY'?check(['R2-B original global FUNCBUY: real ITEM #64 reaches 500000 voucher condition, missing effect rejects atomically'],'source-only'):
+      f.kind==='FUNCBUY'?{scope:'positive wholesale voucher grant + source log',status:'blocked',
+        reason:'Full-commerce marketBuy lacks runBuyCallback; original #64 500000 G transaction is rejected. Existing test proves rejection only.',
+        negativeEvidence:check(['R2-B original global FUNCBUY: real ITEM #64 reaches 500000 voucher condition, missing effect rejects atomically'],'source-only')}:
       check([],'source-only')}));
   const gates={independentRunGreen:evidence?.independentRunGreen??false,
     ownerExpiry:check([title.expiry]),shelves:check(Array.from({length:8},(_,i)=>shelf(i+1))),
