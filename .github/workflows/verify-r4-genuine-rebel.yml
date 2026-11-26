@@ -35,7 +35,7 @@ jobs:
       - name: Isolated lord fiscal source differential (not genuine player)
         working-directory: modern
         run: |
-          node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs tests/r4-lord-fiscal-runtime.test.mjs
+          node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs tests/r4-lord-fiscal-runtime.test.mjs tests/r4-lord-guard-source.test.mjs
           node --test --test-name-pattern='R4 lord tax two-slice source differential' tests/r4-p3-pre-event-overlay.test.mjs
   genuine-rebel:
     runs-on: ubuntu-latest
