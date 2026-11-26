@@ -6,7 +6,7 @@ import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-st
  */
 import {projectR4CrossPeriodCandidate,projectR4SettledPeriodCandidate,R4_CROSS_PERIOD_CANDIDATE} from './original-r4-cross-period-candidate.mjs';
 import {projectR4ExternalCrossPeriodCandidate,R4_EXTERNAL_CROSS_PERIOD_CANDIDATE} from './original-r4-external-cross-period-candidate.mjs';
-import {projectExternalTimeTrace} from './original-r4-external-time-trace.mjs';
+import {projectExternalTimeTrace,projectExternalSaleReceipt} from './original-r4-external-time-trace.mjs';
 import {projectOriginalR4TimeSlices} from './original-r4-time-slices.mjs';
 import {reviewOriginalSoloPeriodPhaseChain} from './original-period-solo-chain.mjs';
 import {loadStandardStreetModel} from './standard-street-model.mjs';
@@ -122,11 +122,14 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       const {shops,market,period,nowSeconds,evidence,stagedArmyBytes}=candidate;
       if(candidate.source!==R4_EXTERNAL_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||candidate.taxRate!==0||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete external time candidate required');
       const sourceTrace=projectExternalTimeTrace(candidate);
+      const saleReceipt=projectExternalSaleReceipt(candidate);
+      const settlementReceipt=sourceSettlementReceipt(evidence);
+      if(settlementReceipt)settlementReceipt.soldByItem=saleReceipt.sliceSales.find(s=>s.dateupdate===1).soldByItem;
       return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,armyBytes:stagedArmyBytes,receipt:{
         action:REVIEWED_WORLD_TIME_COMMAND,source:candidate.source,minutes:command.minutes,elapsedSeconds:command.minutes*60,
-        naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),
+        ...saleReceipt,
         itemTurnAffectedSlices:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0),
-        settlementReceipt:sourceSettlementReceipt(evidence),sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
+        settlementReceipt,sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
         scope:'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
     }
     if(disk&&(crossing||world.period.settledCount>0)){
