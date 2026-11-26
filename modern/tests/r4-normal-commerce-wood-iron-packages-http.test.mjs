@@ -6,10 +6,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
-async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0}){
+async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0,expectedTools=1}){
   assert.equal(p.stock(id),0,'no pre-existing package');
   assert.ok(components.every(x=>p.stock(x)>=10));
-  assert.ok(p.stock(39)>=1);
+  assert.equal(p.stock(39),expectedTools);
   const offer=p.quote(39,useId);
   assert.ok(offer?.canUse||offer?.timePerUseSeconds>p.remaining(),'source package eligibility');
   await p.enoughTime(offer.timePerUseSeconds);
@@ -231,7 +231,7 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
         money:p.state.shop.money,costtoday:p.state.shop.costtoday,fundingWorks:p.fundingWorks}));
     }
   }
-  await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0});
+  await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0,expectedTools:2});
   assert.equal(p.stock(39),1);
   await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2});
   assert.equal(p.stock(39),0);
