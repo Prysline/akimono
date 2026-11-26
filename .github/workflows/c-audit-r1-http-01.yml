@@ -179,3 +179,81 @@ jobs:
           path: ${{ runner.temp }}/p5-funds/
           if-no-files-found: warn
           retention-days: 30
+
+  strict-r1-http-01-d13:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout D13 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 'ffeba863c06dbeb8ae3521897320e0f057f0878e'
+          path: candidate
+          persist-credentials: false
+      - name: Checkout original C55 strict and helper
+        uses: actions/checkout@v4
+        with:
+          ref: '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+          path: evidence
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify pins and execute original C strict against D13 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r1-http-d13"
+          mkdir -p "$out"
+          {
+            git -C candidate log -1 --format='%H %T'
+            git -C evidence log -1 --format='%H %T'
+            node --version
+            perl -v
+            test "$(git -C candidate rev-parse HEAD)" = 'ffeba863c06dbeb8ae3521897320e0f057f0878e'
+            test "$(git -C candidate rev-parse 'HEAD^{tree}')" = '1a6a8912da4c354150bd4dd75743dcc2979cff82'
+            test "$(git -C evidence rev-parse HEAD)" = '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+            test "$(git -C evidence rev-parse 'HEAD^{tree}')" = 'ede2b15cfcdb0077b026c2a25b2386a84eefd003'
+            test -z "$(git -C candidate status --porcelain)"
+            test -z "$(git -C evidence status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+          test ! -e candidate/modern/scripts/r1-http-extra-fields-repro.mjs
+          test "$(git hash-object evidence/modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+          test "$(git hash-object evidence/modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+          test "$(git hash-object candidate/modern/tests/support/r1-http-audit-player.mjs)" = '19244d0b636e393a2f7a26fcd033fe78e0c3d003'
+          cp candidate/modern/tests/support/r1-http-audit-player.mjs "$out/d13-helper.original.mjs"
+          restore() {
+            rm -f candidate/modern/scripts/r1-http-extra-fields-repro.mjs
+            cp "$out/d13-helper.original.mjs" candidate/modern/tests/support/r1-http-audit-player.mjs
+          }
+          trap restore EXIT
+          cp evidence/modern/scripts/r1-http-extra-fields-repro.mjs candidate/modern/scripts/
+          cp evidence/modern/tests/support/r1-http-audit-player.mjs candidate/modern/tests/support/
+          test "$(git hash-object candidate/modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+          test "$(git hash-object candidate/modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+          git -C candidate status --porcelain | tee "$out/test-overlay-status.txt"
+          git -C candidate diff -- modern/tests/support/r1-http-audit-player.mjs >"$out/test-overlay.diff"
+          test -z "$(git -C candidate diff --name-only -- modern/src modern/scripts/dev-local.mjs)"
+          set +e
+          (cd candidate/modern && env -u AKIMONO_REVIEWED_MARKET_COMMERCE node --test scripts/r1-http-extra-fields-repro.mjs) >"$out/stdout.log" 2>"$out/stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/exit-code.txt"
+          cat "$out/stdout.log"
+          cat "$out/stderr.log"
+          restore
+          trap - EXIT
+          test -z "$(git -C candidate status --porcelain)"
+          test -z "$(git -C evidence status --porcelain)"
+          exit "$status"
+      - name: Preserve independent strict output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-http-01-independent-d13-ffeba86
+          path: ${{ runner.temp }}/r1-http-d13/
+          if-no-files-found: warn
+          retention-days: 30
