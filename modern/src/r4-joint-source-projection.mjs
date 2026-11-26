@@ -16,7 +16,7 @@ const text=x=>typeof x==='string'&&Buffer.byteLength(x)<=100000;
 const pins={drlog:'e60cda027c87de25585ee59bf64a4cb24b9d1476',colock:'99ff12db08135879e1a570cef1424f6dd5bec151',lock:'84382170f1b7f70348c4e2a91bf30b1d1043b964',period:'6183e88e9dd69a16606a1064c8084e9a1411dbd5'};
 const producerKinds=new Set(['training','boarding','maintenance','race-prize','dragon-purchase','rider-creation','pasture-creation','stable-creation']);
 export function jointCanonical(x){
-  if(x===null||typeof x==='boolean'||typeof x==='string'||int(x))return JSON.stringify(x);
+  if(x===null||typeof x==='boolean'||typeof x==='string'||typeof x==='number'&&Number.isFinite(x)&&Math.abs(x)<=Number.MAX_SAFE_INTEGER)return JSON.stringify(x);
   if(Array.isArray(x))return '['+x.map(jointCanonical).join(',')+']';
   if(plain(x))return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+jointCanonical(x[k])).join(',')+'}';
   fail('canonical JSON values required');

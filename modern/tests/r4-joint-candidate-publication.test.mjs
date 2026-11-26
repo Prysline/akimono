@@ -11,7 +11,9 @@ import {guildSources,dragonSources,projectorFor} from './support/r4-joint-candid
 const perl=fileURLToPath(new URL('./original-perl/original-r4-guild-peer-buy-probe.pl',import.meta.url));
 const {cases}=JSON.parse(execFileSync('perl',[perl],{encoding:'utf8'}));
 const oracle=cases.find(x=>x.spec.name==='same-bulk-negative');
-const withDragon=s=>({...s,dragon:0,drmoney:0});
+// Peer numeric oracle omits the opposite side's unused daily counter;
+// initialize those counters explicitly for this separate DragonBalance fixture.
+const withDragon=s=>({saletoday:0,paytoday:0,...s,dragon:0,drmoney:0});
 const genesis={
   lineage:'source-sandbox',commonBytes:'old dragon state',
   streets:{
