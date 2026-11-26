@@ -4517,8 +4517,8 @@
       "status": "歷史",
       "evidenceLevel": "Perl 差分＋fixture CAS",
       "originalSource": "inc-makeitem.cgi、inc-turn.cgi、兩 DSL plusup-tetu",
-      "assertions": "#5 PLUS -1200→720、五種期限/重觸發、59 PLUS 市場差分",
-      "executionPath": "original-b59-iron-event-lifecycle；advance-source-time-reviewed-events；legacy save",
+      "assertions": "L156–205 五 lifecycle 案 start/restart expiry 與原版 active state、strict expiry/group；L207–228 all79 numeric PLUS、ITEM5 modifier、active draw count；L230–325 source market-buy、13+段 memory CAS、strict equality 後才 expire、開始當段無 modifier、到期當段仍有 modifier、次段恢復、legacy save gen1/2；L327–400 tape/order/active shape/revision 與四 source mutation 拒絕。",
+      "executionPath": "reviewOriginalB59IronEvent/projectOriginalIronStart/Expiry/SparseAllPlus → advance-source-time-reviewed-events；legacy store 同程序 load。",
       "risk": "漏 overlay 或過期後永久修正",
       "disposition": "保留 source；#22 真 EVENT overlay 另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4527,6 +4527,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 30
+        },
+        {
+          "path": "modern/docs/r0-b59-b60-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -4536,7 +4540,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "固定時鐘、人工 reverse key order、duration/gate draws；sale prefix search 捕捉除跨期外所有 exception；原版單 event fragment、手組 ITEM assignment，Node expiry 部分只與輸入公式比較，未逐值核對全 log/draw/definedIndices/wireCsv；L331–374 拒絕以 pure apply、未送 adapter，repo 不變非真 CAS；happy 負例不隔離缺 draws；非正式 HTTP/v2/真 RNG。"
     },
     {
       "path": "modern/tests/b60-source-happy-nowfunc-live-cas.test.mjs",
@@ -4545,8 +4550,8 @@
       "status": "歷史",
       "evidenceLevel": "Perl 差分＋fixture CAS",
       "originalSource": "兩 DSL happy NOWFUNC、inc-makeitem.cgi、inc-turn.cgi",
-      "assertions": "九案 start/NOWFUNC 同片、人氣、rand(time)、期限等於片尾及續存",
-      "executionPath": "original-b60-happy-event-nowfunc；advance-source-time-reviewed-events；legacy save",
+      "assertions": "L160–200 九案 expiry/start/NOWFUNC active state/rank/gain/randMax 差分；L201–241 五 source drift、八 malformed now 及 rank cap；L242–343 source market 買#10、同段 start+NOWFUNC gain45、20 draws，次段40、四段1h、strict equality、expire 無 NOW、retrigger、legacy gen1/2；L344–397 七 tape/order、四 corrupt state、stale 拒絕。",
+      "executionPath": "reviewOriginalB60HappyEvent/projectOriginalHappyStart/Expiry/Now → advance-source-time-reviewed-events memory CAS；legacy save/load。",
       "risk": "漏同片 callback 或錯亂數範圍",
       "disposition": "保留 source；#22 自然事件、正式 v2 另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4555,6 +4560,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 31
+        },
+        {
+          "path": "modern/docs/r0-b59-b60-rereview-evidence.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -4564,7 +4573,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "固定時間、reverse key fixture、指定 draw；Node 差分 gate entered 由原版 log 選擇，不是獨立 Node gate oracle，未逐案比較全 log/draw count；sale prefix search 捕捉除跨期外所有錯誤；L349–396 pure apply 不送 adapter，repo 不變非 CAS；多 event/start ken-sale 負例未隔離缺 duration draw。非正式 HTTP/v2/真 RNG。"
     },
     {
       "path": "modern/tests/b61-source-sword-demand-live-cas.test.mjs",
@@ -6480,13 +6490,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "inc-makeitem.cgi、inc-turn.cgi、兩 DSL plusup-tetu",
-      "assertions": "#5 PLUS -1200→720、五案、期限、log",
-      "executionPath": "Perl .t → original-b59-iron-event-probe.pl；Node 對照 b59-source-iron-event-live-lifecycle.test.mjs",
+      "assertions": "L9–63 exit/JSON、ITEM5 base -1200/active720、start100、12h+12h、五案 expiry/group/draw、完整 start/end log order；all79 wholesale numeric、active supply>base、相同 draw count。",
+      "executionPath": "Perl .t → original-b59-iron-event-probe.pl；原版 GetItemNumber/GetTime/GetNumber、END/START fragment、59 PLUS/CheckWholeStore harness。",
       "risk": "漏 overlay 或過期後永久修正",
       "disposition": "保留原版來源斷言及探針；保留 source；#22 真 EVENT overlay 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b59-b60-rereview-evidence.md",
+          "line": 21
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b59-iron-event-probe.pl"
@@ -6494,7 +6509,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L73–75 依原版 parser helper 結果手組 assignment，L133–135 eval；非完整 compiler EVENT writer 或 DataRead require；PushLog 收集、RequireFile/GetPath 禁止其他 callback，單 synthetic group、固定 time/draw；wholesale 人工 DT/item、無全 CGI/期末/磁碟。"
     },
     {
       "path": "modern/tests/original-perl/original-b60-happy-event.t",
@@ -6503,13 +6519,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "兩 DSL happy NOWFUNC、inc-makeitem.cgi、inc-turn.cgi",
-      "assertions": "九案、_local_now、人氣、期限、rand",
-      "executionPath": "Perl .t → original-b60-happy-event-probe.pl；Node 對照 b60-source-happy-nowfunc-live-cas.test.mjs",
+      "assertions": "L9–69 exit/JSON、_local_now/start100/5h+5h、九案 active/expiry/retrigger、同段 NOWFUNC、rand ranges 100000/1800/18000/50、1min/1h floor、rank10000、log順序與每案 draw count。",
+      "executionPath": "Perl .t → original-b60-happy-event-probe.pl；原版 END/START/NOWFUNC region eval，真 temp event-n file require/undef。",
       "risk": "漏同片 callback 或錯亂數範圍",
       "disposition": "保留原版來源斷言及探針；保留 source；#22 自然事件、正式 v2 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b59-b60-rereview-evidence.md",
+          "line": 29
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b60-happy-event-probe.pl"
@@ -6517,7 +6538,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L75–84 手工組裝 event package/_local_now temp file（原版 compiler marker 查核但非全編譯器執行）；L113–121 手填單 event group/metadata/shop、固定 draws；GetPath 限定 temp file、PushLog 收集；不是全部事件/正式 DataRead/期末/存檔/玩家。"
     },
     {
       "path": "modern/tests/original-perl/original-b61-sword-demand.t",
@@ -43085,7 +43107,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 37
+    "reReviewedBaseline": 41
   },
   "provenance": [
     {
@@ -43170,7 +43192,8 @@
     "modern/docs/r0-b48-b49-rereview-evidence.md",
     "modern/docs/r0-b50-b52-rereview-evidence.md",
     "modern/docs/r0-b54-b56-rereview-evidence.md",
-    "modern/docs/r0-b57-b58-rereview-evidence.md"
+    "modern/docs/r0-b57-b58-rereview-evidence.md",
+    "modern/docs/r0-b59-b60-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

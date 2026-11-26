@@ -171,3 +171,9 @@
 - 四檔維持2有效2歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審37、剩26；實際逐檔207/233（88.8%）。
 - [逐檔證據](r0-b57-b58-rereview-evidence.md)：B57 十一例、兩 callback、受控CAS；B58 十五例獎級/邊界、合法 memory market 買券、人工 draw/legacy reload，整合 expected 為 Node projector，不是同 world Perl 全差分。非正式 HTTP/v2/自然RNG；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - 第43批 CI 45849759031/job140012737260 success，checkout `f0b67b86d33cabb85c23cd60658909efca6a449c` 與 `59d07e9` compare files=[]；JS1350/1350、0 fail/skip/cancelled、Perl2456/2456（85檔），DSL/source pins 通過。candidate tree 已知，checkout tree未單獨取得。第44/45批仍 in_progress；strict repro 未實跑；新 HEAD 待驗。
+
+### 第四十七批：B59–B60 既有分類重新覆核
+
+- 四檔維持2有效2歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審41、剩22；實際逐檔211/233（90.6%）。
+- [逐檔證據](r0-b59-b60-rereview-evidence.md)：B59 5案 END/START、全79 numeric PLUS、手組 modifier；B60 9案真 temp event-n file 與 NOWFUNC、手工組裝非全 compiler；連續 memory CAS 有效受控證據，負例 pure apply 不是真 CAS；固定 clock/draw/order、legacy reload 非正式 v2。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- 本輪 git ls-remote 實際 DNS failure，未本機重跑；第44/45/46批最後查詢尚未完成，新 HEAD 待驗；strict repro 未實跑。
