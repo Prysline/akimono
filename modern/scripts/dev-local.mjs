@@ -34,7 +34,7 @@ if(reviewedMarketCommerce&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR)
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 // Fail before opening a save store, generating a key or listening on HTTP.
-checkRuntimeEnvironment();
+const runtimeEnvironment=checkRuntimeEnvironment();
 const exactKeys=(obj,keys)=>{
   const names=Object.keys(obj),expected=keys===''?[]:keys.split(',');
   return names.length===expected.length&&expected.every(k=>Object.hasOwn(obj,k));
@@ -81,6 +81,7 @@ const streetModule=createStandardStreetModule({
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
+  expectedNativeInterpreter:runtimeEnvironment.interpreter,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -118,15 +119,18 @@ function verifyOrdinaryDraws(world,command){
 const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule);
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
-const checkpointStore=createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
+const checkpointRuntime=fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
        ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource]:[])],
-  }),
+});
+if(checkpointRuntime.interpreter!==runtimeEnvironment.interpreter)
+  throw Error('AKIMONO_PERL_FINGERPRINT: native interpreter changed during startup');
+const checkpointStore=createReviewedHistoryCheckpointStore({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...checkpointRuntime,
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
 const saveStore=createLocalWorldSaveStore({

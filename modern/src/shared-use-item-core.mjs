@@ -344,7 +344,8 @@ export function projectSharedUseItem({world,command,useItem}){
   if(rule.experienceCallback){
     const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
       points:effects.expPoints,count:original.count,
-      limit:3600});
+      limit:3600,resolveOrder:typeof useItem.resolveExperienceOrder==='function'?
+        args=>useItem.resolveExperienceOrder({...args,world,command}):null});
     nextShop.exp=next.exp;
     experienceGain=next.gained;
     experienceReductions=next.reductions;

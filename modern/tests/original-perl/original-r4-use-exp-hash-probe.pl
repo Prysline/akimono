@@ -1,0 +1,27 @@
+use strict;
+use warnings;
+use utf8;
+use FindBin;
+use JSON::PP;
+our ($DT,$LIMIT_EXP);
+local $/;
+my $input=decode_json(<STDIN>);
+open my $fh,'<:encoding(UTF-8)',"$FindBin::Bin/use.cgi" or die $!;
+my $source=<$fh>;close $fh;
+my $start=index($source,"\t#熟練度処理\n");
+my $end=index($source,"\n}\n\nsub MakeAmount",$start);
+die 'frozen EXP source moved' unless $start>=0&&$end>$start;
+my $body=substr($source,$start,$end-$start);
+my $run=eval 'sub {my ($USE)=@_;'.$body.'}';
+die $@ unless ref($run) eq 'CODE';
+my %exp=split(/,/,join(',',map{@$_}@{$input->{entries}}));
+# Explicit source callback fixture before the unchanged UseItem EXP tail.
+# #65/0 failure updates #62 even when it did not exist in the initial hash.
+if($input->{selfRumorFailure}){
+  $exp{62}-=100;
+  $exp{62}=0 if $exp{62}<0;
+}
+$DT={exp=>\%exp};$LIMIT_EXP=3600;
+my $USE={itemno=>$input->{target},exp=>$input->{points},result=>{count=>$input->{count}}};
+$run->($USE);
+print encode_json({exp=>$DT->{exp},expold=>$USE->{result}{expold}});

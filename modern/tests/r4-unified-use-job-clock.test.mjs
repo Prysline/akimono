@@ -31,6 +31,8 @@ import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {parseDsl} from '../src/parse-dsl.mjs';
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
 import {reviewOriginalUseJobFallback} from '../src/reviewed-use-job-fallback.mjs';
+import {r4UseExpHashSeed} from '../src/original-r4-use-exp-hash-replay.mjs';
+import {fileURLToPath} from 'node:url';
 
 // Clock-only oracle: execute the frozen compiler's actual JOB emission
 // block and frozen CheckUseItem on fresh USE rows. Base clocks now come
@@ -196,3 +198,39 @@ test('R4 controlled gathering fallback shares quote, exact time gate, USE effect
 });
 
 
+
+test('D16 controlled existing #9/1 USE redistributes tied EXP through the actual source GameCore CAS',async()=>{
+ const input=await loadNormalCommerceAuditSources();
+ const street=createStandardStreetModule({...input,enableReviewedNormalTime:true});
+ const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({periodSource:input.originalPeriodSource,
+   adminSource:input.originalAdminInitSource,readSource:input.originalDataReadSource,writeSource:input.originalDataWriteSource,
+   reviewedB41:street.reviewedB41}));
+ const repo=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({
+   worldId:'controlled-native-exp-overflow',streetId:street.id,nowSeconds:1000000,period}),streetModule:street});
+ function run(repository,kind,fields={}){return executeMemoryCommand({repository,streetModule:street,
+   command:{kind,expectedRevision:repository.read().revision,...fields}});}
+ assert.equal(run(repo,'initialize-source-market').ok,true);
+ assert.equal(run(repo,'open-shop',{shopId:1,ownerName:'來源測試',shopName:'熟練度測試'}).ok,true);
+ const seed=structuredClone(repo.read()),shop=seed.shops[0];
+ shop.item[8]=1;shop.job='material';shop.exp={9:995,12:868,15:868,16:869};shop.time=seed.nowSeconds-609;
+ const trial=createSourceReviewedMemoryWorldAdapter({initialWorld:seed,streetModule:street});
+ const before=trial.read();
+ const fields={shopId:1,itemId:9,useId:1,requestedCount:1,randomDraws:[0,0,0,0,0,0,999999]};
+ const command={kind:'use-item',expectedRevision:before.revision,...fields};
+ const oracle=JSON.parse(execFileSync('perl',[fileURLToPath(new URL('./original-perl/original-r4-use-exp-hash-probe.pl',import.meta.url))],{
+   input:JSON.stringify({entries:Object.entries(shop.exp),target:9,points:20,count:1}),encoding:'utf8',
+   env:{...process.env,PERL_HASH_SEED:r4UseExpHashSeed({world:before,command}),PERL_PERTURB_KEYS:'0'}}));
+ const result=run(trial,'use-item',fields);
+ assert.equal(result.ok,true,JSON.stringify(result.details));
+ assert.equal(result.details.timeSpentSeconds,609);
+ assert.deepEqual(result.world.shops[0].exp,oracle.exp);
+ assert.equal(Object.values(result.world.shops[0].exp).reduce((a,b)=>a+b,0),3600);
+ assert.equal(result.world.shops[0].exp['9'],1000);
+ assert.equal(result.world.revision,before.revision+1);
+ assert.equal(result.world.nowSeconds,before.nowSeconds);
+ assert.deepEqual(before.shops[0].exp,shop.exp);
+ const replay=createSourceReviewedMemoryWorldAdapter({initialWorld:before,streetModule:street});
+ assert.deepEqual(run(replay,'use-item',fields).world,result.world);
+ const stale=executeMemoryCommand({repository:trial,streetModule:street,command});
+ assert.equal(stale.code,'REVISION_CONFLICT');assert.deepEqual(trial.read(),result.world);
+});

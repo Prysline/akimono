@@ -74,6 +74,7 @@ import {SOURCE_STANDARD_STREET_MAX_MONEY}
   from './shared-showcase-price.mjs';
 import {originalSourceUseClock} from './shared-use-experience.mjs';
 import {reviewOriginalUseJobFallback} from './reviewed-use-job-fallback.mjs';
+import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
 import {compileReviewedSelfAdvertiseUse}
@@ -178,7 +179,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
-  enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,
+  enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,expectedNativeInterpreter=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
@@ -484,7 +485,14 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
+  // Native equal-EXP redistribution belongs to the existing reviewed
+  // normal command and replay authority; never accept a player permutation.
+  const expHashReview=enableReviewedNormalTime&&originalUseSource!==null&&originalDataReadSource!==null?
+    reviewUseExpHash({useSource:originalUseSource,readSource:originalDataReadSource}):null;
   const useItem=Object.freeze({
+    ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({
+      ...args,review:expHashReview,expectedInterpreter:expectedNativeInterpreter,
+    })}:{}),
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:

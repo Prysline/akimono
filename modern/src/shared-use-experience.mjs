@@ -22,7 +22,7 @@ export function originalUseTimeSeconds({time,exptime,experience}){
  * only when LIMIT_EXP is exceeded. Equal-EXP ties are unreviewed Perl hash
  * iteration order; fail closed if redistribution would depend on them.
  */
-export function originalUseExperience({records={},itemId,points,count,limit=3600}){
+export function originalUseExperience({records={},itemId,points,count,limit=3600,resolveOrder=null}){
   safe(itemId,'itemId',1);safe(points,'exp per use');
   safe(count,'effective count',1);safe(limit,'LIMIT_EXP');
   if(!records||typeof records!=='object'||Array.isArray(records))
@@ -44,10 +44,14 @@ export function originalUseExperience({records={},itemId,points,count,limit=3600
   const reductions=[];
   if(limit>0&&total>limit){
     let excess=total-limit;
-    const keys=Object.keys(exp).sort((a,b)=>exp[a]-exp[b]);
+    let keys=Object.keys(exp).sort((a,b)=>exp[a]-exp[b]);
     const eligible=keys.filter(id=>id!==key);
-    if(eligible.some((id,i)=>i>0&&exp[eligible[i-1]]===exp[id]))
-      fail('ambiguous Perl hash tie in LIMIT_EXP redistribution');
+    if(eligible.some((id,i)=>i>0&&exp[eligible[i-1]]===exp[id])){
+      if(typeof resolveOrder!=='function')fail('ambiguous Perl hash tie in LIMIT_EXP redistribution');
+      const observed=resolveOrder({records,exp:{...exp},itemId});
+      if(!Array.isArray(observed)||observed.length!==keys.length||new Set(observed).size!==keys.length||observed.some((id,i)=>typeof id!=='string'||!Object.hasOwn(exp,id)||i>0&&exp[observed[i-1]]>exp[id]))fail('invalid reviewed EXP order');
+      keys=observed;
+    }
     let remaining=keys.length-1;
     for(const id of keys){
       if(id===key)continue;
