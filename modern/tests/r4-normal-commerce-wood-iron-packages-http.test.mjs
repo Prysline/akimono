@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
+import {planGenuineMarketStep} from './support/genuine-market-plan.mjs';
 
 async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0,expectedTools=1}){
   assert.equal(p.stock(id),0,'no pre-existing package');
@@ -160,6 +161,76 @@ test('R4 genuine #74 steel equipment package from four trained production books,
   await packageAndSell(t,p,{id:74,useId:15,components:[42,48,54,59],sales,losses});
 });
 
+/** Build working capital and donor EXP with the same four legal product
+ * routes already exercised by the genuine high-point test. Buy scarce
+ * magic stones while the shop is productive, rather than waiting on a
+ * sold-out iron shelf after all the expensive components are accumulated.
+ * Targets are client strategy only; all money, stock and EXP come from HTTP.
+ */
+async function prepareAdvancedCapital(t,p){
+  const goods=[
+    {id:40,book:17,useId:0,raw:3,input:20,output:20},
+    {id:57,book:17,useId:1,raw:3,input:20,output:20},
+    {id:45,book:16,useId:0,raw:2,input:24,output:30},
+    {id:51,book:16,useId:1,raw:2,input:24,output:32},
+  ];
+  const reserve=()=>Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000);
+  await p.use(79,1);
+  await p.market(13);await p.market(12);
+  for(let n=0;;n++){
+    assert.ok(n<32,'advanced capital construction budget');
+    await p.enoughTime(p.quote(63,3).timePerUseSeconds);
+    if(p.state.shop.money>=40000+reserve())break;
+    await p.use(13,1);
+  }
+  await p.use(63,3);assert.equal(p.state.shop.showcasecount,4);
+  async function produce(g){
+    const count=Math.min(6,Math.max(1,Math.ceil((120-p.stock(g.id))/(g.output*0.8))));
+    await p.gather(g.raw,g.input*count);
+    const r=await p.use(g.book,g.useId,count);
+    assert.equal(r.details.effectiveCount,count);
+    assert.ok(r.details.originalUseItem.some(([id,n])=>id===g.raw&&n===g.input*count));
+    assert.ok(r.details.originalAddItem.some(([id,n])=>id===g.id&&n>=Math.floor(g.output*count*0.8)));
+  }
+  for(const g of goods)for(let n=0;p.stock(g.id)<120;n++){
+    assert.ok(n<4,'advanced capital initial manufacture #'+g.id);await produce(g);
+  }
+  await p.enoughTime(4*600);
+  for(const [shelf,g] of goods.entries()){
+    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:g.id,per:120});
+    assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+  }
+  const start=p.state.world.nowSeconds;
+  let steps=0,stonePurchases=0,lastPeriod=-1;
+  const status=()=>({money:p.state.shop.money,stones:p.stock(8),exp16:p.exp(16),exp17:p.exp(17),
+    period:p.state.world.period.settledCount,steps,stonePurchases,stock:goods.map(g=>[g.id,p.stock(g.id)])});
+  // 30 for the skill, 6 for one mid recipe, up to 20 for two high
+  // recipes, and 24 for source EXP recovery or additional batches.
+  // #8 PLUS is 6h; buy every affordable arrival during actual trade.
+  while(p.state.shop.money<3000000||p.stock(8)<80||p.exp(16)+p.exp(17)<1600){
+    assert.ok(++steps<=1800&&p.state.world.nowSeconds-start<=28*129600,
+      'advanced capital/stone supply budget '+JSON.stringify(status()));
+    if(lastPeriod!==p.state.world.period.settledCount){
+      lastPeriod=p.state.world.period.settledCount;t.diagnostic('advanced capital '+JSON.stringify(status()));
+    }
+    if(p.stock(8)<80){
+      const offer=p.state.marketOffers.find(x=>x.itemId===8);
+      const plan=planGenuineMarketStep({offer,owned:p.stock(8),needed:80-p.stock(8),partial:true,
+        money:p.state.shop.money,remaining:p.remaining(),reserve:reserve()});
+      if(plan.kind==='buy'){
+        await p.market(8,plan.quantity,{partial:true});stonePurchases+=plan.quantity;continue;
+      }
+    }
+    const g=goods.reduce((a,b)=>p.stock(a.id)<=p.stock(b.id)?a:b);
+    if(p.stock(g.id)<64)await produce(g);else await p.tick(60);
+  }
+  assert.ok(stonePurchases>=80);
+  // Keep the showcases earning while procuring the skill materials and
+  // the first career. The packing sale oracle requires a single shelf;
+  // shrink later with a separately acquired original #63 tool.
+  t.diagnostic('advanced capital ready '+JSON.stringify(status()));
+}
+
 /** #75 and #76 share one actual player so the #76 progression reuses
  * legitimately earned EXP rather than re-creating a trained shop.
  * Four books: thresholds 40%/60%, except staff 50%/70%.
@@ -168,24 +239,23 @@ test('R4 genuine #74 steel equipment package from four trained production books,
 test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sales and four v2 generations',async t=>{
   const sales75={},loss75={},sales76={},loss76={};
   const watch75=onSale(sales75,loss75,75),watch76=onSale(sales76,loss76,76);
-  // One finite budget for all four careers, eight advanced recipes and
-  // actual source book loss replacements. Previous CI exhausted 120 works
-  // at the fourth career or the second packing tool. Allow at most 60
-  // 10000-G works per career on average (240 total), not a retry of a world.
-  // The unused basic iron products are saleable funding stock, never the
-  // eight advanced components reserved for #75/#76.
+  // One finite fallback budget, unchanged from the previous run. The
+  // primary funding is now real multi-shelf natural commerce. Reserved
+  // advanced components are never displayed until they are packed.
   const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,
     fundingWorkBudget:240,fundingSaleItems:[41,47,53,58],
     onTick(r,before){watch75(r,before);watch76(r,before);}});
-  await p.use(79,0);await p.use(79,3);await p.market(13);
-  // Acquire both consumable tools while the shop has low carrying costs.
-  // They have no source COST; no second market wait after the first sale.
-  await p.market(39,2,{partial:true});
-  assert.equal(p.stock(39),2);
+  await prepareAdvancedCapital(t,p);
+  await p.market(39,2,{partial:true});assert.equal(p.stock(39),2);
+  await p.market(63);
   await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
-  await p.use(37,0);assert.equal(p.stock(18),1);
+  await p.market(37);await p.use(37,0);assert.equal(p.stock(18),1);
   await p.market(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
-  for(const [book,basic,career,midGate,highGate] of [[20,41,4,400,600],[21,47,5,400,600],[22,53,6,400,600],[23,58,7,500,700]]){
+  // Prepare the rare staff inputs before converting the donor EXP.
+  // First finish the stone-dependent career, then the three iron-only
+  // training routes. Do not reset/retry a world or select a draw.
+  await p.ore(6,20);await p.ore(7,40);
+  for(const [book,basic,career,midGate,highGate] of [[23,58,7,500,700],[20,41,4,400,600],[21,47,5,400,600],[22,53,6,400,600]]){
     await p.market(book);await p.market(78);
     await p.ore(5,160);
     await p.use(78,career);
@@ -231,6 +301,8 @@ test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sal
         money:p.state.shop.money,costtoday:p.state.shop.costtoday,fundingWorks:p.fundingWorks}));
     }
   }
+  await p.use(63,0);
+  assert.equal(p.state.shop.showcasecount,1);
   await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0,expectedTools:2});
   assert.equal(p.stock(39),1);
   await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2});
