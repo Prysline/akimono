@@ -6606,17 +6606,37 @@
       "path": "modern/tests/original-perl/original-r4-dragon-balance.t",
       "sha": "453f45ce49144b02cd4aa69abc3777b3033eb03f",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（龍賽檔案／ledger）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "L9–36 exit0/JSON、9 cases、正負 money、paytoday330、duplicate ID→500、absent 仍結算既有250、empty unlink、chop→50、CRLF→200、unknown ID ignored、-800/+200 net。",
+      "executionPath": "原版 DragonBalance + 擷取 per-shop ledger in isolated Perl",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工雙店；原版真隔離 drapay read/unlink；GetPath 只許測試路徑，l/GetMoneyString identity，PushLog 記錄參數而非持久 log；Node payoutFilePresent/Consumed 為文字投影，非磁碟操作。未執行完整 period、真龍賽生成、正式玩家、HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 13
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-dragon-balance-probe.pl",
+          "sha": "c87bb942a3e28118cbf3f0049d8211233c2723fa"
+        }
+      ],
+      "fixtures": "與 Node 檔同九原版 fixture。",
+      "limitations": "人工雙店；原版真隔離 drapay read/unlink；GetPath 只許測試路徑，l/GetMoneyString identity，PushLog 記錄參數而非持久 log；Node payoutFilePresent/Consumed 為文字投影，非磁碟操作。未執行完整 period、真龍賽生成、正式玩家、HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-dynamic-population-plus.t",
@@ -7250,33 +7270,105 @@
       "path": "modern/tests/original-perl/original-r4-period-dragon-chain.t",
       "sha": "435f51f9002f2df13147351372b10d42b6dd0c04",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期龍賽 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L9–39 exit0/JSON、兩期 dragon500→-500、drmoney500→0、payyesterday517、兩 drapay 消耗、drawsUsed3/3、rankingcount1→2。",
+      "executionPath": "frozen SortDT + pre-backup prefix in one Perl process",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 29
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-dragon-chain-probe.pl",
+          "sha": "35d1b98cabce56129fb3598a6a90e09b16e2f6da"
+        }
+      ],
+      "fixtures": "同上；固定3 draws/期。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-dragon-dignity.t",
       "sha": "7bf0c7afe7030e29961e4fda3277203cf7cd9eb9",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期龍賽／爵位 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L9–38 exit0/JSON、兩期 dignity26→23→23、drawsUsed4/4、dragon500→-500、drmoney0、payyesterday517、兩 drapay 消耗、rankingcount2。",
+      "executionPath": "frozen SortDT + pre-backup prefix with dignity rand(100) in one Perl process",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 45
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-dragon-dignity-probe.pl",
+          "sha": "584f4af5c43d84c058be9915d82cc6af5fb4513c"
+        }
+      ],
+      "fixtures": "同上；固定4 draws/期。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages.t",
@@ -12965,38 +13057,193 @@
       "path": "modern/tests/r4-period-dragon-dignity-same-world-chain.test.mjs",
       "sha": "ea3cd285a566594924fe2fd20916ef5193474f54",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（兩期龍賽／爵位 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L58–95 十 phases、兩期 shop/town/population/points exact、dignity draw range100/count1、file consumed、nonCommittable/worldStateWritten=false、input immutable、26→23→23、dragon-500/drmoney0。L96–105 兩次 Perl process；L106–130 threshold drift、legacy review、null/1000000 draws、negative dignity 拒絕。",
+      "executionPath": "Perl period dragon+dignity probe → projectOriginalSoloPeriodPhaseChain (dragon/dignity opt-in)",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 L9–10 memory imports 未用、L42–44 B50 回傳值未用；L116–118 legacy combined input 可先由 nonzero dignity/dragon 守門拒絕，不能獨立證明缺 dignity draw review guard。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 37
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-dragon-dignity-probe.pl",
+          "sha": "584f4af5c43d84c058be9915d82cc6af5fb4513c"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b50-period-chain-probe.pl",
+          "sha": "f069ead5a3857f578c2ed2682ede26ce83536b82"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        },
+        {
+          "path": "modern/src/original-r4-period-dignity-decay.mjs",
+          "sha": "624948a17862f66c25b73fdafd5f10717180a309"
+        }
+      ],
+      "fixtures": "單店 dignity26→23→23；payout +500/-1000；now1000000/1129600；award/dignity/2 territory draws each；dignity 0/999999 millionths.",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 L9–10 memory imports 未用、L42–44 B50 回傳值未用；L116–118 legacy combined input 可先由 nonzero dignity/dragon 守門拒絕，不能獨立證明缺 dignity draw review guard。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/r4-period-dragon-same-world-chain.test.mjs",
       "sha": "4e90d01e552d51e592effd9305766ef5ecf0888f",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（兩期龍賽 prefix）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L57–91 九 phases、兩期 shop/town/population/points exact、file consumed、nonCommittable、worldStateWritten=false、input immutable、Node log count=1；dragon500→-500、drmoney0、payyesterday517。L92–100 兩次 Perl process；L101–123 legacy payout/nonzero dragon、committable forged、NaN/overflow 拒絕。",
+      "executionPath": "Perl period dragon probe → projectOriginalSoloPeriodPhaseChain (dragon opt-in)",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 L9–10 memory imports 未用、L42–44 B50 回傳值未用；L101 標題 world CAS 但未執行 CAS，L80–81 僅 Node log 數，原版 PushLog stub，非 log payload 差分。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 105
+        },
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 21
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-dragon-chain-probe.pl",
+          "sha": "35d1b98cabce56129fb3598a6a90e09b16e2f6da"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b50-period-chain-probe.pl",
+          "sha": "f069ead5a3857f578c2ed2682ede26ce83536b82"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        }
+      ],
+      "fixtures": "單店、dignity0、guild/EVENT empty；payout +500/-1000；now1000000/1129600；award+2 territory draws each.",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock、固定 NOW_TIME、指定 rand tape；WriteLog/PushLog stub，GetMoneyString/l identity，CloseShop/EditGuildMoney 禁止，EVENT/guild 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 L9–10 memory imports 未用、L42–44 B50 回傳值未用；L101 標題 world CAS 但未執行 CAS，L80–81 僅 Node log 數，原版 PushLog stub，非 log payload 差分。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/r4-period-expiry-all-stages-chain.test.mjs",
@@ -13597,22 +13844,45 @@
       "path": "modern/tests/r4-source-dragon-balance.test.mjs",
       "sha": "5a322062f0095ca3d2ad4840cf2dd9399bf28919",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（龍賽檔案／純 ledger）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "L20–40 九 cases：shops/log arguments/file present/consumed/noncommittable/input immutable；正負結算、chop。L41–47 兩次 Perl process。L48–73 chop→chomp/順序 drift、malformed text、overflow、null、duplicate shop ID 拒絕。",
+      "executionPath": "DragonBalance probe → projectR4DragonBalance",
+      "risk": "龍賽 payout 累計、歷史收支、原版順序／爵位與 IO 邊界",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工雙店；原版真隔離 drapay read/unlink；GetPath 只許測試路徑，l/GetMoneyString identity，PushLog 記錄參數而非持久 log；Node payoutFilePresent/Consumed 為文字投影，非磁碟操作。未執行完整 period、真龍賽生成、正式玩家、HTTP/CAS/v2。 malformed/overflow 等負例是 Node 收窄契約，不是 Perl 拒絕差分。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 103
+        },
+        {
+          "path": "modern/docs/r0-r4-dragon-period-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-dragon-balance-probe.pl",
+          "sha": "c87bb942a3e28118cbf3f0049d8211233c2723fa"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        }
+      ],
+      "fixtures": "兩店 money1000/2000；正負、duplicate ID、absent、empty、no newline、CRLF、unknown ID、既有正負 dragon，共九 cases。",
+      "limitations": "人工雙店；原版真隔離 drapay read/unlink；GetPath 只許測試路徑，l/GetMoneyString identity，PushLog 記錄參數而非持久 log；Node payoutFilePresent/Consumed 為文字投影，非磁碟操作。未執行完整 period、真龍賽生成、正式玩家、HTTP/CAS/v2。 malformed/overflow 等負例是 Node 收窄契約，不是 Perl 拒絕差分。",
+      "reviewScope": "完整測試／對應 probe／第28批固定 period/DSL 與 Node source contract"
     },
     {
       "path": "modern/tests/r4-source-guild-files.test.mjs",
@@ -40049,14 +40319,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 158,
-      "待補": 43
+      "有效": 164,
+      "待補": 37
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 127,
+    "currentSessionReviewed": 133,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -40124,7 +40394,8 @@
     "modern/docs/r0-r4-clock-population-plus-evidence.md",
     "modern/docs/r0-r4-sorted-pre-event-evidence.md",
     "modern/docs/r0-r4-p3-pre-event-overlay-evidence.md",
-    "modern/docs/r0-r4-period-all-finance-evidence.md"
+    "modern/docs/r0-r4-period-all-finance-evidence.md",
+    "modern/docs/r0-r4-dragon-period-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -40306,6 +40577,153 @@
       "checkout": "8de14457b5c31055f9abb9a097c86c3cd0123137",
       "run": 45815056839,
       "job": 139892525015,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "72b39f5710842a8118c2919a493b9403b123e0b2",
+      "tree": "35304b4e5cbe933090bf045c30b0b878658f8016",
+      "checkout": "f3649ef8d9cb0e72fdfcb5cd7ff7c15efd4c435d",
+      "run": 45814598758,
+      "job": 139890932520,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "a84d2de4a0f949312d7358a2a3a7263267bb9334",
+      "tree": "aa1ca0de58e22b5e8a1ef19cb5b6a884947c1060",
+      "checkout": "98ac80a195fe37720ca46fc888424890429170e0",
+      "run": 45814822511,
+      "job": 139891712582,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "15e35e984ce094e41b7e62236d9b21505249435f",
+      "tree": "0839dca1c1703a1fc8600af8e21b7932aa5ef976",
+      "checkout": "f7c63a3309e8d82161ea851bd4e2fdde3de91621",
+      "run": 45815436169,
+      "job": 139893860805,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "dcbc5fad1b88b014f1b08fd9c9423fbb2e4a7b6d",
+      "tree": "a8ec3fd305818929e1701500bb692ddfd41b7710",
+      "checkout": "f35129062d5b19d999ea7891f31796b9159ea895",
+      "run": 45815667129,
+      "job": 139894639625,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "d0091c4aa749146facb174caae95ecbb6b334c94",
+      "tree": "476346668feca40fa5f04571362561366b222da5",
+      "checkout": "9dd1f4fafc092be77ae65ef97f31b2f26c6facb9",
+      "run": 45816082328,
+      "job": 139896056757,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "ff9d9f66e525751376ee0038fdf5f928fa103835",
+      "tree": "e280d89198abc30b4a720baa33101bc5c2ee0816",
+      "checkout": "a0dc80d63c303de94335ae467c5ce999ce6b9d08",
+      "run": 45817237519,
+      "job": 139900009144,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "c8e18aa9682e5e288bdb6b468d6c171912a0664c",
+      "tree": "bcc51dc3ef7fe6b0892ed9d8b25a76e5bdf47cdc",
+      "checkout": "03baed3c358bfa6384fbf5f08e3e035f32b7c393",
+      "run": 45817807463,
+      "job": 139901955114,
       "conclusion": "success",
       "js": {
         "total": 1350,

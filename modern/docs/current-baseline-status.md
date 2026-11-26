@@ -174,3 +174,19 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ### CI 補核：第22批
 
 - run 45815056839 / job 139892525015：success，HEAD `57dfd4d950fd93854a757367f3fc34f4c7ad1348`、實際 checkout `8de14457b5c31055f9abb9a097c86c3cd0123137`，tree `beefcbf6efcca540f32280c5d8490ad574c0884e` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。非最新 HEAD 成功證明。
+
+### 第 29 批：R4 龍賽檔案／兩期龍賽與爵位
+
+- 新審 6 檔：有效 164、歷史 32、待補 37；固定分母 233，分類收斂 196/233（84.1%）；累計另逐檔審閱 133 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-dragon-period-evidence.md)：九龍賽檔案 cases、兩期龍賽及爵位 prefix；Perl 真隔離 drapay read/unlink，Node 純文字投影、每期重讀 Oracle input，非獨立連續提交。人工 stock/clock/rand、log stub；CAS 標題無 CAS 呼叫、legacy dignity 負例未隔離 guard；不證正式玩家／HTTP／v2。83 詳細功能列與正式下界不變。未本地重跑，Git DNS 失敗，R1-HTTP-01 未實跑；新候選 CI 待核。
+
+### CI 補核：第20、21及23–27批
+
+- 第20批 run 45814598758 / job 139890932520：success，HEAD `72b39f5710842a8118c2919a493b9403b123e0b2`、實際 checkout `f3649ef8d9cb0e72fdfcb5cd7ff7c15efd4c435d`，tree `35304b4e5cbe933090bf045c30b0b878658f8016` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第21批 run 45814822511 / job 139891712582：success，HEAD `a84d2de4a0f949312d7358a2a3a7263267bb9334`、實際 checkout `98ac80a195fe37720ca46fc888424890429170e0`，tree `aa1ca0de58e22b5e8a1ef19cb5b6a884947c1060` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第23批 run 45815436169 / job 139893860805：success，HEAD `15e35e984ce094e41b7e62236d9b21505249435f`、實際 checkout `f7c63a3309e8d82161ea851bd4e2fdde3de91621`，tree `0839dca1c1703a1fc8600af8e21b7932aa5ef976` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第24批 run 45815667129 / job 139894639625：success，HEAD `dcbc5fad1b88b014f1b08fd9c9423fbb2e4a7b6d`、實際 checkout `f35129062d5b19d999ea7891f31796b9159ea895`，tree `a8ec3fd305818929e1701500bb692ddfd41b7710` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第25批 run 45816082328 / job 139896056757：success，HEAD `d0091c4aa749146facb174caae95ecbb6b334c94`、實際 checkout `9dd1f4fafc092be77ae65ef97f31b2f26c6facb9`，tree `476346668feca40fa5f04571362561366b222da5` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第26批 run 45817237519 / job 139900009144：success，HEAD `ff9d9f66e525751376ee0038fdf5f928fa103835`、實際 checkout `a0dc80d63c303de94335ae467c5ce999ce6b9d08`，tree `e280d89198abc30b4a720baa33101bc5c2ee0816` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第27批 run 45817807463 / job 139901955114：success，HEAD `c8e18aa9682e5e288bdb6b468d6c171912a0664c`、實際 checkout `03baed3c358bfa6384fbf5f08e3e035f32b7c393`，tree `bcc51dc3ef7fe6b0892ed9d8b25a76e5bdf47cdc` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第28批 run 45818228163 尚 in_progress（本批查詢），前述結果不替代新 HEAD 驗收。
