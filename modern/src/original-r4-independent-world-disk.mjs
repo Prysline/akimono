@@ -6,10 +6,10 @@ import {createHash} from 'node:crypto';
 import {reviewPeriodPlay,serializePeriodPlay,parsePeriodPlay} from './original-r4-period-play-file.mjs';
 import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
-import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
+import {reviewPeriodLog,projectCrossPeriodLogRows,projectExternalCrossPeriodLogRows,projectReviewedArmyConflictLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {PALACE_COMMAND,reviewOriginalPalaceRules,validatePalaceTown,describeOriginalPalace,projectOriginalPalaceMission} from './original-r4-palace-mission.mjs';
-import {ARMY_COMMANDS,createIndependentArmyProjection} from './original-r4-independent-army.mjs';
+import {ARMY_COMMANDS,CONFLICT_COMMANDS,createIndependentArmyProjection} from './original-r4-independent-army.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
 const CANDIDATE='source-cross-period-candidate-not-committed';
@@ -24,12 +24,12 @@ export function independentCandidateWorld(world){
   return {...world,period:{...period,state:period.state===R4_SETTLED_STATE?CANDIDATE:period.state}};
 }
 function sha1(s){return typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null}
-export function createIndependentDiskProjection({sources,sort,street}){
+export function createIndependentDiskProjection({sources,sort,street,externalRebel=false}){
   if(sha1(sources.newSource)!=='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7')fail('frozen new.cgi required');
-  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true}),
+  const codec={reviewed:reviewPeriodPlay({writeSource:sources.writeSource,incFuncSource:sources.readSource,detailSource:sources.detailSource,configSource:sources.configSource},{crossPeriod:true,ordinaryMultiShelf:true,externalRebel}),
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
-  const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
+  const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource,...(externalRebel?{armyCommand:sources.armyCommandSource}:{})});
   const palaceInputs=[sources.palaceViewSource,sources.palaceCommandSource,sources.palaceConfigSource];
   if(palaceInputs.some(s=>s!=null)&&palaceInputs.some(s=>s==null))fail('incomplete palace source set');
   const palace=palaceInputs.every(s=>s!=null)?reviewOriginalPalaceRules({
@@ -37,7 +37,8 @@ export function createIndependentDiskProjection({sources,sort,street}){
     configSource:sources.palaceConfigSource,readSource:sources.readSource}):null;
   const armyInputs=[sources.armyViewSource,sources.armyCommandSource,sources.armyFileSource,sources.armyCalcSource];
   if(armyInputs.some(s=>s!=null)&&armyInputs.some(s=>s==null))fail('incomplete army source set');
-  const army=armyInputs.every(s=>s!=null)?createIndependentArmyProjection(sources):null;
+  const army=armyInputs.every(s=>s!=null)?createIndependentArmyProjection(sources,{externalRebel}):null;
+  if(externalRebel&&!army)fail('complete army source set required for external time');
   const palaceArgs={reviewed:palace,townReview:codec.townReview};
   const applyPalace=(world,command)=>projectOriginalPalaceMission({...palaceArgs,world,command});
   function wire(world,town){
@@ -79,7 +80,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
         next={pass:'',comment:'',remoteaddr:'',guild:'',blocklogin:'',nocheckip:'',job:'',
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
-      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS].includes(command.kind))next.lastlogin=now;
+      if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS,...(externalRebel?CONFLICT_COMMANDS:[])].includes(command.kind))next.lastlogin=now;
       return projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
     });
     const after={...before,shops,market:applied.market??before.market,nowSeconds:now,period,revision:before.revision+1};
@@ -102,13 +103,23 @@ export function createIndependentDiskProjection({sources,sort,street}){
         '僱用矮人兵士 '+r.count+' 名，單價 '+r.unitPrice+'，合計 '+r.cost+'；消耗時間 40 分鐘。':
         '解僱矮人兵士 '+r.count+' 名；消耗時間 10 分鐘。'].join('\t')+'\n');
     }
+    const conflictAction=externalRebel&&CONFLICT_COMMANDS.includes(command.kind);
+    if(conflictAction){
+      if(!old)fail('source conflict disk required');
+      const expected=army.applyConflict(before,command);
+      if(!same(expected,applied))fail('conflict successor drift');
+      const candidate={source:expected.receipt.source,committable:false,receipt:{...expected.receipt,committable:false}};
+      newRows.unshift(...projectReviewedArmyConflictLogRows({reviewed:log,candidate,nowSeconds:now}));
+    }
+    const externalTime=externalRebel&&command.kind==='advance-reviewed-world-time'&&applied.receipt?.source==='r4-external-rebel-cross-period-candidate.v1';
+    if(externalTime&&(!old||applied.receipt.sourceTrace?.liveArmySha256!==(old.live['army.cgi']?createHash('sha256').update(old.live['army.cgi'].bytes).digest('hex'):null)))fail('external time army preimage mismatch');
     const play=wire(after,town);
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
     if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
     if(['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
-    if(newRows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('bounded log rows');
+    if(newRows.some(s=>typeof s!=='string'||!(conflictAction?/^\d+\t[0123]\t\d+\t[^\r\n\t]*\n$/:/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/).test(s)))fail('bounded log rows');
     let d;
     if(!old){
       if(command.kind!=='initialize-source-market'||before.revision!==0)fail('only fresh source initialization');
@@ -119,7 +130,7 @@ export function createIndependentDiskProjection({sources,sort,street}){
       const crossings=period.settledCount-before.period.settledCount;
       if(![0,1].includes(crossings))fail('one source boundary per command');
       const live={...old.live};
-      if(ARMY_COMMANDS.includes(command.kind))live['army.cgi']=entry(applied.armyBytes,now);
+      if(ARMY_COMMANDS.includes(command.kind)||conflictAction||externalTime&&applied.armyBytes!==null)live['army.cgi']=entry(applied.armyBytes,now);
       // period.cgi copies the prior LIVE files, not the new settled play.
       const generations=crossings?[Object.fromEntries(backups.map(n=>[n,entry(old.live[n].bytes,now)])),...old.generations.slice(0,2)]:old.generations;
       // DataWrite checks the original backup play mtime, before RenewLog.
@@ -139,5 +150,6 @@ export function createIndependentDiskProjection({sources,sort,street}){
     return next;
   }
   return Object.freeze({validate,finalize,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+    ...(externalRebel?{externalLogs:candidate=>projectExternalCrossPeriodLogRows({reviewed:log,candidate}),applyConflict:army.applyConflict,describeConflict:army.describeConflict}:{}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }

@@ -8,6 +8,8 @@ export function isReviewedOrdinaryCommand(c,street){
   switch(c.kind){
     case 'complete-palace-mission':return street.reviewedPalace===true&&exact(c,'expectedRevision,kind,shopId');
     case 'hire-army':case 'fire-army':return street.reviewedArmy===true&&exact(c,common+'requestedCount')&&int(c.requestedCount,1);
+    case 'start-rebellion':case 'join-rebellion':return street.reviewedRebelTime===true&&exact(c,common+'confirmation')&&c.confirmation==='rebel';
+    case 'dispatch-guard':return street.reviewedRebelTime===true&&exact(c,'kind,expectedRevision,shopId');
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
     case 'market-buy':{
       const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;

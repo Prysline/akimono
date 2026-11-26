@@ -5,13 +5,15 @@ import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-st
  * caller ordering. The original legacy/fixture StreetModule remains separate.
  */
 import {projectR4CrossPeriodCandidate,projectR4SettledPeriodCandidate,R4_CROSS_PERIOD_CANDIDATE} from './original-r4-cross-period-candidate.mjs';
+import {projectR4ExternalCrossPeriodCandidate,R4_EXTERNAL_CROSS_PERIOD_CANDIDATE} from './original-r4-external-cross-period-candidate.mjs';
+import {projectExternalTimeTrace} from './original-r4-external-time-trace.mjs';
 import {projectOriginalR4TimeSlices} from './original-r4-time-slices.mjs';
 import {reviewOriginalSoloPeriodPhaseChain} from './original-period-solo-chain.mjs';
 import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,reviewR4ExternalPreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
 import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
@@ -19,7 +21,7 @@ import {projectR4NormalTurnCandidate,R4_NORMAL_TURN_PROJECTION} from './original
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
-import {ARMY_COMMANDS} from './original-r4-independent-army.mjs';
+import {ARMY_COMMANDS,CONFLICT_COMMANDS} from './original-r4-independent-army.mjs';
 export const REVIEWED_WORLD_TIME_COMMAND='advance-reviewed-world-time';
 const fail=s=>{throw new RangeError('R4 reviewed local world time: '+s)};
 const keys=(o)=>Object.keys(o).sort().join(',');
@@ -30,7 +32,7 @@ export function isReviewedWorldTimeCommand(command){
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
 const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
-export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false}){
+export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedRebelTime=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
   const sorted=reviewR4SortedPreEvent(sources);
@@ -41,9 +43,18 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
-  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
-  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k));
+  if(typeof enableReviewedRebelTime!=='boolean'||enableReviewedRebelTime&&!enableReviewedCrossPeriod)fail('external time requires reviewed crossing disk');
+  const externalData=enableReviewedRebelTime?reviewR4ExternalPreEventItemOverlay(sources):null;
+  const externalEvents=externalData?reviewOriginalR4MultiEventFixture({
+    compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
+    reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
+    reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
+    reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:externalData.rebel}):null;
+  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,externalRebel:enableReviewedRebelTime}):null;
+  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k))||(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(k));
   const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true}):null;
+  const externalPeriod=externalData?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,reviewedRebelNow:externalData.rebel}):null;
+  const needsExternal=period=>Object.hasOwn(period.eventState??{},'rebel')||period.town?.leader!==0;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
   // initialize the crossing CAS adapter. Retain bounded canonical digests.
@@ -60,7 +71,9 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);
     }
-    validateR4PreEventPeriod({reviewed:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk)});
+    const external=enableReviewedRebelTime&&needsExternal(period);
+    if(external&&period.settledCount<1)fail('external time requires settled source state');
+    validateR4PreEventPeriod({reviewed:external?externalData:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk),externalCandidate:external});
     if(world.market===null){
       if(world.revision!==0||world.shops.length!==0||Object.keys(world.period.eventState).length!==0)fail('only fresh source market anchor');
     }else if(!validateSourceSparseMarket(world.market))fail('reviewed market');
@@ -92,6 +105,20 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const input=disk?independentCandidateWorld(world):world;
     const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod};
     const crossing=disk&&projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+command.minutes*60}).crossesSettlement;
+    if(enableReviewedRebelTime&&needsExternal(world.period)){
+      requireProvenance(world);
+      const candidate=projectR4ExternalCrossPeriodCandidate({...args,reviewedDataRead:externalData,reviewedEvents:externalEvents,reviewedPeriod:externalPeriod,
+        liveArmyBytes:world.period.disk.live['army.cgi']?.bytes??null});
+      const {shops,market,period,nowSeconds,evidence,stagedArmyBytes}=candidate;
+      if(candidate.source!==R4_EXTERNAL_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||candidate.taxRate!==0||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete external time candidate required');
+      const sourceTrace=projectExternalTimeTrace(candidate);
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,armyBytes:stagedArmyBytes,receipt:{
+        action:REVIEWED_WORLD_TIME_COMMAND,source:candidate.source,minutes:command.minutes,elapsedSeconds:command.minutes*60,
+        naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),
+        itemTurnAffectedSlices:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0),
+        settlementReceipt:null,sourceTrace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,
+        scope:'source-reviewed independent settled external rebel time; no leader tax, guild or dragon'}},logRows:disk.externalLogs(candidate)});
+    }
     if(disk&&(crossing||world.period.settledCount>0)){
       const candidate=(world.period.settledCount>0?projectR4SettledPeriodCandidate:projectR4CrossPeriodCandidate)(args);
       const {shops,market,period,nowSeconds,evidence}=candidate;
@@ -133,9 +160,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):applied;
   }
   const wrapped=Object.freeze({...street,
-    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[])]),
+    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[]),...(enableReviewedRebelTime?CONFLICT_COMMANDS:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
+    ...(enableReviewedRebelTime?{reviewedRebelTime:true,describeConflict:world=>{validate(world);requireProvenance(world);return disk.describeConflict(world);}}:{}),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
     ...(disk?{finalizeReviewedTransition({before,command,applied}){
@@ -155,6 +183,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       validate(world);
       if(disk&&command.kind==='reviewed-sparse-all-plus')fail('isolated PLUS fixture cannot enter crossing runtime');
       if(command.kind===PALACE_COMMAND){requireProvenance(world);return disk.applyPalace(world,command);}
+      if(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyConflict(world,command);}
       if(ARMY_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyArmy(world,command);}
       return street.apply({world,command});
     },
@@ -176,6 +205,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         if(!allowedOrdinary(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
         let applied;
         if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
+        else if(enableReviewedRebelTime&&CONFLICT_COMMANDS.includes(command.kind))applied=disk.applyConflict(before,command);
         else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
         else{
           const result=applyGameCommand({world:before,command,streetModule:street});
