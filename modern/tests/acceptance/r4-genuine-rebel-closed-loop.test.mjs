@@ -9,6 +9,7 @@ import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {genuinePlayer} from '../support/p3-genuine-v2-player.mjs';
+import {prepareGenuineMissionRecipe} from '../support/r4-genuine-mission-recipe.mjs';
 import {createIndependentPeriodDiskStore} from '../../src/r4-independent-period-disk-store.mjs';
 import {encodeMemorySnapshot} from '../../src/game-core-contract.mjs';
 import {parseArmyFile} from '../../src/original-r4-army-files.mjs';
@@ -87,7 +88,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     point:p.state.palace.point,maxPoint,rank:shop().rank,money:shop().money,profit:shop().profitstock,
     dignity:shop().dignity,mission:p.state.palace,ticks,proceeds,missions,population:snapshot().period.dtPeople,
     upkeep:shop().costtoday,rankingcount:shop().rankingcount,saletoday:shop().saletoday,paytoday:shop().paytoday,taxtoday:shop().taxtoday,
-    pointAtMaximumRank:calculateSourceShopPoint({...shop(),rank:10000}),stock:shop().item.map((n,i)=>[i+1,n]).filter(([,n])=>n)});
+    pointAtMaximumRank:calculateSourceShopPoint({...shop(),rank:10000}),exp:shop().exp,stock:shop().item.map((n,i)=>[i+1,n]).filter(([,n])=>n)});
   function bounded(){assert.ok(snapshot().revision<6500,'genuine command budget '+diagnostic());}
   async function command(route,body={}){
     bounded();
@@ -113,7 +114,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
       if(p.remaining()>=q.timePerUseSeconds)break;
       await p.enoughTime(q.timePerUseSeconds);
     }
-    assert.equal(p.quote(id,useId).canUse,true,'source USE gate '+id+'/'+useId+' '+diagnostic());
+    assert.equal(p.quote(id,useId).canUse,true,'source USE gate '+id+'/'+useId+' '+JSON.stringify(p.quote(id,useId))+' '+diagnostic());
     return p.use(id,useId);
   }
   async function material(id,count){
@@ -131,10 +132,14 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   }
   async function craft(id,useId,product,materials){
     bounded();
-    await book(id);
-    for(const [item,count] of materials)await material(item,count);
-    // Requote after all upstream acquisition and any time advance.
-    const result=await useReady(id,useId);
+    const train=useId>0&&id===15?()=>craft(15,0,30,[[1,10]]):
+      useId>0&&id===66?()=>craft(66,0,67,[[5,20]]):null;
+    const ready=await prepareGenuineMissionRecipe({p,book:id,useId,materials,acquireBook:book,
+      acquireMaterial:material,train,diagnostic,onRetry:info=>t.diagnostic('R4 genuine recipe retry '+JSON.stringify(info))});
+    const prior=snapshot(),exp=p.exp(id);
+    assert.ok(exp>=ready.requiredProficiency,'actual source EXP at command submission');
+    const result=await p.use(id,useId);
+    assert.equal(snapshot().revision,prior.revision+1,'ready recipe submits without an intervening time advance');
     assert.equal(result.details.sourceUseItemId,id);
     assert.equal(result.details.useNo,useId);
     assert.equal(result.details.effectiveCount,1);
@@ -244,6 +249,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     const shelf=shop().showcase.indexOf(task.itemId);
     if(shelf>=0&&p.stock(task.itemId)<task.count+lowStock)await list(0,shelf);
     assert.ok(route,'actual source palace task '+task.itemId);
+    if(p.stock(task.itemId)>=task.count)return;
     if(route.book>=20)await forgeSkill();
     if(route.book===66)await magicSkill();
     await book(route.book);
@@ -251,11 +257,6 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     for(let n=0;p.stock(task.itemId)<task.count;n++){
       assert.ok(n<360,'genuine mission material budget '+diagnostic());
       if(n%2===0)await economyStock();
-      if(route.gate&&p.exp(route.book)<route.gate){
-        const [product,inputs]=route.book===15?[30,[[1,10]]]:[67,[[5,20]]];
-        await craft(route.book,0,product,inputs);
-        continue;
-      }
       await craft(route.book,route.useId,task.itemId,route.materials);
     }
     assert.equal(p.state.palace.itemId,task.itemId);

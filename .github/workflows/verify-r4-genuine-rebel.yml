@@ -6,6 +6,8 @@ on:
       - 'modern/src/**'
       - 'modern/scripts/dev-local.mjs'
       - 'modern/tests/support/p3-genuine-v2-player.mjs'
+      - 'modern/tests/support/r4-genuine-mission-recipe.mjs'
+      - 'modern/tests/r4-genuine-mission-recipe.test.mjs'
       - 'modern/tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs'
       - 'modern/tests/r4-p3-pre-event-overlay.test.mjs'
       - 'modern/tests/r4-rebel-reviewed-runtime.test.mjs'
@@ -31,7 +33,7 @@ jobs:
         working-directory: modern
         run: |
           node --test --test-name-pattern='(R4 (two-slice external source fixture|opt-in external CAS refuses|external receipt aggregates|residual natural sale)|full actual two-slice source prefix)' tests/r4-p3-pre-event-overlay.test.mjs
-          node --test tests/r4-rebel-reviewed-runtime.test.mjs
+          node --test tests/r4-rebel-reviewed-runtime.test.mjs tests/r4-genuine-mission-recipe.test.mjs
       - name: Run genuine player acceptance (no fixture or skip)
         working-directory: modern
         run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
