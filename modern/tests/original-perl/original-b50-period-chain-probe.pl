@@ -16,15 +16,15 @@ our (@DT,@ITEM,%id2idx,%name2idx,$STATE,$DTpeople,$DTusercount,
   $DEFINE_FUNCUPDATE,$ITEM_DIR,$MAX_ITEM,@SHOWCASE_COST,
   $PROFIT_DAY_COUNT,$EXP_DOWN_RATE,$EXP_DOWN_POINT,
   $BAL_JOB,$BAL_NAME,$DTTaxrate,$MYDIR,
-  @B50_SAMPLES,$B50_USED,$B50_EXPECTED);
+  @B50_SAMPLES,$B50_USED,$B50_EXPECTED,@B50_RANGES,@B50_LOGS);
 BEGIN{
   no warnings 'redefine';
   *CORE::GLOBAL::rand=sub{
     my($range)=@_;
     die "Unexpected B-50 original period RNG bound $range"
-      unless defined($range)&&($range==9||$range==200);
+      unless defined($range)&&($range==9||$range==200||$range==100||$range==2500||$range==5000000);
     die 'Missing original period RNG sample' unless @main::B50_SAMPLES;
-    $main::B50_USED++;
+    $main::B50_USED++;push @main::B50_RANGES,0+$range;
     return shift(@main::B50_SAMPLES)*$range/1000000;
   };
 }
@@ -34,9 +34,9 @@ sub source {
   open(my $file,'<:encoding(UTF-8)',$path) or die $!;
   local $/;my $source=<$file>;close($file);return $source;
 }
-sub l{return $_[0]}
+sub l{my($s,@args)=@_;$s=~s/%([12])/defined($args[$1-1])?$args[$1-1]:""/ge;return $s}
 sub WriteLog{return 1}
-sub PushLog{return 1}
+sub PushLog{push @B50_LOGS,[@_];return 1}
 sub CloseShop {die 'B-50 forbids original expired-shop close path'}
 sub DragonBalance {
   die 'B-50 would not review pending dragon race payments'
@@ -177,9 +177,39 @@ for my $r (@rounds){
     },
   };
 }
+# Isolated full prefix with nonzero tax and earned-dignity decay inputs.
+# Keep the historical two-case result unchanged for the existing .t.
+my @conflictResults;
+if(@ARGV&&$ARGV[0] eq '--conflict'){
+  my @conflictRounds=(
+    {name=>'calm-led-tax',town=>{%$initialTown,leader=>1,money=>5000000,army=>10000,robina=>2000},draws=>[0,0,0,0]},
+    {name=>'start-led-invasion',town=>{%$initialTown,leader=>1,money=>5000000,develop=>9000,safety=>9000,army=>10000,robina=>2000},draws=>[0,0,0,0,299999]},
+    {name=>'extend-expired-event',town=>{%$initialTown,leader=>1,money=>0,army=>3000,robina=>2000},active=>900000,draws=>[0,0]},
+  );
+  for my $r(@conflictRounds){
+    $NOW_TIME=1000000;$DTpeople=500000;$DTusercount=1;
+    $STATE=dclone($r->{town});@DT=(dclone($originalShop));
+    $DT[0]{dignity}=13;$DT[0]{taxtoday}=1234;
+    %DTevent=defined($r->{active})?(rebel=>$r->{active}):();
+    $BAL_JOB='外敵';$BAL_NAME='首領';%GUILD=();%GUILD_DATA=();
+    my $input={shop=>dclone($DT[0]),town=>dclone($STATE),dtPeople=>$DTpeople,
+      awardDrawMillionths=>0,dignityDrawMillionths=>249999,
+      territoryDrawMillionths=>$r->{draws},nowSeconds=>$NOW_TIME,
+      conflictContext=>{activeUntilSeconds=>$r->{active},balJob=>$BAL_JOB,balName=>$BAL_NAME}};
+    SortDT();my $before=$DT[0]{point};
+    @B50_SAMPLES=(0,249999,@{$r->{draws}});@B50_RANGES=();@B50_LOGS=();$B50_USED=0;
+    b50_source_original_period();
+    die 'conflict full-prefix source RNG unused' if @B50_SAMPLES;
+    push @conflictResults,{name=>$r->{name},input=>$input,output=>{
+      shop=>dclone($DT[0]),town=>dclone($STATE),dtPeople=>0+$DTpeople,
+      pointsBefore=>$before,pointsAfter=>0+$DT[0]{point},
+      activeUntilSeconds=>$DTevent{rebel},eventState=>{%DTevent},
+      ranges=>[@B50_RANGES],logs=>[grep{$_->[0]==2&&($_->[2]=~/護衛軍|外敵首領/)}@B50_LOGS]}};
+  }
+}
 print JSON::PP->new->canonical->utf8->encode({
   source=>'full fixed inc-period.cgi pre-backup prefix + true original SortDT/FUNCUPDATE/Use::AddItem',
   scope=>'single active Standard Street shop; no DragonBalance file, stale closure, guilds, real events, original backup/session; not player period commit',
   itemLimits=>[map {0+$limits{$_}} 1..79],
-  cases=>\@results,
+  cases=>\@results,(@ARGV&&$ARGV[0] eq '--conflict'?(conflictCases=>\@conflictResults):()),
 });

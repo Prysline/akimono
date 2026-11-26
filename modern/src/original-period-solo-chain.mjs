@@ -14,7 +14,8 @@ import {reviewOriginalTopPrize,projectOriginalTopPrize}
   from './original-period-top-prize.mjs';
 import {reviewOriginalPeriodShopLedger,projectOriginalPeriodShopLedger}
   from './original-period-shop-ledger.mjs';
-import {reviewOriginalPeriodTerritory,projectOriginalPeriodTerritory}
+import {reviewOriginalPeriodTerritory,projectOriginalPeriodTerritory,
+  reviewOriginalTerritoryConflict,projectOriginalTerritoryConflict}
   from './original-period-territory.mjs';
 import {reviewR4DragonBalance,projectR4DragonBalance,
   projectR4DragonShopLedger,R4_DRAGON_BALANCE_SOURCE}
@@ -51,6 +52,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
   includeReviewedActualCloseShop=false,
   includeReviewedPeriodBackup=false,includeReviewedSaleTax=false,
+  reviewedRebelNow=null,
 }){
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
@@ -93,6 +95,11 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const territory=reviewOriginalPeriodTerritory({
     periodSource,adminSource,readSource,bootstrapMeta,includeReviewedSaleTax,
   });
+  const conflictTerritory=reviewedRebelNow===null?null:reviewOriginalTerritoryConflict({
+    periodSource,adminSource,readSource,bootstrapMeta,reviewedRebelNow,
+  });
+  if(conflictTerritory&&(!includeReviewedSaleTax||!shopExpiry||guild||dragon||actualClose||periodBackup||postTech))
+    bad('conflict territory requires independent reviewed tax/expiry and no external IO');
   const markers=[
     '$DT[0]->{rankingcount}++;',
     'DragonBalance();',
@@ -125,6 +132,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
     source:B50_INTEGRATED_SOURCE,
     soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
     shopExpiry,actualClose,closedPrune,periodBackup,
+    ...(conflictTerritory?{conflictTerritory}:{}),
     compiledLimits:Object.freeze([...compiledLimits]),
     phases:Object.freeze(['SortDT-before','rankingcount++',
       ...(dragon?['DragonBalance-file-before-prize']:[]),
@@ -137,7 +145,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
       ...(guild?['guild-fee-and-attack-defense-after-sale-history']:[]),
       ...(dignity?['dignity-decline-before-second-SortDT']:[]),
       actualClose?'SortDT-after-closed-shop-prune':'SortDT-after',
-      'unled-town',
+      conflictTerritory?'source-territory-and-RebelRobin':'unled-town',
       postTech?'UpdateResetAfter-technology-loss':'UpdateResetAfter-guard',
       ...(periodBackup?['original-period-backup-session-source-tail']:[])]),
     nonCommittable:true,
@@ -157,6 +165,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
   postTechDraws=null,nowSeconds=null,
   sessionFileNames=null,periodBackupState=null,
+  conflictContext=null,territoryRandomDrawProvider=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
@@ -245,9 +254,17 @@ export function projectOriginalSoloPeriodPhaseChain({
   safe(shop.lastlogin,'original shop lastlogin');
   safe(shop.time,'original shop time');
   safe(dtPeople,'original previous city population',1);
-  if(!Array.isArray(territoryDrawMillionths)||
-     territoryDrawMillionths.length!==2)
-    bad('two reviewed source town draws required');
+  const conflict=reviewed.conflictTerritory??null;
+  if(conflict===null){
+    if(conflictContext!==null||territoryRandomDrawProvider!==null||
+       !Array.isArray(territoryDrawMillionths)||territoryDrawMillionths.length!==2)
+      bad('two reviewed source town draws required');
+  }else{
+    if(!conflictContext||Object.keys(conflictContext).sort().join(',')!=='activeUntilSeconds,balJob,balName'||
+       (territoryRandomDrawProvider===null?(!Array.isArray(territoryDrawMillionths)||territoryDrawMillionths.length<2||territoryDrawMillionths.length>5):
+       (typeof territoryRandomDrawProvider!=='function'||territoryDrawMillionths!==undefined)))
+      bad('explicit reviewed conflict territory context and draw mode required');
+  }
   const beforeSort=projectOriginalSoloSort({shop,reviewed:reviewed.soloSort});
   // Original order: SortDT (inc-turn) -> DragonBalance file read
   // -> UpdateResetBefore prize -> shop dragon ledger -> histories.
@@ -321,7 +338,13 @@ export function projectOriginalSoloPeriodPhaseChain({
     projectOriginalSoloSort({
       shop:beforeAfterSort,reviewed:reviewed.soloSort,
     });
-  const city=projectOriginalPeriodTerritory({
+  if(conflict&&(!afterSort.shop||expiryEffect?.expiredOwner))bad('conflict period closure outside candidate');
+  const city=conflict?projectOriginalTerritoryConflict({
+    reviewed:conflict,town,dtPeople,dtUserCount:1,activeShopIds:[afterSort.shop.id],
+    taxIn:accounting.shop.taxyesterday,nowSeconds,...conflictContext,
+    ...(territoryRandomDrawProvider===null?{drawMillionths:territoryDrawMillionths}:
+      {randomDrawProvider:territoryRandomDrawProvider}),
+  }):projectOriginalPeriodTerritory({
     reviewed:reviewed.territory,town,dtPeople,
     shopCount:1,taxIn:accounting.shop.taxyesterday,
     drawMillionths:territoryDrawMillionths,
@@ -349,6 +372,7 @@ export function projectOriginalSoloPeriodPhaseChain({
     shop:techLoss?.shop??afterSort.shop,
     town:city.town,
     dtPeople:city.dtPeople,
+    ...(conflict?{conflictTerritory:city}:{}),
     pointsBefore:beforeSort.shop.point,
     pointsAfter:afterSort.shop?.point??null,
     ...(closedSort?{
