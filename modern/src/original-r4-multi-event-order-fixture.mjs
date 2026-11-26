@@ -285,8 +285,17 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
     instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[],
-    guildEndCallbacks=[],rebelNowCallbacks=[],happyEffects=[];
+    guildEndCallbacks=[],rebelNowCallbacks=[],happyEffects=[],instantEffects=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
+  // Full-commerce-only read-only snapshots of the actual callback stages.
+  // Never use these receipts as input, a grant, or a second RNG stream.
+  const effectShop=s=>({money:s.money,rank:s.rank,item:[...s.item],
+    showcase:[...s.showcase],price:[...s.price],shopname:s.shopname});
+  const recordInstant=(code,callback,samples,calls)=>{
+    if(reviewedInventory?.normalCommerce)instantEffects.push({code,
+      before:effectShop(nextShop),after:effectShop(callback.shop),
+      samples:[...samples],logs:calls.map(row=>[...row])});
+  };
   let nextGuild=guildContext===null?null:{
     dominion:guildContext.dominion,
     guilds:guildContext.guilds.map(g=>({...g})),
@@ -398,6 +407,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==1)
         fail('reviewed support STARTFUNC must return 0');
+      recordInstant(code,callback,[sample],callback.message===null?[]:[[2,0,callback.message]]);
       nextShop=callback.shop;
       supportCallbacks.push(code);
       if(callback.message!==null)logs.push([2,0,callback.message]);
@@ -423,6 +433,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==samples.length)
         fail('reviewed instant STARTFUNC must return 0');
+      recordInstant(code,callback,samples,callback.message===null?[]:[[2,0,callback.message]]);
       nextShop=callback.shop;
       instantCallbacks.push(code);
       if(callback.message!==null)logs.push([2,0,callback.message]);
@@ -445,6 +456,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
          callback.randomDrawsUsed!==count||
          callback.ticketCountConsumed!==count)
         fail('reviewed loto STARTFUNC must consume all tickets and return zero');
+      recordInstant(code,callback,ticketDraws,callback.logs.map(log=>[log.level,log.shopId,log.message]));
       nextShop=callback.shop;
       lotoCallbacks.push(code);
       for(const log of callback.logs)logs.push([log.level,log.shopId,log.message]);
@@ -560,7 +572,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),
       happyNowCallbacks:Object.freeze(happyNowCallbacks),
-      ...(reviewedInventory?.normalCommerce?{happyEffects:Object.freeze(happyEffects)}:{}),
+      ...(reviewedInventory?.normalCommerce?{happyEffects:Object.freeze(happyEffects),instantEffects:Object.freeze(instantEffects)}:{}),
     }),
     ...(guildContext===null?{}:{
       guildContext:Object.freeze({

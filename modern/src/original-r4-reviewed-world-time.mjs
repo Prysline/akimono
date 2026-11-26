@@ -115,7 +115,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       if(candidate.source!==R4_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete crossing source candidate required');
       for(const shop of shops)validateTimeShop(shop);
       const trace={drawPolicy:evidence.drawPolicy,hashPolicy:evidence.hashPolicy,seed:evidence.seed,interpreter:evidence.interpreter,slices:evidence.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,logs:s.eventLogs,
-        ...(normalCommerce!==null?{eventCommerce:s.preEvent.receipt.eventCommerce??null,happyEffects:s.happyEffects??[]}: {})}))};
+        ...(normalCommerce!==null?{eventCommerce:s.preEvent.receipt.eventCommerce??null,happyEffects:s.happyEffects??[],instantEffects:s.instantEffects??[]}: {})}))};
       // Compact source-derived receipts for actual player acceptance. These
       // are derived from the same reviewed candidate, not a second formula.
       const itemTurnAffectedSlices=evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0);

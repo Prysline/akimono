@@ -108,7 +108,7 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       preEventDraws:[...samples],activeOrder:[...hash.nowOrder],eventOrder:[...hash.eventOrder],
       nowOrder:[...finalHash.nowOrder],eventDrawRanges:event.randomDrawRanges,eventSamples:event.consumedSamples,
       eventLogs:event.logs,eventState:period.eventState,shop:event.shop,
-      ...(normalCommerce!==null?{happyEffects:event.happyEffects}: {})});
+      ...(normalCommerce!==null?{happyEffects:event.happyEffects,instantEffects:event.instantEffects}: {})});
     cursor={...cursor,shops:event.shop===null?[]:[event.shop],market:pre.market,period,nowSeconds:pre.nowSeconds};hash=finalHash;
   }
   if(cursor.nowSeconds!==plan.nowAfter||Boolean(settlement)!==(plan.crossesSettlement&&world.shops.length===1))fail('complete crossing command required');
