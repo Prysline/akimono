@@ -13,6 +13,8 @@ export function isReviewedOrdinaryCommand(c,street){
     case 'lord-inside':return street.reviewedLordFiscal===true&&exact(c,common+'taxrate,devem,safem')&&[['taxrate',40],['devem',10000000],['safem',10000000]].every(([k,max])=>typeof c[k]==='string'&&c[k].length>0&&!/[^0-9]/.test(c[k])&&int(Number(c[k]),0,max));
     case 'lord-tax-side':return street.reviewedLordFiscal===true&&exact(c,common+'targetShopId,mode')&&c.targetShopId===1&&['free','double','normal'].includes(c.mode);
     case 'lord-tax-reset':return street.reviewedLordFiscal===true&&exact(c,'kind,expectedRevision,shopId');
+    case 'lord-outside':case 'lord-outdel':return street.reviewedLordFiscal===true&&exact(c,common+'cnt1,cnt2')&&int(c.cnt1)&&int(c.cnt2);
+    case 'lord-expose':return street.reviewedLordFiscal===true&&exact(c,common+'targetShopId')&&c.targetShopId===1;
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
     case 'market-buy':{
       const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;

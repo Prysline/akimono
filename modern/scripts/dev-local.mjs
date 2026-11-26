@@ -514,10 +514,14 @@ async function api(req,res,url){
     }
     case '/api/lord-inside':
     case '/api/lord-tax-side':
-    case '/api/lord-tax-reset': {
+    case '/api/lord-tax-reset':
+    case '/api/lord-outside':
+    case '/api/lord-outdel':
+    case '/api/lord-expose': {
       if(!streetModule.reviewedLordFiscal)return send(res,409,{ok:false,error:'領主財政需獨立審閱模式',state:state()});
       const kind=url.pathname.slice('/api/'.length);
-      const fields=kind==='lord-inside'?'taxrate,devem,safem':kind==='lord-tax-side'?'targetShopId,mode':'';
+      const fields=kind==='lord-inside'?'taxrate,devem,safem':kind==='lord-tax-side'?'targetShopId,mode':
+        kind==='lord-expose'?'targetShopId':['lord-outside','lord-outdel'].includes(kind)?'cnt1,cnt2':'';
       if(!exactKeys(body,'expectedRevision'+(fields?','+fields:'')))throw Error('領主指令僅接受原版欄位及版本');
       result=commit({kind,expectedRevision:ensureRevision(body),shopId:1,...Object.fromEntries(fields?fields.split(',').map(k=>[k,body[k]]):[])});
       break;
