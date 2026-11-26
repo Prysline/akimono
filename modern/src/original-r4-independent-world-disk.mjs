@@ -126,7 +126,12 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
     const play=wire(after,town);
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
-    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
+    // Frozen new.cgi calls PushLog(1,0,l(...)) after FUNCNEW.
+    // The pinned Standard Street FUNCNEW does not set DEFINE_FUNCNEW_NOLOG.
+    // Core zh_TW.po a512f6887cee214e66828769a382ad2b18bcd5b3:
+    // "%1が新装開店しました。" -> "%1開設新商店了。"
+    // Keep older projections without the reviewed owner main source unchanged.
+    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+(street.reviewedNormalCommerce&&sources.ownerMainSource!=null?'開設新商店了。':'が新装開店しました。')].join('\t')+'\n');
     if(street.reviewedDiscard===true&&command.kind==='discard-item'){
       if(applied.receipt.source!=='r4-frozen-item-t-no-guild.v1'||applied.receipt.shopId!==1||typeof applied.receipt.originalMessage!=='string')fail('source discard log identity');
       newRows.unshift([now,0,1,applied.receipt.originalMessage].join('\t')+'\n');

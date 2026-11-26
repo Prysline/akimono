@@ -5,6 +5,11 @@ import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 test('R4 original warehouse and balance read models survive real local actions and both v2 generations',async t=>{
  const p=await genuinePlayer(t,{now:'896401',crossPeriod:true,fullCommerce:true});
  const row=id=>p.state.warehouse.rows.find(x=>x.itemId===id);
+ const opening=p.state.news.rows.filter(row=>row.message==='高階鍛造實測開設新商店了。');
+ assert.equal(opening.length,1);assert.equal(opening[0].mode,1);assert.equal(opening[0].id,0);assert.equal(opening[0].private,false);
+ assert.equal(opening[0].wire,[p.state.world.nowSeconds,1,0,'高階鍛造實測開設新商店了。'].join('\t'));
+ assert.ok(p.state.news.recentRows.some(row=>row.wire===opening[0].wire));
+ assert.equal(p.state.world.period.disk.live['log0.cgi'].bytes,opening[0].wire+'\n');
  assert.equal(p.state.balance.source,'r4-frozen-inc-info-independent.v1');
  assert.equal(p.state.balance.shelfMaintenance,0);
  assert.equal(p.state.balance.foundedLabel,'00秒');
@@ -22,6 +27,7 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.ok(before.news.rows.some(row=>row.id===0));
  const first=await p.saveAndRestart(0);
  assert.deepEqual({warehouse:p.state.warehouse,balance:p.state.balance,news:p.state.news,showcaseView:p.state.showcaseView},before);
+ assert.equal(p.state.news.rows.filter(row=>row.wire===opening[0].wire).length,1);
  const denied=await p.post('/api/discard',{itemId:9,count:1,expectedRevision:first.revision-1});
  assert.equal(denied.ok,false);assert.deepEqual(p.state.world,first);
  assert.deepEqual({warehouse:p.state.warehouse,balance:p.state.balance,news:p.state.news,showcaseView:p.state.showcaseView},before);
