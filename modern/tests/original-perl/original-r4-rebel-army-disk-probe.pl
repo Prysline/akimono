@@ -340,13 +340,13 @@ sub zeroRiotChain{
   for my $i(0..3){
     my $live=getFile(GetPath("army"));
     my $input={startSeconds=>$temptimenow,spanSeconds=>3600,activeUntilSeconds=>0+$DTevent{rebel},
-      town=>{%$STATE},shops=>[map{{%$_}}@DT],randomDraws=>$i==3?[]:[0],
+      town=>{%$STATE},shops=>[map{{%$_,army=>defined($_->{army})?0+$_->{army}:undef}}@DT],randomDraws=>$i==3?[]:[0],
       taxRate=>$DTTaxrate,balJob=>$BAL_JOB,balName=>$BAL_NAME};
     @LOG=();@COMBINED_DRAWS=@{$input->{randomDraws}};@COMBINED_RANGES=();$READ_ARMY=$WRITE_ARMY=0;
     originalRebelEventFragment();die 'zero RIOT unused RNG' if @COMBINED_DRAWS;
     die 'zero RIOT changed live prematurely' unless getFile(GetPath("army")) eq $live;
     my $stage=getFile(GetPath($TEMP_DIR,"army"));
-    my $output={town=>{%$STATE},shops=>[map{{%$_}}@DT],
+    my $output={town=>{%$STATE},shops=>[map{{%$_,army=>defined($_->{army})?0+$_->{army}:undef}}@DT],
       activeUntilSeconds=>$DTevent{rebel},riotIds=>[sort{$a<=>$b}map{0+$_}keys %RIOT],
       armyById=>{map{$_=>0+$ARMY{$_}}keys %ARMY},taxRate=>$DTTaxrate,
       logs=>[map{[@$_]}@LOG],randomDrawRanges=>[@COMBINED_RANGES],
