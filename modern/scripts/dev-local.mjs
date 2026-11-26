@@ -51,7 +51,7 @@ const [
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
-  originalNewSource,originalCustomSource,originalLogSource,
+  originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -69,7 +69,7 @@ const [
   'modern/tests/original-perl/period.cgi',
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
-  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
+  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi','modern/tests/original-perl/sc-s.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -79,7 +79,7 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
+  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
 });
 if(!['initialize-source-market','open-shop',
@@ -125,7 +125,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1']:[])],
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource]:[])],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;

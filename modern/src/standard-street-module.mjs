@@ -1,3 +1,4 @@
+import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
@@ -175,7 +176,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
   originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,
   originalUseSource=null,originalItemHelperSource=null,
-  originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
+  originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
@@ -600,6 +601,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed USE market write/overflow branch');
     },
   });
+  // D9 live market time requires A's pinned ITEM compiler metadata.
+  if(enableReviewedMarketCommerce&&enableReviewedNormalTime&&originalShowcaseSource===null)
+    bad('reviewed market time requires frozen showcase source');
+  const reviewedMarketToolMetadata=enableReviewedMarketCommerce&&originalShowcaseSource!==null?
+    reviewNormalCommerceItems({itemDsl,compilerSource:originalCompilerSource,
+      showcaseSource:originalShowcaseSource,turnSource:originalTurnSource}):null;
+  if(reviewedMarketToolMetadata!==null&&
+     (marketBuy?.getRule(63)?.zeroPriceReviewed!==true||giftMap.limits[62]?.limit!==1||giftMap.limits[62]?.wslimit!==1))
+    bad('reviewed market tool holding and buy contract');
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
        itemDsl,rebelDsl,turnSource:originalTurnSource,
@@ -607,7 +617,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       configSource:originalConfigSource,
       reviewedMarket11:reviewedMarketBuy11,
       reviewedB59Iron,reviewedB60Happy,reviewedB61Sword,
-      reviewedB62Map,reviewedB63Map}):null;
+      reviewedB62Map,reviewedB63Map,reviewedMarketToolMetadata}):null;
   const reviewedSupportEventCallbacks=reviewedEventCatalog?
     reviewOriginalSupportEventCallbacks({
       itemDsl,turnSource:originalTurnSource,
