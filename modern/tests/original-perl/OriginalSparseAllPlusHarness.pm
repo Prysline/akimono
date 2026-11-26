@@ -50,8 +50,12 @@ sub run {
   die 'R4 original population must be positive source integer'
     unless $main::DTpeople=~/^\d+$/ && $main::DTpeople>=1
       && $main::DTpeople<=1000000000;
-  @main::DT=({item=>[(0)x79]});
-  $main::DT[0]{item}[62]=exists($o{starterToolOwned})?$o{starterToolOwned}:1; $main::DT[0]{item}[78]=5;
+  if($o{emptyStreet}){
+    @main::DT=();
+  }else{
+    @main::DT=({item=>[(0)x79]});
+    $main::DT[0]{item}[62]=exists($o{starterToolOwned})?$o{starterToolOwned}:1; $main::DT[0]{item}[78]=5;
+  }
   @main::DTwholestore=exists($o{wholesale})?@{$o{wholesale}}:();
   my $span=exists($o{timespanSeconds})?$o{timespanSeconds}:60;
   die 'B-37 bounded synthetic post-sale timespan'

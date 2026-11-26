@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createMemoryWorld,createMemoryWorldAdapter,executeMemoryCommand,
   PERIOD_WORLD_SCHEMA} from '../src/game-core-contract.mjs';
-import {projectOriginalSparseAllPlus}
+import {projectOriginalSparseAllPlus,reviewR4EmptyStreetPlus}
   from '../src/original-sparse-all-plus.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -82,6 +82,36 @@ test('R4 dynamic PLUS rejects invalid population without touching original sourc
       timespanSeconds:120,randomDraws:[],
       r4PeriodPopulation:true,
     }));
+  }
+  assert.equal(JSON.stringify(original),before);
+});
+
+test('R4 empty street PLUS uses zero holdings and original zero-shop coefficient and caps',()=>{
+  const reviewed=reviewR4EmptyStreetPlus({
+    turnSource:source.originalTurnSource,wholeSource:source.originalWholeSource,
+  });
+  const original=opened(),before=JSON.stringify(original);
+  assert.equal(oracle.emptyCases.length,3);
+  for(const c of oracle.emptyCases){
+    // Oracle fixture only; not a player save or claimed committed closure.
+    const world={...original,shops:[],schema:PERIOD_WORLD_SCHEMA,
+      period:{dtPeople:c.dtPeople},market:{...original.market,
+        wholesale:[...c.inputWholesale],sparseWrittenSlots:Array.from({length:79},(_,i)=>i),
+        originalWholesaleCsv:c.inputWholesale.join(','),sourceWriteShape:'whole-store-79'}};
+    const args={world,reviewed:street.reviewedAllPlus,compiled:street.reviewedGiftMapUse,
+      timespanSeconds:60,randomDraws:c.consumedSamples,r4PeriodPopulation:true};
+    const prior=JSON.stringify(world);
+    assert.throws(()=>projectOriginalSparseAllPlus(args),/exactly one shop/);
+    assert.throws(()=>projectOriginalSparseAllPlus({...args,r4EmptyStreetReview:{...reviewed}}),/reviewed empty street/);
+    assert.throws(()=>projectOriginalSparseAllPlus({...args,r4EmptyStreetReview:reviewed,
+      world:{...world,shops:original.shops}}),/reviewed empty street/);
+    const result=projectOriginalSparseAllPlus({...args,r4EmptyStreetReview:reviewed});
+    assert.deepEqual(result.shops,[]);
+    assert.deepEqual(result.market.wholesale,c.wholesale);
+    assert.deepEqual(result.market.sparseWrittenSlots,c.definedIndices);
+    assert.equal(result.market.originalWholesaleCsv,c.wireCsv);
+    assert.equal(result.receipt.drawsUsed,c.drawsUsed);
+    assert.equal(JSON.stringify(world),prior);
   }
   assert.equal(JSON.stringify(original),before);
 });
