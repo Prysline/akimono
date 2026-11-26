@@ -73,7 +73,7 @@ export function projectR4RebelPeriodTrigger({
      !safe(nowSeconds)||!safe(nowSeconds+259200)||
      !town||typeof town!=='object'||Array.isArray(town)||
      Object.keys(town).sort().join(',')!==names.slice().sort().join(',')||
-     names.some(k=>!safe(town[k]))||
+     names.some(k=>['money','out'].includes(k)?!Number.isSafeInteger(town[k]):!safe(town[k]))||
      typeof leaderShopExists!=='boolean'||
      (leaderShopExists&&town.leader===0)||
      (activeUntilSeconds!==null&&(!safe(activeUntilSeconds)||activeUntilSeconds===0))||
