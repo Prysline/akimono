@@ -27,7 +27,7 @@ function context(reviewed,f){
      !plain(f.town)||!plain(f.eventState)||Object.values(f.eventState).some(v=>!integer(v))||
      !Array.isArray(f.shops)||!f.shops.length)fail('explicit source fixture required');
   const {town:t,shops}=f;
-  if(!integer(t.leader)||!signed(t.money)||!integer(t.army)||!integer(t.robina)||!integer(t.safety)||t.safety>10000||
+  if(!integer(t.leader)||!signed(t.money)||!integer(t.army)||!integer(t.robina)||!integer(t.safety)||
     !integer(t.devem)||!integer(t.safem))fail('town fields');
   if(shops.some(s=>!plain(s)||!integer(s.id,1)||typeof s.name!=='string'||typeof s.shopname!=='string'||!integer(s.rank)||!integer(s.taxtoday))||
      new Set(shops.map(s=>s.id)).size!==shops.length)fail('shop fields');
@@ -51,7 +51,7 @@ export function describeLordGuard({reviewed,fixture}){
   if(!integer(totalTax)||!integer(totalTax*period)||!integer(fixture.lasttime+3*3600))fail('quote overflow');
   const taxForecast=Math.trunc(totalTax*period/elapsed/10000)*10000;
   const army=t.army+t.robina,unitUpkeep=200-Math.trunc(t.safety/100),upkeep=t.army*unitUpkeep;
-  if(!integer(taxForecast)||!integer(army)||!integer(upkeep))fail('quote overflow');
+  if(!integer(taxForecast)||!integer(army)||!signed(unitUpkeep)||!signed(upkeep))fail('quote overflow');
   const canManage=t.money>0&&!rebellion;
   const exposeReason=rebellion?'rebellion':t.army<2000?'army':t.money<1000000?'funds':null;
   return {source:reviewed.source,committable:false,taxForecast,money:t.money,taxRate:fixture.taxRate,

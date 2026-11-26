@@ -304,3 +304,14 @@ test('palace page uses the server audience quote and revision-only completion, n
   assert.match(script,/await call\('\/api\/palace-complete',\{expectedRevision:before\.world\.revision\}/);
   assert.match(adapter,/case '\/api\/palace-complete'/);
 });
+
+test('lord residence is gated by server authority and routes original six commands with revisions',()=>{
+  assert.match(html,/id="lord-tab" data-tab="lord" disabled/);
+  for(const id of ['tab-lord','lord-panel','lord-money','lord-forecast','lord-army-split','lord-upkeep','lord-inside-form','lord-tax-side-form','lord-tax-reset','lord-outside-form','lord-outdel-form','lord-expose-form'])assert.ok(html.includes('id="'+id+'"'),id);
+  assert.ok(script.includes("s?.reviewedLordFiscal===true&&Boolean(q)&&Boolean(s?.world)"));
+  assert.ok(script.includes("if(!available&&currentTab==='lord')selectTab('army')"));
+  assert.ok(script.includes("expectedRevision:before.world.revision,...body"));
+  for(const kind of ['inside','tax-side','tax-reset','outside','outdel','expose'])assert.ok(adapter.includes("'/api/lord-"+kind+"'"),kind);
+  assert.ok(script.includes("q.canExposeTarget"));
+  assert.ok(script.includes("renderLord(s)"));
+});

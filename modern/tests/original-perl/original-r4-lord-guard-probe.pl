@@ -81,7 +81,7 @@ if(!$c){
  my($headline,$regular,$volunteer)=$disp=~/<b>([^<]*)<\/b><small>（正規軍 (\d+)人，義勇軍 (\d+)人）/;
  die 'original army view fields missing' unless defined($headline)&&defined($regular)&&defined($volunteer);
  my $army=$regular+$volunteer;
- my($unit)=$disp=~/正規軍１人につき(\d+)/;
+ my($unit)=$disp=~/正規軍１人につき(-?\d+)/;
  die 'original fiscal view fields missing' unless defined($rate)&&defined($devem)&&defined($safem)&&defined($unit);
  print encode_json({ok=>1,taxForecast=>$money[0],money=>$money[1],upkeep=>$money[2],
   taxRate=>0+$rate,devem=>0+$devem,safem=>0+$safem,army=>0+$army,sourceArmyHeadline=>$headline,

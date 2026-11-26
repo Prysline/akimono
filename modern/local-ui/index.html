@@ -41,7 +41,7 @@
           <button type="button" disabled>［圖書館］</button>
         </span>
         <span class="subgroup" data-subgroup="facility" hidden>
-          <button type="button" disabled>［領主邸］</button>
+          <button type="button" id="lord-tab" data-tab="lord" disabled>［領主邸］</button>
           <button type="button" disabled>［公會］</button>
           <button type="button" disabled>［競技場］</button>
           <button type="button" data-tab="army">［傭兵所］</button>
@@ -342,7 +342,7 @@
         <label>或輸入人數 <input id="army-fire-count" type="number" min="1" step="1"></label>
         <button id="army-fire" type="submit" disabled>解僱</button>
       </form>
-      <p id="army-conflict-disabled" class="muted">反亂、護衛派遣及領主交易尚未開放。</p>
+      <p id="army-conflict-disabled" class="muted">反亂、護衛派遣尚未開放。</p>
       <div id="army-conflict-panel" hidden>
         <h3 class="sub-title">反亂與護衛派遣</h3>
         <p id="army-conflict-status" role="status">等待來源資格核對。</p>
@@ -351,7 +351,59 @@
           <button id="army-join-rebellion" type="button" disabled>參加反亂（20分鐘）</button>
           <button id="army-dispatch-guard" type="button" disabled>派遣護衛（20分鐘）</button>
         </div>
-        <p class="muted">獨立審閱模式：需已完成至少一期決算及原版軍事資格；領主稅率、公會與多人操作尚未開放。</p>
+        <p class="muted">獨立審閱模式：需已完成至少一期決算及原版軍事資格。領主邸另需領主財政模式；公會與多人操作尚未開放。</p>
+      </div>
+    </section>
+
+    <section id="tab-lord" class="section pane" hidden>
+      <h2 class="section-title">● 領主邸／政務室</h2>
+      <p id="lord-status" role="status">僅限獨立審閱模式的現任領主。</p>
+      <div id="lord-panel" hidden>
+        <h3 class="sub-title">內政設定</h3>
+        <table class="use-detail-table"><tbody>
+          <tr><th scope="row">街資金</th><td id="lord-money">—</td></tr>
+          <tr><th scope="row">稅收預估</th><td id="lord-forecast">—</td></tr>
+        </tbody></table>
+        <form id="lord-inside-form" class="shelf-form">
+          <label>稅率（0–40%） <input id="lord-taxrate" type="number" min="0" max="40" step="1" required></label>
+          <label>開拓對策費 <input id="lord-devem" type="number" min="0" max="10000000" step="1" required></label>
+          <label>治安對策費 <input id="lord-safem" type="number" min="0" max="10000000" step="1" required></label>
+          <button type="submit" id="lord-inside" disabled>確定內政設定</button>
+          <p class="muted">原版標準：稅率 20%，兩項對策費各 5,000,000；於期末結算。</p>
+        </form>
+        <h3 class="sub-title">賞罰</h3>
+        <p>個別稅率：<span id="lord-tax-target">—</span>（目前：<span id="lord-tax-mode">—</span>）</p>
+        <form id="lord-tax-side-form" class="shelf-form">
+          <label>稅率設定 <select id="lord-tax-side-mode"><option value="normal">通常</option><option value="free">免除</option><option value="double">兩倍</option></select></label>
+          <button id="lord-tax-side" type="submit" disabled>設定</button>
+          <button id="lord-tax-reset" type="button" disabled>全部重設為通常</button>
+        </form>
+        <p id="lord-expose-status" role="status"></p>
+        <form id="lord-expose-form" class="shelf-form" hidden>
+          <label>取締對象 <select id="lord-expose-target"></select></label>
+          <button id="lord-expose" type="submit" disabled>取締（費用 1,000,000）</button>
+        </form>
+        <h3 class="sub-title">軍事設定</h3>
+        <table class="use-detail-table"><tbody>
+          <tr><th scope="row">總兵力</th><td id="lord-army">—</td></tr>
+          <tr><th scope="row">正規軍／義勇軍</th><td id="lord-army-split">—</td></tr>
+          <tr><th scope="row">維持費／期</th><td id="lord-upkeep">—</td></tr>
+          <tr><th scope="row">正規軍每人維持費</th><td id="lord-unit-upkeep">—</td></tr>
+        </tbody></table>
+        <p id="lord-military-status" role="status"></p>
+        <form id="lord-outside-form" class="shelf-form" hidden>
+          <h3 class="sub-title">兵力增強（每人 1,200，街資金支出）</h3>
+          <label>預設人數 <select id="lord-outside-options"></select></label>
+          <label>或輸入人數 <input id="lord-outside-count" type="number" min="0" step="1"></label>
+          <button id="lord-outside" type="submit" disabled>增強</button>
+        </form>
+        <form id="lord-outdel-form" class="shelf-form" hidden>
+          <h3 class="sub-title">兵力削減（不退款）</h3>
+          <label>預設人數 <select id="lord-outdel-options"></select></label>
+          <label>或輸入人數 <input id="lord-outdel-count" type="number" min="0" step="1"></label>
+          <button id="lord-outdel" type="submit" disabled>解僱</button>
+        </form>
+        <p class="muted">目前僅有一間真實店舖，個別稅率與取締只能作用於該店。不涉及傭兵所私兵、公會或多人操作。</p>
       </div>
     </section>
 

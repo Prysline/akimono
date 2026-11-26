@@ -27,6 +27,8 @@ const viewCases=[
  ['zero elapsed period clamped to one',fixture({safety:0},{lasttime:129600-10800})],
  ['last second before boundary',fixture({safety:10000},{lasttime:129600-10801})],
  ['other event leaves view unchanged',fixture({}, {eventState:{'ken-sale':1100000}})],
+ ['source period safety above 10000',fixture({safety:15000})],
+ ['source signed guard upkeep above safety 20000',fixture({safety:25000})],
 ];
 for(const [name,f] of viewCases)test('R4 lord original view: '+name,()=>{
  const before=structuredClone(f),original=oracle(f),got=describeLordGuard({reviewed,fixture:f});

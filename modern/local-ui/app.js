@@ -7,7 +7,7 @@ let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
 let lastPricingItemId=null;
-let palaceSubmitting=false,armySubmitting=false;
+let palaceSubmitting=false,armySubmitting=false,lordSubmitting=false,lordViewRevision=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -33,7 +33,7 @@ const conciseTimeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',lord:'領主邸',
   balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
@@ -75,7 +75,7 @@ function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
   currentGroup=['market','palace'].includes(name)?'trade':'self';
-  if(name==='army')currentGroup='facility';
+  if(name==='army'||name==='lord')currentGroup='facility';
   updateNavigation();
 }
 function selectGroup(name){
@@ -389,6 +389,39 @@ function renderPalace(s){
   text('palace-item',canMeet?(catalogItem(s,p.itemId)?.name??'商品 #'+p.itemId):'—');
   text('palace-stock',canMeet?number(p.owned)+'／'+number(p.count):'—');
 }
+function renderLord(s){
+  const q=s?.lord,available=s?.reviewedLordFiscal===true&&Boolean(q)&&Boolean(s?.world);
+  $('lord-tab').disabled=!available;
+  $('lord-panel').hidden=!available;
+  if(!available&&currentTab==='lord')selectTab('army');
+  text('lord-status',available?'現任領主：'+s.shop.name:s?.reviewedLordFiscal?'目前沒有領主施政資格。':'領主邸需獨立領主財政審閱模式。');
+  const enabled=available&&!lordSubmitting;
+  for(const id of ['taxrate','devem','safem','inside','tax-side','tax-side-mode','tax-reset'])$('lord-'+id).disabled=!enabled;
+  if(!available){lordViewRevision=null;return;}
+  if(lordViewRevision!==s.world.revision){
+    for(const k of ['taxrate','devem','safem'])$('lord-'+k).value=String(q[k==='taxrate'?'taxRate':k]);
+    $('lord-tax-side-mode').value=q.taxMode===1?'free':q.taxMode===2?'double':'normal';
+    lordViewRevision=s.world.revision;
+  }
+  text('lord-money',money(q.money));text('lord-forecast',money(q.taxForecast));
+  text('lord-tax-target',q.targetShopName);text('lord-tax-mode',q.taxMode===1?'免除':q.taxMode===2?'兩倍':'通常');
+  text('lord-army',number(q.army));text('lord-army-split',number(q.regularArmy)+'／'+number(q.volunteerArmy));
+  text('lord-upkeep',money(q.upkeep));text('lord-unit-upkeep',money(q.unitUpkeep));
+  const reasons={rebellion:'反亂中不可取締。',army:'正規軍不足 2,000 人。',funds:'街資金不足 1,000,000。'};
+  text('lord-expose-status',q.canExpose?(q.canExposeTarget?'取締會使目標人氣降為十分之一。':'目標人氣不足 20%。'):reasons[q.exposeReason]??'無法取締。');
+  $('lord-expose-form').hidden=!q.canExpose;
+  $('lord-expose-target').replaceChildren(new Option(q.targetShopName,'1'));
+  $('lord-expose-target').disabled=!enabled||!q.canExposeTarget;
+  $('lord-expose').disabled=!enabled||!q.canExposeTarget;
+  text('lord-military-status',q.canHire?'可僱用上限 '+number(q.hireMaximum)+'；可解僱上限 '+number(q.fireMaximum):'反亂中或街資金不足，不可調整正規軍。');
+  for(const [kind,allowed,options,maximum] of [['outside',q.canHire,q.hireOptions,q.hireMaximum],['outdel',q.canFire,q.fireOptions,q.fireMaximum]]){
+    const active=enabled&&allowed&&maximum>0,select=$('lord-'+kind+'-options'),previous=select.value;
+    $('lord-'+kind+'-form').hidden=!allowed;
+    select.replaceChildren(new Option('請選擇','0'),...options.map(x=>new Option(x.label.replace('(資金最大)','（資金最大）').replace('(兵士最大)','（兵士最大）'),String(x.count))));
+    if(options.some(x=>String(x.count)===previous))select.value=previous;
+    select.disabled=!active;$('lord-'+kind+'-count').disabled=!active;$('lord-'+kind).disabled=!active;
+  }
+}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -433,6 +466,7 @@ function showState(s){
   text('shop-points',number(s.shopSummary?.point));
   renderPalace(s);
   renderArmy(s);
+  renderLord(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -683,6 +717,33 @@ for(const mode of ['hire','fire']){
         $('army-'+mode+'-count').value='';
       });
     }finally{armySubmitting=false;renderArmy(snapshot);}
+  });
+}
+async function submitLord(kind,body,allowed,label){
+  const before=snapshot;
+  if(lordSubmitting||!before?.world||!before.lord||!allowed)return;
+  lordSubmitting=true;renderLord(before);
+  try{await call('/api/lord-'+kind,{expectedRevision:before.world.revision,...body},label,data=>feedback('已完成'+label+'。',data.details));}
+  finally{lordSubmitting=false;renderLord(snapshot);}
+}
+$('lord-inside-form').addEventListener('submit',event=>{
+  event.preventDefault();const body=Object.fromEntries(['taxrate','devem','safem'].map(k=>[k,$('lord-'+k).value]));
+  if(Object.values(body).some(v=>!/^\d+$/.test(v))){feedback('請輸入非負整數。',null,true);return;}
+  return submitLord('inside',body,true,'內政設定');
+});
+$('lord-tax-side-form').addEventListener('submit',event=>{
+  event.preventDefault();return submitLord('tax-side',{targetShopId:1,mode:$('lord-tax-side-mode').value},true,'個別稅率設定');
+});
+$('lord-tax-reset').addEventListener('click',()=>submitLord('tax-reset',{},true,'稅率重設'));
+$('lord-expose-form').addEventListener('submit',event=>{
+  event.preventDefault();if(snapshot?.lord?.canExposeTarget!==true||!window.confirm('確定取締目前店舖並支出 1,000,000 街資金？'))return;
+  return submitLord('expose',{targetShopId:Number($('lord-expose-target').value)},true,'店舖取締');
+});
+for(const [kind,flag] of [['outside','canHire'],['outdel','canFire']]){
+  $('lord-'+kind+'-form').addEventListener('submit',event=>{
+    event.preventDefault();const cnt1=Number($('lord-'+kind+'-options').value),cnt2=Number($('lord-'+kind+'-count').value);
+    if(![cnt1,cnt2].every(n=>Number.isSafeInteger(n)&&n>=0)||!(cnt2||cnt1)){feedback('請輸入正整數人數。',null,true);return;}
+    return submitLord(kind,{cnt1,cnt2},snapshot?.lord?.[flag]===true,kind==='outside'?'護衛軍增強':'護衛軍削減');
   });
 }
 $('palace-complete').addEventListener('click',async()=>{
