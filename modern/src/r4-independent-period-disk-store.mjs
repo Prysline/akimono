@@ -20,7 +20,7 @@ function layout(world){
     if(!entries||Object.keys(entries).sort().join(',')!==[...names].sort().join(','))fail('unexpected file layout');
     for(const n of names){const f=entries[n];if(typeof f?.bytes!=='string'||!Number.isSafeInteger(f.mtime)||f.mtime<0||f.mtime>world.nowSeconds)fail('source file entry');out[prefix+n]=f;}
   }
-  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi']);
+  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi',...(Object.hasOwn(d.live??{},'army.cgi')?['army.cgi']:[])]);
   collect('backup/',d.backup,baseNames);
   if(!Array.isArray(d.generations)||d.generations.length!==3)fail('three backup generations required');
   d.generations.forEach((g,i)=>{if(g!==null)collect('backup'+(i+1)+'/',g,baseNames)});

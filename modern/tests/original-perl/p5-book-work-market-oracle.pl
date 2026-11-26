@@ -48,8 +48,13 @@ $TIME_SEND_ITEM=1200;$USER='r2b-original-dynamic';$DTTaxrate=0;
 
 # Existing original harness uses frozen compiler/GetTime and real
 # inc-turn PLUS + CheckWholeStore, yielding the same real wholesale as R2-A.
+my $mode=$ARGV[0]//'';
+die 'unknown oracle mode' unless $mode eq ''||$mode eq '--showcase-tool'||$mode eq '--transport-10'||$mode eq '--transport-12';
+my $target=$mode eq '--showcase-tool'?63:$mode eq '--transport-10'?10:$mode eq '--transport-12'?12:13;
+my $slot=$target-1;
+my $positive=$target==10||$target==12;
 my $supply=OriginalSparseAllPlusHarness::run(
-  timespanSeconds=>60,randomDraws=>[(0)x118]);
+  starterToolOwned=>$target==63?0:1,timespanSeconds=>60,randomDraws=>[(0)x118]);
 for my $i (0..$#main::out_item){
   my $item=$main::out_item[$i];
   $ITEM[$item->{no}]={%$item,sort=>$i};
@@ -112,6 +117,9 @@ die 'P5 source book compilation drift' unless
   $ITEM[13]{limit}==1 && $ITEM[13]{wslimit}==1 &&
   !$ITEM[13]{pricehalf} && !$ITEM[13]{funcbuy} &&
   $supply->{plusSeconds}[12]==36000 && $supply->{numericWholesale}[12]==1;
+if($target==63){
+  die 'source tool compilation drift' unless $ITEM[63]{code} eq 'edit-showcase' && $ITEM[63]{price}==0 && $ITEM[63]{limit}==1 && $ITEM[63]{wslimit}==1 && $supply->{plusSeconds}[62]==86400 && $supply->{numericWholesale}[62]==1;
+}
 my ($init)=$source=~/^\@\@FUNCINIT\s*\n(.*?)(?=^\@\@FUNCITEM)/ms;
 die 'missing original FUNCINIT' unless defined $init;
 $init=~s/\@\@ITEMNO"行家的精隨"/24/g;
@@ -119,39 +127,41 @@ die 'unexpected FUNCINIT macros' if $init=~/\@\@/;
 $P5_INIT=eval 'sub {'.$init.'}';
 die "cannot compile original FUNCINIT: $@" unless ref($P5_INIT) eq 'CODE';
 my @cases;
-for my $case ('success','zero-money','count-clamp','held','sold-out',
+for my $case ($positive?('success','peddle','appraiser','peddle-appraiser'):('success','zero-money','count-clamp','held','sold-out',
               'negative-price','stale-price','stale-shelf','wrong-item',
               'zero-count','negative-count','future-clock','time-cap',
-              'peddle','appraiser','peddle-appraiser'){
+              'peddle','appraiser','peddle-appraiser',($target==63?('debt'):()))){ 
   $DT={id=>1,status=>1,money=>100000,paytoday=>123,saletoday=>0,
     taxtoday=>0,time=>854200,rank=>5010,item=>[(0)x79],
     showcasecount=>1,showcase=>[0],price=>[0],shopname=>'P5 source'};
-  $DT->{item}[62]=1;$DT->{item}[78]=5;
+  $DT->{item}[62]=$target==63?0:1;$DT->{item}[78]=5;
   $DT->{job}=$case=~/peddle/?'peddle':'';
   $DT->{item}[23]=1 if $case=~/appraiser/;
   $DT->{money}=0 if $case eq 'zero-money';
+  $DT->{money}=-100000 if $case eq 'debt';
   $DT->{time}=$NOW_TIME+1 if $case eq 'future-clock';
   $DT->{time}=$NOW_TIME-$MAX_STOCK_TIME-1 if $case eq 'time-cap';
   @DT=($DT);@DTwholestore=@{$supply->{wholesale}};
   my $offer=GetWholeStore();
-  my ($shelf)=grep {$offer->{showcase}[$_]==13} 0..$offer->{showcasecount}-1;
-  die 'P5 source book quote missing' unless defined($shelf)&&$offer->{price}[$shelf]==0;
-  $DT->{item}[12]=1 if $case eq 'held';
-  $DTwholestore[12]=0 if $case eq 'sold-out';
+  my ($shelf)=grep {$offer->{showcase}[$_]==$target} 0..$offer->{showcasecount}-1;
+  die 'source quote missing' unless defined($shelf)&&($positive?$offer->{price}[$shelf]>0:$offer->{price}[$shelf]==0);
+  my $marketPrice=0+$offer->{price}[$shelf];
+  $DT->{item}[$slot]=1 if $case eq 'held';
+  $DTwholestore[$slot]=0 if $case eq 'sold-out';
   CheckWholeStore();
-  my $stockBefore=0+($DTwholestore[12]//0);
-  die 'P5 whole cap drift' unless $stockBefore==(($case eq 'held'||$case eq 'sold-out')?0:1);
+  my $stockBefore=0+($DTwholestore[$slot]//0);
+  die 'P5 whole cap drift' unless $positive||$stockBefore==(($case eq 'held'||$case eq 'sold-out')?0:1);
   my $moneyBefore=$DT->{money};my $timeBefore=$DT->{time};
-  my $ownedBefore=$DT->{item}[12];
-  my $quotedPrice=$case eq 'negative-price'?-1:$case eq 'stale-price'?1:0;
+  my $ownedBefore=$DT->{item}[$slot];
+  my $quotedPrice=$case eq 'negative-price'?-1:$case eq 'stale-price'?1:$marketPrice;
   my $quotedShelf=$shelf+($case eq 'stale-shelf'?1:0);
   my $requested=$case eq 'count-clamp'?99:$case eq 'zero-count'?0:$case eq 'negative-count'?-1:1;
-  my $requestedItem=$case eq 'wrong-item'?10:13;
+  my $requestedItem=$case eq 'wrong-item'?10:$target;
   $TIME_SEND_ITEM=1200;
   $P5_INIT->();
   $TIME_SEND_ITEM=int($TIME_SEND_ITEM/2);
-  my $expectedTime=GetTimeDeal(0,13,1);
-  my ($taxrate,$tax)=GetSaleTax(13,1,0,0);
+  my $expectedTime=GetTimeDeal($marketPrice,$target,1);
+  my ($taxrate,$tax)=GetSaleTax($target,1,$marketPrice,0);
   $TIME_SEND_ITEM=1200;$last_error='';
   $commits=$writes=$rendered=0;@R2B_DYNAMIC_TRACE=();@P5_LOGS=();
   %Q=(id=>0,it=>$requestedItem,sc=>$quotedShelf,pr=>$quotedPrice,num1=>$requested,num2=>0);
@@ -165,13 +175,13 @@ for my $case ('success','zero-money','count-clamp','held','sold-out',
     case=>$case,itemId=>$requestedItem,requestedCount=>$requested,
     job=>$DT->{job},appraiser=>0+$DT->{item}[23],
     marketShelf=>$quotedShelf,sourceShelf=>$shelf,expectedPrice=>$quotedPrice,
-    trueMarketPrice=>0,trueMarketTimeSeconds=>0+$expectedTime,
+    trueMarketPrice=>$marketPrice,trueMarketTimeSeconds=>0+$expectedTime,
     taxRate=>0+$taxrate,tax=>0+$tax,actualTax=>$rendered?0+$item::BUY->{tax}:undef,
     accepted=>$rendered?JSON::PP::true:JSON::PP::false,
     purchasedCount=>0+$num,moneyBefore=>$moneyBefore,money=>0+$DT->{money},
-    paytoday=>0+$DT->{paytoday},ownedBefore=>$ownedBefore,stock=>0+$DT->{item}[12],
+    paytoday=>0+$DT->{paytoday},ownedBefore=>$ownedBefore,stock=>0+$DT->{item}[$slot],
     timeBefore=>$timeBefore,time=>0+$DT->{time},
-    marketBefore=>$stockBefore,marketStock=>0+($DTwholestore[12]//0),
+    marketBefore=>$stockBefore,marketStock=>0+($DTwholestore[$slot]//0),
     giftStock=>0+$DT->{item}[78],wholesaleCsv=>join(',',@DTwholestore),
     sparseWrittenSlots=>\@slots,stages=>[@R2B_DYNAMIC_TRACE],
     logs=>[@P5_LOGS],commits=>0+$commits,writes=>0+$writes,

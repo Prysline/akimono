@@ -12,10 +12,10 @@ const fail=s=>{throw new RangeError('R4 time RNG: '+s)};
 const int=n=>Number.isSafeInteger(n)&&n>=0;
 export const R4_CROSS_PERIOD_DRAW_POLICY='akimono.r4.cross-period-draws.v1';
 export function createR4TimeDraws(args){
-  return createDraws(args,R4_TIME_DRAW_POLICY,R4_FULL_PRE_EVENT_DRAWS+100);
+  return createDraws(args,R4_TIME_DRAW_POLICY,args.fullCommerce===true?R4_FULL_PRE_EVENT_DRAWS+100:221);
 }
 export function createR4CrossPeriodDraws(args){
-  return createDraws(args,R4_CROSS_PERIOD_DRAW_POLICY,2*(R4_FULL_CROSS_SLICE_DRAWS+100));
+  return createDraws(args,R4_CROSS_PERIOD_DRAW_POLICY,args.fullCommerce===true?2*(R4_FULL_CROSS_SLICE_DRAWS+100):450);
 }
 function createDraws({world,minutes},policy,budget){
   if(typeof world?.worldId!=='string'||!world.worldId||world.worldId.length>200||!int(world.revision)||!int(world.nowSeconds)||!int(minutes)||minutes<1||minutes>60)fail('bounded server world/command identity');

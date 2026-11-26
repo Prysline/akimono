@@ -18,7 +18,7 @@ export function projectR4NormalTurnCandidate({world,minutes,street,reviewedR4,re
   if(reviewedEvents.eventCodes.join(',')!==reviewedHash?.declarationOrder?.join(','))fail('EVENT catalog mismatch');
   const hash=resolveR4HashOrders({reviewed:reviewedHash,world,minutes,expectedInterpreter});
   validateR4PreEventPeriod({reviewed:reviewedDataRead,period:world.period,activeOrder:hash.activeOrder});
-  const tape=createR4TimeDraws({world,minutes});
+  const tape=createR4TimeDraws({world,minutes,fullCommerce:street.reviewedNormalCommerce!==undefined});
   const normalCommerce=street.reviewedNormalCommerce??null;
   const maxDraws=normalCommerce===null?121:R4_FULL_PRE_EVENT_DRAWS;
   const args={world,minutes,shopId:world.shops[0].id,reviewed:street.reviewedB41,

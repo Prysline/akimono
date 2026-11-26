@@ -44,7 +44,7 @@
           <button type="button" disabled>［領主邸］</button>
           <button type="button" disabled>［公會］</button>
           <button type="button" disabled>［競技場］</button>
-          <button type="button" disabled>［傭兵所］</button>
+          <button type="button" data-tab="army">［傭兵所］</button>
           <button type="button" disabled>［住宅地］</button>
         </span>
         <span class="subgroup" data-subgroup="social" hidden>
@@ -316,6 +316,33 @@
         <p class="help-text">完成使命可獲得 1 點爵位經驗值；任務由整條街共用，繳交後由伺服器更新。</p>
         <div class="back-row"><button type="button" id="palace-complete" class="primary" disabled>繳交指定商品</button></div>
       </div>
+    </section>
+
+    <section id="tab-army" class="section pane" hidden>
+      <h2 class="section-title">● 傭兵所</h2>
+      <p id="army-status" role="status">請先開店。</p>
+      <table class="use-detail-table"><tbody>
+        <tr><th scope="row">爵位經驗值</th><td id="army-dignity">—</td></tr>
+        <tr><th scope="row">僱用最大數</th><td id="army-maximum">—</td></tr>
+        <tr><th scope="row">僱用數</th><td id="army-count">—</td></tr>
+        <tr><th scope="row">僱用費用／人</th><td id="army-price">—</td></tr>
+        <tr><th scope="row">狀態</th><td id="army-riot">—</td></tr>
+      </tbody></table>
+      <form id="army-hire-form" class="shelf-form">
+        <h3 class="sub-title">兵士僱用（消耗40分鐘）</h3>
+        <p id="army-hire-reason"></p>
+        <label>預設人數 <select id="army-hire-options"><option value="">請選擇</option></select></label>
+        <label>或輸入人數 <input id="army-hire-count" type="number" min="1" step="1"></label>
+        <button id="army-hire" type="submit" disabled>僱用</button>
+      </form>
+      <form id="army-fire-form" class="shelf-form">
+        <h3 class="sub-title">兵士解僱（消耗10分鐘，不退款）</h3>
+        <p id="army-fire-reason"></p>
+        <label>預設人數 <select id="army-fire-options"><option value="">請選擇</option></select></label>
+        <label>或輸入人數 <input id="army-fire-count" type="number" min="1" step="1"></label>
+        <button id="army-fire" type="submit" disabled>解僱</button>
+      </form>
+      <p class="muted">反亂、護衛派遣及領主交易尚未開放。</p>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>

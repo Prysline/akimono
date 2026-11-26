@@ -55,17 +55,17 @@ export function quoteCompiledWholesaleRule(rule,marketStock,shop=null){
   // buy-s.cgi halves the original 1200s TIME_SEND_ITEM to 600s.
   const multiplier=zero?1:Math.max(0.5,Math.min(2,2-price/base));
   let timeSeconds=Math.trunc(rule.marketTimeSeconds*multiplier);
-  // P5 zero-price transport includes the reviewed original FUNCINIT prelude
-  // before buy-s.cgi halves TimeSendItem. Positive-price policies are unchanged.
-  if(zero&&shop!==null){
-    const transport=rule.zeroPriceTransport;
+  // Source FUNCINIT precedes buy-s.cgi's wholesale halving and GetTimeDeal.
+  // Full commerce includes the same transport modifiers for positive prices.
+  if(shop!==null&&(zero||rule.sourceTransport)){
+    const transport=rule.sourceTransport??rule.zeroPriceTransport;
     if(!transport||!Array.isArray(shop.item)||
       !Number.isSafeInteger(shop.item[transport.appraiserIndex])||shop.item[transport.appraiserIndex]<0)
       fail('invalid zero-price source transport context');
     let originalSend=rule.marketTimeSeconds*2;
     if(shop.item[transport.appraiserIndex]>0)originalSend=Math.trunc(originalSend/4*3);
     if(shop.job===transport.job)originalSend=Math.trunc(originalSend/2);
-    timeSeconds=Math.trunc(originalSend/2);
+    timeSeconds=Math.trunc(Math.trunc(originalSend/2)*multiplier);
   }
   if(!Number.isSafeInteger(timeSeconds)||timeSeconds<0)
     fail('unsafe original GetTimeDeal time');
@@ -124,6 +124,7 @@ export function compileStandardStreetMarketBuyRegistry({
     init[0].raw.includes("$TIME_SEND_ITEM=int($TIME_SEND_ITEM/2) if $DT->{job} eq 'peddle';")&&
     model.items.some(x=>x.id===24&&x.code==='skill-mekiki'&&x.name==='行家的精隨')?
     Object.freeze({appraiserIndex:23,job:'peddle'}):null;
+  if(includeReviewedShowcaseTool&&zeroTransport===null)fail('original FUNCINIT transport review required');
   const sourceItems=[...main.blocks,...rebel.blocks]
     .filter(b=>b.kind==='ITEM');
   if(sourceItems.length!==79)fail('original ITEM count');
@@ -195,6 +196,7 @@ export function compileStandardStreetMarketBuyRegistry({
       pricePolicy:Object.freeze(pricePolicy),
       stockLimit:limit.limit,wholesaleLimit:limit.wslimit,
       marketTimeSeconds,
+      ...(includeReviewedShowcaseTool?{sourceTransport:zeroTransport}:{}),
       ...(zeroPriceReviewed?{zeroPriceReviewed:true,zeroPriceTransport:zeroTransport}:{}),
       callbackSource:callback?block.file+':'+callback.line:null,
       globalBuyCallback,classification,reason,
@@ -224,6 +226,7 @@ export function compileStandardStreetMarketBuyRegistry({
         stockLimit:e.stockLimit,
         ...(e.zeroPriceReviewed?{zeroPriceReviewed:true,wholesaleLimit:e.wholesaleLimit,
           zeroPriceTransport:e.zeroPriceTransport}:{}),
+        ...(e.sourceTransport?{sourceTransport:e.sourceTransport}:{}),
         marketTimeSeconds:e.marketTimeSeconds,
         source:e.source,
         scope:e.classification==='common-static'?

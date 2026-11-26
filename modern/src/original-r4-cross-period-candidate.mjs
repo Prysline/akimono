@@ -38,7 +38,7 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
      !reviewedEvents.iron||!reviewedEvents.sword||reviewedEvents.guildbattle!==null||reviewedEvents.rebel!==null)
     fail('reviewed independent single-shop source dependencies required');
   if(reviewedEvents.eventCodes.join(',')!==reviewedHash?.declarationOrder?.join(','))fail('EVENT catalog mismatch');
-  const tape=createR4CrossPeriodDraws({world,minutes});
+  const tape=createR4CrossPeriodDraws({world,minutes,fullCommerce:street.reviewedNormalCommerce!==undefined});
   const normalCommerce=street.reviewedNormalCommerce??null;
   const maxDraws=normalCommerce===null?125:R4_FULL_CROSS_SLICE_DRAWS;
   const plan=projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+minutes*60});

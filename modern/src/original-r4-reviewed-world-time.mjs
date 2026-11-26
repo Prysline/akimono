@@ -20,6 +20,7 @@ import {reviewNormalCommerceItems,validateNormalCommerceInventory,capReviewedCom
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
+import {ARMY_COMMANDS} from './original-r4-independent-army.mjs';
 export const REVIEWED_WORLD_TIME_COMMAND='advance-reviewed-world-time';
 const fail=s=>{throw new RangeError('R4 reviewed local world time: '+s)};
 const keys=(o)=>Object.keys(o).sort().join(',');
@@ -50,7 +51,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
     reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
   const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
-  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND);
+  const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k));
   const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce}):null;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
@@ -146,10 +147,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):capApplied(applied);
   }
   const wrapped=Object.freeze({...street,
-    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[])]),
+    capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
+    ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
     ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
@@ -167,6 +169,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       validate(world);
       if(disk&&command.kind==='reviewed-sparse-all-plus')fail('isolated PLUS fixture cannot enter crossing runtime');
       if(command.kind===PALACE_COMMAND){requireProvenance(world);return disk.applyPalace(world,command);}
+      if(ARMY_COMMANDS.includes(command.kind)){requireProvenance(world);return disk.applyArmy(world,command);}
       return street.apply({world,command});
     },
     reviewPeriodTransition({before,after,command=null,initial=false}){
@@ -187,6 +190,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         if(!allowedOrdinary(command?.kind)||command.kind==='reviewed-sparse-all-plus'||before.nowSeconds!==after.nowSeconds)fail('unreviewed independent ordinary transition');
         let applied;
         if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
+        else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
         else{
           const result=applyGameCommand({world:before,command,streetModule:street});
           if(!result.ok)fail('source ordinary replay rejected');
