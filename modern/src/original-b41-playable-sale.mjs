@@ -34,6 +34,9 @@ import {reviewOriginalR4TimeSlices,projectOriginalR4TimeSlices}
 import {projectR4PreEventItemOverlay} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {projectOriginalSoloPeriodPhaseChain,B50_INTEGRATED_SOURCE} from './original-period-solo-chain.mjs';
+import {projectR4PeriodShopExpiry} from './original-r4-period-shop-expiry.mjs';
+import {resolveR4CloseArchiveHashOrders} from './original-r4-close-archive-hash.mjs';
+import {isR4IndependentCloseReview} from './original-r4-independent-close-candidate.mjs';
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
@@ -232,7 +235,7 @@ function projectSourcePreEventSaleSlice({
   reviewedB61Sword=null,reviewedB62Map=null,reviewedB63Map=null,
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
-  r4DataRead=null,normalCommerce=null,
+  r4DataRead=null,normalCommerce=null,r4CloseReview=null,sessionFileNames=null,expectedInterpreter=null,
 },boundary=null){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -243,6 +246,11 @@ function projectSourcePreEventSaleSlice({
   // an exact sub-minute source slice. Public/legacy callers still use minutes.
   const span=safe(boundary===null?minutes*60:boundary.spanSeconds,'timespan',1);
   if(normalCommerce!==null&&(!p3InventoryStage||!r4ReviewedSort||!r4DataRead||!reviewedEventTimeSlice))bad('full commerce requires complete reviewed R4 stage');
+  if(r4CloseReview!==null&&(!isR4IndependentCloseReview(r4CloseReview)||normalCommerce===null||
+     boundary===null||boundary.reviewed?.actualClose?.fullCommerceArchive!==true||
+     !Array.isArray(sessionFileNames)))
+    bad('reviewed independent closure candidate required');
+  if(r4CloseReview===null&&sessionFileNames!==null)bad('unreviewed source session inventory');
   const maxDraws=normalCommerce!==null?(boundary===null?R4_FULL_PRE_EVENT_DRAWS:R4_FULL_CROSS_SLICE_DRAWS):(boundary===null?121:125);
   if(!Array.isArray(randomDraws)||randomDraws.length>maxDraws||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
@@ -429,13 +437,13 @@ function projectSourcePreEventSaleSlice({
   // The original period runs between SortDT and the 59 PLUS loop. It
   // observes the command's final NOW_TIME, not the intermediate boundary.
   // Only a candidate can use this seam; no WorldState or disk commit.
-  let settlement=null,periodDraws=0,plusWorld={...world,shops:[newShop]};
+  let settlement=null,periodDraws=0,closeHashEvidence=null,plusWorld={...world,shops:[newShop]};
   if(boundary!==null)plusWorld={...plusWorld,period:{...world.period,
     eventState:overlayWorld.period.eventState}};
   if(boundary?.dateupdate===1){
     const reviewedPeriod=boundary.reviewed;
     if(reviewedPeriod.dragon!==null||reviewedPeriod.guild!==null||
-       reviewedPeriod.actualClose!==null||reviewedPeriod.periodBackup!==null||
+       (reviewedPeriod.actualClose!==null&&r4CloseReview===null)||reviewedPeriod.periodBackup!==null||
        reviewedPeriod.postTech!==null||reviewedPeriod.dignity===null||
        reviewedPeriod.shopExpiry===null||
        ![undefined,''].includes(newShop.guild)||
@@ -446,16 +454,27 @@ function projectSourcePreEventSaleSlice({
     periodDraws=3+(dignity?1:0);
     if(randomDraws.length<used+periodDraws)bad('missing original period random samples');
     const draws=randomDraws.slice(used,used+periodDraws);
+    const expires=r4CloseReview!==null&&projectR4PeriodShopExpiry({
+      reviewed:reviewedPeriod.shopExpiry,shop:newShop,nowSeconds:boundary.commandNowSeconds,
+    }).expiredOwner;
+    if(expires)closeHashEvidence=resolveR4CloseArchiveHashOrders({
+      reviewed:r4CloseReview.archiveHash,world:boundary.dataReadWorld,minutes,
+      shopAfterSale:newShop,shelfSales:natural.shelfSales,expectedInterpreter,
+    });
     settlement=projectOriginalSoloPeriodPhaseChain({
       reviewed:reviewedPeriod,shop:newShop,town:world.period.town,dtPeople:world.period.dtPeople,
       awardDrawMillionths:draws[0],
       dignityDrawMillionths:dignity?draws[1]:null,
       territoryDrawMillionths:draws.slice(dignity?2:1),
       nowSeconds:boundary.commandNowSeconds,
+      ...(r4CloseReview===null?{}:{sessionFileNames:expires?sessionFileNames:null,
+        archiveHashOrders:closeHashEvidence?.archiveHashOrders??null}),
     });
-    if(settlement.shopExpiry?.expiredOwner||!settlement.shop||settlement.nonCommittable!==true)
+    if(settlement.nonCommittable!==true||(!expires&&(!settlement.shop||settlement.shopExpiry?.expiredOwner))||
+       (expires&&(settlement.shop!==null||settlement.actualCloseEffect?.closed!==true||
+         settlement.activeShops?.length!==0)))
       bad('source closure requires external archive/session transaction');
-    plusWorld={...world,shops:[settlement.shop],period:{...world.period,
+    plusWorld={...world,shops:expires?[]:[settlement.shop],period:{...world.period,
       town:settlement.town,dtPeople:settlement.dtPeople}};
   }
   const money=newShop.money,saleToday=newShop.saletoday;
@@ -467,10 +486,11 @@ function projectSourcePreEventSaleSlice({
     reviewedB59Iron,ironEventActive,
     reviewedEventTimeSlice,
     ...(overlay===null?{}:{r4DataReadOverlay:overlay}),
+    ...(closeHashEvidence===null?{}:{r4EmptyStreetReview:r4CloseReview.emptyPlus}),
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
-    ...(boundary===null?{}:{settlement,...(settlement?{periodLogInput:{shop:newShop,town:world.period.town}}:{})}),
+    ...(boundary===null?{}:{settlement,...(settlement?{periodLogInput:{shop:newShop,town:world.period.town}}:{}),...(closeHashEvidence?{closeHashEvidence}:{})}),
     // R3 only projects the pre-EVENT source stages. Do not write period:
     // the consumer must choose the original EVENT stage (R4) or explicitly
     // mark unknown state in the legacy B-41 player compatibility wrapper.

@@ -677,3 +677,68 @@ test('R4 reviewed CAS settles two consecutive source boundaries from legal openi
   const final=command('advance-reviewed-world-time',{minutes:1});
   assert.equal(final.world.period.settledCount,2);
 });
+
+import {reviewR4IndependentCloseCandidate} from '../src/original-r4-independent-close-candidate.mjs';
+import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
+import {projectR4SettledPeriodCandidate} from '../src/original-r4-cross-period-candidate.mjs';
+test('R4 source-only crossing closes an expired shop, preserves native archive and continues both empty slices and later commands',async()=>{
+  const closureSources={...boundarySources,turnSource:source.originalTurnSource,
+    writeSource:source.originalDataWriteSource,wholeSource:source.originalWholeSource,
+    showcaseSource:await readPerl('sc-s.cgi'),userSource:await readPerl('pinned-user.cgi')};
+  const r4CloseReview=reviewR4IndependentCloseCandidate(closureSources);
+  const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...closureSources,
+    includeReviewedMultiShelf:true,includeReviewedSaleTax:true,
+    includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true});
+  const fullStreet=Object.freeze({...street,reviewedNormalCommerce:reviewNormalCommerceItems(closureSources)});
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  // Source-stage fixture, deliberately NOT a genuine acquisition or clock proof.
+  world.nowSeconds=1673980;
+  world.period.eventState={'plusup-tetu':1673990,'happy':1675000};
+  Object.assign(world.shops[0],{pass:'',comment:'',remoteaddr:'',dignity:12,rankingcount:0,
+    profitstock:0,taxmode:0,drmoney:0,trush:0,guild:'',blocklogin:'',nocheckip:'',
+    job:'weapon',exp:{14:20,37:200},user:{},money:-1000,
+    itemtoday:{10:1,40:2},itemyesterday:{41:1,42:2},saletoday:1000,taxtoday:321});
+  const before=JSON.stringify(world),sessionFileNames=['1-alpha.cgi','1-.cgi','2-keep.cgi'];
+  const commandArgs={world,minutes:1,street:fullStreet,reviewedR4,reviewedDataRead,
+    reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod,r4CloseReview,sessionFileNames};
+  const result=projectR4CrossPeriodCandidate(commandArgs);
+  assert.equal(result.committable,false);assert.equal(result.worldStateWritten,false);
+  assert.deepEqual(result.shops,[]);assert.equal(result.nowSeconds,1674040);
+  assert.equal(result.period.settledCount,1);assert.equal(result.period.lastSettledBoundarySeconds,1674000);
+  assert.deepEqual(result.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+  const [first,second]=result.evidence.slices;
+  const settlement=first.preEvent.settlement,close=settlement.actualCloseEffect;
+  assert.equal(settlement.shopExpiry.expiredOwner,true);assert.equal(settlement.shop,null);
+  assert.equal(close.closed,true);assert.deepEqual(close.deletedSessions,['1-alpha.cgi']);
+  assert.deepEqual(close.remainingSessions,['1-.cgi','2-keep.cgi']);
+  assert.equal(close.shop.money,0);assert.equal(settlement.closedShop.money,-settlement.maintenance);
+  assert.equal(first.preEvent.closeHashEvidence.interpreter,result.evidence.interpreter);
+  assert.equal(first.preEvent.closeHashEvidence.seed,result.evidence.seed);
+  assert.ok(close.archived.startsWith('経営者不在\n'));
+  for(const slice of [first,second]){
+    assert.equal(slice.shop,null);assert.deepEqual(slice.preEvent.shops,[]);
+    assert.ok(!slice.eventDrawRanges.includes(1000));
+  }
+  assert.equal(second.preEvent.receipt.naturalSaleCount,0);
+  assert.equal(second.preEvent.receipt.callbackDraws,1);
+  assert.equal(second.preEvent.receipt.periodDraws,0);
+  assert.equal(second.preEvent.settlement,null);
+  assert.equal(result.evidence.plusSeconds[4],720);
+  assert.equal(Object.hasOwn(result.period.eventState,'plusup-tetu'),false);
+  const next=continueR4CrossPeriodCandidate({previous:result,minutes:1});
+  assert.deepEqual(next.shops,[]);assert.equal(next.nowSeconds,result.nowSeconds+60);
+  assert.equal(next.period.settledCount,1);assert.deepEqual(next.period.town,result.period.town);
+  assert.equal(next.evidence.plusSeconds[4],-1200);
+  // Another exact boundary in an already empty street skips inc-period.
+  // This is a pure clock fixture, not a player transition.
+  const empty={...world,shops:[],period:result.period,market:result.market,nowSeconds:1803580,
+    revision:world.revision+1};
+  const later=projectR4SettledPeriodCandidate({...commandArgs,world:empty,sessionFileNames:close.remainingSessions});
+  assert.deepEqual(later.shops,[]);assert.equal(later.nowSeconds,1803640);
+  assert.equal(later.period.settledCount,1);assert.equal(later.period.lastSettledBoundarySeconds,1674000);
+  assert.deepEqual(later.period.town,result.period.town);
+  assert.ok(later.evidence.slices.every(s=>s.preEvent.settlement===null&&s.preEvent.receipt.periodDraws===0));
+  assert.throws(()=>projectR4CrossPeriodCandidate({...commandArgs,r4CloseReview:{...r4CloseReview}}),/reviewed independent closure/);
+  assert.equal(JSON.stringify(world),before);
+  assert.deepEqual(sessionFileNames,['1-alpha.cgi','1-.cgi','2-keep.cgi']);
+});
