@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 185、歷史 32、待補 16。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 154 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 187、歷史 32、待補 14。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 156 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -107,7 +107,7 @@
 | original-perl/original-r4-rebel-period-trigger.t | 有效 | Perl Oracle（period RebelRobin） |
 | original-perl/original-r4-sorted-pre-event.t | 有效 | Perl Oracle（單店 SortDT smoke）；[第26批](r0-r4-sorted-pre-event-evidence.md) |
 | original-perl/original-r4-time-slices.t | 有效 | Perl Oracle（36h 時鐘分割） |
-| original-perl/original-r4-town-play.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-town-play.t | 有效 | Perl Oracle（真隔離 guild 讀取／town DataWrite/DataRead） |
 | original-perl/original-shared-callbacks.t | 有效 | Perl Oracle（外部呼叫 stub） |
 | original-perl/original-sparse-all-plus.t | 有效 | Perl Oracle（受控 PLUS） |
 | original-perl/original-sparse-multi-plus.t | 有效 | Perl Oracle（受控 PLUS） |
@@ -222,7 +222,7 @@
 | r4-source-rebel-now.test.mjs | 有效 | Perl Oracle／Node 差分（單 EVENT NOW） |
 | r4-source-rebel-period-now.test.mjs | 有效 | Perl Oracle／Node 差分（period→NOW 單切片） |
 | r4-source-rebel-period-trigger.test.mjs | 有效 | Perl Oracle／Node 差分（period RebelRobin） |
-| r4-source-town-play.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-town-play.test.mjs | 有效 | Perl Oracle／Node 差分（真隔離 town stage/rename/recovery） |
 | r4-source-world-transition-cas-guard.test.mjs | 歷史 | 舊 CAS／nonCommittable 與 legacy store |
 | reviewed-gift-map-use.test.mjs | 有效 | Perl Oracle／Node 差分（受控 memory） |
 | reviewed-use-fixture-street.test.mjs | 待補 | 未完成語義審閱 |
