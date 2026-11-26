@@ -1013,6 +1013,40 @@ test('R4 opt-in external CAS refuses structurally valid rebel assets without acq
   play[3]=Object.entries(forged.period.eventState).flat().join(',');
   forged.period.disk.live['play.cgi'].bytes=play.join('\n');
   assert.equal(crossStreet.validateReviewedWorldTimeState(forged),true,'shape alone is not authority');
+  // External commerce source review is deliberately not acquisition
+  // approval. This is a paired projection on explicit source fixtures;
+  // actual positive access must still arrive by authenticated commands.
+  const {projectSharedUseItem}=await import('../src/shared-use-item-core.mjs');
+  const {projectSharedMarketBuy}=await import('../src/market-buy-core.mjs');
+  const normalFixture={...structuredClone(before),revision:forged.revision};
+  const rebelFixture=structuredClone(forged);
+  const knownMarket=fresh(true).repository.read().market;
+  normalFixture.market=knownMarket;rebelFixture.market=knownMarket;
+  assert.equal(crossStreet.marketBuy.validateWorld(rebelFixture),true);
+  assert.equal(street.marketBuy.validateWorld(rebelFixture),false);
+  const gift={kind:'use-item',expectedRevision:forged.revision,shopId:1,itemId:79,useId:0,requestedCount:1};
+  assert.equal(crossStreet.useItem.validateEventState({world:rebelFixture}),true);
+  assert.deepEqual(projectSharedUseItem({world:rebelFixture,command:gift,useItem:crossStreet.useItem}),
+    projectSharedUseItem({world:normalFixture,command:gift,useItem:crossStreet.useItem}));
+  const offer=crossStreet.listMarketOffers(rebelFixture).find(x=>x.canBuy&&x.marketStock>0);
+  assert.ok(offer,'known source wholesale fixture');
+  const buy={kind:'market-buy',expectedRevision:forged.revision,shopId:1,itemId:offer.itemId,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price};
+  assert.deepEqual(projectSharedMarketBuy({world:rebelFixture,command:buy,marketBuy:crossStreet.marketBuy}),
+    projectSharedMarketBuy({world:normalFixture,command:buy,marketBuy:crossStreet.marketBuy}));
+  for(const mutate of [
+    w=>delete w.period.disk.live['army.cgi'],
+    w=>{w.period.disk.live['army.cgi'].bytes='1,4000\\n2\\n';},
+    w=>{w.shops[0].taxmode=2;},
+    w=>{w.period.eventState.guildbattle=w.nowSeconds+100;},
+    w=>{const lines=w.period.disk.live['play.cgi'].bytes.split('\\n'),h=lines[1].split(',');h[3]='3';lines[1]=h.join(',');w.period.disk.live['play.cgi'].bytes=lines.join('\\n');}
+  ]){
+    const bad=structuredClone(rebelFixture);mutate(bad);
+    assert.equal(crossStreet.marketBuy.validateWorld(bad),false);
+    assert.equal(crossStreet.useItem.validateEventState({world:bad}),false);
+  }
+  const unauthenticatedUse=applyGameCommand({world:forged,streetModule:crossStreet,command:gift});
+  assert.equal(unauthenticatedUse.ok,false);
+  assert.match(unauthenticatedUse.details.reason,/provenance/);
   const rejected=repository.compareAndSwap({expectedRevision:before.revision,nextWorld:forged,command:attack});
   assert.equal(rejected.ok,false);
   assert.deepEqual(repository.read(),before);

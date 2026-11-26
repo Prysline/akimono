@@ -59,6 +59,7 @@ import {reviewOriginalB60HappyEvent}
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
 import {reviewR4PreEventItemOverlay,validateR4OrdinaryEventContext} from './original-r4-pre-event-item-overlay.mjs';
+import {reviewR4RebelOrdinaryContext,validateR4RebelOrdinaryContext} from './original-r4-rebel-ordinary-context.mjs';
 import {attachR4ReviewedTimeController} from './original-r4-reviewed-world-time.mjs';
 import {reviewR4WorldTransitionGate,allowR4UnsettledWorldTransition}
   from './original-r4-world-transition-gate.mjs';
@@ -186,7 +187,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(typeof enableReviewedRebelTime!=='boolean'||enableReviewedRebelTime&&!enableReviewedCrossPeriod)bad('external time requires reviewed crossing');
   const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
-  const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
+  const rebelOrdinaryReview=enableReviewedRebelTime?reviewR4RebelOrdinaryContext({...r4Sources,buySource:originalBuySource,useSource:originalUseSource}):null;
+  const knownOrdinaryEvents=world=>(ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod}))||
+    (rebelOrdinaryReview!==null&&validateR4RebelOrdinaryContext({reviewed:rebelOrdinaryReview,world}));
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   if(model.maxMoney!==SOURCE_STANDARD_STREET_MAX_MONEY)
     bad('original MaxMoney declaration changed; review direct price cap');
