@@ -4340,22 +4340,77 @@
       "path": "modern/tests/original-admin-sparse-market.test.mjs",
       "sha": "81db868d6972067ee708992e2134dde213699a01",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（舊 memory CAS）",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/use.cgi",
+      "assertions": "init metadata 精確 500000,100 等、空 CSV / 0 defined slots vs 79 numeric zeros；source drift拒絕、incomplete opt-in、舊 capability 集合；boot rev0→1 無店、open→2 #63×1/#79×5；reboot/post-open/extra wholesale 拒絕；gift 消耗2、9/12/14各+1、slot78唯一已寫，第二次保留 sparse、第三次拒絕不變；cap map slots8/11/13/78 寫零；malformed provenance與 stale rev拒絕、JSON immutable roundtrip；Perl probe 對照 CSV/defined/numeric/stock/money/time，cap fixture對照",
+      "executionPath": "modern/src/original-admin-world-bootstrap.mjs → modern/src/standard-street-module.mjs → modern/src/game-core-contract.mjs → modern/src/world-wholesale-codec.mjs → modern/tests/original-perl/original-admin-sparse-market-probe.pl",
+      "risk": "舊 opt-in module 非正式七命令入口；memory adapter/固定時鐘；cap fixture非合法取得；原版 Perl 子程序可能無 Perl 時 skip（已確認候選 0 skip）；非 HTTP/v2 或完整 compiler",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 17
+        },
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-admin-world-bootstrap.mjs",
+          "sha": "2e852bc260e2c67bb081465377ffec2976c01a88"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/world-wholesale-codec.mjs",
+          "sha": "2714020cb3fb2d555062cbbaa1c42a8601e2bb50"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market-probe.pl",
+          "sha": "2bac04c03ea5a630d0a425f5423e0ba03da408bb"
+        }
+      ],
+      "fixtures": "固定 now1000000、shop42、source opt-in module；空市場、兩次 #79/0 合法 memory 兌換；cap case 注入三種地圖各3；Perl subprocess",
+      "limitations": "舊 opt-in module 非正式七命令入口；memory adapter/固定時鐘；cap fixture非合法取得；原版 Perl 子程序可能無 Perl 時 skip（已確認候選 0 skip）；非 HTTP/v2 或完整 compiler",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
@@ -4403,22 +4458,77 @@
       "path": "modern/tests/original-item-dynamic-loading-model.test.mjs",
       "sha": "444e615842d687abe4c3201c14bfb3e1407b382a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（虛擬 require）",
+      "originalSource": "_config.cgi、modern/tests/original-perl/core-item-detail.cgi、modern/tests/original-perl/core-item-form.cgi、modern/tests/original-perl/core-item-submit.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-makeitem.cgi、custom/inc-item-data.cgi、custom/inc-rebel-data.cgi",
+      "assertions": "custom RequireFile priority且無 override；common package item/funcitem；三 entrypoint 先 common 再 direct require 再 USE lookup；compiler同 package、per-code paths、@USE不清、_local_1 alias；獨立work money104 logs2、showcase2 [9,0]/[90,0]；%INC cache及同名 symbol覆寫、重載舊路徑不能恢復；兩槽覆寫留下6槽；unsafe sequence拒絕與immutable；9 scenarios真 Perl @INC probe steps/loadedPaths/hookRequests exact",
+      "executionPath": "modern/src/original-item-dynamic-loading-model.mjs → modern/src/original-standard-callback-inventory.mjs → modern/tests/original-perl/original-virtual-item-require-probe.pl",
+      "risk": "不執行真 CGI/完整 compiler/磁碟 module；舊全域 symbol 碰撞為來源風險，不是要求正式模型重現漏洞；不證明 #13/63 正式交易",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 39
+        },
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 14
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-detail.cgi",
+          "sha": "9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-form.cgi",
+          "sha": "7ec2c01829c20e78feec53a1ed410ad7254b21c7"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-submit.cgi",
+          "sha": "bf895cb9c4672fe984cc9be352d52a856d3ac4e3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-item-dynamic-loading-model.mjs",
+          "sha": "b83ac7e8d065c54d5a922b599c5eebda74ca35ef"
+        },
+        {
+          "path": "modern/src/original-standard-callback-inventory.mjs",
+          "sha": "bac98cbffaf7135d1e4b0687a20a4a3e9bfa7f36"
+        },
+        {
+          "path": "modern/tests/original-perl/original-virtual-item-require-probe.pl",
+          "sha": "89e4321d9431fe8597a2b7660a00fb9a71976204"
+        }
+      ],
+      "fixtures": "合成 book-work / edit-showcase 虛擬檔，單 Perl interpreter；9 種順序；money100/shelf1等 fixture",
+      "limitations": "不執行真 CGI/完整 compiler/磁碟 module；舊全域 symbol 碰撞為來源風險，不是要求正式模型重現漏洞；不證明 #13/63 正式交易",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-item-helper-model.test.mjs",
@@ -4639,22 +4749,52 @@
       "path": "modern/tests/original-perl/original-admin-sparse-market.t",
       "sha": "71247094b760f9827b78addf60bc20b7d4062965",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 init/gift）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/use.cgi",
+      "assertions": "init 原版 print time numeric、metadata literal、6 LF split/blank WHOLE & event/ //、0 slots；#79/0 兩次5→3→1、9/12/14各+1/次、CSV78逗號+0、defined[78]、數值0、trace use-time→wholesale→require-common、money100000、time958600→960400；第三次 count0 trace空且 stock/CSV/time不變；cap case vouchers仍耗、additem retained0、4 literal zero slots、其他 undef",
+      "executionPath": "Perl Test::More → fixed source markers / isolated harness as stated",
+      "risk": "不執行 init 全函式/真 IO/lock/完整 compiler；cap為合成資料；原版 oracle 非正式玩家",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 17
+        },
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 32
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "OriginalAdminBootstrapHarness scalar handle 與 OriginalGiftMapUseHarness；先空 WHOLE，再沿用庫存／稀疏陣列；cap 注入",
+      "limitations": "不執行 init 全函式/真 IO/lock/完整 compiler；cap為合成資料；原版 oracle 非正式玩家",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-b41-real-sale.t",
@@ -5175,17 +5315,36 @@
       "path": "modern/tests/original-perl/original-item-callback-contract.t",
       "sha": "1c19557289fb36b3cfc24f8d2bd15b9b420a9c82",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "靜態來源守門（Perl Test::More）",
+      "originalSource": "modern/tests/original-perl/use.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "16 assertions：CheckWholeStore→無條件 RequireFile→EXP；result.function 選 item:: symbol、missing symbol跳過、全店/targetidx/effective count/USE/active shop/ITEM namespace 綁定在 dispatch前；return verbatim；compiler functionbefore與function 分開；唯一 dynamic invocation site",
+      "executionPath": "Perl Test::More → fixed source markers / isolated harness as stated",
+      "risk": "雖是 .t 但不執行原版 callback；不證明執行順序以外的實際 side effects、合法取得或持久化",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 50
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "只讀固定 CGI 文字；index/regex，不 eval",
+      "limitations": "雖是 .t 但不執行原版 callback；不證明執行順序以外的實際 side effects、合法取得或持久化",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-item-helpers.t",
@@ -5989,17 +6148,60 @@
       "path": "modern/tests/original-perl/original-virtual-item-require.t",
       "sha": "d019316685a9522d7a7f428d1ba149d2e72614dc",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（虛擬 require）",
+      "originalSource": "_config.cgi、modern/tests/original-perl/core-item-detail.cgi、modern/tests/original-perl/core-item-form.cgi、modern/tests/original-perl/core-item-submit.cgi、modern/tests/original-perl/core-inc-item.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/use.cgi、custom/inc-item-data.cgi",
+      "assertions": "P01–20 原文 loader/require/compiler/USE order；P21–50 真 Perl require：work¥4/money104、2 USE owners；同路徑cache、異路徑覆寫_local_1、回到cached仍用後者；反向覆寫只2槽、剩6；showcase2、陳列/價格與兩 log exact；hook first load order",
+      "executionPath": "Perl Test::More → fixed source markers / isolated harness as stated",
+      "risk": "不是正式 CGI/disk generated module，兩 callback synthetic；不能把舊全域碰撞視為現代必須行為",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 41
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-detail.cgi",
+          "sha": "9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-form.cgi",
+          "sha": "7ec2c01829c20e78feec53a1ed410ad7254b21c7"
+        },
+        {
+          "path": "modern/tests/original-perl/core-item-submit.cgi",
+          "sha": "bf895cb9c4672fe984cc9be352d52a856d3ac4e3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "OriginalVirtualItemLoader @INC memory hook；book-work、edit-showcase 及重複/反向組合",
+      "limitations": "不是正式 CGI/disk generated module，兩 callback synthetic；不能把舊全域碰撞視為現代必須行為",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-world-use-sequence.t",
@@ -6296,22 +6498,49 @@
       "path": "modern/tests/original-standard-callback-inventory.test.mjs",
       "sha": "374b0f92d79673254296b80a2863f5d252b647a0",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "靜態來源回呼清冊",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "79 ITEM/116 USE/25 EVENT/7 FUNC；56 post=22 lostbook+1 popup+11 inline+22 alias、60 無 post；1 pre #14、1 itemTurn #70、42 job modifiers；58 callbacks 來源定位全部 resolved/not-executed；#13/#25/#63/#78 aliases 1/1/7/13；lostbook/popup/reference tokens、#62 token effects；compiler drift/missing shared definition/structure拒絕；freeze",
+      "executionPath": "modern/src/original-standard-callback-inventory.mjs",
+      "risk": "token references不代表實際 effects；無 callback 執行、compiler/runtime registry、HTTP/CAS/v2；不證明所有 USE 行為",
+      "disposition": "保留限定來源證據；不升格正式 HTTP/v2",
+      "reason": "本輪逐檔完整讀取；前候選 CI 45794612974 0 skip，本次新 HEAD 尚待",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 39
+        },
+        {
+          "path": "modern/docs/r0-admin-callback-loader-evidence.md",
+          "line": 23
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-standard-callback-inventory.mjs",
+          "sha": "bac98cbffaf7135d1e4b0687a20a4a3e9bfa7f36"
+        }
+      ],
+      "fixtures": "直接兩 DSL 與 compiler 原文，source mutation 負例",
+      "limitations": "token references不代表實際 effects；無 callback 執行、compiler/runtime registry、HTTP/CAS/v2；不證明所有 USE 行為",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-use-eligibility-model.test.mjs",
@@ -29093,7 +29322,7 @@
       "fixtures": "合法玩家正向資產，僅負向用隔離 tempdir key 重簽外層、必要時內層；不接觸生產 key",
       "risk": "內層驗證被外層拒絕遮蔽；不能證明 key compromise safety",
       "disposition": "新候選待 CI；保留既有無 key 篡改測試；不算新功能驗收",
-      "reason": "本次新增，尚未執行",
+      "reason": "exact prior candidate CI 45794612974 subtest 737 passed; eight diagnostics verified; latest candidate pending",
       "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
@@ -29102,14 +29331,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 68,
-      "待補": 141
+      "有效": 74,
+      "待補": 135
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 29,
+    "currentSessionReviewed": 35,
     "reReviewedBaseline": 5
   },
   "provenance": [
@@ -29154,7 +29383,8 @@
     "modern/docs/r0-limit-world-codec-evidence.md",
     "modern/docs/r0-p3-mixed-path-evidence.md",
     "modern/docs/r1-v2-security-evidence.md",
-    "modern/docs/r0-init-wholesale-exp-use-evidence.md"
+    "modern/docs/r0-init-wholesale-exp-use-evidence.md",
+    "modern/docs/r0-admin-callback-loader-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -29207,6 +29437,44 @@
         "deadRevision": 81,
         "recoveredRevision": 86
       }
+    },
+    {
+      "head": "f7a2c520d9a17fe66a6b08ec02073f61bdf3a1f8",
+      "tree": "1e66142f265ff0af160c3176b5107f09b6399f77",
+      "checkout": "0493bf2b80b4bd0677bccb92a00af91eb84a6c72",
+      "run": 45794612974,
+      "job": 139821957733,
+      "conclusion": "success",
+      "js": {
+        "total": 1343,
+        "pass": 1343,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success",
+      "death": {
+        "opportunities": 256,
+        "deaths": 1,
+        "deadCows": 4,
+        "deadRevision": 216,
+        "recoveredRevision": 221
+      },
+      "innerGuard": [
+        "inner MAC",
+        "source fingerprint",
+        "interpreter",
+        "hash policy",
+        "draw policy",
+        "checkpoint generation",
+        "anchor revision",
+        "retained origin"
+      ]
     }
   ],
   "evidenceLayerSchema": {

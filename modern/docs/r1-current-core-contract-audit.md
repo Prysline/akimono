@@ -60,3 +60,6 @@
 
 ## R1 checkpoint 內層隔離負例（待 CI）
 新增 `r1-v2-inner-checkpoint.test.mjs`：真時鐘 genuinePlayer 合法礦石、130 次丟棄形成 checkpoint、兩代保存；僅在負向 case 讀取隔離測試目錄 key 重簽外層，必要時重簽 metadata，使 outer HMAC 通過，對 inner MAC、sourceFingerprint、interpreter、hashPolicy、drawPolicy、generation、anchor revision、origin 八個變體逐一 `verifyChain` 指定拒絕原因，再實際 HTTP load 由舊代復原、確認不覆寫 forged bytes，恢復原始檔後重啟 exact。白箱僅驗防禦分層，不表示玩家能存取 key，也不宣稱 key compromise 下安全；既有 P4/P5 無 key 攻擊證據仍保留。此測試尚未執行。
+
+## 已確認 checkpoint 內層隔離 CI
+[45794612974](https://github.com/Prysline/akimono/actions/runs/45794612974) job 139821957733，HEAD `f7a2c520d9a17fe66a6b08ec02073f61bdf3a1f8`、實際 checkout `0493bf2b80b4bd0677bccb92a00af91eb84a6c72` tree `1e66142f265ff0af160c3176b5107f09b6399f77` 相同。JS 1343/1343、0 fail/skip/cancelled，Perl 85 檔 2456/2456，所有 DSL/pin steps 成功。subtest 737 通過，八條 R1_INNER_GUARD 診斷逐一核對：inner MAC、fingerprint、interpreter、hash policy、draw policy、generation、anchor revision、origin；外層驗證先通過，再獨立指定原因及 HTTP 回退。P4 256 opportunities 觀察1 death、4 cows、rev216→221。僅固定前候選結果，新 HEAD 需重驗。R1-HTTP-01 獨立 strict repro 尚未執行；本機重新測 Git DNS 仍無法解析。
