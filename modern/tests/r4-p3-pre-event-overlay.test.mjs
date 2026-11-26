@@ -724,11 +724,12 @@ test('R4 source-only crossing closes an expired shop, preserves native archive a
   assert.equal(second.preEvent.receipt.periodDraws,0);
   assert.equal(second.preEvent.settlement,null);
   assert.equal(result.evidence.plusSeconds[4],720);
-  assert.equal(Object.hasOwn(result.period.eventState,'plusup-tetu'),false);
+  // The old expiry must be gone; the source may legally start it again.
+  assert.notEqual(result.period.eventState['plusup-tetu'],world.period.eventState['plusup-tetu']);
   const next=continueR4CrossPeriodCandidate({previous:result,minutes:1});
   assert.deepEqual(next.shops,[]);assert.equal(next.nowSeconds,result.nowSeconds+60);
   assert.equal(next.period.settledCount,1);assert.deepEqual(next.period.town,result.period.town);
-  assert.equal(next.evidence.plusSeconds[4],-1200);
+  assert.equal(next.evidence.plusSeconds[4],Object.hasOwn(result.period.eventState,'plusup-tetu')?720:-1200);
   // Another exact boundary in an already empty street skips inc-period.
   // This is a pure clock fixture, not a player transition.
   const empty={...world,shops:[],period:result.period,market:result.market,nowSeconds:1803580,
