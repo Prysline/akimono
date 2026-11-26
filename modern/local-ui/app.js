@@ -446,16 +446,25 @@ function showState(s){
     const actions=document.createElement('div');
     actions.className='market-actions';
     const count=document.createElement('input');
-    count.type='number';count.min='1';count.step='1';count.value='1';
+    count.type='number';count.min='1';count.step='1';count.value=offer.form?'':'1';
     count.setAttribute('aria-label','#'+offer.itemId+' 購買數量');
     count.dataset.marketCount=String(offer.itemId);
-    count.disabled=!offer.canBuy;
+    const available=offer.form?offer.form.available:offer.canBuy;
+    count.disabled=!available;
+    if(offer.form){
+      const presets=document.createElement('select');presets.dataset.marketPreset=String(offer.itemId);presets.setAttribute('aria-label',offer.name+' 進貨數量選項');
+      for(const choice of offer.form.options){const option=document.createElement('option');option.value=String(choice.count);option.textContent=choice.label;presets.append(option);}
+      presets.disabled=!available;
+      presets.addEventListener('change',()=>{count.value='';});
+      actions.append(presets);
+      count.placeholder='自訂';
+    }
     const button=document.createElement('button');
     button.type='button';button.className='primary';
     button.dataset.marketBuy=String(offer.itemId);
-    button.textContent=offer.canBuy?'購買':offer.reason?'不支援':'暫不可買';
-    button.disabled=!offer.canBuy;
-    button.title=offer.reason??(offer.marketStock===0?'市場缺貨':
+    button.textContent=available?'購買':offer.form?.reason??(offer.reason?'不支援':'暫不可買');
+    button.disabled=!available;
+    button.title=offer.form?.reason??offer.reason??(offer.marketStock===0?'市場缺貨':
       !shop?'請先開店':'來源市場或持有上限暫不可交易');
     actions.append(count,button);tdAction.append(actions);tr.append(tdAction);
     marketBody.append(tr);
@@ -733,11 +742,14 @@ $('market-offers').addEventListener('click',event=>{
   if(!button||button.disabled)return;
   const itemId=Number(button.dataset.marketBuy);
   const offer=snapshot?.marketOffers?.find(row=>row.itemId===itemId);
-  if(!offer||!offer.canBuy)return;
+  if(!offer||!offer.canBuy||offer.form?.available===false)return;
   const input=button.closest('tr')?.querySelector('input[data-market-count]');
+  const preset=button.closest('tr')?.querySelector('select[data-market-preset]');
+  const requested=Number(input?.value)||Number(preset?.value);
+  if(!Number.isSafeInteger(requested)||requested<1){feedback('請指定購買數量',null,true);return;}
   call('/api/buy',{
     expectedRevision:snapshot.world.revision,itemId,
-    requestedCount:Number(input?.value),
+    requestedCount:requested,
     marketShelf:offer.shelf,expectedPrice:offer.price,
   },'來源市場進貨 #'+itemId+' '+offer.name);
 });

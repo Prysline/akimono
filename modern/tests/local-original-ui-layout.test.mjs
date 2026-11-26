@@ -291,3 +291,11 @@ test('compact original showcase editor retains each occupied shelf and syncs cus
   assert.match(css,/#tab-item #showcase-shelf\{width:152px/);
   assert.match(css,/\.discard-section \.inline-form label\{[\s\S]*?flex-direction:row/);
 });
+
+
+test('source market buy form retains source presets and server-only transaction identity',()=>{
+ assert.match(script,/offer\.form\?offer\.form\.available:offer\.canBuy/);
+ assert.match(script,/presets\.dataset\.marketPreset/);
+ assert.match(script,/requestedCount:requested/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
