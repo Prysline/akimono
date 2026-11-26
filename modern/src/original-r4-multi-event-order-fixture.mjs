@@ -176,7 +176,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false}){
+  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -236,6 +236,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     fail('invalid EVENT draw/order adapter');
   if(typeof reviewedExternalDraws!=='boolean'||(reviewedExternalDraws&&(randomDrawProvider===null||reviewed.rebel===null)))
     fail('explicit source fixture external draw opt-in requires reviewed rebel');
+  if(readRebelArmy!==null&&(!reviewedExternalDraws||typeof readRebelArmy!=='function'||
+     rebelContext.riotIds.length!==0||Object.keys(rebelContext.armyById).length!==0))
+    fail('lazy army source requires explicit empty placeholder and external fixture review');
   if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||
      (!reviewedExternalDraws&&(reviewed.rebel!==null||reviewed.guildbattle!==null))))
     fail('provider requires exact normal-event RNG and no external special callbacks unless explicitly reviewed fixture');
@@ -448,6 +451,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         if(!nextShop||typeof nextShop.name!=='string'||
            !(nextShop.army===null||Number.isSafeInteger(nextShop.army)))
           fail('rebel NOW requires original named shop and army');
+        if(readRebelArmy!==null){
+          const read=readRebelArmy();
+          if(!read||typeof read!=='object'||Object.keys(read).sort().join(',')!=='armyById,riotIds'||
+             !Array.isArray(read.riotIds)||!read.armyById||typeof read.armyById!=='object')
+            fail('explicit source army read result required');
+          nextRebel={...nextRebel,armyById:{...read.armyById},riotIds:[...read.riotIds]};
+        }
         const samples=randomDrawProvider===null?randomDraws.slice(used,used+rebelNowDrawCount):null;
         const beforeDraws=used;
         const beforeRanges=ranges.length;

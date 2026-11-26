@@ -997,11 +997,59 @@ my $rebelExpired=step(name=>'expired-rebel-has-no-NOW-effect',
   rebelNowDraws=>[],rebelContext=>$rebelContext);
 push @rebelCases,$rebelExpired;
 
+# Actual full territory region + same process EVENT callbacks and RNG tape.
+# This uses the existing isolated source IO adapters; no player state.
+our ($NOW_TIME,$DTpeople,$DTusercount);
+my $territorySource=OriginalGiftMapUseHarness::source('period.cgi');
+my $territoryFrom=index($territorySource,'#領土データ調整');
+my $territoryTo=index($territorySource,'#決算時のカスタム処理（リセット後）',$territoryFrom);
+my $robinFrom=index($territorySource,"sub RebelRobin\n");
+my $robinTo=index($territorySource,'sub DragonBalance',$robinFrom);
+die 'territory source moved' unless $territoryFrom>=0&&$territoryTo>$territoryFrom&&$robinFrom>=0&&$robinTo>$robinFrom;
+my $territoryRegion=substr($territorySource,$territoryFrom,$territoryTo-$territoryFrom);
+my $robinRegion=substr($territorySource,$robinFrom,$robinTo-$robinFrom);
+{no warnings 'redefine';*main::l=sub{my($s,@args)=@_;$s=~s/%([12])/$args[$1-1]/ge;return $s};}
+my $territoryCompiled=eval "package main;use utf8;no strict;no warnings;\n".$robinRegion.
+  "\nsub R4MixedActualTerritory{my \$taxin=shift;\n".$territoryRegion."\nreturn \$armycost;}\n1;";
+die "actual mixed territory compile failed $@" unless $territoryCompiled;
+sub territoryMixedCase{
+  my(%o)=@_;
+  my $begin=1003600;my $span=3600;
+  $NOW_TIME=$begin+$span;$DTpeople=500000;$DTusercount=1;
+  $STATE={%{$o{town}}};%id2idx=(1=>0);%DTevent=(happy=>2000000);
+  $DTevent{rebel}=$o{active} if defined($o{active});
+  $BAL_JOB='外敵';$BAL_NAME='首領';
+  my $input={town=>{%$STATE},events=>{%DTevent},period=>{nowSeconds=>$NOW_TIME,
+     dtPeople=>$DTpeople,dtUserCount=>$DTusercount,activeShopIds=>[1],taxIn=>0}};
+  @R4_MULTI_DRAWS=@{$o{periodDraws}};@R4_MULTI_RANGES=();@LOG=();
+  my $cost=R4MixedActualTerritory(0);
+  die 'mixed territory unused RNG' if @R4_MULTI_DRAWS;
+  my $city={%$STATE};my $periodOutput={town=>{%$STATE},dtPeople=>$DTpeople,
+     activeUntilSeconds=>$DTevent{rebel},armyCost=>$cost,randomDrawRanges=>[@R4_MULTI_RANGES],logs=>[@LOG]};
+  my $people=delete $city->{people};
+  my $context={town=>$city,armyById=>$o{armyById},riotIds=>$o{riotIds},taxRate=>0,balJob=>$BAL_JOB,balName=>$BAL_NAME};
+  my $event=step(name=>$o{name},begin=>$begin,prior=>{%DTevent},shop=>$rebelShop,
+     rebelContext=>$context,rebelNowDraws=>$o{nowDraws},happyNowDraw=>300000);
+  my $finalTown={%{$event->{output}{rebelContext}{town}},people=>$people};
+  return {name=>$o{name},input=>$input,periodOutput=>$periodOutput,event=>$event,
+    randomDraws=>[@{$o{periodDraws}},@{$event->{input}{randomDraws}}],
+    randomDrawRanges=>[@{$periodOutput->{randomDrawRanges}},@{$event->{output}{randomDrawRanges}}],
+    finalTown=>$finalTown,logs=>[@{$periodOutput->{logs}},@{$event->{output}{logs}}]};
+}
+my @territoryMixedCases=(
+ territoryMixedCase(name=>'calm-period-happy-without-army-read',town=>{%townBase,money=>5000000,robinb=>0},
+    periodDraws=>[0,0,0,0],nowDraws=>[],armyById=>{},riotIds=>[]),
+ territoryMixedCase(name=>'past-rebel-extended-before-mixed-NOW',town=>{%townBase,leader=>0,robinb=>0},
+    active=>900000,periodDraws=>[0,0],nowDraws=>[500000],armyById=>{1=>4000},riotIds=>[1]),
+ territoryMixedCase(name=>'period-bandit-start-before-mixed-NOW',town=>{%townBase,money=>5000000,develop=>9000,safety=>9000,robinb=>0},
+    periodDraws=>[0,0,0,0,299999],nowDraws=>[900000,500000],armyById=>{},riotIds=>[]),
+);
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
   happyCases=>\@happyCases,durableCases=>\@durableCases,
-  guildCases=>\@guildCases,rebelCases=>\@rebelCases,
+  guildCases=>\@guildCases,rebelCases=>\@rebelCases,territoryMixedCases=>\@territoryMixedCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });
