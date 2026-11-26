@@ -22,3 +22,7 @@ GameCore 唯一交易/USE 入口；StreetModule 提供已審閱 registry/callbac
 ## 重疊快照
 
 正式基線 08fdd3b31ff130e66d0337360430fda3d73fdc8d；A 1780f564c3b5bca3a1d396a6156d280f71fa9b23；B f356c14452537a11167110f5b46709f7a1bb9039。相對正式基線 A 186 路徑/B 212/交集156（非 docs/tests 48）；相對共同祖先 ddd2f441ed5b36b8dcb94deaa193764eab7f2d21，A 107/B 142/交集77。A 相對 B ahead 88/behind 54/diverged。重疊不等於實際內容衝突。逐檔 blob/語義、import 閉包與實際衝突審閱仍待完成，不以此表宣告已解衝突。
+
+## 店舖生命週期（已授權責任分配，2026-11-27）
+
+以 [店舖生命週期唯一施工責任與介面契約](r4-shop-lifecycle-ownership.md) 為準：B 獨占自主 restart/cls 的來源 wrapper、帳號/session/registration/子資料及外部效果候選；D 獨占正式入口、owner ACL、GameCore/CAS、同一 v2/replay、封存與日誌發布及 HTTP/UI；A 重用既有 close 來源、續正常經營，不再寫兩個入口；C 獨立驗證。不將測試 reset 作玩家再出發，不變正式基線或合併授權。
