@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {reviewR4HashPolicy,resolveR4HashOrders,r4HashSeed} from '../src/original-r4-perl-hash-replay.mjs';
+import {reviewR4HashPolicy,resolveR4HashOrders,r4HashSeed,resolveR4ExternalCommandHashOrders} from '../src/original-r4-perl-hash-replay.mjs';
 import {createR4TimeDraws} from '../src/r4-time-command-draws.mjs';
 import {LOTO_RANGE} from '../src/original-b58-loto-startfunc.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -53,4 +53,42 @@ test('R4 time RNG is restart-reproducible and domain-separated, and lottery cove
   assert.ok(tape.some(([,loto])=>loto.result>=1000000),'lottery cannot be limited to 1e6 integer outcomes');
   assert.throws(()=>a.unit(221),/range/);
   assert.throws(()=>a.lottery(-1),/range/);
+});
+
+test('external replay retains period assignment, pre-NOW traversal and post-NOW deletion across two source slices',()=>{
+  const native=String.raw`use strict;use warnings;use JSON::PP;
+  my $in=decode_json(do{local $/;<STDIN>});
+  my %DTevent=split(/,/,join(',',map{@$_}@{$in->{active}}));
+  my @initial=keys %DTevent;my @steps;
+  for my $s(@{$in->{steps}}){
+    my @before=keys %DTevent;
+    $DTevent{rebel}=$s->{periodRebel} if defined $s->{periodRebel};
+    my @prior=keys %DTevent;
+    delete $DTevent{$_} for @{$s->{expired}};
+    $DTevent{$_->[0]}=$_->[1] for @{$s->{started}};
+    my @now=keys %DTevent;
+    delete $DTevent{rebel} if @{$s->{nowDeleted}};
+    push @steps,{before=>\@before,prior=>\@prior,now=>\@now,after=>[keys %DTevent]};
+  }
+  print encode_json({initial=>\@initial,steps=>\@steps,nextPrior=>[keys %DTevent]});`;
+  for(let revision=7;revision<11;revision++)for(const existing of [false,true]){
+    const w={...world,revision,period:{eventState:{...world.period.eventState,...(existing?{rebel:1000000}:{})}}},minutes=60;
+    const step={periodRebel:1259200,expired:['ken-sale'],started:[['boom-posyon',1010000]],nowDeleted:['rebel']};
+    const steps=[step,{periodRebel:null,expired:['happy'],started:[['ken-sale',1019999]],nowDeleted:[]}];
+    const first=resolveR4ExternalCommandHashOrders({reviewed,world:w,minutes,pendingPeriodRebel:step.periodRebel});
+    const complete=resolveR4ExternalCommandHashOrders({reviewed,world:w,minutes,steps,expectedInterpreter:first.interpreter});
+    const oracle=JSON.parse(execFileSync('perl',['-e',native],{input:JSON.stringify({active:Object.entries(w.period.eventState),steps}),
+      encoding:'utf8',env:{...process.env,PERL_HASH_SEED:r4HashSeed({world:w,minutes}),PERL_PERTURB_KEYS:'0'}}));
+    assert.deepEqual(complete.initialOrder,oracle.initial);
+    assert.deepEqual(complete.steps,oracle.steps);
+    assert.deepEqual(complete.nextPriorOrder,oracle.nextPrior);
+    assert.deepEqual(first.nextPriorOrder,complete.steps[0].prior);
+    assert.ok(complete.steps[0].now.includes('rebel'));
+    assert.ok(!complete.steps[0].after.includes('rebel'));
+    assert.deepEqual(complete.steps[1].before,complete.steps[0].after);
+    assert.equal(complete.committable,false);
+    assert.throws(()=>resolveR4ExternalCommandHashOrders({reviewed,world:w,minutes,steps:[{...step,nowDeleted:['happy']}]}),/invalid rebel NOW deletion/);
+    assert.throws(()=>resolveR4ExternalCommandHashOrders({reviewed,world:w,minutes,steps:[step,{...steps[1],periodRebel:1259200}]}),/first slice/);
+    assert.throws(()=>resolveR4ExternalCommandHashOrders({reviewed,world:w,minutes,steps:[{...step,started:[['guildbattle',1259200]]}]}),/invalid external started/);
+  }
 });
