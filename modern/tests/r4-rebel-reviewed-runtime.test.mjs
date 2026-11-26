@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
-import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
+import {createIndependentPeriodDiskStore,independentPeriodDiskDigest,PERIOD_DISK_DIRECTORY} from '../src/r4-independent-period-disk-store.mjs';
+import {rename,readFile,writeFile,rm,stat,utimes} from 'node:fs/promises';
+import {join} from 'node:path';
 import {encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
 // Actual HTTP commands, no fixture awards. This proves negative eligibility
@@ -41,6 +43,44 @@ test('opt-in R4 conflict endpoints require actual soldiers, exact requests and r
   assert.equal(p.state.armyConflict.canStart,false);
   await p.tick(1);
   const second=await p.saveAndRestart(1);
+  // The real generation pointer must recover from corruption of the newest
+  // materialized source files, even with intact world-a.json and its history.
+  const store=createIndependentPeriodDiskStore({directory:p.directory});
+  const newest=join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(second));
+  const play=join(newest,'play.cgi'),moved=join(p.directory,'saved-play-for-test');
+  const envelope=await readFile(join(p.directory,'world-a.json'),'utf8');
+  await p.rejectDamagedLatestDisk(first,second,async()=>{
+    await rename(play,moved);
+    try{
+      assert.throws(()=>store.verify(second));
+      assert.throws(()=>store.stage(second),'existing incomplete generation must not be repaired');
+      assert.equal(await readFile(join(p.directory,'world-a.json'),'utf8'),envelope);
+      assert.equal(store.verify(first),true);
+      return async()=>{
+        // Failed stage/load must leave the absent member absent.
+        try{await stat(play);assert.fail('corrupt generation unexpectedly repaired');}
+        catch(error){assert.equal(error.code,'ENOENT');}
+        await rename(moved,play);
+      };
+    }catch(error){await rename(moved,play);throw error;}
+  });
+  assert.equal(store.verify(second),true);
+  await p.rejectDamagedLatestDisk(first,second,async()=>{
+    await rename(play,moved);
+    try{
+      await writeFile(play,'invalid source play');
+      const mtime=second.period.disk.live['play.cgi'].mtime;
+      await utimes(play,mtime,mtime);
+      assert.throws(()=>store.verify(second),/bytes or clock mismatch/);
+      assert.throws(()=>store.stage(second),/bytes or clock mismatch/);
+      return async()=>{
+        assert.equal(await readFile(play,'utf8'),'invalid source play');
+        await rm(play);await rename(moved,play);
+      };
+    }catch(error){await rm(play,{force:true});await rename(moved,play);throw error;}
+  });
+  assert.equal(await readFile(join(p.directory,'world-a.json'),'utf8'),envelope);
+  assert.equal(store.verify(second),true);
   // A structurally valid, materialized file generation still cannot create
   // army/rebel state that is absent from the actual player's command history.
   await p.rejectForgedLatest(first,record=>{
