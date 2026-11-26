@@ -160,3 +160,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - run 45813093496 / job 139885734085：success，HEAD `acc414314ef38cfb7f88af8148300954123e2427`、實際 checkout `d1fb90e7875af8d5bb314bc9db0e316cbe154611`，tree `47b3a37d9de7e133ee4ff2bcb3696e4d1ea3da6e` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - run 45813568842 / job 139887380057：success，HEAD `ed54848fc26e5800532b1b24001972b986df9a41`、實際 checkout `4e37acc8760eeaf78f69ff7f5045c9b78986c663`，tree `90eab3330c1b20f26944fae87f70b15e1aea13f7` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - 第16/18批 conditional skip 紀錄保留；第20–25批本次 API 查詢仍 in_progress，不能認列成功。
+
+### 第 27 批：R4 P3 pre-EVENT overlay／跨期與記憶體 CAS
+
+- 新審 1 檔：有效 156、歷史 32、待補 45；固定分母 233，分類收斂 188/233（80.7%）；累計另逐檔審閱 125 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-p3-pre-event-overlay-evidence.md)：11 subtests，九 PARAM overlay、normal/crossing source 差分、20+40 秒同 Perl process、受控記憶體 CAS 兩次36h、隔離四檔 stage/recovery；人工 stock/clock/tape，非正式 HTTP/真時鐘/v2 reload。九 EVENT 已補既有差分層；83 詳細功能列及正式下界不變。未本地重跑，R1-HTTP-01 未實跑；新候選 CI 待核。

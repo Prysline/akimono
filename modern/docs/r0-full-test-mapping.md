@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 155、歷史 32、待補 46。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 124 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 156、歷史 32、待補 45。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 125 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -194,7 +194,7 @@
 | r4-multi-event-order.test.mjs | 有效 | Perl Oracle／Node 差分（17-key 受控投影） |
 | r4-original-event-hash-order.test.mjs | 有效 | Perl Oracle（hash 觀測，JS wrapper） |
 | r4-original-time-slices.test.mjs | 有效 | Perl Oracle／Node 差分（36h 時鐘分割） |
-| r4-p3-pre-event-overlay.test.mjs | 待補 | 未完成語義審閱 |
+| r4-p3-pre-event-overlay.test.mjs | 有效 | 原版 Oracle／Node 差分＋受控記憶體 CAS＋隔離磁碟 |
 | r4-period-all-finance-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-dragon-dignity-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |
 | r4-period-dragon-same-world-chain.test.mjs | 待補 | 未完成語義審閱 |
