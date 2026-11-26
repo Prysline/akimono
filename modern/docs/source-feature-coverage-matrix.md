@@ -47,3 +47,8 @@
 第十三批：[R4 RebelRobin period→NOW](r0-r4-rebel-period-now-evidence.md)：rebel 七 trigger/extension、八 period→NOW 單切片受控 Oracle/Node 差分；非完整 settlement、軍隊磁碟、真時間/RNG/CAS/v2。83 詳細 rows、25 EVENT 限定 Oracle 下界及正式下界不變。
 
 第十四批：[R4 公會檔案／邊界／會費](r0-r4-guild-files-fee-evidence.md)：共用 guild definition/ledger、隔離磁碟恢復、per-shop dues/atk/def call stub；不映射 guildbattle 或正式玩家。83 詳細 rows 及正式下界不變。
+
+### 第 23 批：混合 support／instant EVENT
+
+- 新審 4 檔：有效 144、歷史 32、待補 57；固定分母 233，分類收斂 176/233（75.5%）；累計另逐檔審閱 113 份，原有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-mixed-support-instant-evidence.md)：四 support／六 theft 同程序 hash＋受控 RNG 差分；共用 Perl .t 另有 loto/happy/iron/sword/guildbattle/rebel 原版斷言，對應 Node 檔另審。83 詳細功能列及正式取得/HTTP/v2 下界不變。未執行本批本地測試，CI 待核。

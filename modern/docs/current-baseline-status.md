@@ -128,3 +128,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 第二十一批：[R4 RebelRobin period→NOW](r0-r4-rebel-period-now-evidence.md)，四檔有效；累計有效135、歷史32、待補66（167/233，71.7%），收斂後逐檔審閱104、既有待覆核56。rebel 七 trigger/extension、八 period→NOW 人工同片來源差分，非完整 period/軍隊結算/17 EVENT/正式時間。83 詳細 rows、正式下界不變。第二十批 CI 45814598758 queued，新候選待驗。
 
 第二十二批：[R4 公會檔案／邊界／會費](r0-r4-guild-files-fee-evidence.md)，五檔有效；累計有效140、歷史32、待補61（172/233，73.8%），收斂後逐檔審閱109、既有待覆核56。實際隔離 stage/live、原版注入第2 rename 與 Node 目標目錄阻擋第2 rename 的 recovery、舊 keys/mtime/malformed 來源觀測；單店 dues 只 EditGuildMoney call stub。非正式 v2/全域原子或玩家能力；83 詳細 rows、正式下界不變。新候選 CI 待驗。
+
+### 第 23 批：混合 support／instant EVENT
+
+- 新審 4 檔：有效 144、歷史 32、待補 57；固定分母 233，分類收斂 176/233（75.5%）；累計另逐檔審閱 113 份，原有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-mixed-support-instant-evidence.md)：四 support／六 theft 同程序 hash＋受控 RNG 差分；共用 Perl .t 另有 loto/happy/iron/sword/guildbattle/rebel 原版斷言，對應 Node 檔另審。83 詳細功能列及正式取得/HTTP/v2 下界不變。未執行本批本地測試，CI 待核。
