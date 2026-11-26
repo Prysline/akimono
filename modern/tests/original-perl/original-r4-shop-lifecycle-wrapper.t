@@ -287,5 +287,48 @@ DataRead();ok(!exists $id2idx{1},'closed ID absent on actual reload');
 is($DTblockip,'192.0.2.5','actual block IP written and reloaded');
 ok(!auth(name=>'alice',token=>$token)->{ok},'old session rejected by missing active owner');
 ok($LOCKED eq ''&&! -e "$DATA_DIR/commit.cgi",'actual commit and unlock complete');
+
+# LC-B2: two real original active owners, controlled isolated registration,
+# source auth directory cleanup, and the post-restart block-IP distinction.
+sub two_shop_case {
+  put_file("$DATA_DIR/user.cgi",'');
+  my $aliceToken=reset_case(10801,1);
+  $NEW_SHOP_BLOCKIP=1;delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  like(registration(name=>'bob',shop=>'second shop',ip=>'192.0.2.6'),qr/__SOURCE_RENDER__/,'actual second shop registration before lifecycle');
+  DataRead();my $bobId=$DTnextid-1;
+  ok($bobId!=1 && exists $id2idx{$bobId},'distinct source IDs');
+  my $bobLogin=auth(name=>'bob',password=>'beta_pw',ip=>'192.0.2.6');
+  ok($bobLogin->{ok},'second owner logs in through actual source');
+  return ($aliceToken,$bobId);
+}
+for my $restartFirst(0,1){
+  my($aliceToken,$bobId)=two_shop_case();
+  if($restartFirst){
+    delete $INC{"$ITEM_DIR/funcnew.cgi"};
+    like((submit('pinned-membership-user.cgi',$aliceToken,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'actual normal restart before close');
+    DataRead();is($DT[$id2idx{1}]{remoteaddr},'','actual restart removes original stored remote address');
+    ok(auth(name=>'alice',token=>$aliceToken)->{ok},'same source session valid after restart');
+  }
+  like((submit('pinned-membership-user.cgi',$aliceToken,'cls','closeshop'))[0],qr/__SOURCE_RENDER__/,'actual close after two-shop history');
+  DataRead();ok(!exists $id2idx{1} && exists $id2idx{$bobId},'only closing owner removed');
+  is($DTblockip,$restartFirst?'':'192.0.2.5','source close blockIP follows persisted source remoteaddr');
+  my $before=raw_file("$DATA_DIR/play.cgi");
+  like(registration(name=>'charlie',shop=>'third shop',ip=>'192.0.2.5'),qr/すでに店舗を持っています/,'stale raw login-directory row denies first registration');
+  is(raw_file("$DATA_DIR/play.cgi"),$before,'first denial no publication');
+  my $newBob=auth(name=>'bob',password=>'beta_pw',ip=>'192.0.2.6');
+  ok($newBob->{ok},'actual active-owner password login prunes inactive names');
+  ok(!GetIPList('192.0.2.5'),'actual GetIPList no longer sees closed owner after prune');
+  my $next=$DTnextid;
+  delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  my $error=registration(name=>'charlie',shop=>'third shop',ip=>'192.0.2.5');
+  if($restartFirst){
+    like($error,qr/__SOURCE_RENDER__/,'source registration allowed after restart-close and active-owner prune');
+    DataRead();ok(exists $id2idx{$next} && $next!=1 && $next!=$bobId,'source next ID allocated, old ID not resurrected');
+    is($DT[$id2idx{$next}]{name},'charlie','new owner not old closed actor');
+  }else{
+    like($error,qr/現在登録制限されています/,'direct close source blockIP still denies after prune');
+    is(raw_file("$DATA_DIR/play.cgi"),$before,'blockIP denial no publication');
+  }
+}
 chdir $cwd or die 'restore cwd';
 done_testing();
