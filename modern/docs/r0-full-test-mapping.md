@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 192、歷史 32、待補 9。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 161 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 195、歷史 32、待補 6。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 164 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -117,11 +117,11 @@
 | original-perl/original-use-outcomes.t | 有效 | Perl Oracle（機率與產出片段） |
 | original-perl/original-use-transaction.t | 有效 | Perl Oracle（交易前段） |
 | original-perl/original-virtual-item-require.t | 有效 | Perl Oracle（虛擬 require） |
-| original-perl/original-world-use-sequence.t | 待補 | 未完成語義審閱 |
+| original-perl/original-world-use-sequence.t | 有效 | Perl Oracle（人工連續 USE／lostbook） |
 | original-perl/period-experience.t | 有效 | Perl Oracle（固定片段） |
 | original-perl/period-stock-use.t | 有效 | Perl Oracle（固定片段） |
-| original-perl/showcase-market.t | 待補 | 未完成語義審閱 |
-| original-perl/whole-store.t | 待補 | 未完成語義審閱 |
+| original-perl/showcase-market.t | 有效 | Perl Oracle（人工市場統計／sc-s CGI） |
+| original-perl/whole-store.t | 有效 | Perl Oracle（人工批發定價／LIMIT） |
 | original-perl/world-commit.t | 有效 | Perl Oracle（隔離多檔 marker／rename） |
 | original-perl/world-data.t | 有效 | Perl Oracle（隔離 DataWrite stage） |
 | original-perl/world-one-shop.t | 有效 | Perl Oracle（隔離 DataRead 店家結構） |

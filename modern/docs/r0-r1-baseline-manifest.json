@@ -8552,17 +8552,57 @@
       "path": "modern/tests/original-perl/original-world-use-sequence.t",
       "sha": "3338080d6fcd95a20a93435901b8cb7adec8a8b6",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（人工連續 USE／lostbook）",
+      "originalSource": "modern/tests/original-perl/use.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/core-inc-item.cgi；custom/inc-item-data.cgi",
+      "assertions": "L14–26 前次 snapshot 手動傳入；L28–81 兩次 USE，stock[9,6,5]、money50→30、pay25→45、time968→986、EXP230→260、callback 前 EXP200→230、wholesale[3,0,-3]；L83–97 skip→hit；L99–113 zero-count 不觸發時間／批發／callback。",
+      "executionPath": "同 Perl interpreter 反覆 run；原版 UseItem/MakeAmount、UseTime/GetItemUseTime、CheckWholeStore、原版 item helper 及 DSL lostbook（DSL L3174–3182）；RequireFile recorder。",
+      "risk": "人工 USE／市場供需／價格、stock、時間順序與正式玩家界線",
+      "disposition": "保留限定來源回歸；不升格正式玩家",
+      "reason": "不是79項真商品、不是完整世界/磁碟或連續 RNG state；originalPerlDraw 是重設 seed 後預計的第一個 rand，不是 callback 內直接截取；非正式 HTTP/CAS/v2/Node 差分。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-world-use-market-fixtures-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        }
+      ],
+      "fixtures": "人工 A/B/C、職業 worker、permit、固定 now1000、seed12/14；run 每次重建 @ITEM/@DT 並傳前次部分 state。",
+      "limitations": "不是79項真商品、不是完整世界/磁碟或連續 RNG state；originalPerlDraw 是重設 seed 後預計的第一個 rand，不是 callback 內直接截取；非正式 HTTP/CAS/v2/Node 差分。",
+      "reviewScope": "完整測試、USE helper、對應原版來源與斷言範圍"
     },
     {
       "path": "modern/tests/original-perl/period-experience.t",
@@ -8638,33 +8678,75 @@
       "path": "modern/tests/original-perl/showcase-market.t",
       "sha": "b6c054fe18b5270cdd6a88d1f003444ea5e3c50b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（人工市場統計／sc-s CGI）",
+      "originalSource": "modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/sc-s.cgi",
+      "assertions": "L32–58 兩店 stock20、加權總值5000、均價250、min100/max300、前後期銷量各5、uppoint200及上下限；L60–123 原版 sc-s 標準100、直接175、137%、直接優先、缺貨/flag s/索引拒絕、清架。",
+      "executionPath": "GetMarketStatus；do ./sc-s.cgi，真 UseTime/CheckCount，Lock/DataRead/CheckUserPass/DataWrite/commit/log/render stubs。",
+      "risk": "人工 USE／市場供需／價格、stock、時間順序與正式玩家界線",
+      "disposition": "保留限定來源回歸；不升格正式玩家",
+      "reason": "sc-s L18 先消耗時間才驗 L20–34；拒絕僅部分驗 commit=0，未斷言時間不變或 rollback；索引拒絕未查 commit；無 HTTP/browser/真鎖/CAS/v2。市場 extrema 跨次 reset、多架同品重算未驗。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-world-use-market-fixtures-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 #10 price100/popular80、兩店一架；固定 now1000000、600秒；非真商品宣告/合法取得。",
+      "limitations": "sc-s L18 先消耗時間才驗 L20–34；拒絕僅部分驗 commit=0，未斷言時間不變或 rollback；索引拒絕未查 commit；無 HTTP/browser/真鎖/CAS/v2。市場 extrema 跨次 reset、多架同品重算未驗。",
+      "reviewScope": "完整測試、USE helper、對應原版來源與斷言範圍"
     },
     {
       "path": "modern/tests/original-perl/whole-store.t",
       "sha": "17a353d6650ea58baab83d9ee4dc49ac1786f341",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（人工批發定價／LIMIT）",
+      "originalSource": "modern/tests/original-perl/whole.cgi；custom/inc-item-data.cgi",
+      "assertions": "L11–26 人工三商品 sort、動態50/固定30/最低1、ID-1；L28–44 兩店上限、負 stock 裁0、負 wslimit 絕對10、SetWholeStore；L47–81 #20/#25 手工編譯數值0.5/1.5，1/2/3店上限1/1/2與2/3/5及扣店內存量。",
+      "executionPath": "真 GetWholeStore/CheckWholeStore/SetWholeStore（whole.cgi L4–75），無 compiler／CGI。",
+      "risk": "人工 USE／市場供需／價格、stock、時間順序與正式玩家界線",
+      "disposition": "保留限定來源回歸；不升格正式玩家",
+      "reason": "僅人工批發規則，無 admin compiler 執行、合法取得、正式市場交易、Node 差分或 v2；不把手填 #20/#25 當新增逐商品 Oracle 層。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-world-use-market-fixtures-evidence.md",
+          "line": 23
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [],
+      "fixtures": "人工 #5/#10/#11 非原版商品屬性；#20/#25 LIMIT 對應 DSL L761/L2279（手填 wslimit），人工店內庫存。",
+      "limitations": "僅人工批發規則，無 admin compiler 執行、合法取得、正式市場交易、Node 差分或 v2；不把手填 #20/#25 當新增逐商品 Oracle 層。",
+      "reviewScope": "完整測試、USE helper、對應原版來源與斷言範圍"
     },
     {
       "path": "modern/tests/original-perl/world-commit.t",
@@ -41732,14 +41814,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 192,
-      "待補": 9
+      "有效": 195,
+      "待補": 6
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 161,
+    "currentSessionReviewed": 164,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -41815,7 +41897,8 @@
     "modern/docs/r0-r4-period-backup-full-tail-evidence.md",
     "modern/docs/r0-r4-backup-data-write-disk-evidence.md",
     "modern/docs/r0-r4-town-play-evidence.md",
-    "modern/docs/r0-ui-world-read-commit-evidence.md"
+    "modern/docs/r0-ui-world-read-commit-evidence.md",
+    "modern/docs/r0-world-use-market-fixtures-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -42228,6 +42311,48 @@
       "checkout": "79a8fedb61f5e2bbfeb497ed84552d82cf90ace5",
       "run": 45825399615,
       "job": 139928131564,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "44b35c24ed74d64a832b667bf3afd696caa23e40",
+      "tree": "2c23b96662fbab8d7ac4c10a70f6b8dceef014dc",
+      "checkout": "c782fa822d0d4a588b73ffa9ed58d9c37b52356d",
+      "run": 45826749043,
+      "job": 139932750970,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "0e875d4cc00a6e48c281229c71e96606d4dcdaa2",
+      "tree": "8750adc80c962d205a40a72a4ab556e0037cb631",
+      "checkout": "67e11542ee9a53ec6bcf947682d4d6eec5141ea9",
+      "run": 45827170541,
+      "job": 139934197653,
       "conclusion": "success",
       "js": {
         "total": 1350,

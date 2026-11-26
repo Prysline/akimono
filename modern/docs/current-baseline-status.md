@@ -237,3 +237,14 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ### CI 補核：第31批
 
 - run 45825399615 / job 139928131564：success，HEAD `afce18b527f3af777d4fdadfd8d968656b3a5aa5`、實際 checkout `79a8fedb61f5e2bbfeb497ed84552d82cf90ace5`、tree `4a1b80e0cbac00a01c1143bbdf973ef7bc9710dd` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。第32–35批與 bb44e26 查詢仍 in_progress；不替代新 HEAD 驗收。
+
+### 第三十七批：人工 world USE 序列／市場與批發來源
+
+- 新審3檔有效：有效195、歷史32、待補6；固定233，分類收斂227/233（97.4%）；收斂後逐檔補審164，既有重審7、剩56；新增5獨立。
+- [逐檔證據](r0-world-use-market-fixtures-evidence.md)：兩次人工 A/B/C USE 同 interpreter 但重建 state、各次 seed，真原版 lostbook、wholesale/callback/EXP 順序；人工 #10 市場統計與 sc-s CGI，時間先於拒絕，commit/IO stub；人工批發定價/limit、#20/#25 手填 DSL 數值非 compiler 或合法取得。非正式玩家、HTTP/CAS/v2/Node 差分；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+
+### CI 補核：第33、34批
+
+- 第33批 run 45826749043 / job 139932750970：success，HEAD `44b35c24ed74d64a832b667bf3afd696caa23e40`、實際 checkout `c782fa822d0d4a588b73ffa9ed58d9c37b52356d`、tree `2c23b96662fbab8d7ac4c10a70f6b8dceef014dc` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
+- 第34批 run 45827170541 / job 139934197653：success，HEAD `0e875d4cc00a6e48c281229c71e96606d4dcdaa2`、實際 checkout `67e11542ee9a53ec6bcf947682d4d6eec5141ea9`、tree `8750adc80c962d205a40a72a4ab556e0037cb631` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
+- 第32、35批及 bb44e26 最後查詢仍 in_progress；不替代新 HEAD 驗收。
