@@ -12458,55 +12458,237 @@
       "path": "modern/tests/r3-shared-natural-sale.test.mjs",
       "sha": "3f5a7b206d10c48c3b85a4031bdc752eea1bf2a9",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控自然販售與 pre-EVENT 純投影）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi",
+      "assertions": "L47–117 六 ITEM #10/40–44 ×4 stock/display、價格/point/cost/金錢/rank/稅/帳/庫存、純投影與 guard；L119–189 #70 無 owner draw 門檻/cleanup、7 原版 callback 案例（有 owner 三例僅 Perl）；L195–243 六 ITEM×50/100/150/200% 24例與 drift；L249–318 24 pre-EVENT natural→ITEM→PLUS 順序、全79 wholesale/draw；L324–395 16 例 2–8 架共庫存/價格/空架/order、精確 natural draw 與第9架/未知 ITEM/EVENT override 拒絕。",
+      "executionPath": "原版 inc-turn 自然區段、原版 market/item/whole、59 PLUS、#70 原 body 與 FUNCTURN/FUNCSALE dispatch；Node projectSharedNaturalSale 等純投影，初始化/開店才用 memory CAS。",
+      "risk": "自然販售／價格稅與帳本／來源取得／時間及存檔界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "單架基礎及價格兩組只 assert Node drawsUsed <= 原版 natural+PLUS draw，不證精確自然 draw；多架才精確 natural draw，未比 PLUS state；24整合才比全79 wholesale與總 draw。#70 有 owner 未執行 Node 差分，Node 拒 stocked #70；無正式合法取得/HTTP/真時鐘/伺服器 RNG/v2；無完整 EVENT/period 或多店。",
+      "reviewed": true,
       "documentReferences": [
         {
-          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
-          "line": 28
-        },
-        {
-          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
-          "line": 38
-        },
-        {
-          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
-          "line": 50
-        },
-        {
-          "path": "modern/docs/r4-r0-affected-tests-mapping.md",
-          "line": 11
+          "path": "modern/docs/r0-r3-natural-sword-sales-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r3-shared-sale-probe.pl",
+          "sha": "291722987b0ea4127f30d9679065f77398e52e0c"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r3-item-callback-stage-probe.pl",
+          "sha": "05a1d89aafd749bc9d03ccd81bb79654273c19d9"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r3-price-sale-probe.pl",
+          "sha": "0d38d22cef43107f419d2491615f11dbad1058f3"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r3-integrated-priced-turn-probe.pl",
+          "sha": "5aa075038c97fc75707d156a78d13f3726683aa9"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r3-multi-shelf-sale-probe.pl",
+          "sha": "ebd1badc97a76ddef8d4af45d30008de75e4a814"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNayutaFuncturnHarness.pm",
+          "sha": "51f90c216f849c3f11fa3817ff336b898bdea3ea"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/shared-natural-sale-core.mjs",
+          "sha": "e75a92b76bdbbe6b56f5314911c825c96419bc32"
+        },
+        {
+          "path": "modern/src/r3-reviewed-item-callback-stage.mjs",
+          "sha": "249132fefcf5bd6537c720ec6150c27afafe3b95"
+        },
+        {
+          "path": "modern/src/original-sparse-all-plus.mjs",
+          "sha": "c5bce229da9f5efefdd4aa062eb0676945d9fdd7"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "人工單店 stock、固定 rank5010/money、span60/1800、固定 millionth draws、人工 #70 owner/展示只在 Perl；多架為手填 stock 與 price。",
+      "limitations": "單架基礎及價格兩組只 assert Node drawsUsed <= 原版 natural+PLUS draw，不證精確自然 draw；多架才精確 natural draw，未比 PLUS state；24整合才比全79 wholesale與總 draw。#70 有 owner 未執行 Node 差分，Node 拒 stocked #70；無正式合法取得/HTTP/真時鐘/伺服器 RNG/v2；無完整 EVENT/period 或多店。",
+      "reviewScope": "完整測試、Perl probes 與共用 harness 入口、legacy helper 核對；未重新實跑"
     },
     {
       "path": "modern/tests/r3-shared-sword-acquisition-sales.test.mjs",
       "sha": "5c348554a637195ec86ab04978f9ec6067c154c2",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "歷史",
+      "evidenceLevel": "舊時間命令／記憶體 CAS＋legacy v1 真隔離磁碟",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；_config.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "L47–69 period seed、memory initialize/open、原版 #10 probe supply draws 用於 reviewed-sparse-all-plus；L71–109 Node projector 試出 draw prefix 59–121、舊 advance-source-time-reviewed-events、固定 event order/高 draw，空 eventState；L111–149 真 temp directory、#40–44 無批發、market-buy #14、首次 USE 每劍10、stale showcase 拒絕且 snapshot 相同；L150–187 五次展示/30min 推進、五次 v1 save、第二次後 load/new adapter 連續 CAS、最後 revision/money/itemtoday keys。",
+      "executionPath": "Node 舊 reviewed-sparse-all-plus/advance-source-time-reviewed-events、market-buy/use-item/edit-showcase memory CAS；Perl original-market-buy10-probe 僅取 supply.draws，非五劍取得/售出逐值 Oracle；legacy-world-save-store v1（寫檔 fsync/rename）實際隔離磁碟。",
+      "risk": "自然販售／價格稅與帳本／來源取得／時間及存檔界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "歷史入口、v1 非正式 v2；無 HTTP/真時鐘/伺服器 RNG、無真原版五劍完整連續差分；totalSold>0 僅總量，逐商品只 stock 不增與 itemtoday key，不單獨證每劍正銷量或每筆稅/收入；重載第二次為同程序新 adapter，非 process restart；未測中途失敗、雙槽損壞、正式鎖。",
+      "reviewed": true,
       "documentReferences": [
         {
-          "path": "modern/docs/r3-r0-affected-tests-mapping.md",
-          "line": 29
+          "path": "modern/docs/r0-r3-natural-sword-sales-evidence.md",
+          "line": 14
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/original-period-world-seed.mjs",
+          "sha": "0fa17185d67894b35218c2c6e632ee54021c906e"
+        },
+        {
+          "path": "modern/src/original-b41-playable-sale.mjs",
+          "sha": "47100f2d430e4bb7a59d49ccb3f7a07a931caf9f"
+        },
+        {
+          "path": "modern/tests/support/legacy-world-save-store.mjs",
+          "sha": "cacbb09ecddc9c202238981b66e3cf63d417e845"
+        }
+      ],
+      "fixtures": "固定 now897400、period seed、人工 USE draws [999999,50×0,999999]、projector 選自然/PLUS draws、eventHashOrderFixture 與 999999；五次同單架替換，非同時五架。",
+      "limitations": "歷史入口、v1 非正式 v2；無 HTTP/真時鐘/伺服器 RNG、無真原版五劍完整連續差分；totalSold>0 僅總量，逐商品只 stock 不增與 itemtoday key，不單獨證每劍正銷量或每筆稅/收入；重載第二次為同程序新 adapter，非 process restart；未測中途失敗、雙槽損壞、正式鎖。",
+      "reviewScope": "完整測試、Perl probes 與共用 harness 入口、legacy helper 核對；未重新實跑"
     },
     {
       "path": "modern/tests/r4-declarative-event-cycle.test.mjs",
@@ -42066,15 +42248,15 @@
   ],
   "testCounts": {
     "baseline": {
-      "歷史": 32,
-      "有效": 199,
-      "待補": 2
+      "歷史": 33,
+      "有效": 200,
+      "待補": 0
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 168,
+    "currentSessionReviewed": 170,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -42153,7 +42335,8 @@
     "modern/docs/r0-ui-world-read-commit-evidence.md",
     "modern/docs/r0-world-use-market-fixtures-evidence.md",
     "modern/docs/r0-peer-use-fixture-evidence.md",
-    "modern/docs/r0-r2-declarative-unified-use-evidence.md"
+    "modern/docs/r0-r2-declarative-unified-use-evidence.md",
+    "modern/docs/r0-r3-natural-sword-sales-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -42608,6 +42791,48 @@
       "checkout": "67e11542ee9a53ec6bcf947682d4d6eec5141ea9",
       "run": 45827170541,
       "job": 139934197653,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "ff70e04ccb59d2c02427304c801d58f86ec9caf1",
+      "tree": "146f8eebeb674fa69072ced446fcf4584be09c56",
+      "checkout": "6513eeabaf9fd1a59ba4e6ebb3585dda6f756690",
+      "run": 45826374794,
+      "job": 139931469807,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "ec0acb2ddcbb6fc8f3202f42ae06ff7a9929e6cf",
+      "tree": "f19fff358cac10436785f9b2f95778ea932c6883",
+      "checkout": "daed658b9f8c0ff6c9e42d88e2fc89c5d8599f3e",
+      "run": 45827783268,
+      "job": 139936292121,
       "conclusion": "success",
       "js": {
         "total": 1350,

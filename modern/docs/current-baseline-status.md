@@ -258,3 +258,15 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 
 - 新審2檔有效：有效199、歷史32、待補2；固定233，分類收斂231/233（99.1%）；收斂後逐檔補審168，既有重審7、剩56；新增5獨立。
 - [逐檔證據](r0-r2-declarative-unified-use-evidence.md)：69 distinct recipe IDs 受控 Perl/Node、人工材料/EXP/job/time/draw，並非合法取得；#26/0 僅 metadata/drift。Unified #79 六例只驗 probe 長度，#14 六分支逐值差分、受控初始券換地圖、memory CAS 拒絕；非完整 compiler/CGI/HTTP/v2。R1 逐項尚待另行連結，詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 暫不變。
+
+### 第四十批：R3 natural sale／五劍取得販售，分類收斂完成
+
+- 新審2檔（1有效、1歷史）：有效200、歷史33、待補0；固定233，分類收斂233/233（100%）；收斂後逐檔補審170，既有重審7、剩56；新增5獨立。不是全量重審或 R0 結案。
+- [逐檔證據](r0-r3-natural-sword-sales-evidence.md)：原版 24 stock/display＋24 price＋24 pre-EVENT＋16 multi-shelf，人工 stock／固定 draw；單架 draw 只 <= 原版總量，多架精確 natural，整合才比全79 wholesale及總 draw；#70 有 owner 只 Perl。五劍 Node 合法來源路徑受控 memory CAS，但使用舊時間命令與真隔離 legacy v1（重載非新 process），非正式 HTTP/v2 或逐劍完整原版差分。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 暫不變。
+- 下一步：重新逐檔覆核剩餘56份原有分類；完成後逐項補 R1 14層，R5 仍只規劃。
+
+### CI 補核：第32、35批
+
+- 第32批 run 45826374794 / job 139931469807：success，HEAD `ff70e04ccb59d2c02427304c801d58f86ec9caf1`、實際 checkout `6513eeabaf9fd1a59ba4e6ebb3585dda6f756690`、tree `146f8eebeb674fa69072ced446fcf4584be09c56` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
+- 第35批 run 45827783268 / job 139936292121：success，HEAD `ec0acb2ddcbb6fc8f3202f42ae06ff7a9929e6cf`、實際 checkout `daed658b9f8c0ff6c9e42d88e2fc89c5d8599f3e`、tree `f19fff358cac10436785f9b2f95778ea932c6883` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
+- 新 HEAD 未驗；保留第16、18批 cow mortality skip 歷史，不沿用舊綠燈。
