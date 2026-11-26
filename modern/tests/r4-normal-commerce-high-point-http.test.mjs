@@ -28,7 +28,8 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
     taxtoday:p.state.shop.taxtoday,paytoday:p.state.shop.paytoday,
     period:p.state.world.period.settledCount,clock:p.state.world.nowSeconds,
     remaining:p.remaining(),exp:p.state.shop.exp,stock:goods.map(g=>[g.id,p.stock(g.id)]),
-    book:p.stock(65),gross,tax,saleCount,steps,bestPoint});
+    book:p.stock(65),gross,tax,saleCount,steps,bestPoint,population:p.state.world.period.dtPeople,
+    trush:p.state.shop.trush,prices:p.state.shop.price});
   const checkPoint=()=>{
     const s=p.state.shop;
     assert.equal(s.point,calculateSourceShopPoint(s),'original GetDTPoint from actual ledger, not cached test points');
@@ -53,10 +54,13 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
 
   // Source MakeAmount uses a nonnegative addition to count*0.8 for
   // count >= 20. Four distinct categories share no inventory; the first
-  // shelf has original fourth-power demand, others third-power. A 120%
-  // listed price lowers replenishment demand while retaining real margin.
-  // Avoid sellout popularity penalties with a stock buffer, not fake rank.
-  const target=120,low=64;
+  // shelf has original fourth-power demand, others third-power. At 120%
+  // the later mixed-category shelves have only (1/1.2)^3 of base demand;
+  // the extra price does not offset that loss in gross sales. Use the
+  // actual standard price for the revenue phase, with a larger buffer to
+  // avoid the source sellout popularity penalty. Keep 120% for the
+  // separate manual EVENT showcase so that its lifecycle is unchanged.
+  const target=160,low=96;
   async function produce(g){
     const count=Math.min(6,Math.max(1,Math.ceil((target-p.stock(g.id))/(g.output*0.8))));
     await p.gather(g.raw,g.input*count);
@@ -73,7 +77,7 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
       await produce(g);
     }
   }
-  async function display(ids){
+  async function display(ids,per=120){
     assert.equal(ids.length,4);
     // Gathering and action-time waits execute real natural sales on the
     // existing shelves. Recheck inventory AFTER the last wait, before
@@ -94,12 +98,12 @@ async function highPointPlayer(t,{maxSteps=700,maxPeriods=12,onTick=null}={}){
     }
     assert.ok(ids.every(id=>p.stock(id)>0));
     for(const [shelf,id] of ids.entries()){
-      const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:id,per:120});
+      const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:id,per});
       assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
     }
     assert.deepEqual(p.state.shop.showcase,ids);
   }
-  await display(goods.map(g=>g.id));
+  await display(goods.map(g=>g.id),100);
 
   const startClock=p.state.world.nowSeconds;
   async function ready(useId,extraSeconds=0,requiredStock=[]){
@@ -236,8 +240,8 @@ for(const g of categories)test('R4 genuine #65/2 '+g.code+', negative natural sa
     await iron(g,160);
     // Restore all normal revenue lines before earning 20000 points.
     // Fill each source category from actual production.
-    for(const product of goods)if(p.stock(product.id)<64)await produce(product);
-    await display(goods.map(x=>x.id));
+    for(const product of goods)if(p.stock(product.id)<96)await produce(product);
+    await display(goods.map(x=>x.id),100);
     await ready(2,4*600,[g.wood]);
     assert.ok(p.state.shop.point>=20000);
     assert.ok(p.stock(g.id)>=160,'iron held off display until the source activation');
