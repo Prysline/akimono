@@ -4331,8 +4331,8 @@
       "status": "歷史",
       "evidenceLevel": "fixture／現代 policy",
       "originalSource": "inc-turn.cgi 亂數使用；現代 replay policy（非原版 PRNG）",
-      "assertions": "相同世界/命令 121 draws 重播；domain separation、範圍、非法欄位拒絕",
-      "executionPath": "local-source-command-draws；advance-source-time / reviewed-sparse-all-plus",
+      "assertions": "L14–23 121 個整數 millionth、freeze、重播、59-prefix；L24–33 revision/worldId/clock/args/kind 各變更時前8 draw 不同；L34–46 十種 malformed state/command/count 拒絕。",
+      "executionPath": "sourceCommandDraws；SHA-256 48-bit rejection sampling、固定 domain。",
       "risk": "舊 replay policy 被誤認 Perl hash/PRNG",
       "disposition": "保留舊 policy；正式 r4-time-command-draws / history 另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4345,6 +4345,10 @@
         {
           "path": "modern/docs/r3-r0-affected-tests-mapping.md",
           "line": 16
+        },
+        {
+          "path": "modern/docs/r0-b54-b56-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -4352,7 +4356,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "本地 migration replay policy，不重建 Perl process rand；固定人工 world/revision/time，沒有真 RNG、HTTP、CAS、重啟；未測 use-item domain 或統計均勻性。"
     },
     {
       "path": "modern/tests/b55-source-event-callbacks-live-cas.test.mjs",
@@ -4361,8 +4366,8 @@
       "status": "歷史",
       "evidenceLevel": "Perl 差分＋fixture CAS",
       "originalSource": "兩 DSL STARTFUNC manbiki/goutou、inc-turn.cgi",
-      "assertions": "十案損失、保安機器人、人氣、log、RNG、return 0 無 active event；實買店 fixture CAS",
-      "executionPath": "original-instant-event-callbacks；reviewed-instant-event-callback-fixture；legacy save",
+      "assertions": "L55–76 十例 79-slot/rank/money/ret/log/draw 差分、輸入不變；L77–103 三 source mutation、六 projector 拒絕；L104–210 memory 實買2、售1、unknown EVENT 拒買、人工 goutou callback 成功與多餘 draw 拒絕全狀態不變、legacy disk save/load、bounded prefix 再售。",
+      "executionPath": "reviewOriginalInstantEventCallbacks → projector；executeMemoryCommand → reviewed-instant-event-callback-fixture；legacy-world-save-store，後續 applyGameCommand 選出符合 draw 長度的 prefix 再 commit。",
       "risk": "把注入事件當自然觸發或持久化",
       "disposition": "保留 source；#22 正式 EVENT+time 另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4371,6 +4376,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 26
+        },
+        {
+          "path": "modern/docs/r0-b54-b56-rereview-evidence.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -4380,7 +4389,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "Perl callback-only，格式 stub、ITEMNO 手動替換；固定 time 與人工 draw；明示 naturalEventTriggered=false，EVENT state null；後續售出透過選擇可接受 prefix，非自然玩家 RNG；legacy disk 非正式 v2/HTTP/新程序重啟。"
     },
     {
       "path": "modern/tests/b56-source-event-time-slice.test.mjs",
@@ -4389,8 +4399,8 @@
       "status": "歷史",
       "evidenceLevel": "fixture CAS",
       "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
-      "assertions": "明示 17 鍵排列非 Perl hash；sale/PLUS/搶劫、第二次 gate、null unknown、拒絕跨期／壞輸入",
-      "executionPath": "original-b56-event-time-slice / projectR3PreEventTurn；advance-source-time-reviewed-events；legacy save",
+      "assertions": "L107–125 17 key、publicGameplay=false、兩 source drift；L127–209 pre-EVENT 比 B41、原狀態不變、goutou slice rev+1/time+1800、rank/stock/money/market、3 start codes、18 draws、legacy save/load 及第二 slice；L211–244 五種 unsupported/order/draw 拒絕 whole memory snapshot、unknown incoming state 拒絕。",
+      "executionPath": "reviewB56EventSlice → R3 pre-EVENT 與 GameCore advance-source-time-reviewed-events → legacy save/load；第二段 sourceCommandDraws + prefix search。",
       "risk": "固定順序冒充真來源 hash",
       "disposition": "#23 已分類；本表僅交叉核對，保留 fixture；#22 真時間另證",
       "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
@@ -4415,6 +4425,10 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 55
+        },
+        {
+          "path": "modern/docs/r0-b54-b56-rereview-evidence.md",
+          "line": 21
         }
       ],
       "realPlayer": false,
@@ -4423,7 +4437,8 @@
         23,
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "event order 為 compiled list reverse，非 Perl process hash order；人工 0/999999 trigger tape、固定時間，僅 goutou callback 與兩零機率 gate；無獨立 Perl 全 EVENT oracle；第二段對失敗 trial 無逐項原因斷言；L157–163 null state guard 省略多個 reviewed contract 參數，不能單獨證實 guard；非正式 v2/HTTP/真 RNG。B56 是 #23/#24 重疊唯一基線列，不重複計數。"
     },
     {
       "path": "modern/tests/b57-source-support-events-live-cas.test.mjs",
@@ -6364,13 +6379,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "兩 DSL STARTFUNC manbiki/goutou、inc-turn.cgi",
-      "assertions": "十案偷竊/搶劫/機器人、庫存與人氣",
-      "executionPath": "Perl .t → original-b55-instant-event-callback-probe.pl；Node 對照 b55-source-event-callbacks-live-cas.test.mjs",
+      "assertions": "L10–44 exit/JSON、十固定案例：未命中、floor(stock/10)、robot 生存/損毀、floor(stock/4)、rank 5000→4000、空架；全部 ret=0、draw count。",
+      "executionPath": "Perl .t → original-b55-instant-event-callback-probe.pl；取 DSL manbiki/goutou STARTFUNC eval。",
       "risk": "把注入事件當自然觸發或持久化",
       "disposition": "保留原版來源斷言及探針；保留 source；#22 正式 EVENT+time 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b54-b56-rereview-evidence.md",
+          "line": 29
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b55-instant-event-callback-probe.pl"
@@ -6378,7 +6398,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "probe L29 格式 stub、L54 robot ITEMNO 手動替換64；L78–89 人工 stock/rank/draw；直接呼叫 callback 不跑 gate/hash order/完整編譯/磁碟；L97–112 對 ret 非0拒絕但 undefined 也輸出0，非原始 ret 型別精確證據。"
     },
     {
       "path": "modern/tests/original-perl/original-b57-support-event.t",
@@ -43043,7 +43064,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 29
+    "reReviewedBaseline": 33
   },
   "provenance": [
     {
@@ -43126,7 +43147,8 @@
     "modern/docs/r0-b44-b47-rereview-evidence.md",
     "modern/docs/r0-b41-b43-rereview-evidence.md",
     "modern/docs/r0-b48-b49-rereview-evidence.md",
-    "modern/docs/r0-b50-b52-rereview-evidence.md"
+    "modern/docs/r0-b50-b52-rereview-evidence.md",
+    "modern/docs/r0-b54-b56-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

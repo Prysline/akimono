@@ -179,3 +179,9 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 - 五檔維持4有效1歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審29、剩34；實際逐檔199/233（85.4%）。
 - [逐檔證據](r0-b50-b52-rereview-evidence.md)：B50 Perl 同程序兩期前綴，Node 每次 Oracle input；repo 未傳 projector，不是真 CAS 拒絕。B51 真 memory CAS/legacy disk bootstrap，不是正式 v2 或期末；clockShift 負例同時缺 writeSource。B52 原版 seed/單句與 scalar handle，非真磁碟或實際 EVENT。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
 - #24 三個補件檔與 #26 blob SHA 全相同，#23 registry audit script 相同，audit/repro/test/R5 plan 有差異仍須語義比對。第43批 CI 45849759031 查詢時 in_progress；本環境 git ls-remote 仍 DNS failure，strict repro 未實跑；新 HEAD 待驗。
+
+### 第四十五批：B54–B56 既有分類重新覆核
+
+- 四檔維持1有效3歷史：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審33、剩30；實際逐檔203/233（87.1%）。B56 重疊唯一列。
+- [逐檔證據](r0-b54-b56-rereview-evidence.md)：B54 local deterministic replay 非 Perl RNG；B55 十例直接 callback、人工 stock/draw、memory CAS 與 legacy disk；B56 反轉17-key fixture，非 Perl hash order，實際受控 CAS/拒絕、舊存檔、prefix retry；null state 負例未隔離其他 review 參數。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- 第43/44批 CI 45849759031/45851995042 查詢時仍 in_progress；未本機重跑、strict repro 未實跑；新 HEAD 待驗。
