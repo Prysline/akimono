@@ -77,6 +77,7 @@ import {PERIOD_WORLD_SCHEMA}
 import {SOURCE_STANDARD_STREET_MAX_MONEY}
   from './shared-showcase-price.mjs';
 import {originalSourceUseClock} from './shared-use-experience.mjs';
+import {reviewOriginalUseJobFallback} from './reviewed-use-job-fallback.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
 import {compileReviewedSelfAdvertiseUse}
@@ -411,11 +412,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const giftUseVariants=compileReviewedGiftUseVariants({
     itemDsl,model,giftMap,
   });
+  const jobFallback=enableReviewedFullCommerce?reviewOriginalUseJobFallback({itemDsl,useSource:originalUseSource,compilerSource:originalCompilerSource}):null;
   const declarativeUses=compileReviewedDeclarativeUses({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   const gatheringUses=compileReviewedGatheringMapUses({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   const showcaseResizeUses=compileReviewedShowcaseResizeUses({
     itemDsl,model,limits:giftMap.limits,
@@ -436,13 +438,13 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     itemDsl,model,limits:giftMap.limits,
   });
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   // Only the authenticated local shop is a legal HTTP target. Preserve
   // the existing two-shop memory rule separately outside this mode.
   const localTargetUses=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     compileReviewedLocalTargetUses({sources:r4Sources,model,limits:giftMap.limits,targetAdvertiseUse,manualCommerce:ordinaryEventReview?.manual??null}):[];
-  const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
+  const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits,jobFallback}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,

@@ -54,9 +54,12 @@ function shapeProbe(street,id,kind){
   try {validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41);return true;}
   catch(e){if(!(e instanceof RangeError))throw e;return false;}
 }
-export async function auditNormalCommerce(){
-  const input=Object.fromEntries(await Promise.all(locations.map(
+export async function loadNormalCommerceAuditSources(){
+  return Object.fromEntries(await Promise.all(locations.map(
     async ([key,p])=>[key,await readFile(path.join(root,p),'utf8')])));
+}
+export async function auditNormalCommerce(){
+  const input=await loadNormalCommerceAuditSources();
   const parsed=[parseDsl(input.itemDsl,locations[0][1]),parseDsl(input.rebelDsl,locations[1][1])];
   const audit=validateStandardStreet(parsed);
   if(!audit.ok)throw new Error('source declaration audit failed');

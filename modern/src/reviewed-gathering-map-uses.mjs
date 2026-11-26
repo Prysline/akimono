@@ -26,7 +26,7 @@ function sourceOutput(entry,model){
   return {effect:Object.freeze({itemId,countPerUse:count,
     probabilityPermille:probability}),message:parts[3]??''};
 }
-export function compileReviewedGatheringMapUses({itemDsl,model,limits}){
+export function compileReviewedGatheringMapUses({itemDsl,model,limits,jobFallback=null}){
   if(typeof itemDsl!=='string'||model?.items?.length!==79||
      !Array.isArray(limits)||limits.length!==79)
     fail('source DSL and 79 ITEM limits required');
@@ -78,6 +78,7 @@ export function compileReviewedGatheringMapUses({itemDsl,model,limits}){
         ...(useId===0?{jobTimeModifier:Object.freeze({
           job:'material',numerator:2,denominator:3,
         })}:{}),
+        ...(jobFallback?.get(itemId,useId)?{fallbackJobTimeModifier:jobFallback.get(itemId,useId)}:{}),
         afterCallback:Object.freeze({
           kind:'lostbook',threshold:10,consumedCount:1,allowLoss:true,
           message:modelItem.name+'已經破爛到看不懂，就扔掉了。',
