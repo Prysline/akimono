@@ -37,3 +37,5 @@
 第八批補鏈：[自然販售／#70 FUNCTURN](r0-natural-sale-functurn-evidence.md)：ITEM #10/#70 受控來源 Oracle／差分，83 筆功能有詳細證據；#70 registry false 不變；正式取得/HTTP/v2 下界不變。
 
 第九批補鏈：[R4 EVENT declarative／PARAM](r0-r4-declarative-event-evidence.md)：九 EVENT 純 PARAM overlay，其中七 EVENT 單 key END/START 及 DataRead 連續時段差分；25 metadata 下界與83詳細 rows 不變。正式 HTTP/v2/合法取得仍不變，不能宣告 EVENT callback/runtime 已驗收。
+
+第十批：[R4 B50 公會帳本／跨期磁碟](r0-r4-b50-disk-ledger-evidence.md) 為共用 period/guild/IO 來源層；不硬映射 guildbattle、人工 EVENT codec 或商品取得，83詳細 rows 與正式下界不變。

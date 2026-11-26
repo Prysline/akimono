@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 119、歷史 32、待補 82。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 88 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 123、歷史 32、待補 78。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 92 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -75,8 +75,8 @@
 | original-perl/original-multi-item-use.t | 有效 | Perl Oracle（材料與產出片段） |
 | original-perl/original-natural-sale-plus.t | 有效 | Perl Oracle（受控自然販售＋PLUS） |
 | original-perl/original-nayuta-functurn.t | 有效 | Perl Oracle（受控 FUNCTURN） |
-| original-perl/original-r4-b50-guild-ledger.t | 待補 | 未完成語義審閱 |
-| original-perl/original-r4-b50-period-disk.t | 待補 | 未完成語義審閱 |
+| original-perl/original-r4-b50-guild-ledger.t | 有效 | Perl Oracle（隔離公會磁碟） |
+| original-perl/original-r4-b50-period-disk.t | 有效 | Perl Oracle（隔離 period disk tail） |
 | original-perl/original-r4-close-shop-archive-file.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-close-shop-effects.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-data-files-backup.t | 待補 | 未完成語義審閱 |
@@ -206,8 +206,8 @@
 | r4-reviewed-time-http-history.test.mjs | 有效 | 受控 HTTP/CAS |
 | r4-sorted-pre-event.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-b50-archive-disk-chain.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-b50-guild-ledger.test.mjs | 待補 | 未完成語義審閱 |
-| r4-source-b50-period-disk.test.mjs | 待補 | 未完成語義審閱 |
+| r4-source-b50-guild-ledger.test.mjs | 有效 | Perl Oracle／Node 差分（隔離公會磁碟） |
+| r4-source-b50-period-disk.test.mjs | 有效 | Perl Oracle／Node 差分（隔離 B50 磁碟） |
 | r4-source-backup-disk.test.mjs | 待補 | 未完成語義審閱 |
 | r4-source-cas-http-save-restart.test.mjs | 歷史 | legacy HTTP／雙世代 fixture |
 | r4-source-close-shop-archive-file.test.mjs | 待補 | 未完成語義審閱 |

@@ -57,3 +57,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 第十六批 [自然販售／#70 FUNCTURN](r0-natural-sale-functurn-evidence.md) 補審4檔：115有效、32歷史、86待補（147/233）；收斂後補審84、既有待覆核56。ITEM #10/#70 受控來源 Oracle／差分補鏈，83 筆有詳細證據；正式取得/HTTP/v2 下界不變。前候選 CI 45809746831 已核對 checkout 同 tree、1350 JS／2456 Perl 通過；新候選待驗。
 
 第十七批 [R4 EVENT declarative／PARAM](r0-r4-declarative-event-evidence.md) 補審4檔：119有效、32歷史、82待補（151/233）；收斂後補審88、既有待覆核56。9 EVENT 純 PARAM 差分、其中7單 key END/START 生命週期；25 metadata 下界不變，83 筆功能有詳細證據；正式下界不變。新候選待 CI。
+
+第十八批 [R4 B50 公會帳本／跨期磁碟](r0-r4-b50-disk-ledger-evidence.md) 補審4檔：123有效、32歷史、78待補（155/233）；收斂後補審92、既有待覆核56。原版 temp disk、受控 period prefix/tail、guild ledger、stage/receipt/recovery，不等於正式 v2 或原子 WorldState；83 詳細 rows、正式下界不變。新候選待 CI。

@@ -66,3 +66,6 @@
 
 ## HTTP transport 負向補強（待新 HEAD CI）
 重新閱讀正式 dev-local `78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9`：228–270 行 commit preview、history/preflight、jsonBody 4096 字元界線、JSON object 及安全整數；328–335 行 method/Origin；470–480 行 discard exact keys。新增既有 `r1-http-persistence-contract.test.mjs` 第三個 subtest：合法初始化/開店並保存後，以 /api/discard 對 12 組 transport/schema 拒絕驗證 exact 405/403/400、ok=false、完整 world/history/checkpoint/generation/磁碟 SHA256 不變，重啟 load 相同。包括 GET、foreign Origin、破損 JSON、null/array/string/number、超過4096字元、缺 count、boolean/unsafe count、null revision。測試 helper 新增 raw request；不改 production、既有 assertions 或新增測試檔計數。這不是瀏覽器 auth 或跨程序競爭證明，不宣稱量測 RNG。R1-HTTP-01 strict repro 仍獨立，未執行（本輪 git ls-remote DNS 失敗）。
+
+## R4 B50 隔離 period／guild 磁碟契約覆核
+[第十八批證據](r0-r4-b50-disk-ledger-evidence.md) 對應四份固定基線測試：原版實際 temp disk／受控兩期、guild income reset、stage/live 邊界、備份/關店/log/session 與 DataRead，原版第三 rename 與 Node 第四 rename 注入失敗後 recovery，Node receipt 拒絕 stage/已搬檔變更。此為 noncommittable 隔離 adapter；前置 IO 副作用不受正式 WorldState CAS 保證，不宣稱 v2/跨程序/斷電安全。#18/#16/#22 外部依賴不變。

@@ -6278,33 +6278,209 @@
       "path": "modern/tests/original-perl/original-r4-b50-guild-ledger.t",
       "sha": "0f9452a3c3cd0fdf84bb9e622dcf0f6682997aa0",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離公會磁碟）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/pinned-user.cgi；modern/tests/original-perl/pinned-error.cgi",
+      "assertions": "6–10：執行 probe 並解碼；11–20：separate/one-turn 各兩期帳本連續、EditGuildMoney treasury、次期 income reset、MakeGuildFile；21–23：第一期是否實寫、最終帳本語義一致。",
+      "executionPath": "original-r4-b50-guild-ledger-probe.pl 執行固定 period prefix、原版 guild/MakeGuildFile/WriteGuildData/DataCommitOrAbort/ReadGuildData，rename sandbox",
+      "risk": "公會收入 reset、跨期 stage/live、backup、關店、失敗 recovery 及非原子外部副作用；非正式玩家",
+      "disposition": "保留隔離來源證據；不移植正式 runtime 或 v2",
+      "reason": "逐檔審閱完整測試、probe 與執行入口；固定兩期、單 guild；外部 SetUserData/WriteErrorLog 為記錄 stub，實際 temp session unlink 與 payout file；未執行 period backup tail/full inc-turn。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
+          "line": 12
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-b50-guild-ledger-probe.pl",
+          "sha": "c5353d075368a13add3473ea0dbfd7e60a4d3526"
+        }
+      ],
+      "fixtures": "單店／guild_a／固定期末及明示 draws／人工資產與 temp disk",
+      "limitations": "固定兩期、單 guild；外部 SetUserData/WriteErrorLog 為記錄 stub，實際 temp session unlink 與 payout file；未執行 period backup tail/full inc-turn。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-b50-period-disk.t",
       "sha": "a464de4166f2345849d24098e6eef71505dedb95",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（隔離 period disk tail）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/pinned-user.cgi；modern/tests/original-perl/pinned-error.cgi；modern/tests/original-perl/pinned-custom.cgi；modern/tests/original-perl/pinned-log.cgi",
+      "assertions": "11–28：一／兩期 stage→live、原版 DataRead 重讀、舊 live backup、log rotation/equality、mtime、第二期關店 archive 與 backup generation；29–34：原版第三 rename 注入失敗、marker、兩檔待搬及 recovery 結果。",
+      "executionPath": "original-r4-b50-period-disk-probe.pl；原版 period prefix+tail、DataWrite/DataFilesBackup、CloseShop、RenewLog、DataCommitOrAbort、DataRead/ReadGuildData，temp directory",
+      "risk": "公會收入 reset、跨期 stage/live、backup、關店、失敗 recovery 及非原子外部副作用；非正式玩家",
+      "disposition": "保留隔離來源證據；不移植正式 runtime 或 v2",
+      "reason": "逐檔審閱完整測試、probe 與執行入口；人工單店單 guild，兩期 1000000/1129600，明示 draws/payout；原版函式在受控 wrapper 內執行、rename 可故障注入，非正式 v2/full inc-turn 或真 process restart。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
+          "line": 26
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-custom.cgi",
+          "sha": "93d7f77df648df0c46e5dca4763afd3d2c48654b"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-log.cgi",
+          "sha": "0f9143c49d1552233f27754e3937e1cdc2740f0a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-b50-period-disk-probe.pl",
+          "sha": "c3a46207080afdb36a77404fd53f1a9a01a83364"
+        }
+      ],
+      "fixtures": "單店／guild_a／固定期末及明示 draws／人工資產與 temp disk",
+      "limitations": "人工單店單 guild，兩期 1000000/1129600，明示 draws/payout；原版函式在受控 wrapper 內執行、rename 可故障注入，非正式 v2/full inc-turn 或真 process restart。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-close-shop-archive-file.t",
@@ -11569,33 +11745,273 @@
       "path": "modern/tests/r4-source-b50-guild-ledger.test.mjs",
       "sha": "262cb992337ee4db069af0d35f9ddcc8d485c316",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（隔離公會磁碟）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/pinned-user.cgi；modern/tests/original-perl/pinned-error.cgi",
+      "assertions": "54–75：兩期逐次 ledger read/persist、guildMoneyEdits、guildContext、重讀解析相等、負 atk 不改檔；76–80：來源 drift／缺欄／重複 key；82–120：同一次隔離 turn 兩期 state continuity、stage ledger 不提前改 live、最終 guild ledger/definition 差分。",
+      "executionPath": "execFileSync original-r4-b50-guild-ledger-probe.pl；projectOriginalSoloPeriodPhaseChain、persistGuildPeriod、stageGuildFiles/commitGuildFiles；mkdtemp",
+      "risk": "公會收入 reset、跨期 stage/live、backup、關店、失敗 recovery 及非原子外部副作用；非正式玩家",
+      "disposition": "保留隔離來源證據；不移植正式 runtime 或 v2",
+      "reason": "逐檔審閱完整測試、probe 與執行入口；人工單店／單 guild_a、固定時鐘／亂數與龍族 payout；隔離 guild ledger IO，非正式玩家加入公會、跨程序 CAS、原子 WorldState 或 v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-b50-guild-ledger-probe.pl",
+          "sha": "c5353d075368a13add3473ea0dbfd7e60a4d3526"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-guild-files.mjs",
+          "sha": "0a3db9a0d8056986674ea5424d0e5ab72777d239"
+        },
+        {
+          "path": "modern/src/original-r4-guild-ledger-file.mjs",
+          "sha": "218a4dacefdeed7096f200a8fed01d07d37f031c"
+        }
+      ],
+      "fixtures": "單店／guild_a／固定期末及明示 draws／人工資產與 temp disk",
+      "limitations": "人工單店／單 guild_a、固定時鐘／亂數與龍族 payout；隔離 guild ledger IO，非正式玩家加入公會、跨程序 CAS、原子 WorldState 或 v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-b50-period-disk.test.mjs",
       "sha": "773567de97be906a306e8db5cd410b1119f53a81",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（隔離 B50 磁碟）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/period.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/pinned-guild.cgi；modern/tests/original-perl/pinned-guildsub.cgi；modern/tests/original-perl/pinned-config.cgi；modern/tests/original-perl/pinned-sub.cgi；modern/tests/original-perl/pinned-user.cgi；modern/tests/original-perl/pinned-error.cgi；modern/tests/original-perl/pinned-custom.cgi；modern/tests/original-perl/pinned-log.cgi",
+      "assertions": "76–132：人工檔案／mtime、stage B50、逐期 shop/town/guild/log/backup/expiry/subdata、live play/guildbal 未提前改；133–149：一／兩期 final commit、重讀 active/empty、transient 欄位清除、stage/marker 清除；150–172：Node 第四 rename 失敗 recovery、不重播、缺 log 的 incomplete stage 拒絕；173–180：未知 EVENT／缺欄／多鍵拒絕；182–194：原版第三 rename 失敗 recovery；196–214：ready receipt 防 stage/已搬移檔變更；217–236：人工 sparse CSV、EVENT 順序、多鍵 codec、拒絕。",
+      "executionPath": "execFileSync original-r4-b50-period-disk-probe.pl；stageB50PeriodDisk/commitB50PeriodDisk/readPeriodPlay/serializePeriodPlay；mkdtemp",
+      "risk": "公會收入 reset、跨期 stage/live、backup、關店、失敗 recovery 及非原子外部副作用；非正式玩家",
+      "disposition": "保留隔離來源證據；不移植正式 runtime 或 v2",
+      "reason": "逐檔審閱完整測試、probe 與執行入口；真 temp disk 但原版舊 play/guildbal/log/backup 檔案，committable=false/worldStateWritten=false；不是正式 v2 或全域原子交易。happy/plusup-tetu codec 僅人工 key，不證明 EVENT runtime；沒有真時鐘、真 RNG 或跨程序崩潰證明。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-b50-disk-ledger-evidence.md",
+          "line": 19
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guild.cgi",
+          "sha": "6593aa8a3ae4a1695c2418f12a3776f0053454ac"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-guildsub.cgi",
+          "sha": "4dee1edeeedf3b482b8786111e1e5d626095f8d5"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-config.cgi",
+          "sha": "010e43766c1b78c7572cbc0aded2daf03dc07a1e"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-sub.cgi",
+          "sha": "33c767f434d7d6f0c5e9e0c9a291472b3a0f3b25"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-custom.cgi",
+          "sha": "93d7f77df648df0c46e5dca4763afd3d2c48654b"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-log.cgi",
+          "sha": "0f9143c49d1552233f27754e3937e1cdc2740f0a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-b50-period-disk-probe.pl",
+          "sha": "c3a46207080afdb36a77404fd53f1a9a01a83364"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-guild-files.mjs",
+          "sha": "0a3db9a0d8056986674ea5424d0e5ab72777d239"
+        },
+        {
+          "path": "modern/src/original-r4-b50-period-disk.mjs",
+          "sha": "94ed86f2e3ccb2673b25009d0d19539f1c8eb999"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-archive-file.mjs",
+          "sha": "3ad6e474644c188163284ef904f448e54016177b"
+        },
+        {
+          "path": "modern/src/original-r4-period-play-file.mjs",
+          "sha": "04138fec12f00185f5932eb3dfab331c44d81fe7"
+        },
+        {
+          "path": "modern/src/original-r4-town-files.mjs",
+          "sha": "b1b902e6e0bc94a278a92dfcd546f215ec4e19d6"
+        },
+        {
+          "path": "modern/src/original-r4-backup-disk.mjs",
+          "sha": "f556966c221811df66b112a02b80c7fab7aac81a"
+        },
+        {
+          "path": "modern/src/original-r4-external-files-sandbox.mjs",
+          "sha": "7e2b5c16688ced71ddc2f998b9f3636d87458f64"
+        },
+        {
+          "path": "modern/src/original-r4-period-log-disk.mjs",
+          "sha": "276dda4c393cda70f6fe40f58492cb0aece86319"
+        }
+      ],
+      "fixtures": "單店／guild_a／固定期末及明示 draws／人工資產與 temp disk",
+      "limitations": "真 temp disk 但原版舊 play/guildbal/log/backup 檔案，committable=false/worldStateWritten=false；不是正式 v2 或全域原子交易。happy/plusup-tetu codec 僅人工 key，不證明 EVENT runtime；沒有真時鐘、真 RNG 或跨程序崩潰證明。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/r4-source-backup-disk.test.mjs",
@@ -36920,14 +37336,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 119,
-      "待補": 82
+      "有效": 123,
+      "待補": 78
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 88,
+    "currentSessionReviewed": 92,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -36984,7 +37400,8 @@
     "modern/docs/r0-legacy-r2-r3-http-evidence.md",
     "modern/docs/r0-sparse-plus-evidence.md",
     "modern/docs/r0-natural-sale-functurn-evidence.md",
-    "modern/docs/r0-r4-declarative-event-evidence.md"
+    "modern/docs/r0-r4-declarative-event-evidence.md",
+    "modern/docs/r0-r4-b50-disk-ledger-evidence.md"
   ],
   "integrationCiHistory": [
     {
