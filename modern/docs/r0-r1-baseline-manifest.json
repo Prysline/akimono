@@ -16508,6 +16508,40 @@
       "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
+    },
+    {
+      "path": "modern/tests/r1-v2-inner-checkpoint.test.mjs",
+      "sha": null,
+      "status": "待補",
+      "evidenceLevel": "正式 HTTP/v2 checkpoint 白箱負向回歸",
+      "originalSource": "modern/src/reviewed-history-checkpoint-store.mjs、modern/src/reviewed-world-time-history.mjs、modern/src/local-world-save-store.mjs、modern/tests/support/p3-genuine-v2-player.mjs",
+      "originalSources": [
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        }
+      ],
+      "assertions": "合法礦石取得、130 丟棄、雙代 checkpoint；8 個變體外層 HMAC 通過，獨立 verifyChain 指定拒絕原因；HTTP 舊代回退、偽造檔不覆寫、還原後兩槽 bytes/world exact",
+      "executionPath": "genuinePlayer now:null crossPeriod:true → formal v2；test-only key 白箱 verifyRecord/verifyChain 與獨立 HTTP load",
+      "fixtures": "合法玩家正向資產，僅負向用隔離 tempdir key 重簽外層、必要時內層；不接觸生產 key",
+      "risk": "內層驗證被外層拒絕遮蔽；不能證明 key compromise safety",
+      "disposition": "新候選待 CI；保留既有無 key 篡改測試；不算新功能驗收",
+      "reason": "本次新增，尚未執行",
+      "reviewed": true,
+      "documentReferences": [],
+      "realPlayer": false
     }
   ],
   "testCounts": {
@@ -16516,7 +16550,7 @@
       "有效": 68,
       "待補": 141
     },
-    "added": 4,
+    "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],

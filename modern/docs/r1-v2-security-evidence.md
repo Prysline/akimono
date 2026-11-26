@@ -59,3 +59,6 @@
 | time/EVENT replay | P3 crossing receipts、P4/P5 reviewed ticks | 新測 fresh proof eventOrder、after digest 及未知 event；完整 25 EVENT 矩陣待補 |
 | atomicity | source fsync/rename/readback，候選 HTTP snapshot | 不證明多程序、斷電、失敗後所有 staging 副作用；R1-HTTP-01 仍獨立未跑 |
 
+
+## R1 checkpoint 內層隔離負例（待 CI）
+新增 `r1-v2-inner-checkpoint.test.mjs`：真時鐘 genuinePlayer 合法礦石、130 次丟棄形成 checkpoint、兩代保存；僅在負向 case 讀取隔離測試目錄 key 重簽外層，必要時重簽 metadata，使 outer HMAC 通過，對 inner MAC、sourceFingerprint、interpreter、hashPolicy、drawPolicy、generation、anchor revision、origin 八個變體逐一 `verifyChain` 指定拒絕原因，再實際 HTTP load 由舊代復原、確認不覆寫 forged bytes，恢復原始檔後重啟 exact。白箱僅驗防禦分層，不表示玩家能存取 key，也不宣稱 key compromise 下安全；既有 P4/P5 無 key 攻擊證據仍保留。此測試尚未執行。

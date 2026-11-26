@@ -25,3 +25,5 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 [45765900966](https://github.com/Prysline/akimono/actions/runs/45765900966) job 139726608654：HEAD `b40dec8bfd28f6e655e48f5068c5ba280d5513b8`，checkout `41808264862039019cacbed13d552ee63b1d8e91` tree `de0452748ce90c5367beeb327b35cba0397e8f65` 相同。JS 1342/1342、0 fail/skip/cancelled，Perl 85 檔 2456/2456、Result PASS，所有 DSL 與原版 pins 步驟成功。R1 CAS race 與 fresh replay 均通過；P4 實測 96 opportunities、1 death、4 cows、rev81→86 保存／合法復原。此綠燈屬固定前一候選，不替代新 HEAD。
 
 第六批補審 8 檔（[開店、展示、PLUS、EXP、USE](r0-init-wholesale-exp-use-evidence.md)），有效 68、歷史 24、待補 141（92/233），收斂後補審 29 份，既有 58 份待覆核。
+
+新增第五份候選測試（checkpoint 內層隔離負例），不計入 233 正式基線測試分母；待 exact CI。
