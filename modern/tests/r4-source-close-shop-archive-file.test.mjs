@@ -9,7 +9,7 @@ import {
   reviewR4CloseShopEffects,projectR4CloseShopEffects,
 } from '../src/original-r4-close-shop-effects.mjs';
 import {
-  reviewR4CloseShopArchiveSource,appendR4CloseShopArchiveSandbox,
+  reviewR4CloseShopArchiveSource,appendR4CloseShopArchiveSandbox,projectR4CloseShopArchiveGeneration,
   R4_CLOSE_ARCHIVE_SOURCE,
 } from '../src/original-r4-close-shop-archive-file.mjs';
 
@@ -62,6 +62,13 @@ test('R4 full frozen CloseShop+WriteErrorLog actually append/rotate archived byt
         assert.equal(result.committable,false);
         assert.equal(result.worldStateWritten,false);
         assert.equal(result.rotated,row.kind==='rotate');
+        const previous=row.input.logPrior===null?null:{bytes:row.input.logPrior,mtime:row.context.nowSeconds-1};
+        const projected=projectR4CloseShopArchiveGeneration({reviewed,effect,previous,...row.context});
+        assert.equal(projected.live.bytes,row.output.liveLog,'immutable archive generation matches actual frozen Perl bytes');
+        assert.equal(projected.live.mtime,row.context.nowSeconds);
+        assert.equal(projected.rotated,row.kind==='rotate');
+        assert.equal(projected.old?.bytes??null,row.output.oldLog);
+        if(projected.rotated)assert.equal(projected.old.mtime,previous.mtime);
         const log=await readFile(path.join(logDir,'delete.cgi'),'utf8');
         assert.equal(log,row.output.liveLog,
           row.kind+' real UTF8 original Perl and Node log bytes');
@@ -114,4 +121,37 @@ test('R4 original error/user frozen source drift, fake committable and unsafe lo
     }),/isolated temporary sandbox/);
     await assert.rejects(stat(path.join(dir,'log','delete.cgi')),{code:'ENOENT'});
   } finally {await rm(dir,{recursive:true,force:true});}
+});
+
+// Explicit isolated source file generation, not a player world or CAS proof.
+import {createIndependentPeriodDiskStore,independentPeriodDiskDigest,PERIOD_DISK_DIRECTORY} from '../src/r4-independent-period-disk-store.mjs';
+test('R4 immutable archive generation verifies exact bytes and layout, rejects damaged archive without repairing it',async()=>{
+  const row=oracle().cases[0];
+  const effect=projectR4CloseShopEffects({reviewed:reviewedClose,shopId:1,shop:row.input.shop,reason:row.input.reason,sessionFileNames:[]});
+  const now=row.context.nowSeconds,prior={bytes:'界'.repeat(10000),mtime:now-2},old={bytes:'previous rotation',mtime:now-3};
+  const append=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:prior,previousOld:old,...row.context});
+  assert.equal(append.rotated,false,'strict >30000 UTF8 byte threshold');
+  assert.deepEqual(append.old,old);
+  const rotate=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:{...prior,bytes:prior.bytes+'a'},previousOld:old,...row.context});
+  assert.equal(rotate.rotated,true);assert.equal(rotate.live.bytes,row.output.liveLog);
+  assert.equal(rotate.old.mtime,prior.mtime);
+  assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed:{...reviewed},effect,...row.context}),/pinned archive review/);
+  const backup=Object.fromEntries(['play.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'].map(n=>[n,{bytes:'',mtime:now}]));
+  const live={...backup,'guild.cgi':{bytes:'',mtime:now},'lasttime.cgi':{bytes:'',mtime:now},'log/delete.cgi':rotate.live,'log/delete-old.cgi':rotate.old};
+  const world={shops:[],nowSeconds:now,period:{disk:{source:'r4-independent-source-disk.v1',live,backup,generations:[null,null,null]}}};
+  const dir=await sandbox();
+  try{
+    const store=createIndependentPeriodDiskStore({directory:dir});
+    assert.equal(store.stage(world),true);assert.equal(store.verify(world),true);
+    const logDir=path.join(dir,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(world),'log');
+    assert.equal(await readFile(path.join(logDir,'delete.cgi'),'utf8'),rotate.live.bytes);
+    assert.equal(await readFile(path.join(logDir,'delete-old.cgi'),'utf8'),rotate.old.bytes);
+    await writeFile(path.join(logDir,'unexpected.cgi'),'unreviewed');
+    assert.throws(()=>store.verify(world),/layout mismatch/);
+    await rm(path.join(logDir,'unexpected.cgi'));
+    await writeFile(path.join(logDir,'delete.cgi'),'corrupted archive');
+    assert.throws(()=>store.verify(world),/source file bytes or clock mismatch/);
+    assert.throws(()=>store.stage(world),/source file bytes or clock mismatch/);
+    assert.equal(await readFile(path.join(logDir,'delete.cgi'),'utf8'),'corrupted archive');
+  }finally{await rm(dir,{recursive:true,force:true});}
 });
