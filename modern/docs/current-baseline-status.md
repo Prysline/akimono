@@ -222,3 +222,9 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ### 第三十五批：town／guildbattle END／play 磁碟
 
 兩份待補轉有效：原版直接 END body 真隔離 guild/config/ledger read、兩次 DataWrite/DataRead，Node 真隔離讀檔及 town-only stage/rename/recovery；town map 比對不等於 hash order bytes，非完整 EVENT lifecycle、正式玩家、CAS 或 v2。Set/GetTownData key 不對稱保留原版行為。guildbattle 既有 Oracle/Node 層追加引用，詳細仍 87 項、其餘 133 項；正式下界不變。證據：[r0-r4-town-play-evidence.md](r0-r4-town-play-evidence.md)。R0 有效187、歷史32、待補14（219/233，94.0%）；收斂後逐檔補審156，既有重新覆核7，剩56；候選新增5獨立。
+
+### CI 補核：第29、30批
+
+- 第29批 run 45824384633 / job 139924653702：success，HEAD `4f855a10a908cd37e3a93ce1fcf45feae9b54596`、實際 checkout `cf0ed17acb13d9496cdf725e7ce29049228c3bef`、tree `bdc4bd9c8f5838ab206a29602fb487fa6820e51b` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第30批 run 45824834094 / job 139926235251：success，HEAD `a33b920e1256f2cdc33924c22a2c68b6d1f2e16c`、實際 checkout `f0061b9789777e98c23c64990958ae1c885675e4`、tree `9d535d3761a744111277bf393bf7fe898200db79` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
+- 第31–35批最後查詢仍 in_progress：45825399615、45826374794、45826749043、45827170541、45827783268；不替代新 HEAD 驗收。
