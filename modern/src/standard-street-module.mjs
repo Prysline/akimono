@@ -1,3 +1,4 @@
+import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
@@ -473,7 +474,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
+  const expHashReview=enableReviewedFullCommerce?reviewUseExpHash({useSource:originalUseSource,readSource:originalDataReadSource}):null;
   const useItem=Object.freeze({
+    ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({...args,review:expHashReview})}:{}),
     reviewedSignedCash:enableReviewedFullCommerce,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
