@@ -142,3 +142,70 @@ test('D6 immutable archive projection preserves exact UTF8 rotation boundary and
   assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed,effect,previous:{...prior,mtime:now+1},...row.context}),/prior archive entry/);
   assert.deepEqual({prior,old},before);
 });
+
+// Explicit isolated source file generation, not a player world or CAS proof.
+import {createIndependentPeriodDiskStore,independentPeriodDiskDigest,PERIOD_DISK_DIRECTORY} from '../src/r4-independent-period-disk-store.mjs';
+test('R4 immutable archive generation verifies exact bytes and layout, rejects damaged archive without repairing it',async()=>{
+  const row=oracle().cases[0];
+  const effect=projectR4CloseShopEffects({reviewed:reviewedClose,shopId:1,shop:row.input.shop,reason:row.input.reason,sessionFileNames:[]});
+  const now=row.context.nowSeconds,prior={bytes:'界'.repeat(10000),mtime:now-2},old={bytes:'previous rotation',mtime:now-3};
+  const append=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:prior,previousOld:old,...row.context});
+  assert.equal(append.rotated,false,'strict >30000 UTF8 byte threshold');
+  assert.deepEqual(append.old,old);
+  const rotate=projectR4CloseShopArchiveGeneration({reviewed,effect,previous:{...prior,bytes:prior.bytes+'a'},previousOld:old,...row.context});
+  assert.equal(rotate.rotated,true);assert.equal(rotate.live.bytes,row.output.liveLog);
+  assert.equal(rotate.old.mtime,prior.mtime);
+  assert.throws(()=>projectR4CloseShopArchiveGeneration({reviewed:{...reviewed},effect,...row.context}),/pinned archive review/);
+  const backup=Object.fromEntries(['play.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'].map(n=>[n,{bytes:'',mtime:now}]));
+  const live={...backup,'guild.cgi':{bytes:'',mtime:now},'lasttime.cgi':{bytes:'',mtime:now},'log/delete.cgi':rotate.live,'log/delete-old.cgi':rotate.old};
+  const world={shops:[],nowSeconds:now,period:{disk:{source:'r4-independent-source-disk.v1',live,backup,generations:[null,null,null]}}};
+  const dir=await sandbox();
+  try{
+    const store=createIndependentPeriodDiskStore({directory:dir});
+    assert.equal(store.stage(world),true);assert.equal(store.verify(world),true);
+    const logDir=path.join(dir,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(world),'log');
+    assert.equal(await readFile(path.join(logDir,'delete.cgi'),'utf8'),rotate.live.bytes);
+    assert.equal(await readFile(path.join(logDir,'delete-old.cgi'),'utf8'),rotate.old.bytes);
+    await writeFile(path.join(logDir,'unexpected.cgi'),'unreviewed');
+    assert.throws(()=>store.verify(world),/layout mismatch/);
+    await rm(path.join(logDir,'unexpected.cgi'));
+    await writeFile(path.join(logDir,'delete.cgi'),'corrupted archive');
+    assert.throws(()=>store.verify(world),/source file bytes or clock mismatch/);
+    assert.throws(()=>store.stage(world),/source file bytes or clock mismatch/);
+    assert.equal(await readFile(path.join(logDir,'delete.cgi'),'utf8'),'corrupted archive');
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('D8 shared immutable layout retains army and closed archive without weakening file guards',async()=>{
+  const now=100,entry=bytes=>({bytes,mtime:now});
+  const backup=Object.fromEntries(['play.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'].map(n=>[n,entry('')]));
+  const live={...backup,'guild.cgi':entry(''),'lasttime.cgi':entry(''),'army.cgi':entry('1,3000\n1\n')};
+  const open={shops:[{id:1}],nowSeconds:now,period:{disk:{source:'r4-independent-source-disk.v1',live,backup,generations:[null,null,null]}}};
+  const closed=structuredClone(open);closed.shops=[];
+  closed.period.disk.live['log/delete.cgi']=entry('source archive\n');
+  closed.period.disk.live['log/delete-old.cgi']=entry('prior archive\n');
+  const invalid=structuredClone(closed);invalid.shops=[{id:1}];
+  const oldOnly=structuredClone(closed);delete oldOnly.period.disk.live['log/delete.cgi'];
+  const dir=await sandbox();
+  try{
+    const store=createIndependentPeriodDiskStore({directory:dir});
+    assert.equal(store.stage(open),true);
+    assert.throws(()=>store.stage(invalid),/closed archive layout/);
+    assert.throws(()=>store.stage(oldOnly),/closed archive layout/);
+    assert.equal(store.stage(closed),true);
+    const root=path.join(dir,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(closed));
+    assert.equal(await readFile(path.join(root,'army.cgi'),'utf8'),live['army.cgi'].bytes);
+    const archive=path.join(root,'log','delete.cgi'),alias=path.join(dir,'alias');
+    const {link,lstat}=await import('node:fs/promises');
+    await link(archive,alias);
+    assert.throws(()=>store.verify(closed),/regular independent source file/);
+    assert.throws(()=>store.stage(closed),/regular independent source file/);
+    assert.equal((await lstat(archive)).nlink,2);
+    assert.equal(await readFile(alias,'utf8'),'source archive\n');
+    await rm(alias);assert.equal(store.verify(closed),true);
+    await rm(archive);
+    assert.throws(()=>store.stage(closed));
+    await assert.rejects(lstat(archive),{code:'ENOENT'});
+    assert.equal(store.verify(open),true);
+  }finally{await rm(dir,{recursive:true,force:true});}
+});

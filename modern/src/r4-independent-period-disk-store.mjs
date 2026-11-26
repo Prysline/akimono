@@ -20,7 +20,9 @@ function layout(world){
     if(!entries||Object.keys(entries).sort().join(',')!==[...names].sort().join(','))fail('unexpected file layout');
     for(const n of names){const f=entries[n];if(typeof f?.bytes!=='string'||!Number.isSafeInteger(f.mtime)||f.mtime<0||f.mtime>world.nowSeconds)fail('source file entry');out[prefix+n]=f;}
   }
-  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi']);
+  const archive=Object.hasOwn(d.live??{},'log/delete.cgi'),oldArchive=Object.hasOwn(d.live??{},'log/delete-old.cgi');
+  if((archive&&world.shops?.length!==0)||(oldArchive&&!archive))fail('closed archive layout');
+  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi',...(Object.hasOwn(d.live??{},'army.cgi')?['army.cgi']:[]),...(archive?['log/delete.cgi']:[]),...(oldArchive?['log/delete-old.cgi']:[])]);
   collect('backup/',d.backup,baseNames);
   if(!Array.isArray(d.generations)||d.generations.length!==3)fail('three backup generations required');
   d.generations.forEach((g,i)=>{if(g!==null)collect('backup'+(i+1)+'/',g,baseNames)});
@@ -34,7 +36,7 @@ export function createIndependentPeriodDiskStore({directory}){
     const subdirs=new Set(Object.keys(files).filter(n=>n.includes('/')).map(n=>n.split('/')[0]));
     const expected=[...Object.keys(files).filter(n=>!n.includes('/')),...subdirs].sort();
     if(JSON.stringify(fs.readdirSync(target).sort())!==JSON.stringify(expected))fail('file generation layout mismatch');
-    for(const sub of subdirs){const p=path.join(target,sub);dir(p);if(JSON.stringify(fs.readdirSync(p).sort())!==JSON.stringify(baseNames.slice().sort()))fail('backup layout mismatch');}
+    for(const sub of subdirs){const p=path.join(target,sub);dir(p);if(JSON.stringify(fs.readdirSync(p).sort())!==JSON.stringify(Object.keys(files).filter(n=>n.startsWith(sub+'/')).map(n=>n.slice(sub.length+1)).sort()))fail('backup layout mismatch');}
     for(const [name,f] of Object.entries(files)){
       const p=path.join(target,name),before=fs.lstatSync(p);
       if(!before.isFile()||before.nlink!==1)fail('regular independent source file required '+name);
