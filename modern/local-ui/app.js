@@ -7,7 +7,7 @@ let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
 let lastPricingItemId=null;
-let palaceSubmitting=false;
+let palaceSubmitting=false,armySubmitting=false;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -33,7 +33,7 @@ const conciseTimeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',
   balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
@@ -75,12 +75,14 @@ function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
   currentGroup=['market','palace'].includes(name)?'trade':'self';
+  if(name==='army')currentGroup='facility';
   updateNavigation();
 }
 function selectGroup(name){
   if(!Object.hasOwn(groupNames,name))return;
   if(name==='self')return selectTab('shop');
   if(name==='trade')return selectTab('market');
+  if(name==='facility')return selectTab('army');
   currentGroup=name;
   currentTab=null;
   updateNavigation();
@@ -312,6 +314,26 @@ $('storage-inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');
   if(button)openItem(Number(button.dataset.openItem));
 });
+function renderArmy(s){
+  const a=s?.army;
+  text('army-status',a?'矮人兵士正在等待僱用。':s?.reviewedCrossPeriod?'請先建立商店。':'傭兵所需已審閱的跨期模式。');
+  text('army-dignity',number(a?.dignity));
+  text('army-maximum',number(a?.maximum));
+  text('army-count',number(a?.count));
+  text('army-price',number(a?.unitPrice));
+  text('army-riot',a?(a.riot?'反亂':'待機'):'—');
+  const reasons={'dignity-capacity':'爵位所允許的僱用上限不足。',funds:'資金不足。',time:'可用時間不足。','no-army':'目前沒有兵士。'};
+  for(const [mode,allowed,reason,options,max] of [['hire',a?.canHire,a?.hireReason,a?.hireOptions,a?.hireMaximum],['fire',a?.canFire,a?.fireReason,a?.fireOptions,a?.fireMaximum]]){
+    const enabled=allowed===true&&!armySubmitting&&Boolean(s?.world);
+    const select=$('army-'+mode+'-options'),previous=select.value;
+    select.replaceChildren(new Option('請選擇',''),...(options??[]).map(n=>new Option(number(n),String(n))));
+    if((options??[]).some(n=>String(n)===previous))select.value=previous;
+    select.disabled=!enabled;
+    $('army-'+mode+'-count').disabled=!enabled;
+    $('army-'+mode).disabled=!enabled;
+    text('army-'+mode+'-reason',allowed?'本次最多 '+number(max)+' 人。':reasons[reason]??'目前不可操作。');
+  }
+}
 function renderPalace(s){
   const p=s?.palace;
   text('palace-point',number(p?.point));
@@ -378,6 +400,7 @@ function showState(s){
   text('rank',number(s.shopSummary?.rankPosition));
   text('shop-points',number(s.shopSummary?.point));
   renderPalace(s);
+  renderArmy(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -600,6 +623,24 @@ async function call(path,payload={},label='操作',onSuccess=null){
     onSuccess?.(data);
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
+}
+for(const mode of ['hire','fire']){
+  $('army-'+mode+'-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const before=snapshot,allowed=mode==='hire'?before?.army?.canHire:before?.army?.canFire;
+    if(armySubmitting||!before?.world||allowed!==true)return;
+    const raw=$('army-'+mode+'-count').value||$('army-'+mode+'-options').value;
+    const requestedCount=Number(raw);
+    if(!Number.isSafeInteger(requestedCount)||requestedCount<1){feedback('請輸入正整數人數。',null,true);return;}
+    armySubmitting=true;renderArmy(before);
+    try{
+      await call('/api/army-'+mode,{expectedRevision:before.world.revision,requestedCount},mode==='hire'?'僱用兵士':'解僱兵士',data=>{
+        const r=data.details;
+        feedback('已'+(mode==='hire'?'僱用':'解僱')+' '+number(r.count)+' 名兵士；現有 '+number(r.armyAfter)+' 名。',r);
+        $('army-'+mode+'-count').value='';
+      });
+    }finally{armySubmitting=false;renderArmy(snapshot);}
+  });
 }
 $('palace-complete').addEventListener('click',async()=>{
   const before=snapshot;

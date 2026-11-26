@@ -45,6 +45,7 @@ const [
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -64,6 +65,7 @@ const [
   'modern/tests/original-perl/core-inc-item.cgi',
   'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
   'modern/tests/original-perl/pinned-palace.cgi','modern/tests/original-perl/pinned-palace-s.cgi','custom/inc-palace.cgi',
+  'modern/tests/original-perl/pinned-army-view.cgi','modern/tests/original-perl/pinned-army-s.cgi','modern/tests/original-perl/pinned-army.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -75,6 +77,7 @@ const streetModule=createStandardStreetModule({
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
 if(!['initialize-source-market','open-shop',
@@ -120,7 +123,8 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource],
+       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -167,6 +171,7 @@ function state(){
       rankPosition:null,
     },
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
+    army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
@@ -480,6 +485,14 @@ async function api(req,res,url){
       if(!streetModule.reviewedPalace)return send(res,409,{ok:false,error:'宮殿需已審閱的跨期來源存檔模式',state:state()});
       if(!exactKeys(body,'expectedRevision'))throw Error('宮殿只接受 expectedRevision，不接受商品、爵位、evt、點數或 RNG');
       result=commit({kind:'complete-palace-mission',expectedRevision:ensureRevision(body),shopId:1});
+      break;
+    }
+    case '/api/army-hire':
+    case '/api/army-fire': {
+      if(!streetModule.reviewedArmy)return send(res,409,{ok:false,error:'傭兵所需已審閱的跨期來源存檔模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
+      result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
+        expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
       break;
     }
     case '/api/discard': {
