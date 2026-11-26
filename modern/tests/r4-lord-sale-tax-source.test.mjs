@@ -111,3 +111,83 @@ for(const row of rows)test('R4 original natural-sale tax: '+row.name,()=>{
  assert.throws(()=>projectSharedNaturalSale({...args,lordTaxContext:{...lordTaxContext}}),/reviewed context/);
  assert.throws(()=>projectSharedNaturalSale({...args,shop:{...shop,taxmode:3},lordTaxContext}),/reviewed context/);
 });
+
+import {loadStandardStreetModel} from '../src/standard-street-model.mjs';
+import {compileReviewedGiftMapUse} from '../src/reviewed-gift-map-use.mjs';
+import {reviewOriginalCompiledEventCatalog} from '../src/original-event-compiled-catalog.mjs';
+import {reviewR4RebelNow} from '../src/original-r4-rebel-now.mjs';
+import {reviewOriginalSoloPeriodPhaseChain,projectOriginalSoloPeriodPhaseChain} from '../src/original-period-solo-chain.mjs';
+import {reviewLordInside,projectLordInside} from './support/r4-lord-inside-candidate.mjs';
+
+test('R4 original lord inside -> actual natural sales -> two original period prefixes: same taxes credited once',async()=>{
+ const periodSources={
+  periodSource:await readFile(path.join(originalDir,'period.cgi'),'utf8'),
+  configSource:source.originalConfigSource,itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,
+  compilerSource:source.originalCompilerSource,originalAddItemSource:source.originalUseSource,
+  detailSource:source.originalDetailSource,readSource:source.originalDataReadSource,
+  adminSource:source.originalAdminInitSource,turnSource:source.originalTurnSource,
+ };
+ const model=loadStandardStreetModel(source.itemDsl,source.rebelDsl);
+ const compiled=compileReviewedGiftMapUse({itemDsl:source.itemDsl,rebelDsl:source.rebelDsl,model});
+ const compiledCatalog=reviewOriginalCompiledEventCatalog(periodSources);
+ const reviewedRebelNow=reviewR4RebelNow({...periodSources,compiledCatalog});
+ const periodReview=reviewOriginalSoloPeriodPhaseChain({...periodSources,model,
+  bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',
+  compiledLimits:compiled.limits.map(it=>it.limit),
+  includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,
+  includeReviewedMultiShelf:true,reviewedRebelNow});
+ const insideReview=reviewLordInside(await readFile(path.join(originalDir,'pinned-lord-s.cgi'),'utf8'));
+ const requests=[],jsSales=[];
+ for(const sale of rows){
+  const fixture={revision:5,taxRate:0,
+   town:{leader:1,money:5000000,in:0,out:0,develop:5001,devem:0,safety:5001,safem:0,army:10000,robina:2000,robinb:0},
+   actor:{id:1,name:'Owner',money:100000,time:956800},eventState:sale.rebel?{rebel:1259200}:{}};
+  const command={kind:'lord-inside',expectedRevision:5,actorId:1,taxrate:String(sale.taxRate),devem:'123',safem:'456'};
+  const original=JSON.parse(execFileSync('perl',['original-r4-lord-inside-probe.pl'],{
+   cwd:originalDir,input:JSON.stringify({fixture,command}),encoding:'utf8'}));
+  const got=projectLordInside({reviewed:insideReview,fixture,command});
+  assert.equal(original.ok,1);
+  assert.deepEqual(got.fixture,original.fixture);
+  assert.equal(got.fixture.town.money,fixture.town.money,'budgets not charged during policy change');
+  const item=Array(79).fill(0);
+  for(const [id,stock] of Object.entries(sale.startingStocks))item[Number(id)-1]=stock;
+  item[78]=5;
+  const shop={id:1,status:1,rank:5010,money:100000-10000*sale.shown.length,
+   paytoday:10000*sale.shown.length,item,showcasecount:sale.shown.length,showcase:[...sale.shown],price:[...sale.prices],
+   trush:0,saletoday:0,taxtoday:0,costtoday:0,itemtoday:{},itemyesterday:{},taxmode:sale.taxMode};
+  const lordTaxContext=createR4LordSaleTaxContext({reviewed,townTaxRate:got.fixture.taxRate,
+   taxMode:shop.taxmode,eventState:got.fixture.eventState});
+  const natural=projectSharedNaturalSale({shop,saleRules:street.reviewedB41.saleRules,
+   upkeepCosts:street.reviewedB41.upkeepCosts,spanSeconds:1800,randomDraws:sale.consumedSamples,
+   lordTaxContext,recordShelfSales:true});
+  assert.equal(natural.shop.taxtoday,sale.taxtoday);
+  requests.push({sale,town:original.fixture.town});jsSales.push(natural.shop);
+ }
+ const result=JSON.parse(execFileSync('perl',['original-b50-period-chain-probe.pl','--sale-tax-stdin'],{
+  cwd:originalDir,input:JSON.stringify(requests),encoding:'utf8'})).saleTaxCases;
+ assert.equal(result.length,rows.length);
+ for(const [i,row] of result.entries()){
+  const sale=rows[i],natural=jsSales[i];
+  assert.equal(row.name,sale.name);assert.equal(row.periods.length,2);
+  const first=row.periods[0],second=row.periods[1];
+  const { _sale_count_:temporary,...naturalShop}=natural;
+  const firstInput={...first.input,shop:{...first.input.shop,...naturalShop}};
+  assert.deepEqual(firstInput.shop,first.input.shop,'exact sale-to-ledger input handoff');
+  let previous=null;
+  for(const [j,period] of row.periods.entries()){
+   const input=j===0?firstInput:{...period.input,shop:previous.shop,town:previous.town,dtPeople:previous.dtPeople};
+   assert.deepEqual(input,period.input,'same-state period continuation');
+   const before=structuredClone(input);
+   const got=projectOriginalSoloPeriodPhaseChain({reviewed:periodReview,...input});
+   for(const k of ['shop','town','dtPeople','pointsBefore','pointsAfter'])assert.deepEqual(got[k],period.output[k],row.name+' '+k);
+   for(const k of ['activeUntilSeconds','eventState','logs'])assert.deepEqual(got.conflictTerritory[k],period.output[k],row.name+' '+k);
+   assert.deepEqual([9,100,...got.conflictTerritory.randomDrawRanges],period.output.ranges);
+   const taxes=j===0?sale.taxtoday:0;
+   assert.equal(got.shop.taxyesterday,taxes);assert.equal(got.shop.taxtoday,0);
+   assert.equal(got.town.in,taxes);assert.equal(got.town.money,input.town.money+taxes-got.town.out);
+   assert.equal(got.nonCommittable,true);assert.equal(got.worldStateWritten,false);
+   assert.deepEqual(input,before);
+   previous=got;
+  }
+ }
+});

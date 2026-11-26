@@ -118,13 +118,15 @@ $EXPIRE_TIME=3600*24*7;
 $PROFIT_DAY_COUNT=3; $EXP_DOWN_RATE=60;$EXP_DOWN_POINT=5;
 $MAX_ITEM=79;@SHOWCASE_COST=(0,2000,4000,8000);
 my $shelfCount=1;
-my ($shelfMode,$conflictMode)=(0,0);
+my ($shelfMode,$conflictMode,$saleTaxMode)=(0,0,0);
 for my $arg (@ARGV){
   if($arg eq '--conflict' && !$conflictMode){$conflictMode=1;}
   elsif($arg=~/^--shelves=([1-8])$/ && !$shelfMode){$shelfMode=1;$shelfCount=0+$1;}
-  else{die 'expected unique --shelves=1..8 and/or --conflict';}
+  elsif($arg eq '--sale-tax-stdin' && !$saleTaxMode){$saleTaxMode=1;}
+  else{die 'expected unique --shelves=1..8 and/or --conflict or --sale-tax-stdin';}
 }
-if($shelfMode){
+die 'sale tax mode is standalone' if $saleTaxMode&&($shelfMode||$conflictMode);
+if($shelfMode||$saleTaxMode){
   @SHOWCASE_COST=($itemDsl=~/^\s*CostShowcase\d+\s+(\d+)\s*(?:#.*)?$/gmi);
   die 'eight original shelf costs required' unless @SHOWCASE_COST==8;
 }
@@ -228,9 +230,55 @@ if($conflictMode){
       ranges=>[@B50_RANGES],logs=>[grep{$_->[0]==2&&($_->[2]=~/護衛軍|外敵首領/)}@B50_LOGS]}};
   }
 }
+# Isolated source-to-source handoff: receive the actual natural-sale probe
+# output and original lord-inside town. No player inventory or disk commit.
+# The first period consumes the measured taxes; the second has no new sale.
+my @saleTaxResults;
+if($saleTaxMode){
+  binmode STDIN,':raw';
+  my $requests=decode_json(do{local $/;<STDIN>});
+  die 'expected sale tax source rows' unless ref($requests) eq 'ARRAY'&&@$requests;
+  for my $request(@$requests){
+    my $row=$request->{sale};
+    my $n=scalar(@{$row->{shown}});
+    die 'invalid source sale handoff' unless $n>=2&&$n<=8&&$row->{saletoday}>0;
+    $STATE=dclone($request->{town});$DTpeople=500000;$DTusercount=1;
+    @DT=(dclone($originalShop));
+    my $shop=$DT[0];
+    $shop->{showcasecount}=$n;$shop->{showcase}=dclone($row->{shown});
+    $shop->{price}=dclone($row->{prices});$shop->{item}[62]=0;
+    $shop->{paytoday}=10000*$n;$shop->{taxmode}=0+$row->{taxMode};
+    $shop->{itemtoday}={map {$_=>0+$row->{soldByItem}{$_}} grep {$row->{soldByItem}{$_}>0} keys %{$row->{soldByItem}}};
+    for my $id(keys %{$row->{stockAfter}}){$shop->{item}[$id-1]=0+$row->{stockAfter}{$id};}
+    for my $k(qw(money rank temprank trush saletoday taxtoday costtoday)){$shop->{$k}=0+$row->{$k};}
+    $shop->{dignity}=13;$shop->{blocklogin}='';
+    %DTevent=$row->{rebel}?(rebel=>1259200):();
+    $DTTaxrate=0+$row->{taxRate};
+    $BAL_JOB='外敵';$BAL_NAME='首領';%GUILD=();%GUILD_DATA=();
+    my @periods;
+    for my $round(0,1){
+      $NOW_TIME=1000000+129600*$round;
+      my @draws=$DTevent{rebel}?(0,0):(0,0,0,0);
+      my $input={shop=>dclone($DT[0]),town=>dclone($STATE),dtPeople=>0+$DTpeople,
+        awardDrawMillionths=>0,dignityDrawMillionths=>249999,territoryDrawMillionths=>\@draws,
+        nowSeconds=>$NOW_TIME,conflictContext=>{activeUntilSeconds=>$DTevent{rebel},balJob=>$BAL_JOB,balName=>$BAL_NAME}};
+      SortDT();my $before=0+$DT[0]{point};
+      @B50_SAMPLES=(0,249999,@draws);@B50_RANGES=();@B50_LOGS=();$B50_USED=0;
+      b50_source_original_period();
+      die 'source tax period RNG unused' if @B50_SAMPLES;
+      push @periods,{input=>$input,output=>{
+        shop=>dclone($DT[0]),town=>dclone($STATE),dtPeople=>0+$DTpeople,
+        pointsBefore=>$before,pointsAfter=>0+$DT[0]{point},
+        activeUntilSeconds=>$DTevent{rebel},eventState=>{%DTevent},
+        ranges=>[@B50_RANGES],logs=>[grep{$_->[0]==2&&($_->[2]=~/護衛軍|外敵首領/)}@B50_LOGS]}};
+    }
+    push @saleTaxResults,{name=>$row->{name},periods=>\@periods};
+  }
+}
 print JSON::PP->new->canonical->utf8->encode({
   source=>'full fixed inc-period.cgi pre-backup prefix + true original SortDT/FUNCUPDATE/Use::AddItem',
   scope=>'single active Standard Street shop; no DragonBalance file, stale closure, guilds, real events, original backup/session; not player period commit',
   itemLimits=>[map {0+$limits{$_}} 1..79],
   cases=>\@results,($conflictMode?(conflictCases=>\@conflictResults):()),
+  ($saleTaxMode?(saleTaxCases=>\@saleTaxResults):()),
 });
