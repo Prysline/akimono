@@ -25,6 +25,7 @@ import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
 import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
+import {checkRuntimeEnvironment} from '../src/runtime-environment.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
 // Temporary D integration gate, not full commerce or an alternate save authority.
@@ -32,6 +33,8 @@ const reviewedMarketCommerce=process.env.AKIMONO_REVIEWED_MARKET_COMMERCE==='1';
 if(reviewedMarketCommerce&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('reviewed market commerce requires crossing and explicit save directory');
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
+// Fail before opening a save store, generating a key or listening on HTTP.
+checkRuntimeEnvironment();
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');

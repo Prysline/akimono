@@ -6,7 +6,7 @@
 import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
-import {execFileSync} from 'node:child_process';
+import {readNativePerlInterpreter} from './runtime-environment.mjs';
 import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
 import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 
@@ -55,13 +55,7 @@ export function fingerprintReviewedCheckpointRuntime({sources,sourceDirectory,en
     .map(n=>[n,sha(fs.readFileSync(path.join(sourceDirectory,n)))]);
   const sourceFingerprint=sha(JSON.stringify([FORMAT,process.version,
     inputs,sha(fs.readFileSync(entrypoint)),sources.map(s=>sha(s))]));
-  const env={...process.env};
-  for(const k of Object.keys(env))if(k.startsWith('PERL'))delete env[k];
-  let interpreter;
-  try{interpreter=execFileSync('perl',['-MConfig','-e','print "$^V/$Config{archname}"'],
-    {env,encoding:'utf8',timeout:3000,maxBuffer:1024,stdio:['ignore','pipe','pipe']});}
-  catch{fail('native Perl interpreter unavailable');}
-  if(!interpreter||interpreter.length>120)fail('invalid interpreter fingerprint');
+  const interpreter=readNativePerlInterpreter();
   return {sourceFingerprint,interpreter};
 }
 export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter,crossPeriod=false}){
