@@ -48,3 +48,6 @@
 - reviewed-world-time-history.mjs:56–165：exact time trace（draw/hash policy、seed、interpreter、EVENT order/samples、effect/after digest），fresh anchor 或 verified checkpoint，source replayer 比對完整 canonical WorldState；prefix lineage 比對，不允許任意新 anchor。
 - reviewed-history-checkpoint-store.mjs:51–184：來源/runtime fingerprint、32-byte server key、HMAC metadata 與 checkpoint save envelope、timingSafeEqual、prefix digest、origin/revision/generation lineage 全鏈驗證；fresh proof 依重播而非宣稱每個 fresh envelope 均有 HMAC。保留 prefix 是獨立物件，未在本輪證明所有失敗路徑均無任何暫存／retained 殘留。
 - 新競爭測試僅驗單 dev-local 同 revision/世代的兩個請求，不宣稱跨程序 CAS。成功丟棄可能合法更新 period.disk 的交易投影；僅對 time、eventState、settledCount、金錢、庫存、revision、history、實體存檔 bytes 斷言，拒絕路徑仍比較完整 snapshot。HMAC/未知命令/非法 EVENT/損毀的既有測試仍須逐檔對照，不能以來源核對替代執行。
+
+## 第五批：既有安全證據對照與 fresh 負向補件
+[R1 v2 安全證據覆核](r1-v2-security-evidence.md)：逐檔回收 P3 兩個 rotation/crossing 與 P4/P5 三份正式測試、兩 helper 的具體斷言，分離 fixed clock、fresh replay 與 checkpoint HMAC；已有外層 HMAC/內層 metadata 破壞、fingerprint、prefix 損毀與復原證據，但 metadata 破壞同時失效 outer HMAC，不能宣稱單獨內層判斷已測。新增 `r1-v2-fresh-negative-replay.test.mjs`：正常 HTTP 建立兩代存檔，9 個 checksum-correct 最新 slot 負例、兩 slot 全壞拒絕覆寫、還原 genuine bytes exact restart。待候選 CI；仍未執行 R1-HTTP-01，無 runtime 修改。

@@ -6383,7 +6383,7 @@
       "status": "有效",
       "evidenceLevel": "混合：正式 HTTP/v2 固定時鐘＋歷史 v1（分段）",
       "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/core-inc-admin-func.cgi、modern/tests/original-perl/inc-func.cgi、modern/tests/original-perl/write.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi、_config.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/buy-s.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/market.cgi、modern/tests/original-perl/core-detail.cgi、modern/tests/original-perl/period.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/core-inc-item.cgi",
-      "assertions": "1–359：legacy 四書20/21/22/23各合法鐵製品41/47/53/58、技能保留、EXP、NEED/非法USE/client RNG/stale rev、2 gen restart；#20 14 組 forged skill/product/EXP/job/book/material/RNG/command/cap/missing/corrupt/size/prefix fallback，prefix 移除舊 slot 可 replay 作對照；武器轉職 EXP transfer、配件雙 NEED 拒絕。360–470：正式固定時鐘配件66、雙技能、17 EVENT order、settledCount0、2 saves/restarts、proof commands、EXP拒絕。471–700：正式 v2 P1 15/0..4、EXP220→600、elixir exact cost；P2 78/11→25/0→78/0 career/restart；v1 refusal/load/init no overwrite + explicit reset→v2；四書鐵製造2 gen、#20/1 EXP200→220鋼劍42，#20/2拒絕；每成功 USE rev+1、失敗世界不變",
+      "assertions": "1–370：legacy 四書20/21/22/23各合法鐵製品41/47/53/58、技能保留、EXP、NEED/非法USE/client RNG/stale rev、2 gen restart；#20 14 組 forged skill/product/EXP/job/book/material/RNG/command/cap/missing/corrupt/size/prefix fallback，prefix 移除舊 slot 可 replay 作對照；武器轉職 EXP transfer、配件雙 NEED 拒絕。371–470：正式固定時鐘配件66、雙技能、17 EVENT order、settledCount0、2 saves/restarts、proof commands、EXP拒絕。471–700：正式 v2 P1 15/0..4、EXP220→600、elixir exact cost；P2 78/11→25/0→78/0 career/restart；v1 refusal/load/init no overwrite + explicit reset→v2；四書鐵製造2 gen、#20/1 EXP200→220鋼劍42，#20/2拒絕；每成功 USE rev+1、失敗世界不變",
       "executionPath": "boot(reviewedTime=false) → legacy-dev-local/v1；reviewedTime=true → scripts/dev-local.mjs → reviewed time/HTTP/CAS/v2",
       "risk": "固定 now，非 genuinePlayer(now:null)；兩模式不可互換，14 forged variants 屬 legacy v1、不能當 v2/HMAC 證據；非跨期、無完整拒絕 disk/history/RNG call count；不新增正式 feature flags",
       "disposition": "保留限定來源／固定時鐘 v2 證據；正式真時鐘另證",
@@ -6622,15 +6622,68 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
-      "originalSource": "inc-turn.cgi / period.cgi",
-      "assertions": "跨期後 260 次操作及 v2 歷史",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/period.cgi、modern/tests/original-perl/write.cgi",
+      "assertions": "L12–53：37 次內到結算，play.cgi previous bytes、lasttime mtime、dateupdate=1、EXP decay、排行、sale/pay/tax yesterday、maintenance/cash、profitstock、city tax、item history、prize grant/discard、population。L57–105：gen1 exact、260 ops revision/time/stock/count、>=2 rotations、續作 EXP、第二次 settlement、gen2 exact、前代 disk lineage、偽造 product+1 回退。",
       "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
-      "risk": "受控玩家履歷、技能／保存",
+      "risk": "固定初始時鐘；單店單架，沒有原版多店／全部外部 IO；只偽造一種製品，非獨立 HMAC/key/trace 負例。",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
-      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reason": "重新逐檔完整讀取固定測試及 helper；歷史基線 CI 不等於新候選",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-v2-security-evidence.md",
+          "line": 14
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        }
+      ],
+      "fixtures": "genuinePlayer default fixed now=896401,crossPeriod=true；合法取得、鑄造、展示、兩次結算；260 × discard iron",
+      "limitations": "固定初始時鐘；單店單架，沒有原版多店／全部外部 IO；只偽造一種製品，非獨立 HMAC/key/trace 負例。",
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/p3-v2-cross-period-nayuta.test.mjs",
@@ -6750,15 +6803,60 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "受控 HTTP/CAS + v2 重啟",
-      "originalSource": "reviewed history / v2",
-      "assertions": "超過 256 次合法操作、checkpoint 輪替及重啟",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "L7–58：每次 revision+1、now 不變、iron-1、history<=128，>=2 checkpoint rotations，第一次轉輪 gen1 重啟、gen2 exact；製品/EXP/技能與 period 保留。L61–66：rejectDamagedOldestPrefix → status unreadable / restart load/init reject / restore exact；checksum-correct latest product+1 → gen1 fallback。",
       "executionPath": "dev-local → genuinePlayer（預設固定起始時鐘）",
-      "risk": "受控玩家履歷、技能／保存",
+      "risk": "不是跨期或真初始時鐘；oldest prefix tamper 是檔案破壞，未隔離 metadata MAC/fingerprint 個別驗證；沒有跨程序寫入證明。",
       "disposition": "保留原斷言；日後契約遷移需保留來源 Oracle 及拒絕語義",
-      "reason": "直接閱讀固定基線測試及其入口；證據層級限於實際操作",
+      "reason": "重新逐檔完整讀取固定測試及 helper；歷史基線 CI 不等於新候選",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": false
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-v2-security-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        }
+      ],
+      "fixtures": "genuinePlayer default now=896401/crossPeriod=false；合法 mining/training/market/craft，260 × discard iron one",
+      "limitations": "不是跨期或真初始時鐘；oldest prefix tamper 是檔案破壞，未隔離 metadata MAC/fingerprint 個別驗證；沒有跨程序寫入證明。",
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/p3-v2-written-accessory-book.test.mjs",
@@ -6782,15 +6880,64 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "HTTP/CAS",
-      "originalSource": "custom/inc-item-data.cgi dairy callbacks; USE",
-      "assertions": "自然牛死亡（有界實驗可能 skip）、補充及 v2 偽造拒絕",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/inc-turn.cgi",
+      "assertions": "死亡路徑：牛2 market+3 voucher→cow job，yield/death/EXP/time/draw count，死亡後先 save/restart、足量奶仍 NEED 拒絕、合法補牛→優格→再存。若 480 opportunities 無死牛明確 t.skip。fresh 路徑：合法 count clipping、action-time deny、anchor=fresh；獨立 stock 25/26/35/36、EXP、job、history pop、RNG sample、v1 format、bad checksum；restore:true each fallback + bytes not overwritten。",
       "executionPath": "dev-local.mjs → GameCore → v2",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
+      "risk": "死亡 case 不能從檔名推成必定觀察；fresh replay 不是 HMAC checkpoint。deny helper 比 world/history，非磁碟 hash 或 RNG calls。基線 CI skip=0 是該次，候選未驗。",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "固定測試內容與來源／PR 證據",
+      "reason": "重新逐檔完整讀取固定測試及 helper；歷史基線 CI 不等於新候選",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": true
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-v2-security-evidence.md",
+          "line": 23
+        }
+      ],
+      "realPlayer": true,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        }
+      ],
+      "fixtures": "now:null,crossPeriod:true；合法市場、券、牛與牧場；30×16 有界 RNG opportunities，另 fresh proof 雙代",
+      "limitations": "死亡 case 不能從檔名推成必定觀察；fresh replay 不是 HMAC checkpoint。deny helper 比 world/history，非磁碟 hash 或 RNG calls。基線 CI skip=0 是該次，候選未驗。",
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/p4-dairy-v2-player-http.test.mjs",
@@ -6798,15 +6945,80 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "HTTP/CAS",
-      "originalSource": "custom/inc-item-data.cgi #25/#26/#35/#36; USE/FUNCTURN",
-      "assertions": "真時鐘十牛、七 USE、販售、兩代保存及 checkpoint",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/item.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/period.cgi",
+      "assertions": "七 USE（25/0,25/1,26/0,26/1,26/2,35/0,36/0），NEED 4/5/9/10 cows、milk/death/EXP/time/draw、career、rank 1/10/30、4 商品自然販售、原版 maintenance、purchase/settlement 帳本；gen1/2 exact；129 ops checkpoint、inspectDairyCheckpoint 32-byte key、outer digest/record HMAC、每 segment metadata HMAC/fingerprint/origin/anchor SHA/revision/prefix SHA 至 fresh；stale save、newest prefix damage、checkpointAuth/mac/sourceFingerprint/prefixSha256 四個獨立變體、複合資產偽造，older fallback。",
       "executionPath": "dev-local.mjs → GameCore → v2",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
+      "risk": "讀取 key 僅測試內獨立驗算；攻擊者無 key 的邊界；metadata 變體重算 SHA 但未重簽 outer HMAC，因此證明整體拒絕，不單獨證明每個內層檢查的觸發。非分散式或斷電驗收。",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "固定測試內容與來源／PR 證據",
+      "reason": "重新逐檔完整讀取固定測試及 helper；歷史基線 CI 不等於新候選",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": true
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-v2-security-evidence.md",
+          "line": 32
+        }
+      ],
+      "realPlayer": true,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        },
+        {
+          "path": "modern/tests/support/p4-dairy-proof.mjs",
+          "sha": "52dc93bf36212062bbc9989bd272344c3c7e5322"
+        }
+      ],
+      "fixtures": "now:null,crossPeriod:true；實際 market 2 cow、合法券/排行獎、10 cow；129×合法 milk discard 強制 checkpoint",
+      "limitations": "讀取 key 僅測試內獨立驗算；攻擊者無 key 的邊界；metadata 變體重算 SHA 但未重簽 outer HMAC，因此證明整體拒絕，不單獨證明每個內層檢查的觸發。非分散式或斷電驗收。",
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/p5-book-work-market-source.test.mjs",
@@ -6830,15 +7042,76 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "HTTP/CAS",
-      "originalSource": "custom/inc-item-data.cgi #13/#78; buy-s.cgi; USE/PLUS",
-      "assertions": "合法買書、打工收入跨越非打工資金上界、雙代 v2、篡改拒絕",
+      "originalSource": "custom/inc-item-data.cgi、custom/inc-rebel-data.cgi、modern/tests/original-perl/buy-s.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/inc-turn.cgi、modern/tests/original-perl/whole.cgi",
+      "assertions": "#13 zero price、600s、limit1、whole street cap；illegal prices/shelf/extra/unknown #63/#999/stale/negative count 等拒絕；work 3000/10000、normal/peddle cost、clipping、no RNG/stock/EXP change、兩 inline logs；work-funded purchase 保守 totalPaid>nonWorkFunds；129 legal discards+兩代 v2、history command keys/count/order、獨立 HMAC/prefix verification；stale gen、newest prefix damage、checkpointAuth/mac/fingerprint/prefix、money、v1 fallback；另 fresh no checkpointAuth/segments0、cash/book/price/useId/bad hash 獨立篡改。",
       "executionPath": "dev-local.mjs → GameCore → v2",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
+      "risk": "拒絕 helper 比 world/history/checkpoint，不獨立量測所有 disk/ RNG；metadata mutations outer HMAC 同時失效，非 inner isolation；未涵蓋全部 USE/ITEM/EVENT。",
       "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "固定測試內容與來源／PR 證據",
+      "reason": "重新逐檔完整讀取固定測試及 helper；歷史基線 CI 不等於新候選",
       "reviewed": true,
-      "documentReferences": [],
-      "realPlayer": true
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-v2-security-evidence.md",
+          "line": 41
+        }
+      ],
+      "realPlayer": true,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/scripts/dev-local.mjs",
+          "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9"
+        },
+        {
+          "path": "modern/tests/support/p3-genuine-v2-player.mjs",
+          "sha": "547208190d5ec6d26af293e1ed0d0ded5f649a44"
+        },
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/reviewed-history-checkpoint-store.mjs",
+          "sha": "ed1b8167d739523279eb1063427578e33b1ff7ca"
+        },
+        {
+          "path": "modern/tests/support/p4-dairy-proof.mjs",
+          "sha": "52dc93bf36212062bbc9989bd272344c3c7e5322"
+        }
+      ],
+      "fixtures": "now:null,crossPeriod:true；無注入；零價 #13、合法 #78/12、#8/#10 買/丟、work funds 上界；fresh 與 checkpoint 分案",
+      "limitations": "拒絕 helper 比 world/history/checkpoint，不獨立量測所有 disk/ RNG；metadata mutations outer HMAC 同時失效，非 inner isolation；未涵蓋全部 USE/ITEM/EVENT。",
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/peer-trade-model.test.mjs",
@@ -16000,6 +16273,35 @@
       "reviewed": true,
       "documentReferences": [],
       "realPlayer": false
+    },
+    {
+      "path": "modern/tests/r1-v2-fresh-negative-replay.test.mjs",
+      "sha": null,
+      "status": "待補",
+      "evidenceLevel": "正式 HTTP/v2 fresh 負向回歸",
+      "originalSource": "固定 v2 store/history 與 reviewed time",
+      "originalSources": [
+        {
+          "path": "modern/src/local-world-save-store.mjs",
+          "sha": "df8429f40065882f2c1482c63e0e2163b6acb7d0"
+        },
+        {
+          "path": "modern/src/reviewed-world-time-history.mjs",
+          "sha": "b6cd1f7dff2635d12e2077237babb1a0be676d0b"
+        },
+        {
+          "path": "modern/src/original-r4-reviewed-world-time.mjs",
+          "sha": "9bd891a9e9826e1efe71c7776b7a670291192af0"
+        }
+      ],
+      "assertions": "9 個獨立最新 slot schema/parity/history/unknown command/unknown EVENT/trace/successor 負例（重算 SHA），previous genuine fallback、不覆寫；雙 slot 損毀後 load/init/save 拒絕且全 snapshot 不變，還原 exact",
+      "executionPath": "auditPlayer 正式 dev-local 真初始時鐘，合法兩代 v2，僅負向寫磁碟",
+      "risk": "fresh replay, corrupt generation, invalid command/EVENT, all-invalid overwrite",
+      "disposition": "待候選 CI；不作已通過或新增正向 feature 證明",
+      "reason": "本輪新增，尚未執行",
+      "reviewed": true,
+      "documentReferences": [],
+      "realPlayer": false
     }
   ],
   "testCounts": {
@@ -16008,11 +16310,12 @@
       "有效": 60,
       "待補": 149
     },
-    "added": 3,
+    "added": 4,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 21
+    "currentSessionReviewed": 21,
+    "reReviewedBaseline": 5
   },
   "provenance": [
     {
@@ -16051,5 +16354,10 @@
     "market-buy",
     "use-item",
     "advance-reviewed-world-time"
+  ],
+  "candidateEvidenceDocs": [
+    "modern/docs/r0-limit-world-codec-evidence.md",
+    "modern/docs/r0-p3-mixed-path-evidence.md",
+    "modern/docs/r1-v2-security-evidence.md"
   ]
 }

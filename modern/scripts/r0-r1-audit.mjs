@@ -21,6 +21,12 @@ export async function checkAudit(m){
  const counts=m.tests.reduce((a,x)=>(a[x.status]=(a[x.status]||0)+1,a),{});
  for(const key of ['有效','歷史','待補'])ok((counts[key]??0)===(m.testCounts.baseline[key]??0),'classification count mismatch '+key);
  ok(m.testCounts.added===m.addedTests.length,'added count mismatch');
+ const candidateDocs=new Set(m.candidateEvidenceDocs??[]),docCache=new Map();
+ ok(candidateDocs.size===(m.candidateEvidenceDocs??[]).length,'duplicate candidate evidence document');
+ for(const p of candidateDocs){
+   ok(/^modern\/docs\/[a-z0-9-]+\.md$/.test(p)&&!baseline.has(p),'invalid candidate evidence path '+p);
+   docCache.set(p,String(await read(p)).split('\n'));
+ }
  for(const x of rows){
    ok(['有效','歷史','待補','重複','阻塞'].includes(x.status)&&x.originalSource&&x.assertions&&x.executionPath&&x.risk&&x.disposition&&x.reason&&x.evidenceLevel,'incomplete row '+x.path);
    if(x.sha!==null){ok(baseline.get(x.path)===x.sha,'test baseline mismatch '+x.path);ok(sha(await read(x.path))===x.sha,'test blob drift; re-review '+x.path);}
@@ -31,7 +37,16 @@ export async function checkAudit(m){
      const text=String(await read(x.path));
      ok(/genuinePlayer\(/.test(text)&&/now:\s*null/.test(text)&&!/legacy-/.test(text),'real player evidence not explicit '+x.path);
    }
-   for(const ref of x.documentReferences)ok(baseline.has(ref.path),'unknown document '+ref.path);
+   for(const ref of x.documentReferences){
+     ok(baseline.has(ref.path)||candidateDocs.has(ref.path),'unknown document '+ref.path);
+     if(candidateDocs.has(ref.path)){
+       const lines=docCache.get(ref.path);
+       ok(Number.isSafeInteger(ref.line)&&ref.line>=1&&lines[ref.line-1]==='## '+x.path.split('/').at(-1),'candidate evidence anchor mismatch '+ref.path+':'+ref.line);
+     }
+   }
+   for(const source of [...(x.originalSources??[]),...(x.executionSources??[])]){
+     ok(baseline.get(source.path)===source.sha,'evidence source pin mismatch '+source.path);
+   }
  }
  const itemDsl=String(await read('custom/inc-item-data.cgi')),rebelDsl=String(await read('custom/inc-rebel-data.cgi'));
  const parsed=[parseDsl(itemDsl,'custom/inc-item-data.cgi'),parseDsl(rebelDsl,'custom/inc-rebel-data.cgi')];
