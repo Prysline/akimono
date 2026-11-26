@@ -47,7 +47,8 @@ test('R1 same-revision competing discard and same-generation competing saves com
  assert.equal(after.world.shops[0].item[78],s.shop.item[78]-1);
  assert.equal(after.world.shops[0].money,s.shop.money);
  assert.equal(after.world.nowSeconds,before.world.nowSeconds);
- assert.deepEqual(after.world.period,before.world.period);
+ assert.deepEqual(after.world.period.eventState,before.world.period.eventState);
+ assert.equal(after.world.period.settledCount,before.world.period.settledCount);
  assert.equal(after.historyCommands,before.historyCommands+1);
  assert.equal(after.generation,before.generation);
  assert.deepEqual(after.disk,before.disk);

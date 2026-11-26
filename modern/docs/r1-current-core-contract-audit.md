@@ -18,7 +18,7 @@
 - 新測試使用現行 `dev-local` 及既有 `genuinePlayer({now:null,crossPeriod:true})`，拒絕額外欄位、非法/stale revision、舊時間與供貨、禁止展示 #63；逐次比對 WorldState、歷史數、checkpoint revision、存檔世代，最後合法清架與 v2 重啟。尚待 exact HEAD CI。
 - Registry 稽核直接沿用現行 source wiring 與 compiler；`r1-formal-registry-audit.mjs` 固定 dev-local blob，輸出逐項註冊與編譯結果；不等同玩家可達。
 - #62/1 在 `standard-street-module.mjs` 的 declarativeUseIndex 有規則，但 `dev-local.mjs` /api/use 拒絕 targetShopId、多店預檢 403、/api/save 拒絕多店；#62/2、#65/0–2 尚無規則。#63 正式市場零價再取得 getRule=null，初始工具及 USE 擴建另計。
-- **R1-HTTP-01 來源缺口**：固定 dev-local 的 /api/initialize 不驗證 request key set；/api/open-shop 只取 ownerName/shopName/revision，伺服器強制 shopId=1，額外欄位被忽略而不是拒絕。/api/load 也沒有 key-set 檢查。這是嚴格 HTTP 契約不一致，並非已證明能注入資產或越權。獨立 `node --test scripts/r1-http-extra-fields-repro.mjs` 按應有拒絕行為斷言，現行來源預期暴露失敗；尚未實際執行。故不納入預期綠燈的 npm test，不改預期、不 skip、不修共享 runtime。R1 後續經授權修復；與 #18/#22 的外部／時間業務功能分離。load 額外欄位的重啟重現仍待補。
+- **R1-HTTP-01 來源缺口**：固定 dev-local 的 /api/initialize 不驗證 request key set；/api/open-shop 只取 ownerName/shopName/revision，伺服器強制 shopId=1，額外欄位被忽略而不是拒絕。/api/load 也沒有 key-set 檢查。這是嚴格 HTTP 契約不一致，並非已證明能注入資產或越權。獨立 `node --test scripts/r1-http-extra-fields-repro.mjs` 按應有拒絕行為斷言，現行來源預期暴露失敗；尚未實際執行。故不納入預期綠燈的 npm test，不改預期、不 skip、不修共享 runtime。R1 後續經授權修復；與 #18/#22 的外部／時間業務功能分離。load 額外欄位重啟腳本已於後續批次補入，仍待執行。
 
 ## 已回收的來源 CI
 #23 run 45746112640：1336/1336、Perl 2456/2456；Registry 診斷七 capability 與全部 220 rows 已回填。#24 run 45754245430：1332/1332、Perl 2456/2456；三項正式啟動拒絕通過。兩者 checkout tree 分別等於各自 HEAD tree，整合候選仍須重驗。R1-HTTP-01 尚無本輪執行結果。
@@ -27,3 +27,24 @@
 固定正式 dev-local blob 的 367–437 行：initialize 不檢查 key set；open-shop 只取 ownerName/shopName/revision 且 server shopId=1；load 僅檢查 live world 是否存在並讀合法 saveStore.load()。buy/use/discard/save/reset 有 exact key set；showcase 有允許欄位與必填/二選一；advance-reviewed-time exactKeys。舊時間、supply、多人預檢直接拒絕。此為來源確認，尚非本輪 HTTP 實際觀察或資產注入證明。
 獨立 `node --test scripts/r1-http-extra-fields-repro.mjs` 增加空 body 合法 control、open-shop 合法 control、相同合法 v2 保存兩次重啟 load control/probe。逐次記錄實際 status/response、world/revision/history/generation 與保存檔 SHA256；保留預期 4xx、狀態不變的嚴格斷言，不加入預期綠燈的 npm test。
 新 `r1-http-persistence-contract.test.mjs`：18 組非法/衝突 HTTP 請求逐次比對完整 world、history、checkpoint、generation、磁碟 hash；同 revision 丟棄與同 generation 保存競爭只一次提交，重啟一致。只合法初始化/開店，無注入；尚未取得本候選 CI。RNG 不另宣稱已驗：world 不變不等於獨立觀測 RNG 呼叫次數。
+
+## 七種能力逐命令來源核對（正式 base，非新測試通過宣告）
+共通 kind/expectedRevision：非空 kind 最長 100，revision 非負安全整數；StreetModule id、capability 與 revision 不合分別拒絕。來源：game-core-contract.mjs:131–219（b5ff31b7caa086e811ab7e4204aca8a5b23a8975）。所有數值下限以下均指安全整數。
+
+| command | Core payload（不含共通欄位） | 正式 HTTP／條件 |
+|---|---|---|
+| initialize-source-market | 無額外欄位 | /api/initialize，僅 fresh revision=0、無 shops/market/events；HTTP 未嚴格拒絕額外欄位 |
+| open-shop | shopId>=1、ownerName/shopName 非空且最多200字元；選填 icon>=0 | /api/open-shop 僅取姓名店名 revision，server shopId=1；不允許第二間店；HTTP 未嚴格拒絕額外欄位 |
+| market-buy | shopId/itemId/requestedCount>=1、marketShelf/expectedPrice>=0，exact keys | /api/buy exact keys，server shopId=1；現有市場、單店、持有上限、庫存、價格架號核對；count 依資金與容量裁切；#13 合法零價仍有運輸時間 |
+| use-item | shopId/itemId/requestedCount>=1、useId>=0；Core 選填 randomDraws、targetShopId | /api/use exact keys，拒 client draw 和 targetShopId；正式單店；前置材料/持有/EXP/時間/資產/事件等由 reviewed rule 核對；內部 draw 必須 0..999999 且數量精確 |
+| edit-showcase | shopId>=1、shelf/itemId>=0；選填 per、priceOverride | /api/showcase revision/itemId 必填、per 或 priceOverride 至少一個、shelf 選填；per 1..200、priceOverride 1..sourceMaxShowcasePrice、架號須存在；itemId=0 清架 |
+| discard-item | shopId/itemId/count>=1，exact keys | /api/discard exact keys；活動店舖、已知商品、非 notrash、足夠庫存；不消耗時間 |
+| advance-reviewed-world-time | minutes 1..60，exact keys | /api/advance-reviewed-time exact keys；單店、reviewed inventory；跨期 opt-in，舊路由拒絕 |
+
+定位：standard-street-module.mjs:109–125、開店/初始化/展示/丟棄分派；market-buy-core.mjs:18–191；shared-use-item-core.mjs:39–415；original-r4-reviewed-world-time.mjs:24–27、52–100；scripts/dev-local.mjs:329–535。market-buy 先計價、金錢、時間、庫存，再 global FUNCBUY、item FUNCBUY、market codec；USE 依 receipt callbackOrder 核對 before-use、check-use/account/materials/make-amount/check-whole-store、after-use/inline/experience；未知回呼與多餘 draw 拒絕，尚未逐支驗收。GameCore snapshot 隔離、nonCommittable guard、finalizer、period reviewer、CAS identity/schema/revision/time 守門；HTTP commit 先 preview/history/preflight，再 CAS，成功後才更新 proof。正式 ordinary draw 是 command-scoped SHA256（worldId/revision/time/args），非可變全域 RNG stream，非 Perl rand 等價；不把拒絕時 state 不變宣稱為量測 RNG 呼叫次數。
+
+## v2 來源核對與證據界線
+- local-world-save-store.mjs:39–125、172–219：有界 regular file、拒 v1、exact envelope、generation slot parity、digest、canonical proof/world、重播及 periodDiskStore verify；兩世代須 lineage compatible；無有效世代時拒覆寫損毀存檔；expectedGeneration、worldId、revision 及 prefix 守門，暫存檔 fsync/rename/readback。不同程序的同時寫入或斷電耐久不由此單程序測試證明。
+- reviewed-world-time-history.mjs:56–165：exact time trace（draw/hash policy、seed、interpreter、EVENT order/samples、effect/after digest），fresh anchor 或 verified checkpoint，source replayer 比對完整 canonical WorldState；prefix lineage 比對，不允許任意新 anchor。
+- reviewed-history-checkpoint-store.mjs:51–184：來源/runtime fingerprint、32-byte server key、HMAC metadata 與 checkpoint save envelope、timingSafeEqual、prefix digest、origin/revision/generation lineage 全鏈驗證；fresh proof 依重播而非宣稱每個 fresh envelope 均有 HMAC。保留 prefix 是獨立物件，未在本輪證明所有失敗路徑均無任何暫存／retained 殘留。
+- 新競爭測試僅驗單 dev-local 同 revision/世代的兩個請求，不宣稱跨程序 CAS。成功丟棄可能合法更新 period.disk 的交易投影；僅對 time、eventState、settledCount、金錢、庫存、revision、history、實體存檔 bytes 斷言，拒絕路徑仍比較完整 snapshot。HMAC/未知命令/非法 EVENT/損毀的既有測試仍須逐檔對照，不能以來源核對替代執行。

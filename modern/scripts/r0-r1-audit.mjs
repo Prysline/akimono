@@ -43,6 +43,14 @@ export async function checkAudit(m){
   if(b.kind==='EVENT')expected.push(['EVENT',b.fields.code[0].value,b.file,b.startLine]);
  }}
  ok(JSON.stringify(expected)===JSON.stringify(m.features.map(x=>[x.kind,x.id,x.path,x.line])),'feature declaration mismatch');
+ const declarations=JSON.parse(await read('modern/docs/r1-source-declarations.json'));
+ ok(declarations.length===m.features.length,'source declaration count');
+ const sourceLines={'custom/inc-item-data.cgi':itemDsl.split('\n'),'custom/inc-rebel-data.cgi':rebelDsl.split('\n')};
+ for(let i=0;i<declarations.length;i++){
+  const d=declarations[i],f=m.features[i];
+  ok(d.kind===f.kind&&d.id===f.id&&d.path===f.path&&d.sha===f.sha&&d.startLine===f.line&&d.endLine===f.declarationEndLine,'source declaration identity '+f.id);
+  ok(JSON.stringify(d.rawLines)===JSON.stringify(sourceLines[d.path].slice(d.startLine-1,d.endLine)),'source declaration raw lines '+f.id);
+ }
  const catalog=reviewOriginalCompiledEventCatalog({itemDsl,rebelDsl,compilerSource:String(await read('modern/tests/original-perl/inc-makeitem.cgi')),turnSource:String(await read('modern/tests/original-perl/inc-turn.cgi'))});
  for(const x of m.features){
   ok(x.declared===true&&baseline.get(x.path)===x.sha,'feature source pin mismatch '+x.id);

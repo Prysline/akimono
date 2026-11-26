@@ -8230,7 +8230,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 83,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8259,7 +8261,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 99,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8288,7 +8292,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 110,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8317,7 +8323,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 122,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8346,7 +8354,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 137,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8375,7 +8385,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 151,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8404,7 +8416,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 165,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8433,7 +8447,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 179,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8462,7 +8478,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 193,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -8493,7 +8511,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 207,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8522,7 +8542,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 220,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8551,7 +8573,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 231,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8580,7 +8604,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 250,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8609,7 +8635,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 264,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -8640,7 +8668,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 276,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8669,7 +8699,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 287,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8698,7 +8730,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 298,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8727,7 +8761,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 309,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8756,7 +8792,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 321,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8785,7 +8823,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 332,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8814,7 +8854,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 344,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8843,7 +8885,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 355,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8872,7 +8916,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 367,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8901,7 +8947,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 378,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8930,7 +8978,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 390,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8959,7 +9009,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 401,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -8988,7 +9040,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 413,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9017,7 +9071,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 423,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9046,7 +9102,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 435,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9075,7 +9133,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 447,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9104,7 +9164,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 459,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9133,7 +9195,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 471,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9162,7 +9226,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 483,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9191,7 +9257,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 492,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9222,7 +9290,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 508,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9256,7 +9326,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 521,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9290,7 +9362,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 534,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9324,7 +9398,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 545,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9358,7 +9434,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 558,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9392,7 +9470,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 572,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9423,7 +9503,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 584,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9452,7 +9534,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 597,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9481,7 +9565,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 609,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9512,7 +9598,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 622,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9541,7 +9629,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 635,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9570,7 +9660,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 645,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9599,7 +9691,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 656,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9628,7 +9722,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 667,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9659,7 +9755,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 680,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9693,7 +9791,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 695,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9727,7 +9827,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 713,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9761,7 +9863,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 731,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9795,7 +9899,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 752,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9826,7 +9932,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 765,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9860,7 +9968,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 779,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9894,7 +10004,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 790,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9928,7 +10040,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 803,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -9962,7 +10076,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 816,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -9993,7 +10109,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 828,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10027,7 +10145,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 842,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10061,7 +10181,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 853,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10095,7 +10217,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 866,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10129,7 +10253,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 879,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10160,7 +10286,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 891,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10194,7 +10322,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 905,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10228,7 +10358,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 916,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10262,7 +10394,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 929,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10296,7 +10430,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 942,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10327,7 +10463,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 955,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10361,7 +10499,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 970,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10395,7 +10535,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 982,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10429,7 +10571,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 996,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10463,7 +10607,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1010,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10494,7 +10640,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1025,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10523,7 +10671,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1041,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10552,7 +10702,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1056,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10581,7 +10733,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1071,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10610,7 +10764,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1086,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10641,7 +10797,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1101,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10670,7 +10828,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1116,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10699,7 +10859,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1130,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10728,7 +10890,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1144,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10759,7 +10923,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1159,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -10788,7 +10954,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1193,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10819,7 +10987,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1209,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10850,7 +11020,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1222,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10881,7 +11053,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1236,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10912,7 +11086,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1250,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10943,7 +11119,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1264,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -10974,7 +11152,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1276,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11005,7 +11185,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1288,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11036,7 +11218,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1301,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11067,7 +11251,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1314,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11098,7 +11284,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1327,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11129,7 +11317,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1341,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11160,7 +11350,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1354,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11191,7 +11383,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1367,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11222,7 +11416,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1380,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11253,7 +11449,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1393,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11284,7 +11482,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1406,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11315,7 +11515,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1420,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11346,7 +11548,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1432,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11377,7 +11581,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1444,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11408,7 +11614,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1457,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11439,7 +11647,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1470,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11470,7 +11680,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1483,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11501,7 +11713,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1496,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11532,7 +11746,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1508,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11563,7 +11779,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1521,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11594,7 +11812,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1534,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11625,7 +11845,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1547,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11656,7 +11878,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1559,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11687,7 +11911,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1571,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11718,7 +11944,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1583,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11749,7 +11977,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1609,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11780,7 +12010,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1620,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11811,7 +12043,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1630,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11842,7 +12076,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1640,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11873,7 +12109,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1650,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11904,7 +12142,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1660,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11935,7 +12175,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1670,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11966,7 +12208,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1685,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -11997,7 +12241,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1699,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12028,7 +12274,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1713,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12059,7 +12307,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1726,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12090,7 +12340,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1739,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12121,7 +12373,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1752,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12152,7 +12406,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1765,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12183,7 +12439,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1778,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12214,7 +12472,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1792,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12243,7 +12503,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1819,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12272,7 +12534,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1836,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12301,7 +12565,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1858,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12336,7 +12602,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1871,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12367,7 +12635,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1891,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12398,7 +12668,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1900,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12429,7 +12701,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1913,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12458,7 +12732,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1950,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12487,7 +12763,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1959,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12516,7 +12794,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1968,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12545,7 +12825,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1977,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12574,7 +12856,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1986,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12603,7 +12887,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 1995,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12632,7 +12918,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2004,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12661,7 +12949,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2013,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12692,7 +12982,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2026,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12721,7 +13013,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2060,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12750,7 +13044,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2120,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -12779,7 +13075,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2150,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -12808,7 +13106,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2160,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -12837,7 +13137,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2171,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -12866,7 +13168,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2182,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -12895,7 +13199,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2192,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12926,7 +13232,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2205,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12957,7 +13265,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2217,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -12988,7 +13298,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2229,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13019,7 +13331,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2241,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13050,7 +13364,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2255,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13081,7 +13397,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2269,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13112,7 +13430,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2282,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13144,7 +13464,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2314,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13176,7 +13498,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2327,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13207,7 +13531,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2340,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13239,7 +13565,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2376,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13271,7 +13599,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2387,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13303,7 +13633,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2398,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13334,7 +13666,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2410,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13366,7 +13700,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2420,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13397,7 +13733,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2432,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13429,7 +13767,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2442,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13460,7 +13800,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2455,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13489,7 +13831,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2464,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13520,7 +13864,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2476,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13549,7 +13895,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2485,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13580,7 +13928,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2497,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13609,7 +13959,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2506,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13640,7 +13992,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2517,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13669,7 +14023,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2527,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -13700,7 +14056,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2539,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13734,7 +14092,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2586,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13768,7 +14128,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2596,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13802,7 +14164,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2606,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13836,7 +14200,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2616,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13870,7 +14236,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2626,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13904,7 +14272,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2636,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13938,7 +14308,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2646,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -13972,7 +14344,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2656,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14006,7 +14380,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2666,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14040,7 +14416,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2676,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14074,7 +14452,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2686,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14108,7 +14488,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2696,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14142,7 +14524,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2706,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14176,7 +14560,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2715,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "ITEM",
@@ -14207,7 +14593,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2726,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14236,7 +14624,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2736,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14265,7 +14655,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2746,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14294,7 +14686,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2757,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14323,7 +14717,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2765,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "USE",
@@ -14352,7 +14748,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2773,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14381,7 +14779,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2794,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14410,7 +14810,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2815,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14439,7 +14841,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2829,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14468,7 +14872,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2843,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14497,7 +14903,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2857,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14526,7 +14934,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2870,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14555,7 +14965,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2893,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14584,7 +14996,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2922,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14613,7 +15027,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2943,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14642,7 +15058,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2964,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14671,7 +15089,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2974,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14700,7 +15120,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2983,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14729,7 +15151,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 2992,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14758,7 +15182,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3004,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14787,7 +15213,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3042,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14816,7 +15244,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3084,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14845,7 +15275,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3103,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14874,7 +15306,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3124,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14903,7 +15337,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 3161,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14932,7 +15368,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 92,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     },
     {
       "kind": "EVENT",
@@ -14961,7 +15399,9 @@
         "pr": 23,
         "run": 45746112640,
         "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
-      }
+      },
+      "declarationEndLine": 105,
+      "declarationEvidence": "modern/docs/r1-source-declarations.json"
     }
   ],
   "counts": {
