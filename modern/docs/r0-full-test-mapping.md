@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 58、歷史 22、待補 153。B56 重疊去重；既有 63 份分類為第一批證據；收斂後累計另逐檔審閱 17 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 60、歷史 24、待補 149。B56 重疊去重；既有 63 份分類為第一批證據；收斂後累計另逐檔審閱 21 份，並非全量重審。新增 3 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -138,8 +138,8 @@
 | original-use-transaction-model.test.mjs | 待補 | 未完成語義審閱 |
 | p1-advanced-medicine-persistence-http.test.mjs | 歷史 | 歷史 HTTP |
 | p2-career-persistence-http.test.mjs | 歷史 | 歷史 HTTP |
-| p3-forging-persistence-http.test.mjs | 待補 | 未完成語義審閱 |
-| p3-pre-event-inventory.test.mjs | 待補 | 未完成語義審閱 |
+| p3-forging-persistence-http.test.mjs | 有效 | 混合：正式 HTTP/v2 固定時鐘＋歷史 v1（分段） |
+| p3-pre-event-inventory.test.mjs | 有效 | Perl Oracle／Node 差分（受控 pre-EVENT） |
 | p3-v2-appraiser-skill.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
 | p3-v2-cross-period-long-history.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
 | p3-v2-cross-period-nayuta.test.mjs | 有效 | 受控 HTTP/CAS + v2 重啟 |
@@ -160,9 +160,9 @@
 | period-stock-use-model.test.mjs | 待補 | 未完成語義審閱 |
 | r2-book-work-source.test.mjs | 待補 | 未完成語義審閱 |
 | r2-career-change-source.test.mjs | 待補 | 未完成語義審閱 |
-| r2-career-true-player-http.test.mjs | 待補 | 未完成語義審閱 |
+| r2-career-true-player-http.test.mjs | 歷史 | 舊 HTTP／CAS（固定時鐘/RNG） |
 | r2-dairy-inline-source.test.mjs | 待補 | 未完成語義審閱 |
-| r2-dairy-true-player-http.test.mjs | 待補 | 未完成語義審閱 |
+| r2-dairy-true-player-http.test.mjs | 歷史 | 舊 HTTP／CAS＋v1 recovery（固定時鐘/RNG） |
 | r2-declarative-use-effects.test.mjs | 待補 | 未完成語義審閱 |
 | r2-gathering-http-save.test.mjs | 待補 | 未完成語義審閱 |
 | r2-gathering-map-uses.test.mjs | 待補 | 未完成語義審閱 |

@@ -84,4 +84,4 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 本次同步只更新文件，不修改程式、測試、workflow、研究分支或 Notion；原歷史正文保留。
 
 ## R0/R1 獨立收斂候選（2026-11-26）
-正式 HEAD/tree 未變；#23/#24 的既有證據收斂於 [canonical manifest](r0-r1-baseline-manifest.json)，233 既有測試去重分類 58/22/153（有效/歷史/待補），另 3 新測試。#25 為 #22 R4 固定基線 CI 專用 Draft，不納入本線。整合候選尚未完成 exact HEAD CI，R0/R1 未結案。
+正式 HEAD/tree 未變；#23/#24 的既有證據收斂於 [canonical manifest](r0-r1-baseline-manifest.json)，233 既有測試去重分類 60/24/149（有效/歷史/待補），另 3 新測試。#25 為 #22 R4 固定基線 CI 專用 Draft，不納入本線。整合候選尚未完成 exact HEAD CI，R0/R1 未結案。
