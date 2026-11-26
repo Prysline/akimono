@@ -39,3 +39,20 @@ test('territory source trigger ordering and population contract',()=>{
  assert.throws(()=>projectOriginalTerritoryConflict({reviewed,...x,activeShopIds:[1,2]}),/membership/);
  assert.throws(()=>reviewOriginalTerritoryConflict({...sources,periodSource:periodSource+' '}),/frozen conflict territory source/);
 });
+
+test('complete territory and RebelRobin use a shared range cursor with no preselected branch draw count',()=>{
+ for(const row of cases){
+  const {drawMillionths,...input}=row.input;
+  const observed=[];
+  const actual=projectOriginalTerritoryConflict({reviewed,...input,randomDrawProvider:(index,range)=>{
+    assert.equal(index,observed.length);assert.equal(range,row.output.randomDrawRanges[index],row.name);
+    assert.ok(index<drawMillionths.length);observed.push(range);return drawMillionths[index];
+  }});
+  assert.deepEqual(actual,projectOriginalTerritoryConflict({reviewed,...row.input}));
+  assert.deepEqual(observed,row.output.randomDrawRanges);
+  assert.equal(actual.drawsUsed,drawMillionths.length);
+  assert.throws(()=>projectOriginalTerritoryConflict({reviewed,...row.input,randomDrawProvider:()=>0}),/exact source territory/);
+ }
+ const {drawMillionths,...input}=cases[0].input;
+ assert.throws(()=>projectOriginalTerritoryConflict({reviewed,...input,randomDrawProvider:()=>undefined}),/invalid conflict territory RNG/);
+});

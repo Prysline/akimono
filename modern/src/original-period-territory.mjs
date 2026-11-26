@@ -158,7 +158,7 @@ export function reviewOriginalTerritoryConflict({periodSource,adminSource,readSo
   conflictReviews.add(r);return r;
 }
 export function projectOriginalTerritoryConflict({reviewed,town,dtPeople,dtUserCount,activeShopIds,taxIn,nowSeconds,
-  activeUntilSeconds,drawMillionths,balJob='外敵',balName='首領'}){
+  activeUntilSeconds,drawMillionths,randomDrawProvider=null,balJob='外敵',balName='首領'}){
   if(!conflictReviews.has(reviewed))fail('reviewed conflict territory required');
   if(!Number.isSafeInteger(dtUserCount)||dtUserCount<0||!Array.isArray(activeShopIds)||
      activeShopIds.length>dtUserCount||activeShopIds.some(id=>!Number.isSafeInteger(id)||id<1)||
@@ -168,9 +168,19 @@ export function projectOriginalTerritoryConflict({reviewed,town,dtPeople,dtUserC
   if(!town||typeof town!=='object'||Array.isArray(town)||Object.keys(town).some(k=>!names.includes(k)&&k!=='people')||
      names.some(k=>!Object.hasOwn(town,k)))fail('town field contract');
   const old=Object.fromEntries(names.map(k=>[k,safe(town[k],'town '+k,['money','out'].includes(k)?-Number.MAX_SAFE_INTEGER:0)]));
-  if(!Array.isArray(drawMillionths)||drawMillionths.length<2||drawMillionths.length>5||
-     drawMillionths.some(x=>!Number.isSafeInteger(x)||x<0||x>=1000000))fail('exact source territory and RebelRobin draws');
-  const {state,nextPeople,armyCost,guardsPenalty}=territoryBeforeRebel({old,people,shopCount:dtUserCount,taxIn,draws:drawMillionths.slice(0,2)});
+  if(randomDrawProvider===null?
+     (!Array.isArray(drawMillionths)||drawMillionths.length<2||drawMillionths.length>5||
+      drawMillionths.some(x=>!Number.isSafeInteger(x)||x<0||x>=1000000)):
+     (typeof randomDrawProvider!=='function'||drawMillionths!==undefined))fail('exact source territory and RebelRobin draws');
+  const consumed=[],ranges=[];
+  const take=(index,range)=>{
+    if(index!==consumed.length||index>=5)fail('conflict territory RNG cursor');
+    const sample=randomDrawProvider(index,range);
+    if(!Number.isSafeInteger(sample)||sample<0||sample>=1000000)fail('invalid conflict territory RNG sample');
+    consumed.push(sample);ranges.push(range);return sample;
+  };
+  const draws=randomDrawProvider===null?drawMillionths.slice(0,2):[take(0,200),take(1,200)];
+  const {state,nextPeople,armyCost,guardsPenalty}=territoryBeforeRebel({old,people,shopCount:dtUserCount,taxIn,draws});
   const leaderShopExists=activeShopIds.includes(old.leader);
   const logs=[];
   if(old.army+old.robina<10000)logs.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
@@ -178,7 +188,9 @@ export function projectOriginalTerritoryConflict({reviewed,town,dtPeople,dtUserC
   // value before insolvency clamps cash and before militia transfer.
   const {people:transientPeople,...triggerTown}=state;
   const trigger=projectR4RebelPeriodTrigger({reviewed:reviewed.rebel,nowSeconds,town:triggerTown,
-    leaderShopExists,activeUntilSeconds,randomDraws:drawMillionths.slice(2),balJob,balName});
+    leaderShopExists,activeUntilSeconds,balJob,balName,
+    ...(randomDrawProvider===null?{randomDraws:drawMillionths.slice(2)}:{randomDrawProvider:(index,range)=>take(index+2,range)})});
+  if(randomDrawProvider!==null&&(trigger.drawsUsed!==consumed.length-2||trigger.randomDrawRanges.some((range,i)=>ranges[i+2]!==range)))fail('conflict territory RNG evidence drift');
   const next={...trigger.town,people:transientPeople};
   logs.push(...trigger.logs);
   next.army=safe(next.army+next.robina,'town militia transfer');
