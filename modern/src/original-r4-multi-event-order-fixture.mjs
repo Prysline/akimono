@@ -361,7 +361,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
         reviewed:reviewed.support,eventCode:code,shop:nextShop,
-        randomDraws:[sample],
+        randomDraws:[sample],reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==1)
@@ -402,7 +402,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       const ticketDraws=[];
       for(let i=0;i<count;i++)ticketDraws.push(Math.trunc(draw(LOTO_RANGE)));
       const callback=projectOriginalLotoStartfunc({
-        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,
+        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==count||

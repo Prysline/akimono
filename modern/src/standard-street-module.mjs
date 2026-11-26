@@ -1,3 +1,5 @@
+import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
+import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
@@ -177,13 +179,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
+  originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
     bad('original DSL source text');
   if(typeof enableReviewedNormalTime!=='boolean')bad('explicit reviewed time mode');
   if(typeof enableReviewedCrossPeriod!=='boolean'||enableReviewedCrossPeriod&&!enableReviewedNormalTime)bad('cross period requires reviewed normal time');
-  const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
+  if(typeof enableReviewedFullCommerce!=='boolean'||enableReviewedFullCommerce&&!enableReviewedNormalTime)bad('full commerce requires reviewed normal time');
+  const r4Sources={itemDsl,rebelDsl,showcaseSource:originalShowcaseSource,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,palaceViewSource:originalPalaceViewSource,palaceCommandSource:originalPalaceCommandSource,palaceConfigSource:originalPalaceConfigSource,armyViewSource:originalArmyViewSource,armyCommandSource:originalArmyCommandSource,armyFileSource:originalArmyFileSource,armyCalcSource:originalArmyViewSource===null&&originalArmyCommandSource===null&&originalArmyFileSource===null?null:originalBuyCalcSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
@@ -342,9 +346,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       compilerSource:originalCompilerSource,
       buySource:originalBuySource,wholeSource:originalWholeSource,
       itemSource:originalBuyItemSource,
-      globalBuyCallback:reviewedGlobalBuyCallback,
+      globalBuyCallback:reviewedGlobalBuyCallback,includeReviewedShowcaseTool:enableReviewedFullCommerce,
     }):null;
   const marketBuy=Object.freeze({
+    reviewedSignedCash:enableReviewedFullCommerce,
     globalBuyCallback:reviewedGlobalBuyCallback,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
@@ -421,10 +426,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
     itemDsl,model,limits:giftMap.limits,
   });
+  const noGuildAdvertiseUse=enableReviewedFullCommerce?compileReviewedNoGuildAdvertiseUse({itemDsl,model,limits:giftMap.limits}):null;
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,
     ...bookWorkUses,...careerChangeUses,partyUse,selfAdvertiseUse,
-    targetAdvertiseUse,
+    targetAdvertiseUse,...(noGuildAdvertiseUse?[noGuildAdvertiseUse]:[]),
   ].map(rule=>[
     rule.itemId+':'+rule.useId,rule,
   ]));
@@ -470,7 +476,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     }),
     scope:reviewedB63Map?.scope??reviewedB62Map.scope,
   }):null;
+  const expHashReview=enableReviewedFullCommerce?reviewUseExpHash({useSource:originalUseSource,readSource:originalDataReadSource}):null;
   const useItem=Object.freeze({
+    ...(expHashReview?{resolveExperienceOrder:args=>resolveR4UseExpOrder({...args,review:expHashReview})}:{}),
+    reviewedSignedCash:enableReviewedFullCommerce,
     getRule(itemId,useId){
       if(itemId===giftUseRule.itemId)
         return useId===0?giftUseRule:
@@ -493,6 +502,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         'original ITEM has no reviewed USE #'+useId;
     },
     runInlineCallback({rule,shop,count,random,targetShop}){
+      if(noGuildAdvertiseUse&&rule===noGuildAdvertiseUse)return projectOriginalNoGuildAdvertisement({rule,shop,count});
       if(rule===targetAdvertiseUse){
         if(rule.inlineCallback?.kind!=='advertise-other'||count!==1)
           bad('unreviewed original target advertisement');
@@ -700,7 +710,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse,selfAdvertiseUse].filter(Boolean)
+        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse].filter(Boolean)
         .map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
@@ -771,7 +781,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           const timeMaximum=shop&&actualTime>0?
             Math.max(0,Math.floor((world.nowSeconds-shop.time)/actualTime)):0;
           const moneyMaximum=shop&&rule.money>0?
-            Math.floor(shop.money/rule.money):Number.MAX_SAFE_INTEGER;
+            Math.max(0,Math.floor(shop.money/rule.money)):Number.MAX_SAFE_INTEGER;
           const materialsMaximum=shop?rule.uses.reduce((maximum,input)=>{
             const available=shop.item[input.itemId-1]??0;
             // NEED/proba=0 is a holding requirement, not consumption per use.
@@ -808,7 +818,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             missing?'材料不足：'+
               (model.items.find(item=>item.id===missing.itemId)?.name??
                 '未知材料')+'需要 '+missing.count+' 件':
-            shop.money<rule.money?'資金不足':
+            (rule.money>0||!enableReviewedFullCommerce)&&shop.money<rule.money?'資金不足':
             shop.time+actualTime>world.nowSeconds?'可用行動時間不足':
             null;
           return Object.freeze({
@@ -1046,5 +1056,5 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod}):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod,enableReviewedFullCommerce}):base;
 }

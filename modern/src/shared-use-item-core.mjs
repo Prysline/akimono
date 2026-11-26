@@ -97,7 +97,8 @@ export function projectSharedUseItem({world,command,useItem}){
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
   world.market.wholesale.forEach((n,i)=>int(n,'wholesale '+i));
-  for(const key of ['money','paytoday','time','rank'])int(shop[key],key);
+  int(shop.money,'money',useItem.reviewedSignedCash===true?-Number.MAX_SAFE_INTEGER:0);
+  for(const key of ['paytoday','time','rank'])int(shop[key],key);
   if(rule.singleUseOnly&&command.requestedCount!==1)
     fail('unreviewed original multiple USE');
   const expRecord=shop.exp??{};
@@ -210,7 +211,7 @@ export function projectSharedUseItem({world,command,useItem}){
   };
   let inlineShowcase=null,inlineDairy=null,inlineWork=null;
   let inlineCareer=null,inlineParty=null,inlineAdvertisement=null;
-  let inlineTargetAdvertisement=null;
+  let inlineTargetAdvertisement=null,inlineNoGuildAdvertisement=null;
   if(isTargetAdvertisement){
     if(!rule.singleUseOnly||original.count!==1||
        typeof useItem.runInlineCallback!=='function')
@@ -245,6 +246,12 @@ export function projectSharedUseItem({world,command,useItem}){
       fail('original advertising callback invalid');
     nextShop.rank=inlineAdvertisement.rank;
     functionReturn=inlineAdvertisement.returned;
+  }
+  if(rule.inlineCallback?.kind==='advertise-no-guild'){
+    if(rule.itemId!==62||rule.useId!==2||!rule.singleUseOnly||original.count!==1||typeof useItem.runInlineCallback!=='function')fail('unreviewed no-guild advertisement');
+    inlineNoGuildAdvertisement=useItem.runInlineCallback({rule,shop:nextShop,count:original.count,random});
+    if(typeof inlineNoGuildAdvertisement?.returned!=='string'||!Array.isArray(inlineNoGuildAdvertisement.logCalls)||inlineNoGuildAdvertisement.logCalls.length!==0)fail('no-guild callback result');
+    functionReturn=inlineNoGuildAdvertisement.returned;
   }
   if(rule.inlineCallback?.kind==='party-popularity'){
     if(rule.itemId!==77||rule.useId!==0||
@@ -289,7 +296,7 @@ export function projectSharedUseItem({world,command,useItem}){
       rule,shop:nextShop,count:original.count,random,
     });
     if(!inlineWork||!Number.isSafeInteger(inlineWork.moneyAfter)||
-       inlineWork.moneyAfter<0||
+       (useItem.reviewedSignedCash!==true&&inlineWork.moneyAfter<0)||
        inlineWork.moneyBefore!==nextShop.money||
        inlineWork.earned!==(rule.useId===0?3000:10000)*original.count||
        !Array.isArray(inlineWork.logCalls))
@@ -344,7 +351,8 @@ export function projectSharedUseItem({world,command,useItem}){
   if(rule.experienceCallback){
     const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
       points:effects.expPoints,count:original.count,
-      limit:3600});
+      limit:3600,resolveOrder:typeof useItem.resolveExperienceOrder==='function'?
+        args=>useItem.resolveExperienceOrder({...args,world,command}):null});
     nextShop.exp=next.exp;
     experienceGain=next.gained;
     experienceReductions=next.reductions;
@@ -381,8 +389,8 @@ export function projectSharedUseItem({world,command,useItem}){
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
       ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
-         inlineAdvertisement||inlineTargetAdvertisement?{
-        originalInlineLogCalls:(inlineTargetAdvertisement?.logCalls??
+         inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement?{
+        originalInlineLogCalls:(inlineTargetAdvertisement?.logCalls??inlineNoGuildAdvertisement?.logCalls??
           inlineAdvertisement?.logCalls??inlineParty?.logCalls??
           inlineCareer?.logCalls??inlineDairy?.logCalls??
           inlineWork.logCalls),
@@ -397,7 +405,7 @@ export function projectSharedUseItem({world,command,useItem}){
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
         ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||
-           inlineParty||inlineAdvertisement||inlineTargetAdvertisement?
+           inlineParty||inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement?
            ['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),

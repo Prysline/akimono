@@ -1,3 +1,4 @@
+import {isReviewedNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 /** R4 DataRead overlay for the common single-shop pre-EVENT stage.
  * No EVENT transition, acquisition proof or commit authority is granted.
  */
@@ -36,14 +37,16 @@ export function validateR4PreEventPeriod({reviewed,period,activeOrder,candidateS
   if(groups.some(g=>!g)||new Set(groups).size!==groups.length)fail('conflicting source EVENT groups');
   return true;
 }
-export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleReview,plusReview,candidateSettled=false}){
+export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleReview,plusReview,candidateSettled=false,normalCommerce=null}){
   validateR4PreEventPeriod({reviewed,period:world?.period,activeOrder,candidateSettled});
   if(world.schema!=='akimono.memory-world.v2'||world.events!==null||!saleReview?.p3TurnItems||plusReview?.plusSeconds?.length!==79)fail('source-reviewed P3 inventory and all PLUS required');
   // Only fields consumed by this common stage. Other source price fields
   // cannot be silently defaulted; current nine overlays only use these three.
+  if(normalCommerce!==null&&!isReviewedNormalCommerceItems(normalCommerce))fail('frozen full ITEM review required');
+  const sourceRules=normalCommerce?.saleRules??saleReview.p3TurnItems.rules;
   let items=Array.from({length:79},(_,i)=>({itemId:i+1,
-    popular:saleReview.p3TurnItems.rules[i+1]?.popularSeconds??0,
-    point:saleReview.p3TurnItems.rules[i+1]?.point??0,
+    popular:normalCommerce?.items[i].popular??sourceRules[i+1]?.popularSeconds??0,
+    point:normalCommerce?.items[i].point??sourceRules[i+1]?.point??0,
     plus:plusReview.plusSeconds[i]}));
   const baseItems=Object.freeze(items.map(item=>Object.freeze({...item})));
   for(const code of activeOrder){
@@ -51,9 +54,9 @@ export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleRev
     if(reviewed.params.rules[code].some(r=>!['popular','point','plus'].includes(r.field)))fail('unreviewed field overlay');
     items=projectR4EventItemParams({reviewed:reviewed.params,eventCode:code,items}).items;
   }
-  const saleRules=Object.fromEntries(Object.entries(saleReview.p3TurnItems.rules).map(([id,r])=>[id,Object.freeze({...r,popularSeconds:items[id-1].popular,point:items[id-1].point})]));
+  const saleRules=Object.fromEntries(Object.entries(sourceRules).map(([id,r])=>[id,Object.freeze({...r,popularSeconds:items[id-1].popular,point:items[id-1].point})]));
   const plusSeconds=items.map(x=>x.plus);
-  if(plusSeconds.filter(Boolean).length!==59||plusSeconds.some(n=>!Number.isSafeInteger(n))||Object.values(saleRules).some(r=>!Number.isSafeInteger(r.popularSeconds)||r.popularSeconds<1||!Number.isSafeInteger(r.point)||r.point<0))fail('unreviewed derived ITEM values');
+  if(plusSeconds.filter(Boolean).length!==59||plusSeconds.some(n=>!Number.isSafeInteger(n))||Object.values(saleRules).some(r=>!Number.isSafeInteger(r.popularSeconds)||(r.popularSeconds<1&&!(r.itemId===65&&r.popularSeconds===0&&r.zeroPopularReviewed===true))||!Number.isSafeInteger(r.point)||r.point<0))fail('unreviewed derived ITEM values');
   const o=Object.freeze({baseItems,saleRules:Object.freeze(saleRules),plusSeconds:Object.freeze(plusSeconds),activeOrder:Object.freeze([...activeOrder]),committable:false});overlays.add(o);return o;
 }
 export function reviewedR4OverlayPlus(overlay,world,reviewed){

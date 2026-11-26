@@ -55,6 +55,26 @@ my @cases=(
   {name=>'eight-shelves-all-empty',
    shown=>[(0)x8],prices=>[(0)x8],stocks=>{}},
 );
+# Additional deliberately discriminating source cases, separate from the
+# historical 16-case acceptance set. The second unlike type stops the
+# original demand-denominator scan, but does not stop sales.
+if(@ARGV){
+  die 'expected --mixed-type-audit' unless @ARGV==1 && $ARGV[0] eq '--mixed-type-audit';
+  @cases=(
+    {name=>'mixed-type-break-positive-draw',shown=>[10,40],
+     prices=>[5000,1200],stocks=>{10=>10,40=>10},
+     draws=>[0,500000,0]},
+    {name=>'mixed-type-break-even-when-unlike-shelf-empty',shown=>[10,41,40],
+     prices=>[5000,1500,1200],stocks=>{10=>10,40=>10},
+     draws=>[0,500000,0]},
+    {name=>'mixed-type-break-does-not-resume-on-original-type',shown=>[40,10,40],
+     prices=>[1200,5000,1200],stocks=>{10=>10,40=>10},
+     draws=>[500000,0,0,500000,0]},
+    {name=>'mixed-type-eight-shelves-after-break',shown=>[10,40,0,41,40,0,41,40],
+     prices=>[5000,1200,0,1500,1200,0,1500,1200],stocks=>{10=>10,40=>10,41=>10},
+     draws=>[0,500000,0,500000,0,500000,0]},
+  );
+}
 my @rows;
 for my $case (@cases){
   # Reset the compiled source ITEM/PLUS environment for each independent run.
@@ -97,7 +117,8 @@ for my $case (@cases){
   });
   @main::DTwholestore=();
   my $span=1800;
-  my @draws=(500000,0,750000,0,(0)x117);
+  my @prefix=exists $case->{draws}?@{$case->{draws}}:(500000,0,750000,0);
+  my @draws=(@prefix,(0)x(121-@prefix));
   @main::B35_DRAWS=@draws;$main::B35_USED=0;
   main::B38SourceNaturalPlus($span);
   my ($shop,$used)=($main::DT[0],$main::B35_USED);

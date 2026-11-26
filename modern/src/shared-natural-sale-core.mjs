@@ -18,7 +18,7 @@ const int=(v,s,min=0)=>{
 export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
-  popDownRate=5,baseUpkeep=0,
+  popDownRate=5,baseUpkeep=0,reviewedSignedCash=false,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -38,6 +38,7 @@ export function projectSharedNaturalSale({
     fail('multi-shelf source rules or EVENT overlay not reviewed');
 
   const active=[],market=new Map(),displayedTypes=new Set();
+  let sourceGroup=null,demandScanOpen=true;
   const sourceRule=id=>shelfCount===1?rule:saleRules?.[id]??null;
   for(let shelf=0;shelf<shelfCount;shelf++){
     const id=int(shop.showcase[shelf],'source shelf item');
@@ -49,7 +50,8 @@ export function projectSharedNaturalSale({
     }
     const r=sourceRule(id);
     if(!r||r.itemId!==id||int(r.unitPrice,'source base price',1)<1||
-       listed<1||int(r.popularSeconds,'source popularity',1)<1||
+       listed<1||int(r.popularSeconds,'source popularity')<0||
+       (r.popularSeconds===0&&(id!==65||r.zeroPopularReviewed!==true))||
        int(r.point,'source point')<0||id>79)
       fail('displayed ITEM price or rule not source reviewed');
     if(shelfCount===1&&rule?.itemId!==id)
@@ -57,6 +59,14 @@ export function projectSharedNaturalSale({
     const type=r.itemType??(shelfCount===1?'single-reviewed':'');
     if(!type)fail('multi-shelf source ITEM type not reviewed');
     displayedTypes.add(type);
+    // Frozen inc-turn first scans the specialty group and accumulates
+    // buypeoplebase in the SAME loop. The first unlike displayed type
+    // breaks that scan BEFORE its weight is counted, even with zero stock.
+    // GetMarketStatus and the subsequent sale loop still visit every shelf.
+    if(demandScanOpen){
+      if(sourceGroup!==null&&sourceGroup!==type)demandScanOpen=false;
+      else sourceGroup=type;
+    }
     const stock=int(shop.item[id-1],'source showcased stock');
     if(stock===0)continue;
     const exponent=shelf===0?4:3;
@@ -69,14 +79,15 @@ export function projectSharedNaturalSale({
     };
     existing.stock+=stock; // Original GetMarketStatus counts each occupied shelf
     existing.weightedPrice+=stock*listed;
-    existing.buypeoplebase+=weight;
+    if(demandScanOpen)existing.buypeoplebase+=weight;
     market.set(id,existing);
     active.push({shelf,id,listed,ratio,weight,rule:r});
   }
   const rankBefore=int(shop.rank,'rank');
   const temprank=rankBefore+(displayedTypes.size===1?1000:0);
   const item=[...shop.item],itemtoday={...shop.itemtoday};
-  let money=int(shop.money,'money');
+  const cashMin=reviewedSignedCash?-Number.MAX_SAFE_INTEGER:0;
+  let money=int(shop.money,'money',cashMin);
   let trush=int(shop.trush??0,'trush');
   let saletoday=int(shop.saletoday,'saletoday');
   let taxtoday=int(shop.taxtoday??0,'taxtoday');
@@ -89,8 +100,9 @@ export function projectSharedNaturalSale({
   const seed=population*saleSpeed/3/50;
   for(const status of market.values()){
     status.marketprice=Math.trunc(status.weightedPrice/status.stock);
-    status.uppoint=Math.max(10,Math.min(1000,
-      Math.trunc(status.stock/seed*sourcePopular(status.rule))));
+    const popular=sourcePopular(status.rule);
+    status.uppoint=popular===0?100:Math.max(10,Math.min(1000,
+      Math.trunc(status.stock/seed*popular)));
   }
 
   let sold=0,rankUp=0,rankDown=0;
@@ -103,7 +115,10 @@ export function projectSharedNaturalSale({
     const status=market.get(id);
     const rankWeight=temprank<100?99:temprank;
     if(temprank===0)fail('unreviewed zero-rank source shop normalization');
-    const visitors=population*saleSpeed/sourcePopular(r)*
+    // Frozen inc-turn skips buypeople assignment when POP is zero.
+    // The item still contributes to the display group and upkeep above.
+    const popular=sourcePopular(r);
+    const visitors=popular===0?0:population*saleSpeed/popular*
       spanSeconds/86400 * weight/(status.buypeoplebase+1)*
       (rankWeight/temprank);
     let saleRank=ratio;
@@ -129,7 +144,7 @@ export function projectSharedNaturalSale({
       if(taxRate<0){taxDown=taxRate+1;taxRate=0;}
       taxRate=Math.min(99,Math.trunc(taxRate*taxDown+0.5));
       const tax=int(Math.trunc(proceeds*taxRate/100),'sale tax');
-      money=int(money+proceeds-tax,'money after sale');
+      money=int(money+proceeds-tax,'money after sale',cashMin);
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
       taxtoday=int(taxtoday+tax,'taxtoday after sale');
