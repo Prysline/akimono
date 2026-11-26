@@ -4101,8 +4101,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（受控）",
       "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
-      "assertions": "0 與 -1 不同、五種 start gate、群組、duration、RNG、拒絕不支援 callback",
-      "executionPath": "original-event-start-gate",
+      "assertions": "L24–39 source review 0/-1 與三項 source mutation；L40–56 五案逐值 entered/group/expiry/draw、active count、no notices；L57–72 缺/多 draw、callback、disabled/fractional probability、group shape、duration 拒絕。",
+      "executionPath": "reviewOriginalEventStart → projectOriginalEventStart；Perl probe JSON 作差分。",
       "risk": "錯編停用 EVENT 或消耗亂數",
       "disposition": "保留；不等同所有 EVENT 玩家生命週期",
       "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
@@ -4111,6 +4111,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b48-b49-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -4120,7 +4124,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "單 synthetic EVENT，固定 time=1000000、span120、人工 group/draw；Perl 只跑 inc-turn start region，callback 為空，RequireFile/GetPath fail closed；不執行實際 EVENT、period、world IO、HTTP/CAS/v2。"
     },
     {
       "path": "modern/tests/b49-original-event-lifecycle.test.mjs",
@@ -4129,8 +4134,8 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（受控）",
       "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
-      "assertions": "六種 expiry/start/rand；等於片尾仍未過期、群組與未知 callback 拒絕",
-      "executionPath": "original-event-lifecycle",
+      "assertions": "L26–37 strict < expiry mutation 與未審 start 拒絕；L38–52 六案 expired/entered/group/activeUntil/draw 逐值及輸入不變；L53–65 負時間/零 span、缺 draw、callback 拒絕。",
+      "executionPath": "reviewOriginalEventStart → reviewOriginalEventLifecycle → projectOriginalEventLifecycle；Perl probe JSON 作差分。",
       "risk": "邊界提前失效、重啟或錯序",
       "disposition": "保留；#22 真 reviewed time 另證",
       "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
@@ -4139,6 +4144,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b48-b49-rereview-evidence.md",
+          "line": 13
         }
       ],
       "realPlayer": false,
@@ -4148,7 +4157,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "單 synthetic EVENT，固定 time/span/draw、人工 active expiry；只執行 END/START 區段，無 NOW、實際 callback、period 或正式存檔。Oracle expired flag 由 probe 依條件計算，另有 active map 與 .t 邊界斷言。"
     },
     {
       "path": "modern/tests/b50-period-same-state-chain.test.mjs",
@@ -6164,13 +6174,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
-      "assertions": "五案、0 gate 消耗亂數、群組、期限計算",
-      "executionPath": "Perl .t → original-b48-event-start-probe.pl；Node 對照 b48-original-event-start.test.mjs",
+      "assertions": "L9–28 probe exit/JSON、五案；0 gate 1 draw、無期限不寫 DTevent；正機率 miss/hit、duration 3 draws、occupied 0 draws、到期 1003828/1000120。",
+      "executionPath": "Perl .t → original-b48-event-start-probe.pl → 原版 inc-turn start region eval。",
       "risk": "錯編停用 EVENT 或消耗亂數",
       "disposition": "保留原版來源斷言及探針；保留；不等同所有 EVENT 玩家生命週期",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b48-b49-rereview-evidence.md",
+          "line": 21
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b48-event-start-probe.pl"
@@ -6178,7 +6193,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "固定 time/span、人工 EVENT 與 draw tape；每案清空 DTevent/LOG，未執行原版 compiler 本體或正式事件 callback、世界 I/O。"
     },
     {
       "path": "modern/tests/original-perl/original-b49-event-lifecycle.t",
@@ -6187,13 +6203,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
-      "assertions": "六案、expiry equality、active 無 draw、重觸發",
-      "executionPath": "Perl .t → original-b49-event-lifecycle-probe.pl；Node 對照 b49-original-event-lifecycle.test.mjs",
+      "assertions": "L9–32 exit/JSON、六案；fresh 1 draw、active/equal boundary 不重觸發、expired zero retrigger、timed expiry 1003720/3 draws、miss 1 draw。",
+      "executionPath": "Perl .t → original-b49-event-lifecycle-probe.pl → 原版 inc-turn END/START region eval。",
       "risk": "邊界提前失效、重啟或錯序",
       "disposition": "保留原版來源斷言及探針；保留；#22 真 reviewed time 另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b48-b49-rereview-evidence.md",
+          "line": 29
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b49-event-lifecycle-probe.pl"
@@ -6201,7 +6222,8 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "limitations": "每案人工 EVENT、active、time、draw，無 callback/NOW；expired 布林由 probe 依 strict < 條件推導，另查 active end/group/draw；非正式世界週期或玩家。"
     },
     {
       "path": "modern/tests/original-perl/original-b50-period-chain.t",
@@ -42994,7 +43016,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 20
+    "reReviewedBaseline": 24
   },
   "provenance": [
     {
@@ -43075,7 +43097,8 @@
     "modern/docs/r0-r2-declarative-unified-use-evidence.md",
     "modern/docs/r0-r3-natural-sword-sales-evidence.md",
     "modern/docs/r0-b44-b47-rereview-evidence.md",
-    "modern/docs/r0-b41-b43-rereview-evidence.md"
+    "modern/docs/r0-b41-b43-rereview-evidence.md",
+    "modern/docs/r0-b48-b49-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -43735,6 +43758,27 @@
       "perl": "skipped after JS failure",
       "pins": "skipped after npm test failure; DSL audit step failure",
       "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-b44-b47-rereview-evidence.md:14"
+    },
+    {
+      "head": "50528dd28d184f7110e4b364f956a62f7e5bbca7",
+      "tree": "fc5f081c5a760287e4fed8f9171a27c56a5a37e7",
+      "checkout": "27f4fd45e9d915167057664e50cc89e3d4d006e0",
+      "run": 45844865477,
+      "job": 139995779986,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "total": 2456,
+        "pass": 2456
+      },
+      "pins": "DSL/source pins passed; GitHub compare HEAD vs actual checkout files=[]; tree SHA cited from prior PR metadata, not independently fetched"
     }
   ],
   "evidenceLayerSchema": {

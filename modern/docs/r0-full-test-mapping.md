@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 20 份已重新逐檔覆核（其餘 43 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 24 份已重新逐檔覆核（其餘 39 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -247,3 +247,9 @@
 - modern/tests/r1-v2-inner-checkpoint.test.mjs：真玩家 checkpoint 內層八種隔離負向回歸，外層 HMAC 通過、獨立原因與 HTTP 復原；待 CI。
 
 [第四十二批重新覆核](r0-b41-b43-rereview-evidence.md)：B41–43 五檔分類不變，實際逐檔190/233，R1下界不變。
+
+### 第四十三批：B48–B49 既有分類重新覆核
+
+- 四檔有效分類維持：有效200、歷史33、待補0；固定233；新逐檔170、既有63重審24、剩39；實際逐檔194/233（83.3%）。
+- [逐檔證據](r0-b48-b49-rereview-evidence.md)：五／六個單 synthetic EVENT、固定 time/draw，原版 START 與 END/START region；strict expiry equality、group、duration、draw count；無真 callback/NOW/period/world IO/HTTP/CAS/v2；R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。
+- 第42批 CI 45844865477/job139995779986 success，實際 checkout `27f4fd45e9d915167057664e50cc89e3d4d006e0`，與 `50528dd` compare files=[]；JS1350/1350、0 fail/skip/cancelled，Perl2456/2456（85檔），DSL/source pins 通過；tree SHA 來自前 PR metadata，未獨立取 tree。新 HEAD 待驗；本機 Git DNS 仍失敗，strict repro 未實跑。
