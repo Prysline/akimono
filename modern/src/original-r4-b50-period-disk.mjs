@@ -113,13 +113,22 @@ async function commitPeriodDisk({directory,reviewed,recover=false},externalRebel
   const markerStat=await exists(marker);
   if(typeof recover!=='boolean'||Boolean(markerStat)!==recover)fail('explicit recovery mode must match marker');
   if(!await exists(ready))fail('incomplete stage: no ready receipt');
-  const receipt=JSON.parse(await regular(ready));
+  const envelope=JSON.parse(await regular(ready));
+  const validDigest=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+  const plain=x=>x&&Object.getPrototypeOf(x)===Object.prototype;
+  if(externalRebel&&(!plain(envelope)||Object.keys(envelope).sort().join(',')!=='files,liveBefore'||!plain(envelope.liveBefore)||Object.keys(envelope.liveBefore).sort().join(',')!=='army.cgi,play.cgi'||!Object.values(envelope.liveBefore).every(validDigest)))fail('invalid external preimage receipt');
+  const receipt=externalRebel?envelope.files:envelope;
   if(!receipt||Object.getPrototypeOf(receipt)!==Object.prototype||Object.keys(receipt).sort().join(',')!==[...expectedFiles].sort().join(',')||Object.values(receipt).some(x=>typeof x!=='string'||!/^[a-f0-9]{64}$/.test(x)))fail('invalid ready receipt');
   const pending=await readdir(stage);
   if(pending.some(n=>!expectedFiles.includes(n))||!recover&&pending.length!==expectedFiles.length)fail('incomplete stage or unknown file');
   for(const n of expectedFiles){
     const p=path.join(pending.includes(n)?stage:root,n);
     if(await digest(p)!==receipt[n])fail('staged or moved file differs from ready receipt '+n);
+  }
+  // Single-writer source sandbox precondition, not an interprocess lock or WorldState CAS.
+  // Recovery verifies already-moved output hashes above and must not demand their old input hashes.
+  if(externalRebel&&!recover){
+    for(const [name,hash] of Object.entries(envelope.liveBefore))if(await digest(path.join(root,name))!==hash)fail('live preimage changed '+name);
   }
   const result=await commitExternalFiles({reviewed,directory:root,expectedFiles,abort:recover});
   await unlink(ready);await unlink(attempt);

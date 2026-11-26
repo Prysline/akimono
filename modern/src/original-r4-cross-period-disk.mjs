@@ -39,7 +39,9 @@ async function stageCrossPeriodDisk({directory,reviews,commandArgs},externalRebe
   if(Object.keys(parseGuildDefinition((await bytes(path.join(root,'guild.cgi'))).toString('utf8'))).length||
      Object.keys(parseGuildLedgers((await bytes(path.join(root,'guildbal.cgi'))).toString('utf8'))).length)fail('no external guild context');
   const args={directory:root,reviewed:reviews.play,townReview:reviews.town};
+  const beforePlay=externalRebel?await bytes(path.join(root,'play.cgi')):null;
   const live=await readPeriodPlay(args);
+  if(externalRebel&&!(await bytes(path.join(root,'play.cgi'))).equals(beforePlay))fail('live play changed during read');
   if(live.blockip!==''||live.taxRate!==0||Object.keys(live.town).length||live.nextid<2)fail('independent original metadata required');
   const wire=w=>serializePeriodPlay({...args,world:w});
   const before=playWorld({reviewed:reviews.play,world:commandArgs.world,meta:live});
@@ -70,10 +72,12 @@ async function stageCrossPeriodDisk({directory,reviews,commandArgs},externalRebe
   const log=await renewPeriodLogDisk({reviewed:reviews.log,directory:root,rows:logRows,nowSeconds:candidate.nowSeconds});
   if(externalRebel){
     if(!(await bytes(path.join(root,'army.cgi'))).equals(Buffer.from(armyBytes)))fail('live army changed during stage');
+    if(!(await bytes(path.join(root,'play.cgi'))).equals(beforePlay))fail('live play changed during stage');
     await writeFile(path.join(stage,'army.cgi'),candidate.stagedArmyBytes,{flag:'wx'});
   }
   const stagedFiles=externalRebel?[...filenames,'army.cgi']:filenames;
   const ready=Object.fromEntries(await Promise.all(stagedFiles.map(async n=>[n,createHash('sha256').update(await bytes(path.join(stage,n))).digest('hex')])));
-  await writeFile(path.join(root,'period-ready'),JSON.stringify(ready)+'\n',{flag:'wx'});
+  const receipt=externalRebel?{files:ready,liveBefore:{'army.cgi':createHash('sha256').update(armyBytes).digest('hex'),'play.cgi':createHash('sha256').update(beforePlay).digest('hex')}}:ready;
+  await writeFile(path.join(root,'period-ready'),JSON.stringify(receipt)+'\n',{flag:'wx'});
   return {candidate,final,rotation,definition,guild,backup,play,log,committable:false,worldStateWritten:false};
 }

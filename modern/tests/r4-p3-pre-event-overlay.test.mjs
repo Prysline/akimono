@@ -881,8 +881,17 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
       await put('stage/army.cgi','tampered');
       await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}),/differs from ready receipt/);
       await put('stage/army.cgi',stagedArmy);
-      const live=path.join(directory,'play.cgi');await rm(live);await mkdir(live);
+      await put('army.cgi','1,9999\n1\n');
+      await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}),/live preimage changed army/);
+      await put('army.cgi',liveArmyBytes);
+      await put('play.cgi',initialPlay+'tampered\n');
+      await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}),/live preimage changed play/);
+      await put('play.cgi',initialPlay);
+      await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
+      // army is the first reviewed rename; guild failure must leave marker and already-moved army.
+      const live=path.join(directory,'guild.cgi');await rm(live);await mkdir(live);
       await assert.rejects(commitR4ExternalCrossPeriodDisk({directory,reviewed:reviews.external}));
+      assert.equal(await get('army.cgi'),stagedArmy);
       await assert.rejects(stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs}),/prior attempt/);
       await assert.rejects(readPeriodPlay({...codec,directory}),/pending commit/);
       await rm(live,{recursive:true});
@@ -893,6 +902,9 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
       assert.deepEqual(loaded,perl);
       assert.deepEqual(loaded.events,sourceDisk.reloaded.events);
       assert.deepEqual(loaded.state,sourceDisk.reloaded.state);
+      assert.equal(Math.floor((await stat(path.join(directory,'lasttime.cgi'))).mtimeMs/1000),sourceDisk.lasttimeMtime);
+      const reloadedArmy=parseArmyFile(await get('army.cgi'),[1]);
+      assert.deepEqual(reloadedArmy,{armyById:sourceDisk.reloadedArmy.army,riotIds:sourceDisk.reloadedArmy.riot});
       for(const n of ['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])assert.equal(await get(n),sourceDisk.live[n],n);
       assert.deepEqual(await readdir(path.join(directory,'stage')),[]);
       await assert.rejects(stat(path.join(directory,'commit.cgi')),{code:'ENOENT'});
