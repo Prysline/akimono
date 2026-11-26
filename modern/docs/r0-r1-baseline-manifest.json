@@ -4459,43 +4459,129 @@
       "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
       "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（純 callback 投影）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/inc-func.cgi",
+      "assertions": "32–81 來源順序、Core formatter、local alias；82–143 打工收入、回傳／雙 log、負數與零、無庫存時間 EXP；144–242 展示架擴縮、holes/tail、不可變及非法 fixture；244–282 13 個隔離 Perl 結果逐欄比較。",
+      "executionPath": "projectOriginalBookWorkCallback／projectOriginalShowcaseResizeCallback → execFileSync Perl probe → source-extracted _local_1",
+      "risk": "不執行完整 USE gate、費用、材料、時間、職業倍率、合法取得、真正 log/CGI/HTTP/v2；負數只屬原版 callback 邊界。",
+      "disposition": "保留限定 Oracle／差分；正式玩家證據另證；不移植人工 recipe",
+      "reason": "本批固定 blob 逐檔語義閱讀；前候選 exact CI 已通過，本批未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 43
+        },
+        {
+          "path": "modern/docs/r0-work-showcase-lostbook-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-inline-work-showcase-model.mjs",
+          "sha": "d40c3c6137c466e9136f5bada225ea139311c71c"
+        },
+        {
+          "path": "modern/src/original-standard-callback-inventory.mjs",
+          "sha": "bac98cbffaf7135d1e4b0687a20a4a3e9bfa7f36"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalInlineCallbackHarness.pm",
+          "sha": "eb0c1c2d96fe6b23ec6539c7027370f9bfba3068"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase-probe.pl",
+          "sha": "b050f31f07035035c78104ebd3f4487350f3ead7"
+        }
+      ],
+      "fixtures": "人工 money/count/param、展示架陣列與價格，WriteLog 記錄 stub；Perl 缺失可 skip。",
+      "limitations": "不執行完整 USE gate、費用、材料、時間、職業倍率、合法取得、真正 log/CGI/HTTP/v2；負數只屬原版 callback 邊界。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-integrated-use-lostbook-model.test.mjs",
       "sha": "6d93500b23e652e57ac3a2551c644c4484bbea19",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（合成完整 USE 順序）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "20–56 source gate→材料→產出→市場→callback→EXP；57–184 交易結果、單次市場修正、錢／時間／EXP、0 gate、零庫存、重複材料負數、inactive、嚴格 < RNG；185–202 fixture 防護；203–229 13 個原版執行逐欄比較。",
+      "executionPath": "projectOriginalIntegratedUseLostbook → Perl probe → source-extracted UseItem/MakeAmount/time/wholesale/helper/lostbook",
+      "risk": "非任一正式 ITEM/USE 的原始配方或實際玩家取得，不能把 A/B/C 當正式 item ID；未執行真正 loader、HTTP、CAS、v2、正式 clock/RNG。",
+      "disposition": "保留限定 Oracle／差分；正式玩家證據另證；不移植人工 recipe",
+      "reason": "本批固定 blob 逐檔語義閱讀；前候選 exact CI 已通過，本批未重跑",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 38
+        },
+        {
+          "path": "modern/docs/r0-work-showcase-lostbook-evidence.md",
+          "line": 25
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/src/original-integrated-use-lostbook-model.mjs",
+          "sha": "f5b2b14bf12f3f075e35b95718f0e8dc7e7be5e7"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        },
+        {
+          "path": "modern/tests/original-perl/original-full-use-lostbook-probe.pl",
+          "sha": "47cb4019cfb9e064182abc780e5df6788c32589b"
+        }
+      ],
+      "fixtures": "synthetic A/B/C slots、兩店、人工 recipe、fixed seed/observed Perl draw；RequireFile stub；Perl 缺失可 skip。",
+      "limitations": "非任一正式 ITEM/USE 的原始配方或實際玩家取得，不能把 A/B/C 當正式 item ID；未執行真正 loader、HTTP、CAS、v2、正式 clock/RNG。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-item-dynamic-loading-model.test.mjs",
@@ -5414,17 +5500,57 @@
       "path": "modern/tests/original-perl/original-full-use-lostbook.t",
       "sha": "d891c5245e3d0741ca2737fb8ae91bdc1df4edbb",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（合成完整 USE 順序）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/use.cgi、modern/tests/original-perl/calc.cgi、modern/tests/original-perl/whole.cgi、modern/tests/original-perl/core-inc-item.cgi",
+      "assertions": "22–52 exact routine/source order；53–108 count4→2、錢70→30、時間950→986、market [3,0,-3]、nested use 後 stock [9,6,5]、EXP200→260、skip/absent；110–177 金錢/EXP gate、cap、stale expold、空 stock、inactive、duplicate materials 負數。",
+      "executionPath": "OriginalFullUseLostbookHarness::bootstrap / run → main::UseItem 與 item::lostbook",
+      "risk": "真正原版函式隔離，不是完整 CGI；重複材料負數是人工 recipe 的原版行為，不宣稱現行 runtime 可觸發；不升格到正式 RNG/時間/存檔。",
+      "disposition": "保留限定 Oracle／差分；正式玩家證據另證；不移植人工 recipe",
+      "reason": "本批固定 blob 逐檔語義閱讀；前候選 exact CI 已通過，本批未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-work-showcase-lostbook-evidence.md",
+          "line": 35
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-item.cgi",
+          "sha": "bb0244748088be0c5f1d24de7f9f7f05225278cb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalFullUseLostbookHarness.pm",
+          "sha": "2e84c60cf948011e0f32344dde4ee64299793964"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalItemHelperHarness.pm",
+          "sha": "d6d9627308f992c92483cdae609e1a7b299d3f2e"
+        }
+      ],
+      "fixtures": "合成 A/B/C recipe、seed 12/17 等、人工另一店；RequireFile recording-only；trace wrappers。",
+      "limitations": "真正原版函式隔離，不是完整 CGI；重複材料負數是人工 recipe 的原版行為，不宣稱現行 runtime 可觸發；不升格到正式 RNG/時間/存檔。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-gift-map-use.t",
@@ -5486,17 +5612,45 @@
       "path": "modern/tests/original-perl/original-inline-work-showcase.t",
       "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（原版隔離 callback）",
+      "originalSource": "custom/inc-item-data.cgi、modern/tests/original-perl/inc-makeitem.cgi、modern/tests/original-perl/inc-func.cgi",
+      "assertions": "14–43 owner 13/63、2/8 USE 與 alias、原文 wrapper；44–93 打工金額、格式、雙 log 及負數；95–160 展示架擴縮、等長不修尾、undef hole、原有 tail 保留。52 項斷言。",
+      "executionPath": "OriginalInlineCallbackHarness::bootstrap / select_callback / fixture / run → eval exact body＋GetMoneyString",
+      "risk": "callback 本身不消耗資源不代表整個 USE 免費；原版時間／職業／費用／取得／正式世界存檔未驗證。",
+      "disposition": "保留限定 Oracle／差分；正式玩家證據另證；不移植人工 recipe",
+      "reason": "本批固定 blob 逐檔語義閱讀；前候選 exact CI 已通過，本批未重跑",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-work-showcase-lostbook-evidence.md",
+          "line": 15
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalInlineCallbackHarness.pm",
+          "sha": "eb0c1c2d96fe6b23ec6539c7027370f9bfba3068"
+        }
+      ],
+      "fixtures": "合成 $DT/$USE/$count；WriteLog 僅記錄；未執行完整 compiler。",
+      "limitations": "callback 本身不消耗資源不代表整個 USE 免費；原版時間／職業／費用／取得／正式世界存檔未驗證。",
+      "reviewScope": "本輪逐檔語義；非全量功能結案"
     },
     {
       "path": "modern/tests/original-perl/original-item-callback-contract.t",
@@ -19555,7 +19709,9 @@
       "evidence": [
         "modern/tests/p5-book-work-v2-player-http.test.mjs",
         "modern/tests/p5-book-work-market-source.test.mjs",
-        "modern/tests/market-buy-core.test.mjs"
+        "modern/tests/market-buy-core.test.mjs",
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
       ],
       "registryEvidence": {
         "kind": "ITEM",
@@ -19620,7 +19776,23 @@
               "sha": "56d39115e402654e89e88cb07d996199113f784e"
             }
           ],
-          "scope": "existing scoped claim; detailed evidence not universal"
+          "scope": "existing scoped claim; detailed evidence not universal",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 44,
+              "endLine": 93,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
         },
         "nodeDifferential": {
           "value": true,
@@ -19638,7 +19810,16 @@
               "sha": "56d39115e402654e89e88cb07d996199113f784e"
             }
           ],
-          "scope": "existing scoped claim; detailed evidence not universal"
+          "scope": "existing scoped claim; detailed evidence not universal",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
         },
         "lawfulAcquisition": {
           "value": true,
@@ -19909,6 +20090,20 @@
           "startLine": 228,
           "endLine": 246,
           "scope": "來源市場正 PLUS 後 0 價/600s/limit1 購入，持有後 street cap 阻止再供貨；不可上架；2 世代持有"
+        },
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 44,
+          "endLine": 93,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
         }
       ],
       "evidenceScope": "不宣稱市場以外回呼或全 ITEM 驗收"
@@ -19924,8 +20119,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -19933,7 +20128,9 @@
       "status": "受控正式驗收",
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
-        "modern/tests/p5-book-work-v2-player-http.test.mjs"
+        "modern/tests/p5-book-work-v2-player-http.test.mjs",
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -19965,8 +20162,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 44,
+              "endLine": 93,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法 #13 持有；3000/次、normal7200/peddle4800、time clipping、資產/EXP 不變、inline logs",
@@ -20292,6 +20520,20 @@
           "startLine": 228,
           "endLine": 246,
           "scope": "合法 #13 持有；3000/次、normal7200/peddle4800、time clipping、資產/EXP 不變、inline logs"
+        },
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 44,
+          "endLine": 93,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
         }
       ],
       "evidenceScope": "無獨立逐 USE Perl 差分/UI；v2 history 命令與資金回放"
@@ -20307,8 +20549,8 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -20316,7 +20558,9 @@
       "status": "受控正式驗收",
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
-        "modern/tests/p5-book-work-v2-player-http.test.mjs"
+        "modern/tests/p5-book-work-v2-player-http.test.mjs",
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
       ],
       "registryEvidence": {
         "kind": "USE",
@@ -20348,8 +20592,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 44,
+              "endLine": 93,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "合法 #13；10000/次、normal14400/peddle9600、保留書/EXP、兩 inline logs；收入支持超過非工作資金上限的合法購買",
@@ -20619,6 +20894,20 @@
           "startLine": 228,
           "endLine": 246,
           "scope": "合法 #13；10000/次、normal14400/peddle9600、保留書/EXP、兩 inline logs；收入支持超過非工作資金上限的合法購買"
+        },
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 44,
+          "endLine": 93,
+          "scope": "B-27 原版打工 callback：param 3000/10000、收益與 log stub；非完整交易"
         }
       ],
       "evidenceScope": "無逐 USE Oracle/UI"
@@ -20634,15 +20923,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "初始合法持有；市場零價再取得未註冊；擴建 USE 與市場取得不同",
       "owner": "R4 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "63",
@@ -20690,8 +20982,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 95,
+              "endLine": 160,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20701,7 +21024,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 95,
+          "endLine": 160,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -20714,15 +21053,18 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/0",
@@ -20753,8 +21095,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 95,
+              "endLine": 160,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20764,7 +21137,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 95,
+          "endLine": 160,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -20777,15 +21166,18 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/1",
@@ -20816,8 +21208,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 95,
+              "endLine": 160,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20827,7 +21250,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 95,
+          "endLine": 160,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -20840,15 +21279,18 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/2",
@@ -20879,8 +21321,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 95,
+              "endLine": 160,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20890,7 +21363,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 95,
+          "endLine": 160,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -20903,15 +21392,18 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/3",
@@ -20942,8 +21434,39 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            },
+            {
+              "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+              "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+              "startLine": 95,
+              "endLine": 160,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工",
+          "refs": [
+            {
+              "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+              "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+              "startLine": 244,
+              "endLine": 282,
+              "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20953,7 +21476,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 244,
+          "endLine": 282,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 95,
+          "endLine": 160,
+          "scope": "B-27 原版展示架 callback：param 1–4 direct probe，擴縮/holes/tail；非完整施工"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -31886,14 +32425,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 24,
-      "有效": 79,
-      "待補": 130
+      "有效": 83,
+      "待補": 126
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 40,
+    "currentSessionReviewed": 44,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -31941,7 +32480,8 @@
     "modern/docs/r0-init-wholesale-exp-use-evidence.md",
     "modern/docs/r0-admin-callback-loader-evidence.md",
     "modern/docs/r1-event-gift-oracle-evidence.md",
-    "modern/docs/r0-gift-market-oracle-evidence.md"
+    "modern/docs/r0-gift-market-oracle-evidence.md",
+    "modern/docs/r0-work-showcase-lostbook-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -32032,6 +32572,27 @@
         "anchor revision",
         "retained origin"
       ]
+    },
+    {
+      "head": "1d3d112e3b5897e7c013ee5d8cf5906c12151c5a",
+      "tree": "41fce2eb2ef4c8ffcdb8cf9bca2c3f5cdf90c8c6",
+      "checkout": "c8bbf30ac5e0d6aa2f5dc321f8878dc0c76be121",
+      "run": 45804660497,
+      "job": 139856600728,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
     }
   ],
   "evidenceLayerSchema": {

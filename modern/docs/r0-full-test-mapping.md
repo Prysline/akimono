@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 79、歷史 24、待補 130。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 40 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 83、歷史 24、待補 126。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 44 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -34,8 +34,8 @@
 | local-source-text.test.mjs | 有效 | 來源守門／記憶體負向 |
 | market-buy-core.test.mjs | 有效 | Perl Oracle / Node 差分 |
 | original-admin-sparse-market.test.mjs | 有效 | Perl Oracle／Node 差分（舊 memory CAS） |
-| original-inline-work-showcase-model.test.mjs | 待補 | 未完成語義審閱 |
-| original-integrated-use-lostbook-model.test.mjs | 待補 | 未完成語義審閱 |
+| original-inline-work-showcase-model.test.mjs | 有效 | Perl Oracle／Node 差分（純 callback 投影） |
+| original-integrated-use-lostbook-model.test.mjs | 有效 | Perl Oracle／Node 差分（合成完整 USE 順序） |
 | original-item-dynamic-loading-model.test.mjs | 有效 | Perl Oracle／Node 差分（虛擬 require） |
 | original-item-helper-model.test.mjs | 待補 | 未完成語義審閱 |
 | original-market-buy10.test.mjs | 有效 | 混合：Perl Oracle／Node 差分＋歷史 HTTP/CAS |
@@ -66,9 +66,9 @@
 | original-perl/original-b61-sword-demand.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b62-sword-map-use.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b63-sword-map-all-outcomes.t | 有效 | Perl Oracle（受控） |
-| original-perl/original-full-use-lostbook.t | 待補 | 未完成語義審閱 |
+| original-perl/original-full-use-lostbook.t | 有效 | Perl Oracle（合成完整 USE 順序） |
 | original-perl/original-gift-map-use.t | 有效 | 原版 Perl Oracle（隔離 compiler／Core） |
-| original-perl/original-inline-work-showcase.t | 待補 | 未完成語義審閱 |
+| original-perl/original-inline-work-showcase.t | 有效 | Perl Oracle（原版隔離 callback） |
 | original-perl/original-item-callback-contract.t | 有效 | 靜態來源守門（Perl Test::More） |
 | original-perl/original-item-helpers.t | 待補 | 未完成語義審閱 |
 | original-perl/original-market-buy10.t | 有效 | 原版 Perl Oracle（隔離 CGI） |
