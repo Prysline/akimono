@@ -7374,17 +7374,53 @@
       "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages.t",
       "sha": "7eef938d74b4415313ab545a820cbd3c4828083d",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期 expiry 呼叫／財務／技術）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L10–47 exit0/JSON、兩期、first no close/second one close reason/log、shop仍1、dragon500→-500、atk921、dignity23、lost19、第二期 draws6、兩真檔消耗。",
+      "executionPath": "frozen SortDT + pre-backup prefix, CloseShop call recorder",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop recorder 不改 shop/file；只確認呼叫與後續財務/技術。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 29
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages-probe.pl",
+          "sha": "7a12654e460382fee2b5e57a0df9839d74321571"
+        }
+      ],
+      "fixtures": "同上；8/6 tape。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop recorder 不改 shop/file；只確認呼叫與後續財務/技術。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-full-tail-close.t",
@@ -7406,17 +7442,53 @@
       "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
       "sha": "497fab15af08cb6cde885e77445fe8850259086d",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（兩期高 EXP 技術遺失）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi",
+      "assertions": "L10–45 exit0/JSON、lost18/24→19、log4/2、draws8/6、EXP10 4695→4409、18/24/19 slots0、38 slot1、dragon-500/atk921/dignity23、兩真 drapay 消耗。",
+      "executionPath": "frozen SortDT + pre-backup prefix + UpdateResetAfter technology loss",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop 禁止；tech log capture 非正式 durable log。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 45
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech-probe.pl",
+          "sha": "7478a1fde0cc2ea17701c300c4e07a645bf61a45"
+        }
+      ],
+      "fixtures": "同上；原版固定 draws。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop 禁止；tech log capture 非正式 durable log。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-period-real-close-chain.t",
@@ -7438,17 +7510,37 @@
       "path": "modern/tests/original-perl/original-r4-period-shop-expiry.t",
       "sha": "6b7d331df8c97935b1ec9ee2f9d649915741bdb4",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Perl Oracle（缺席關店呼叫）",
+      "originalSource": "modern/tests/original-perl/period.cgi",
+      "assertions": "L10–31 exit0/JSON、九 cases：exact12h/7d 不關，+1s 呼叫，stop 保護、warning 不保護、young/recent/zero 不關，原版 reason/channel/message。",
+      "executionPath": "frozen expiry block eval；CloseShop/PushLog recorder",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工 shop/now；原版只擷取 period expiry block，CloseShop/PushLog 記錄呼叫，l 為測試 adapter；沒有執行 CloseShop 實作、刪檔、archive/guild/session 或正式時間/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 13
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-shop-expiry-probe.pl",
+          "sha": "49c8dd66855be909d07e968c18a497bfd2429ec6"
+        }
+      ],
+      "fixtures": "同九 cases；EXPIRE_TIME 人工設3600*24*7。",
+      "limitations": "人工 shop/now；原版只擷取 period expiry block，CloseShop/PushLog 記錄呼叫，l 為測試 adapter；沒有執行 CloseShop 實作、刪檔、archive/guild/session 或正式時間/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/original-perl/original-r4-rebel-now.t",
@@ -13249,17 +13341,105 @@
       "path": "modern/tests/r4-period-expiry-all-stages-chain.test.mjs",
       "sha": "5712efaf778da6ef4ecb178d243b7cf078a303ba",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（兩期 expiry 呼叫／財務／技術）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L51–113 phase metadata 順序、兩期 exact shop/town/population/points/guildContext/fee calls/tech loss/log/expiry calls/log、nonCommittable/no write/input unchanged；第二期 close recorder、shop仍1、dragon-500、atk921、dignity23、lost19。L115–126 兩次 Perl process；L128–157 未審時間/null/負時間/偽 committable/source drift 拒絕。",
+      "executionPath": "expiry all-stages probe → projectOriginalSoloPeriodPhaseChain (dragon/dignity/guild/postTech/expiry)",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop stub 只記呼叫，仍保留店鋪與後續財務/技術；未測真關店。L12–14 tech imports 未用；phase list 是 metadata，順序另由 source prefix/差分支持。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 21
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages-probe.pl",
+          "sha": "7a12654e460382fee2b5e57a0df9839d74321571"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        },
+        {
+          "path": "modern/src/original-r4-period-dignity-decay.mjs",
+          "sha": "624948a17862f66c25b73fdafd5f10717180a309"
+        },
+        {
+          "path": "modern/src/original-r4-guild-period-fee.mjs",
+          "sha": "bc53f9a9f788e2d497837c70e37cef7dfd1d8e05"
+        },
+        {
+          "path": "modern/src/original-r4-post-period-tech-loss.mjs",
+          "sha": "7f77f5178dc5cec18114488ccfc3229ddc019acc"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        },
+        {
+          "path": "modern/src/original-r4-period-shop-expiry.mjs",
+          "sha": "5cdcd2d89de5b54b7c736fd4663b9e517f87e5f9"
+        }
+      ],
+      "fixtures": "單店 foundation1000000/lastlogin0、now1000000/1129600、guild50、EXP10/14各5000、tech18/19/38/24各1、8/6 draws。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop stub 只記呼叫，仍保留店鋪與後續財務/技術；未測真關店。L12–14 tech imports 未用；phase list 是 metadata，順序另由 source prefix/差分支持。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/r4-period-full-tail-close-chain.test.mjs",
@@ -13281,17 +13461,101 @@
       "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
       "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（兩期高 EXP 技術遺失）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；_config.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L49–91 兩期 exact shop/town/population/points/guild/fee/tech lost/log、rand range14000/count、no write/input unchanged；lost18/24→19、38保留、EXP10 4695→4409。L93–100 兩次 Perl process；L102–137 source drift、no-tech review、null/short/extra/out-of-bound draws、偽 committable、低 EXP 無 lost IDs。",
+      "executionPath": "high-exp probe → projectOriginalSoloPeriodPhaseChain (dragon/dignity/guild/postTech)；direct tech guard",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop 禁止；L108–113 no-tech 同時 high EXP/skill/draw 未審，不能隔離各守門；L131–135 低 EXP 直接 projector 只斷言 lost IDs=[]、空 tape 成功，非原版低 EXP 獨立差分。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 37
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech-probe.pl",
+          "sha": "7478a1fde0cc2ea17701c300c4e07a645bf61a45"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/original-r4-dragon-balance.mjs",
+          "sha": "a7fb03c98d76d03050397bb72c81f048716b5b85"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        },
+        {
+          "path": "modern/src/original-r4-period-dignity-decay.mjs",
+          "sha": "624948a17862f66c25b73fdafd5f10717180a309"
+        },
+        {
+          "path": "modern/src/original-r4-guild-period-fee.mjs",
+          "sha": "bc53f9a9f788e2d497837c70e37cef7dfd1d8e05"
+        },
+        {
+          "path": "modern/src/original-r4-post-period-tech-loss.mjs",
+          "sha": "7f77f5178dc5cec18114488ccfc3229ddc019acc"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        }
+      ],
+      "fixtures": "單店 EXP10/14各5000、18/19/38/24各1、now1000000/1129600、8/6 draws（tech 0/500000/999999/250000；0/999999）。",
+      "limitations": "原版同一 Perl process 兩期，Node 每期接收該期 Oracle input，非自行續接 Node output；人工 stock/EXP/guild、固定 NOW_TIME、指定 rand tape；真隔離 drapay read/unlink，Node 文字投影；EditGuildMoney 只記錄，WriteLog/PushLog 不持久化，EVENT 空，backup/session/MakeGuildFile tail 未執行；不證正式玩家/時鐘/RNG、HTTP/CAS/v2。 CloseShop 禁止；L108–113 no-tech 同時 high EXP/skill/draw 未審，不能隔離各守門；L131–135 低 EXP 直接 projector 只斷言 lost IDs=[]、空 tape 成功，非原版低 EXP 獨立差分。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/r4-period-real-close-source-chain.test.mjs",
@@ -14076,22 +14340,49 @@
       "path": "modern/tests/r4-source-period-shop-expiry.test.mjs",
       "sha": "0d97a4a7c4a90eff8da68694d86b7668aa900eff",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle／Node 差分（缺席關店呼叫）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi",
+      "assertions": "L22–52 九 cases、threshold43200/604800、closeCalls/log/unchanged shop exact、strict 12h/7d 邊界與 +1s。L53–59 兩次 Perl process；L60–83 source/config drift、無效 timestamp/blocklogin/shopname、偽 effectKnown 拒絕。",
+      "executionPath": "isolated expiry probe → projectR4PeriodShopExpiry",
+      "risk": "店主缺席嚴格時間邊界、跨期財務／技術遺失與 IO 順序",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與對應 probe 逐檔審閱；人工 shop/now；原版只擷取 period expiry block，CloseShop/PushLog 記錄呼叫，l 為測試 adapter；沒有執行 CloseShop 實作、刪檔、archive/guild/session 或正式時間/HTTP/CAS/v2。 Perl probe EXPIRE_TIME 人工設3600*24*7，Node review 檢查 _config.cgi。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 126
+        },
+        {
+          "path": "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-period-shop-expiry-probe.pl",
+          "sha": "49c8dd66855be909d07e968c18a497bfd2429ec6"
+        },
+        {
+          "path": "modern/src/original-r4-period-shop-expiry.mjs",
+          "sha": "5cdcd2d89de5b54b7c736fd4663b9e517f87e5f9"
+        }
+      ],
+      "fixtures": "now700000/0、foundation/lastlogin 邊界、blocklogin stop/warning/空字串；九 cases。",
+      "limitations": "人工 shop/now；原版只擷取 period expiry block，CloseShop/PushLog 記錄呼叫，l 為測試 adapter；沒有執行 CloseShop 實作、刪檔、archive/guild/session 或正式時間/HTTP/CAS/v2。 Perl probe EXPIRE_TIME 人工設3600*24*7，Node review 檢查 _config.cgi。",
+      "reviewScope": "完整測試／對應 probe／period/DSL 與 Node expiry/post-tech contract"
     },
     {
       "path": "modern/tests/r4-source-rebel-now.test.mjs",
@@ -28237,15 +28528,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+        "modern/tests/original-perl/original-r4-period-high-exp-tech.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "18",
@@ -28293,8 +28587,32 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+              "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+              "startLine": 17,
+              "endLine": 36,
+              "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+              "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+              "startLine": 55,
+              "endLine": 90,
+              "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28304,7 +28622,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+          "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+          "startLine": 55,
+          "endLine": 90,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+          "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+          "startLine": 17,
+          "endLine": 36,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #18 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -28317,15 +28651,20 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+        "modern/tests/r4-period-expiry-all-stages-chain.test.mjs",
+        "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+        "modern/tests/original-perl/original-r4-period-expiry-all-stages.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "19",
@@ -28373,8 +28712,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+              "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+              "startLine": 17,
+              "endLine": 36,
+              "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            },
+            {
+              "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages.t",
+              "sha": "7eef938d74b4415313ab545a820cbd3c4828083d",
+              "startLine": 37,
+              "endLine": 44,
+              "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+              "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+              "startLine": 55,
+              "endLine": 90,
+              "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            },
+            {
+              "path": "modern/tests/r4-period-expiry-all-stages-chain.test.mjs",
+              "sha": "5712efaf778da6ef4ecb178d243b7cf078a303ba",
+              "startLine": 62,
+              "endLine": 112,
+              "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28384,7 +28761,37 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+          "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+          "startLine": 55,
+          "endLine": 90,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/r4-period-expiry-all-stages-chain.test.mjs",
+          "sha": "5712efaf778da6ef4ecb178d243b7cf078a303ba",
+          "startLine": 62,
+          "endLine": 112,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+          "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+          "startLine": 17,
+          "endLine": 36,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-expiry-all-stages.t",
+          "sha": "7eef938d74b4415313ab545a820cbd3c4828083d",
+          "startLine": 37,
+          "endLine": 44,
+          "scope": "受控 post-period UpdateTodayEraseTech；第二期人工持有 #19 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -28397,15 +28804,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+        "modern/tests/original-perl/original-r4-period-high-exp-tech.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "24",
@@ -28453,8 +28863,32 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+              "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+              "startLine": 17,
+              "endLine": 36,
+              "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+              "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+              "startLine": 55,
+              "endLine": 90,
+              "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28464,7 +28898,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+          "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+          "startLine": 55,
+          "endLine": 90,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+          "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+          "startLine": 17,
+          "endLine": 36,
+          "scope": "受控 post-period UpdateTodayEraseTech；第一期人工持有 #24 遺失；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -28477,15 +28927,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+        "modern/tests/original-perl/original-r4-period-high-exp-tech.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "38",
@@ -28533,8 +28986,32 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+              "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+              "startLine": 17,
+              "endLine": 36,
+              "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+              "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+              "startLine": 55,
+              "endLine": 90,
+              "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28544,7 +29021,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r4-period-high-exp-tech-same-world-chain.test.mjs",
+          "sha": "7aa7573ff7d6189fe5ec56d227420e318f776607",
+          "startLine": 55,
+          "endLine": 90,
+          "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-high-exp-tech.t",
+          "sha": "497fab15af08cb6cde885e77445fe8850259086d",
+          "startLine": 17,
+          "endLine": 36,
+          "scope": "受控 post-period UpdateTodayEraseTech；兩期 rand 未命中，人工持有 #38 保留（非遺失分支）；固定 EXP/stock/rand，非合法取得或正式時間/RNG/HTTP/CAS/v2。"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -40319,14 +40812,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 164,
-      "待補": 37
+      "有效": 170,
+      "待補": 31
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 133,
+    "currentSessionReviewed": 139,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -40395,7 +40888,8 @@
     "modern/docs/r0-r4-sorted-pre-event-evidence.md",
     "modern/docs/r0-r4-p3-pre-event-overlay-evidence.md",
     "modern/docs/r0-r4-period-all-finance-evidence.md",
-    "modern/docs/r0-r4-dragon-period-evidence.md"
+    "modern/docs/r0-r4-dragon-period-evidence.md",
+    "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -40724,6 +41218,27 @@
       "checkout": "03baed3c358bfa6384fbf5f08e3e035f32b7c393",
       "run": 45817807463,
       "job": 139901955114,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "d2870d55b0ee9b2a9ab5b92e396cd028d842146a",
+      "tree": "30f7ab262daf732b86c87ed92269612808591535",
+      "checkout": "aa42c20422e4c112af7a68a42857ae38a9f30721",
+      "run": 45818228163,
+      "job": 139903387992,
       "conclusion": "success",
       "js": {
         "total": 1350,

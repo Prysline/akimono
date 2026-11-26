@@ -190,3 +190,12 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 第26批 run 45817237519 / job 139900009144：success，HEAD `ff9d9f66e525751376ee0038fdf5f928fa103835`、實際 checkout `a0dc80d63c303de94335ae467c5ce999ce6b9d08`，tree `e280d89198abc30b4a720baa33101bc5c2ee0816` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - 第27批 run 45817807463 / job 139901955114：success，HEAD `c8e18aa9682e5e288bdb6b468d6c171912a0664c`、實際 checkout `03baed3c358bfa6384fbf5f08e3e035f32b7c393`，tree `bcc51dc3ef7fe6b0892ed9d8b25a76e5bdf47cdc` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。
 - 第28批 run 45818228163 尚 in_progress（本批查詢），前述結果不替代新 HEAD 驗收。
+
+### 第 30 批：R4 店主缺席／兩期高 EXP 技術遺失
+
+- 新審 6 檔：有效 170、歷史 32、待補 31；固定分母 233，分類收斂 202/233（86.7%）；累計另逐檔審閱 139 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-expiry-high-exp-tech-evidence.md)：九 expiry cases、嚴格12h/7d +1s 邊界；兩期原版真隔離 drapay、CloseShop call recorder（店鋪仍在）、高 EXP 18/24→19 遺失、38 保留、EXP4695→4409、8/6 draws。Node 每期重讀 Oracle input；人工 stock/EXP/clock/rand、guild/log IO stub，非真關店或正式玩家／HTTP／v2。新增四 ITEM 限定 Oracle/Node 詳細證據，87 詳細列、ITEM14/USE39/EVENT25；#38 僅保留分支，正式取得/HTTP/v2 下界不變。未本地重跑，R1-HTTP-01 未實跑；新候選 CI 待核。
+
+### CI 補核：第28批
+
+- run 45818228163 / job 139903387992：success，HEAD `d2870d55b0ee9b2a9ab5b92e396cd028d842146a`、實際 checkout `aa42c20422e4c112af7a68a42857ae38a9f30721`，tree `30f7ab262daf732b86c87ed92269612808591535` 一致；JS 1350/1350、0 fail/skip/cancelled，Perl 2456/2456（85檔）PASS，DSL/source pins 通過。第29批 run 45824384633 查詢時 in_progress；不替代新 HEAD。

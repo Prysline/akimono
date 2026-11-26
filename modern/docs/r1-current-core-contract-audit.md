@@ -110,3 +110,8 @@
 
 - 新審 6 檔：有效 164、歷史 32、待補 37；固定分母 233，分類收斂 196/233（84.1%）；累計另逐檔審閱 133 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
 - [逐檔證據](r0-r4-dragon-period-evidence.md)：九龍賽檔案 cases、兩期龍賽及爵位 prefix；Perl 真隔離 drapay read/unlink，Node 純文字投影、每期重讀 Oracle input，非獨立連續提交。人工 stock/clock/rand、log stub；CAS 標題無 CAS 呼叫、legacy dignity 負例未隔離 guard；不證正式玩家／HTTP／v2。83 詳細功能列與正式下界不變。未本地重跑，Git DNS 失敗，R1-HTTP-01 未實跑；新候選 CI 待核。
+
+### 第 30 批：R4 店主缺席／兩期高 EXP 技術遺失
+
+- 新審 6 檔：有效 170、歷史 32、待補 31；固定分母 233，分類收斂 202/233（86.7%）；累計另逐檔審閱 139 份，既有分類尚 56 份待覆核。新增 5 檔獨立計算。
+- [逐檔證據](r0-r4-expiry-high-exp-tech-evidence.md)：九 expiry cases、嚴格12h/7d +1s 邊界；兩期原版真隔離 drapay、CloseShop call recorder（店鋪仍在）、高 EXP 18/24→19 遺失、38 保留、EXP4695→4409、8/6 draws。Node 每期重讀 Oracle input；人工 stock/EXP/clock/rand、guild/log IO stub，非真關店或正式玩家／HTTP／v2。新增四 ITEM 限定 Oracle/Node 詳細證據，87 詳細列、ITEM14/USE39/EVENT25；#38 僅保留分支，正式取得/HTTP/v2 下界不變。未本地重跑，R1-HTTP-01 未實跑；新候選 CI 待核。
