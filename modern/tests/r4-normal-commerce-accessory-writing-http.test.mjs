@@ -64,16 +64,26 @@ async function trainAppraiser(p){
   }
   for(const id of [18,19,24])assert.equal(p.stock(id),1);
 }
-async function list(p,id,per){
+async function list(p,id,per,sales){
+  const beforeStock=p.stock(id),beforeSales=sales[id]??0;
+  assert.ok(beforeStock>0,'source stock before listing #'+id);
   await p.enoughTime(600);
-  assert.ok(p.stock(id)>0,'source stock for listing #'+id);
+  // Waiting is a real turn. An already displayed, newly crafted item can
+  // sell out before the next repricing command. Require real sale receipts;
+  // never replace stock, discard this career, or suppress a failed command.
+  if(!p.stock(id)){
+    assert.equal(p.state.shop.showcase[0],id,'sold during wait on existing shelf');
+    assert.equal((sales[id]??0)-beforeSales,beforeStock,'real sale during listing wait #'+id);
+    return false;
+  }
   const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf:0,itemId:id,per});
   assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
   assert.equal(p.state.shop.showcase[0],id);
+  return true;
 }
 async function naturalSale(p,id,sales,hours=288){
   const before=sales[id]??0;
-  await list(p,id,10);
+  await list(p,id,10,sales);
   for(let n=0;(sales[id]??0)===before&&n<hours&&p.stock(id)>0;n++){
     await p.tick(60);
     if(n%24===23&&(sales[id]??0)===before)await p.use(13,0);
@@ -164,11 +174,11 @@ test('R4 genuine #66/0-3 accessory manufacture, #67-70 natural sales, positive F
       const first=await p.saveAndRestart(generation++);
       assert.equal(first.shops[0].item[69],1);
     }
-    await list(p,70,100);
+    const listed=await list(p,70,100,sales);
     // Two minutes produces a positive integer rank gain on an eligible,
     // unsold necklace. If the shop is capped or a real sale occurs first,
     // continue normal sale/manufacture on this SAME career.
-    if(p.boundary()>120){
+    if(listed&&p.boundary()>120){
       const before=p.state.shop,r=await p.tick(2);
       if(before.rank<10000&&r.details.naturalSaleCount===0&&p.stock(70)===1)
         assert.equal(r.details.itemTurnAffectedSlices,1);

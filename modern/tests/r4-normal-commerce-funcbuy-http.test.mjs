@@ -54,10 +54,29 @@ test('R4 genuine wholesale #64 FUNCBUY grants #79 from actual payment, logs once
   }
   assert.ok(purchase,'bounded source supply / funding '+JSON.stringify({works,money:p.state.shop.money,robot:p.stock(64),voucher:p.stock(79),period:p.state.world.period.settledCount}));
   const first=await p.saveAndRestart(0);assert.deepEqual(first,purchase.after);
-  await p.discard(64);
+  const discarded=await p.post('/api/discard',{expectedRevision:first.revision,itemId:64,count:1});
+  assert.equal(discarded.code,'COMMITTED',JSON.stringify(discarded.details??discarded.error));
+  const afterDiscard=p.state.world;
+  // Frozen item-t.cgi calls PushLog and RenewLog. A source-reviewed
+  // discard adds exactly one row, unlike the old local stub.
+  const discardRow=[first.nowSeconds,0,1,discarded.details.originalMessage].join('\t')+'\n';
+  assert.equal(discarded.details.originalMessage,'看門機器人1架被丟棄了');
+  const old=first.period.disk.live,next=afterDiscard.period.disk.live;
+  if(old['log1.cgi'].mtime<first.nowSeconds-129600){
+    assert.equal(next['log0.cgi'].bytes,discardRow);
+    assert.deepEqual(next['log1.cgi'],old['log0.cgi']);
+    assert.deepEqual(next['log2.cgi'],old['log1.cgi']);
+  }else{
+    assert.equal(next['log0.cgi'].bytes,discardRow+purchase.bytes);
+    assert.deepEqual(next['log1.cgi'],old['log1.cgi']);
+    assert.deepEqual(next['log2.cgi'],old['log2.cgi']);
+  }
+  assert.equal(next['log0.cgi'].mtime,first.nowSeconds);
   const second=await p.saveAndRestart(1);
+  assert.deepEqual(second,afterDiscard);
   assert.equal(second.shops[0].item[63],0);assert.equal(second.shops[0].item[78],first.shops[0].item[78]);
-  assert.equal(second.period.disk.live['log0.cgi'].bytes,purchase.bytes);
-  assert.equal(second.period.disk.live['log0.cgi'].bytes.split(purchase.row).length-1,1);
+  const retained=['log0.cgi','log1.cgi','log2.cgi'].map(n=>second.period.disk.live[n].bytes).join('');
+  assert.equal(retained.split(purchase.row).length-1,1);
+  assert.equal(retained.split(discardRow).length-1,1);
   t.diagnostic(JSON.stringify({works,paid:500000,granted:1,revision:first.revision,secondRevision:second.revision}));
 });
