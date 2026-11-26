@@ -88,7 +88,14 @@ async function history(p,generation){
 
 test('P5 new player: lawful zero-price book, clipped work, career, two v2 generations, cash spending and authenticated replay',async t=>{
   const purchases=[],works=[];
+  // Upper bound on all non-work funds, deliberately ignoring upkeep/losses.
+  // With no showcase sales and no other earning USE, count every positive
+  // cash delta from reviewed time and the career command conservatively.
+  let nonWorkFunds=100000,totalPaid=0,workFundedPurchase=null;
   const p=await genuinePlayer(t,{now:null,crossPeriod:true,
+    onTick(r,before){
+      nonWorkFunds+=Math.max(0,r.state.shop.money-before.shops[0].money);
+    },
     onPurchase(r,before,offer){
       const d=r.details,old=before.shops[0],after=r.state.shop;
       assert.equal(d.unitPrice,offer.price);
@@ -102,6 +109,7 @@ test('P5 new player: lawful zero-price book, clipped work, career, two v2 genera
       assert.equal(d.timeConsumedSeconds,offer.timeSeconds);
       assert.equal(r.state.world.revision,before.revision+1);
       purchases.push({itemId:d.itemId,count:d.purchasedCount,paid:d.totalPaid,time:d.timeConsumedSeconds});
+      totalPaid+=d.totalPaid;
     }
   });
   assert.equal(p.state.shop.money,100000);
@@ -147,7 +155,9 @@ test('P5 new player: lawful zero-price book, clipped work, career, two v2 genera
   assert.ok(career.price>0);
   await deny(p,'/api/buy',{itemId:78,requestedCount:1,marketShelf:career.shelf,expectedPrice:0});
   await p.market(78);
+  const beforeCareerMoney=p.state.shop.money;
   await p.use(78,12);
+  nonWorkFunds+=Math.max(0,p.state.shop.money-beforeCareerMoney);
   assert.equal(p.state.shop.job,'peddle');
   assert.equal(p.stock(78),0);
   works.push(await work(p,0,2));
@@ -166,6 +176,25 @@ test('P5 new player: lawful zero-price book, clipped work, career, two v2 genera
   }
   assert.equal(p.stock(8),0);
   assert.ok(purchases.some(x=>x.itemId===8&&x.paid>0));
+  // Cash is fungible: simply spending after work does not establish that
+  // earnings were necessary. Buy a frequently supplied, already-reviewed
+  // #10 at its live price until gross spending exceeds all non-work funds.
+  // Discard normally to avoid unnecessary stock/upkeep; no sale income.
+  for(let n=0;totalPaid<=nonWorkFunds&&n<32;n++){
+    const offer=await waitOffer(p,10);
+    assert.equal(offer.price,5000);
+    if(p.state.shop.money<offer.price)works.push(await work(p,1));
+    const paidBefore=totalPaid;
+    await p.market(10);
+    if(totalPaid>nonWorkFunds){
+      workFundedPurchase={itemId:10,paid:totalPaid-paidBefore,totalPaid,nonWorkFunds,
+        minimumWorkFundsUsed:totalPaid-nonWorkFunds};
+    }
+    await p.discard(10,1);
+  }
+  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');
+  assert.ok(totalPaid>nonWorkFunds,'conservative proof remains true after spending');
+  assert.ok(totalPaid-nonWorkFunds<=works.reduce((sum,w)=>sum+w.earned,0));
   assert.ok(Number.isSafeInteger(p.state.historyCheckpointRevision));
   works.push(await work(p,0));
   const second=await p.saveAndRestart(1);
@@ -189,7 +218,9 @@ test('P5 new player: lawful zero-price book, clipped work, career, two v2 genera
   await p.rejectForgedLatest(first,r=>{r.format='akimono.local-world-save.v1';},{restore:true});
   const afterRestart=await work(p,0);
   t.diagnostic('P5 real player purchases='+JSON.stringify(purchases)+
-    ' work='+JSON.stringify(works)+' second restart work='+JSON.stringify(afterRestart)+
+    ' work='+JSON.stringify(works)+' work-funded purchase='+JSON.stringify(workFundedPurchase)+
+    ' final gross spending='+totalPaid+' final non-work funds='+nonWorkFunds+
+    ' second restart work='+JSON.stringify(afterRestart)+
     ' generations=1,2 revisions='+first.revision+'→'+second.revision+
     ' checkpoint='+p.state.historyCheckpointRevision+' retained segments='+verified.segments);
 });

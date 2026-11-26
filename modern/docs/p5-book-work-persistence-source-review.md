@@ -2,7 +2,7 @@
 
 **狀態：Draft PR #21 候選，尚未驗收／尚未合併。** 開工基線 `a9654531c64a82be19c135a9b806ff9ef5fa5a73`，tree `7e0e4909cd2569db438bdebc16c435c70f5627ef`。P4 PR #20 已正式合併：merge `a9654531c64a82be19c135a9b806ff9ef5fa5a73`、PR HEAD `0aeaca696e533d3616b6f3b517fa47afbf6d1ff6`、tree `7e0e4909cd2569db438bdebc16c435c70f5627ef`。[CI 45653296366](https://github.com/Prysline/akimono/actions/runs/45653296366) exact HEAD、實際 checkout `a39f5f027eccc43997e0824c1af1704c658754d3` 同 tree：JavaScript 1325/1325（0 失敗、0 跳過）、Perl 2456/2456（85 .t）、DSL 與凍結 source blob 稽核成功。
 
-本輪 GitHub 連接器已寫入候選；執行環境不能解析 github.com 進行本機 checkout，故未在本機執行 Perl 或 Node。P5-A 的獨立 Oracle 先提交並觸發 Actions；其執行結果尚未取得，後續程式及測試仍屬候選，不是已通過 A 再提升的版本。只從正式 migration 開 `work/p5-book-work-persistence-20261126`；不修改 main、R4 研究分支、固定交接 refs、凍結來源或 Notion。合併須另經授權與 exact HEAD 完整 CI。
+本輪 GitHub 連接器已寫入候選；執行環境不能解析 github.com 進行本機 checkout，故未在本機執行 Perl 或 Node。P5-A 的獨立 Oracle 先提交並觸發 Actions；後續程式及測試是在 A 執行結果尚未取得時建立，仍屬候選，不是已通過 A 再提升的版本。只從正式 migration 開 `work/p5-book-work-persistence-20261126`；不修改 main、R4 研究分支、固定交接 refs、凍結來源或 Notion。合併須另經授權與 exact HEAD 完整 CI。
 
 ## A. 凍結來源及差分
 
@@ -27,7 +27,13 @@
 - `p5-book-work-v2-player-http.test.mjs` 兩個實際 HTTP 測試，使用 `genuinePlayer(t,{now:null,crossPeriod:true})`、新獨立目錄、伺服器 RNG；從初始空市場、真開店、正式 advance-reviewed-time 有界等待、既有 /api/buy 取得 #13，再兩種打工及超請求裁切，買 #78 /12 行腳商人，驗證 7200/14400→4800/9600。實際市場正價 #8 消費與合法丟棄累積 checkpoint；不注入收入、庫存、EXP、RNG 或假時鐘。消費驗證現行共用正價 receipt 的實際扣款，不宣稱正價 FUNCINIT 另已移植。
 - 第一代、第二代及兩次 Node restart，來源歷史 / retained prefix 逐段核對 #13 買入 expectedPrice=0、USE 只含原版命令欄位，完整 WorldState、revision、generation、money/stock/time/job、HMAC/fingerprint。沿用唯一 `akimono.local-world-save.v2`；不改 save envelope、checkpoint store、history replayer 或增加 moneyProof/workProof。source/runtime fingerprint 仍會令不相容 v2 拒絕。
 - 負面案例涵蓋未持有、缺貨／持有上限、錯價／錯架、額外欄位／RNG／收入、非法 count、過期 revision／generation、時間不足、不能陳列、fresh history checksum 正確但現金／書／命令不符、HMAC/fingerprint/prefix 錯誤、v1、損毀與舊世代回復。既有 R0–R4/P1–P4 回歸仍須完整 CI。
-- 驗收關卡：目標 PR exact HEAD / checkout merge tree、source blob、DSL、完整 JS/Perl CI 以及 P5 diagnostics。現在只完成候選寫入，沒有實際 P5 passing count、玩家收入數字、重啟通過或合併結論。任何失敗必須讀 logs 再修正；不能用 P4 成功結果冒充 P5。
+- 驗收關卡：目標 PR exact HEAD / checkout merge tree、source blob、DSL、完整 JS/Perl CI 以及 P5 diagnostics。任何失敗必須讀 logs 再修正；不能用 P4 成功結果冒充 P5。
+
+### 中間提交實際 CI 紀錄（尚非最新 HEAD 驗收）
+
+- [CI 45725557075](https://github.com/Prysline/akimono/actions/runs/45725557075)，提交 `f7644cb0a0af63bc116e3d1da3175c35bf6ebd3c`，實際 checkout `c9c3f6b0c8b0e7de0f733ebc6c13298bb7495adb`，兩者 tree `b49e221d0e9ef7d572982b3c25c03a557896df12` 相同。JS 1329 tests／1328 pass／0 fail／1 skip（P4 自然乳牛死亡未出現）；Perl 85 files／2456 pass；凍結 source 與 DSL 稽核成功。
+- 受控 #13 市場 Oracle 與 Node 差分通過 13 個案例（此提交尚不含後續三個 FUNCINIT 案例）；真玩家從空市場合法買入 #13（0 G／600 秒），普通 3000／10000 G、5 次裁切 3 次得 9000 G；#78 購買 10000 G、轉行商後 6000／10000／20000／3000 G。第二代存檔後另一次 3000 G／4800 秒。前七次收入合計 61000 G；兩代 revision 20→193、checkpoint 129、retained prefix 1；fresh forged cash/book/USE 測試通過。
+- 該輪 #8 真實購買與扣款已通過，但尚不能證明累計支出需要打工收入（初始有 100000 G）。新增強驗收：沿用真 HTTP #10（固定 5000 G）購買與合法丟棄；保守累計所有非打工正現金流，不扣除其間損失，直到總購買支出超過非打工資金上界。必須輸出 work-funded purchase、gross spending、non-work funds 與最低已使用打工收入；這是測試核算，不是新存檔欄位或資金來源標籤。此新增斷言與三個 FUNCINIT 案例仍需新 HEAD CI 證據。
 
 ## 剩餘範圍
 
