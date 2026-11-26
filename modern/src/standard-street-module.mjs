@@ -348,8 +348,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     order:buyRegistry?.order??Object.freeze([]),
     getRule(itemId){return buyRegistry?.getRule(itemId)??null;},
     describe(itemId){return buyRegistry?.describe(itemId)??null;},
-    quote({rule,marketStock}){
-      return buyRegistry?.quote({rule,marketStock})??null;
+    quote({rule,marketStock,shop=null}){
+      return buyRegistry?.quote({rule,marketStock,shop})??null;
     },
     validateWorld(world){
       // Original DataRead may load EVENT overlays and guild effects before
@@ -841,9 +841,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       const rule=buyRegistry.getRule(itemId);
       const shelf=marketStock>0?buyRegistry.order.slice(0,entry.sort)
         .filter(row=>world.market.wholesale[row.wholesaleIndex]>0).length:null;
-      const quote=rule&&marketStock>0?
-        buyRegistry.quote({rule,marketStock}):null;
       const shop=world.shops?.[0]??null;
+      const quote=rule&&marketStock>0?
+        buyRegistry.quote({rule,marketStock,shop}):null;
       const canBuy=Boolean(quote&&marketBuy.validateWorld(world)&&
         shop?.id===1&&shop.status===1&&
         shop.item[entry.shopIndex]<entry.stockLimit);

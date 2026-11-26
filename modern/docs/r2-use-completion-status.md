@@ -1,5 +1,7 @@
 # R2 原版商品 USE／製作補完狀態（平行支線）
 
+> **2026-11-26 現行同步：** P4 已正式合併 PR #20，JS 1325/1325、Perl 2456/2456。P5 [Draft PR #21](https://github.com/Prysline/akimono/pull/21) 已寫入 #13 零價市場、收入及 v2 候選；[P5 來源審閱](p5-book-work-persistence-source-review.md)，未取得 P5 CI/玩家驗收。下方舊 B-43、#13 取得缺口文字保留為歷史，不是現行 v2 架構。
+
 > **2026-11-25｜現行基線同步：** R2 隔離整合分支已成為正式 migration 的祖先；P1/P2/P3 及已審閱時間功能後續整合已驗收。下方 getRule/listUseOffers 數量、未完成職業敘述、工作分支等僅是當時 R2 盤點，不宣稱所有 116 USE、R0/R1 或多人世界已完成。 [最新基線、驗收與接續指引](current-baseline-status.md)。
 >
 > **下方為歷史內容，保留原始來源及當時紀錄。**

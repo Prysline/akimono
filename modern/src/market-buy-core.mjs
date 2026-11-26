@@ -59,7 +59,10 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   // StreetModule computes the ORIGINAL market price and delivery time
   // from the currently observed wholesale stock (whole.cgi BASE pricehalf,
   // item.cgi GetTimeDeal). GameCore must not hard-code street DSL or ITEM IDs.
-  safe(rule.unitPrice,'original base item PRICE',1);
+  const zero=rule.zeroPriceReviewed===true;
+  safe(rule.unitPrice,'original base item PRICE',zero?0:1);
+  if(zero&&(rule.unitPrice!==0||rule.basePrice!==0||rule.pricePolicy?.kind!=='fixed'))
+    fail('invalid reviewed zero-price policy');
   safe(rule.marketTimeSeconds,'original base market transport time');
   if(typeof rule.source!=='string'||!rule.source)
     fail('missing original review provenance');
@@ -77,13 +80,18 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
     'wholesale stock');
   if(owned>stockLimit)fail('original item holding limit already exceeded');
   if(inMarket===0)fail('original wholesale item sold out');
-  const quote=marketBuy.quote({rule,marketStock:inMarket});
+  if(zero&&checkedSum(owned,inMarket,'zero-price street stock')>
+      safe(rule.wholesaleLimit,'reviewed zero-price wholesale limit',1))
+    fail('original zero-price total street stock cap');
+  const quote=marketBuy.quote({rule,marketStock:inMarket,shop});
   if(inMarket>0&&(!quote||typeof quote!=='object'))
     fail('missing source-reviewed market quote');
   const price=inMarket>0?
-    safe(quote.price,'reviewed actual market price',1):null;
+    safe(quote.price,'reviewed actual market price',zero?0:1):null;
   const timeCost=inMarket>0?
     safe(quote.timeSeconds,'reviewed actual market time'):null;
+  if(zero&&(price!==0||timeCost<1||timeCost>rule.marketTimeSeconds))
+    fail('invalid reviewed fixed zero-price quote');
 
   // The shelf is the rank among in-stock goods in original source sort order.
   const place=marketBuy.order.findIndex(row=>
@@ -109,8 +117,10 @@ export function projectSharedMarketBuy({world,command,marketBuy}){
   const originalTime=safe(shop.time,'shop time');
   const remaining=safe(world.nowSeconds,'world time')-originalTime;
   if(remaining<0)fail('original UseTime negative balance');
-  let count=Math.min(command.requestedCount,stockLimit-owned,inMarket,
-    Math.trunc(money/price));
+  // Original buy-s.cgi clips by cash only when price > 0. A verified
+  // zero PRICE still consumes the original positive transport time.
+  let count=Math.min(command.requestedCount,stockLimit-owned,inMarket);
+  if(price>0)count=Math.min(count,Math.trunc(money/price));
   if(!Number.isSafeInteger(count)||count<=0)
     fail('item limit, money or market stock prevents buying');
   const total=checkedProduct(count,price,'purchase total');
