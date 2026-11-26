@@ -36,10 +36,12 @@ function directory(dir,create=false,privateDir=false){
     fail('unsafe checkpoint directory');
 }
 function readBounded(filename,max,privateFile=false){
-  const fd=fs.openSync(filename,c.O_RDONLY|(c.O_NOFOLLOW??0));
+  const before=fs.lstatSync(filename);
+  if(!before.isFile()||before.nlink!==1)fail('unsafe checkpoint file');
+  const fd=fs.openSync(filename,c.O_RDONLY|(c.O_NOFOLLOW??0)|(c.O_NONBLOCK??0));
   try{
     const st=fs.fstatSync(fd);
-    if(!st.isFile()||st.nlink!==1||st.size>max||
+    if(!st.isFile()||st.nlink!==1||st.dev!==before.dev||st.ino!==before.ino||st.size>max||
        (privateFile&&process.platform!=='win32'&&(st.mode&0o077)!==0))fail('unsafe checkpoint file');
     const result=fs.readFileSync(fd);
     if(result.length>max)fail('oversized checkpoint file');

@@ -198,6 +198,22 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     await boot();ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,second);
   }
+  async function rejectDamagedLatestDisk(first,second,damage){
+    // Keep the genuine save envelopes untouched. Only corrupt the actual
+    // newest materialized generation, never manufacture a playable world.
+    await stop();
+    const restore=await damage();
+    try{
+      await boot();ok(await post('/api/load'),'LOADED');
+      assert.deepEqual(state.world,first);
+      assert.equal(state.save.recoveryWarning,true);
+      assert.equal(state.save.generation,1);
+    }finally{await stop();await restore();}
+    await boot();ok(await post('/api/load'),'LOADED');
+    assert.deepEqual(state.world,second);
+    assert.equal(state.save.generation,2);
+    assert.equal(state.save.recoveryWarning,false);
+  }
   async function rejectForgedLatest(first,mutate,{restore=false,recompute=true}={}){
     const slot=join(directory,'world-a.json');
     await stop();
@@ -221,5 +237,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
+  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
 }
