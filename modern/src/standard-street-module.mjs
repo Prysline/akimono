@@ -73,6 +73,7 @@ import {PERIOD_WORLD_SCHEMA}
 import {SOURCE_STANDARD_STREET_MAX_MONEY}
   from './shared-showcase-price.mjs';
 import {originalSourceUseClock} from './shared-use-experience.mjs';
+import {reviewOriginalUseJobFallback} from './reviewed-use-job-fallback.mjs';
 import {compileReviewedShowcaseResizeUses}
   from './reviewed-showcase-resize-use.mjs';
 import {compileReviewedSelfAdvertiseUse}
@@ -402,11 +403,16 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const giftUseVariants=compileReviewedGiftUseVariants({
     itemDsl,model,giftMap,
   });
+  // Correct the original CheckUseItem clock on existing reviewed runtime
+  // rules; source-only legacy adapters retain their prior restricted contract.
+  // No new USE handler, acquisition permission or EXP redistribution is added.
+  const jobFallback=enableReviewedNormalTime&&originalUseSource!==null?
+    reviewOriginalUseJobFallback({itemDsl,useSource:originalUseSource,compilerSource:originalCompilerSource}):null;
   const declarativeUses=compileReviewedDeclarativeUses({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   const gatheringUses=compileReviewedGatheringMapUses({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   const showcaseResizeUses=compileReviewedShowcaseResizeUses({
     itemDsl,model,limits:giftMap.limits,
@@ -427,7 +433,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     itemDsl,model,limits:giftMap.limits,
   });
   const targetAdvertiseUse=compileReviewedTargetAdvertiseUse({
-    itemDsl,model,limits:giftMap.limits,
+    itemDsl,model,limits:giftMap.limits,jobFallback,
   });
   const declarativeUseIndex=new Map([
     ...declarativeUses,...gatheringUses,...dairyInlineUses,

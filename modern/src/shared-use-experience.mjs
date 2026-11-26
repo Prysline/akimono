@@ -74,15 +74,18 @@ export function originalSourceUseClock({rule,job='',experience}){
   if(typeof job!=='string')fail('shop job');
   let time=safe(rule.time,'source use time',1);
   let exptime=safe(rule.exptime,'source trained time');
-  const modifier=rule.jobTimeModifier;
-  if(modifier){
+  // Original CheckUseItem resolves the explicit function for this job first,
+  // then USE #0's function for the SAME job if the first is absent.
+  const modifiers=[rule.jobTimeModifier,rule.fallbackJobTimeModifier].filter(Boolean);
+  for(const modifier of modifiers){
     if(!['peddle','book','weapon','armor','tool','material','drug','cow'].includes(modifier.job)||
        modifier.numerator!==2||modifier.denominator!==3)
       fail('unreviewed source job modifier');
-    if(job===modifier.job){
-      time=Math.trunc(time*modifier.numerator/modifier.denominator);
-      exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
-    }
+  }
+  const modifier=modifiers.find(m=>m.job===job);
+  if(modifier){
+    time=Math.trunc(time*modifier.numerator/modifier.denominator);
+    exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
   }
   return {base:time,trained:exptime,
     seconds:originalUseTimeSeconds({time,exptime,experience})};
