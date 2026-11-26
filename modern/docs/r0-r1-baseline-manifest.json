@@ -3411,12 +3411,12 @@
       "mode": "100644",
       "status": "歷史",
       "evidenceLevel": "舊 HTTP／CAS＋Perl 差分",
-      "originalSource": "buy-s.cgi、sc-s.cgi、inc-turn.cgi、whole.cgi",
-      "assertions": "30/60 分自然賣出實買 #10；拒絕缺來源能力；原價、貨架、金錢、庫存、revision",
-      "executionPath": "GameCore market-buy/edit-showcase → advance-source-time；legacy-dev-local",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/sc-s.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi",
+      "assertions": "L72–92 capability 缺來源／五種無效時間輸入 snapshot 不變；L93–130 30/60m 各自 fresh flow、rev5→6、原版售量/draw/現金/庫存/rank/雙帳/稅/trush/維持費/全79市場 sparse CSV 差分；L131–143 清架後只驗 stale CAS；L144–215 legacy HTTP HTML/JS wiring、未買拒上架、單次買/展示/售出及 stale/state。",
+      "executionPath": "原版 probe → Node GameCore memory adapter initialize/open/reviewed-sparse-all-plus/market-buy/edit-showcase/advance-source-time；另啟 legacy-dev-local 子程序 HTTP。",
       "risk": "自然售賣量、時間、成交與帳本",
-      "disposition": "R3/R4 正式 reviewed time 另證；保留舊來源差分",
-      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "disposition": "保留限定回歸及歷史證據；不升格正式玩家",
+      "reason": "原版交易 commit 僅 counter；natural probe 跳過 FUNCSALE/SortDT/period/EVENT。Node 清架測試只提交 stale request，未獨立證明清架 fresh revision 不售；UI 僅文字/wiring，無瀏覽器操作；legacy HTTP 非正式 reviewed time/v2，不升格。",
       "reviewed": true,
       "documentReferences": [
         {
@@ -3434,16 +3434,123 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 11
+        },
+        {
+          "path": "modern/docs/r0-b41-b43-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
       "probes": [
-        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+        "modern/tests/original-perl/original-market-buy10-probe.pl"
       ],
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "fixtures": "固定 now=1000000、單店 #10 5000G、人工 Perl draw prefix；HTTP 固定時間及 deterministic RNG，60s供貨後買1。",
+      "limitations": "原版交易 commit 僅 counter；natural probe 跳過 FUNCSALE/SortDT/period/EVENT。Node 清架測試只提交 stale request，未獨立證明清架 fresh revision 不售；UI 僅文字/wiring，無瀏覽器操作；legacy HTTP 非正式 reviewed time/v2，不升格。",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+          "sha": "cffc93c2f78409198d4fa7bcf218633fd029afb4"
+        },
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/support/legacy-dev-local.mjs",
+          "sha": "992a03097c4631ad7ee58c928942547d994724b3"
+        }
+      ]
     },
     {
       "path": "modern/tests/b42-continuous-shop.test.mjs",
@@ -3451,12 +3558,12 @@
       "mode": "100644",
       "status": "歷史",
       "evidenceLevel": "舊 HTTP／CAS＋Perl 差分",
-      "originalSource": "buy-s.cgi、inc-turn.cgi、whole.cgi",
-      "assertions": "同一世界兩輪真原版供貨、購買、售出及空架；市場 CSV、收支、時間片",
-      "executionPath": "GameCore advance-source-time；legacy-dev-local",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/sc-s.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi",
+      "assertions": "L89–135 同一 memory adapter 兩次各買1/售1、rev6→7→8→9、itemtoday1→2、空架10m無售且專精+1000、全79市場/definedness/CSV與 ledger 差分、stale snapshot；L136–152 36h/+3h boundary 1026000、人工 near clone 拒跨期；L154–238 legacy HTTP 一次先買2、兩次售出、partial EVENT 後再次買409、空架、stale。",
+      "executionPath": "同一 Node memory CAS/world，兩次30m再10m；原版同程序 probe 保留店/批發；另 legacy HTTP 先買2再售，不是HTTP兩次成功購買。",
       "risk": "第二輪狀態重設、稀疏市場漂移",
-      "disposition": "R5 同一世界續營另證；保留原兩輪 oracle",
-      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "disposition": "保留限定回歸及歷史證據；不升格正式玩家",
+      "reason": "checkShop 僅比較有定義的欄位，未比每段原版 draw count/稅；跨期測試用 applyGameCommand(near)，snapshot 比的是未送入的 repository，未驗 near 自身不變或真結算；HTTP 拒買只驗409/revision/reason，未比全狀態；非正式 HTTP/v2、全 EVENT/period 或真連續玩家。",
       "reviewed": true,
       "documentReferences": [
         {
@@ -3470,16 +3577,123 @@
         {
           "path": "modern/docs/r3-r0-affected-tests-mapping.md",
           "line": 39
+        },
+        {
+          "path": "modern/docs/r0-b41-b43-rereview-evidence.md",
+          "line": 14
         }
       ],
       "realPlayer": false,
       "probes": [
-        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+        "modern/tests/original-perl/original-market-buy10-probe.pl"
       ],
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "fixtures": "now=1000000、Perl 每段指定 draw；HTTP fixed now/RNG、3600s PLUS、先買2；near clone 人工改 clock。",
+      "limitations": "checkShop 僅比較有定義的欄位，未比每段原版 draw count/稅；跨期測試用 applyGameCommand(near)，snapshot 比的是未送入的 repository，未驗 near 自身不變或真結算；HTTP 拒買只驗409/revision/reason，未比全狀態；非正式 HTTP/v2、全 EVENT/period 或真連續玩家。",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+          "sha": "cffc93c2f78409198d4fa7bcf218633fd029afb4"
+        },
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/support/legacy-dev-local.mjs",
+          "sha": "992a03097c4631ad7ee58c928942547d994724b3"
+        }
+      ]
     },
     {
       "path": "modern/tests/b43-durable-world-save.test.mjs",
@@ -3487,12 +3701,12 @@
       "mode": "100644",
       "status": "歷史",
       "evidenceLevel": "舊存檔／HTTP/CAS fixture",
-      "originalSource": "write.cgi、lock.cgi、buy-s.cgi、inc-turn.cgi",
-      "assertions": "兩代存檔、損毀回退、generation、身分、續買賣；固定 clock/RNG",
-      "executionPath": "legacy-world-save-store / legacy-dev-local",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/sc-s.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi",
+      "assertions": "L72–112 store 兩代、exact encoded snapshot、memory 再買、stale generation/foreign world拒；L113–135 最新損毀回退/雙損 fail-closed；L136–152 合併 stock+負 itemtoday 拒及未重算 checksum 破壞；L196–315 legacy HTTP 三代/兩次重啟/先買2後售兩次、unknown EVENT拒再買、最新 torn slot回退再售；L317–393 B54 關 deterministic fixture 仍固定 clock，同 revision 重啟重播全 world exact、client draw noise/ stale；L395–431 clear 兩槽、保留額外檔、symlink拒絕（非Windows）；L433–515 HTTP confirmation/revision/generation/worldId/reset/雙損及重開。",
+      "executionPath": "memory CAS sample → legacy-world-save-store 真 temp A/B disk；legacy-dev-local 真 HTTP 子程序 SIGTERM/restart/load/save/reset，B54 legacy revision replay。",
       "risk": "把舊格式當正式 v2 或移除磁碟拒絕",
-      "disposition": "P3–P5 v2 證據接替玩家保存；保留隔離負例，非一比一替代",
-      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "disposition": "保留限定回歸及歷史證據；不升格正式玩家",
+      "reason": "memory-world.v2 是內存 schema，disk format 明確 akimono.local-world-save.v1（legacy store L31）；L139–142 同時改 stock 與負 itemtoday，未隔離合法形狀 stock guard；L148 改 money 不重算 checksum，非 checksum-correct forged/HMAC 測試；兩代回退的前3個 store test 非新程序；HTTP 真重啟但舊入口、無正式v2 HMAC/checkpoint/真時鐘/完整 EVENT；不證明所有拒絕磁碟位元不變或跨程序競爭。",
       "reviewed": true,
       "documentReferences": [
         {
@@ -3502,16 +3716,131 @@
         {
           "path": "modern/docs/r3-r0-affected-tests-mapping.md",
           "line": 15
+        },
+        {
+          "path": "modern/docs/r0-b41-b43-rereview-evidence.md",
+          "line": 23
         }
       ],
       "realPlayer": false,
       "probes": [
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl",
         "modern/tests/original-perl/original-market-buy10-probe.pl"
       ],
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "fixtures": "固定 now=1000000，通常 deterministic RNG；B54 明確關 deterministic fixture、仍固定 clock；原版 supply/ sale30 draw fixture；手工破壞隔離存檔，不是玩家注入。",
+      "limitations": "memory-world.v2 是內存 schema，disk format 明確 akimono.local-world-save.v1（legacy store L31）；L139–142 同時改 stock 與負 itemtoday，未隔離合法形狀 stock guard；L148 改 money 不重算 checksum，非 checksum-correct forged/HMAC 測試；兩代回退的前3個 store test 非新程序；HTTP 真重啟但舊入口、無正式v2 HMAC/checkpoint/真時鐘/完整 EVENT；不證明所有拒絕磁碟位元不變或跨程序競爭。",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+          "sha": "cffc93c2f78409198d4fa7bcf218633fd029afb4"
+        },
+        {
+          "path": "modern/tests/original-perl/original-market-buy10-probe.pl",
+          "sha": "42849c0ac02a0ed7e9514dd5c6d4283ff7e9733b"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/tests/support/legacy-dev-local.mjs",
+          "sha": "992a03097c4631ad7ee58c928942547d994724b3"
+        },
+        {
+          "path": "modern/tests/support/legacy-world-save-store.mjs",
+          "sha": "cacbb09ecddc9c202238981b66e3cf63d417e845"
+        },
+        {
+          "path": "modern/tests/support/legacy-career-save-replay.mjs",
+          "sha": "62edcd02637f2b07bcdb79c6cec811f13e3c287e"
+        }
+      ]
     },
     {
       "path": "modern/tests/b44-period-ledger.test.mjs",
@@ -5414,17 +5743,21 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "buy-s.cgi、sc-s.cgi、inc-turn.cgi、whole.cgi",
-      "assertions": "實買 #10、兩交易提交、30/60 分、自然售賣、5000G 及雙帳本",
-      "executionPath": "Perl .t → original-b41-real-sale-probe.pl；Node 對照 b41-real-playable-sale.test.mjs",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/sc-s.cgi",
+      "assertions": "L9–36 exit/JSON；獨立30/60m 各買1 #10、現金95000→100000、原價/展示5000、time958000、兩 commit counter、售1/stock0、sales/pay5000、tax0、sale record1、79槽/CSV及 consumedSamples 長度、60m upkeep>30m。",
+      "executionPath": "Perl .t → original-b41-real-sale-probe.pl → source buy-s/sc-s + B38 natural region + B35 PLUS/CheckWholeStore。",
       "risk": "自然售賣量、時間、成交與帳本",
-      "disposition": "保留原版來源斷言及探針；R3/R4 正式 reviewed time 另證；保留舊來源差分",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "disposition": "保留限定回歸及歷史證據；不升格正式玩家",
+      "reason": "Lock/DataRead/DataWrite/DataCommitOrAbort/CheckUserPass 等 stub（probe L21–42），commit 是計數非磁碟；B38 只執行 natural region 接 PLUS，未執行完整 callback/SortDT/period；draw 長度只與同 probe 回報比較；非正式HTTP/CAS/v2。",
       "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r3-r0-affected-tests-mapping.md",
           "line": 22
+        },
+        {
+          "path": "modern/docs/r0-b41-b43-rereview-evidence.md",
+          "line": 32
         }
       ],
       "realPlayer": false,
@@ -5434,7 +5767,81 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "fixtures": "probe L56–140、212–218；獨立 fresh synthetic single shop，各自 real source buy #10；初始#63/#79人工庫存、人工 rank/time、population、zero tax/empty EVENT及固定 draw。",
+      "limitations": "Lock/DataRead/DataWrite/DataCommitOrAbort/CheckUserPass 等 stub（probe L21–42），commit 是計數非磁碟；B38 只執行 natural region 接 PLUS，未執行完整 callback/SortDT/period；draw 長度只與同 probe 回報比較；非正式HTTP/CAS/v2。",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+          "sha": "cffc93c2f78409198d4fa7bcf218633fd029afb4"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ]
     },
     {
       "path": "modern/tests/original-perl/original-b42-two-rounds.t",
@@ -5442,17 +5849,21 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "buy-s.cgi、inc-turn.cgi、whole.cgi",
-      "assertions": "第二次買賣同一原版店、累計 10000G 收支、空架",
-      "executionPath": "Perl .t → original-b41-real-sale-probe.pl；Node 對照 b42-continuous-shop.test.mjs",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/buy-s.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/calc.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/sc-s.cgi",
+      "assertions": "L9–49 exit/JSON；first/repurchase/second/empty：stock0→1→0，cash100000→95000→100000，累計sales/pay10000，commit counter3，itemtoday2、每段 saleRecord1/0、維持費遞增、空架專精rank+1000、三段79槽CSV與draw長度。",
+      "executionPath": "Perl .t → 同一 probe run(30,1)，保留 DT/DTwholestore，第二次 source buy、第二自然/PLUS、空架600s。",
       "risk": "第二輪狀態重設、稀疏市場漂移",
-      "disposition": "保留原版來源斷言及探針；R5 同一世界續營另證；保留原兩輪 oracle",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "disposition": "保留限定回歸及歷史證據；不升格正式玩家",
+      "reason": "原版店/批發連續，但新 request transient 欄人工重設、commit/auth/IO stub；非完整 CGI 請求/真時間/磁碟/EVENT/period；未測正式 HTTP/v2/CAS，draw 長度非獨立 RNG 證明。",
       "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r3-r0-affected-tests-mapping.md",
           "line": 23
+        },
+        {
+          "path": "modern/docs/r0-b41-b43-rereview-evidence.md",
+          "line": 41
         }
       ],
       "realPlayer": false,
@@ -5462,7 +5873,81 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "fixtures": "probe L141–210 同一 Perl interpreter、手動 NOW_TIME += minutes*60，重設 TIME_SEND_ITEM=1200 與刪 buypeoplebase 模擬新 request；每段重置 draw tape。",
+      "limitations": "原版店/批發連續，但新 request transient 欄人工重設、commit/auth/IO stub；非完整 CGI 請求/真時間/磁碟/EVENT/period；未測正式 HTTP/v2/CAS，draw 長度非獨立 RNG 證明。",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/buy-s.cgi",
+          "sha": "6ba8df9a733ed16c490389414cd94934fe1185ca"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/calc.cgi",
+          "sha": "586354a9a300e26d0e12a4efa512fa25760e3197"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/sc-s.cgi",
+          "sha": "0bada620cff769bed782707d61b87e48cce0a58c"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b41-real-sale-probe.pl",
+          "sha": "cffc93c2f78409198d4fa7bcf218633fd029afb4"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ]
     },
     {
       "path": "modern/tests/original-perl/original-b44-period-ledger.t",
@@ -42509,7 +42994,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 15
+    "reReviewedBaseline": 20
   },
   "provenance": [
     {
@@ -42589,7 +43074,8 @@
     "modern/docs/r0-peer-use-fixture-evidence.md",
     "modern/docs/r0-r2-declarative-unified-use-evidence.md",
     "modern/docs/r0-r3-natural-sword-sales-evidence.md",
-    "modern/docs/r0-b44-b47-rereview-evidence.md"
+    "modern/docs/r0-b44-b47-rereview-evidence.md",
+    "modern/docs/r0-b41-b43-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

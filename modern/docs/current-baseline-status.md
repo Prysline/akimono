@@ -291,3 +291,9 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 前 HEAD：run 45832044809/job 139951042892，HEAD `eec3487149d6b11483035acdc20d2690a7003106`、實際 checkout `777925e438dc5855b1d0e43bd31084769d780252`、tree `56eac8fb160a269d95b3d125d237bbf1d0eaaab3` 相同；failure，JS 1342/1350、8 fail、0 skip、0 cancelled；Perl/source pins skipped，DSL audit step failure；首個 anchor mismatch `r0-b44-b47-rereview-evidence.md:14`。
 - 八個失敗均為稽核 subtests 724、728、731–736（相同 anchor guard 或其先行遮蔽）；不是八個已證實的 production 缺陷。第37/41批 P4 cow mortality 未觀察到死亡而 skip，第16/18批歷史 skip 保留。
 - 本次修正三份既有 evidence docs 共11個 Perl 標題，僅移除 `original-perl/` 前綴，使其符合既有 `checkAudit` basename exact-match；行號、測試分類、語義內容及稽核規則不變。40份既有 candidate evidence docs 的引用已按同一規則檢查，僅此11處不符。R1 features 與第35批已驗 tree 的 manifest 完全相同，未重新語義覆核全部歷史 ranges。未取得可核驗本機 checkout（git ls-remote DNS 仍失敗），未本機重跑；修正後 HEAD 待 CI，R1-HTTP-01 未實跑，R5 未啟動。
+
+### 第四十二批：B41–B43 既有分類重新覆核
+
+- 五檔既有分類維持（3歷史、2有效）：有效200、歷史33、待補0；固定233、分類100%；新逐檔170，既有63重審20、剩43；實際逐檔190/233（81.5%）；候選新增5獨立。
+- [逐檔證據](r0-b41-b43-rereview-evidence.md)：B41 30/60m source #10 買/展示/售、原版 commit/auth/IO stub、自然區段接 PLUS 非全 period；清架測試只驗 stale。B42 同 memory/原版兩次買售，legacy HTTP 實際先買2再售2次、partial EVENT 後拒再買；near clone 跨期拒絕未驗 clone 不變。B43 真隔離 legacy v1 雙槽與子程序重啟，memory schema v2 不等於正式磁碟v2；B54 仍固定 clock；stock/負 itemtoday 合併拒絕，未重算 checksum；reset/symlink 負例僅歷史路徑。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變，R5 未啟動。
+- 第36–41及前 HEAD CI failure 已於 `6d3a293` 記錄並修復11個 evidence heading；修正 commit CI 45844518410 查詢時 queued；新候選待驗。R1-HTTP-01 strict repro 未實跑。

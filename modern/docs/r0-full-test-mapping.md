@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 15 份已重新逐檔覆核（其餘 48 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 20 份已重新逐檔覆核（其餘 43 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -245,3 +245,5 @@
 - modern/tests/r1-http-persistence-contract.test.mjs：正式 HTTP/v2 負向及競爭回歸，整合候選待驗。
 - modern/tests/r1-v2-fresh-negative-replay.test.mjs：正式 v2 fresh replay 九種負向變體、雙槽全損拒絕與復原；整合候選待驗。
 - modern/tests/r1-v2-inner-checkpoint.test.mjs：真玩家 checkpoint 內層八種隔離負向回歸，外層 HMAC 通過、獨立原因與 HTTP 復原；待 CI。
+
+[第四十二批重新覆核](r0-b41-b43-rereview-evidence.md)：B41–43 五檔分類不變，實際逐檔190/233，R1下界不變。
