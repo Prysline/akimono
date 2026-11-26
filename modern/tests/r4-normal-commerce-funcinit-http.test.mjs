@@ -20,7 +20,9 @@ test('R4 genuine #24 appraiser and peddle FUNCINIT transport, actual market paym
       assert.equal(after.shops[0].item[77],shop.item[77]+1);
       assert.equal(after.market.wholesale[77],before.market.wholesale[77]-1);
       assert.equal(after.revision,before.revision+1);assert.equal(after.nowSeconds,before.nowSeconds);
-      assert.ok(after.period.disk.live['log0.cgi'].bytes.startsWith([after.nowSeconds,0,1,'local market-buy'].join('\t')+'\n'));
+      const purchaseRow=[after.nowSeconds,0,1,'購買市場的轉職指南1組@\\10,000(合計\\10,000)購買於/消費時間'+Math.trunc(seconds/60)+'分'].join('\t')+'\n';
+      assert.ok(after.period.disk.live['log0.cgi'].bytes.startsWith(purchaseRow));
+      assert.equal(after.period.disk.live['log0.cgi'].bytes.split(purchaseRow).length-1,1);
       purchases.push({appraiser,peddle,seconds,cmd:{expectedRevision:before.revision,itemId:78,requestedCount:1,marketShelf:offer.shelf,expectedPrice:offer.price}});
     }});
   await p.market(78);await p.discard(78);
