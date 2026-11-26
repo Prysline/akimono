@@ -856,6 +856,56 @@ test('R4 two-slice external source fixture stages five files and recovers the sa
         const time=result.nowSeconds-604800-(n==='old.cgi'?1:0);
         await utimes(path.join(directory,'session',n),time,time);
       }
+      // Same frozen full-source fixture exercises the production projection
+      // and history format, NOT an admitted player or an authenticated anchor.
+      const {createIndependentDiskProjection,R4_INDEPENDENT_DISK,R4_SETTLED_STATE}=await import('../src/original-r4-independent-world-disk.mjs');
+      const {projectExternalTimeTrace}=await import('../src/original-r4-external-time-trace.mjs');
+      const {makeReviewedTimeHistoryEntry,isReviewedTimeHistoryEntry,replayReviewedTimeHistoryEntry}=await import('../src/reviewed-world-time-history.mjs');
+      const projection=createIndependentDiskProjection({sources:{itemDsl:source.itemDsl,writeSource:source.originalDataWriteSource,
+        readSource:source.originalDataReadSource,detailSource:source.originalDetailSource,configSource:source.originalConfigSource,
+        periodSource:source.originalPeriodSource,newSource:await readPerl('new.cgi'),customSource:await readPerl('pinned-custom.cgi'),
+        logSource:await readPerl('pinned-log.cgi'),armyViewSource:await readPerl('pinned-army-view.cgi'),
+        armyCommandSource:await readPerl('pinned-army-s.cgi'),armyFileSource:await readPerl('pinned-army.cgi'),
+        armyCalcSource:await readPerl('calc.cgi')},sort:reviewedR4.sort,street,externalRebel:true});
+      const liveFiles={};
+      for(const n of [...backupNames,'guild.cgi','lasttime.cgi','army.cgi'])
+        liveFiles[n]={bytes:n==='lasttime.cgi'?'':await get(n),mtime:n==='log1.cgi'?world.nowSeconds-129600:world.nowSeconds};
+      const runtimeBefore={...world,period:{...world.period,state:R4_SETTLED_STATE,disk:{source:R4_INDEPENDENT_DISK,live:liveFiles,
+        backup:Object.fromEntries(backupNames.map(n=>[n,{bytes:liveFiles[n].bytes,mtime:world.nowSeconds-7200}])),generations:[null,null,null]}}};
+      projection.validate(runtimeBefore);
+      const command={kind:'advance-reviewed-world-time',expectedRevision:world.revision,minutes:1};
+      const sourceTrace=projectExternalTimeTrace(result);
+      const finalized=projection.finalize({before:runtimeBefore,command,applied:{shops:result.shops,market:result.market,period:result.period,
+        nowSeconds:result.nowSeconds,armyBytes:result.stagedArmyBytes,receipt:{action:command.kind,source:result.source,sourceTrace}},logRows:projection.externalLogs(result)});
+      const runtimeAfter={...runtimeBefore,shops:finalized.shops,market:finalized.market,period:finalized.period,nowSeconds:result.nowSeconds,revision:world.revision+1};
+      projection.validate(runtimeAfter);
+      for(const n of ['army.cgi','guild.cgi','guildbal.cgi','log0.cgi','log1.cgi','log2.cgi'])
+        assert.equal(runtimeAfter.period.disk.live[n].bytes,sourceDisk.live[n],'immutable projection '+n);
+      assert.equal(runtimeAfter.period.disk.live['lasttime.cgi'].mtime,sourceDisk.lasttimeMtime);
+      for(const n of backupNames){
+        assert.equal(runtimeAfter.period.disk.generations[0][n].bytes,sourceDisk.generations[0][n]);
+        assert.equal(runtimeAfter.period.disk.backup[n].bytes,sourceDisk.backup[n]);
+      }
+      assert.equal(Object.hasOwn(runtimeAfter.period.disk.backup,'army.cgi'),false);
+      assert.equal(Object.hasOwn(runtimeAfter.shops[0],'army'),false);
+      const runtimePlay=parsePeriodPlay({...codec,bytes:runtimeAfter.period.disk.live['play.cgi'].bytes});
+      const oraclePlay=parsePeriodPlay({...codec,bytes:sourceDisk.live['play.cgi']});
+      assert.ok(Math.abs(runtimePlay.shops[0].costtoday-oraclePlay.shops[0].costtoday)<1e-8);
+      runtimePlay.shops[0].costtoday=oraclePlay.shops[0].costtoday;
+      assert.deepEqual(runtimePlay,oraclePlay);
+      const fixtureResult={ok:true,world:runtimeAfter,details:finalized.receipt};
+      const historyEntry=makeReviewedTimeHistoryEntry({before:runtimeBefore,command,result:fixtureResult});
+      assert.equal(isReviewedTimeHistoryEntry(historyEntry),true);
+      assert.equal(historyEntry.trace.slices[0].armyRead,true);
+      assert.equal(historyEntry.trace.slices[1].armyRead,armed);
+      assert.deepEqual(historyEntry.trace.slices.map(s=>s.afterOrder),e.map(s=>s.afterOrder));
+      const tampered=structuredClone(historyEntry);
+      tampered.trace.slices[1].activeOrder.push('rebel');
+      assert.equal(isReviewedTimeHistoryEntry(tampered),false);
+      const forgedResult=structuredClone(fixtureResult);
+      forgedResult.world.period.disk.live['army.cgi'].bytes='1,9999\n1\n';
+      assert.throws(()=>makeReviewedTimeHistoryEntry({before:runtimeBefore,command,result:forgedResult}),/army or EVENT successor mismatch/);
+      assert.throws(()=>replayReviewedTimeHistoryEntry({repository:{read:()=>runtimeBefore},streetModule:{reviewedNormalTime:true},entry:historyEntry}),/not authorized/);
       const {liveArmyBytes:ignored,...commandArgs}=input;
       await assert.rejects(stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs:input}),/actual live army/);
       const stage=await stageR4ExternalCrossPeriodDisk({directory,reviews,commandArgs});
