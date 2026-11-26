@@ -6486,17 +6486,53 @@
       "path": "modern/tests/original-perl/original-r4-close-shop-archive-file.t",
       "sha": "f49436f2cfb2f5f75fd5757c7064c1528f737d0b",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "原版 Oracle（真隔離封存磁碟）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；_config.cgi；modern/tests/original-perl/pinned-error.cgi；modern/tests/original-perl/pinned-user.cgi",
+      "assertions": "L11–25 probe 成功、四案例、status/money/rank=0、保留非匹配 session；L26–40 12345 pre-zero、UTF-8 shop 名稱、既有前綴、30001 bytes 輪替、missing log 仍關店。",
+      "executionPath": "完整 frozen write.cgi / pinned-user.cgi / pinned-error.cgi require；隔離檔案真 append/rename/unlink",
+      "risk": "關店封存、輪替、失敗部分副作用、來源與隔離磁碟界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與相關 probe/source 審閱；SetUserData 原版 no-op；原版 WriteErrorLog open 失敗直接 return，CloseShop 仍清零及 unlink；不證 30000 bytes 等值、錯誤回復、跨檔原子性、正式玩家/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-close-shop-archive-evidence.md",
+          "line": 15
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-close-shop-archive-file-probe.pl",
+          "sha": "6310534c78aed2ed774edc621e15129fbda5c296"
+        }
+      ],
+      "fixtures": "同四案例，GetPath/GetTrueIP 注入、固定 NOW900001、人工 shop/stock/EXP/session。",
+      "limitations": "SetUserData 原版 no-op；原版 WriteErrorLog open 失敗直接 return，CloseShop 仍清零及 unlink；不證 30000 bytes 等值、錯誤回復、跨檔原子性、正式玩家/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／關店封存 probe、frozen CloseShop/WriteErrorLog/SetUserData 與 Node writer；B50 既有 recorder 邊界"
     },
     {
       "path": "modern/tests/original-perl/original-r4-close-shop-effects.t",
@@ -13834,17 +13870,105 @@
       "path": "modern/tests/r4-source-b50-archive-disk-chain.test.mjs",
       "sha": "979996f47565aedc764caf2731b02ce90483385a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分＋Node 真隔離封存（非兩期原版磁碟差分）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；_config.cgi；modern/tests/original-perl/pinned-error.cgi；modern/tests/original-perl/pinned-user.cgi；modern/tests/original-perl/period.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/use.cgi；modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/core-inc-admin-func.cgi",
+      "assertions": "L53–92 二期 shop exact、首期無 close payload、第二期 archive payload exact、Node 真 append、非 committable/worldStateWritten、正 bytes、包含 payload、首行七 TSV 欄、單次封存。",
+      "executionPath": "同一 Perl process 兩期 source prefix，WriteErrorLog recorder；Node 每期 Oracle input 純投影後獨立 sandbox writer",
+      "risk": "關店封存、輪替、失敗部分副作用、來源與隔離磁碟界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與相關 probe/source 審閱；兩期 Perl WriteErrorLog/SetUserData recorder；Node 實際 log context 取獨立 probe NOW900001，非第二期 NOW；不比對整個兩期原版 log bytes，不證首期磁碟不存在（僅 payload null），不證 Node 自行續接、完整 backup/session/MakeGuildFile tail、正式玩家/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-close-shop-archive-evidence.md",
+          "line": 25
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        },
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-close-shop-archive-file-probe.pl",
+          "sha": "6310534c78aed2ed774edc621e15129fbda5c296"
+        },
+        {
+          "path": "modern/tests/original-perl/original-r4-period-real-close-chain-probe.pl",
+          "sha": "161244a68aa1fd20ee5fec659a1cd09bb0b71b7c"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-archive-file.mjs",
+          "sha": "3ad6e474644c188163284ef904f448e54016177b"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-effects.mjs",
+          "sha": "8ba642520d76dd9115acde71028554f24ece1261"
+        },
+        {
+          "path": "modern/src/original-period-solo-chain.mjs",
+          "sha": "0c83f75a8a4090c0fa8318ab1f5f2f37c846c37d"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        },
+        {
+          "path": "modern/src/reviewed-gift-map-use.mjs",
+          "sha": "c0cb84e0c45727d4a0f0129b5fc00734f7e733d0"
+        }
+      ],
+      "fixtures": "B50 人工 stock/EXP/guild、固定 NOW/rand tape；獨立 archive probe 的首例 context（非第二期實際 NOW）。",
+      "limitations": "兩期 Perl WriteErrorLog/SetUserData recorder；Node 實際 log context 取獨立 probe NOW900001，非第二期 NOW；不比對整個兩期原版 log bytes，不證首期磁碟不存在（僅 payload null），不證 Node 自行續接、完整 backup/session/MakeGuildFile tail、正式玩家/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／關店封存 probe、frozen CloseShop/WriteErrorLog/SetUserData 與 Node writer；B50 既有 recorder 邊界"
     },
     {
       "path": "modern/tests/r4-source-b50-guild-ledger.test.mjs",
@@ -14188,17 +14312,61 @@
       "path": "modern/tests/r4-source-close-shop-archive-file.test.mjs",
       "sha": "3b278eece56f1c50071b6286edf3d76385b15e60",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
-      "documentReferences": [],
-      "realPlayer": false
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（真隔離封存磁碟）",
+      "originalSource": "modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-func.cgi；_config.cgi；modern/tests/original-perl/pinned-error.cgi；modern/tests/original-perl/pinned-user.cgi",
+      "assertions": "L33–87 四 cases、完整 shop、session 名稱投影、live/old log 解碼文字相等、pre-zero archive、missing ENOENT；L89–117 source drift、committable、TSV newline、tmp root 拒絕及無 live 檔。",
+      "executionPath": "完整 frozen CloseShop/SetUserData/WriteErrorLog Perl probe；Node CloseShop 純投影＋隔離 append/rename",
+      "risk": "關店封存、輪替、失敗部分副作用、來源與隔離磁碟界線",
+      "disposition": "保留限定來源證據；不升格正式玩家或整合存檔",
+      "reason": "完整測試與相關 probe/source 審閱；Perl 真 session unlink；Node session 僅投影；GetPath/GetTrueIP 注入，文字 UTF-8 decode 比對非 raw Buffer；未測 30000 bytes 等值、舊檔已存在、rename/append 中途錯誤或競爭。writer L80–92 先 rename 再驗證 context，現負例只在空目錄，無全失敗原子性證據。非正式玩家/時鐘/RNG/HTTP/CAS/v2。",
+      "reviewed": true,
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-r4-close-shop-archive-evidence.md",
+          "line": 5
+        }
+      ],
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-error.cgi",
+          "sha": "16b619dffd91a3b67095177b7da464de264f1aa3"
+        },
+        {
+          "path": "modern/tests/original-perl/pinned-user.cgi",
+          "sha": "46fe3b13e68ee83997aa919125ab210372af2822"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-r4-close-shop-archive-file-probe.pl",
+          "sha": "6310534c78aed2ed774edc621e15129fbda5c296"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-archive-file.mjs",
+          "sha": "3ad6e474644c188163284ef904f448e54016177b"
+        },
+        {
+          "path": "modern/src/original-r4-close-shop-effects.mjs",
+          "sha": "8ba642520d76dd9115acde71028554f24ece1261"
+        }
+      ],
+      "fixtures": "人工 shop 12345 G/rank20、32 fields、79 slots、固定 NOW900001/IP/host/user、兩 session；既有 UTF-8 行或 30001 X。",
+      "limitations": "Perl 真 session unlink；Node session 僅投影；GetPath/GetTrueIP 注入，文字 UTF-8 decode 比對非 raw Buffer；未測 30000 bytes 等值、舊檔已存在、rename/append 中途錯誤或競爭。writer L80–92 先 rename 再驗證 context，現負例只在空目錄，無全失敗原子性證據。非正式玩家/時鐘/RNG/HTTP/CAS/v2。",
+      "reviewScope": "完整測試／關店封存 probe、frozen CloseShop/WriteErrorLog/SetUserData 與 Node writer；B50 既有 recorder 邊界"
     },
     {
       "path": "modern/tests/r4-source-close-shop-effects.test.mjs",
@@ -40976,14 +41144,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 174,
-      "待補": 27
+      "有效": 177,
+      "待補": 24
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 143,
+    "currentSessionReviewed": 146,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -41054,7 +41222,8 @@
     "modern/docs/r0-r4-period-all-finance-evidence.md",
     "modern/docs/r0-r4-dragon-period-evidence.md",
     "modern/docs/r0-r4-expiry-high-exp-tech-evidence.md",
-    "modern/docs/r0-r4-real-close-evidence.md"
+    "modern/docs/r0-r4-real-close-evidence.md",
+    "modern/docs/r0-r4-close-shop-archive-evidence.md"
   ],
   "integrationCiHistory": [
     {

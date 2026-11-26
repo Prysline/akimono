@@ -111,3 +111,8 @@ P1 #9、P2 #10 歷史整合；P3 #15 封存交接、#17 正式合併；P4 #20、
 ### 第三十一批：真 CloseShop／兩期結算
 
 有效174、歷史32、待補27（206/233，88.4%）；收斂後逐檔補審143、原有分類重新覆核7（剩56）；候選新增5獨立計算。四份測試與兩份 probe 已逐檔實讀，見 [限定證據](r0-r4-real-close-evidence.md)。原版真隔離 session unlink、archive pre-zero 文字、status/money/rank 歸零、SortDT singleton prune；第二期 closed reference 仍結算 dragon1500、fee75、money1425、atk921，移除後不跑技術 rand。Node 每期 Oracle input，純投影；SetUserData/WriteErrorLog/EditGuildMoney 等外部呼叫記錄、DataWrite 未執行、備份尾段未跑。R1 詳細87，限定 ITEM14/USE39/EVENT25、正式取得/HTTP/v2 ITEM7/USE12/EVENT0 不變。CI29、30 本批查詢仍 in_progress，不繼承舊綠燈。
+
+### 第三十二批：R4 關店封存磁碟／B50 串接
+
+- 新審 3 檔：有效 177、歷史 32、待補 24；固定分母 233，分類收斂 209/233（89.7%）；收斂後另逐檔補審 146，既有分類重審 7、剩 56；候選新增 5 獨立計算。
+- [逐檔證據](r0-r4-close-shop-archive-evidence.md)：原版真隔離 CloseShop/WriteErrorLog 四例，新建、追加、30001 bytes 輪替、missing log 仍清零與 session unlink；SetUserData 原版 no-op。Node 真隔離 append/rename 與解碼文字差分，missing ENOENT；未測 30000 bytes 等值或跨檔原子性，輪替先於 context 驗證。B50 兩期 Perl 封存仍為 recorder，Node 每期 Oracle input、獨立 probe context，非兩期原版真磁碟差分或正式 WorldState commit。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 不變。Git DNS 仍失敗，未本地重跑、R1-HTTP-01 未實跑；CI29–31 本批查詢仍 in_progress，新候選待驗。
