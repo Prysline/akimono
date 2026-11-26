@@ -3778,9 +3778,9 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（編譯）",
       "originalSource": "inc-makeitem.cgi GetNumber/GetTime、inc-turn.cgi、兩 DSL",
-      "assertions": "25 宣告、17 compiled、8 停用、START 覆寫與 callback metadata；runtimeSupported=false",
+      "assertions": "25 rows逐項 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled、全部 repeated START、opaque callback presence/name equality；runtimeSupported=false；source drift rejection",
       "executionPath": "original-event-compiled-catalog",
-      "risk": "將編譯當執行、把停用當缺失",
+      "risk": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
       "disposition": "保留；#22 逐 EVENT 玩家支援另證",
       "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
       "reviewed": true,
@@ -3788,6 +3788,10 @@
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r1-event-gift-oracle-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -3797,7 +3801,38 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        }
+      ],
+      "fixtures": "兩固定 DSL EVENT header；probe 抽取原版 GetTime/GetNumber，對最後 START 及 callback metadata；Node source mutation",
+      "limitations": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/b54-repeatable-source-command-draws.test.mjs",
@@ -4406,6 +4441,14 @@
         {
           "path": "modern/tests/original-perl/original-admin-sparse-market-probe.pl",
           "sha": "2bac04c03ea5a630d0a425f5423e0ba03da408bb"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalAdminBootstrapHarness.pm",
+          "sha": "538a03cbcc36fd8d27ed77e1c86c40fbce55f1b1"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
         }
       ],
       "fixtures": "固定 now1000000、shop42、source opt-in module；空市場、兩次 #79/0 合法 memory 兌換；cap case 注入三種地圖各3；Perl subprocess",
@@ -4524,6 +4567,10 @@
         {
           "path": "modern/tests/original-perl/original-virtual-item-require-probe.pl",
           "sha": "89e4321d9431fe8597a2b7660a00fb9a71976204"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalVirtualItemLoader.pm",
+          "sha": "c3620e1f6464b511a8f9e124102ff47fabaeda35"
         }
       ],
       "fixtures": "合成 book-work / edit-showcase 虛擬檔，單 Perl interpreter；9 種順序；money100/shelf1等 fixture",
@@ -4791,7 +4838,16 @@
           "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
         }
       ],
-      "executionSources": [],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalAdminBootstrapHarness.pm",
+          "sha": "538a03cbcc36fd8d27ed77e1c86c40fbce55f1b1"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
       "fixtures": "OriginalAdminBootstrapHarness scalar handle 與 OriginalGiftMapUseHarness；先空 WHOLE，再沿用庫存／稀疏陣列；cap 注入",
       "limitations": "不執行 init 全函式/真 IO/lock/完整 compiler；cap為合成資料；原版 oracle 非正式玩家",
       "reviewScope": "本輪逐檔語義；非全量功能結案"
@@ -5043,13 +5099,18 @@
       "status": "有效",
       "evidenceLevel": "Perl Oracle（受控）",
       "originalSource": "inc-makeitem.cgi GetNumber/GetTime、inc-turn.cgi、兩 DSL",
-      "assertions": "25/17/8、2 zero、15 positive、START覆寫及時間",
+      "assertions": "實際執行 Perl probe exit0、JSON、25/17/8、2 zero/15 positive、happy100/18000/18000、priceup-yakusou last -1、rebel zero now、guildbattle end",
       "executionPath": "Perl .t → original-b53-event-catalog-probe.pl；Node 對照 b53-event-catalog-source.test.mjs",
-      "risk": "將編譯當執行、把停用當缺失",
+      "risk": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
       "disposition": "保留原版來源斷言及探針；保留；#22 逐 EVENT 玩家支援另證",
       "reason": "隔離原版執行證據，非現代正式玩家入口",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r1-event-gift-oracle-evidence.md",
+          "line": 13
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b53-event-catalog-probe.pl"
@@ -5057,7 +5118,38 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog-probe.pl",
+          "sha": "855bd3c4ac103217580d19630e256c4239b584a4"
+        },
+        {
+          "path": "modern/src/original-event-compiled-catalog.mjs",
+          "sha": "909d9d5e5d1595ef20c66d0e4e0aedb3d374889d"
+        }
+      ],
+      "fixtures": "兩固定 DSL EVENT header；probe 抽取原版 GetTime/GetNumber，對最後 START 及 callback metadata；Node source mutation",
+      "limitations": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+      "reReviewed": true
     },
     {
       "path": "modern/tests/original-perl/original-b55-instant-event-callback.t",
@@ -6198,7 +6290,12 @@
           "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
         }
       ],
-      "executionSources": [],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalVirtualItemLoader.pm",
+          "sha": "c3620e1f6464b511a8f9e124102ff47fabaeda35"
+        }
+      ],
       "fixtures": "OriginalVirtualItemLoader @INC memory hook；book-work、edit-showcase 及重複/反向組合",
       "limitations": "不是正式 CGI/disk generated module，兩 callback synthetic；不能把舊全域碰撞視為現代必須行為",
       "reviewScope": "本輪逐檔語義；非全量功能結案"
@@ -14352,15 +14449,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-admin-sparse-market.test.mjs",
+        "modern/tests/original-perl/original-admin-sparse-market.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "12",
@@ -14408,8 +14508,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -14419,7 +14550,31 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 173,
+          "endLine": 219,
+          "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 277,
+          "endLine": 328,
+          "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+          "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+          "startLine": 33,
+          "endLine": 106,
+          "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+        }
+      ],
+      "evidenceScope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2"
     },
     {
       "kind": "USE",
@@ -14684,15 +14839,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-admin-sparse-market.test.mjs",
+        "modern/tests/original-perl/original-admin-sparse-market.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "9",
@@ -14740,8 +14898,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -14751,7 +14940,31 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 173,
+          "endLine": 219,
+          "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 277,
+          "endLine": 328,
+          "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+          "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+          "startLine": 33,
+          "endLine": 106,
+          "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+        }
+      ],
+      "evidenceScope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2"
     },
     {
       "kind": "USE",
@@ -14953,15 +15166,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-admin-sparse-market.test.mjs",
+        "modern/tests/original-perl/original-admin-sparse-market.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "14",
@@ -15009,8 +15225,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -15020,7 +15267,31 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 173,
+          "endLine": 219,
+          "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 277,
+          "endLine": 328,
+          "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+          "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+          "startLine": 33,
+          "endLine": 106,
+          "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+        }
+      ],
+      "evidenceScope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2"
     },
     {
       "kind": "USE",
@@ -18883,7 +19154,16 @@
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
-        "http": null,
+        "http": {
+          "value": false,
+          "scope": "正式 HTTP 拒絕 targetShopId；memory registry 仍有規則；非正向 HTTP 驗收",
+          "source": {
+            "path": "modern/scripts/dev-local.mjs",
+            "sha": "78400e3bd5ca3d4c6831cdb0828be8ad5b6fcaa9",
+            "startLine": 461,
+            "endLine": 470
+          }
+        },
         "ui": null,
         "reviewedTime": null,
         "rng": null,
@@ -20908,15 +21188,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "kill-ken",
@@ -20944,11 +21227,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20958,7 +21288,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -20971,15 +21318,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "kill-yoroi",
@@ -21007,11 +21357,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -21021,7 +21418,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -21034,15 +21448,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "kill-tate",
@@ -21070,11 +21487,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -21084,7 +21548,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -21097,15 +21578,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "kill-tue",
@@ -21133,11 +21617,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -21147,7 +21678,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "ITEM",
@@ -27017,8 +27565,8 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": true,
       "http": true,
       "reviewedTime": null,
@@ -27026,7 +27574,9 @@
       "status": "受控正式驗收（限定路徑；非全部回呼）",
       "owner": "R0/R1 證據；正常經營 #22",
       "evidence": [
-        "modern/tests/p4-dairy-v2-player-http.test.mjs"
+        "modern/tests/p4-dairy-v2-player-http.test.mjs",
+        "modern/tests/original-admin-sparse-market.test.mjs",
+        "modern/tests/original-perl/original-admin-sparse-market.t"
       ],
       "registryEvidence": {
         "kind": "ITEM",
@@ -27075,8 +27625,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
         "lawfulAcquisition": {
           "value": true,
           "scope": "初始5、真排行結算再取得≥3、合法券換牛，存檔後持有／資產 history replay",
@@ -27313,6 +27894,27 @@
           "startLine": 248,
           "endLine": 265,
           "scope": "初始5、真排行結算再取得≥3、合法券換牛，存檔後持有／資產 history replay"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 173,
+          "endLine": 219,
+          "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 277,
+          "endLine": 328,
+          "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+          "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+          "startLine": 33,
+          "endLine": 106,
+          "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
         }
       ],
       "evidenceScope": "market-buy unsupported；不宣稱各券 USE 全驗"
@@ -27328,15 +27930,18 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-admin-sparse-market.test.mjs",
+        "modern/tests/original-perl/original-admin-sparse-market.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "79/0",
@@ -27367,18 +27972,125 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "受控 memory：2券／次，第三次剩1拒絕；地圖cap fixture",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 173,
+              "endLine": 219,
+              "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            },
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            }
+          ]
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
         "reviewedTime": null,
-        "rng": null,
+        "rng": {
+          "value": true,
+          "scope": "編譯 source USE/GET 1000 permille；此受控來源不需隨機 outcome，未量測正式 RNG 呼叫",
+          "refs": [
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 173,
+              "endLine": 219,
+              "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+            },
+            {
+              "path": "modern/tests/original-admin-sparse-market.test.mjs",
+              "sha": "81db868d6972067ee708992e2134dde213699a01",
+              "startLine": 277,
+              "endLine": 328,
+              "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+            },
+            {
+              "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+              "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+              "startLine": 33,
+              "endLine": 106,
+              "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+            }
+          ]
+        },
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 173,
+          "endLine": 219,
+          "scope": "合法 memory gift sequence、稀疏 stock/CSV 與第三次拒絕"
+        },
+        {
+          "path": "modern/tests/original-admin-sparse-market.test.mjs",
+          "sha": "81db868d6972067ee708992e2134dde213699a01",
+          "startLine": 277,
+          "endLine": 328,
+          "scope": "直接 Perl probe 與 Node CSV/defined slots/stock/money/time differential"
+        },
+        {
+          "path": "modern/tests/original-perl/original-admin-sparse-market.t",
+          "sha": "71247094b760f9827b78addf60bc20b7d4062965",
+          "startLine": 33,
+          "endLine": 106,
+          "scope": "原版 gift #79/0 兩次成功、第三次不足拒絕與 cap fixture"
+        }
+      ],
+      "evidenceScope": "固定 source compiler 子函式與 UseItem，受控 memory 差分：#79/0 消耗2券、#9/#12/#14各1，稀疏市場、時間1800、cap與拒絕；不等於真 HTTP/v2"
     },
     {
       "kind": "USE",
@@ -27875,15 +28587,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "happy",
@@ -27911,11 +28626,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27925,7 +28687,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -27938,15 +28717,18 @@
       "compiled": true,
       "eventStart": "7%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "boom-posyon",
@@ -27974,11 +28756,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -27988,7 +28817,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28001,15 +28847,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "ken-sale",
@@ -28037,11 +28886,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28051,7 +28947,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28064,15 +28977,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "tate-sale",
@@ -28100,11 +29016,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28114,7 +29077,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28127,15 +29107,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "yoroi-sale",
@@ -28163,11 +29146,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28177,7 +29207,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28190,15 +29237,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "tue-sale",
@@ -28226,11 +29276,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28240,7 +29337,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28253,15 +29367,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "priceup-yakusou",
@@ -28289,11 +29406,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28303,7 +29467,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28316,15 +29497,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "priceup-tetu",
@@ -28352,11 +29536,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28366,7 +29597,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28379,15 +29627,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "priceup-misuriru",
@@ -28415,11 +29666,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28429,7 +29727,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28442,15 +29757,18 @@
       "compiled": false,
       "eventStart": "-1",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "priceup-oriharukon",
@@ -28478,11 +29796,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28492,7 +29857,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28505,15 +29887,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "plusdown-yakusou",
@@ -28541,11 +29926,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28555,7 +29987,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28568,15 +30017,18 @@
       "compiled": true,
       "eventStart": "10%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "plusup-tetu",
@@ -28604,11 +30056,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28618,7 +30117,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28631,15 +30147,18 @@
       "compiled": true,
       "eventStart": "7%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "plusup-misuriru",
@@ -28667,11 +30186,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28681,7 +30247,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28694,15 +30277,18 @@
       "compiled": true,
       "eventStart": "5%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "plusup-oriharukon",
@@ -28730,11 +30316,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28744,7 +30377,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28757,15 +30407,18 @@
       "compiled": true,
       "eventStart": "100%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "manbiki",
@@ -28793,11 +30446,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28807,7 +30507,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28820,15 +30537,18 @@
       "compiled": true,
       "eventStart": "20%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "goutou",
@@ -28856,11 +30576,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28870,7 +30637,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28883,15 +30667,18 @@
       "compiled": true,
       "eventStart": "30%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "getmoney",
@@ -28919,11 +30706,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28933,7 +30767,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -28946,15 +30797,18 @@
       "compiled": true,
       "eventStart": "30%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "getpop",
@@ -28982,11 +30836,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -28996,7 +30897,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -29009,15 +30927,18 @@
       "compiled": true,
       "eventStart": "50%",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "loto",
@@ -29045,11 +30966,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -29059,7 +31027,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -29072,15 +31057,18 @@
       "compiled": true,
       "eventStart": "0",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "rebel",
@@ -29108,11 +31096,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -29122,7 +31157,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     },
     {
       "kind": "EVENT",
@@ -29135,15 +31187,18 @@
       "compiled": true,
       "eventStart": "0",
       "registered": null,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R4 #22 / #18；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/b53-event-catalog-source.test.mjs",
+        "modern/tests/original-perl/original-b53-event-catalog.t"
+      ],
       "registryEvidence": {
         "kind": "EVENT",
         "id": "guildbattle",
@@ -29171,11 +31226,58 @@
             "run": 45746112640,
             "checkout": "bd704fff29212bb1dadc98a4d4cab2ae4aecda84"
           },
-          "scope": "source registration/compile"
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            },
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            }
+          ]
         },
         "registry": null,
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+              "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+              "startLine": 8,
+              "endLine": 32,
+              "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+            },
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2",
+          "refs": [
+            {
+              "path": "modern/tests/b53-event-catalog-source.test.mjs",
+              "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+              "startLine": 21,
+              "endLine": 48,
+              "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -29185,7 +31287,24 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/b53-event-catalog-source.test.mjs",
+          "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+          "startLine": 21,
+          "endLine": 48,
+          "scope": "逐 25 EVENT 比對 code/ordinal/group/startProba/baseTimeSeconds/plusTimeSeconds/compiled/raw START/opaque callback names"
+        },
+        {
+          "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+          "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+          "startLine": 8,
+          "endLine": 32,
+          "scope": "執行固定 GetNumber/GetTime probe；25/17/8、START覆寫與時間"
+        }
+      ],
+      "evidenceScope": "僅編譯 metadata：固定原版 GetNumber/GetTime、last START -1/0/positive、group/time/opaque callback 名稱；沒有 EVENT callback execution / runtime / HTTP / v2"
     }
   ],
   "counts": {
@@ -29339,7 +31458,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 35,
-    "reReviewedBaseline": 5
+    "reReviewedBaseline": 7
   },
   "provenance": [
     {
@@ -29384,7 +31503,8 @@
     "modern/docs/r0-p3-mixed-path-evidence.md",
     "modern/docs/r1-v2-security-evidence.md",
     "modern/docs/r0-init-wholesale-exp-use-evidence.md",
-    "modern/docs/r0-admin-callback-loader-evidence.md"
+    "modern/docs/r0-admin-callback-loader-evidence.md",
+    "modern/docs/r1-event-gift-oracle-evidence.md"
   ],
   "integrationCiHistory": [
     {

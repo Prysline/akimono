@@ -37,3 +37,9 @@ test('R1 live HTTP rejects unauthorized fields, stale/invalid revisions and old 
  assert.equal(r.code,'COMMITTED');assert.equal(p.state.shop.showcase[0],0);
  const snapshot=await p.saveAndRestart(gen);assert.deepEqual(p.state.world,snapshot);
 });
+
+test('R1 14-layer row cannot omit a dimension',async()=>{const m=await loadAudit();delete m.features[0].evidenceLayers.ui;await assert.rejects(checkAudit(m),/incomplete 14-layer row/);});
+test('R1 layer flags cannot contradict compiled or market registry state',async()=>{const m=await loadAudit();const x=m.features.find(x=>x.kind==='EVENT'&&x.compiled===false);x.evidenceLayers.compiled.value=true;await assert.rejects(checkAudit(m),/layer flag mismatch/);});
+test('R1 evidence range must point to the fixed test blob',async()=>{const m=await loadAudit();const x=m.features.find(x=>x.kind==='EVENT');x.evidenceLayers.nodeDifferential.refs[0].sha='0'.repeat(40);await assert.rejects(checkAudit(m),/invalid evidence range\/pin/);});
+test('R1 evidence range cannot exceed the source',async()=>{const m=await loadAudit();const x=m.features.find(x=>x.kind==='EVENT');x.evidenceLayers.nodeDifferential.refs[0].endLine=999999;await assert.rejects(checkAudit(m),/evidence range exceeds source/);});
+test('R1 layer-level HTTP claim cannot cite only a memory fixture',async()=>{const m=await loadAudit();const x=m.features.find(x=>x.kind==='ITEM'&&x.id==='79');const r=x.evidenceLayers.nodeDifferential.refs[0];x.evidenceLayers.http.refs=[r];await assert.rejects(checkAudit(m),/HTTP\/v2 layer requires real player/);});

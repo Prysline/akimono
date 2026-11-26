@@ -67,12 +67,56 @@ export async function checkAudit(m){
   ok(JSON.stringify(d.rawLines)===JSON.stringify(sourceLines[d.path].slice(d.startLine-1,d.endLine)),'source declaration raw lines '+f.id);
  }
  const catalog=reviewOriginalCompiledEventCatalog({itemDsl,rebelDsl,compilerSource:String(await read('modern/tests/original-perl/inc-makeitem.cgi')),turnSource:String(await read('modern/tests/original-perl/inc-turn.cgi'))});
+ const dimensions=['declaration','compiled','registry','perlOracle','nodeDifferential','lawfulAcquisition','prerequisites','formalCommand','http','ui','reviewedTime','rng','cas','v2Restart'];
+ ok(JSON.stringify(m.evidenceLayerSchema?.dimensions)===JSON.stringify(dimensions),'14-layer schema mismatch');
+ const featureTests=new Map(m.tests.map(t=>[t.path,t])),lineCache=new Map();
+ async function pinRange(ref,label,requireTest=true,realPlayer=false){
+   ok(ref&&baseline.get(ref.path)===ref.sha&&Number.isSafeInteger(ref.startLine)&&Number.isSafeInteger(ref.endLine)&&ref.startLine>=1&&ref.endLine>=ref.startLine,'invalid evidence range/pin '+label);
+   if(requireTest){
+     const t=featureTests.get(ref.path);
+     ok(t?.status==='有效'&&t.reviewed&&t.sha===ref.sha,'unreviewed feature evidence '+label);
+     if(realPlayer)ok(t.realPlayer,'HTTP/v2 layer requires real player '+label);
+   }else ok(sha(await read(ref.path))===ref.sha,'evidence source drift '+label);
+   if(!lineCache.has(ref.path))lineCache.set(ref.path,String(await read(ref.path)).split('\n').length);
+   ok(ref.endLine<=lineCache.get(ref.path),'evidence range exceeds source '+label);
+ }
  for(const x of m.features){
   ok(x.declared===true&&baseline.get(x.path)===x.sha,'feature source pin mismatch '+x.id);
   for(const e of x.evidence)ok(baseline.has(e)&&m.tests.some(t=>t.path===e),'missing feature evidence '+e);
   if(x.status.startsWith('受控正式驗收'))ok(x.evidence.length>0&&m.tests.some(t=>x.evidence.includes(t.path)&&t.realPlayer),'completed without player evidence '+x.id);
   if(x.http===true||x.v2Restart===true)ok(m.tests.some(t=>x.evidence.includes(t.path)&&t.realPlayer),'HTTP/v2 claim without actual player evidence '+x.id);
   if(x.kind==='EVENT')ok(catalog.declared.find(e=>e.code===x.id)?.compiled===x.compiled,'event compiled status mismatch '+x.id);
+  const label=x.kind+' '+x.id,L=x.evidenceLayers;
+  ok(L&&Object.keys(L).length===dimensions.length&&dimensions.every(k=>Object.hasOwn(L,k)),'incomplete 14-layer row '+label);
+  const d=L.declaration;
+  ok(d?.path===x.path&&d.sha===x.sha&&d.startLine===x.line&&d.endLine===x.declarationEndLine,'layer declaration identity '+label);
+  for(const k of ['compiled','registry','perlOracle','nodeDifferential','lawfulAcquisition','http','reviewedTime','v2Restart']){
+    const value=x[k==='registry'?'registered':k]??null;
+    ok((L[k]?.value??null)===value,'layer flag mismatch '+label+' '+k);
+  }
+  for(const k of dimensions.slice(1)){
+    const layer=L[k];if(layer===null)continue;
+    ok(typeof layer.value==='boolean'&&typeof layer.scope==='string'&&layer.scope.length>0,'invalid layer value/scope '+label+' '+k);
+    const requireReal=layer.value===true&&['http','v2Restart','formalCommand','cas'].includes(k);
+    if(layer.refs!==undefined){
+      ok(Array.isArray(layer.refs)&&layer.refs.length>0,'empty layer refs '+label+' '+k);
+      for(const r of layer.refs){
+        ok(x.evidence.includes(r.path),'unlinked layer ref '+label+' '+k);
+        await pinRange(r,label+' '+k,true,requireReal);
+      }
+    }
+    if(layer.tests!==undefined){
+      ok(Array.isArray(layer.tests)&&layer.tests.length>0,'empty layer tests '+label+' '+k);
+      for(const r of layer.tests)ok(x.evidence.includes(r.path)&&featureTests.get(r.path)?.sha===r.sha,'invalid layer test pin '+label+' '+k);
+      if(requireReal)ok(layer.tests.some(r=>featureTests.get(r.path)?.realPlayer),'HTTP/v2 layer requires real player '+label+' '+k);
+    }
+    if(layer.source!==undefined)await pinRange(layer.source,label+' '+k,false);
+    if(!['compiled','registry'].includes(k))ok(layer.refs||layer.tests||layer.source,'missing layer evidence '+label+' '+k);
+  }
+  for(const r of x.detailedEvidence??[]){
+    ok(x.evidence.includes(r.path),'unlinked detailed ref '+label);
+    await pinRange(r,label);
+  }
  }
  return {tests:actual.length,features:expected.length,frozen:m.frozen.length};
 }
