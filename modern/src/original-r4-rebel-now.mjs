@@ -133,8 +133,10 @@ export function projectR4RebelNow({
       const ranked=[...shopsOut].sort((a,b)=>(b.army??0)-(a.army??0));
       let winner=ranked[0].id;
       if(winner===city.leader){
-        if(!ranked[1])fail('missing second rebel successor');
-        winner=ranked[1].id;
+        // The frozen Perl reads $DTS[1]->{id} even for a one-shop
+        // town. That undefined id is false in the subsequent if, so
+        // the original NPC successor path runs, not a runtime abort.
+        winner=ranked[1]?.id??0;
       }
       if(city.robinb>(ranked[0].army??0))winner=0;
       city.robina=0;city.money=Math.max(0,city.money);

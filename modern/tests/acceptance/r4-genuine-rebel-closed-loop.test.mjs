@@ -389,4 +389,51 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   t.diagnostic('R4 genuine closed-loop ACCEPTED '+JSON.stringify({missions,ticks,proceeds,maxPoint,
     hired:2500,revision:saved.revision,period:saved.period.settledCount,generation,
     army:saved.period.disk.live['army.cgi'].bytes,eventState:saved.period.eventState,leader:saved.period.town.leader}));
+  // Continue the SAME real player through the original terminal outcome.
+  // A 2500-soldier attack need not win against a larger source city army.
+  // The test must accept a genuine defeat as well as a genuine victory.
+  await t.test('same legal player reaches source rebel outcome, persists it and resumes commerce',async()=>{
+    let terminal=null;
+    for(let n=0;Object.hasOwn(snapshot().period.eventState,'rebel');n++){
+      assert.ok(n<12,'bounded real battle outcome '+diagnostic());
+      const prior=snapshot(),result=await p.tick(60),next=snapshot(),trace=result.details.sourceTrace;
+      assert.equal(trace.hashPolicy,R4_EXTERNAL_COMMAND_HASH_POLICY);
+      assert.equal(trace.liveArmySha256,sha(prior.period.disk.live['army.cgi'].bytes));
+      assert.equal(Object.hasOwn(next.shops[0],'army'),false);
+      assert.equal(trace.slices.at(-1).stagedArmySha256,sha(next.period.disk.live['army.cgi'].bytes));
+      const logs=trace.slices.flatMap(s=>s.logs);
+      if(!Object.hasOwn(next.period.eventState,'rebel')){
+        const suppressed=logs.some(row=>row[2]==='叛亂被護衛軍鎮壓了。');
+        const defeated=logs.some(row=>row[2]==='護衛軍被叛軍殲滅了。領主被趕出了城堡。');
+        assert.notEqual(suppressed,defeated,'exact source terminal log');
+        terminal=suppressed?'suppressed':next.period.town.leader===1?'player-victory':'npc-victory';
+        assert.deepEqual(parseArmyFile(next.period.disk.live['army.cgi'].bytes,[1]).riotIds,[]);
+        assert.equal(p.state.army.riot,false);
+        assert.equal(next.period.town.leader,terminal==='player-victory'?1:0);
+        assert.ok(next.period.disk.live['log0.cgi'].bytes.includes(suppressed?'叛亂被護衛軍鎮壓了。':'護衛軍被叛軍殲滅了。領主被趕出了城堡。'));
+      }
+    }
+    // In the unlikely case the initial two-slice crossing already ended
+    // the event, classify that same source callback, never reroll.
+    if(terminal===null){
+      const logs=trace.slices.flatMap(s=>s.logs);
+      assert.ok(logs.some(row=>row[2]==='叛亂被護衛軍鎮壓了。'||row[2]==='護衛軍被叛軍殲滅了。領主被趕出了城堡。'));
+      terminal=logs.some(row=>row[2]==='叛亂被護衛軍鎮壓了。')?'suppressed':after.period.town.leader===1?'player-victory':'npc-victory';
+    }
+    const outcome=snapshot(),loaded=await p.saveAndRestart(generation++);
+    assert.deepEqual(loaded,outcome);
+    assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(loaded),true);
+    assert.equal(Object.hasOwn(loaded.period.eventState,'rebel'),false);
+    assert.equal(p.state.army.riot,false);
+    const army=loaded.period.disk.live['army.cgi'];
+    await p.tick(1);
+    if(!Object.hasOwn(snapshot().period.eventState,'rebel')){
+      assert.deepEqual(snapshot().period.disk.live['army.cgi'],army,'inactive NOW does not rewrite army');
+    }
+    assert.equal(shop().showcasecount,4);
+    const resumed=await p.saveAndRestart(generation++);
+    assert.equal(createIndependentPeriodDiskStore({directory:p.directory}).verify(resumed),true);
+    t.diagnostic('R4 genuine battle outcome ACCEPTED '+JSON.stringify({terminal,leader:outcome.period.town.leader,
+      army:army.bytes,revision:resumed.revision,period:resumed.period.settledCount,generation}));
+  });
 });
