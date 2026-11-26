@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 9 | 39 | 25 |
-| nodeDifferential | 9 | 39 | 25 |
+| perlOracle | 10 | 39 | 25 |
+| nodeDifferential | 10 | 39 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -33,3 +33,5 @@
 第六批補鏈：[採集／多次地圖／廣告](r0-r2-gathering-advertisement-repeat-evidence.md)：10 USE rows（#9/0–2、#12/0–3、#14/0、#62/0–1）受控完整 source USE 差分，80 筆有詳細證據；#62/1 formal HTTP false 保留，正式正向下界不變。
 
 第七批補鏈：[sparse PLUS](r0-sparse-plus-evidence.md)：ITEM #1/#10/#40 受控來源供給差分，82 筆有詳細證據；正式取得/HTTP/v2 下界不變。
+
+第八批補鏈：[自然販售／#70 FUNCTURN](r0-natural-sale-functurn-evidence.md)：ITEM #10/#70 受控來源 Oracle／差分，83 筆功能有詳細證據；#70 registry false 不變；正式取得/HTTP/v2 下界不變。

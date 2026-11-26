@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 111、歷史 32、待補 90。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 80 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 115、歷史 32、待補 86。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 84 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -40,8 +40,8 @@
 | original-item-helper-model.test.mjs | 有效 | Perl Oracle／Node 差分（隔離 helper） |
 | original-market-buy10.test.mjs | 有效 | 混合：Perl Oracle／Node 差分＋歷史 HTTP/CAS |
 | original-multi-item-use-model.test.mjs | 有效 | 純 Node 投影／來源守門（材料與產出） |
-| original-natural-sale-plus.test.mjs | 待補 | 未完成語義審閱 |
-| original-nayuta-functurn.test.mjs | 待補 | 未完成語義審閱 |
+| original-natural-sale-plus.test.mjs | 有效 | Perl Oracle／Node 差分（受控自然販售＋PLUS） |
+| original-nayuta-functurn.test.mjs | 有效 | Perl Oracle／Node 差分（受控 FUNCTURN） |
 | original-perl/backup-safety.t | 有效 | 原版 Perl Oracle／不安全歷史語義 |
 | original-perl/baseline.t | 有效 | 原版 Perl Oracle |
 | original-perl/lock-safety.t | 有效 | 原版 Perl Oracle／歷史鎖 |
@@ -73,8 +73,8 @@
 | original-perl/original-item-helpers.t | 有效 | Perl Oracle（隔離 helper） |
 | original-perl/original-market-buy10.t | 有效 | 原版 Perl Oracle（隔離 CGI） |
 | original-perl/original-multi-item-use.t | 有效 | Perl Oracle（材料與產出片段） |
-| original-perl/original-natural-sale-plus.t | 待補 | 未完成語義審閱 |
-| original-perl/original-nayuta-functurn.t | 待補 | 未完成語義審閱 |
+| original-perl/original-natural-sale-plus.t | 有效 | Perl Oracle（受控自然販售＋PLUS） |
+| original-perl/original-nayuta-functurn.t | 有效 | Perl Oracle（受控 FUNCTURN） |
 | original-perl/original-r4-b50-guild-ledger.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-b50-period-disk.t | 待補 | 未完成語義審閱 |
 | original-perl/original-r4-close-shop-archive-file.t | 待補 | 未完成語義審閱 |

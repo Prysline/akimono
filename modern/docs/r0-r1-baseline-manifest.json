@@ -4847,43 +4847,233 @@
       "path": "modern/tests/original-natural-sale-plus.test.mjs",
       "sha": "56880dc270355e1524bd146e0aa449c6b7a8e65a",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控自然販售＋PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/core-detail.cgi",
+      "assertions": "69–97：capability、1728秒及 source drift；98–120：空架原版差分；121–157：人工 #10 的販售、稅、人氣、成本、記錄、CSV/defined slots 與 draw 順序；158–194：缺／多／錯 draws、stale、額外欄位、無庫存拒絕及 memory 不變（最後無庫存案例僅斷言拒絕碼）。",
+      "executionPath": "execFileSync original-natural-sale-plus-probe.pl；createStandardStreetModule + executeMemoryCommand reviewed-natural-sale-plus",
+      "risk": "自然販售／人氣／callback 順序、sparse PLUS、明示亂數消耗；非正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "逐檔審閱原版 harness、probe 與實際斷言；固定 now=1000000，人工 #10 庫存／上架、明示 draws；非 FUNCTURN/FUNCSALE、SortDT、period、完整 CGI 或正式 HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 42
+        },
+        {
+          "path": "modern/docs/r0-natural-sale-functurn-evidence.md",
+          "line": 5
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/original-natural-sale-plus-probe.pl",
+          "sha": "99d7a906cad13d1a1c0557293e8f009cca9fddb4"
+        },
+        {
+          "path": "modern/src/original-natural-sale-plus.mjs",
+          "sha": "f1f497c7c81b19262276389493778fa44ce2d512"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "單店單架／人工 stock／固定初始資產與明示 randomDraws",
+      "limitations": "固定 now=1000000，人工 #10 庫存／上架、明示 draws；非 FUNCTURN/FUNCSALE、SortDT、period、完整 CGI 或正式 HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-nayuta-functurn.test.mjs",
       "sha": "8b55b3a8f4b5ae4ab0c259f4ad7611ba81351a85",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控 FUNCTURN）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/core-detail.cgi",
+      "assertions": "65–94：#70 唯一 FUNCTURN、8640秒、100 rank、point20000、source drift；95–121：空架差分；122–152：人工 #70 庫存、未售、rank+100、callback log、sparse 61槽／#70 cap0；153–171：60秒機率兩支、超價、rank cap 與原版差分；172–218：公開 PLUS 上界、非法 draws、stale、額外欄位及偽造 fixture 原子拒絕。",
+      "executionPath": "execFileSync original-nayuta-functurn-probe.pl；executeMemoryCommand reviewed-nayuta-functurn；projectNayutaCallbackOnly",
+      "risk": "自然販售／人氣／callback 順序、sparse PLUS、明示亂數消耗；非正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "逐檔審閱原版 harness、probe 與實際斷言；固定 now=1000000，人工 #70、明示 draws、單架；8640秒只走內部受控路徑，60秒 callback-only 是純投影；非正式時間、合法取得、自然售出 #70 或 HTTP/v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 42
+        },
+        {
+          "path": "modern/docs/r0-natural-sale-functurn-evidence.md",
+          "line": 19
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNayutaFuncturnHarness.pm",
+          "sha": "51f90c216f849c3f11fa3817ff336b898bdea3ea"
+        },
+        {
+          "path": "modern/tests/original-perl/original-nayuta-functurn-probe.pl",
+          "sha": "c0e72dc5219ea4099d10f0e17a7fb5133093a65c"
+        },
+        {
+          "path": "modern/src/original-natural-sale-plus.mjs",
+          "sha": "f1f497c7c81b19262276389493778fa44ce2d512"
+        },
+        {
+          "path": "modern/src/original-nayuta-functurn.mjs",
+          "sha": "1b3e26e018767e26b00c02bbdf5ce46bd7015358"
+        },
+        {
+          "path": "modern/src/standard-street-module.mjs",
+          "sha": "abf89cb14a24479f98ec00374d48657cc1f45d81"
+        },
+        {
+          "path": "modern/src/game-core-contract.mjs",
+          "sha": "b5ff31b7caa086e811ab7e4204aca8a5b23a8975"
+        }
+      ],
+      "fixtures": "單店單架／人工 stock／固定初始資產與明示 randomDraws",
+      "limitations": "固定 now=1000000，人工 #70、明示 draws、單架；8640秒只走內部受控路徑，60秒 callback-only 是純投影；非正式時間、合法取得、自然售出 #70 或 HTTP/v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/backup-safety.t",
@@ -5892,43 +6082,197 @@
       "path": "modern/tests/original-perl/original-natural-sale-plus.t",
       "sha": "7937a8b6071663c8a9c327b333cbf6a1d39d52e1",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（受控自然販售＋PLUS）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/core-detail.cgi",
+      "assertions": "10–16：原版區段標記及排除 SortDT；17–38：人工 #10 售1、105000G、日售5000、稅0、trush5001、cost1、temprank6010、售出記錄、#10 cap10、60 sparse slots、79 槽與 consumed draws；39–48：空架無售、100000G、cost/trush1、temprank5010、definedness 同。",
+      "executionPath": "OriginalNaturalSalePlusHarness::run；直接 Perl .t",
+      "risk": "自然販售／人氣／callback 順序、sparse PLUS、明示亂數消耗；非正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "逐檔審閱原版 harness、probe 與實際斷言；單店單架，1728秒，固定初始資產與人口、人工庫存、明示 draws；只執行原版自然區段與 B35SourceStep，非完整 CGI/時間/正式存檔。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 42
+        },
+        {
+          "path": "modern/docs/r0-natural-sale-functurn-evidence.md",
+          "line": 12
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        }
+      ],
+      "fixtures": "單店單架／人工 stock／固定初始資產與明示 randomDraws",
+      "limitations": "單店單架，1728秒，固定初始資產與人口、人工庫存、明示 draws；只執行原版自然區段與 B35SourceStep，非完整 CGI/時間/正式存檔。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-nayuta-functurn.t",
       "sha": "74ccf29344d0dd1405f8d9a78c1e3d1e7c843a16",
       "mode": "100644",
-      "status": "待補",
-      "evidenceLevel": "未完成語義審閱",
-      "originalSource": "待逐檔核對",
-      "assertions": "待核對實際斷言",
-      "executionPath": "待核對正式／隔離入口",
-      "risk": "來源、狀態、順序或安全回歸；具體影響待逐斷言覆核",
-      "disposition": "保留；不得刪除 Oracle 或降低安全門檻",
-      "reason": "已列入固定 tree；尚未完成語義分類",
-      "reviewed": false,
+      "status": "有效",
+      "evidenceLevel": "Perl Oracle（受控 FUNCTURN）",
+      "originalSource": "custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；_config.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi；modern/tests/original-perl/write.cgi；modern/tests/original-perl/inc-turn.cgi；modern/tests/original-perl/whole.cgi；modern/tests/original-perl/inc-makeitem.cgi；modern/tests/original-perl/market.cgi；modern/tests/original-perl/item.cgi；modern/tests/original-perl/core-detail.cgi",
+      "assertions": "9–19：原版 inline 與 dispatcher 標記；20–39：人工 #70 未售、money100000、cost/trush7、temprank6010、rank5107、log、cap0、61槽；40–53：空架 rank5007、cost/trush5、無 callback log、60槽、draw差1；54–67：60秒 RNG 0/999999、50001超價、rank cap10000。",
+      "executionPath": "OriginalNayutaFuncturnHarness::run + callback_only；直接 Perl .t",
+      "risk": "自然販售／人氣／callback 順序、sparse PLUS、明示亂數消耗；非正式玩家",
+      "disposition": "保留；不得升格正式取得／HTTP/v2",
+      "reason": "逐檔審閱原版 harness、probe 與實際斷言；固定單店單架、人工 #70、明示 draws；原版 inline 用隔離 wrapper eval，實際 dispatcher 執行，略過 FUNCSALE/SortDT/period/CGI；無正式合法取得或 v2。",
+      "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 42
+        },
+        {
+          "path": "modern/docs/r0-natural-sale-functurn-evidence.md",
+          "line": 26
         }
       ],
-      "realPlayer": false
+      "realPlayer": false,
+      "originalSources": [
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        },
+        {
+          "path": "modern/tests/original-perl/write.cgi",
+          "sha": "203f33b37511e838800a45b84183af98fcf46e4c"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-turn.cgi",
+          "sha": "b8a4980275f475a952846a8d6072fad45f8dff50"
+        },
+        {
+          "path": "modern/tests/original-perl/whole.cgi",
+          "sha": "778badaf157326bcfd1f8fa1e310d94f94995eb3"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        },
+        {
+          "path": "modern/tests/original-perl/market.cgi",
+          "sha": "1aca77e9b373c25e53e445d64c101a7cc2246825"
+        },
+        {
+          "path": "modern/tests/original-perl/item.cgi",
+          "sha": "b39400d7dc0ab80062c392ae2bbc923e24ecacf8"
+        },
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/OriginalNaturalSalePlusHarness.pm",
+          "sha": "28875c0036dd616489fc8e9dc5ca49cdb48745b3"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseAllPlusHarness.pm",
+          "sha": "c69be06fca54b0cf9402196c063fb108d637b21c"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalSparseWholesalePlusHarness.pm",
+          "sha": "ba02cee03cb7dc1b5def06cbf3dea869dd93a2b6"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalGiftMapUseHarness.pm",
+          "sha": "4a81cd4b834222acdd059d9ea9a717452fc830c5"
+        },
+        {
+          "path": "modern/tests/original-perl/OriginalNayutaFuncturnHarness.pm",
+          "sha": "51f90c216f849c3f11fa3817ff336b898bdea3ea"
+        }
+      ],
+      "fixtures": "單店單架／人工 stock／固定初始資產與明示 randomDraws",
+      "limitations": "固定單店單架、人工 #70、明示 draws；原版 inline 用隔離 wrapper eval，實際 dispatcher 執行，略過 FUNCSALE/SortDT/period/CGI；無正式合法取得或 v2。",
+      "reviewScope": "完整測試檔斷言與對應原版執行路徑"
     },
     {
       "path": "modern/tests/original-perl/original-r4-b50-guild-ledger.t",
@@ -12036,7 +12380,9 @@
         "modern/tests/original-perl/original-market-buy10.t",
         "modern/tests/original-sparse-multi-plus.test.mjs",
         "modern/tests/original-perl/original-sparse-multi-plus.t",
-        "modern/tests/original-sparse-all-plus.test.mjs"
+        "modern/tests/original-sparse-all-plus.test.mjs",
+        "modern/tests/original-natural-sale-plus.test.mjs",
+        "modern/tests/original-perl/original-natural-sale-plus.t"
       ],
       "registryEvidence": {
         "kind": "ITEM",
@@ -12087,7 +12433,7 @@
         },
         "perlOracle": {
           "value": true,
-          "scope": "原版隔離 buy-s.cgi / controlled PLUS，commit stub，非正式磁碟",
+          "scope": "原版隔離 buy-s.cgi / controlled PLUS，commit stub，非正式磁碟；人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分",
           "refs": [
             {
               "path": "modern/tests/original-market-buy10.test.mjs",
@@ -12123,12 +12469,26 @@
               "startLine": 48,
               "endLine": 114,
               "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-natural-sale-plus.test.mjs",
+              "sha": "56880dc270355e1524bd146e0aa449c6b7a8e65a",
+              "startLine": 98,
+              "endLine": 157,
+              "scope": "人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分"
+            },
+            {
+              "path": "modern/tests/original-perl/original-natural-sale-plus.t",
+              "sha": "7937a8b6071663c8a9c327b333cbf6a1d39d52e1",
+              "startLine": 17,
+              "endLine": 48,
+              "scope": "人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分"
             }
           ]
         },
         "nodeDifferential": {
           "value": true,
-          "scope": "受控 memory stock/money/time/sparse CSV 差分，legacy HTTP 不列正式",
+          "scope": "受控 memory stock/money/time/sparse CSV 差分，legacy HTTP 不列正式；人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分",
           "refs": [
             {
               "path": "modern/tests/original-market-buy10.test.mjs",
@@ -12150,6 +12510,13 @@
               "startLine": 48,
               "endLine": 114,
               "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+            },
+            {
+              "path": "modern/tests/original-natural-sale-plus.test.mjs",
+              "sha": "56880dc270355e1524bd146e0aa449c6b7a8e65a",
+              "startLine": 98,
+              "endLine": 157,
+              "scope": "人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分"
             }
           ]
         },
@@ -12198,6 +12565,20 @@
           "startLine": 48,
           "endLine": 114,
           "scope": "ITEM #10 原版 PLUS／cap／sparse stock 差分；受控供給，非正式取得或完整 turn"
+        },
+        {
+          "path": "modern/tests/original-natural-sale-plus.test.mjs",
+          "sha": "56880dc270355e1524bd146e0aa449c6b7a8e65a",
+          "startLine": 98,
+          "endLine": 157,
+          "scope": "人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分"
+        },
+        {
+          "path": "modern/tests/original-perl/original-natural-sale-plus.t",
+          "sha": "7937a8b6071663c8a9c327b333cbf6a1d39d52e1",
+          "startLine": 17,
+          "endLine": 48,
+          "scope": "人工 #10 stock：原版自然販售／零稅／人氣／維持費／PLUS 差分"
         }
       ]
     },
@@ -20713,15 +21094,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-nayuta-functurn.test.mjs",
+        "modern/tests/original-perl/original-nayuta-functurn.t"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "70",
@@ -20769,8 +21153,39 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分",
+          "refs": [
+            {
+              "path": "modern/tests/original-nayuta-functurn.test.mjs",
+              "sha": "8b55b3a8f4b5ae4ab0c259f4ad7611ba81351a85",
+              "startLine": 95,
+              "endLine": 171,
+              "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分"
+            },
+            {
+              "path": "modern/tests/original-perl/original-nayuta-functurn.t",
+              "sha": "74ccf29344d0dd1405f8d9a78c1e3d1e7c843a16",
+              "startLine": 20,
+              "endLine": 67,
+              "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分",
+          "refs": [
+            {
+              "path": "modern/tests/original-nayuta-functurn.test.mjs",
+              "sha": "8b55b3a8f4b5ae4ab0c259f4ad7611ba81351a85",
+              "startLine": 95,
+              "endLine": 171,
+              "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20780,7 +21195,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-nayuta-functurn.test.mjs",
+          "sha": "8b55b3a8f4b5ae4ab0c259f4ad7611ba81351a85",
+          "startLine": 95,
+          "endLine": 171,
+          "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分"
+        },
+        {
+          "path": "modern/tests/original-perl/original-nayuta-functurn.t",
+          "sha": "74ccf29344d0dd1405f8d9a78c1e3d1e7c843a16",
+          "startLine": 20,
+          "endLine": 67,
+          "scope": "人工 #70 stock：未售，原版 FUNCTURN dispatcher／inline、人氣、受控 RNG 及 PLUS 差分"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -35719,14 +36150,14 @@
   "testCounts": {
     "baseline": {
       "歷史": 32,
-      "有效": 111,
-      "待補": 90
+      "有效": 115,
+      "待補": 86
     },
     "added": 5,
     "overlaps": [
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
-    "currentSessionReviewed": 80,
+    "currentSessionReviewed": 84,
     "reReviewedBaseline": 7
   },
   "provenance": [
@@ -35781,7 +36212,8 @@
     "modern/docs/r0-r2-work-career-dairy-party-evidence.md",
     "modern/docs/r0-r2-gathering-advertisement-repeat-evidence.md",
     "modern/docs/r0-legacy-r2-r3-http-evidence.md",
-    "modern/docs/r0-sparse-plus-evidence.md"
+    "modern/docs/r0-sparse-plus-evidence.md",
+    "modern/docs/r0-natural-sale-functurn-evidence.md"
   ],
   "integrationCiHistory": [
     {
@@ -35879,6 +36311,27 @@
       "checkout": "c8bbf30ac5e0d6aa2f5dc321f8878dc0c76be121",
       "run": 45804660497,
       "job": 139856600728,
+      "conclusion": "success",
+      "js": {
+        "total": 1350,
+        "pass": 1350,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": {
+        "files": 85,
+        "pass": 2456,
+        "result": "PASS"
+      },
+      "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "6499ac2d552d047bf4eb6d74787af18b5d89cc5f",
+      "tree": "9ecfa3a6d8d13721d5383f041fddd32635efead5",
+      "checkout": "f2e9aefd8b3587596bae9c24114469c07f330965",
+      "run": 45809746831,
+      "job": 139874181899,
       "conclusion": "success",
       "js": {
         "total": 1350,
