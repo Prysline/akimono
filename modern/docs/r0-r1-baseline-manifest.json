@@ -19231,15 +19231,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-gift-use-variants.test.mjs",
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "37",
@@ -19287,8 +19290,60 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 另 #79/3 受控兌換產物。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "#79/3 明示 GET 修行套組（DSL L2765），逐欄差分"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#37/0–3 明示消耗（L216/229/241/259）"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 另 #79/3 受控兌換產物。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-gift-use-variants.test.mjs",
+              "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+              "startLine": 74,
+              "endLine": 104,
+              "scope": "#79/3 明示 GET 修行套組（DSL L2765），逐欄差分"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#37/0–3 明示消耗（L216/229/241/259）"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -19298,7 +19353,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-gift-use-variants.test.mjs",
+          "sha": "e8c68b2cbd215a555432c4eb027dd6247129028e",
+          "startLine": 74,
+          "endLine": 104,
+          "scope": "#79/3 明示 GET 修行套組（DSL L2765），逐欄差分"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "#37/0–3 明示消耗（L216/229/241/259）"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19971,15 +20049,18 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/market-buy-core.test.mjs",
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "39",
@@ -20027,8 +20108,74 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#39 原版三案 market-buy 差分與受控 USE 材料消耗；不升格正式取得／HTTP/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/market-buy-core.test.mjs",
+              "sha": "56d39115e402654e89e88cb07d996199113f784e",
+              "startLine": 448,
+              "endLine": 478,
+              "scope": "#39 來源 Registry metadata"
+            },
+            {
+              "path": "modern/tests/market-buy-core.test.mjs",
+              "sha": "56d39115e402654e89e88cb07d996199113f784e",
+              "startLine": 480,
+              "endLine": 530,
+              "scope": "三案原版市場交易差分"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#39/0–18 明示消耗"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#39 原版三案 market-buy 差分與受控 USE 材料消耗；不升格正式取得／HTTP/v2。",
+          "refs": [
+            {
+              "path": "modern/tests/market-buy-core.test.mjs",
+              "sha": "56d39115e402654e89e88cb07d996199113f784e",
+              "startLine": 448,
+              "endLine": 478,
+              "scope": "#39 來源 Registry metadata"
+            },
+            {
+              "path": "modern/tests/market-buy-core.test.mjs",
+              "sha": "56d39115e402654e89e88cb07d996199113f784e",
+              "startLine": 480,
+              "endLine": 530,
+              "scope": "三案原版市場交易差分"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#39/0–18 明示消耗"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -20038,7 +20185,37 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/market-buy-core.test.mjs",
+          "sha": "56d39115e402654e89e88cb07d996199113f784e",
+          "startLine": 448,
+          "endLine": 478,
+          "scope": "#39 來源 Registry metadata"
+        },
+        {
+          "path": "modern/tests/market-buy-core.test.mjs",
+          "sha": "56d39115e402654e89e88cb07d996199113f784e",
+          "startLine": 480,
+          "endLine": 530,
+          "scope": "三案原版市場交易差分"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "#39/0–18 明示消耗"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -38523,15 +38700,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "62",
@@ -38579,8 +38758,32 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "#62/0 人工 stock 的廣告包消耗及自家廣告差分，不等於商會/跨店廣告、合法取得。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+              "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+              "startLine": 55,
+              "endLine": 123,
+              "scope": "明示 #62/0 廣告包消耗、rank、EXP、receipt、draw 差分"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "#62/0 人工 stock 的廣告包消耗及自家廣告差分，不等於商會/跨店廣告、合法取得。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+              "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+              "startLine": 55,
+              "endLine": 123,
+              "scope": "明示 #62/0 廣告包消耗、rank、EXP、receipt、draw 差分"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -38590,7 +38793,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 55,
+          "endLine": 123,
+          "scope": "明示 #62/0 廣告包消耗、rank、EXP、receipt、draw 差分"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -38816,7 +39028,9 @@
       "v2Restart": null,
       "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "62/2",
@@ -38858,7 +39072,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 145,
+          "endLine": 157,
+          "scope": "固定基線 getRule=null 與 describe 拒絕；非實際 HTTP 或外部系統驗收"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -40730,7 +40953,10 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/4",
@@ -40772,7 +40998,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 75,
+          "endLine": 81,
+          "scope": "8個 USE 共用 callback alias"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 23,
+          "endLine": 40,
+          "scope": "原版 declaration/callback alias metadata"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -40793,7 +41035,10 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/5",
@@ -40835,7 +41080,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 75,
+          "endLine": 81,
+          "scope": "8個 USE 共用 callback alias"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 23,
+          "endLine": 40,
+          "scope": "原版 declaration/callback alias metadata"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -40856,7 +41117,10 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/6",
@@ -40898,7 +41162,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 75,
+          "endLine": 81,
+          "scope": "8個 USE 共用 callback alias"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 23,
+          "endLine": 40,
+          "scope": "原版 declaration/callback alias metadata"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -40919,7 +41199,10 @@
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/original-inline-work-showcase-model.test.mjs",
+        "modern/tests/original-perl/original-inline-work-showcase.t"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "63/7",
@@ -40961,7 +41244,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/original-inline-work-showcase-model.test.mjs",
+          "sha": "16b80d49c4b22b28b57c49ac2dcb3ff497ab37fc",
+          "startLine": 75,
+          "endLine": 81,
+          "scope": "8個 USE 共用 callback alias"
+        },
+        {
+          "path": "modern/tests/original-perl/original-inline-work-showcase.t",
+          "sha": "3ccc811e7b743d071898ac5f3fa336133e72a426",
+          "startLine": 23,
+          "endLine": 40,
+          "scope": "原版 declaration/callback alias metadata"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -41124,7 +41423,9 @@
       "v2Restart": null,
       "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "65/0",
@@ -41166,7 +41467,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 145,
+          "endLine": 157,
+          "scope": "固定基線 getRule=null 與 describe 拒絕；非實際 HTTP 或外部系統驗收"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -41187,7 +41497,9 @@
       "v2Restart": null,
       "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "65/1",
@@ -41229,7 +41541,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 145,
+          "endLine": 157,
+          "scope": "固定基線 getRule=null 與 describe 拒絕；非實際 HTTP 或外部系統驗收"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -41250,7 +41571,9 @@
       "v2Restart": null,
       "status": "現行 Registry 無規則；正式玩家拒絕；外部／跨店依賴",
       "owner": "R4 #18/#22；外部 #16",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-self-advertisement-source.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "65/2",
@@ -41292,7 +41615,16 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-self-advertisement-source.test.mjs",
+          "sha": "05997d2b25a28bfd28950a96d21ca8578dc5c3be",
+          "startLine": 145,
+          "endLine": 157,
+          "scope": "固定基線 getRule=null 與 describe 拒絕；非實際 HTTP 或外部系統驗收"
+        }
+      ]
     },
     {
       "kind": "EVENT",
@@ -42347,15 +42679,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "64",
@@ -42403,8 +42737,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 僅 #39/11，非守衛或偷竊 callback。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#39/11 明示用1看門機器人 DSL L407"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 僅 #39/11，非守衛或偷竊 callback。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "#39/11 明示用1看門機器人 DSL L407"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -42414,7 +42786,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "#39/11 明示用1看門機器人 DSL L407"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -42427,15 +42815,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r4-mixed-loto-gate.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "11",
@@ -42483,8 +42873,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控17 EVENT 純投影與 Perl 四案逐值差分；#11 清券、每券一 draw，committable=false；非自然開獎或正式玩家。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+              "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+              "startLine": 70,
+              "endLine": 103,
+              "scope": "四案 mixed loto，清券、每券一 draw、log、cap"
+            },
+            {
+              "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+              "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+              "startLine": 104,
+              "endLine": 139,
+              "scope": "同 Perl process hash order 及拒絕"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控17 EVENT 純投影與 Perl 四案逐值差分；#11 清券、每券一 draw，committable=false；非自然開獎或正式玩家。",
+          "refs": [
+            {
+              "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+              "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+              "startLine": 70,
+              "endLine": 103,
+              "scope": "四案 mixed loto，清券、每券一 draw、log、cap"
+            },
+            {
+              "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+              "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+              "startLine": 104,
+              "endLine": 139,
+              "scope": "同 Perl process hash order 及拒絕"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -42494,7 +42922,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+          "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+          "startLine": 70,
+          "endLine": 103,
+          "scope": "四案 mixed loto，清券、每券一 draw、log、cap"
+        },
+        {
+          "path": "modern/tests/r4-mixed-loto-gate.test.mjs",
+          "sha": "9ed86c1a0c671d713a09f1f471e122054f18ebe4",
+          "startLine": 104,
+          "endLine": 139,
+          "scope": "同 Perl process hash order 及拒絕"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -46216,15 +46660,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "27",
@@ -46272,8 +46718,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#27/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#27/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -46283,7 +46767,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 477,
+          "endLine": 500,
+          "scope": "#27/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -46468,15 +46968,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "28",
@@ -46524,8 +47026,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#28/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#28/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -46535,7 +47075,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 477,
+          "endLine": 500,
+          "scope": "#28/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -46720,15 +47276,17 @@
       "compiled": true,
       "eventStart": null,
       "registered": false,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "ITEM",
         "id": "29",
@@ -46776,8 +47334,46 @@
           },
           "scope": "market-buy registry only"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#29/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。 不改 market-buy unsupported。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 477,
+              "endLine": 500,
+              "scope": "#29/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
         "prerequisites": null,
         "formalCommand": null,
@@ -46787,7 +47383,23 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "受控原版 USE 與共用 memory CAS 比對 compiler、stock、receipt；明示材料消耗，不證合法取得、自然銷售或正式 HTTP/v2。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 477,
+          "endLine": 500,
+          "scope": "#29/0 單次食用/使用，來源訊息及 stock；nocount>1 Node-only"
+        }
+      ]
     },
     {
       "kind": "USE",

@@ -364,3 +364,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 ## C 第54批 R1 ITEM 明示產物補鏈（待本提交 CI）
 
 [52 ITEM 證據](r1-explicit-recipe-item-output-evidence.md)：152→204/220，ITEM Oracle/Node 14→66（僅限定受控 GET 產物差分），正式下界不變。第53批 CI45861418600 queued（最近查詢）。不重跑或升格正式玩家。
+
+
+## C 第55批：R1 最後16列與執行環境
+
+[最後16列詳細證據及 HTTP 執行環境](r1-final-feature-evidence-and-http-environment.md)：204→220/220（含8個 alias/Registry 缺口列），限定 ITEM Oracle/Node 74、USE108、EVENT25；正式下界7/12/0不變。R0 233/233不變。strict repro 環境受阻、未實跑，R5未執行。新 HEAD 待 CI。

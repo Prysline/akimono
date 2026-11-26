@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 66 | 108 | 25 |
-| nodeDifferential | 66 | 108 | 25 |
+| perlOracle | 74 | 108 | 25 |
+| nodeDifferential | 74 | 108 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -214,3 +214,8 @@
 ### 第54批：明示 GET 產物 ITEM
 
 [52 ITEM 逐項證據](r1-explicit-recipe-item-output-evidence.md)：依已測 USE 明示 GET 與 stock/receipt 差分逐項連結，不將全79槽向量硬映射。204/220（剩16）；ITEM Oracle/Node 66（52為限定產物差分，不是全部 ITEM 功能）；正式下界不變，未重跑。R1-HTTP-01 尚未實跑。
+
+
+## C 第55批：R1 最後16列與執行環境
+
+[最後16列詳細證據及 HTTP 執行環境](r1-final-feature-evidence-and-http-environment.md)：204→220/220（含8個 alias/Registry 缺口列），限定 ITEM Oracle/Node 74、USE108、EVENT25；正式下界7/12/0不變。R0 233/233不變。strict repro 環境受阻、未實跑，R5未執行。新 HEAD 待 CI。
