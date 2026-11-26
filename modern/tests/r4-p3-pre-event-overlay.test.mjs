@@ -715,6 +715,47 @@ test('R4 source-only crossing closes an expired shop, preserves native archive a
   assert.equal(first.preEvent.closeHashEvidence.interpreter,result.evidence.interpreter);
   assert.equal(first.preEvent.closeHashEvidence.seed,result.evidence.seed);
   assert.ok(close.archived.startsWith('経営者不在\n'));
+  // Independent original source oracle: one native command, real pinned
+  // CloseShop, actual temporary session unlink, no intermediate JS shop.
+  // This is differential source evidence, NOT an HTTP player career.
+  const actual=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
+    cwd:perlDir,encoding:'utf8',maxBuffer:8*1024*1024,
+    env:{...process.env,PERL_HASH_SEED:result.evidence.seed,PERL_PERTURB_KEYS:'0'},
+    input:JSON.stringify({actualClose:true,sessionFileNames,
+      eventWire:wire(world.period.eventState),startSeconds:world.nowSeconds,
+      shop:world.shops[0],csv:world.market.originalWholesaleCsv,
+      settlement:{town:world.period.town,dtPeople:world.period.dtPeople,commandNowSeconds:result.nowSeconds},
+      slices:result.evidence.slices.map(s=>({spanSeconds:s.spanSeconds,dateupdate:s.dateupdate})),
+      samples:result.evidence.slices.flatMap(s=>[...s.preEventDraws,...s.eventSamples])})
+  }));
+  assert.equal(actual.nowSeconds,result.nowSeconds);
+  assert.deepEqual(actual.dataReadOrder,result.evidence.dataReadOrder);
+  assert.deepEqual(actual.close.archives,[[close.archived,'delete']]);
+  assert.deepEqual(actual.close.remainingSessions,[...close.remainingSessions].sort());
+  assert.equal(actual.close.status,0);
+  assert.equal(actual.close.rank,0);
+  assert.equal(actual.close.money,settlement.closedShop.money);
+  assert.equal(actual.close.rankingcount,settlement.closedShop.rankingcount);
+  assert.equal(actual.close.costyesterday,settlement.maintenance);
+  assert.ok(actual.slices[0].preEvent.preEventLogs.some(row=>
+    row.includes(world.shops[0].shopname+'が経営者不在のため閉店しました。')));
+  for(const [i,s] of result.evidence.slices.entries()){
+    const native=actual.slices[i],pre=native.preEvent;
+    assert.equal(pre.shop,null);
+    assert.equal(native.shop,null);
+    assert.equal(pre.preEventDrawCount,s.preEventDraws.length);
+    assert.deepEqual(pre.wholesale,s.preEvent.market.wholesale);
+    assert.equal(pre.csv,s.preEvent.market.originalWholesaleCsv);
+    assert.deepEqual(pre.plus,result.evidence.plusSeconds);
+    assert.equal(pre.dtPeople,result.period.dtPeople);
+    assert.deepEqual(pre.town,result.period.town);
+    assert.deepEqual(native.activeOrder,s.activeOrder);
+    assert.deepEqual(native.eventOrder,s.eventOrder);
+    assert.deepEqual(native.nowOrder,s.nowOrder);
+    assert.deepEqual(native.eventState,s.eventState);
+    assert.deepEqual(native.ranges,s.eventDrawRanges);
+    assert.deepEqual(native.logs,s.eventLogs);
+  }
   for(const slice of [first,second]){
     assert.equal(slice.shop,null);assert.deepEqual(slice.preEvent.shops,[]);
     assert.ok(!slice.eventDrawRanges.includes(1000));
