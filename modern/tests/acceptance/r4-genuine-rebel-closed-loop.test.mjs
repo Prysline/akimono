@@ -16,9 +16,19 @@ import {R4_EXTERNAL_COMMAND_HASH_POLICY} from '../../src/original-r4-perl-hash-r
 import {calculateSourceShopPoint} from '../../src/original-period-solo-sort.mjs';
 
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
-const WOOD=40,IRON=41,MITHRIL=43,PRICE_PER=75;
-const saleIds=[WOOD,IRON,MITHRIL];
-const basePrice={40:1200,41:1500,43:8000};
+// Reuse the actual #22 four-category, buffered 120% commerce route.
+// Different source types cover the original specialty-demand break;
+// the whole sale pipeline is still the server's reviewed source path.
+const goods=[
+  {id:40,book:17,useId:0,raw:3,input:20,output:20},
+  {id:57,book:17,useId:1,raw:3,input:20,output:20},
+  {id:45,book:16,useId:0,raw:2,input:24,output:30},
+  {id:51,book:16,useId:1,raw:2,input:24,output:32},
+];
+const saleIds=goods.map(g=>g.id);
+const PRICE_PER=120;
+const shelfOf=id=>goods.findIndex(g=>g.id===id);
+const saleTarget=120,lowStock=64;
 const missionRoutes={
   57:{book:17,useId:1,materials:[[3,20]]},
   68:{book:66,useId:1,materials:[[6,20],[8,2]],gate:250},
@@ -29,24 +39,38 @@ const missionRoutes={
 };
 test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers, two-slice rebel CAS and durable replay',{timeout:3300000},async t=>{
   let ticks=0,proceeds=0,maxPoint=0,missions=0,generation=0,fundsCheckpoint=false;
-  const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,now:null,onTick(r,before){
+  const p=await genuinePlayer(t,{crossPeriod:true,rebelTime:true,fullCommerce:true,fundMarketWithWork:true,now:null,onTick(r,before){
     const old=before.shops[0],next=r.state.shop,d=r.details;
     assert.ok(++ticks<=2300,'bounded genuine time experiment exhausted');
     const sold=d.naturalSaleCount;
     assert.ok(Number.isSafeInteger(sold)&&sold>=0);
-    if(sold){
-      assert.ok(saleIds.includes(old.showcase[0]),'only actual economy stock may sell');
-      const id=old.showcase[0],receipt=d.settlementReceipt;
-      if(receipt){
-        assert.equal(next.itemyesterday?.[id]??0,(old.itemtoday?.[id]??0)+receipt.naturalSaleCount);
-        assert.equal(next.itemtoday?.[id]??0,sold-receipt.naturalSaleCount);
-        assert.equal(receipt.saleBeforeLedger,old.saletoday+receipt.naturalSaleCount*old.price[0]);
-        assert.equal(next.saletoday,(sold-receipt.naturalSaleCount)*old.price[0]);
-      }else{
-        assert.equal((next.itemtoday?.[id]??0)-(old.itemtoday?.[id]??0),sold);
-        assert.equal(next.saletoday-old.saletoday,sold*old.price[0]);
+    const rows=d.shelfSales;
+    assert.ok(Array.isArray(rows),'combined source per-shelf receipt');
+    assert.equal(rows.reduce((sum,row)=>sum+row.count,0),sold);
+    const byItem={},boundaryRows=[],residualRows=[];
+    for(const row of rows){
+      assert.ok(saleIds.includes(row.itemId),'only acquired commerce stock may sell');
+      assert.equal(row.itemId,old.showcase[row.shelf]);assert.equal(row.unitPrice,old.price[row.shelf]);
+      assert.equal(row.gross,row.count*row.unitPrice);
+      assert.equal(row.stockAfter,row.stockBefore-row.count);
+      byItem[row.itemId]=(byItem[row.itemId]??0)+row.count;proceeds+=row.gross;
+      if(d.settlementReceipt&&row.sliceIndex===0)boundaryRows.push(row);else residualRows.push(row);
+    }
+    assert.deepEqual(byItem,d.soldByItem);
+    const counts=rr=>{const out={};for(const row of rr)out[row.itemId]=(out[row.itemId]??0)+row.count;return out;};
+    const gross=rr=>rr.reduce((n,row)=>n+row.gross,0);
+    if(d.settlementReceipt){
+      const q=d.settlementReceipt,bc=counts(boundaryRows),rc=counts(residualRows);
+      assert.deepEqual(q.soldByItem,bc);
+      assert.equal(q.saleBeforeLedger,old.saletoday+gross(boundaryRows));
+      assert.equal(next.saletoday,gross(residualRows));
+      for(const id of saleIds){
+        assert.equal(next.itemyesterday?.[id]??0,(old.itemtoday?.[id]??0)+(bc[id]??0));
+        assert.equal(next.itemtoday?.[id]??0,rc[id]??0);
       }
-      proceeds+=sold*old.price[0];
+    }else{
+      assert.equal(next.saletoday-old.saletoday,gross(rows));
+      for(const id of saleIds)assert.equal((next.itemtoday?.[id]??0)-(old.itemtoday?.[id]??0),byItem[id]??0);
     }
     assert.equal(r.state.palace.point,calculateSourceShopPoint(next),'source GetDTPoint, not cash balance');
     maxPoint=Math.max(maxPoint,r.state.palace.point);
@@ -73,14 +97,12 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.equal(snapshot().revision,before.revision+1);
     return r;
   }
-  async function list(id){
-    assert.ok(id===0||saleIds.includes(id));
-    const price=id===0?0:Math.trunc(basePrice[id]*PRICE_PER/100);
-    if(shop().showcase[0]===id&&shop().price[0]===price)return;
+  async function list(id,shelf=shelfOf(id)){
+    assert.ok(id===0||saleIds.includes(id));assert.ok(shelf>=0&&shelf<shop().showcasecount);
+    if(shop().showcase[shelf]===id)return;
     await p.enoughTime(p.state.showcaseEditTimeSeconds);
-    await command('/api/showcase',{itemId:id,shelf:0,per:id===0?100:PRICE_PER});
-    assert.equal(shop().showcase[0],id);
-    assert.equal(shop().price[0],price);
+    await command('/api/showcase',{itemId:id,shelf,per:id===0?100:PRICE_PER});
+    assert.equal(shop().showcase[shelf],id);
   }
   async function book(id){if(!p.stock(id))await p.market(id);}
   async function useReady(id,useId){
@@ -121,54 +143,46 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     assert.ok(output&&Number.isSafeInteger(output.produced)&&output.produced>=0,'actual craft output receipt');
     return output.produced;
   }
-  let advanced=false,reserved=null;
+  let reserved=null;
   const heldForMission=id=>reserved?.itemId===id?reserved.count:0;
-  const sellable=id=>Math.max(0,p.stock(id)-heldForMission(id));
-  // Keep mission goods OFF the sale shelf entirely. Sell skill-training
-  // iron swords instead of accumulating hundreds of costly idle units.
-  async function sellExisting(){
-    const candidates=saleIds.filter(id=>heldForMission(id)===0&&sellable(id)>0);
-    const selected=candidates.find(id=>id===MITHRIL)||candidates.find(id=>id===IRON)||candidates[0];
-    if(!selected)return false;
-    await list(selected);return true;
+  const surplus=id=>Math.max(0,p.stock(id)-heldForMission(id));
+  async function produce(g,goal=saleTarget+heldForMission(g.id)){
+    bounded();
+    await book(g.book);
+    const count=Math.min(6,Math.max(1,Math.ceil((goal-p.stock(g.id))/(g.output*0.8))));
+    await p.gather(g.raw,g.input*count);
+    const r=await p.use(g.book,g.useId,count);
+    assert.equal(r.details.effectiveCount,count);
+    assert.ok(r.details.originalUseItem.some(([id,n])=>id===g.raw&&n===g.input*count));
+    assert.ok(r.details.originalAddItem.some(([id,n])=>id===g.id&&n>=Math.floor(g.output*count*0.8)));
   }
   async function trimInputs(){
-    // By-products of source gathering/mining and unused rank prizes were
-    // repeatedly charged by the original ledger in both failed runs.
-    // These are genuine no-time DISCARD commands, never fixture edits.
-    const keep={1:reserved?.itemId===31?40:0,2:0,3:40,4:0,5:40,6:40,7:3,8:32};
+    // Keep upstream skill/mission ingredients; remove genuinely unused
+    // raw byproducts only. Source upkeep is never waived.
+    const keep={1:reserved?.itemId===31?40:10,2:48,3:40,4:0,5:40,6:40,7:3,8:32};
     for(const [key,max] of Object.entries(keep)){
-      const id=Number(key);
-      if(p.stock(id)>max)await p.discard(id,p.stock(id)-max);
+      const id=Number(key);if(p.stock(id)>max)await p.discard(id,p.stock(id)-max);
     }
-    // Keep the real books, skills, maps, gifts, robot and any mission goods.
-    // Discard only known unused by-products, never sell or discard reserved goods.
   }
   async function economyStock(){
     bounded();
     await trimInputs();
-    if(await sellExisting())return;
-    if(advanced&&heldForMission(MITHRIL)===0){
-      // Only train a new batch when there is no prior sale pool. A legal
-      // career transfer has already moved earned EXP, not granted it.
-      if(p.exp(20)<400){
-        if(heldForMission(IRON)===0)await craft(20,0,IRON,[[5,20]]);
-      }else await craft(20,2,MITHRIL,[[6,20]]);
-      if(await sellExisting())return;
+    // Keep a real stock buffer, especially when goods double as mission
+    // inventory. Never count a reserved item as sold or granted.
+    const g=goods.reduce((a,b)=>surplus(a.id)<=surplus(b.id)?a:b);
+    if(surplus(g.id)<lowStock)await produce(g);
+    for(const [shelf,product] of goods.entries()){
+      if(heldForMission(product.id)>0&&surplus(product.id)<lowStock){
+        if(shop().showcase[shelf]!==0)await list(0,shelf);
+      }else if(p.stock(product.id)>0)await list(product.id,shelf);
     }
-    await craft(17,0,WOOD,[[3,20]]);
-    await sellExisting();
   }
   async function economyTurn(){
     await economyStock();
-    // A refusal must leave this exact player state and its history intact.
-    // Capture real balances, upkeep and stock at the failed source command.
     const before=snapshot(),history=p.state.historyCommands;
     try{await p.tick(60)}catch(error){
-      assert.deepEqual(snapshot(),before);
-      assert.equal(p.state.historyCommands,history);
-      t.diagnostic('R4 genuine rejected economy tick '+diagnostic());
-      throw error;
+      assert.deepEqual(snapshot(),before);assert.equal(p.state.historyCommands,history);
+      t.diagnostic('R4 genuine rejected economy tick '+diagnostic());throw error;
     }
   }
   async function checkpointFunds(){
@@ -202,8 +216,9 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     fundsCheckpoint=true;
   }
   async function scoreAndCash(cash){
-    for(let n=0;p.state.palace.point<20000||shop().money<cash;n++){
-      assert.ok(n<1000,'genuine point/cash budget '+diagnostic());
+    for(let n=0;p.state.palace.point<20000||shop().money<cash||p.state.palace.owned<p.state.palace.count;n++){
+      assert.ok(n<1400,'genuine point/cash budget '+diagnostic());
+      if(p.state.palace.owned<p.state.palace.count)await missionStock();
       await economyTurn();
       await checkpointFunds();
     }
@@ -226,7 +241,8 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   async function missionStock(){
     const task=p.state.palace,route=missionRoutes[task.itemId];
     reserved={itemId:task.itemId,count:task.count};
-    if(shop().showcase[0]===task.itemId)await list(0);
+    const shelf=shop().showcase.indexOf(task.itemId);
+    if(shelf>=0&&p.stock(task.itemId)<task.count+lowStock)await list(0,shelf);
     assert.ok(route,'actual source palace task '+task.itemId);
     if(route.book>=20)await forgeSkill();
     if(route.book===66)await magicSkill();
@@ -251,21 +267,26 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   assert.equal(p.state.palace.index,0);
   assert.equal(p.state.army.count,0);
   assert.equal(Object.hasOwn(snapshot().period.disk.live,'army.cgi'),false);
-  await p.use(79,0);await p.use(79,3);
-  await book(17);
-  for(let n=0;shop().money<160000;n++){
-    assert.ok(n<180,'starter commerce budget '+diagnostic());
-    await economyTurn();
+  assert.equal(p.state.reviewedFullCommerce,true);
+  await p.use(79,1); // original five vouchers exchanged for three books
+  await p.market(13);await p.market(12);
+  for(let n=0;;n++){
+    assert.ok(n<40,'four-shelf funding budget '+diagnostic());
+    await p.enoughTime(p.quote(63,3).timePerUseSeconds);
+    if(shop().money>=40000+Math.max(10000,Math.ceil(shop().costtoday)+10000))break;
+    const work=await p.use(13,1);assert.equal(work.details.moneyEarned,10000);
   }
-  await forgeSkill();await book(20);
-  // Source career guide legitimately transfers HALF of already-earned
-  // mining/gathering/woodcraft EXP. Do not stockpile training swords.
-  await p.market(78);
-  const earned=Object.values(shop().exp??{}).reduce((sum,n)=>sum+n,0);
-  await useReady(78,4);
-  assert.equal(shop().job,'weapon');
-  assert.ok(p.exp(20)>0&&p.exp(20)<=earned);
-  advanced=true;
+  await p.use(63,3);
+  assert.equal(shop().showcasecount,4);assert.equal(p.stock(63),0);
+  for(const g of goods){
+    for(let n=0;p.stock(g.id)<saleTarget;n++){
+      assert.ok(n<6,'initial source manufacturing budget '+g.id);
+      await produce(g);
+    }
+  }
+  await p.enoughTime(2400);
+  for(const [shelf,g] of goods.entries())await list(g.id,shelf);
+  assert.deepEqual(shop().showcase,saleIds);
   // Earn an audience and complete the first task before insisting on the
   // full recruitment reserve; a high score in the early city need not be
   // wasted while waiting for 2.7m cash. All subsequent goals remain exact.
@@ -282,6 +303,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     await missionStock();
     const reserve=missions===0?100000:2700000;
     await scoreAndCash(reserve);
+    if(p.state.palace.owned<p.state.palace.count){await missionStock();continue;}
     // The score can change while time is replenished; obtain it again if
     // necessary, and never permit a below-threshold audience.
     await p.enoughTime(4200);
@@ -302,6 +324,7 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
     t.diagnostic('R4 genuine palace completion '+JSON.stringify(result.details)+' '+diagnostic());
   }
   assert.ok(missions>=3&&shop().dignity>=3&&shop().money>=2500000);
+  assert.equal(shop().showcasecount,4,'same legal expanded shop enters rebellion');
   const beforeHire=shop(),now=snapshot().nowSeconds;
   assert.ok(p.state.army.canHire&&p.state.army.hireMaximum>=2500);
   const hired=await command('/api/army-hire',{requestedCount:2500});
@@ -335,6 +358,8 @@ test('R4 actual player: 20000 source points, palace missions, 2500 paid soldiers
   const crossed=await p.tick(minutes),after=snapshot(),trace=crossed.details.sourceTrace;
   assert.equal(after.period.settledCount,beforeCross.period.settledCount+1);
   assert.equal(trace.hashPolicy,R4_EXTERNAL_COMMAND_HASH_POLICY);
+  assert.equal(after.shops[0].showcasecount,4);
+  assert.ok(Array.isArray(crossed.details.shelfSales));
   assert.deepEqual(trace.slices.map(s=>s.dateupdate),[1,0]);
   assert.equal(trace.slices.reduce((n,s)=>n+s.spanSeconds,0),minutes*60);
   assert.equal(trace.slices[0].armyRead,true);
