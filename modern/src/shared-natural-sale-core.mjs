@@ -18,7 +18,7 @@ const int=(v,s,min=0)=>{
 export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
-  popDownRate=5,baseUpkeep=0,
+  popDownRate=5,baseUpkeep=0,priorDemandShop=null,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -39,6 +39,33 @@ export function projectSharedNaturalSale({
 
   const active=[],market=new Map(),displayedTypes=new Set();
   const sourceRule=id=>shelfCount===1?rule:saleRules?.[id]??null;
+  // DataRead initializes ITEM once per original command. inc-turn adds
+  // buypeoplebase in each effective slice; GetMarketStatus does not clear it.
+  // Reconstruct only the prior slice's contribution from the original shop,
+  // not from post-sale stock or persisted/externally supplied demand values.
+  const priorBase=new Map();
+  if(priorDemandShop!==null){
+    if(!Array.isArray(priorDemandShop.item)||priorDemandShop.item.length!==79||
+      !Array.isArray(priorDemandShop.showcase)||!Array.isArray(priorDemandShop.price)||
+      priorDemandShop.showcase.length!==shelfCount||priorDemandShop.price.length!==shelfCount||
+      priorDemandShop.showcase.some((id,i)=>id!==shop.showcase[i]||priorDemandShop.price[i]!==shop.price[i]))
+      fail('same-command demand shop required');
+    let group=null;
+    for(let shelf=0;shelf<shelfCount;shelf++){
+      const id=priorDemandShop.showcase[shelf],listed=priorDemandShop.price[shelf];
+      if(id===0)continue;
+      const r=sourceRule(id),type=r?.itemType??(shelfCount===1?'single-reviewed':null);
+      if(!r||!type||!Number.isSafeInteger(listed)||listed<1)fail('reviewed prior demand shelf');
+      // Frozen specialization scan stops BEFORE the first different type.
+      if(group!==null&&group!==type)break;
+      group=type;
+      if(int(priorDemandShop.item[id-1],'prior source showcased stock')===0)continue;
+      const weight=(r.unitPrice/listed)**(shelf===0?4:3);
+      const total=(priorBase.get(id)??0)+weight;
+      if(!Number.isFinite(total)||total<0)fail('unsafe original prior demand ratio');
+      priorBase.set(id,total);
+    }
+  }
   for(let shelf=0;shelf<shelfCount;shelf++){
     const id=int(shop.showcase[shelf],'source shelf item');
     const listed=int(shop.price[shelf],'source shelf price');
@@ -65,7 +92,7 @@ export function projectSharedNaturalSale({
     if(!Number.isFinite(weight)||weight<0)
       fail('unsafe original per-shelf demand ratio');
     const existing=market.get(id)??{
-      stock:0,weightedPrice:0,buypeoplebase:0,rule:r,
+      stock:0,weightedPrice:0,buypeoplebase:priorBase.get(id)??0,rule:r,
     };
     existing.stock+=stock; // Original GetMarketStatus counts each occupied shelf
     existing.weightedPrice+=stock*listed;

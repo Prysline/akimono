@@ -414,6 +414,7 @@ function projectSourcePreEventSaleSlice({
     upkeepCosts,
     spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
+    ...(boundary?.dataReadWorld&&boundary.dataReadWorld!==world?{priorDemandShop:boundary.dataReadWorld.shops[0]}:{}),
   });
   const sold=natural.sold;
   const naturalDraws=natural.drawsUsed;

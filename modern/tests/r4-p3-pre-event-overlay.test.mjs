@@ -746,22 +746,23 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
     reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,reviewedLotoCallbacks:street.reviewedLoto,
     reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,
     reviewedSwordEvent:street.reviewedB61Sword,reviewedRebelEvent:external.rebel});
-  for(const armed of [false,true]){
+  for(const {armed,commerce} of [{armed:false,commerce:false},{armed:true,commerce:false},{armed:true,commerce:true}]){
     const {repository}=fresh(true),world=structuredClone(repository.read());
-    world.nowSeconds=1155580;
+    world.nowSeconds=commerce?1153800:1155580;
     world.period={...world.period,state:'source-cross-period-candidate-not-committed',settledCount:1,
       lastSettledBoundarySeconds:1026000,dtPeople:350000,
       town:{...world.period.town,leader:1,money:5000000,develop:5001,safety:5001,army:10000,robina:2000,people:500000},
-      eventState:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
+      eventState:commerce?{'ken-sale':1200000,happy:1200000,rebel:1200000}:{'plusup-tetu':1155590,happy:1200000,rebel:1155500}};
     Object.assign(world.shops[0],{blocklogin:'',dignity:13,taxtoday:321,saletoday:1000});
+    if(commerce){world.shops[0].item[39]=100;world.shops[0].showcase=[40];world.shops[0].price=[900];}
     const liveArmyBytes=armed?'1,4000\n1\n':'\n\n';
-    const input={world,minutes:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
+    const input={world,minutes:commerce?60:1,street,reviewedR4,reviewedDataRead:external,reviewedHash:hashReview,
       reviewedEvents,reviewedPeriod,liveArmyBytes};
     const before=JSON.stringify(world),got=projectR4ExternalCrossPeriodCandidate(input);
     assert.equal(got.committable,false);assert.equal(got.worldStateWritten,false);
-    assert.equal(got.nowSeconds,1155640);
+    assert.equal(got.nowSeconds,commerce?1157400:1155640);
     assert.equal(got.period.settledCount,2);
-    assert.deepEqual(got.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+    assert.deepEqual(got.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),commerce?[[1,1800],[0,1800]]:[[1,20],[0,40]]);
     const slices=got.evidence.slices;
     const actual=JSON.parse(execFileSync('perl',['original-r4-mixed-support-gate-probe.pl','--cross-period-turn'],{
       cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
@@ -794,7 +795,16 @@ test('full actual two-slice source prefix, territory, mixed EVENT and real origi
     assert.equal(slices[1].armyRead,armed);
     assert.equal(Object.hasOwn(got.shops[0],'army'),false);
     assert.equal(got.liveArmyBytes,liveArmyBytes);
-    assert.equal(got.stagedArmyBytes,armed?'1,3987\n1\n':'\n\n');
+    if(!commerce)assert.equal(got.stagedArmyBytes,armed?'1,3987\n1\n':'\n\n');
+    else{
+      const weight=(1200/900)**4;
+      assert.ok(Math.abs(actual.slices[0].preEvent.demandBase[40]-weight)<1e-10);
+      assert.ok(Math.abs(actual.slices[1].preEvent.demandBase[40]-2*weight)<1e-10,
+        'same original ITEM survives both source slices; no DataRead reset');
+      assert.ok(slices[0].preEvent.receipt.naturalSaleCount>0);
+      assert.ok(slices[1].preEvent.receipt.naturalSaleCount>0);
+      assert.equal(slices[1].preEvent.receipt.naturalSaleCount,actual.slices[1].preEvent.shop.itemtoday[40]);
+    }
     assert.equal(JSON.stringify(world),before);
     assert.deepEqual(projectR4ExternalCrossPeriodCandidate(input),got);
     assert.throws(()=>projectR4ExternalCrossPeriodCandidate({...input,taxRate:1}),/no tax-rate/);
@@ -1130,4 +1140,20 @@ test('R4 external receipt aggregates source sales per item and boundary, never i
     const bad=structuredClone(candidate);mutate(bad);
     assert.throws(()=>projectExternalSaleReceipt(bad),/inconsistent source slice totals/);
   }
+});
+
+test('R4 residual natural sale retains only prior command-slice source demand, not previous commands',async()=>{
+  const {projectSharedNaturalSale}=await import('../src/shared-natural-sale-core.mjs');
+  const rule=street.reviewedB41.p3TurnItems.rules[40],item=Array(79).fill(0);
+  item[39]=100;
+  const shop={item,showcasecount:1,showcase:[40],price:[900],rank:5000,money:100000,
+    saletoday:0,taxtoday:0,trush:0,costtoday:0,itemtoday:{}};
+  const args={shop,rule,upkeepCosts:street.reviewedB41.p3TurnItems.costs,spanSeconds:1800,
+    population:500000,randomDraws:[900000,500000,500000,500000]};
+  const fresh=projectSharedNaturalSale(args);
+  const residual=projectSharedNaturalSale({...args,priorDemandShop:shop});
+  assert.ok(residual.sold<fresh.sold,'accumulated source denominator reduces second slice sale');
+  assert.deepEqual(projectSharedNaturalSale({...args,priorDemandShop:{...shop,item:item.map(()=>0)}}),fresh);
+  assert.deepEqual(projectSharedNaturalSale(args),fresh,'new DataRead has no prior demand');
+  assert.throws(()=>projectSharedNaturalSale({...args,priorDemandShop:{...shop,price:[1200]}}),/same-command/);
 });

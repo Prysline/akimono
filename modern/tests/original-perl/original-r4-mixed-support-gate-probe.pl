@@ -673,6 +673,7 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
       shop=>$DT[0],wholesale=>[map {0+($_//0)} @main::DTwholestore[0..78]],
       csv=>join(',',@main::DTwholestore),town=>$STATE,dtPeople=>0+$main::DTpeople,
       preEventDrawCount=>$preCount,preEventLogs=>[@LOG],
+      demandBase=>{map {$_=>0+($ITEM[$_]{buypeoplebase}//0)}grep{$_} @{$DT[0]{showcase}}},
       plus=>[map {0+($ITEM[$_]{plus}//0)}1..79],
     }));
     @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
