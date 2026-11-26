@@ -1,5 +1,5 @@
 # R0 全量測試清冊（收斂 #23/#24，未結案）
-正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 7 份已重新逐檔覆核（其餘 56 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
+正式基線 233 檔（148 JS、85 Perl .t）；有效 200、歷史 33、待補 0。B56 重疊去重；既有 63 份分類中 15 份已重新逐檔覆核（其餘 48 待覆核）；收斂後累計另逐檔審閱 170 份，並非全量重審。新增 5 檔獨立列於 manifest addedTests，不列入分母。
 [Canonical manifest](r0-r1-baseline-manifest.json)；[B41–B63 原始逐檔證據](r0-b41-b63-evidence.md)。保留 [R2-E](r2e-r0-affected-tests-mapping.md) / [R3](r3-r0-affected-tests-mapping.md) / [R4](r4-r0-affected-tests-mapping.md) 歷史映射。未完成語義審閱不得升格。
 
 | 測試路徑（相對 modern/tests） | 狀態 | 證據 |
@@ -49,10 +49,10 @@
 | original-perl/original-admin-sparse-market.t | 有效 | Perl Oracle（隔離 init/gift） |
 | original-perl/original-b41-real-sale.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b42-two-rounds.t | 有效 | Perl Oracle（受控） |
-| original-perl/original-b44-period-ledger.t | 有效 | Perl Oracle（受控） |
-| original-perl/original-b45-top-prize.t | 有效 | Perl Oracle（受控） |
-| original-perl/original-b46-territory.t | 有效 | Perl Oracle（受控） |
-| original-perl/original-b47-solo-sort.t | 有效 | Perl Oracle（受控） |
+| original-perl/original-b44-period-ledger.t | 有效 | 原版 Perl Oracle（受控） |
+| original-perl/original-b45-top-prize.t | 有效 | 原版 Perl Oracle（受控） |
+| original-perl/original-b46-territory.t | 有效 | 原版 Perl Oracle（受控） |
+| original-perl/original-b47-solo-sort.t | 有效 | 原版 Perl Oracle（受控） |
 | original-perl/original-b48-event-start.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b49-event-lifecycle.t | 有效 | Perl Oracle（受控） |
 | original-perl/original-b50-period-chain.t | 有效 | Perl Oracle（受控） |

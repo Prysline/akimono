@@ -136,3 +136,8 @@
 - 新審2檔（1有效、1歷史）：有效200、歷史33、待補0；固定233，分類收斂233/233（100%）；收斂後逐檔補審170，既有重審7、剩56；新增5獨立。不是全量重審或 R0 結案。
 - [逐檔證據](r0-r3-natural-sword-sales-evidence.md)：原版 24 stock/display＋24 price＋24 pre-EVENT＋16 multi-shelf，人工 stock／固定 draw；單架 draw 只 <= 原版總量，多架精確 natural，整合才比全79 wholesale及總 draw；#70 有 owner 只 Perl。五劍 Node 合法來源路徑受控 memory CAS，但使用舊時間命令與真隔離 legacy v1（重載非新 process），非正式 HTTP/v2 或逐劍完整原版差分。R1 詳細87、限定 ITEM14/USE39/EVENT25、正式 ITEM7/USE12/EVENT0 暫不變。
 - 下一步：重新逐檔覆核剩餘56份原有分類；完成後逐項補 R1 14層，R5 仍只規劃。
+
+### 第四十一批：B44–B47 既有分類重新覆核
+
+- 八檔既有有效分類維持：有效200、歷史33、待補0；固定233、分類100%；新逐檔170，既有63重審15、剩48；實際逐檔累計185/233（79.4%）。
+- [逐檔證據](r0-b44-b47-rereview-evidence.md)：B44 原版 ledger 79槽但77槽人工9999，#10/#79 手填 cap；B45 原版 prize callback＋AddItem/排名計數，ITEMNO regex 代換，WriteLog stub，JS no-op DSL mutation 不算 drift；B46 同 Perl interpreter 兩次無領袖 territory，Node 每次 Oracle input、非兩期完整結算；B47 單店 SortDT/GetDTPoint 四例，two-sales 人工帳。均非正式 HTTP/v2/CAS、完整 period。R1 詳細87與限定/正式下界不變。

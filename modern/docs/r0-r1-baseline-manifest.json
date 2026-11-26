@@ -3519,17 +3519,21 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
-      "originalSource": "period.cgi、_config.cgi、inc-makeitem.cgi",
-      "assertions": "三組期末帳本、維持費、庫存、EXP 衰減、利潤；未知外部狀態拒絕",
-      "executionPath": "original-period-shop-ledger",
-      "risk": "維持費截斷、EXP、昨日帳本或外部狀態",
-      "disposition": "保留；#22 多架決算另證",
-      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "L27–47 source/config markers/3案例；L48–64 逐欄 ledger、maintenance、輸入不改、clone；L65–79 guild/dragon/dignity/limits/EXP/count/cost 拒絕。",
+      "executionPath": "原版 period.cgi 前期保存至 dignity decay 前區段直接 eval；Node ledger 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非79真商品上限；無全 compiler/period/獎勵/guild/dragon/town/EVENT/disk/CAS/HTTP/v2；負向僅 throws。",
       "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 5
         }
       ],
       "realPlayer": false,
@@ -3539,7 +3543,45 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b44-period-ledger-probe.pl",
+          "sha": "109d067b5f149e03da3d9ee0fcc4e97dcf0ec38c"
+        },
+        {
+          "path": "modern/src/original-period-shop-ledger.mjs",
+          "sha": "5042498720184aebcfaa113786adb0e6c8a300af"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        }
+      ],
+      "fixtures": "三個獨立人工單店；手填 config、#10 limit20、#79 limit10，其餘77槽9999。",
+      "limitations": "非79真商品上限；無全 compiler/period/獎勵/guild/dragon/town/EVENT/disk/CAS/HTTP/v2；負向僅 throws。"
     },
     {
       "path": "modern/tests/b45-period-top-prize.test.mjs",
@@ -3547,17 +3589,21 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
-      "originalSource": "custom/inc-item-data.cgi FUNCUPDATE、use.cgi、period.cgi",
-      "assertions": "九種頭名獎品、十案含溢出、rankingcount、亂數及未知庫存拒絕",
-      "executionPath": "original-period-top-prize",
-      "risk": "獎品越界、發獎重複、排序與 RNG",
-      "disposition": "保留；多店排名與正式 CAS 由 R4 補",
-      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi",
+      "assertions": "L24–41 9 prizes id/count、source mutation；L42–61 10例逐欄、input unchanged、overflow grant1/discard4；L62–74 invalid draw/stock/rank。",
+      "executionPath": "DSL UpdateResetBefore/TopGetItem regex ITEMNO代換、原版 AddItem與rankingcount++擷取 eval；WriteLog stub；Node 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非完整 compiler/排名競爭/合法得獎或 period；JS L32 CostShowcase2→同字串是 no-op，真正 mutation 是 AddItem；無正式 RNG/CAS/HTTP/v2。",
       "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 23
         }
       ],
       "realPlayer": false,
@@ -3567,7 +3613,41 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b45-top-prize-probe.pl",
+          "sha": "cfdb86eb71880480cddf214b304b1ff0988ae568"
+        },
+        {
+          "path": "modern/src/original-period-top-prize.mjs",
+          "sha": "c2b4e976c8c0ff9f63a3e05a995e92eaf7495f51"
+        },
+        {
+          "path": "modern/src/standard-street-model.mjs",
+          "sha": "c624fbb9f2c141bd539b7dfec86a48d3ba373efc"
+        }
+      ],
+      "fixtures": "人工單店已勝、gift5或9、每例重建、Perl rand(9)注入0..8，Node choice轉 millionths。",
+      "limitations": "非完整 compiler/排名競爭/合法得獎或 period；JS L32 CostShowcase2→同字串是 no-op，真正 mutation 是 AddItem；無正式 RNG/CAS/HTTP/v2。"
     },
     {
       "path": "modern/tests/b46-period-territory.test.mjs",
@@ -3575,17 +3655,21 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
-      "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi",
-      "assertions": "初期、後期、資不抵債三案；人口、發展、治安、志願兵；2 RNG",
-      "executionPath": "original-period-territory",
-      "risk": "人口及領主／軍隊外部狀態誤套",
-      "disposition": "保留；#18 外部功能需獨立整合",
-      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L25–40 bootstrap meta/drift；L41–55 三例 town 全欄/人口、input 不變、2 draws；L56–68 multi-shop/tax/leader/event/draw拒絕。",
+      "executionPath": "原版 territory block＋RebelRobin early return eval；同 interpreter 第一輪結果人工傳第二輪、第三獨立；Node 每例 Oracle input 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非兩期完整結算；RebelRobin僅無領袖 return；無真 town disk/稅收入/多店/完整反叛/CAS/HTTP/v2。",
       "reviewed": true,
       "documentReferences": [
         {
           "path": "modern/docs/r2e-r0-affected-tests-mapping.md",
           "line": 48
+        },
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 41
         }
       ],
       "realPlayer": false,
@@ -3595,7 +3679,33 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b46-territory-probe.pl",
+          "sha": "58961635bfbb2fe7f03222a15e32361bcfd803ac"
+        },
+        {
+          "path": "modern/src/original-period-territory.mjs",
+          "sha": "528291611e001e8cc79d5648b9ec9b2713973c97"
+        }
+      ],
+      "fixtures": "手填 town/meta、單店、tax0、無 leader/event、now1000000、2固定 rand(200)、PushLog/l stub。",
+      "limitations": "非兩期完整結算；RebelRobin僅無領袖 return；無真 town disk/稅收入/多店/完整反叛/CAS/HTTP/v2。"
     },
     {
       "path": "modern/tests/b47-period-solo-sort.test.mjs",
@@ -3603,12 +3713,12 @@
       "mode": "100644",
       "status": "有效",
       "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
-      "originalSource": "core-detail.cgi、inc-func.cgi GetDTPoint/SortDT",
-      "assertions": "開店、兩次售賣、高利潤、虧損；單店 id/name index；拒絕非法多來源",
-      "executionPath": "original-period-solo-sort",
-      "risk": "排序與 point、非單店誤許",
-      "disposition": "保留；#22 多架同世界與完整時序另證",
-      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "originalSource": "modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L20–31 marker drift；L32–44 四例 output逐欄、id/name index、input不改；L45–55 id/status/name/rank/profit拒絕。",
+      "executionPath": "原版 GetDTPoint/SortDT 擷取 eval；各例單店 @DT；Node 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非兩次交易、非多店競爭/同分排序/停業篩選/完整 period；無IO/CAS/HTTP/v2；負向僅 throws。",
       "reviewed": true,
       "documentReferences": [
         {
@@ -3618,6 +3728,10 @@
         {
           "path": "modern/docs/r4-r0-affected-tests-mapping.md",
           "line": 13
+        },
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 59
         }
       ],
       "realPlayer": false,
@@ -3627,7 +3741,29 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b47-solo-sort-probe.pl",
+          "sha": "92ecccde5f159a7bb41139b0912057b918480c6e"
+        },
+        {
+          "path": "modern/src/original-period-solo-sort.mjs",
+          "sha": "a61bba7f651aaccae799b382d22495e2c534115e"
+        }
+      ],
+      "fixtures": "人工 opened/two-sales/positive/loss；two-sales直接填sales/pay10000。",
+      "limitations": "非兩次交易、非多店競爭/同分排序/停業篩選/完整 period；無IO/CAS/HTTP/v2；負向僅 throws。"
     },
     {
       "path": "modern/tests/b48-original-event-start.test.mjs",
@@ -5333,15 +5469,20 @@
       "sha": "7138c295180aed031439839b06fb276c82bd35dd",
       "mode": "100644",
       "status": "有效",
-      "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "period.cgi、_config.cgi、inc-makeitem.cgi",
-      "assertions": "79 欄、三帳本案、維持費15、EXP衰減、昨日欄位",
-      "executionPath": "Perl .t → original-b44-period-ledger-probe.pl；Node 對照 b44-period-ledger.test.mjs",
-      "risk": "維持費截斷、EXP、昨日帳本或外部狀態",
-      "disposition": "保留原版來源斷言及探針；保留；#22 多架決算另證",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "evidenceLevel": "原版 Perl Oracle（受控）",
+      "originalSource": "modern/tests/original-perl/period.cgi；_config.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi；modern/tests/original-perl/inc-makeitem.cgi",
+      "assertions": "L8–39 exit/JSON、79槽/3案例；maintenance、歷史、EXP89/1、loss、#10/79 cap、cash -994、profit -750、稅歸零。",
+      "executionPath": "原版 period.cgi 前期保存至 dignity decay 前區段直接 eval；Node ledger 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非79真商品上限；無全 compiler/period/獎勵/guild/dragon/town/EVENT/disk/CAS/HTTP/v2；負向僅 throws。",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 14
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b44-period-ledger-probe.pl"
@@ -5349,22 +5490,57 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "_config.cgi",
+          "sha": "87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-makeitem.cgi",
+          "sha": "1da8cce1e76ad6159325a37faec68efaa82c7f69"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b44-period-ledger-probe.pl",
+          "sha": "109d067b5f149e03da3d9ee0fcc4e97dcf0ec38c"
+        }
+      ],
+      "fixtures": "三個獨立人工單店；手填 config、#10 limit20、#79 limit10，其餘77槽9999。",
+      "limitations": "非79真商品上限；無全 compiler/period/獎勵/guild/dragon/town/EVENT/disk/CAS/HTTP/v2；負向僅 throws。"
     },
     {
       "path": "modern/tests/original-perl/original-b45-top-prize.t",
       "sha": "f8ecb35dba0839bbf202fdb5f0d28aed441a8970",
       "mode": "100644",
       "status": "有效",
-      "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "custom/inc-item-data.cgi FUNCUPDATE、use.cgi、period.cgi",
-      "assertions": "九選項、十案、#79 上限10及 rankingcount",
-      "executionPath": "Perl .t → original-b45-top-prize-probe.pl；Node 對照 b45-period-top-prize.test.mjs",
-      "risk": "獎品越界、發獎重複、排序與 RNG",
-      "disposition": "保留原版來源斷言及探針；保留；多店排名與正式 CAS 由 R4 補",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "evidenceLevel": "原版 Perl Oracle（受控）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/use.cgi；custom/inc-item-data.cgi；custom/inc-rebel-data.cgi",
+      "assertions": "L8–27 exit/JSON、9選項＋overflow、rankingcount1、一個 item type、gift9→10。",
+      "executionPath": "DSL UpdateResetBefore/TopGetItem regex ITEMNO代換、原版 AddItem與rankingcount++擷取 eval；WriteLog stub；Node 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非完整 compiler/排名競爭/合法得獎或 period；JS L32 CostShowcase2→同字串是 no-op，真正 mutation 是 AddItem；無正式 RNG/CAS/HTTP/v2。",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 32
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b45-top-prize-probe.pl"
@@ -5372,22 +5548,53 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/use.cgi",
+          "sha": "1bf4537cc41e344c144d840d43175c4c232765bb"
+        },
+        {
+          "path": "custom/inc-item-data.cgi",
+          "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb"
+        },
+        {
+          "path": "custom/inc-rebel-data.cgi",
+          "sha": "923634e58a05beca9ab004515fc7669d53a1ba3a"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b45-top-prize-probe.pl",
+          "sha": "cfdb86eb71880480cddf214b304b1ff0988ae568"
+        }
+      ],
+      "fixtures": "人工單店已勝、gift5或9、每例重建、Perl rand(9)注入0..8，Node choice轉 millionths。",
+      "limitations": "非完整 compiler/排名競爭/合法得獎或 period；JS L32 CostShowcase2→同字串是 no-op，真正 mutation 是 AddItem；無正式 RNG/CAS/HTTP/v2。"
     },
     {
       "path": "modern/tests/original-perl/original-b46-territory.t",
       "sha": "496ae141ccf9651325881cc1c64ad7746a30cc34",
       "mode": "100644",
       "status": "有效",
-      "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi",
-      "assertions": "三案、人口374050→336550、發展治安與兵狀態",
-      "executionPath": "Perl .t → original-b46-territory-probe.pl；Node 對照 b46-period-territory.test.mjs",
-      "risk": "人口及領主／軍隊外部狀態誤套",
-      "disposition": "保留原版來源斷言及探針；保留；#18 外部功能需獨立整合",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "evidenceLevel": "原版 Perl Oracle（受控）",
+      "originalSource": "modern/tests/original-perl/period.cgi；modern/tests/original-perl/core-inc-admin-func.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L8–31 exit/JSON、人口500000→374050→336550、develop/safety兩期、army8000→robina2666、money歸零。",
+      "executionPath": "原版 territory block＋RebelRobin early return eval；同 interpreter 第一輪結果人工傳第二輪、第三獨立；Node 每例 Oracle input 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非兩期完整結算；RebelRobin僅無領袖 return；無真 town disk/稅收入/多店/完整反叛/CAS/HTTP/v2。",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 50
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b46-territory-probe.pl"
@@ -5395,22 +5602,49 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/period.cgi",
+          "sha": "6183e88e9dd69a16606a1064c8084e9a1411dbd5"
+        },
+        {
+          "path": "modern/tests/original-perl/core-inc-admin-func.cgi",
+          "sha": "2164b7e5abfea7a466235a8deba1543c2cc41515"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b46-territory-probe.pl",
+          "sha": "58961635bfbb2fe7f03222a15e32361bcfd803ac"
+        }
+      ],
+      "fixtures": "手填 town/meta、單店、tax0、無 leader/event、now1000000、2固定 rand(200)、PushLog/l stub。",
+      "limitations": "非兩期完整結算；RebelRobin僅無領袖 return；無真 town disk/稅收入/多店/完整反叛/CAS/HTTP/v2。"
     },
     {
       "path": "modern/tests/original-perl/original-b47-solo-sort.t",
       "sha": "7ba59eff7bf218bf098e4fcd0566a766a9c03303",
       "mode": "100644",
       "status": "有效",
-      "evidenceLevel": "Perl Oracle（受控）",
-      "originalSource": "core-detail.cgi、inc-func.cgi GetDTPoint/SortDT",
-      "assertions": "四案、point 5010、單店 id/name index、盈虧點數",
-      "executionPath": "Perl .t → original-b47-solo-sort-probe.pl；Node 對照 b47-period-solo-sort.test.mjs",
-      "risk": "排序與 point、非單店誤許",
-      "disposition": "保留原版來源斷言及探針；保留；#22 多架同世界與完整時序另證",
-      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "evidenceLevel": "原版 Perl Oracle（受控）",
+      "originalSource": "modern/tests/original-perl/core-detail.cgi；modern/tests/original-perl/inc-func.cgi",
+      "assertions": "L8–28 exit/JSON、4例、point5010、index0、非負point、rank不變、高profit加分、loss減分。",
+      "executionPath": "原版 GetDTPoint/SortDT 擷取 eval；各例單店 @DT；Node 純投影。",
+      "risk": "period 帳本／獎勵／領土／單店排名證據界線",
+      "disposition": "保留限定回歸；不升格正式玩家",
+      "reason": "非兩次交易、非多店競爭/同分排序/停業篩選/完整 period；無IO/CAS/HTTP/v2；負向僅 throws。",
       "reviewed": true,
-      "documentReferences": [],
+      "documentReferences": [
+        {
+          "path": "modern/docs/r0-b44-b47-rereview-evidence.md",
+          "line": 68
+        }
+      ],
       "realPlayer": false,
       "probes": [
         "modern/tests/original-perl/original-b47-solo-sort-probe.pl"
@@ -5418,7 +5652,25 @@
       "originPR": [
         24
       ],
-      "reviewScope": "既有 Draft 第一批語義證據；未作本輪完整重新審閱"
+      "reviewScope": "既有分類的逐檔語義重新覆核",
+      "originalSources": [
+        {
+          "path": "modern/tests/original-perl/core-detail.cgi",
+          "sha": "9a83d26fb29edee4032958f1e6de837a250f3384"
+        },
+        {
+          "path": "modern/tests/original-perl/inc-func.cgi",
+          "sha": "e7a8add7b0291901e71fe797783b664dff1568a0"
+        }
+      ],
+      "executionSources": [
+        {
+          "path": "modern/tests/original-perl/original-b47-solo-sort-probe.pl",
+          "sha": "92ecccde5f159a7bb41139b0912057b918480c6e"
+        }
+      ],
+      "fixtures": "人工 opened/two-sales/positive/loss；two-sales直接填sales/pay10000。",
+      "limitations": "非兩次交易、非多店競爭/同分排序/停業篩選/完整 period；無IO/CAS/HTTP/v2；負向僅 throws。"
     },
     {
       "path": "modern/tests/original-perl/original-b48-event-start.t",
@@ -42257,7 +42509,7 @@
       "modern/tests/b56-source-event-time-slice.test.mjs"
     ],
     "currentSessionReviewed": 170,
-    "reReviewedBaseline": 7
+    "reReviewedBaseline": 15
   },
   "provenance": [
     {
@@ -42336,7 +42588,8 @@
     "modern/docs/r0-world-use-market-fixtures-evidence.md",
     "modern/docs/r0-peer-use-fixture-evidence.md",
     "modern/docs/r0-r2-declarative-unified-use-evidence.md",
-    "modern/docs/r0-r3-natural-sword-sales-evidence.md"
+    "modern/docs/r0-r3-natural-sword-sales-evidence.md",
+    "modern/docs/r0-b44-b47-rereview-evidence.md"
   ],
   "integrationCiHistory": [
     {

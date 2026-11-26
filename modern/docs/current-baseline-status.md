@@ -270,3 +270,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 - 第32批 run 45826374794 / job 139931469807：success，HEAD `ff70e04ccb59d2c02427304c801d58f86ec9caf1`、實際 checkout `6513eeabaf9fd1a59ba4e6ebb3585dda6f756690`、tree `146f8eebeb674fa69072ced446fcf4584be09c56` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
 - 第35批 run 45827783268 / job 139936292121：success，HEAD `ec0acb2ddcbb6fc8f3202f42ae06ff7a9929e6cf`、實際 checkout `daed658b9f8c0ff6c9e42d88e2fc89c5d8599f3e`、tree `f19fff358cac10436785f9b2f95778ea932c6883` 一致；JS1350/1350、0 fail/skip/cancelled；Perl2456/2456（85檔）PASS；DSL/source pins 全部成功。
 - 新 HEAD 未驗；保留第16、18批 cow mortality skip 歷史，不沿用舊綠燈。
+
+### 第四十一批：B44–B47 既有分類重新覆核
+
+- 八檔既有有效分類維持：有效200、歷史33、待補0；固定233、分類100%；新逐檔170，既有63重審15、剩48；實際逐檔累計185/233（79.4%）。
+- [逐檔證據](r0-b44-b47-rereview-evidence.md)：B44 原版 ledger 79槽但77槽人工9999，#10/#79 手填 cap；B45 原版 prize callback＋AddItem/排名計數，ITEMNO regex 代換，WriteLog stub，JS no-op DSL mutation 不算 drift；B46 同 Perl interpreter 兩次無領袖 territory，Node 每次 Oracle input、非兩期完整結算；B47 單店 SortDT/GetDTPoint 四例，two-sales 人工帳。均非正式 HTTP/v2/CAS、完整 period。R1 詳細87與限定/正式下界不變。
