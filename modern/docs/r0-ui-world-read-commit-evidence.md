@@ -11,7 +11,7 @@
 - Fixture：靜態字串、無玩家 fixture。
 - 限制：不證明實際渲染、事件、HTTP 成功、CAS 或 v2；L66–69 舊 supply/advance-time 只檢查字串存在，正式 handler 舊時間回409（dev-local L530–531）；不可將標題 live commands 當現行可用能力。
 
-## original-perl/world-read-safety.t
+## world-read-safety.t
 
 - 測試 blob: `205dec43ce77014fa380b09c9d18e7af6200c2d6`；Perl Oracle（隔離 DataRead 負例）。
 - 來源／入口：`modern/tests/original-perl/inc-func.cgi` @ `e7a8add7b0291901e71fe797783b664dff1568a0`。
@@ -20,7 +20,7 @@
 - Fixture：人工 minimal world，無店、無 EVENT。
 - 限制：缺 // 或 // CRLF 由外部 1s alarm 截止（來源 L258）；原版非數字資料未驗證；不證正式 Node guard、HTTP/v2 或 rollback。
 
-## original-perl/world-one-shop.t
+## world-one-shop.t
 
 - 測試 blob: `e7b33c9a3486aab47c4672b0f337d9c912a8a5ae`；Perl Oracle（隔離 DataRead 店家結構）。
 - 來源／入口：`modern/tests/original-perl/inc-func.cgi` @ `e7a8add7b0291901e71fe797783b664dff1568a0`。
@@ -29,7 +29,7 @@
 - Fixture：人工 shop header、syntheticPass、payload；無 EVENT。
 - 限制：重複 ID 接受且 index 覆蓋（L282），缺 payload 仍計入店家；不驗原版 AutoVar 真解碼、認證、point 計算或正式多店/v2。
 
-## original-perl/world-data.t
+## world-data.t
 
 - 測試 blob: `56d6fcf6de5bd0359176f0498ad77f92b81f3d5a`；Perl Oracle（隔離 DataWrite stage）。
 - 來源／入口：`modern/tests/original-perl/write.cgi` @ `203f33b37511e838800a45b84183af98fcf46e4c`。
@@ -38,7 +38,7 @@
 - Fixture：無店、無 EVENT，固定時間，fresh backup 避開備份；lasttime path 未建立。
 - 限制：不執行 DataRead、commit、真鎖、備份或 Node 差分；DataFilesBackup stub 宣稱不應走，但 require 原版 write.cgi 會重定義該 sub，不能當成獨立 guard；未斷言 lasttime utime 結果。
 
-## original-perl/world-commit.t
+## world-commit.t
 
 - 測試 blob: `4a8fd57c24de341509ba7c06a5684baa95a04f69`；Perl Oracle（隔離多檔 marker／rename）。
 - 來源／入口：`modern/tests/original-perl/write.cgi` @ `203f33b37511e838800a45b84183af98fcf46e4c`。

@@ -43121,6 +43121,134 @@
         "result": "PASS"
       },
       "pins": "all source/DSL checks success"
+    },
+    {
+      "head": "9a8804b82f102017d29a9138f581157de746144a",
+      "tree": "a0e3ed56190476c9fc28a4f2956ed0096897e60a",
+      "checkout": "a9c23803e37f4538ec68eece0f0994e75ee56ddc",
+      "run": 45829331166,
+      "job": 139941639343,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1342,
+        "fail": 8,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-ui-world-read-commit-evidence.md:41"
+    },
+    {
+      "head": "d6a01c4dc2289834367de43472e819334ae82f76",
+      "tree": "29cd6eb773f750c1eb53102b83b8abeea7cd68f8",
+      "checkout": "35cb46c6177a58612b3ac9ad270656651746a37a",
+      "run": 45829763081,
+      "job": 139943164302,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1341,
+        "fail": 8,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-world-use-market-fixtures-evidence.md:5",
+      "skipped": "P4 actual cow mortality: No cow death occurred in bounded real player experiment"
+    },
+    {
+      "head": "2960ca995705e988f1a13503fb75ef435b7d66d6",
+      "tree": "b4335491889577474dffb0852653028f5578817e",
+      "checkout": "6d09354154fab2cf0145e5de22f923b6b9d6241c",
+      "run": 45830280450,
+      "job": 139944934885,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1342,
+        "fail": 8,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-world-use-market-fixtures-evidence.md:5"
+    },
+    {
+      "head": "91e0293d2c937fcd9d705be5a3d81e2e1011b39e",
+      "tree": "175b19f920de14f81c0021bd3b7fc05682b7e0b4",
+      "checkout": "11c5b6d2d323a3dcde47dc7adb4e598305afb7b6",
+      "run": 45830679821,
+      "job": 139946312881,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1342,
+        "fail": 8,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-world-use-market-fixtures-evidence.md:5"
+    },
+    {
+      "head": "2283f987694cf8691c21cb9ac974f801fc4acb3e",
+      "tree": "8010fa88a1f82ca6aa7e20fc9978201455dcac47",
+      "checkout": "66df3c5207affcb3e5b16ba24a64da9dee539a41",
+      "run": 45831167417,
+      "job": 139947990654,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1342,
+        "fail": 8,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-world-use-market-fixtures-evidence.md:5"
+    },
+    {
+      "head": "3fc9cfb39ee6e7cfafa8629334e49dfa6cc9f67e",
+      "tree": "a86237f42df4a26a267ee70952bd98a52dc02401",
+      "checkout": "d0bdd7c61a8f86bd7340d5350affbaaf720b974c",
+      "run": 45831778318,
+      "job": 139950111363,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1341,
+        "fail": 8,
+        "skip": 1,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-b44-b47-rereview-evidence.md:14",
+      "skipped": "P4 actual cow mortality: No cow death occurred in bounded real player experiment"
+    },
+    {
+      "head": "eec3487149d6b11483035acdc20d2690a7003106",
+      "tree": "56eac8fb160a269d95b3d125d237bbf1d0eaaab3",
+      "checkout": "777925e438dc5855b1d0e43bd31084769d780252",
+      "run": 45832044809,
+      "job": 139951042892,
+      "conclusion": "failure",
+      "js": {
+        "total": 1350,
+        "pass": 1342,
+        "fail": 8,
+        "skip": 0,
+        "cancelled": 0
+      },
+      "perl": "skipped after JS failure",
+      "pins": "skipped after npm test failure; DSL audit step failure",
+      "failed": "subtests 724/728/731–736: candidate evidence anchor mismatch modern/docs/r0-b44-b47-rereview-evidence.md:14"
     }
   ],
   "evidenceLayerSchema": {
