@@ -7,7 +7,7 @@ let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
 let lastPricingItemId=null;
-let palaceSubmitting=false,armySubmitting=false;
+let palaceSubmitting=false,armySubmitting=false,sweepSubmitting=false;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -34,7 +34,7 @@ const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',
-  balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
+  sweep:'掃除',balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
   $('status-summary').hidden=!snapshot?.shop||
@@ -394,6 +394,21 @@ function renderPalace(s){
   text('palace-item',canMeet?(catalogItem(s,p.itemId)?.name??'商品 #'+p.itemId):'—');
   text('palace-stock',canMeet?number(p.owned)+'／'+number(p.count):'—');
 }
+function renderSweep(s){
+  const q=s?.sweep;
+  text('shop-info-clean',q?q.cleanLabel+'（'+number(q.garbageKg)+' kg）':'—');
+  $('stock-trash-warning').hidden=!q?.stockBlocked;
+  $('stock-list-content').hidden=Boolean(q?.stockBlocked);
+  $('sweep-form').hidden=!q?.canSweep;
+  $('sweep-submit').disabled=sweepSubmitting||!q?.canSweep;
+  text('sweep-status',!q?'請先開店，並啟用正常經營模式。':q.garbage<10000?'目前店裡沒有明顯的垃圾。':
+    '目前有相當於 '+number(q.garbageKg)+' kg 的垃圾。全部清理約需 '+conciseTimeText(q.estimatedSeconds)+'。'+(q.availableHours<1?' 行動時間不足。':''));
+  const options=$('sweep-options'),selected=options.value;options.replaceChildren();
+  for(const [hours,label] of [[0,'請選擇'],...(q?.options??[]).map(o=>[o.hours,o.label])]){
+    const option=document.createElement('option');option.value=String(hours);option.textContent=label;options.append(option);
+  }
+  if([...options.options].some(o=>o.value===selected))options.value=selected;
+}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -438,6 +453,7 @@ function showState(s){
   text('shop-points',number(s.shopSummary?.point));
   renderPalace(s);
   renderArmy(s);
+  renderSweep(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -661,6 +677,18 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+$('sweep-form').addEventListener('submit',async event=>{
+  event.preventDefault();const before=snapshot;
+  if(sweepSubmitting||!before?.world||!before.sweep?.canSweep)return;
+  const requestedHours=Number($('sweep-hours').value||$('sweep-options').value);
+  if(!Number.isSafeInteger(requestedHours)||requestedHours<1){feedback('請指定清掃時間。',null,true);return;}
+  sweepSubmitting=true;renderSweep(before);
+  try{await call('/api/sweep',{expectedRevision:before.world.revision,requestedHours},'清掃',data=>{
+    const r=data.details;
+    text('sweep-report','打掃報告：預定 '+number(r.effectiveHours)+' 小時；實際 '+conciseTimeText(r.timeSpentSeconds)+'；原有 '+number(r.garbageBeforeKg)+' kg，清除 '+number(r.garbageRemovedKg)+' kg，剩餘 '+number(r.garbageAfterKg)+' kg。');
+    $('sweep-hours').value='';$('sweep-options').value='0';
+  });}finally{sweepSubmitting=false;renderSweep(snapshot);}
+});
 for(const mode of ['hire','fire']){
   $('army-'+mode+'-form').addEventListener('submit',async event=>{
     event.preventDefault();

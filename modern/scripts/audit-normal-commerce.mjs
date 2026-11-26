@@ -45,6 +45,9 @@ const locations=[
  ['originalArmyFileSource','modern/tests/original-perl/pinned-army.cgi'],
  ['originalDiscardFormSource','modern/tests/original-perl/core-inc-item-throw.cgi'],
  ['originalDiscardSubmitSource','modern/tests/original-perl/core-item-t.cgi'],
+ ['originalSweepFormSource','modern/tests/original-perl/core-sweep.cgi'],
+ ['originalSweepSubmitSource','modern/tests/original-perl/core-sweep-s.cgi'],
+ ['originalStockViewSource','modern/tests/original-perl/core-stock.cgi'],
 ];
 const one=(b,k)=>b.fields[k]?.[0]?.value??null;
 const fields=b=>Object.fromEntries(Object.entries(b.fields).map(([k,v])=>[k,v.map(x=>x.value)]));

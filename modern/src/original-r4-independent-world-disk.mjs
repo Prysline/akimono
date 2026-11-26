@@ -90,7 +90,8 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
           rankingcount:0,dignity:0,profitstock:0,taxmode:0,drmoney:0,trush:0,exp:{},user:{},...next};
       }
       if(['edit-showcase','market-buy','use-item',PALACE_COMMAND,...ARMY_COMMANDS].includes(command.kind)||
-         (street.reviewedDiscard===true&&command.kind==='discard-item'))next.lastlogin=now;
+         (street.reviewedDiscard===true&&command.kind==='discard-item')||
+         (street.reviewedSweep===true&&command.kind==='sweep-shop'))next.lastlogin=now;
       const sorted=projectOriginalSoloSort({shop:next,reviewed:sort}).shop;
       return street.reviewedNormalCommerce===undefined?sorted:capReviewedCommerceCash(sorted,street.reviewedNormalCommerce);
     });

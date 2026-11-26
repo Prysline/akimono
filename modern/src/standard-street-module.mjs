@@ -3,6 +3,7 @@ import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 import {reviewOriginalTopPrize} from './original-period-top-prize.mjs';
 import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './reviewed-local-target-uses.mjs';
+import {reviewOriginalSweep,describeOriginalSweep,projectOriginalSweep} from './original-r4-sweep.mjs';
 import {reviewOriginalDiscard,projectOriginalDiscard} from './original-r4-discard.mjs';
 import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
@@ -186,6 +187,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
   originalDiscardFormSource=null,originalDiscardSubmitSource=null,
+  originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   originalShowcaseSource=null,enableReviewedFullCommerce=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,
 }){
@@ -211,6 +213,11 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(discardInputs.some(s=>s!==null)&&discardInputs.some(s=>s===null))bad('incomplete original discard source set');
   const reviewedDiscard=enableReviewedFullCommerce&&discardInputs.every(s=>s!==null)?reviewOriginalDiscard({
     ...r4Sources,formSource:originalDiscardFormSource,submitSource:originalDiscardSubmitSource,calcSource:originalBuyCalcSource,catalog,limits:giftMap.limits,
+  }):null;
+  const sweepInputs=[originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource];
+  if(sweepInputs.some(s=>s!==null)&&sweepInputs.some(s=>s===null))bad('incomplete original sweep source set');
+  const reviewedSweep=enableReviewedFullCommerce&&sweepInputs.every(s=>s!==null)?reviewOriginalSweep({
+    ...r4Sources,formSource:originalSweepFormSource,submitSource:originalSweepSubmitSource,stockViewSource:originalStockViewSource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,
   }):null;
   const sources=[originalAdminInitSource,originalDataReadSource,originalDataWriteSource];
   if(sources.some(x=>x!==null)&&sources.some(x=>x===null))
@@ -677,6 +684,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const base=Object.freeze({
     id:STANDARD_STREET_ID,
     capabilities:Object.freeze([...actions,
+      ...(reviewedSweep?['sweep-shop']:[]),
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
@@ -697,6 +705,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     catalog,
     reviewedGiftMapUse:giftMap,
     ...(reviewedDiscard?{reviewedDiscard:true}:{}),
+    ...(reviewedSweep?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:reviewedSweep,world})}:{}),
     reviewedBootstrap,
     reviewedSparsePlus,
     reviewedMultiPlus,
@@ -1045,6 +1054,12 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='sweep-shop'){
+        if(!reviewedSweep)bad('original sweep source review required');
+        ownKeysExact(command,['shopId','requestedHours']);
+        integer(command.shopId,'shopId',1);integer(command.requestedHours,'requestedHours',1);
+        return projectOriginalSweep({reviewed:reviewedSweep,world,command});
       }
       if(command.kind==='discard-item'){
         ownKeysExact(command,['shopId','itemId','count']);

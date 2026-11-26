@@ -25,7 +25,7 @@
         <span class="subgroup" data-subgroup="self">
           <button type="button" data-tab="shop" class="selected" aria-current="page">［店內］</button>
           <button type="button" data-tab="stock">［倉庫］</button>
-          <button type="button" disabled title="尚未實作">［掃除］</button>
+          <button type="button" data-tab="sweep">［掃除］</button>
           <button type="button" data-tab="balance">［收支］</button>
           <button type="button" disabled title="尚未實作">［手續］</button>
         </span>
@@ -94,11 +94,12 @@
       <h2 class="section-title">● <span id="shop-title">店內</span></h2>
       <h3 class="sub-title">店家資訊</h3>
       <div class="table-scroll"><table class="shop-info-table"><tbody>
-        <tr><td rowspan="5" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
+        <tr><td rowspan="6" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
         <tr><th scope="row">店主</th><td id="owner-name">—</td></tr>
         <tr><th scope="row">資金</th><td id="shop-info-money">—</td></tr>
         <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
         <tr><th scope="row">人氣</th><td id="shop-info-popularity">—</td></tr>
+        <tr><th scope="row">垃圾</th><td id="shop-info-clean">—</td></tr>
       </tbody></table></div>
       <p class="muted dev-panel" data-dev-panel>原版人氣內部數值：<output id="dev-popularity-raw">—</output>；頂端點數依 GetDTPoint 獨立計算。</p>
       <h3 class="sub-title">展示架</h3>
@@ -172,6 +173,8 @@
 
     <section id="tab-stock" class="section pane" hidden>
       <h2 class="section-title">● 倉庫</h2>
+      <div id="stock-trash-warning" hidden><p>商品都卡在垃圾堆中了，找不到呢。先進行清掃，然後把垃圾扔掉吧。</p><button type="button" class="text-link" data-go-tab="sweep">［前往掃除］</button></div>
+      <div id="stock-list-content">
       <p class="page-intro">點選商品名稱可查看明細、設定展示架或使用商品。</p>
       <h3 class="sub-title">保管倉庫</h3>
       <div class="table-scroll"><table class="warehouse-table">
@@ -184,6 +187,7 @@
         <tbody id="inventory"><tr><td colspan="6">目前沒有販售商品</td></tr></tbody>
       </table></div>
       <p class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP，1000 點＝100%；原始 EXP 顯示於各商品百分比下方。行情與供需尚未完成，不顯示推測值。</p>
+      </div>
     </section>
 
     <section id="tab-item" class="section pane" hidden>
@@ -283,6 +287,17 @@
       </tbody></table>
       <p id="use-result-message" class="use-result-message" role="status"></p>
       <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
+    </section>
+
+    <section id="tab-sweep" class="section pane" hidden>
+      <h2 class="section-title">● 打掃</h2>
+      <p id="sweep-status" role="status">請先開店。</p>
+      <form id="sweep-form" class="inline-form" hidden>
+        <label>時間指定 <select id="sweep-options"><option value="0">請選擇</option></select> 小時</label>
+        <label>或者 <input id="sweep-hours" type="number" min="1" step="1"> 小時</label>
+        <button type="submit" id="sweep-submit" class="primary">進行清掃</button>
+      </form>
+      <p id="sweep-report" role="status"></p>
     </section>
 
     <section id="tab-balance" class="section pane" hidden>

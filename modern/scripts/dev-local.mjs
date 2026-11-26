@@ -50,6 +50,7 @@ const {
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
 }=Object.fromEntries(await Promise.all(Object.entries({
   itemDsl:'custom/inc-item-data.cgi',
   rebelDsl:'custom/inc-rebel-data.cgi',
@@ -83,6 +84,9 @@ const {
   originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
   originalDiscardFormSource:'modern/tests/original-perl/core-inc-item-throw.cgi',
   originalDiscardSubmitSource:'modern/tests/original-perl/core-item-t.cgi',
+  originalSweepFormSource:'modern/tests/original-perl/core-sweep.cgi',
+  originalSweepSubmitSource:'modern/tests/original-perl/core-sweep-s.cgi',
+  originalStockViewSource:'modern/tests/original-perl/core-stock.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
@@ -96,6 +100,7 @@ const streetModule=createStandardStreetModule({
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -145,6 +150,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
        originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
        originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
   originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
        reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
@@ -193,6 +199,7 @@ function state(){
     },
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
     army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
+    sweep:world&&streetModule.reviewedSweep?streetModule.describeSweep(world):null,
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
@@ -518,6 +525,12 @@ async function api(req,res,url){
       if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
       result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
         expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/sweep': {
+      if(!repo||!streetModule.reviewedSweep)return send(res,409,{ok:false,error:'清掃需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,requestedHours'))throw Error('清掃只接受 expectedRevision、requestedHours');
+      result=commit({kind:'sweep-shop',expectedRevision:ensureRevision(body),shopId:1,requestedHours:commandNumber(body.requestedHours,'requestedHours',1)});
       break;
     }
     case '/api/discard': {
