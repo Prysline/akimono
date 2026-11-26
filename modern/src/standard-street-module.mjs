@@ -711,67 +711,16 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           (eventState!==null&&eventState!==undefined&&
            typeof eventState==='object'&&!Array.isArray(eventState)&&
            Object.keys(eventState).length===0)||knownOrdinaryEvents(world));
-      return Object.freeze([giftUseRule,...giftUseVariants,swordUseRule,
+      const rules=[giftUseRule,...giftUseVariants,swordUseRule,
         ...showcaseResizeUses,...declarativeUses,...gatheringUses,
         ...dairyInlineUses,...bookWorkUses,
-        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse].filter(Boolean)
-        .map(rule=>{
+        ...careerChangeUses,partyUse,selfAdvertiseUse,noGuildAdvertiseUse].filter(Boolean);
+      const offers=rules.map(rule=>{
           const owned=shop?.item?.[rule.itemId-1]??0;
           const sourceName=model.items.find(x=>x.id===rule.itemId)?.name;
           const materials=rule.uses.length?
             rule.uses.map(x=>({itemId:x.itemId,count:x.countPerUse})):
             (rule.requiresOwnedItem?[{itemId:rule.itemId,count:1}]:[]);
-          // Read-only source-backed acquisition hints; never synthesize
-          // inventory, wholesale stock, or a new player transaction.
-          // A positive PLUS is a replenishment possibility, not a promise
-          // of an in-stock purchase or sufficient funds.
-          const materialRoutes=Object.freeze(materials.map(row=>{
-            const sourceItem=model.items.find(item=>item.id===row.itemId);
-            const ownedCount=shop?.item?.[row.itemId-1]??0;
-            const missingCount=Math.max(0,row.count-ownedCount);
-            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
-            const buyRule=buyRegistry?.getRule(row.itemId)??null;
-            const plus=sourceItem?.plusRaw??'';
-            const replenishes=Boolean(buyRule&&
-              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
-            const providers=[giftUseRule,...giftUseVariants,
-              swordUseRule,...declarativeUses,...gatheringUses,
-              ...dairyInlineUses,...bookWorkUses,
-              ...careerChangeUses,partyUse,
-              selfAdvertiseUse].filter(provider=>
-                provider?.creates?.some(output=>
-                  output.itemId===row.itemId&&output.countPerUse>0)||
-                (row.itemId===26&&provider?.itemId===25&&
-                 provider.inlineCallback?.kind==='milk-cow'));
-            const availableProvider=providers.find(provider=>
-              provider.uses.every(input=>
-                (shop?.item?.[input.itemId-1]??0)>=input.countPerUse)&&
-              (!provider.requiresOwnedItem||
-                (shop?.item?.[provider.itemId-1]??0)>=1));
-            const prizeChoices=rankOnePrize?.topChoices.filter(choice=>choice.itemId===row.itemId)??[];
-            const kind=missingCount===0?'owned':
-              buyRule&&marketStock>=missingCount?'market-stock':
-              availableProvider?'registered-use':
-              replenishes?'source-plus':
-              prizeChoices.length?'source-rank-one-prize':
-              providers.length?'upstream-use-not-ready':
-              'source-acquisition-not-implemented';
-            return Object.freeze({
-              itemId:row.itemId,name:sourceItem?.name??'未知商品',
-              required:row.count,owned:ownedCount,missing:missingCount,
-              marketStock,kind,sourcePlus:replenishes?plus:null,
-              ...(prizeChoices.length?{rankOnePrize:Object.freeze({
-                choices:Object.freeze(prizeChoices.map(choice=>Object.freeze({index:choice.index,count:choice.count}))),
-                totalChoices:rankOnePrize.topChoices.length,
-              })}:{}),
-              provider:kind==='registered-use'?Object.freeze({
-                itemId:availableProvider.itemId,useId:availableProvider.useId,
-              }):null,
-              providerCandidates:providers.map(p=>Object.freeze({
-                itemId:p.itemId,useId:p.useId,
-              })),
-            });
-          }));
           const priorExp=shop?.exp;
           const invalidExp=priorExp!==undefined&&
             (priorExp===null||typeof priorExp!=='object'||
@@ -834,7 +783,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
           return Object.freeze({
             itemId:rule.itemId,useId:rule.useId,
             itemName:sourceName,useName:rule.name,
-            owned,materials,materialRoutes,moneyPerUse:rule.money,
+            owned,materials,moneyPerUse:rule.money,
             timePerUseSeconds:actualTime,
             proficiency:exp,requiredProficiency:rule.needExperience??0,maxUseCount,maxUseCountReason,
             missingMaterialId:missing?.itemId??null,
@@ -848,6 +797,61 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             supported:true,canUse:reason===null,reason,
             source:rule.source,sourceFile:rule.sourceFile,
           });
+        });
+      const byUse=new Map(offers.map(q=>[q.itemId+':'+q.useId,q]));
+      return Object.freeze(offers.map(offer=>{
+          // Read-only source-backed acquisition hints; never synthesize
+          // inventory, wholesale stock, or a new player transaction.
+          // A positive PLUS is a replenishment possibility, not a promise
+          // of an in-stock purchase or sufficient funds.
+          const materialRoutes=Object.freeze(offer.materials.map(row=>{
+            const sourceItem=model.items.find(item=>item.id===row.itemId);
+            const ownedCount=shop?.item?.[row.itemId-1]??0;
+            const missingCount=Math.max(0,row.count-ownedCount);
+            const marketStock=world?.market?.wholesale?.[row.itemId-1]??0;
+            const buyRule=buyRegistry?.getRule(row.itemId)??null;
+            const plus=sourceItem?.plusRaw??'';
+            const replenishes=Boolean(buyRule&&
+              /^[1-9][0-9]*(?:\.[0-9]+)?[mhd]$/.test(plus));
+            const providers=rules.filter(provider=>
+                provider?.creates?.some(output=>
+                  output.itemId===row.itemId&&output.countPerUse>0)||
+                (row.itemId===26&&provider?.itemId===25&&
+                 provider.inlineCallback?.kind==='milk-cow'));
+            // Match the actual read-only USE offer, not just material stock.
+            // EXP, point, time, money and other source gates remain authoritative.
+            const providerOffer=provider=>byUse.get(provider.itemId+':'+provider.useId);
+            const availableProvider=providers.find(provider=>{
+              const q=providerOffer(provider);
+              return q?.canUse===true&&q.maxUseCount>0;
+            });
+            const prizeChoices=rankOnePrize?.topChoices.filter(choice=>choice.itemId===row.itemId)??[];
+            const kind=missingCount===0?'owned':
+              buyRule&&marketStock>=missingCount?'market-stock':
+              availableProvider?'registered-use':
+              replenishes?'source-plus':
+              prizeChoices.length?'source-rank-one-prize':
+              providers.length?'upstream-use-not-ready':
+              'source-acquisition-not-implemented';
+            return Object.freeze({
+              itemId:row.itemId,name:sourceItem?.name??'未知商品',
+              required:row.count,owned:ownedCount,missing:missingCount,
+              marketStock,kind,sourcePlus:replenishes?plus:null,
+              ...(prizeChoices.length?{rankOnePrize:Object.freeze({
+                choices:Object.freeze(prizeChoices.map(choice=>Object.freeze({index:choice.index,count:choice.count}))),
+                totalChoices:rankOnePrize.topChoices.length,
+              })}:{}),
+              provider:kind==='registered-use'?Object.freeze({
+                itemId:availableProvider.itemId,useId:availableProvider.useId,
+              }):null,
+              providerCandidates:providers.map(p=>Object.freeze({
+                itemId:p.itemId,useId:p.useId,
+                canUse:providerOffer(p)?.canUse===true,
+                reason:providerOffer(p)?.reason??null,
+              })),
+            });
+          }));
+          return Object.freeze({...offer,materialRoutes});
         }));
     },
     // R2-C read-only common wholesale offer projection: identical Registry,

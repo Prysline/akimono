@@ -109,6 +109,15 @@ test('R4 genuine #74 steel equipment package from four trained production books,
     // A 36h boundary may reduce EXP, so the live gate is rechecked below.
     await p.ore(5,320);
     if(book===23)await p.stones(40);
+    if(book===20){
+      await p.enoughTime(p.quote(book,1).timePerUseSeconds);
+      assert.equal(p.exp(book),0);
+      const route=p.quote(39,15).materialRoutes.find(x=>x.itemId===product);
+      assert.equal(route.kind,'upstream-use-not-ready');
+      assert.equal(route.provider,null);
+      assert.match(route.providerCandidates.find(x=>x.itemId===book&&x.useId===1).reason,/熟練度不足/);
+      await p.deny(book,1);
+    }
     await p.use(78,career);
     assert.equal(p.stock(78),0);
     async function craft(useId){
@@ -121,6 +130,11 @@ test('R4 genuine #74 steel equipment package from four trained production books,
         if(useId===1&&p.exp(book)<gate)return false;
         if(p.remaining()>=offer.timePerUseSeconds)break;
         await p.enoughTime(offer.timePerUseSeconds);
+      }
+      if(useId===1&&p.stock(product)===0){
+        const route=p.quote(39,15).materialRoutes.find(x=>x.itemId===product);
+        assert.equal(route.kind,'registered-use');
+        assert.deepEqual(route.provider,{itemId:book,useId:1});
       }
       const prior=p.state.shop,previousExp=p.exp(book),out=product-(useId===0?1:0);
       const done=await p.use(book,useId);
