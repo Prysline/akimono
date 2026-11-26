@@ -81,18 +81,28 @@ test('R4 genuine rank prizes produce #77 party goods, actual popup and natural s
   await p.enoughTime(600);
   const list=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf:0,itemId:77,per:10});
   assert.equal(list.code,'COMMITTED',JSON.stringify(list.details??list.error));
-  for(let n=0;!sales[77]&&n<144;n++){
+  // Frozen PRICE-derived POP for #77 is 1,440,000 seconds. The original
+  // unled territory can fall to develop=safety=1000 and 174,000 people
+  // after collection. At 10% list price the one-shelf buyer pool per
+  // hour at that population is ~0.0604; the expected rounded sale chance
+  // is ~0.0302, so a 144-hour budget has ~1.2% no-sale probability.
+  // Allow 576 actual hours on this same career (roughly 2e-8 under
+  // constant floor population and independent uniform draws). No retry
+  // or selected tape; record a failure if even this finite budget misses.
+  let saleHours=0,minPeople=p.state.world.period.dtPeople;
+  for(;!sales[77]&&saleHours<576;saleHours++){
     await p.tick(60);
+    minPeople=Math.min(minPeople,p.state.world.period.dtPeople);
     // Maintain legitimate owner activity if a long natural-sale wait crosses
     // several periods. A one-copy item cannot be lost to percentage theft.
-    if(n%24===23&&!sales[77])await p.use(13,0);
+    if(saleHours%24===23&&!sales[77])await p.use(13,0);
   }
-  assert.equal(sales[77],1,JSON.stringify({sales,held:p.stock(77),period:p.state.world.period.settledCount}));
+  assert.equal(sales[77],1,JSON.stringify({sales,held:p.stock(77),period:p.state.world.period.settledCount,saleHours,minPeople}));
   assert.equal(p.stock(77),0);
   const second=await p.saveAndRestart(1);
   assert.equal(second.shops[0].item[76],0);
   assert.equal(second.shops[0].showcase[0],77);
   assert.ok(second.period.settledCount>=first.period.settledCount);
   await p.tick(1);
-  t.diagnostic(JSON.stringify({awards:prizes.length,party:true,naturalSale:sales[77],periods:second.period.settledCount,revisions:second.revision}));
+  t.diagnostic(JSON.stringify({awards:prizes.length,party:true,naturalSale:sales[77],saleHours,minPeople,periods:second.period.settledCount,revisions:second.revision}));
 });
