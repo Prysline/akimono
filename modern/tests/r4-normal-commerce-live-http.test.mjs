@@ -100,3 +100,85 @@ test('R4 eight shelves charge original maintenance; negative cash survives v2 an
   await p.saveAndRestart(1);
   await p.tick(1);
 });
+
+// Each size gets one independent fresh player. No selected seed, injected
+// assets, rerolled failure or fixture clock. #30 high-price sales exercise
+// the original tax branch; #32 is another medicine, #10 a different type.
+const shelfCosts=[0,2000,4000,8000,16000,32000,64000,128000];
+for(let count=1;count<=8;count++){
+  test('R4 genuine '+count+'-shelf construction, sequential sale/tax and exact maintenance across two v2 generations',async t=>{
+    const layout=([30,32,30,10,32,10,30,32]).slice(0,count);
+    let ready=false,settlement=null,positiveTax=0;const sales={};
+    const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,onTick(r,before){
+      const d=r.details,shop=before.shops[0],rows=d.shelfSales;
+      assert.ok(Array.isArray(rows),'formal per-shelf source receipt');
+      assert.equal(rows.reduce((sum,x)=>sum+x.count,0),d.naturalSaleCount);
+      const byItem={},remaining=new Map();
+      for(const row of rows){
+        assert.ok(row.shelf>=0&&row.shelf<shop.showcasecount);
+        assert.equal(row.itemId,shop.showcase[row.shelf]);
+        assert.equal(row.unitPrice,shop.price[row.shelf]);
+        assert.equal(row.gross,row.count*row.unitPrice);
+        assert.equal(row.stockAfter,row.stockBefore-row.count);
+        assert.ok(row.stockAfter>=0&&row.count>0);
+        const key=row.sliceIndex+':'+row.itemId;
+        if(remaining.has(key))assert.equal(row.stockBefore,remaining.get(key),'duplicate shelves share inventory within one source slice');
+        else if(row.sliceIndex===0)assert.equal(row.stockBefore,shop.item[row.itemId-1]);
+        remaining.set(key,row.stockAfter);
+        byItem[row.itemId]=(byItem[row.itemId]??0)+row.count;
+        if(ready){
+          sales[row.itemId]=(sales[row.itemId]??0)+row.count;
+          if(row.itemId===30){
+            const rate=Math.min(99,Math.trunc((row.unitPrice/100-1)*5+0.5));
+            assert.equal(row.tax,Math.trunc(row.gross*rate/100));
+            positiveTax+=row.tax;
+          }else assert.equal(row.tax,0);
+        }
+      }
+      assert.deepEqual(byItem,d.soldByItem);
+      if(ready&&d.settlementReceipt){
+        const q=d.settlementReceipt;
+        assert.equal(q.maintenance,Math.trunc(q.costBeforeLedger)+shelfCosts[count-1]);
+        assert.equal(q.cashBeforeLedger-q.cashAfterLedger,q.maintenance);
+        assert.equal(shop.showcasecount,count);
+        settlement=q;
+      }
+    }});
+    await p.use(79,0);await p.use(79,1);
+    // Manufacture rather than wait for a large random wholesale delivery.
+    await p.gather(1,10);await p.use(15,0);
+    assert.ok(p.stock(30)>=10);
+    if(layout.includes(32))await p.market(32,2,{partial:true});
+    if(layout.includes(10))await p.market(10,2,{partial:true});
+    const quote=p.quote(63,count-1);
+    assert.equal(quote.moneyPerUse,count*10000);
+    assert.equal(quote.timePerUseSeconds,count*1800);
+    await p.enoughTime(quote.timePerUseSeconds);
+    const prior=p.state.shop,resize=await p.use(63,count-1);
+    assert.equal(resize.details.effectiveCount,1);
+    assert.equal(p.stock(63),0);assert.equal(p.state.shop.money,prior.money-count*10000);
+    assert.deepEqual(p.state.shop.showcase,Array(count).fill(0));
+    assert.deepEqual(p.state.shop.price,Array(count).fill(0));
+    await p.enoughTime(count*600);
+    for(const [shelf,itemId] of layout.entries()){
+      const per=itemId===30?(shelf===0?200:150):itemId===10?10:100;
+      const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId,per});
+      assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+    }
+    assert.deepEqual(p.state.shop.showcase,layout);
+    const first=await p.saveAndRestart(0);
+    assert.deepEqual(first.shops[0].showcase,layout);
+    ready=true;
+    // The original #30/#32 POP is 20m/50m; unlike #10 bypasses the
+    // initial denominator and is priced at 10%. Observe a full period,
+    // not a selected winning draw. The actual tax branch must occur.
+    for(let n=0;(!settlement||!layout.every(id=>sales[id]>0))&&n<37;n++)await p.tick(60);
+    assert.ok(settlement&&layout.every(id=>sales[id]>0)&&positiveTax>0,
+      JSON.stringify({count,sales,positiveTax,settlement:!!settlement,stock:p.state.shop.item}));
+    const second=await p.saveAndRestart(1);
+    assert.deepEqual(second.shops[0].showcase,layout);
+    assert.deepEqual(second.shops[0].price,first.shops[0].price);
+    assert.ok(second.period.settledCount>first.period.settledCount);
+    t.diagnostic(JSON.stringify({shelves:count,layout,sales,positiveTax,maintenance:settlement.maintenance,revision:second.revision}));
+  });
+}

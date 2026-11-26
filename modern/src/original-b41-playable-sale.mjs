@@ -403,7 +403,7 @@ function projectSourcePreEventSaleSlice({
   const natural=projectSharedNaturalSale({
     shop,rule,saleRules:shop.showcasecount>1?(overlay?.saleRules??saleRules):null,
     upkeepCosts,
-    spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,reviewedSignedCash:normalCommerce!==null,
+    spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,reviewedSignedCash:normalCommerce!==null,recordShelfSales:normalCommerce!==null,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
   });
   const sold=natural.sold;
@@ -479,6 +479,7 @@ function projectSourcePreEventSaleSlice({
       minutes,elapsedSeconds:span,shopId,
       naturalSaleCount:sold,
       ...(shop.showcasecount>1||normalCommerce!==null?{soldByItem:natural.soldByItem}:{}),
+      ...(normalCommerce!==null?{shelfSales:natural.shelfSales}:{}),
       soldItemId:shop.showcase[0]?activeItemId:0,
       stockBefore:beforeStock,stockAfter:items[activeItemId-1],
       ironVeinModifierApplied:ironEventActive,

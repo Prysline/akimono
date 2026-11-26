@@ -18,7 +18,7 @@ const int=(v,s,min=0)=>{
 export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
-  popDownRate=5,baseUpkeep=0,reviewedSignedCash=false,
+  popDownRate=5,baseUpkeep=0,reviewedSignedCash=false,recordShelfSales=false,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -106,10 +106,10 @@ export function projectSharedNaturalSale({
   }
 
   let sold=0,rankUp=0,rankDown=0;
-  const soldByItem={};
+  const soldByItem={},shelfSales=[];
   const saleRecords={};
   const showcasedWithStock=new Set();
-  for(const {id,listed,ratio,weight,rule:r} of active){
+  for(const {shelf,id,listed,ratio,weight,rule:r} of active){
     if(item[id-1]===0)continue; // May have sold out on an earlier shelf
     showcasedWithStock.add(id);
     const status=market.get(id);
@@ -148,7 +148,12 @@ export function projectSharedNaturalSale({
       trush=int(trush+proceeds,'trush after sale');
       saletoday=int(saletoday+proceeds,'saletoday after sale');
       taxtoday=int(taxtoday+tax,'taxtoday after sale');
+      const stockBefore=item[id-1];
       item[id-1]-=take;
+      // Evidence from the very same sequential inventory mutation. No
+      // separate price, RNG, demand, stock or tax calculation.
+      if(recordShelfSales)shelfSales.push({shelf,itemId:id,count:take,unitPrice:listed,
+        gross:proceeds,tax,stockBefore,stockAfter:item[id-1]});
       itemtoday[id]=int((itemtoday[id]??0)+take,'itemtoday');
       sold+=take;
       soldByItem[id]=(soldByItem[id]??0)+take;
@@ -183,5 +188,5 @@ export function projectSharedNaturalSale({
   return {shop:{
       ...shop,item,itemtoday,money,trush,saletoday,taxtoday,rank,temprank,
       costtoday,_sale_count_:saleRecords,
-    },sold,soldByItem,drawsUsed:used};
+    },sold,soldByItem,...(recordShelfSales?{shelfSales}:{}),drawsUsed:used};
 }

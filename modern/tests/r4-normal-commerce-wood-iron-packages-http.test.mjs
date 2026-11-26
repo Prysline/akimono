@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 
-async function packageAndSell(t,p,{id,useId,components,sales,losses}){
+async function packageAndSell(t,p,{id,useId,components,sales,losses,generation=0}){
   assert.equal(p.stock(id),0,'no pre-existing package');
   assert.ok(components.every(x=>p.stock(x)>=10));
   assert.equal(p.stock(39),1);
@@ -20,7 +20,7 @@ async function packageAndSell(t,p,{id,useId,components,sales,losses}){
   for(const x of components)assert.equal(p.stock(x),prior.item[x-1]-10,'material #'+x);
   assert.equal(p.stock(id),10);
   assert.ok(p.state.showcaseOffers.some(o=>o.itemId===id&&o.owned===10));
-  const first=await p.saveAndRestart(0);
+  const first=await p.saveAndRestart(generation);
   assert.equal(first.shops[0].item[id-1],10);
   await p.enoughTime(600);
   const listed=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf:0,itemId:id,per:10});
@@ -30,7 +30,7 @@ async function packageAndSell(t,p,{id,useId,components,sales,losses}){
   // Losses from a real theft/robbery EVENT are not natural sales.
   // Reconcile both from the same command receipts before checking disk.
   assert.equal(p.stock(id),10-sales[id]-(losses[id]??0));
-  const second=await p.saveAndRestart(1);
+  const second=await p.saveAndRestart(generation+1);
   assert.equal(second.shops[0].item[id-1],10-sales[id]-(losses[id]??0));
   assert.equal(second.shops[0].showcase[0],id);
   await p.tick(1);
@@ -158,4 +158,69 @@ test('R4 genuine #74 steel equipment package from four trained production books,
   }
   await p.market(39);
   await packageAndSell(t,p,{id:74,useId:15,components:[42,48,54,59],sales,losses});
+});
+
+/** #75 and #76 share one actual player so the #76 progression reuses
+ * legitimately earned EXP rather than re-creating a trained shop.
+ * Four books: thresholds 40%/60%, except staff 50%/70%.
+ * #76 may require a second 20-unit recipe because source output is 40%.
+ */
+test('R4 genuine #75 and #76 advanced package progression, lostbook, natural sales and four v2 generations',async t=>{
+  const sales75={},loss75={},sales76={},loss76={};
+  const watch75=onSale(sales75,loss75,75),watch76=onSale(sales76,loss76,76);
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce:true,fundMarketWithWork:true,
+    onTick(r,before){watch75(r,before);watch76(r,before);}});
+  await p.use(79,0);await p.use(79,3);await p.market(13);
+  await p.ore(5,20);await p.ore(6,5);await p.ore(7,3);
+  await p.use(37,0);assert.equal(p.stock(18),1);
+  await p.market(37);await p.stones(30);await p.use(37,1);assert.equal(p.stock(19),1);
+  for(const [book,basic,career,midGate,highGate] of [[20,41,4,400,600],[21,47,5,400,600],[22,53,6,400,600],[23,58,7,500,700]]){
+    await p.market(book);await p.market(78);
+    await p.ore(5,160);
+    await p.use(78,career);
+    assert.equal(p.stock(78),0);
+    async function craft(useId,gate){
+      // Lostbook is the actual source callback; acquire any replacement.
+      if(!p.stock(book))await p.market(book);
+      const oreId=useId===0?5:useId===2?6:7;
+      const stone=book===23?({0:2,2:6,3:10})[useId]:0;
+      await p.ore(oreId,20);
+      if(stone)await p.stones(stone);
+      for(let n=0;;n++){
+        assert.ok(n<8,'source recipe clock convergence #'+book+'/'+useId);
+        const offer=p.quote(book,useId);
+        if(p.exp(book)<gate)return false;
+        if(p.remaining()>=offer.timePerUseSeconds)break;
+        await p.enoughTime(offer.timePerUseSeconds);
+      }
+      const before=p.state.shop,previous=p.exp(book),out=basic+useId;
+      assert.equal(p.quote(book,useId).canUse,true);
+      const r=await p.use(book,useId);
+      assert.equal(r.details.experienceGain,20);
+      assert.equal(p.exp(book),previous+20);
+      assert.equal(p.stock(oreId),before.item[oreId-1]-20);
+      if(stone)assert.equal(p.stock(8),before.item[7]-stone);
+      assert.ok(p.stock(out)>before.item[out-1],'original MakeAmount #'+out);
+      assert.equal(p.stock(book),before.item[book-1]-(r.details.mapDestroyed?1:0));
+      if(useId>=2)assert.ok(r.details.callbackOrder.includes('after-use'));
+      assert.equal(p.stock(18),1);assert.equal(p.stock(19),1);
+      return true;
+    }
+    for(const [useId,gate] of [[2,midGate],[3,highGate]]){
+      const product=basic+useId;
+      for(let n=0;p.stock(product)<10;n++){
+        assert.ok(n<64,'source advanced recipe readiness '+JSON.stringify({book,useId,gate,exp:p.exp(book),held:p.stock(product),money:p.state.shop.money,period:p.state.world.period.settledCount}));
+        if(p.exp(book)>=gate&&await craft(useId,gate))continue;
+        await craft(0,0);
+        // Fund future books and ore by genuine ordinary sales, without
+        // exposing the protected packing materials to EVENT losses.
+        if(p.stock(basic)>0)await p.list(basic);
+      }
+      t.diagnostic(JSON.stringify({book,product,held:p.stock(product),exp:p.exp(book),period:p.state.world.period.settledCount}));
+    }
+  }
+  await p.market(39);
+  await packageAndSell(t,p,{id:75,useId:16,components:[43,49,55,60],sales:sales75,losses:loss75,generation:0});
+  await p.market(39);
+  await packageAndSell(t,p,{id:76,useId:17,components:[44,50,56,61],sales:sales76,losses:loss76,generation:2});
 });

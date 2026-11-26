@@ -114,14 +114,16 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
       const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
         naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
-        ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem}:{}),
+        ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem,
+          shelfSales:boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0})),
+          costBeforeLedger:boundary.periodLogInput.shop.costtoday}:{}),
         cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
         saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
         taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
         expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
-      const soldByItem={};
+      const soldByItem={},shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
       if(normalCommerce!==null)for(const slice of evidence.slices)for(const [id,n] of Object.entries(slice.preEvent.receipt.soldByItem))soldByItem[id]=(soldByItem[id]??0)+n;
-      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem}:{}),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem,shelfSales}:{}),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
     }
     const candidate=projectR4NormalTurnCandidate(args);
     if(candidate.source!==R4_NORMAL_TURN_PROJECTION||candidate.committable!==false||
@@ -138,7 +140,8 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       action:REVIEWED_WORLD_TIME_COMMAND,source:R4_NORMAL_TURN_PROJECTION,
       minutes:command.minutes,elapsedSeconds:command.minutes*60,
       naturalSaleCount:preEventReceipt.naturalSaleCount,
-      ...(normalCommerce!==null?{soldByItem:preEventReceipt.soldByItem}:{}),
+      ...(normalCommerce!==null?{soldByItem:preEventReceipt.soldByItem,
+        shelfSales:preEventReceipt.shelfSales.map(row=>({...row,sliceIndex:0}))}:{}),
       itemTurnAffectedSlices:preEventReceipt.itemCallbackStage.itemTurnAffectedShops,settlementReceipt:null,
       sourceTrace:trace,preEventDrawCount:evidence.preEventDraws.length,
       totalDraws:evidence.preEventDraws.length+evidence.eventSamples.length,
