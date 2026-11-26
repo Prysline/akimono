@@ -8,6 +8,7 @@ on:
       - 'modern/tests/support/p3-genuine-v2-player.mjs'
       - 'modern/tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs'
       - 'modern/tests/r4-p3-pre-event-overlay.test.mjs'
+      - 'modern/tests/r4-rebel-reviewed-runtime.test.mjs'
       - 'modern/tests/original-perl/**'
       - '.github/workflows/verify-r4-genuine-rebel.yml'
 
@@ -28,7 +29,9 @@ jobs:
           node-version: '22'
       - name: Focused external source and CAS regression (not full audit)
         working-directory: modern
-        run: node --test --test-name-pattern='R4 (two-slice external source fixture|opt-in external CAS refuses|external receipt aggregates)' tests/r4-p3-pre-event-overlay.test.mjs
+        run: |
+          node --test --test-name-pattern='(R4 (two-slice external source fixture|opt-in external CAS refuses|external receipt aggregates|residual natural sale)|full actual two-slice source prefix)' tests/r4-p3-pre-event-overlay.test.mjs
+          node --test tests/r4-rebel-reviewed-runtime.test.mjs
       - name: Run genuine player acceptance (no fixture or skip)
         working-directory: modern
         run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
