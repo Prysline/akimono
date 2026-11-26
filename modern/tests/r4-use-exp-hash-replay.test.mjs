@@ -31,3 +31,19 @@ test('R4 full commerce equal EXP overflow follows native frozen UseItem tail und
   assert.throws(()=>originalUseExperience({...cases[0],resolveOrder:()=>['62']}),/invalid reviewed EXP order/);
   assert.throws(()=>reviewUseExpHash({...sources,useSource:sources.useSource+' '}),/source drift/);
 });
+
+test('R4 local self rumor defense writes EXP #62 before #65 gain and native tie redistribution (isolated)',()=>{
+  for(let revision=21;revision<29;revision++)for(const before of [{9:900,12:900,15:900,16:900},{9:900,12:900,15:900,16:800,62:100}]){
+    const records={...before,62:Math.max(0,(before[62]??0)-100)};
+    const world={worldId:'source-local-rumor-exp-ties',revision,nowSeconds:1000000,shops:[{id:1,exp:before}]};
+    const command={kind:'use-item',expectedRevision:revision,shopId:1,itemId:65,useId:0,requestedCount:1,targetShopId:1};
+    const actual=originalUseExperience({records,itemId:65,points:200,count:1,
+      resolveOrder:args=>resolveR4UseExpOrder({...args,review,world,command})});
+    const expected=JSON.parse(execFileSync('perl',[probe],{input:JSON.stringify({
+      entries:Object.entries(before),selfRumorFailure:true,target:65,points:200,count:1
+    }),encoding:'utf8',env:{...process.env,PERL_HASH_SEED:r4UseExpHashSeed({world,command}),PERL_PERTURB_KEYS:'0'}}));
+    assert.deepEqual(actual.exp,expected.exp);
+    assert.equal(actual.previous,expected.expold);
+    assert.equal(Object.values(actual.exp).reduce((a,b)=>a+b,0),3600);
+  }
+});

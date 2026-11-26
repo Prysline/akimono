@@ -30,6 +30,7 @@ const perl=[
   'use strict;use warnings;use JSON::PP;',
   'local $/;my $in=decode_json(<STDIN>);',
   'my %exp=split(/,/,join(",",map{@$_}@{$in->{entries}}));',
+  'if(defined $in->{callbackAssignment}){$exp{62}=$in->{callbackAssignment};}',
   '$exp{$in->{target}}=$in->{value};',
   'print encode_json([map{0+$_}sort{$exp{$a}<=>$exp{$b}}keys(%exp)]);',
 ].join('\n');
@@ -39,10 +40,26 @@ export function resolveR4UseExpOrder({review,world,command,records,exp,itemId}){
   if(entries.length>79||keys.length>79||entries.some(([k,v])=>!validInt(Number(k),1,79)||String(Number(k))!==k||!validInt(v,0,1000))||
      !validInt(exp[itemId],0,1000)||keys.some(k=>Number(k)!==itemId&&exp[k]!==records[k])||
      entries.some(([k,v])=>Number(k)!==itemId&&exp[k]!==v))fail('bounded EXP hash input');
+  // For a self-target rumor failure, source writes #62 BEFORE the EXP
+  // tail updates #65. Preserve that insertion order in the native hash,
+  // rather than reconstructing a fresh hash from the post-callback map.
+  let initialEntries=entries,callbackAssignment=null;
+  if(command.itemId===65&&command.useId===0&&command.targetShopId===command.shopId){
+    const before=world.shops?.find(s=>s.id===command.shopId)?.exp;
+    if(!before||typeof before!=='object'||Array.isArray(before))fail('local target source EXP record');
+    initialEntries=Object.entries(before);
+    if(initialEntries.some(([k,v])=>!validInt(Number(k),1,79)||String(Number(k))!==k||!validInt(v,0,1000))||
+       initialEntries.some(([k,v])=>k!=='62'&&records[k]!==v)||
+       entries.some(([k,v])=>k!=='62'&&before[k]!==v))fail('local target callback changed unrelated EXP');
+    if(records[62]!==before[62]){
+      if(records[62]!==Math.max(0,(before[62]??0)-100))fail('local rumor defense EXP source effect');
+      callbackAssignment=records[62];
+    }
+  }
   const env={...process.env,PERL_HASH_SEED:r4UseExpHashSeed({world,command}),PERL_PERTURB_KEYS:'0'};
   for(const key of ['PERL5OPT','PERL5LIB','PERLLIB','PERL_LOCAL_LIB_ROOT','PERL_MB_OPT','PERL_MM_OPT','PERL_HASH_SEED_DEBUG','PERL_UNICODE'])delete env[key];
   let order;
-  try{order=JSON.parse(execFileSync('perl',['-e',perl],{input:JSON.stringify({entries,target:itemId,value:exp[itemId]}),encoding:'utf8',env,timeout:3000,maxBuffer:4096,stdio:['pipe','pipe','pipe']}));}
+  try{order=JSON.parse(execFileSync('perl',['-e',perl],{input:JSON.stringify({entries:initialEntries,callbackAssignment,target:itemId,value:exp[itemId]}),encoding:'utf8',env,timeout:3000,maxBuffer:4096,stdio:['pipe','pipe','pipe']}));}
   catch{fail('native Perl EXP helper unavailable');}
   if(!Array.isArray(order)||order.length!==keys.length||new Set(order).size!==keys.length||
      order.some((k,i)=>!validInt(k,1,79)||!Object.hasOwn(exp,k)||i>0&&exp[order[i-1]]>exp[k]))fail('invalid native EXP key order');

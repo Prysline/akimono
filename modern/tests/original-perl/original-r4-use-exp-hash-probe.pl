@@ -15,6 +15,12 @@ my $body=substr($source,$start,$end-$start);
 my $run=eval 'sub {my ($USE)=@_;'.$body.'}';
 die $@ unless ref($run) eq 'CODE';
 my %exp=split(/,/,join(',',map{@$_}@{$input->{entries}}));
+# Explicit source callback fixture before the unchanged UseItem EXP tail.
+# #65/0 failure updates #62 even when it did not exist in the initial hash.
+if($input->{selfRumorFailure}){
+  $exp{62}-=100;
+  $exp{62}=0 if $exp{62}<0;
+}
 $DT={exp=>\%exp};$LIMIT_EXP=3600;
 my $USE={itemno=>$input->{target},exp=>$input->{points},result=>{count=>$input->{count}}};
 $run->($USE);
