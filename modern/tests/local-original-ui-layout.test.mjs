@@ -357,3 +357,12 @@ test('original market survey and product detail use server market status, separa
  assert.match(script,/s\.warehouse\?\.survey/);
  assert.match(script,/s\.warehouse\?\.marketItems\?\.find/);
 });
+
+
+test('source newspaper shows authorized bulletin rows with literal query, private markers and pagination',()=>{
+ for(const id of ['news-search','news-target','news-keyword','news-mode','news-events','news-rows','news-prev','news-page','news-next'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(html,/data-tab="news"/);
+ assert.match(adapter,/news:world&&streetModule\.describeNews/);
+ assert.match(script,/queryOriginalNews\(source,newsQuery\)/);
+ assert.match(script,/p\.textContent=row\.private/);
+});
