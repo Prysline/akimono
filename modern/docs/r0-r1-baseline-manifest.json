@@ -17890,15 +17890,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/0",
@@ -17929,10 +17931,101 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/0"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/0"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/0"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 84,
+            "endLine": 99
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -17940,7 +18033,37 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/0"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 198,
+          "endLine": 202,
+          "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -17953,15 +18076,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/1",
@@ -17992,10 +18117,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/1"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/1"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/1"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 100,
+            "endLine": 110
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18003,7 +18205,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/1"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18016,15 +18241,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/2",
@@ -18055,10 +18282,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/2"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/2"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/2"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 111,
+            "endLine": 122
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18066,7 +18370,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/2"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18079,15 +18406,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/3",
@@ -18118,10 +18447,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/3"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/3"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/3"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 123,
+            "endLine": 137
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18129,7 +18535,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/3"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18142,15 +18571,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/4",
@@ -18181,10 +18612,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/4"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/4"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/4"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 138,
+            "endLine": 151
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18192,7 +18700,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/4"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18205,15 +18736,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/5",
@@ -18244,10 +18777,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/5"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/5"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/5"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 152,
+            "endLine": 165
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18255,7 +18865,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/5"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18268,15 +18901,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/6",
@@ -18307,10 +18942,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/6"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/6"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/6"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 166,
+            "endLine": 179
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18318,7 +19030,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/6"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18331,15 +19066,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "10/7",
@@ -18370,10 +19107,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/7"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/7"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 10/7"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 180,
+            "endLine": 193
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18381,7 +19195,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 10/7"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -18474,15 +19311,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "37/0",
@@ -18513,10 +19352,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/0"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/0"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/0"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 208,
+            "endLine": 220
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18524,7 +19440,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 37/0"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18537,15 +19476,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "37/1",
@@ -18576,10 +19517,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/1"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/1"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/1"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 221,
+            "endLine": 231
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18587,7 +19605,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 37/1"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18600,15 +19641,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "37/2",
@@ -18639,10 +19682,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/2"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/2"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/2"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 232,
+            "endLine": 250
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18650,7 +19770,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 37/2"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18663,15 +19806,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "37/3",
@@ -18702,10 +19847,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/3"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/3"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 37/3"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 251,
+            "endLine": 264
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18713,7 +19935,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 37/3"
+        }
+      ]
     },
     {
       "kind": "ITEM",
@@ -18806,15 +20051,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/0",
@@ -18845,10 +20092,122 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/0"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 192,
+              "endLine": 197,
+              "scope": "NEED 缺失原版 count=0、Node 拒絕且 snapshot 不變"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/0"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 192,
+              "endLine": 197,
+              "scope": "NEED 缺失原版 count=0、Node 拒絕且 snapshot 不變"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；另有獨立缺 NEED 拒絕。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/0"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 192,
+              "endLine": 197,
+              "scope": "NEED 缺失原版 count=0、Node 拒絕且 snapshot 不變"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 277,
+            "endLine": 287
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18856,7 +20215,44 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/0"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 192,
+          "endLine": 197,
+          "scope": "NEED 缺失原版 count=0、Node 拒絕且 snapshot 不變"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 198,
+          "endLine": 202,
+          "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18869,15 +20265,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/1",
@@ -18908,10 +20306,101 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/1"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/1"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/1"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 288,
+            "endLine": 298
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18919,7 +20408,37 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/1"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 198,
+          "endLine": 202,
+          "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18932,15 +20451,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/2",
@@ -18971,10 +20492,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/2"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/2"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/2"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 299,
+            "endLine": 309
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -18982,7 +20580,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/2"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -18995,15 +20616,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/3",
@@ -19034,10 +20657,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/3"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/3"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/3"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 310,
+            "endLine": 321
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19045,7 +20745,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/3"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19058,15 +20781,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/4",
@@ -19097,10 +20822,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/4"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/4"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/4"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 322,
+            "endLine": 332
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19108,7 +20910,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/4"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19121,15 +20946,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/5",
@@ -19160,10 +20987,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/5"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/5"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/5"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 333,
+            "endLine": 344
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19171,7 +21075,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/5"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19184,15 +21111,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/6",
@@ -19223,10 +21152,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/6"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/6"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/6"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 345,
+            "endLine": 355
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19234,7 +21240,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/6"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19247,15 +21276,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/7",
@@ -19286,10 +21317,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/7"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/7"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/7"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 356,
+            "endLine": 367
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19297,7 +21405,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/7"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19310,15 +21441,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/8",
@@ -19349,10 +21482,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/8"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/8"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/8"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 368,
+            "endLine": 378
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19360,7 +21570,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/8"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19373,15 +21606,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/9",
@@ -19412,10 +21647,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/9"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/9"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/9"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 379,
+            "endLine": 390
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19423,7 +21735,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/9"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19436,15 +21771,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/10",
@@ -19475,10 +21812,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/10"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/10"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/10"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 391,
+            "endLine": 401
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19486,7 +21900,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/10"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19499,15 +21936,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/11",
@@ -19538,10 +21977,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/11"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/11"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/11"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 402,
+            "endLine": 413
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19549,7 +22065,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/11"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19562,15 +22101,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/12",
@@ -19601,10 +22142,101 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/12"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/12"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 198,
+              "endLine": 202,
+              "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/12"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 414,
+            "endLine": 423
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19612,7 +22244,37 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/12"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 198,
+          "endLine": 202,
+          "scope": "指定職業時間受控差分，原版 probe 手套來源公式"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19625,15 +22287,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/13",
@@ -19664,10 +22328,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/13"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/13"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/13"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 424,
+            "endLine": 435
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19675,7 +22416,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/13"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19688,15 +22452,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/14",
@@ -19727,10 +22493,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/14"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/14"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/14"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 436,
+            "endLine": 447
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19738,7 +22581,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/14"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19751,15 +22617,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/15",
@@ -19790,10 +22658,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/15"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/15"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/15"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 448,
+            "endLine": 459
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19801,7 +22746,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/15"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19814,15 +22782,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/16",
@@ -19853,10 +22823,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/16"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/16"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/16"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 460,
+            "endLine": 471
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19864,7 +22911,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/16"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19877,15 +22947,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/17",
@@ -19916,10 +22988,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/17"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/17"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/17"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 472,
+            "endLine": 483
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19927,7 +23076,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/17"
+        }
+      ]
     },
     {
       "kind": "USE",
@@ -19940,15 +23112,17 @@
       "compiled": null,
       "eventStart": null,
       "registered": true,
-      "perlOracle": null,
-      "nodeDifferential": null,
+      "perlOracle": true,
+      "nodeDifferential": true,
       "lawfulAcquisition": null,
       "http": null,
       "reviewedTime": null,
       "v2Restart": null,
       "status": "待補",
       "owner": "R0/R1 證據；正常經營 #22",
-      "evidence": [],
+      "evidence": [
+        "modern/tests/r2-declarative-use-effects.test.mjs"
+      ],
       "registryEvidence": {
         "kind": "USE",
         "id": "39/18",
@@ -19979,10 +23153,87 @@
           },
           "scope": "source registration/compile"
         },
-        "perlOracle": null,
-        "nodeDifferential": null,
+        "perlOracle": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/18"
+            }
+          ]
+        },
+        "nodeDifferential": {
+          "value": true,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 114,
+              "endLine": 163,
+              "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/18"
+            }
+          ]
+        },
         "lawfulAcquisition": null,
-        "prerequisites": null,
+        "prerequisites": {
+          "value": true,
+          "scope": "僅受控前置條件及來源宣告，非合法取得或全部負例；",
+          "refs": [
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 61,
+              "endLine": 112,
+              "scope": "人工前置狀態及原版 probe 輸入"
+            },
+            {
+              "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+              "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+              "startLine": 185,
+              "endLine": 191,
+              "scope": "逐項 loop 實際執行 39/18"
+            }
+          ],
+          "source": {
+            "path": "custom/inc-item-data.cgi",
+            "sha": "7a18185e98b32aee82ca1ce30d6f3c395157dbcb",
+            "startLine": 484,
+            "endLine": 492
+          }
+        },
         "formalCommand": null,
         "http": null,
         "ui": null,
@@ -19990,7 +23241,30 @@
         "rng": null,
         "cas": null,
         "v2Restart": null
-      }
+      },
+      "detailedEvidence": [
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 61,
+          "endLine": 112,
+          "scope": "人工前置狀態及原版 probe 輸入"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 114,
+          "endLine": 163,
+          "scope": "人工材料／EXP／job、固定時鐘與 draw；原版 GetBuffer/GetItemNumber + UseItem/MakeAmount/CheckWholeStore；Node 共用 use-item memory CAS；逐值比較編譯、庫存、市場、EXP、時間、金錢、paytoday、receipt 與 draw 數。非正式 HTTP/v2、合法取得、自然 RNG 或完整生成 CGI。"
+        },
+        {
+          "path": "modern/tests/r2-declarative-use-effects.test.mjs",
+          "sha": "4eca57d066fd6ce9da8689fe7aa2ae58326f1037",
+          "startLine": 185,
+          "endLine": 191,
+          "scope": "逐項 loop 實際執行 39/18"
+        }
+      ]
     },
     {
       "kind": "ITEM",

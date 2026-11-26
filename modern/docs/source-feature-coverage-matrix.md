@@ -7,8 +7,8 @@
 | 宣告、原文定位 | 79 | 116 | 25 |
 | compiled | 79 | 待確認 | 17 |
 | registered | 56 | 112 | 待確認 |
-| perlOracle | 14 | 39 | 25 |
-| nodeDifferential | 14 | 39 | 25 |
+| perlOracle | 14 | 70 | 25 |
+| nodeDifferential | 14 | 70 | 25 |
 | lawfulAcquisition | 7 | 12 | 0 |
 | http | 7 | 12 | 0 |
 | reviewedTime | 5 | 0 | 0 |
@@ -199,3 +199,8 @@
 
 - `modern/docs/r0-r1-pr23-pr24-reconciliation.md`：#23 11路徑、#24 3路徑逐項收錄核對；233 pins/220 declarations、舊 known flags/evidence 保留，補回6檔9筆舊文件引用，B56 僅計一次。#24 42列 status/realPlayer/blob 一致，三補件 blob 相同。兩 PR 不關閉，待新 CI 與使用者/D 決定。
 - #44/45 CI 45851995042、45852340690 success，job 140020465192/140021659118；checkout compare files=[]；JS1350/1350、Perl2456/2456，無 fail/skip/cancel；tree 未獨立取得。R1-HTTP-01 未實跑，87/220 詳細列暫不變，新 HEAD 待驗。
+
+
+### 第52批：31 USE 詳細補鏈
+
+[逐項來源與受控差分](r1-writing-training-disassembly-evidence.md)：#10/0–7、#37/0–3、#39/0–18，詳細列 118/220（剩102）；USE Oracle／Node 70，正式下界不變。非新執行，無 runtime 修改。R1-HTTP-01 尚未實跑。

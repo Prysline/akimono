@@ -349,3 +349,8 @@ R4 可繼續獨立來源研究；欲納入正式玩家功能，從 migration 最
 
 - `modern/docs/r0-r1-pr23-pr24-reconciliation.md`：#23 11路徑、#24 3路徑逐項收錄核對；233 pins/220 declarations、舊 known flags/evidence 保留，補回6檔9筆舊文件引用，B56 僅計一次。#24 42列 status/realPlayer/blob 一致，三補件 blob 相同。兩 PR 不關閉，待新 CI 與使用者/D 決定。
 - #44/45 CI 45851995042、45852340690 success，job 140020465192/140021659118；checkout compare files=[]；JS1350/1350、Perl2456/2456，無 fail/skip/cancel；tree 未獨立取得。R1-HTTP-01 未實跑，87/220 詳細列暫不變，新 HEAD 待驗。
+
+
+## C 第52批 R1 詳細補鏈（待本提交 CI）
+
+[31 USE 逐項證據](r1-writing-training-disassembly-evidence.md)：87→118/220，USE Oracle/Node 39→70，R0 233/233（200有效、33歷史）不變。固定前候選 1b5ea7b1a4fb802fd6937066ce89939919879a88 / b376709e715e313e03f6e0e346e79dab30f94acd，CI 45857315261 最近查詢執行中；未本地重跑，不升格正式玩家。
