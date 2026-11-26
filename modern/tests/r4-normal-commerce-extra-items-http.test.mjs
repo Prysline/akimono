@@ -40,7 +40,21 @@ test('R4 genuine #65 zero-POP listing and #62 self advertisement survive source 
   assert.equal(first.shops[0].item[61],1);
   assert.equal(first.shops[0].item[64],1);
   await p.enoughTime(p.quote(62,0).timePerUseSeconds);
+  // A stale request must be rejected before the source RNG is sampled or
+  // a callback log row, history entry, EXP, inventory or clock is changed.
+  const beforeUse=p.state.world,historyBefore=p.state.historyCommands;
+  const request={expectedRevision:beforeUse.revision,itemId:62,useId:0,requestedCount:1};
+  const stale=await p.post('/api/use',{...request,expectedRevision:request.expectedRevision-1});
+  assert.equal(stale.status,409);assert.equal(stale.code,'REVISION_CONFLICT');
+  assert.deepEqual(p.state.world,beforeUse);
+  assert.equal(p.state.historyCommands,historyBefore);
   const rank=p.state.shop.rank,priorExp=p.exp(62),use=await p.use(62,0);
+  assert.equal(p.state.world.revision,beforeUse.revision+1);
+  const afterUse=p.state.world,historyAfter=p.state.historyCommands;
+  const duplicate=await p.post('/api/use',request);
+  assert.equal(duplicate.status,409);assert.equal(duplicate.code,'REVISION_CONFLICT');
+  assert.deepEqual(p.state.world,afterUse,'duplicate USE must not append original callback rows');
+  assert.equal(p.state.historyCommands,historyAfter);
   assert.equal(p.stock(62),0);
   assert.equal(use.details.experienceGain,100);
   const logged=use.details.originalInlineLogCalls.map(row=>[p.state.world.nowSeconds,...row].join('\t')+'\n').reverse().join('');
@@ -53,7 +67,22 @@ test('R4 genuine #65 zero-POP listing and #62 self advertisement survive source 
   assert.equal(p.stock(65),1);
   assert.equal(sales[65]??0,0);
   const saved=await p.saveAndRestart(1);
-  assert.ok(['log0.cgi','log1.cgi','log2.cgi'].some(k=>saved.period.disk.live[k].bytes.includes(logged)),'actual source advertisement log survives save and restart');
+  const logFile=['log0.cgi','log1.cgi','log2.cgi'].find(k=>saved.period.disk.live[k].bytes.includes(logged));
+  assert.ok(logFile,'actual source advertisement log survives save and restart');
+  // Negative integrity test only: edit a saved log message, not the live
+  // player, and recompute the outer v2 checksum using the existing helper.
+  // A well-formed log row is still not a valid source-history successor.
+  await p.rejectForgedLatest(first,record=>{
+    const world=JSON.parse(record.world),file=world.period.disk.live[logFile];
+    const row=logged.split('\n').filter(Boolean).find(line=>line.split('\t')[1]==='3');
+    assert.ok(row,'actual public mode-3 callback row');
+    assert.ok(file.bytes.includes(row+'\n'));
+    const fields=row.split('\t');
+    fields[3]+=' [forged log]';
+    file.bytes=file.bytes.replace(row+'\n',fields.join('\t')+'\n');
+    record.world=JSON.stringify(world);
+  },{restore:true,recompute:true});
+  assert.deepEqual(p.state.world,saved,'restored genuine latest generation replays exactly');
   t.diagnostic(JSON.stringify({item65Sales:sales[65]??0,advertisementExp:p.exp(62),beforeWork:moneyBefore,finalMoney:p.state.shop.money,settlements:settlements.length}));
 });
 
