@@ -22,7 +22,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
 import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp} from '../src/original-r4-owner-help.mjs';
-import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu} from '../src/original-r4-settlement-menu.mjs';
+import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
@@ -42,7 +42,8 @@ const read=rel=>readFile(path.join(root,rel),'utf8');
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
 const reviewedLibrary=reviewOriginalLibrary(await readPinnedSource('custom/library.cgi'));
-const reviewedOwnerHelp=reviewOriginalOwnerHelp(await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi'));
+const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
+const reviewedOwnerHelp=reviewOriginalOwnerHelp(originalIncMainSource);
 // Bind source names to paths directly: adding a source cannot shift the next input.
 const {
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
@@ -113,6 +114,7 @@ const {
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
+const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -229,6 +231,7 @@ function state(){
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
     ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
+    ownerClock:reviewedFullCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.
     shopSummary:{

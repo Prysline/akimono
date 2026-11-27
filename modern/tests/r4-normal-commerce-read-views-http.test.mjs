@@ -16,6 +16,8 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.settlementMenu.nextSettlementAtSeconds,p.state.nextSettlementAtSeconds);
  assert.equal(p.state.settlementMenu.secondsUntilSettlement,p.state.secondsUntilSettlement);
  assert.equal(p.state.settlementMenu.timezoneSeconds,32400);
+ assert.equal(p.state.ownerClock.remainingSeconds,p.state.world.nowSeconds-p.state.shop.time);
+ assert.equal(p.state.ownerClock.source,'r4-frozen-owner-clock.v1');
  assert.equal(p.state.ownerHelp.kind,'new-shop');
  assert.equal(p.state.ownerHelp.libraryChapter,1);
  assert.equal(p.state.ownerHelp.mailSupported,false);

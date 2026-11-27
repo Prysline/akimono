@@ -27,3 +27,22 @@ export function describeOriginalSettlementMenu({reviewed,lasttime,nextSettlement
   return {source:'r4-frozen-settlement-menu.v1',nextSettlementAtSeconds:next,secondsUntilSettlement:remaining,
     dateLabel,remainingLabel,timezoneSeconds:reviewed.timezoneSeconds,label:'[下次決算 '+dateLabel+' 還有'+remainingLabel+']'};
 }
+
+const ownerReviews=new WeakSet();
+export function reviewOriginalOwnerClock({reviewed,incMainSource,infoSource}){
+  if(!reviews.has(reviewed))fail('reviewed time formatter');
+  const sources=[[incMainSource,'5cd020011f6676ec4a8a202ab1bb28b90515ce8d'],[infoSource,'d365aa83da571ce3029589f4c547d0940310e6f3']];
+  for(const [s,pin] of sources)
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==pin)fail('owner clock source drift');
+  const r=Object.freeze({maxStockSeconds:72*3600});ownerReviews.add(r);return r;
+}
+export function describeOriginalOwnerClock({reviewed,world}){
+  if(!ownerReviews.has(reviewed))fail('reviewed owner clock');
+  if(!world||world.shops?.length!==1||world.shops[0].id!==1||world.shops[0].status!==1)return null;
+  const s=world.shops[0],remaining=world.nowSeconds-s.time;
+  if(![world.nowSeconds,s.time,remaining].every(Number.isSafeInteger))fail('source owner clock values');
+  const displaySeconds=remaining<0?-remaining:Math.min(remaining,reviewed.maxStockSeconds);
+  const label=formatOriginalBalanceDuration(displaySeconds);
+  return {source:'r4-frozen-owner-clock.v1',remainingSeconds:remaining,displaySeconds,
+    label:remaining<0?'距離可以行動還有 '+label:label};
+}

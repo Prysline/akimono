@@ -673,9 +673,9 @@ function showState(s){
   renderMarketSurvey(s);
   renderNews(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
-  const actionTime=actionSeconds===null?'—':
+  const actionTime=s.ownerClock?.label??(actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
-      timeText(Math.min(actionSeconds,72*3600));
+      timeText(Math.min(actionSeconds,72*3600)));
   text('time',actionTime);
   text('shop-info-time',actionTime);
   text('shop-info-popularity',Number.isSafeInteger(shop?.rank)?

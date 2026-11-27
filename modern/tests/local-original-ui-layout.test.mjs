@@ -428,3 +428,9 @@ test('original settlement notice uses the server source clock, not browser time'
   assert.match(script,/s\.settlementMenu\?\.label/);
   assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
 });
+
+test('owner time label uses the original server clock on all owner views',()=>{
+  assert.match(script,/s\.ownerClock\?\.label/);
+  for(const id of ['time','shop-info-time','balance-time'])assert.ok(script.includes("text('"+id+"',actionTime)"));
+  assert.match(adapter,/ownerClock:reviewedFullCommerce\?describeOriginalOwnerClock/);
+});
