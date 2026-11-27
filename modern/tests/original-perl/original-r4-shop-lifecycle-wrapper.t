@@ -576,5 +576,32 @@ visit_other_street(sub {
 DataRead();
 ok(!exists $id2idx{1},'other street join does not resurrect closed local ID');
 
+
+# Raw original session alias hazard: SESSION_DIR is keyed by owner name, not ID.
+# The current modern authority must NOT accept this as authorized reuse.
+my($retiredToken,$retiredPeer)=two_shop_case();
+delete $INC{"$ITEM_DIR/funcnew.cgi"};
+like((submit('pinned-membership-user.cgi',$retiredToken,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'source same-name reuse setup restart');
+like((submit('pinned-membership-user.cgi',$retiredToken,'cls','closeshop'))[0],qr/__SOURCE_RENDER__/,'source same-name reuse setup close');
+DataRead();
+ok(!exists $id2idx{1},'source original actor inactive before re-registration');
+ok(!auth(name=>'alice',token=>$retiredToken)->{ok},'source old token rejected while name inactive');
+my $retiredSession=raw_file("$SESSION_DIR/alice.cgi");
+ok(auth(name=>'bob',password=>'beta_pw',ip=>'192.0.2.6')->{ok},'source peer prunes inactive owner name');
+ok(!GetIPList('192.0.2.5'),'source original IP row pruned');
+my $replacementId=$DTnextid;
+delete $INC{"$ITEM_DIR/funcnew.cgi"};
+like(registration(name=>'alice',shop=>'replacement shop',ip=>'192.0.2.5'),qr/__SOURCE_RENDER__/,'raw original same-name re-registration before password login');
+DataRead();
+ok($replacementId!=1 && exists $id2idx{$replacementId},'replacement name has distinct source shop ID');
+is(raw_file("$SESSION_DIR/alice.cgi"),$retiredSession,'raw new.cgi does not overwrite prior name-keyed session');
+my $alias=auth(name=>'alice',token=>$retiredToken);
+ok($alias->{ok},'raw original name-keyed old session accepted before new password login (known source hazard)');
+is($alias->{id},$replacementId,'raw original old token resolves replacement ID, not old ID');
+ok(!auth(name=>'alice',password=>'alpha_pw')->{ok},'retired account password not accepted by replacement account');
+ok(auth(name=>'alice',password=>'beta_pw')->{ok},'replacement account password accepted');
+# Do not assert random regenerated token differs: source token collision is possible.
+# No real credentials are emitted, and no change to modern auth or public policy.
+
 chdir $cwd or die 'restore cwd';
 done_testing();
