@@ -632,10 +632,26 @@ my $retiredSession=raw_file("$SESSION_DIR/alice.cgi");
 ok(auth(name=>'bob',password=>'beta_pw',ip=>'192.0.2.6')->{ok},'source peer prunes inactive owner name');
 ok(!GetIPList('192.0.2.5'),'source original IP row pruned');
 my $replacementId=$DTnextid;
+my $regBefore={lasttime=>0+$DTlasttime,nextid=>0+$DTnextid,blockip=>"$DTblockip"};
+my @regPrior=map{{id=>0+$_->{id},status=>0+$_->{status},name=>$_->{name},remoteaddr=>$_->{remoteaddr}}} @DT;
 delete $INC{"$ITEM_DIR/funcnew.cgi"};
 like(registration(name=>'alice',shop=>'replacement shop',ip=>'192.0.2.5'),qr/__SOURCE_RENDER__/,'raw original same-name re-registration before password login');
 DataRead();
 ok($replacementId!=1 && exists $id2idx{$replacementId},'replacement name has distinct source shop ID');
+if($ENV{AKIMONO_D_REGISTRATION_WIRE_ORACLE}){
+  # Synthetic source observation only. Never print the source password value.
+  my $s=$DT[$id2idx{$replacementId}];
+  my %scalars=map{($_,($_ eq 'pass'?'':($s->{$_}//'')))} @DTindexnamelist;
+  note('D_REGISTRATION_WIRE '.JSON::PP->new->ascii->canonical->encode({
+    before=>$regBefore,priorShops=>\@regPrior,now=>0+$NOW_TIME,
+    reload=>{lasttime=>0+$DTlasttime,nextid=>0+$DTnextid,blockip=>"$DTblockip"},
+    scalars=>\%scalars,point=>0+$s->{point},
+    showcase=>[map{0+($_//0)} @{$s->{showcase}}],price=>[map{0+($_//0)} @{$s->{price}}],
+    item=>[map{0+($s->{item}[$_]//0)} 0..78],
+    mapSizes=>[map{scalar keys %{$s->{$_}}} qw(itemyesterday itemtoday exp user)],
+    credentialPresent=>length($s->{pass}//'')?JSON::PP::true:JSON::PP::false,
+  }));
+}
 is(raw_file("$SESSION_DIR/alice.cgi"),$retiredSession,'raw new.cgi does not overwrite prior name-keyed session');
 my $alias=auth(name=>'alice',token=>$retiredToken);
 ok($alias->{ok},'raw original name-keyed old session accepted before new password login (known source hazard)');
