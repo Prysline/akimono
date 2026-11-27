@@ -417,3 +417,9 @@ test('original library opens its eight source chapters without HTML injection',(
   assert.match(adapter,/url\.pathname==='\/api\/library'/);
   assert.match(css,/#library-body\{white-space:pre-wrap/);
 });
+
+test('original local owner help uses source projection and opens original library chapter',()=>{
+  assert.match(html,/id="owner-help"/);assert.match(html,/id="owner-help-library"/);
+  assert.match(script,/renderOwnerHelp\(s\)/);assert.match(script,/selectTab\('library',id\)/);
+  assert.match(adapter,/describeOriginalOwnerHelp\(\{reviewed:reviewedOwnerHelp,world\}\)/);
+});
