@@ -22,6 +22,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
 import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp,describeOriginalOwnerScene} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalUseForm,describeOriginalUseForm} from '../src/original-r4-use-form.mjs';
 import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
@@ -113,6 +114,8 @@ const {
   originalMarketListSource:'modern/tests/original-perl/core-shop-m.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
+const originalUseFormSource=await readPinnedSource('modern/tests/original-perl/core-item-m.cgi');
+const reviewedUseForm=reviewOriginalUseForm({formSource:originalUseFormSource,itemDsl,compilerSource:originalCompilerSource,calcSource:originalBuyCalcSource,configSource:originalConfigSource});
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
 const streetModule=createStandardStreetModule({
@@ -189,7 +192,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalUseFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -265,7 +268,7 @@ function state(){
           info:item?.infoRaw??null,
         };
       }),
-    useOffers:streetModule.listUseOffers(world),
+    useOffers:streetModule.listUseOffers(world).map(offer=>reviewedFullCommerce?{...offer,detail:describeOriginalUseForm({reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule(offer.itemId,offer.useId),shop:world?.shops[0]??null,nowSeconds:world?.nowSeconds??null})}:offer),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     reviewedFullCommerce,
     showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?

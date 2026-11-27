@@ -219,7 +219,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/function updateUseEstimate\(\)/);
   assert.match(script,/const timeSuffix=Number\.isSafeInteger\(row\.timePerUseSeconds\)/);
   assert.match(script,/use-count'\)\.addEventListener\('input',updateUseEstimate/);
-  assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
+  assert.match(script,/const requestedCount=offer\.detail\?\.noCount\?1:Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
   assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
   assert.match(css,/\.use-action-list\{/);
   assert.match(css,/\.use-detail-table\{/);
@@ -439,4 +439,12 @@ test('original shop scene renders source dialogue as text, without synthetic cus
   assert.match(html,/id="owner-scene"/);
   assert.match(script,/p\.textContent=customer\.text/);
   assert.match(adapter,/ownerScene:reviewedFullCommerce\?describeOriginalOwnerScene/);
+});
+
+test('original USE form uses reviewed count choices, material consumption and nocount presentation',()=>{
+  assert.match(adapter,/describeOriginalUseForm\(\{reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule/);
+  for(const id of ['use-detail-info','use-detail-requirements','use-count-first-unit','use-count-last-unit'])assert.ok(html.includes('id="'+id+'"'));
+  assert.match(script,/row\.consumptionLabel/);assert.match(script,/detail\.options\.filter/);
+  assert.match(script,/\$\(id\)\.hidden=Boolean\(detail\?\.noCount\)/);
+  assert.match(script,/text\('perform-use',detail\?\.action/);
 });

@@ -283,17 +283,19 @@
       <table class="use-detail-table"><tbody>
         <tr><th scope="row">商品</th><td id="use-detail-item">—</td></tr>
         <tr><th scope="row">目前持有</th><td id="use-detail-owned">—</td></tr>
-        <tr><th scope="row">所需材料（每次）</th><td id="use-detail-materials">—</td></tr>
-        <tr><th scope="row">費用（每次）</th><td id="use-detail-money">—</td></tr>
-        <tr><th scope="row">時間（每次）</th><td id="use-detail-time">—</td></tr>
+        <tr id="use-info-row" hidden><th scope="row">備註</th><td id="use-detail-info"></td></tr>
+        <tr id="use-requirements-row" hidden><th scope="row">必要條件</th><td id="use-detail-requirements"></td></tr>
+        <tr><th scope="row" id="use-materials-label">所需材料（每次）</th><td id="use-detail-materials">—</td></tr>
+        <tr><th scope="row" id="use-money-label">費用（每次）</th><td id="use-detail-money">—</td></tr>
+        <tr><th scope="row" id="use-time-label">時間（每次）</th><td id="use-detail-time">—</td></tr>
         <tr><th scope="row">操作限制</th><td id="use-detail-limit">—</td></tr>
       </tbody></table>
       <form id="use-action-form" class="use-action-form" hidden>
-        <label for="use-count-presets">執行次數</label>
+        <label id="use-count-label" for="use-count-presets">執行次數</label>
         <select id="use-count-presets" aria-label="快捷執行次數"></select>
-        <span>次，或自訂</span>
+        <span id="use-count-first-unit">次，或自訂</span>
         <input id="use-count" type="number" min="1" step="1" placeholder="次數" aria-label="自訂執行次數（空白時使用快捷選擇）">
-        <span>次</span>
+        <span id="use-count-last-unit">次</span>
         <button type="submit" id="perform-use" class="primary">執行操作</button>
       </form>
       <p id="use-estimated-time" class="use-estimated-time">本次預估行動時間：—</p>

@@ -373,35 +373,51 @@ function renderUseDetail(s){
   text('use-detail-name',offer?.useName??'請返回商品明細選擇操作');
   text('use-detail-item',offer?nameFor(offer.itemId):'—');
   text('use-detail-owned',offer?number(offer.owned):'—');
+  const detail=offer?.detail;
+  const suffix=detail?(detail.noCount?'':'（1'+detail.scale+'）'):'（每次）';
+  text('use-materials-label','所需材料'+suffix);text('use-money-label','費用'+suffix);text('use-time-label','時間'+suffix);
+  $('use-info-row').hidden=!detail;text('use-detail-info',detail?.info??'');
+  const requirements=detail?[
+    detail.requiredProficiencyPercent?'必要熟練度 '+detail.requiredProficiencyPercent+'%':null,
+    detail.requiredJob?'必要職業 '+detail.requiredJob:null,
+    detail.requiredPoint?'必要點數 '+detail.requiredPoint:null,
+    detail.requiredPopularityPercent?'必要人氣 '+detail.requiredPopularityPercent+'%':null,
+  ].filter(Boolean):[];
+  $('use-requirements-row').hidden=!requirements.length;text('use-detail-requirements',requirements.join('；'));
   text('use-detail-materials',offer?
+    (detail?(detail.materials.length?detail.materials.map(row=>
+      nameFor(row.itemId)+' × '+number(row.count)+'（剩下 '+number(row.owned)+'；'+row.consumptionLabel+'）').join('、'):'不需材料'):
     (offer.materials?.length?offer.materials.map(row=>
       nameFor(row.itemId)+' × '+number(row.count)+'（持有 '+
-      number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料'):'—');
+      number(s.shop?.item?.[row.itemId-1])+ '）').join('、'):'不需材料')):'—');
   text('use-detail-money',offer?money(offer.moneyPerUse):'—');
-  text('use-detail-time',offer?conciseTimeText(offer.timePerUseSeconds):'—');
+  text('use-detail-time',offer?(detail?detail.timeLabel+(offer.proficiency?'（熟練度 '+detail.proficiencyPercent+'%）':''):conciseTimeText(offer.timePerUseSeconds)):'—');
   const maximum=offer?.maxUseCount??0;
   const limitName=offer?.maxUseCountReason??'可執行上限';
   text('use-detail-limit',offer?
-    (maximum>0?'最多 '+number(maximum)+' 次（'+limitName+'）':
+    (maximum>0?(detail?.noCount?'單次操作':detail&&detail.sourceMaximum!==maximum?
+      '最大回數 '+number(detail.sourceMaximum)+'；目前可執行 '+number(maximum)+' '+detail.scale:
+      '最多 '+number(maximum)+' '+(detail?.scale??'次')+'（'+limitName+'）'):
       (offer.reason??'目前不可執行')):'—');
   const form=$('use-action-form');
   form.hidden=!offer;
   const presets=$('use-count-presets');
   const previous=Number(presets.value);
   presets.replaceChildren();
-  const choices=[1,2,3,5,maximum].filter((n,i,all)=>
-    n>0&&n<=maximum&&all.indexOf(n)===i);
-  for(const n of choices){
-    const option=document.createElement('option');
-    option.value=String(n);
-    option.textContent=n===maximum&&maximum>1?
-      n+'（'+limitName+'）':String(n);
-    presets.append(option);
+  const options=detail?detail.options.filter(o=>o.count>0&&o.count<=maximum):
+    [1,2,3,5,maximum].filter((n,i,all)=>n>0&&n<=maximum&&all.indexOf(n)===i)
+      .map(n=>({count:n,label:n===maximum&&maximum>1?n+'（'+limitName+'）':String(n)}));
+  const choices=options.map(o=>o.count);
+  for(const {count:n,label} of options){
+    const option=document.createElement('option');option.value=String(n);option.textContent=label;presets.append(option);
   }
   presets.disabled=!offer?.canUse||!choices.length;
   presets.value=choices.includes(previous)?String(previous):String(choices[0]??'');
   const count=$('use-count');
-  count.max=offer?.firstUseOnly?'1':'';
+  count.max=offer?.firstUseOnly||offer?.singleUseOnly||detail?.noCount?'1':'';
+  for(const id of ['use-count-label','use-count-presets','use-count-first-unit','use-count','use-count-last-unit'])$(id).hidden=Boolean(detail?.noCount);
+  text('use-count-first-unit',(detail?.scale??'次')+'，或自訂');text('use-count-last-unit',detail?.scale??'次');
+  text('perform-use',detail?.action??'執行操作');
   $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
     offer.canUse?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
@@ -409,6 +425,7 @@ function renderUseDetail(s){
   updateUseEstimate();
 }
 function selectedUseCount(){
+  if(snapshot?.useOffers?.find(row=>row.itemId===selectedItemId&&row.useId===selectedUseId)?.detail?.noCount)return 1;
   const manual=$('use-count').value.trim();
   return Number(manual!==''?manual:$('use-count-presets').value);
 }
@@ -1134,7 +1151,7 @@ $('use-action-form').addEventListener('submit',async event=>{
     row.itemId===itemId&&row.useId===useId);
   if(!offer?.canUse||currentTab!=='use'||!before?.world)return;
   const manual=$('use-count').value.trim();
-  const requestedCount=Number(manual!==''?manual:$('use-count-presets').value);
+  const requestedCount=offer.detail?.noCount?1:Number(manual!==''?manual:$('use-count-presets').value);
   if(!Number.isSafeInteger(requestedCount)||requestedCount<1||
     (offer.firstUseOnly&&requestedCount!==1)){
     feedback('請輸入有效的執行次數。',null,true);
