@@ -87,6 +87,23 @@ test('R4 genuine all mining and mountain maps, sword-market doubled and lostbook
   const first=await p.saveAndRestart(0);
   for(let id=1;id<=8;id++)assert.ok(first.shops[0].item[id-1]>0);
   for(let id=1;id<=8;id++)await sell(p,id,sales);
+  // The raw-material acquisition and natural-sale phase is complete.
+  // Do not carry unused costly ore/wood into a separate sword-market
+  // career phase. Original discard is a real command; no fixture write.
+  assert.ok(Array.from({length:8},(_,i)=>i+1).every(id=>sales[id]>0));
+  await p.list(0);
+  const disposed=[];
+  for(let id=1;id<=8;id++){
+    const count=p.stock(id);
+    if(!count)continue;
+    const before=p.state.world;
+    await p.discard(id,count);
+    assert.equal(p.stock(id),0);
+    assert.equal(p.state.world.revision,before.revision+1);
+    assert.equal(p.state.world.nowSeconds,before.nowSeconds);
+    disposed.push([id,count]);
+  }
+  t.diagnostic('raw material sale phase complete '+JSON.stringify({sales,disposed,money:p.state.shop.money,costtoday:p.state.shop.costtoday}));
   // #14 is an actual paid acquisition with a 10% pre-callback doubling
   // and a separate 10% post-callback book loss, neither a selected tape.
   await acquire(p,78);await use(p,78,12);
@@ -96,10 +113,16 @@ test('R4 genuine all mining and mountain maps, sword-market doubled and lostbook
     assert.ok(n<120,'actual sword market outcome budget '+JSON.stringify({normal,double,lost,swordTrips}));
     await acquire(p,14);
     for(let j=0;;j++){
-      assert.ok(j<20,'actual sword trip funding');
+      const status=()=>({trip:n,fundingWorks:p.fundingWorks,money:p.state.shop.money,
+        costtoday:p.state.shop.costtoday,period:p.state.world.period.settledCount,
+        showcase:p.state.shop.showcase,stock:[40,41,42,43,44].map(id=>[id,p.stock(id)])});
+      assert.ok(j<120,'actual sword trip funding '+JSON.stringify(status()));
       await time(p,14,0);
       if(p.state.shop.money>=12000+Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000))break;
-      await p.use(13,1);
+      // Same finite shared funding-work budget as the market planner.
+      // List a legitimately acquired surplus sword when the shelf is empty,
+      // so paid work and waiting also support natural commerce.
+      await p.earnMarketFunds({kind:'sword-trip',trip:n,...status()});
     }
     const {shop,d}=await use(p,14,0);
     assert.equal(d.moneySpent,12000);assert.equal(p.state.shop.money,shop.money-12000);
@@ -116,6 +139,12 @@ test('R4 genuine all mining and mountain maps, sword-market doubled and lostbook
       assert.equal(p.stock(id),shop.item[id-1]+got.produced);
     }
     swordTrips.push({amount,lost:d.mapDestroyed,added:d.originalAddItem});
+    // Maintain an earning shelf rather than accumulate unused products.
+    // Only the sword outputs are surplus in this phase.
+    if(!p.state.shop.showcase[0]||!p.stock(p.state.shop.showcase[0])){
+      const surplus=[40,41,42,43,44].find(id=>p.stock(id)>0);
+      if(surplus!==undefined)await p.list(surplus);
+    }
   }
   assert.ok(normal&&double&&lost&&swordTrips.some(row=>row.added.length>0));
   const last=await p.saveAndRestart(1);

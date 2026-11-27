@@ -200,9 +200,27 @@ async function prepareAdvancedCapital(t,p){
   }
   await p.enoughTime(4*600);
   for(const [shelf,g] of goods.entries()){
-    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:g.id,per:120});
-    assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));
+    // The funding helper may already have listed this product in shelf 0.
+    // Genuine sales/events during later production or clock waits can
+    // exhaust it. Replenish on this same career BEFORE the next submission;
+    // a refused command is still a failure, never a retry or selected RNG.
+    for(let n=0;;n++){
+      assert.ok(n<12,'advanced capital live listing budget '+JSON.stringify({
+        shelf,item:g.id,stock:p.stock(g.id),showcase:p.state.shop.showcase,
+        money:p.state.shop.money,period:p.state.world.period.settledCount}));
+      await p.enoughTime(p.state.showcaseEditTimeSeconds??600);
+      if(p.stock(g.id)>0)break;
+      await produce(g);
+    }
+    const before=p.state.world,held=p.stock(g.id);
+    const r=await p.post('/api/showcase',{expectedRevision:before.revision,shelf,itemId:g.id,per:120});
+    assert.equal(r.code,'COMMITTED',JSON.stringify({shelf,item:g.id,held,details:r.details,error:r.error}));
+    assert.equal(p.state.shop.showcase[shelf],g.id);
+    assert.equal(p.stock(g.id),held);
+    assert.equal(p.state.world.revision,before.revision+1);
+    assert.equal(p.state.world.nowSeconds,before.nowSeconds);
   }
+  assert.deepEqual(p.state.shop.showcase,goods.map(g=>g.id));
   const start=p.state.world.nowSeconds;
   let steps=0,stonePurchases=0,lastPeriod=-1;
   const status=()=>({money:p.state.shop.money,stones:p.stock(8),exp16:p.exp(16),exp17:p.exp(17),
