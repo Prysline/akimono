@@ -99,12 +99,13 @@
       </section>
       <h3 class="sub-title">店家資訊</h3>
       <div class="table-scroll"><table class="shop-info-table"><tbody>
-        <tr><td rowspan="6" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
+        <tr><td rowspan="7" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
         <tr><th scope="row">店主</th><td id="owner-name">—</td></tr>
         <tr><th scope="row">資金</th><td id="shop-info-money">—</td></tr>
         <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
         <tr><th scope="row">人氣</th><td id="shop-info-popularity">—</td></tr>
         <tr><th scope="row">垃圾</th><td id="shop-info-clean">—</td></tr>
+        <tr><th scope="row">評論</th><td><span id="owner-comment-read">—</span><form id="owner-comment-form" hidden><input id="owner-comment-input" type="text" size="20" aria-label="店鋪評論"> <button id="owner-comment-submit" type="submit">變更</button></form></td></tr>
       </tbody></table></div>
       <p class="muted dev-panel" data-dev-panel>原版人氣內部數值：<output id="dev-popularity-raw">—</output>；頂端點數依 GetDTPoint 獨立計算。</p>
       <section id="owner-scene" class="help-text" hidden aria-label="原版店內顧客對話">

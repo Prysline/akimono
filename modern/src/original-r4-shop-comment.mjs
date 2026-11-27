@@ -2,7 +2,7 @@
  * Authentication and multiplayer identity remain outside this local adapter.
  */
 import {createHash} from 'node:crypto';
-const pins={formSource:'2463a62fb4cac2364a7c8c7f8f0823d619396157',submitSource:'8e817c535d4cd17e68d65f0e2f67846a344b5094',nameSource:'ae3b3a862fc78b8775795ed88d5d1911861b3d80',configSource:'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0',logSource:'0f9143c49d1552233f27754e3937e1cdc2740f0a'};
+const pins={ownerMainSource:'5cd020011f6676ec4a8a202ab1bb28b90515ce8d',formSource:'2463a62fb4cac2364a7c8c7f8f0823d619396157',submitSource:'8e817c535d4cd17e68d65f0e2f67846a344b5094',nameSource:'ae3b3a862fc78b8775795ed88d5d1911861b3d80',configSource:'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0',logSource:'0f9143c49d1552233f27754e3937e1cdc2740f0a'};
 const reviews=new WeakSet();
 const fail=m=>{throw new RangeError(m)};
 export function reviewOriginalShopComment(sources){

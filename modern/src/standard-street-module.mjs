@@ -189,7 +189,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalUserSource=null,originalErrorSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
-  originalCommentFormSource=null,originalCommentSubmitSource=null,originalCommentNameSource=null,
+  originalCommentFormSource=null,originalCommentSubmitSource=null,originalCommentNameSource=null,originalCommentOwnerMainSource=null,
   originalDiscardFormSource=null,originalDiscardSubmitSource=null,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   originalBalanceViewSource=null,originalInfoViewSource=null,originalMarketSurveySource=null,
@@ -219,9 +219,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
-  const commentInputs=[originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource];
+  const commentInputs=[originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalCommentOwnerMainSource];
   if(commentInputs.some(s=>s!==null)&&commentInputs.some(s=>s===null))bad('incomplete original comment source set');
-  const reviewedComment=enableReviewedFullCommerce&&commentInputs.every(s=>s!==null)?reviewOriginalShopComment({formSource:originalCommentFormSource,submitSource:originalCommentSubmitSource,nameSource:originalCommentNameSource,configSource:originalConfigSource,readSource:originalDataReadSource,logSource:originalLogSource}):null;
+  const reviewedComment=enableReviewedFullCommerce&&commentInputs.every(s=>s!==null)?reviewOriginalShopComment({ownerMainSource:originalCommentOwnerMainSource,formSource:originalCommentFormSource,submitSource:originalCommentSubmitSource,nameSource:originalCommentNameSource,configSource:originalConfigSource,readSource:originalDataReadSource,logSource:originalLogSource}):null;
   const discardInputs=[originalDiscardFormSource,originalDiscardSubmitSource];
   if(discardInputs.some(s=>s!==null)&&discardInputs.some(s=>s===null))bad('incomplete original discard source set');
   const reviewedDiscard=enableReviewedFullCommerce&&discardInputs.every(s=>s!==null)?reviewOriginalDiscard({

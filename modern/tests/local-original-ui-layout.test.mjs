@@ -448,3 +448,10 @@ test('original USE form uses reviewed count choices, material consumption and no
   assert.match(script,/\$\(id\)\.hidden=Boolean\(detail\?\.noCount\)/);
   assert.match(script,/text\('perform-use',detail\?\.action/);
 });
+
+
+test('R4 original comment has two local owner form entries sharing one HTTP command',()=>{
+ assert.match(html,/data-tab="procedures"/);
+ assert.match(html,/id="tab-procedures"[\s\S]*?id="comment-form"[\s\S]*?id="shop-comment-input"/);
+ assert.match(html,/id="tab-shop"[\s\S]*?id="owner-comment-form"[\s\S]*?id="owner-comment-input"/);
+});

@@ -697,6 +697,10 @@ function showState(s){
   $('comment-form').hidden=!(shop&&s.reviewedShopComment);
   text('comment-status',!shop?'請先開店。':s.reviewedShopComment?'評論（36 字以內，可清空）':'評論尚未開放。');
   $('shop-comment-input').value=shop?.comment??'';
+  $('owner-comment-form').hidden=!(shop&&s.reviewedShopComment);
+  $('owner-comment-read').hidden=Boolean(shop&&s.reviewedShopComment);
+  text('owner-comment-read',shop?.comment??'—');
+  $('owner-comment-input').value=shop?.comment??'';
   renderOwnerHelp(s);
   renderMarketSurvey(s);
   renderNews(s);
@@ -922,13 +926,15 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
-$('comment-form').addEventListener('submit',async event=>{
-  event.preventDefault();const before=snapshot,button=$('comment-submit');
-  if(button.disabled||!before?.shop||!before.reviewedShopComment)return;
-  button.disabled=true;
-  try{await call('/api/shop-comment',{expectedRevision:before.world.revision,comment:$('shop-comment-input').value},'評論更新');}
-  finally{button.disabled=false;}
-});
+for(const [form,input] of [['comment-form','shop-comment-input'],['owner-comment-form','owner-comment-input']]){
+  $(form).addEventListener('submit',async event=>{
+    event.preventDefault();const before=snapshot,buttons=[$('comment-submit'),$('owner-comment-submit')];
+    if(buttons.some(button=>button.disabled)||!before?.shop||!before.reviewedShopComment)return;
+    for(const button of buttons)button.disabled=true;
+    try{await call('/api/shop-comment',{expectedRevision:before.world.revision,comment:$(input).value},'評論更新');}
+    finally{for(const button of buttons)button.disabled=false;}
+  });
+}
 $('sweep-form').addEventListener('submit',async event=>{
   event.preventDefault();const before=snapshot;
   if(sweepSubmitting||!before?.world||!before.sweep?.canSweep)return;

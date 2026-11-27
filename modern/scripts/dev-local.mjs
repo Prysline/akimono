@@ -137,7 +137,7 @@ const streetModule=createStandardStreetModule({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-  originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,
+  originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalCommentOwnerMainSource:originalIncMainSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -194,7 +194,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-       originalUseFormSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;

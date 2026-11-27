@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 import {reviewOriginalShopComment,projectOriginalShopComment} from '../src/original-r4-shop-comment.mjs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const f=n=>read('./original-perl/'+n);
-const sources={formSource:f('core-other.cgi'),submitSource:f('core-user-settings.cgi'),nameSource:f('core-name.cgi'),configSource:read('../../_config.cgi'),readSource:f('inc-func.cgi'),logSource:f('pinned-log.cgi')};
+const sources={ownerMainSource:f('core-inc-main.cgi'),formSource:f('core-other.cgi'),submitSource:f('core-user-settings.cgi'),nameSource:f('core-name.cgi'),configSource:read('../../_config.cgi'),readSource:f('inc-func.cgi'),logSource:f('pinned-log.cgi')};
 const review=reviewOriginalShopComment(sources);
 test('R4 comment frozen Perl differential, success and rejection without unrelated shop mutation',()=>{
  const body=sources.submitSource.match(/sub comment\n\{[\s\S]*?\n\}/)[0];
