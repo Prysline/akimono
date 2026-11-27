@@ -35,7 +35,7 @@ const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場',survey:'市價調查',palace:'宮殿',army:'傭兵所',
-  sweep:'掃除',balance:'收支',news:'新聞',library:'圖書館',item:'商品明細',use:'操作明細','use-result':'操作結果'};
+  sweep:'掃除',procedures:'手續',balance:'收支',news:'新聞',library:'圖書館',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
   $('status-summary').hidden=!snapshot?.shop||
@@ -694,6 +694,9 @@ function showState(s){
   renderPalace(s);
   renderArmy(s);
   renderSweep(s);
+  $('comment-form').hidden=!(shop&&s.reviewedShopComment);
+  text('comment-status',!shop?'請先開店。':s.reviewedShopComment?'評論（36 字以內，可清空）':'評論尚未開放。');
+  $('shop-comment-input').value=shop?.comment??'';
   renderOwnerHelp(s);
   renderMarketSurvey(s);
   renderNews(s);
@@ -919,6 +922,13 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+$('comment-form').addEventListener('submit',async event=>{
+  event.preventDefault();const before=snapshot,button=$('comment-submit');
+  if(button.disabled||!before?.shop||!before.reviewedShopComment)return;
+  button.disabled=true;
+  try{await call('/api/shop-comment',{expectedRevision:before.world.revision,comment:$('shop-comment-input').value},'評論更新');}
+  finally{button.disabled=false;}
+});
 $('sweep-form').addEventListener('submit',async event=>{
   event.preventDefault();const before=snapshot;
   if(sweepSubmitting||!before?.world||!before.sweep?.canSweep)return;

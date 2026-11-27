@@ -1,3 +1,4 @@
+import {reviewOriginalShopComment,projectOriginalShopComment} from './original-r4-shop-comment.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
 import {reviewUseExpHash,resolveR4UseExpOrder} from './original-r4-use-exp-hash-replay.mjs';
@@ -188,6 +189,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalUserSource=null,originalErrorSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
+  originalCommentFormSource=null,originalCommentSubmitSource=null,originalCommentNameSource=null,
   originalDiscardFormSource=null,originalDiscardSubmitSource=null,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   originalBalanceViewSource=null,originalInfoViewSource=null,originalMarketSurveySource=null,
@@ -217,6 +219,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     bad('original MaxMoney declaration changed; review direct price cap');
   const catalog=structuralCatalog(itemDsl,rebelDsl,model);
   const giftMap=compileReviewedGiftMapUse({itemDsl,rebelDsl,model});
+  const commentInputs=[originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource];
+  if(commentInputs.some(s=>s!==null)&&commentInputs.some(s=>s===null))bad('incomplete original comment source set');
+  const reviewedComment=enableReviewedFullCommerce&&commentInputs.every(s=>s!==null)?reviewOriginalShopComment({formSource:originalCommentFormSource,submitSource:originalCommentSubmitSource,nameSource:originalCommentNameSource,configSource:originalConfigSource,readSource:originalDataReadSource,logSource:originalLogSource}):null;
   const discardInputs=[originalDiscardFormSource,originalDiscardSubmitSource];
   if(discardInputs.some(s=>s!==null)&&discardInputs.some(s=>s===null))bad('incomplete original discard source set');
   const reviewedDiscard=enableReviewedFullCommerce&&discardInputs.every(s=>s!==null)?reviewOriginalDiscard({
@@ -693,6 +698,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     id:STANDARD_STREET_ID,
     capabilities:Object.freeze([...actions,
       ...(reviewedSweep?['sweep-shop']:[]),
+      ...(reviewedComment?['edit-shop-comment']:[]),
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
@@ -714,6 +720,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedGiftMapUse:giftMap,
     ...(reviewedDiscard?{reviewedDiscard:true,listDiscardOffers:world=>listOriginalDiscardOffers({reviewed:reviewedDiscard,world})}:{}),
     ...(reviewedSweep?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:reviewedSweep,world})}:{}),
+    ...(reviewedComment?{reviewedShopComment:true}:{}),
     reviewedBootstrap,
     reviewedSparsePlus,
     reviewedMultiPlus,
@@ -1065,6 +1072,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='edit-shop-comment'){
+        if(!reviewedComment)bad('original comment source review required');
+        return projectOriginalShopComment({reviewed:reviewedComment,world,command});
       }
       if(command.kind==='sweep-shop'){
         if(!reviewedSweep)bad('original sweep source review required');

@@ -27,7 +27,7 @@
           <button type="button" data-tab="stock">［倉庫］</button>
           <button type="button" data-tab="sweep">［掃除］</button>
           <button type="button" data-tab="balance">［收支］</button>
-          <button type="button" disabled title="尚未實作">［手續］</button>
+          <button type="button" data-tab="procedures">［手續］</button>
         </span>
         <span class="subgroup" data-subgroup="trade" hidden>
           <button type="button" data-tab="market">［市場］</button>
@@ -317,6 +317,15 @@
       <div class="back-row"><button type="button" class="text-link" id="result-back-to-item">［返回商品明細］</button></div>
     </section>
 
+    <section id="tab-procedures" class="section pane" hidden>
+      <h2>●各種手續</h2>
+      <p id="comment-status">請先開店。</p>
+      <form id="comment-form" class="inline-form" hidden>
+        <label>評論 <input id="shop-comment-input" type="text" size="36"></label>
+        <button id="comment-submit" type="submit">變更</button>
+      </form>
+      <p>店長圖像、店名、店長名、密碼、再出發及閉店手續尚未開放。</p>
+    </section>
     <section id="tab-sweep" class="section pane" hidden>
       <h2 class="section-title">● 打掃</h2>
       <p id="sweep-status" role="status">請先開店。</p>

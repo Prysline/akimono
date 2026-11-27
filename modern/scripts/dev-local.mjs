@@ -115,6 +115,7 @@ const {
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const originalUseFormSource=await readPinnedSource('modern/tests/original-perl/core-item-m.cgi');
+const [originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource]=await Promise.all(['core-other.cgi','core-user-settings.cgi','core-name.cgi'].map(name=>readPinnedSource('modern/tests/original-perl/'+name)));
 const reviewedUseForm=reviewOriginalUseForm({formSource:originalUseFormSource,itemDsl,compilerSource:originalCompilerSource,calcSource:originalBuyCalcSource,configSource:originalConfigSource});
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
@@ -136,6 +137,7 @@ const streetModule=createStandardStreetModule({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
+  originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -192,7 +194,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-       originalUseFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalUseFormSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -233,6 +235,7 @@ function state(){
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
+    reviewedShopComment:streetModule.reviewedShopComment===true,
     ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
     ownerScene:reviewedFullCommerce?describeOriginalOwnerScene({reviewed:reviewedOwnerHelp,world}):null,
     ownerClock:reviewedFullCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
@@ -586,6 +589,12 @@ async function api(req,res,url){
       if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
       result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
         expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/shop-comment': {
+      if(!repo||!streetModule.reviewedShopComment)return send(res,409,{ok:false,error:'店鋪評論需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,comment')||typeof body.comment!=='string')throw Error('評論只接受 expectedRevision、comment 文字');
+      result=commit({kind:'edit-shop-comment',expectedRevision:ensureRevision(body),shopId:1,comment:body.comment});
       break;
     }
     case '/api/sweep': {
