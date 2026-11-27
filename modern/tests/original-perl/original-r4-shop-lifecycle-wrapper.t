@@ -23,7 +23,7 @@ our ($DATA_DIR,$TEMP_DIR,$BACKUP_DIR,$FILE_EXT,$DATA_FILE,$COMMIT_FILE,
   $MASTER_PASSWORD,$NEW_SHOP_ADMIN,$NEW_OTHERTOWN_BLOCK,$NEW_SHOP_BLOCKIP,
   $NEW_SHOP_KEYWORD,$MAX_USER,$DEFINE_FUNCNEW,$DEFINE_FUNCNEW_NOLOG,
   $MYDIR,@OtherDir,@NG_SHOP_NAME,$MOBILE,$CHECK_IP,$TZ_JST,$ITEM_DIR,
-  @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
+  @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$LOG_DIR,$LOG_SIZE_MAX,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
 my %pins=(
   'pinned-colock.cgi'=>'99ff12db08135879e1a570cef1424f6dd5bec151',
   'pinned-inc-gd-entry.cgi'=>'f28cdcc1778534cbf1c84195df7ab749519be5a6',
@@ -47,6 +47,8 @@ my %pins=(
   'pinned-time.cgi'=>'e164091d4dc6de084bb4770e0b9b4bf6005d9f3f',
   'pinned-membership-user.cgi'=>'8e817c535d4cd17e68d65f0e2f67846a344b5094',
   'pinned-other.cgi'=>'2463a62fb4cac2364a7c8c7f8f0823d619396157',
+  'pinned-error.cgi'=>'16b619dffd91a3b67095177b7da464de264f1aa3',
+  '../../../_config.cgi'=>'87e4fd4eefba063d982e3b79aa7cfa6565e1a0',
   'pinned-user.cgi'=>'46fe3b13e68ee83997aa919125ab210372af2822',
   'inc-makeitem.cgi'=>'1da8cce1e76ad6159325a37faec68efaa82c7f69',
   '../../../custom/inc-item-data.cgi'=>'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',
@@ -589,7 +591,34 @@ ok(!exists $id2idx{1},'other street join does not resurrect closed local ID');
 my($retiredToken,$retiredPeer)=two_shop_case();
 delete $INC{"$ITEM_DIR/funcnew.cgi"};
 like((submit('pinned-membership-user.cgi',$retiredToken,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'source same-name reuse setup restart');
-like((submit('pinned-membership-user.cgi',$retiredToken,'cls','closeshop'))[0],qr/__SOURCE_RENDER__/,'source same-name reuse setup close');
+# On this chain only, execute the actual pinned WriteErrorLog body rather
+# than the trace adapter. A pre-existing oversized synthetic archive forces
+# the original rotation; subsequent registration must not discard either file.
+my $archiveBody=block($source{'pinned-error.cgi'},"sub WriteErrorLog\n{","sub OutErrorBlockLogin");
+$archiveBody=~s/^sub WriteErrorLog/sub/ or die 'archive body drift';
+my $actualArchive=eval "package main; no strict; no warnings; use utf8;\n".$archiveBody;
+die "original archive compilation: $@" unless ref($actualArchive) eq 'CODE';
+my ($archiveMax)=$source{'../../../_config.cgi'}=~/\$LOG_SIZE_MAX\s*=\s*(\d+);/;
+die 'archive config drift' unless $archiveMax==30000;
+my $archiveDir="$DATA_DIR/log";
+make_path($archiveDir);
+my $archiveLive=GetPath($archiveDir,'delete');
+my $archiveOld=GetPath($archiveDir,'delete-old');
+my $priorArchive='X'x($archiveMax+1);
+put_file($archiveLive,$priorArchive);
+{
+  local $LOG_DIR=$archiveDir;local $LOG_SIZE_MAX=$archiveMax;
+  local $ENV{SCRIPT_NAME}='/street/membership/user.cgi';
+  local $ENV{REMOTE_HOST}='source-fixture.invalid';
+  local *WriteErrorLog=$actualArchive;
+  like((submit('pinned-membership-user.cgi',$retiredToken,'cls','closeshop'))[0],qr/__SOURCE_RENDER__/,'source same-name reuse setup close');
+}
+my $closedArchive=raw_file($archiveLive);
+ok(length($closedArchive)>0 && $closedArchive ne $priorArchive,'real voluntary close writes current archive');
+my $archiveText=decode_utf8($closedArchive);
+ok(index($archiveText,'自主閉店')>=0,'real archive contains original close reason');
+is(raw_file($archiveOld),$priorArchive,'actual WriteErrorLog retains rotated archive bytes');
+my @archiveTimes=((stat($archiveLive))[9],(stat($archiveOld))[9]);
 DataRead();
 ok(!exists $id2idx{1},'source original actor inactive before re-registration');
 ok(!auth(name=>'alice',token=>$retiredToken)->{ok},'source old token rejected while name inactive');
@@ -605,6 +634,9 @@ is(raw_file("$SESSION_DIR/alice.cgi"),$retiredSession,'raw new.cgi does not over
 my $alias=auth(name=>'alice',token=>$retiredToken);
 ok($alias->{ok},'raw original name-keyed old session accepted before new password login (known source hazard)');
 is($alias->{id},$replacementId,'raw original old token resolves replacement ID, not old ID');
+is(raw_file($archiveLive),$closedArchive,'actual re-registration and DataRead preserve current close archive');
+is(raw_file($archiveOld),$priorArchive,'actual re-registration preserves rotated archive');
+is_deeply([(stat($archiveLive))[9],(stat($archiveOld))[9]],\@archiveTimes,'re-registration does not touch archive mtimes');
 ok(!auth(name=>'alice',password=>'alpha_pw')->{ok},'retired account password not accepted by replacement account');
 ok(auth(name=>'alice',password=>'beta_pw')->{ok},'replacement account password accepted');
 # Do not assert random regenerated token differs: source token collision is possible.
