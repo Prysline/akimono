@@ -205,14 +205,23 @@ feed('define',$define,qr/\sset\s+NewShop(?:Money|Time|Item)\s/i);
 is($g_define->{NewShopMoney},'100000','actual compiler DEFINE money');
 is($g_define->{NewShopTime},'12*60*60','actual compiler DEFINE time expression');
 @ITEM=();
-while($dsl=~/^\@\@ITEM\b[^\n]*\n([\s\S]*?)(?=^\@\@(?:ITEM|USE|EVENT|FUNC\w+|END)\b|\z)/mg){
-  ClearBuffer('item');feed('item',$1,qr/^\s*(?:no|code|name)\s/i);
+# The source compiler changes mode at indented, case-insensitive @@use.
+# Stop at the first directive, rather than letting USE names overwrite ITEM.
+my %seenItemNo;
+while($dsl=~/^\@\@ITEM\b[^\n]*\n([\s\S]*?)(?=^[\t ]*\@\@(?:ITEM|USE|EVENT|FUNC\w+|END)\b|\z)/mgi){
+  my $itemHeader=$1;
+  die 'nested directive leaked into ITEM identity slice' if $itemHeader=~/^[\t ]*\@\@/m;
+  ClearBuffer('item');feed('item',$itemHeader,qr/^\s*(?:no|code|name)\s/i);
   die 'missing compiler ITEM identity' unless $g_item->{no} && $g_item->{name};
+  die 'duplicate compiler ITEM number' if $seenItemNo{$g_item->{no}}++;
   $ITEM[$g_item->{no}]={map {$_=>$g_item->{$_}} qw(no name code)};
 }
 is(scalar(grep {defined $_} @ITEM),79,'actual source ITEM identity compiler rows');
 is($ITEM[63]{name},'展示架擴建拆卸工具','FUNCNEW source item 63');
 is($ITEM[79]{name},'禮物卷','FUNCNEW source item 79');
+is($ITEM[63]{code},'edit-showcase','FUNCNEW item 63 source code');
+is($ITEM[79]{code},'gift','FUNCNEW item 79 source code');
+is($g_define->{NewShopItem},'展示架擴建拆卸工具:1:禮物卷:5','actual compiler DEFINE initial item names');
 feed('funcnew',$funcnew,undef);
 $ITEM_DIR="$root/$MYDIR/compiled";make_path($ITEM_DIR);
 OutFunctionData();
