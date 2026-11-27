@@ -14,7 +14,9 @@ function safe(n,key,min=0){
   if(!Number.isSafeInteger(n)||n<min)fail(key);
   return n;
 }
-export function reviewOriginalSoloSort({detailSource,readSource}){
+const stableSingleReviews=new WeakSet();
+export function reviewOriginalSoloSort({detailSource,readSource},{stableSingleSource=false}={}){
+  if(typeof stableSingleSource!=='boolean')fail('explicit stable single shop review');
   const markersDetail=[
     'sub SortDT',
     '@DT=grep($_->{status},@DT);',
@@ -32,10 +34,12 @@ export function reviewOriginalSoloSort({detailSource,readSource}){
     '$p= 1 / (2 - $p) if ($p < 1);',
     'return int( $DT->{rank} * $r * $p );',
   ])guard(readSource,m);
-  return Object.freeze({
+  const reviewed=Object.freeze({
     source:B47_SOLO_RANK_SOURCE,
     scope:'source-ranked single active store only; no other shops, closures, guilds, period write or side effects',
   });
+  if(stableSingleSource)stableSingleReviews.add(reviewed);
+  return reviewed;
 }
 /** Shared GetDTPoint arithmetic. Callers own source and shop validation;
  * never accept a cached or caller-supplied point as an authority. */
@@ -56,7 +60,7 @@ export function calculateSourceShopPoint({rank,profitstock,saletoday,taxtoday,pa
 export function projectOriginalSoloSort({shop,reviewed}){
   if(reviewed?.source!==B47_SOLO_RANK_SOURCE)
     fail('source review required');
-  if(!shop||shop.id!==1||shop.status!==1||
+  if(!shop||(!stableSingleReviews.has(reviewed)&&shop.id!==1)||!Number.isSafeInteger(shop.id)||shop.id<1||shop.status!==1||
      typeof shop.name!=='string'||shop.name.length===0)
     fail('only one original active named shop');
   const rank=safe(shop.rank,'rank');

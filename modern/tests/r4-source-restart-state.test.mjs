@@ -44,3 +44,25 @@ test('LC-D2 restart normalized 32 scalars and seven source sections match actual
   assert.throws(()=>projectR4RestartState({...input,reviewed:{}}),/reviewed D/);
   assert.throws(()=>reviewR4RestartState({sourceTexts,detailSource:detailSource+'\n'}),/source drift/);
 });
+
+
+test('LC-D2 stable ID100 restart matches actual original wrapper and retains allocator/identity scope',()=>{
+  const runner=fileURLToPath(new URL('./original-perl/original-r4-shop-lifecycle-wrapper.t',import.meta.url));
+  const out=execFileSync('perl',[runner],{encoding:'utf8',env:{...process.env,AKIMONO_D_RESTART_STABLE_ID_ORACLE:'1'},maxBuffer:4*1024*1024});
+  const notes=out.split('\n').filter(l=>l.startsWith('# D_RESTART_STABLE_WIRE '));assert.equal(notes.length,1);
+  const evidence=JSON.parse(notes[0].slice('# D_RESTART_STABLE_WIRE '.length)),shop=normalized(evidence.before),expected=normalized(evidence.after);
+  expected.point=evidence.point;
+  assert.equal(shop.id,100);assert.equal(expected.id,100);
+  assert.equal(evidence.before.split('\n')[1].split(',')[1],'101');
+  assert.equal(evidence.after.split('\n')[1].split(',')[1],'101');
+  const stable=reviewR4RestartState({sourceTexts,detailSource},{stableSingleSource:true});
+  const world={worldId:'stable-restart-unit',streetId:'standard-street',revision:5,nowSeconds:evidence.now,shops:[shop]};
+  const input={reviewed:stable,world,actorRef:{worldId:world.worldId,street:world.streetId,shopId:100,ownerName:shop.name},expectedRevision:5,confirmation:'restart',subdataNames:['1-alpha.cgi','100-alpha.cgi','1000-keep.cgi']};
+  const before=structuredClone(world),got=projectR4RestartState(input);
+  assert.deepEqual(got.shop,expected);
+  assert.deepEqual(got.subdataDeletionSelection,['100-alpha.cgi']);assert.equal(got.sessionIntent.deleteSessionFile,false);
+  assert.equal(got.committable,false);assert.deepEqual(world,before);
+  assert.throws(()=>projectR4RestartState({...input,reviewed}),/single-store numeric world/);
+  assert.throws(()=>projectR4RestartState({...input,actorRef:{...input.actorRef,shopId:1}}),/R4 lifecycle/);
+  assert.throws(()=>projectR4RestartState({...input,world:{...world,shops:[shop,{...shop,id:101}]}}),/single-store numeric world/);
+});

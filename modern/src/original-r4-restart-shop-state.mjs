@@ -8,18 +8,20 @@ const fail=m=>{throw new RangeError('R4 restart state: '+m)};
 const blob=s=>typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null;
 const reviews=new WeakMap();
 const textFields=new Set(['name','shopname','pass','comment','remoteaddr','guild','blocklogin','nocheckip','job','rankingyesterday']);
-export function reviewR4RestartState({sourceTexts,detailSource}){
+export function reviewR4RestartState({sourceTexts,detailSource},{stableSingleSource=false}={}){
+  if(typeof stableSingleSource!=='boolean')fail('explicit stable single shop review');
   const source=reviewShopLifecycleSources(sourceTexts);
   if(blob(detailSource)!=='9a83d26fb29edee4032958f1e6de837a250f3384')fail('source drift detail');
   const match=sourceTexts.core.match(/@DTindexnamelist=\s*qw\(([\s\S]*?)\)\s*;/);
   const fields=match?.[1].trim().split(/\s+/);
   if(!fields||fields.length!==32||new Set(fields).size!==32)fail('source scalar schema');
-  const sort=reviewOriginalSoloSort({detailSource,readSource:sourceTexts.core});
-  const token=Object.freeze({committable:false});reviews.set(token,{source,fields,sort});return token;
+  const sort=reviewOriginalSoloSort({detailSource,readSource:sourceTexts.core},{stableSingleSource});
+  const token=Object.freeze({committable:false});reviews.set(token,{source,fields,sort,stableSingleSource});return token;
 }
 export function projectR4RestartState({reviewed,world,actorRef,expectedRevision,confirmation,subdataNames}){
   const r=reviews.get(reviewed);
-  if(!r||world?.shops?.length!==1||world.shops[0].id!==1||world.nowSeconds<43200)
+  if(!r||world?.shops?.length!==1||(!r.stableSingleSource&&world.shops[0].id!==1)||
+    !Number.isSafeInteger(world.shops[0].id)||world.shops[0].id<1||world.nowSeconds<43200)
     fail('reviewed D single-store numeric world required');
   const current=world.shops[0];
   const effect=projectShopLifecycleSource({review:r.source,snapshot:{revision:world.revision,worldId:world.worldId,street:world.streetId,shops:world.shops},

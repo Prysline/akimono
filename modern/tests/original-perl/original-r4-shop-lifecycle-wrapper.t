@@ -238,13 +238,19 @@ sub subNames {
   opendir my $d,$SUBDATA_DIR or die $!;my @f=sort grep {$_ ne '.'&&$_ ne '..'} readdir($d);closedir $d;return \@f;
 }
 sub reset_case {
-  my($age,$compiled)=@_;
+  my($age,$compiled,$stableId)=@_;
   my @rows=@initial;my @s=split(/,/,$rows[6],-1);
+  if(defined $stableId){
+    die 'controlled stable ID required' unless $stableId==100;
+    $s[$column{id}]=$stableId;
+    my @header=split(/,/,$rows[1],-1);$header[1]=$stableId+1;$rows[1]=join(',',@header);
+  }
   $s[$column{foundation}]=$NOW_TIME-$age;$s[$column{remoteaddr}]='192.0.2.5';
   $s[$column{guild}]=7;$rows[6]=join(',',@s);
   put_file("$DATA_DIR/play.cgi",encode_utf8(join("\n",@rows)."\n"));
   unlink "$SUBDATA_DIR/$_" for @{subNames()};
   put_file("$SUBDATA_DIR/$_",'synthetic subdata') for @subNames;
+  if(defined $stableId){put_file("$SUBDATA_DIR/$_",'synthetic stable subdata') for ('100-alpha.cgi','1000-keep.cgi');}
   unlink "$SESSION_DIR/alice.cgi" if -e "$SESSION_DIR/alice.cgi";
   $DEFINE_FUNCNEW=$compiled;delete $INC{"$ITEM_DIR/funcnew.cgi"};
   @logCalls=();@archiveCalls=();@renewSnapshots=();
@@ -642,5 +648,22 @@ ok(auth(name=>'alice',password=>'beta_pw')->{ok},'replacement account password a
 # Do not assert random regenerated token differs: source token collision is possible.
 # No real credentials are emitted, and no change to modern auth or public policy.
 
+# Separate controlled single active source ID100, not a second formal world.
+my $stableToken=reset_case(10801,1,100);
+my $stableBefore=raw_file("$DATA_DIR/play.cgi");
+like((submit('pinned-membership-user.cgi',$stableToken,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'actual source restart stable shop ID100');
+DataRead();
+ok(@DT==1 && exists $id2idx{100} && !exists $id2idx{1},'actual stable restart retains same ID');
+my $stableShop=$DT[$id2idx{100}];
+is($DTnextid,101,'actual stable restart preserves canonical allocator');
+is($stableShop->{point},5010,'actual stable restart reread point');
+is_deeply(subNames(),[sort @subNames,'1000-keep.cgi'],'stable restart removes only ID100 subdata');
+ok(auth(name=>'alice',token=>$stableToken)->{ok},'actual stable restart preserves source token');
+if($ENV{AKIMONO_D_RESTART_STABLE_ID_ORACLE}){
+  note('D_RESTART_STABLE_WIRE '.JSON::PP->new->ascii->canonical->encode({
+    before=>decode_utf8($stableBefore),after=>decode_utf8(raw_file("$DATA_DIR/play.cgi")),
+    point=>0+$stableShop->{point},now=>0+$NOW_TIME,
+  }));
+}
 chdir $cwd or die 'restore cwd';
 done_testing();
