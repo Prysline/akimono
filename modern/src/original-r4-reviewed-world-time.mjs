@@ -14,6 +14,7 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
+import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
 import {reviewOriginalShowcaseView,describeOriginalShowcase} from './original-r4-showcase-view.mjs';
 import {reviewOriginalNews,describeOriginalNews} from './original-r4-news-view.mjs';
 import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
@@ -46,7 +47,6 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     if(!sources.writeSource.includes('$DT->{money}=$MAX_MONEY if $DT->{money}>$MAX_MONEY;'))fail('original DataWrite money cap required');
     street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
   }
-  const capApplied=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>capReviewedCommerceCash(s,normalCommerce))};
   const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
   const warehouse=normalCommerce&&sources.stockViewSource!=null?reviewOriginalWarehouse(sources):null;
@@ -71,6 +71,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const news=normalCommerce&&enableReviewedCrossPeriod&&newsInputs.every(s=>s!=null)?reviewOriginalNews(sources):null;
   const showcaseView=normalCommerce&&sources.showcaseViewSource!=null?reviewOriginalShowcaseView(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
+  // Frozen DataRead recomputes GetDTPoint before every CGI action. Match
+  // the existing disk finalizer at the non-crossing command boundary, not
+  // just in the read-only owner summary. Leave prior commerce mode intact.
+  const finalizeNonDisk=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>
+    capReviewedCommerceCash(projectOriginalSoloSort({shop:s,reviewed:sorted.sort}).shop,normalCommerce))};
   const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
     compiledCatalog:street.reviewedEventCatalog,reviewedParams:data.params,itemDsl:sources.itemDsl,turnSource:sources.turnSource,readSource:sources.readSource});
@@ -173,7 +178,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const {shops,market,period,nowSeconds,evidence}=candidate;
     // Separate reviewed command adapter owns the complete successor and
     // exact CAS recheck. Never pass a partial noncommittable proposal to Core.
-    if(!disk)validate({...world,shops:capApplied({shops}).shops,market,period,nowSeconds,revision:world.revision+1});
+    if(!disk)validate({...world,shops:finalizeNonDisk({shops}).shops,market,period,nowSeconds,revision:world.revision+1});
     validateTimeShop(shops[0]);
     const {preEventReceipt,...trace}=evidence;
     if(normalCommerce!==null)trace.eventCommerce=preEventReceipt.eventCommerce;
@@ -188,7 +193,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       totalDraws:evidence.preEventDraws.length+evidence.eventSamples.length,
       scope:'source-reviewed local single-shop nonsettling normal time; no external special EVENT or 36h settlement',
     }};
-    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):capApplied(applied);
+    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):finalizeNonDisk(applied);
   }
   const wrapped=Object.freeze({...street,
     capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[])]),
@@ -232,7 +237,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
       if(!allowedOrdinary(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
-      return disk?disk.finalize({before,command,applied}):capApplied(applied);
+      return disk?disk.finalize({before,command,applied}):finalizeNonDisk(applied);
     }}:{}),
     validateReviewedWorldTimeState:validate,
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
