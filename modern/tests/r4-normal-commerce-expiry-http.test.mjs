@@ -42,7 +42,7 @@ test('R4 genuine absent owner closes at source settlement, archives once, reload
   assert.equal(closed.nowSeconds,beforeClose.nowSeconds+3600);
   assert.equal(closed.period.settledCount,beforeClose.period.settledCount+1);
   assert.equal(receipt.closureReceipt.shopId,owner.id);
-  assert.equal(receipt.closureReceipt.reason,'経営者不在');
+  assert.equal(receipt.closureReceipt.reason,'沒有上線');
   assert.deepEqual(receipt.closureReceipt.deletedSessions,[]);
   assert.deepEqual(receipt.closureReceipt.remainingSessions,[]);
   assert.equal(receipt.settlementReceipt.cashAfterLedger,0-receipt.settlementReceipt.maintenance);
@@ -53,7 +53,7 @@ test('R4 genuine absent owner closes at source settlement, archives once, reload
   assert.equal(archive.mtime,closed.nowSeconds);
   const rows=archive.bytes.trimEnd().split('\n');
   assert.equal(rows.length,3);
-  assert.equal(rows[0],[closed.nowSeconds,'','','','','','経営者不在'].join('\t'));
+  assert.equal(rows[0],[closed.nowSeconds,'','','','','','沒有上線'].join('\t'));
   const scalar=rows[1].split(','),sections=rows[2].split(':');
   assert.equal(scalar.length,32);assert.equal(scalar[0],String(owner.id));assert.equal(scalar[1],String(last));
   assert.ok(scalar.includes(owner.shopname));
@@ -63,7 +63,7 @@ test('R4 genuine absent owner closes at source settlement, archives once, reload
     assert.deepEqual(parts.filter((_,j)=>j%2===0),receipt.closureReceipt.archiveHash.archiveHashOrders[k]);
   }
   assert.equal(closed.period.disk.live['play.cgi'].bytes.split('\n').length,7);
-  assert.ok(closed.period.disk.live['log0.cgi'].bytes.includes(owner.shopname+'が経営者不在のため閉店しました。'));
+  assert.ok(closed.period.disk.live['log0.cgi'].bytes.includes(owner.shopname+'因為沒有上線所以店鋪被關閉了。'));
   assert.equal(closed.period.disk.generations[0]['play.cgi'].bytes,beforeClose.period.disk.live['play.cgi'].bytes);
   const path=join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(closed));
   assert.equal(await readFile(join(path,'log','delete.cgi'),'utf8'),archive.bytes);

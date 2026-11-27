@@ -83,7 +83,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
   const closeReview=enableReviewedCrossPeriod&&enableReviewedFullCommerce&&closeInputs.every(s=>s!=null)?reviewR4IndependentCloseCandidate(sources):null;
   const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,r4CloseReview:closeReview}):null;
   const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k));
-  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,includeReviewedActualCloseShop:Boolean(closeReview),includeReviewedFullCommerceClose:Boolean(closeReview)}):null;
+  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,includeReviewedActualCloseShop:Boolean(closeReview),includeReviewedFullCommerceClose:Boolean(closeReview),includeReviewedLocalizedClose:Boolean(closeReview&&sources.ownerMainSource!=null)}):null;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
   // initialize the crossing CAS adapter. Retain bounded canonical digests.
@@ -148,7 +148,7 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       const boundary=evidence.slices.find(s=>s.preEvent.settlement)?.preEvent;
       const closeEffect=boundary?.settlement.actualCloseEffect??null;
       const ledgerShop=boundary?.settlement.shop??boundary?.settlement.closedShop;
-      const closureReceipt=closeEffect?{shopId:closeEffect.shop.id,reason:'経営者不在',archiveHash:boundary.closeHashEvidence,
+      const closureReceipt=closeEffect?{shopId:closeEffect.shop.id,reason:boundary.settlement.shopExpiry.closeCalls[0].reason,archiveHash:boundary.closeHashEvidence,
         deletedSessions:closeEffect.deletedSessions,remainingSessions:closeEffect.remainingSessions}:null;
       const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
         naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,

@@ -53,7 +53,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
   includeReviewedActualCloseShop=false,
   includeReviewedPeriodBackup=false,includeReviewedSaleTax=false,
-  includeReviewedMultiShelf=false,includeReviewedFullCommerceClose=false,
+  includeReviewedMultiShelf=false,includeReviewedFullCommerceClose=false,includeReviewedLocalizedClose=false,
 }){
   if(typeof includeReviewedMultiShelf!=='boolean')bad('explicit multi-shelf period opt-in');
   if(typeof includeReviewedFullCommerceClose!=='boolean'||
@@ -61,6 +61,8 @@ export function reviewOriginalSoloPeriodPhaseChain({
        !includeReviewedShopExpiry||!includeReviewedActualCloseShop||
        includeReviewedDragon||includeReviewedGuild||includeReviewedPostTech||includeReviewedPeriodBackup))
     bad('explicit independent full commerce CloseShop source review required');
+  if(typeof includeReviewedLocalizedClose!=='boolean'||includeReviewedLocalizedClose&&!includeReviewedFullCommerceClose)
+    bad('localized CloseShop requires reviewed independent full commerce');
   // The new opt-in is only the independent prize/ledger/territory prefix.
   // External dragon, guild, archive and post-tech source branches retain
   // their single-shelf review except the independently reviewed full
@@ -95,7 +97,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const postTech=includeReviewedPostTech?
     reviewR4PostPeriodTechLoss({itemDsl,model,periodSource}):null;
   const shopExpiry=includeReviewedShopExpiry?
-    reviewR4PeriodShopExpiry({periodSource,configSource}):null;
+    reviewR4PeriodShopExpiry({periodSource,configSource,localized:includeReviewedLocalizedClose}):null;
   if(includeReviewedActualCloseShop&&!shopExpiry)
     bad('real CloseShop requires the source period owner-expiry gate');
   const actualClose=includeReviewedActualCloseShop?
@@ -305,7 +307,7 @@ export function projectOriginalSoloPeriodPhaseChain({
   const actualCloseEffect=reviewed.actualClose&&expiryEffect?.expiredOwner?
     projectR4CloseShopEffects({
       reviewed:reviewed.actualClose,shopId:shop.id,
-      shop:award.shop,sessionFileNames,reason:'経営者不在',archiveHashOrders,
+      shop:award.shop,sessionFileNames,reason:expiryEffect.closeCalls[0].reason,archiveHashOrders,
     }):null;
   const shopAfterClose=actualCloseEffect?.shop??award.shop;
   const dragonSettlement=reviewed.dragon?

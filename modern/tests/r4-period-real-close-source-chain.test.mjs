@@ -182,6 +182,8 @@ test('R4 independent full commerce source period closes an eight-shelf indebted 
     includeReviewedMultiShelf:true,includeReviewedShopExpiry:true,
     includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true,
   });
+  const localized=reviewOriginalSoloPeriodPhaseChain({...opts,includeReviewedDignity:true,includeReviewedSaleTax:true,
+    includeReviewedMultiShelf:true,includeReviewedShopExpiry:true,includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true,includeReviewedLocalizedClose:true});
   const original=JSON.parse(execFileSync('perl',['original-r4-period-real-close-chain-probe.pl','--full-commerce'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
   }));
@@ -194,6 +196,18 @@ test('R4 independent full commerce source period closes an eight-shelf indebted 
     assert.ok(input.shop.money<0);
     if(previous)assert.deepEqual(input.shop,previous.shop);
     const got=projectOriginalSoloPeriodPhaseChain({reviewed,...input});
+    const translated=projectOriginalSoloPeriodPhaseChain({reviewed:localized,...input});
+    assert.deepEqual(translated.shop,got.shop);
+    assert.deepEqual(translated.town,got.town);
+    assert.deepEqual(translated.closedShop,got.closedShop);
+    assert.deepEqual(translated.prize,got.prize);
+    assert.equal(translated.maintenance,got.maintenance);
+    if(got.shopExpiry.expiredOwner){
+      assert.deepEqual(translated.shopExpiry.closeCalls,[{shopId:input.shop.id,reason:'沒有上線'}]);
+      assert.deepEqual(translated.shopExpiry.logs,[[1,0,input.shop.shopname+'因為沒有上線所以店鋪被關閉了。']]);
+      assert.equal(translated.actualCloseEffect.archived,'沒有上線'+got.actualCloseEffect.archived.slice(got.actualCloseEffect.archived.indexOf('\n')));
+      assert.deepEqual(translated.actualCloseEffect.deletedSessions,got.actualCloseEffect.deletedSessions);
+    }else assert.deepEqual(translated.shopExpiry,got.shopExpiry);
     assert.deepEqual(got.shop,row.output.shop);
     assert.deepEqual(got.town,row.output.town);
     assert.equal(got.dtPeople,row.output.dtPeople);

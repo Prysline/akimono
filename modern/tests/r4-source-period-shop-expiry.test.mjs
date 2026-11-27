@@ -81,3 +81,24 @@ test('R4 expiry source drift, wrong settings and invalid timestamps fail closed'
     reviewed:{...reviewed,closeShopEffectKnown:true},...row,
   }),/source-reviewed original CloseShop invocation/);
 });
+
+test('R4 independent localized expiry reason and announcement match frozen period.cgi with zh_TW l()',()=>{
+  const localized=reviewR4PeriodShopExpiry({periodSource,configSource,localized:true});
+  const start=periodSource.indexOf('#経営者不在'),end=periodSource.indexOf('#ドラゴンレース清算',start);
+  const block=periodSource.slice(start,end);
+  const cases=original().cases;
+  const perl=[
+    'use utf8;use JSON::PP;no strict;no warnings;local $/;my $in=decode_json(<STDIN>);$EXPIRE_TIME=3600*24*7;',
+    'sub l{my($s,@a)=@_;$s="沒有上線" if $s eq "経営者不在";$s="%1因為沒有上線所以店鋪被關閉了。" if $s eq "%1が経営者不在のため閉店しました。";$s=~s/%([1-9])/$a[$1-1]/ge;return $s}',
+    'sub CloseShop{push @close,{shopId=>$_[0],reason=>$_[1]}} sub PushLog{push @log,[@_]}',
+    'my @out;for my $x (@{$in->{inputs}}){$DT=$x->{shop};$NOW_TIME=$x->{nowSeconds};@close=();@log=();eval $in->{block};die $@ if $@;push @out,{closeCalls=>[@close],logs=>[@log]}}print encode_json([@out]);',
+  ].join('\n');
+  const expected=JSON.parse(execFileSync('perl',['-e',perl],{input:JSON.stringify({block,inputs:cases.map(c=>c.input)}),encoding:'utf8'}));
+  for(let i=0;i<cases.length;i++){
+    const got=projectR4PeriodShopExpiry({reviewed:localized,...cases[i].input});
+    assert.deepEqual(got.closeCalls,expected[i].closeCalls);
+    assert.deepEqual(got.logs,expected[i].logs);
+    assert.equal(got.expiredOwner,cases[i].output.expiredOwner);
+    assert.deepEqual(got.shop,cases[i].output.shop);
+  }
+});

@@ -42,7 +42,7 @@ export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,in
   // Core locale/zh_TW.po a512f6887cee214e66828769a382ad2b18bcd5b3.
   // The translated winner message deliberately omits %2 (win count).
   // Only normal independent ranking announcements use this locale; B50
-  // identity-locale differential and city/lifecycle/army logs stay intact.
+  // identity-locale differential and city/army logs stay intact.
   const winner=localizedRanking?'「本次的優勝店鋪為'+shop.shopname+'。」':'「今期の優勝店は'+shop.shopname+'さんでした。'+(count===1?'初優勝':count+'度目の優勝')+'おめでとうございます」';
   const points=localizedRanking?'「點數為'+result.pointsBefore+'點」':'「点数は'+result.pointsBefore+'点でした」';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
@@ -53,7 +53,16 @@ export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,in
     [0,shop.id,head+'作為'+p.itemName+'的獎品，獲得'+p.wanted+scale],
   ];
   if(p.discarded)calls.push([0,shop.id,'但是由於超過了最大持有數量，'+p.discarded+scale+'被丟棄了']);
-  if(result.actualCloseEffect)calls.push([1,0,shop.shopname+'が経営者不在のため閉店しました。']);
+  if(result.actualCloseEffect){
+    const expiry=result.shopExpiry,call=expiry?.closeCalls?.[0],announcement=expiry?.logs?.[0];
+    const suffix=call?.reason==='沒有上線'?'因為沒有上線所以店鋪被關閉了。':
+      call?.reason==='経営者不在'?'が経営者不在のため閉店しました。':null;
+    if(expiry?.expiredOwner!==true||expiry.closeCalls.length!==1||expiry.logs?.length!==1||
+      call.shopId!==shop.id||suffix===null||!Array.isArray(announcement)||announcement.length!==3||
+      announcement[0]!==1||announcement[1]!==0||announcement[2]!==shop.shopname+suffix||
+      result.actualCloseEffect.archived.split('\n')[0]!==call.reason)fail('source closure locale identity');
+    calls.push(announcement);
+  }
   calls.push(...(result.dragonLogs??[]));
   if(town.army+town.robina<10000)calls.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
   if(town.money+(independentPeriod?shop.taxtoday:0)-result.town.out<0)calls.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
