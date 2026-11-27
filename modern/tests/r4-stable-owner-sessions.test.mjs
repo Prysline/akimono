@@ -59,9 +59,13 @@ test('LC-D1 actual private credential verifier binds stable identity and plugs i
  assert.equal(await verifyOwnerCredential({record,binding,password:'wrong_pw'}),false);
  assert.equal(await verifyOwnerCredential({record,binding:{...binding,streetId:'other'},password:'old_pw'}),false);
  assert.equal(await verifyOwnerCredential({record:{...record,hash:'x'},binding,password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record:{...record,hash:record.hash+'\n'},binding,password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record:{...record,salt:record.salt+'\n'},binding,password:'old_pw'}),false);
  assert.equal(await verifyOwnerCredential({record:{...record,binding:{...binding,shopId:2}},binding:{...binding,shopId:2},password:'old_pw'}),false);
  await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'owner'}),/invalid registration/);
  await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'x:y'}),/invalid registration/);
+ await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'0'}),/invalid registration/);
+ await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'abc\n'}),/invalid registration/);
  await assert.rejects(createOwnerCredentialRecord({newSource:newSource+' ',binding,password:'old_pw'}),/invalid registration/);
  const authenticateOwner=createCredentialOwnerAuthenticator({
    readCredentials:req=>({ownerName:req.name,password:req.password}),

@@ -18,9 +18,10 @@ function exact(x,keys){
 const bounded=s=>typeof s==='string'&&s.length>0&&s.length<=100&&!/[\0\r\n\t]/.test(s);
 const validBinding=b=>exact(b,bindingKeys)&&bounded(b.worldId)&&bounded(b.streetId)&&bounded(b.ownerName)&&
   Number.isSafeInteger(b.shopId)&&b.shopId>0;
-const passwordShape=p=>typeof p==='string'&&/^[A-Za-z0-9_-]{1,12}$/.test(p);
-const hex32=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
-const hex16=s=>typeof s==='string'&&/^[a-f0-9]{32}$/.test(s);
+// Perl's false scalar "0" fails the original required-password check.
+const passwordShape=p=>typeof p==='string'&&p.length>=1&&p.length<=12&&p!=='0'&&!/[^A-Za-z0-9_-]/.test(p);
+const hex32=s=>typeof s==='string'&&s.length===64&&!/[^a-f0-9]/.test(s);
+const hex16=s=>typeof s==='string'&&s.length===32&&!/[^a-f0-9]/.test(s);
 const bindingText=b=>JSON.stringify(bindingKeys.map(k=>b[k]));
 function saltFor(b,salt){
   // Bind the verifier to the stable identity, not name or row index alone.
@@ -54,12 +55,13 @@ export function createCredentialOwnerAuthenticator({readCredentialRecord,readCre
   return async function authenticateOwner({request,world}){
     const submitted=readCredentials(request);
     if(!exact(submitted,['ownerName','password'])||!bounded(submitted.ownerName)||!passwordShape(submitted.password))return null;
-    const active=world.shops.filter(s=>s.status===1&&s.name===submitted.ownerName);
+    const {ownerName,password}=submitted;
+    const active=world.shops.filter(s=>s.status===1&&s.name===ownerName);
     if(active.length!==1)return null;
     const binding={worldId:world.worldId,streetId:world.streetId,shopId:active[0].id,ownerName:active[0].name};
     if(!validBinding(binding))return null;
     const record=await readCredentialRecord({binding:Object.freeze(binding),world});
-    if(!await verifyOwnerCredential({record,binding,password:submitted.password}))return null;
+    if(!await verifyOwnerCredential({record,binding,password}))return null;
     return Object.freeze({...binding,revision:world.revision});
   };
 }
