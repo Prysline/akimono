@@ -33,15 +33,22 @@ function row(time,mode,id,msg,armyConflictLog=false){
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
  * identity fixtures as the original probe, not real localization/currency.
  */
-export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false,r4CloseReview=null}){
+export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false,r4CloseReview=null,localizedRanking=false}){
   check(reviewed);
   if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
      (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||(result.actualCloseEffect&&(!isR4IndependentCloseReview(r4CloseReview)||result.shop!==null||result.actualCloseEffect.closed!==true))||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
+  if(typeof localizedRanking!=='boolean'||localizedRanking&&!independentPeriod)fail('independent ranking locale only');
   const count=shop.rankingcount+1,p=result.prize,head='本次優勝';
+  // Core locale/zh_TW.po a512f6887cee214e66828769a382ad2b18bcd5b3.
+  // The translated winner message deliberately omits %2 (win count).
+  // Only normal independent ranking announcements use this locale; B50
+  // identity-locale differential and city/lifecycle/army logs stay intact.
+  const winner=localizedRanking?'「本次的優勝店鋪為'+shop.shopname+'。」':'「今期の優勝店は'+shop.shopname+'さんでした。'+(count===1?'初優勝':count+'度目の優勝')+'おめでとうございます」';
+  const points=localizedRanking?'「點數為'+result.pointsBefore+'點」':'「点数は'+result.pointsBefore+'点でした」';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
   const calls=[
-    [1,0,'「今期の優勝店は'+shop.shopname+'さんでした。'+(count===1?'初優勝':count+'度目の優勝')+'おめでとうございます」'],
-    [1,0,'「点数は'+result.pointsBefore+'点でした」'],
+    [1,0,winner],
+    [1,0,points],
     [2,0,head+shop.shopname+'收到'+(p.index<5?'禮物卷':p.index===5?'機器人':'慶祝用品')],
     [0,shop.id,head+'作為'+p.itemName+'的獎品，獲得'+p.wanted+scale],
   ];
@@ -84,14 +91,14 @@ export function projectReviewedEventLogRows({reviewed,logs,nowSeconds}){
     return row(nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]);
   }).reverse();
 }
-export function projectCrossPeriodLogRows({reviewed,candidate,r4CloseReview=null}){
+export function projectCrossPeriodLogRows({reviewed,candidate,r4CloseReview=null,localizedRanking=false}){
   check(reviewed);
   if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
   const calls=[];
   for(const slice of candidate.evidence.slices){
     if(slice.dateupdate===1){
       const {periodLogInput,settlement}=slice.preEvent;
-      if(settlement!==null)calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true,r4CloseReview}));
+      if(settlement!==null)calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true,r4CloseReview,localizedRanking}));
       else if(!isR4IndependentCloseReview(r4CloseReview)||slice.preEvent.shops.length!==0||slice.preEvent.receipt.periodDraws!==0)fail('unreviewed skipped settlement');
     }
     for(const call of slice.eventLogs){

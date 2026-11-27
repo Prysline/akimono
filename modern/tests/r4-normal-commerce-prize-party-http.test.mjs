@@ -20,6 +20,13 @@ test('R4 genuine rank prizes produce #77 party goods, actual popup and natural s
         assert.equal(prize.stockAfter-prize.stockBefore,prize.granted);
         assert.equal(prize.granted+prize.discarded,prize.wanted);
         assert.equal(d.settlementReceipt.rankingCount,before.shops[0].rankingcount+1);
+        const log=r.state.world.period.disk.live['log0.cgi'].bytes;
+        const win=[r.state.world.nowSeconds,1,0,'「本次的優勝店鋪為'+before.shops[0].shopname+'。」'].join('\t')+'\n';
+        assert.equal(log.split(win).length-1,1,'one original zh_TW winner announcement');
+        const pointRows=log.split('\n').filter(row=>row.startsWith([r.state.world.nowSeconds,1,0,'「點數為'].join('\t')));
+        assert.equal(pointRows.length,1);
+        assert.match(pointRows[0],/「點數為\d+點」$/);
+        assert.ok(log.indexOf(pointRows[0])<log.indexOf(win),'source PushLog reverses announcement order');
         prizes.push({...prize,period:r.state.world.period.settledCount});
       }
     }});

@@ -191,6 +191,6 @@ export function createIndependentDiskProjection({sources,sort,street,r4CloseRevi
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,hasClosed,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate,r4CloseReview}),
+  return Object.freeze({validate,finalize,hasClosed,...(army?{army:true,applyArmy:army.apply,describeArmy:army.describe}:{}),...(palace?{palace:true,applyPalace,describePalace:world=>describeOriginalPalace({...palaceArgs,world})}:{}),crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate,r4CloseReview,localizedRanking:Boolean(street.reviewedNormalCommerce&&sources.ownerMainSource!=null)}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }
