@@ -32,10 +32,11 @@ async function checkedUse(p,id,useId,count=1){
   assert.deepEqual(p.state.shop.item,expected,'source receipt reconciles all 79 holdings');
   const rows=(d.originalInlineLogCalls??[]).map(row=>[after.nowSeconds,...row].join('\t')+'\n').reverse().join('');
   if(rows)assert.ok(after.period.disk.live['log0.cgi'].bytes.startsWith(rows),'source callback log order');
-  else if(id===79){
-    assert.ok(!Object.hasOwn(d,'originalInlineLogCalls'),'original gift exchanges have no callback log');
-    for(const name of ['log0.cgi','log1.cgi','log2.cgi'])assert.deepEqual(after.period.disk.live[name],before.period.disk.live[name],'silent original gift exchange: '+name);
-  }else if(!Object.hasOwn(d,'originalInlineLogCalls'))assert.ok(after.period.disk.live['log0.cgi'].bytes.startsWith([after.nowSeconds,0,1,'local use-item'].join('\t')+'\n'));
+  else {
+    // All remaining checked actions in this test have no source log:
+    // recipes, gathering/lostbook, gifts, or a callback returning no rows.
+    for(const name of ['log0.cgi','log1.cgi','log2.cgi'])assert.deepEqual(after.period.disk.live[name],before.period.disk.live[name],'silent original USE '+id+'/'+useId+': '+name);
+  }
   return {shop,before,after,d,request};
 }
 async function stale(p,request){

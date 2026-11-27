@@ -107,15 +107,15 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       await enoughTime(offer.timePerUseSeconds*count);
     }
     const offer=quote(id,useId);
-    // Snapshot after all time waits. A real advance may legitimately emit
-    // EVENT/settlement logs; the callback-free gift command itself may not.
-    const silentGift=fullCommerce&&crossPeriod&&id===79;
-    const beforeLogs=silentGift?Object.fromEntries(['log0.cgi','log1.cgi','log2.cgi'].map(name=>[name,structuredClone(state.world.period.disk.live[name])])):null;
+    // Snapshot after all time waits. An advance may emit legitimate logs.
+    // Reviewed frozen declarative/gathering/gift/sword-map USEs do not.
+    const silentUse=fullCommerce&&crossPeriod&&([9,10,12,14,15,16,17,20,21,22,23,27,28,29,35,36,37,39,66,79].includes(id)||id===26&&useId!==0);
+    const beforeLogs=silentUse?Object.fromEntries(['log0.cgi','log1.cgi','log2.cgi'].map(name=>[name,structuredClone(state.world.period.disk.live[name])])):null;
     const result=await command('/api/use',{itemId:id,useId,requestedCount:count,...(offer.targetShopId?{targetShopId:offer.targetShopId}:{})});
     assert.equal(result.details.effectiveCount,count);
-    if(silentGift){
+    if(silentUse){
       assert.ok(!Object.hasOwn(result.details,'originalInlineLogCalls'));
-      for(const [name,entry] of Object.entries(beforeLogs))assert.deepEqual(state.world.period.disk.live[name],entry,'original silent gift #79/'+useId+': '+name);
+      for(const [name,entry] of Object.entries(beforeLogs))assert.deepEqual(state.world.period.disk.live[name],entry,'original silent USE #'+id+'/'+useId+': '+name);
     }
     return result;
   }

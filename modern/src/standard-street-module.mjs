@@ -7,6 +7,7 @@ import {compileReviewedLocalTargetUses,projectReviewedLocalTargetUse} from './re
 import {reviewOriginalSweep,describeOriginalSweep,projectOriginalSweep} from './original-r4-sweep.mjs';
 import {reviewOriginalDiscard,listOriginalDiscardOffers,projectOriginalDiscard} from './original-r4-discard.mjs';
 import {reviewCommerceUseLogs} from './original-r4-period-log-disk.mjs';
+import {reviewOriginalSilentUseLogs} from './original-r4-silent-use-log.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 /**
  * Standard Street source-reviewed module (B-31 baseline through R2-A).
@@ -205,6 +206,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
   const commerceUseLogs=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
     reviewCommerceUseLogs({helperSource:originalItemHelperSource,logSource:originalLogSource,configSource:originalConfigSource}):null;
+  const silentUseLogs=commerceUseLogs&&originalOwnerMainSource!==null?
+    reviewOriginalSilentUseLogs({itemDsl,useSource:originalUseSource,helperSource:originalItemHelperSource,wholeSource:originalWholeSource,calcSource:originalBuyCalcSource}):null;
   const buyForm=enableReviewedFullCommerce&&originalBuyFormSource!==null?reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource,marketListSource:originalMarketListSource,pageSource:originalMarketListSource===null?null:originalNewsPageSource}):null;
   const model=loadStandardStreetModel(itemDsl,rebelDsl);
   const rankOnePrize=enableReviewedFullCommerce&&enableReviewedCrossPeriod?
@@ -722,6 +725,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     reviewedB41,
     reviewedEventCatalog,
     ...(commerceUseLogs?{reviewedCommerceUseLogs:commerceUseLogs}:{}),
+    ...(silentUseLogs?{reviewedSilentUseLogs:silentUseLogs}:{}),
     ...(ordinaryEventReview?.manual?{reviewedManualCommerceEvents:ordinaryEventReview.manual}:{}),
     reviewedInstantEventCallbacks,
     reviewedSupportEventCallbacks,
