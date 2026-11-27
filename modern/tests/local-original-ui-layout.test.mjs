@@ -183,8 +183,14 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/cell\(Number\.isSafeInteger\(offer\.timeSeconds\)\?\s*conciseTimeText\(offer\.timeSeconds\):'—'\)/);
   assert.match(script,/\$\('showcase-shelves'\)\.addEventListener\('click'/);
   assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100,shelf/);
-  assert.doesNotMatch(shop,/data-go-tab=/,
-    'top navigation replaces redundant in-shop links');
+  // A36 restores the three source inc-main.cgi scene actions, not duplicate navigation elsewhere.
+  const sceneStart=shop.indexOf('id="owner-scene"');
+  const sceneEnd=shop.indexOf('id="shop-shelf-maintenance"');
+  assert.ok(sceneStart>=0&&sceneEnd>sceneStart);
+  const scene=shop.slice(sceneStart,sceneEnd);
+  assert.deepEqual([...scene.matchAll(/data-go-tab="([^"]+)"/g)].map(m=>m[1]),['news','stock','sweep']);
+  assert.doesNotMatch(shop.slice(0,sceneStart)+shop.slice(sceneEnd),/data-go-tab=/,
+    'no redundant in-shop links outside the original scene');
   assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
   assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
