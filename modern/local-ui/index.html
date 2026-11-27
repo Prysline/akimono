@@ -111,7 +111,15 @@
       </tbody></table></div>
       <p class="muted dev-panel" data-dev-panel>原版人氣內部數值：<output id="dev-popularity-raw">—</output>；頂端點數依 GetDTPoint 獨立計算。</p>
       <section id="owner-scene" class="help-text" hidden aria-label="原版店內顧客對話">
-        <strong>店內對話</strong>
+        <strong>店內情景</strong>
+        <div class="inline-form" aria-label="原版店內操作入口">
+          <button type="button" class="text-link" data-go-tab="news">［新聞］</button>
+          <button type="button" class="text-link" data-go-tab="stock">［倉庫］</button>
+          <button type="button" class="text-link" data-go-tab="sweep" id="owner-scene-sweep" hidden>［垃圾袋／掃除］</button>
+        </div>
+        <p id="owner-scene-gold" hidden></p>
+        <div id="owner-scene-garbage"></div>
+        <p id="owner-scene-items" hidden></p>
         <p id="owner-scene-helper"></p>
         <div id="owner-scene-customers"></div>
       </section>

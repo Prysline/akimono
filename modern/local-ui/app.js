@@ -187,10 +187,23 @@ function renderOwnerHelp(s){
   $('owner-help-library').hidden=!Number.isSafeInteger(help?.libraryChapter);
   const scene=s.ownerScene;
   $('owner-scene').hidden=!scene;
+  const gold=$('owner-scene-gold'),garbage=$('owner-scene-garbage'),items=$('owner-scene-items');
+  gold.hidden=!scene?.goldCount;
+  gold.textContent=scene?.goldCount?'金幣 × '+scene.goldCount+'（圖片未提供）':'';
+  garbage.replaceChildren();
+  for(const count of scene?.garbageRows??[]){
+    const p=document.createElement('div');p.textContent='垃圾袋 × '+count+'（圖片未提供）';garbage.append(p);
+  }
+  $('owner-scene-sweep').hidden=!(scene?.garbageRows?.length);
+  const shown=scene?.displayedItems??[];
+  items.hidden=!shown.length;
+  items.textContent=shown.length?'店內陳列：'+shown.map(id=>catalogItem(s,id)?.name??'商品 #'+id).join('、')+'（圖片未提供）':'';
   text('owner-scene-helper',scene?'小幫手：'+scene.helper.text:'');
   const customers=$('owner-scene-customers');customers.replaceChildren();
   for(const customer of scene?.customers??[]){
-    if(customer===null)continue;
+    if(customer===null){
+      const p=document.createElement('div');p.textContent='（原版空位）';customers.append(p);continue;
+    }
     const p=document.createElement('p');p.textContent=customer.text;customers.append(p);
   }
 }

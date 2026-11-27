@@ -481,3 +481,29 @@ test('source USE list renders projected names and original entry eligibility',()
   assert.equal(visible.children[0].textContent,'寫作');
   assert.match(script,/offer\.sourceUseOk===false\|\|currentTab/);
 });
+
+test('owner scene uses source gold, garbage rows, duplicate shelves and genuine navigation',()=>{
+  const fn=script.slice(script.indexOf('function renderOwnerHelp('),script.indexOf('const toggle='));
+  const nodes=new Map();
+  const node=()=>({hidden:false,textContent:'',children:[],replaceChildren(){this.children=[]},append(x){this.children.push(x)}});
+  const $=id=>{if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)};
+  const render=new Function('$','text','document','catalogItem',fn+';return renderOwnerHelp;')($,(id,value)=>{$(id).textContent=value},{createElement:node},(s,id)=>s.itemCatalog.find(x=>x.itemId===id));
+  const ownerScene={goldCount:6,garbageRows:[1,3],displayedItems:[79,79],helper:{sprite:0,text:'歡迎光臨'},customers:[null,{sprite:5,text:'購物'}]};
+  render({ownerScene,itemCatalog:[{itemId:79,name:'禮物'}]});
+  assert.equal($('owner-scene').hidden,false);
+  assert.equal($('owner-scene-gold').textContent,'金幣 × 6（圖片未提供）');
+  assert.deepEqual($('owner-scene-garbage').children.map(x=>x.textContent),['垃圾袋 × 1（圖片未提供）','垃圾袋 × 3（圖片未提供）']);
+  assert.equal($('owner-scene-items').textContent,'店內陳列：禮物、禮物（圖片未提供）');
+  assert.equal($('owner-scene-sweep').hidden,false);
+  assert.deepEqual($('owner-scene-customers').children.map(x=>x.textContent),['（原版空位）','購物']);
+  render({ownerScene:{...ownerScene,goldCount:0,garbageRows:[],displayedItems:[],customers:[]},itemCatalog:[]});
+  assert.equal($('owner-scene-gold').hidden,true);assert.equal($('owner-scene-items').hidden,true);
+  assert.equal($('owner-scene-sweep').hidden,true);assert.deepEqual($('owner-scene-garbage').children,[]);
+  render({ownerScene:null,itemCatalog:[]});assert.equal($('owner-scene').hidden,true);
+  const sceneHtml=html.slice(html.indexOf('id="owner-scene"'),html.indexOf('id="shop-shelf-maintenance"'));
+  for(const tab of ['news','stock','sweep']){
+    assert.ok(sceneHtml.includes('data-go-tab="'+tab+'"'));
+    assert.ok(html.includes('id="tab-'+tab+'"'));
+  }
+  assert.ok(script.includes('()=>selectTab(button.dataset.goTab)'));
+});

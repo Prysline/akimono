@@ -93,6 +93,12 @@ test('frozen DevelopImage and CharaDefine scene matches actual source across tim
     assert.deepEqual(got.displayedItems,want.items);
     assert.deepEqual(got.helper,{sprite:0,text:locale[want.speech[0]]});
     assert.deepEqual(got.customers,want.customers.map(id=>id==='space'?null:{sprite:Number(id),text:locale[want.speech[id]]}));
+    assert.deepEqual(got.assets.customerSlots,want.customers.map(id=>id==='space'?{path:'map/dummy.png',width:64,height:16}:{path:'map/c-s'+id+'.png',sourceClass:'c'}));
+    assert.deepEqual(got.assets.gold,{path:'map/c-sg.png',width:24,height:24});
+    assert.deepEqual(got.assets.garbage,{path:'map/c-st.png',sourceClass:'c'});
+    assert.deepEqual(got.assets.news,{path:'map/c-sn.png',width:24,height:26});
+    assert.deepEqual(got.assets.warehouse,{path:'map/shops.png',width:90,height:42});
+    assert.deepEqual(got.assets.helper,{path:'map/c-s0.png',sourceClass:'c'});
   }
   assert.deepEqual(cases,before);
   assert.equal(describeOriginalOwnerScene({reviewed,world:null}),null);

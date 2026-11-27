@@ -55,6 +55,15 @@ export function describeOriginalOwnerScene({reviewed,world}){
   return {source:'r4-frozen-owner-scene.v1',phase,hasDisplayedStock:staffed,
     goldCount:Math.min(6,Math.max(0,Math.trunc(s.money/5000000))),garbageRows,
     displayedItems:s.showcase.filter(id=>id>0&&s.item[id-1]>0),
+    // Explicit source image dimensions only; class-based sizing is not guessed.
+    assets:{
+      gold:{path:'map/c-sg.png',width:24,height:24},
+      garbage:{path:'map/c-st.png',sourceClass:'c'},
+      news:{path:'map/c-sn.png',width:24,height:26},
+      warehouse:{path:'map/shops.png',width:90,height:42},
+      helper:{path:'map/c-s0.png',sourceClass:'c'},
+      customerSlots:ids.map(id=>id===null?{path:'map/dummy.png',width:64,height:16}:{path:'map/c-s'+id+'.png',sourceClass:'c'}),
+    },
     helper:{sprite:0,text:staffed?'歡迎光臨':speech[0]},
     customers:ids.map(id=>id===null?null:{sprite:id,text:speech[id]})};
 }
