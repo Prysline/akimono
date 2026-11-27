@@ -54,6 +54,10 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
   validateR4PreEventPeriod({reviewed:reviewedDataRead,period:world.period,activeOrder:initialHash.initialOrder,candidateSettled});
   const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initialHash.initialOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled,normalCommerce});
   const steps=[],slices=[];let cursor=world,hash=initialHash,used=0,settlement=null;
+  // One transient @ITEM demand hash per original CGI command, never
+  // inherited from a previous command, save or checkpoint. Preserve prior
+  // commerce behavior until D reviews migration of that separate mode.
+  let sourceDemandBase=normalCommerce===null?null:{};
   for(const [i,part] of plan.effectiveSlices.entries()){
     const args={world:cursor,minutes,shopId:1,reviewed:street.reviewedB41,
       reviewedAllPlus:street.reviewedAllPlus,compiled:street.reviewedGiftMapUse,
@@ -61,6 +65,7 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
       reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
       reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,
+      ...(sourceDemandBase===null?{}:{sourceDemandBaseBefore:sourceDemandBase}),
       ...(closeEnabled?{r4CloseReview,sessionFileNames,expectedInterpreter:initialHash.interpreter}:{}),
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initialHash.initialOrder}};
     const project=cursor.shops.length===0?a=>projectR4EmptyStreetPreEvent({reviewed:r4CloseReview,
@@ -72,6 +77,10 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       project:randomDraws=>project({...args,randomDraws})});
     if(pre.nowSeconds!==cursor.nowSeconds+part.timespanSeconds)fail('exact source slice and draw accounting');
     used+=samples.length;
+    if(sourceDemandBase!==null&&cursor.shops.length){
+      if(!pre.sourceDemandBase)fail('missing command-local source demand base');
+      sourceDemandBase=pre.sourceDemandBase;
+    }
     if(part.dateupdate===1&&cursor.shops.length){
       settlement=pre.settlement;
       if(!settlement?.shop&&!(closeEnabled&&settlement?.actualCloseEffect?.closed===true&&pre.shops.length===0))fail('missing source settlement');

@@ -236,6 +236,7 @@ function projectSourcePreEventSaleSlice({
   reviewedEventTimeSlice=false,r4ReviewedSort=null,
   p3InventoryStage=false,reviewedNayuta=null,
   r4DataRead=null,normalCommerce=null,r4CloseReview=null,sessionFileNames=null,expectedInterpreter=null,
+  sourceDemandBaseBefore=null,
 },boundary=null){
   if(reviewed?.source!==B41_SOURCE||reviewedAllPlus?.source!==ALL_PLUS_SOURCE)
     bad('source review missing');
@@ -413,6 +414,7 @@ function projectSourcePreEventSaleSlice({
     upkeepCosts,
     spanSeconds:span,randomDraws:randomDraws.slice(0,121),popularOverride,reviewedSignedCash:normalCommerce!==null,recordShelfSales:normalCommerce!==null,
     ...(boundary===null?{}:{population:world.period.dtPeople}),
+    ...(sourceDemandBaseBefore===null?{}:{sourceDemandBaseBefore}),
   });
   const sold=natural.sold;
   const naturalDraws=natural.drawsUsed;
@@ -490,6 +492,7 @@ function projectSourcePreEventSaleSlice({
   });
   return {
     shops:plus.shops,market:plus.market,nowSeconds:nextTime,
+    ...(natural.sourceDemandBase===undefined?{}:{sourceDemandBase:natural.sourceDemandBase}),
     ...(boundary===null?{}:{settlement,...(settlement?{periodLogInput:{shop:newShop,town:world.period.town}}:{}),...(closeHashEvidence?{closeHashEvidence}:{})}),
     // R3 only projects the pre-EVENT source stages. Do not write period:
     // the consumer must choose the original EVENT stage (R4) or explicitly

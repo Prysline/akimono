@@ -1,0 +1,7 @@
+# A42｜同一次 Turn 跨期需求分母來源修正
+
+起點 6a15f516ec9b82f68b950a29a22c2e9758622133 / 073c798fe316c26a851a08822279fe8d642f782b。凍結 Core inc-turn.cgi b8a4980275f475a952846a8d6072fad45f8dff50：DataRead 在 foreach timespan 之前，對 ITEM.buypeoplebase 使用 +=，以累加值+1 作分母。market.cgi 1aca77e9b373c25e53e445d64c101a7cc2246825::GetMarketStatus 只重設市場統計（todaystock/todayprice/todaysale/yesterdaysale/marketprice/uppoint），不重設 buypeoplebase；period.cgi 6183e88e9dd69a16606a1064c8084e9a1411dbd5、core-detail.cgi 9a83d26fb29edee4032958f1e6de837a250f3384、固定 Standard Street DSL 7a18185e98b32aee82ca1ce30d6f3c395157dbcb 無 buypeoplebase reset。現代原本每個 time slice 重新初始化，跨期第二片自然需求分母有來源差分。
+
+A42 只在 full-commerce crossing candidate 內傳 command-local sourceDemandBase；第一片空 map、後續片使用前片的累加值；新 command、replay、繼續候選重新建空 map。不加入 WorldState、receipt、v2 或 HTTP 欄位。不改 prior-commerce、原版價錢、權重、人口、RNG 抽樣順序及期末規則；同次命令的正確銷量與抽樣數可能隨來源修正而變。D 需選擇性整合與 fingerprint、跨窗 time/period/多店對照。
+
+新增 original-normal-commerce-same-command-probe.pl 重用既有 exact frozen natural_source 與 compiled_items，單架、重複架、異類提前中止掃描三組，兩次同 @ITEM natural region、第三次 fresh ITEM，逐片比對分母、RNG、銷量、庫存、人氣、垃圾、現金、稅及維持費。原版 natural region 局部差分，不是完整跨期 Perl CGI（中間 period/EVENT 不執行）；新增測試待 CI。V8 執行修改後真 shared function + 實讀 tax/status helper，人工庫存、#40 POP10800、1→2→1 carry、銷量2→1（重置則2）、immutable carry 通過。首個局部 smoke 選擇 POP86400 不足以區分銷量，未提交；以凍結 #40 POP 修正區辨力，非改遊戲。未完整 checkout，不冒稱 Node/Perl/HTTP/玩家通過。A38/A39 raw logs exact trees JS1606/1606、1607/1607、Perl2778/2778/94檔，fail/skip/cancel/todo0；A40/A41 待證。
