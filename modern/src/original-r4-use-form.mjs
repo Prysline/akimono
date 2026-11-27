@@ -37,7 +37,9 @@ export function reviewOriginalUseForm(sources){
       if(field(u,'action')!==undefined)action=literal(field(u,'action'));
       const arg=literal(field(u,'arg')??''),info=literal(field(u,'info')??'');
       if(!['','nocount','target|nocount'].includes(arg)||field(u,'argmessage')||field(u,'argselect')||field(u,'funci'))fail('unreviewed form extension');
-      records.set(id+':'+useId,Object.freeze({itemId:id,useId,scale:scale||'回',action:action||'使用',info,noCount:arg.includes('nocount'),target:arg.includes('target')}));
+      const needexp=field(u,'needexp')??'0%',needpoint=field(u,'needpoint')??'0';
+      if(!/^\d+%$/.test(needexp)||!/^\d+$/.test(needpoint)||field(u,'needjob')||field(u,'needpop')||field(u,'needevent'))fail('unreviewed form requirement');
+      records.set(id+':'+useId,Object.freeze({itemId:id,useId,scale:scale||'回',action:action||'使用',info,noCount:arg.includes('nocount'),target:arg.includes('target'),sourceNeedExperience:Number(needexp.slice(0,-1))*10,sourceNeedPoint:Number(needpoint)}));
     }
   }
   if(records.size!==116||[...records.values()].filter(r=>r.noCount).length!==32)fail('source form count');
@@ -81,9 +83,20 @@ export function describeOriginalUseForm({reviewed,offer,rule,shop,nowSeconds}){
       options.push({count,label:labels.get(count)});old=count;
     }
   }
+  // item-m.cgi reports every failed condition in this order. Modern
+  // execution restrictions (owned map, external policy, CAS, etc.) are
+  // separate. Pinned DSL has no needjob/needpop/needevent declarations.
+  const sourceFormRejections=[];
+  if(shop&&offer.sourceUseOk!==false){
+    if(rule.money&&shop.money<rule.money)sourceFormRejections.push({code:'money',label:'資金不足'});
+    if(shop.time+time>nowSeconds)sourceFormRejections.push({code:'time',label:'時間不足'});
+    if(offer.proficiency<row.sourceNeedExperience)sourceFormRejections.push({code:'experience',label:'熟練度不足'});
+    if(row.sourceNeedPoint&&(shop.point??0)<row.sourceNeedPoint)sourceFormRejections.push({code:'point',label:'點數不足'});
+  }
+  const sourceFormAllowed=Boolean(shop&&offer.sourceUseOk!==false&&sourceFormRejections.length===0);
   const requiredJob=rule.needJob?r.jobs.get(rule.needJob):null;
   if(rule.needJob&&!requiredJob)fail('source job label');
-  return {source,...row,materials,sourceMaximum,options,
+  return {source,...row,materials,sourceMaximum,options,sourceFormAllowed,sourceFormRejections,
     timeLabel:formatOriginalBalanceDuration(time),
     proficiencyPercent:Math.trunc(offer.proficiency/10),
     requiredProficiencyPercent:Math.trunc(offer.requiredProficiency/10),

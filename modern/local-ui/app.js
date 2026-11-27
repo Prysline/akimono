@@ -485,7 +485,7 @@ function renderUseDetail(s){
   $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
     offer.canUse?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
-      (offer.reason??'目前無法執行'));
+      ([...(detail?.sourceFormRejections??[]).map(x=>x.label),...(offer.reason?[offer.reason]:[])].filter((x,i,a)=>a.indexOf(x)===i).join('；')||'目前無法執行'));
   updateUseEstimate();
 }
 function selectedUseCount(){

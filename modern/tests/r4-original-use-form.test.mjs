@@ -91,3 +91,33 @@ test('original USE form is read-only and does not enable denied quote or add sou
   assert.throws(()=>describeOriginalUseForm({...args,offer:{...offer,moneyPerUse:1}}),/quote identity/);
   assert.throws(()=>describeOriginalUseForm({...args,reviewed:{...reviewed}}),/source review/);
 });
+
+test('original item-m rejection checks report all source conditions in source order',async()=>{
+  const {sources,reviewed,street}=await read();
+  const blocks=parseDsl(sources.itemDsl,'custom/inc-item-data.cgi').blocks;
+  const rows=[];
+  for(const item of blocks.filter(b=>b.kind==='ITEM')){
+    const itemId=Number(item.fields.no[0].value);
+    const uses=blocks.filter(b=>b.kind==='USE'&&b.ownerItemLine===item.startLine);
+    for(const [useId,u] of uses.entries()){
+      const rule=street.useItem.getRule(itemId,useId);
+      const shop={money:0,time:1000000,item:Array(79).fill(10000),point:0,exp:{}};
+      const offer={itemId,useId,moneyPerUse:rule.money,timePerUseSeconds:rule.time,proficiency:0,requiredProficiency:rule.needExperience??0,canUse:false,sourceUseOk:true};
+      const actual=describeOriginalUseForm({reviewed,offer,rule,shop,nowSeconds:1000000});
+      const needexp=Number((u.fields.needexp?.[0]?.value??'0%').slice(0,-1))*10;
+      const needpoint=Number(u.fields.needpoint?.[0]?.value??0);
+      rows.push({money:rule.money,time:rule.time,needexp,needpoint,actual:actual.sourceFormRejections.map(x=>x.code),allowed:actual.sourceFormAllowed});
+    }
+  }
+  const code=fragment(sources.formSource,"if( ($USE->{money})","$disp.=&");
+  const perl=[
+    'use utf8;use JSON::PP;no strict;no warnings;local $/;my $rows=decode_json(<STDIN>);',
+    'sub l{my %labels=("資金が足りません"=>"money","時間が足りません"=>"time","熟練度が足りません"=>"experience","必要な職業に就いていません"=>"job","点数が足りません"=>"point","人気が足りません"=>"popularity","このコマンドには特定のイベントの発生が必要です"=>"event");return $labels{$_[0]}}',
+    'my @out;for my $row (@$rows){$USE=$row;$DT={money=>0,time=>1000000,point=>0,rank=>0};$NOW_TIME=1000000;my $exp=0;$nonuse=0;$disp="";',
+    code,
+    'my @codes=($disp=~/<B>([^<]+)<\/B>/g);push @out,{codes=>\@codes,allowed=>$nonuse?JSON::PP::false:JSON::PP::true};}print encode_json(\@out);'
+  ].join('\n');
+  const result=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify(rows)}));
+  assert.equal(rows.length,116);
+  assert.deepEqual(result,rows.map(row=>({codes:row.actual,allowed:row.allowed})));
+});
