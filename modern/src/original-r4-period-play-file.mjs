@@ -63,14 +63,17 @@ function sparseWire(world){
   if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||p.stock.some((v,i)=>v!==world.wholesale[i]))fail('sparse wholesale numeric view mismatch');
   return p.originalCsv;
 }
-export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,twoShopSource=false}={}){
+export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,twoShopSource=false,stableSingleSource=false}={}){
   if(typeof twoShopSource!=='boolean'||twoShopSource&&crossPeriod)fail('isolated two-shop source review only');
+  // This opt-in only reviews canonical one-store wire with a source-assigned ID.
+  // It does not grant registration, lifecycle commands, multi-shop time or CAS.
+  if(typeof stableSingleSource!=='boolean'||stableSingleSource&&(!crossPeriod||twoShopSource))fail('isolated stable single-shop source review only');
   if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||ordinaryMultiShelf&&!crossPeriod)fail('explicit cross-period wire opt-in');
   // DataWrite joins the actual arrays; DataRead splits both full arrays.
   // This only extends ordinary disk encoding, not the single-shelf time gate.
   if(ordinaryMultiShelf&&(!sources.writeSource.includes('join(",",@{$DT->{showcase}})')||!sources.writeSource.includes('join(",",@{$DT->{price}})')||!sources.incFuncSource.includes('@DT{qw(showcase price)}=map{[split(/,/,$_)]}@list[0,1];')))fail('source showcase wire drift');
   const data=reviewR4DataWriteFiles(sources);
-  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,...(twoShopSource?{twoShopSource:true}:{})});reviews.add(r);return r;
+  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,...(twoShopSource?{twoShopSource:true}:{}),...(stableSingleSource?{stableSingleSource:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
 function sourceOrderedShops(world){
@@ -97,7 +100,8 @@ export function serializePeriodPlay({reviewed,townReview,world}){
     reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
   for(const s of (reviewed.twoShopSource?sourceOrderedShops(world):world.shops)){
     const shelves=integer(s.showcasecount,'showcasecount',1);
-    if(s.status!==1||(!reviewed.twoShopSource&&integer(s.id,'id',1)!==1)||integer(s.foundation,'foundation',1)<1||integer(s.money,'money')>1000000000||shelves>(reviewed.ordinaryMultiShelf?8:1))fail('unreviewed B50 shop');
+    if(reviewed.stableSingleSource&&integer(s.id,'id',1)>=integer(world.nextid,'nextid',1))fail('stable shop ID requires canonical nextid');
+    if(s.status!==1||(!reviewed.twoShopSource&&!reviewed.stableSingleSource&&integer(s.id,'id',1)!==1)||integer(s.foundation,'foundation',1)<1||integer(s.money,'money')>1000000000||shelves>(reviewed.ordinaryMultiShelf?8:1))fail('unreviewed B50 shop');
     lines.push(reviewed.shopFields.map(k=>field(s[k],k,reviewed.crossPeriod)).join(','));
     lines.push([wireArray(s.showcase,'showcase',shelves),wireArray(s.price,'price',shelves),wireArray(s.item,'item',79),...['itemyesterday','itemtoday','exp','user'].map(k=>wireMap(s[k],k,reviewed.crossPeriod))].join(':'));
   }

@@ -8,7 +8,8 @@ use File::Path qw(make_path);
 use JSON::PP;
 binmode STDOUT, ':raw';
 my $two_active=@ARGV==1 && $ARGV[0] eq '--two-active';
-die 'unknown probe arguments' if @ARGV && !$two_active;
+my $stable_single=@ARGV==1 && $ARGV[0] eq '--stable-single';
+die 'unknown probe arguments' if @ARGV && !$two_active && !$stable_single;
 
 # Executes pinned ORIGINAL write.cgi DataWrite + DataCommitOrAbort,
 # original inc-func.cgi AutoVar::Get, DataRead, GetDTPoint, GetPath and
@@ -33,12 +34,12 @@ $MAX_ITEM=79;
 $MAX_MONEY=1000000000;
 $DTlasttime=1000;
 $DTpeople=500000;
-$DTnextid=3;
+$DTnextid=$stable_single?100:3;
 $DTblockip='';
 $DTTaxrate=0;
 $LOCKED=File::Spec->catfile($root,'owned-lock');
 $DTtown={};
-$DTusercount=2;
+$DTusercount=$stable_single?1:2;
 
 sub readSource {
   my ($name)=@_;
@@ -104,7 +105,7 @@ my $backupFile=File::Spec->catfile($BACKUP_DIR,'play.cgi');
 putFile($backupFile,'fresh backup');
 utime($NOW_TIME-100,$NOW_TIME-100,$backupFile) or die "backup utime $!";
 my %initial=map{$_=>0}@DTindexnamelist;
-$initial{id}=1;
+$initial{id}=$stable_single?100:1;
 $initial{status}=1;
 $initial{name}='alice';
 $initial{shopname}='source shop';
@@ -126,6 +127,15 @@ if($two_active){
   $initial{guild}='alpha';
   $initial{rank}=1000;
 }
+if($stable_single){
+  $initial{$_}='' for qw(pass comment remoteaddr blocklogin nocheckip guild job);
+  $initial{remoteaddr}='192.0.2.6';
+  $DTblockip=$initial{remoteaddr};
+  $initial{showcasecount}=2;
+  $initial{showcase}=[10,0];$initial{price}=[100,0];
+  $initial{item}[9]=2;
+  $initial{itemtoday}={10=>1};
+}
 my %closed=%initial;
 $closed{id}=2;
 $closed{name}='closed';
@@ -144,9 +154,13 @@ if($two_active){
   $closed{showcase}=[79];
   $closed{price}=[10000];
 }
-@DT=(\%initial,\%closed);
-%id2idx=(1=>0,2=>1);
-%name2idx=(alice=>0,($two_active?'bob':'closed')=>1);
+if($stable_single){
+  @DT=(\%initial);%id2idx=(100=>0);%name2idx=(alice=>0);
+}else{
+  @DT=(\%initial,\%closed);
+  %id2idx=(1=>0,2=>1);
+  %name2idx=(alice=>0,($two_active?'bob':'closed')=>1);
+}
 @DTwholestore=(0)x79;
 %DTevent=();
 $STATE={map{($_,0)}@STATEnamelist};
@@ -169,7 +183,8 @@ for my $round(1..2) {
       die 'second shop inventory lost' unless $DT[$id2idx{2}]{item}[78]==2;
     }else{
       die 'source reload did not retain one active shop'
-        unless @DT==1 && $DT[0]{id}==1;
+        unless @DT==1 && $DT[0]{id}==($stable_single?100:1);
+      die 'stable source DataRead did not repair allocated header' if $stable_single && ($DTnextid!=101 || $id2idx{100}!=0 || $name2idx{alice}!=0 || $DT[0]{item}[9]!=2);
       $DT[0]{money}=16900;
       $DT[0]{saletoday}=100;
     }
@@ -195,6 +210,10 @@ for my $round(1..2) {
     stagedMoved=>(!-e File::Spec->catfile($TEMP_DIR,'play.cgi'))
       ? JSON::PP::true : JSON::PP::false,
   };
+}
+if($stable_single){
+  @DT=();%id2idx=();%name2idx=();%name2pass=();DataRead();
+  die 'stable second reload drift' unless @DT==1 && $DT[0]{id}==100 && $DTnextid==101 && $DT[0]{showcasecount}==2 && $DT[0]{money}==16900;
 }
 if($two_active){
   @DT=();%id2idx=();%name2idx=();%name2pass=();
