@@ -3,9 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
 test('R4 owner icon form read, exact CAS, silent logs and v2 replay',async t=>{
- const p=await genuinePlayer(t,{crossPeriod:true,fullCommerce:true});
+ const p=await genuinePlayer(t,{crossPeriod:true,fullCommerce:true,selectOwnerIcon:true});
  assert.equal(p.state.reviewedOwnerIcon,true);
  const before=p.state.world,rev=before.revision;
+ assert.ok(before.shops[0].icon>=1&&before.shops[0].icon<=25);
  const form=await p.request('/api/owner-icon-form?kind=procedures');
  assert.equal(form.icons.length,25);assert.ok(form.randomIcon>=1&&form.randomIcon<=25);
  assert.deepEqual((await p.request('/api/state')).world,before);

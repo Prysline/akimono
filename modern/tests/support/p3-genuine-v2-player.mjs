@@ -14,7 +14,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null,trace=false}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommerce=false,fundMarketWithWork=false,fundingWorkBudget=120,fundingSaleItems=[],onTick=null,onPurchase=null,trace=false,selectOwnerIcon=false}={}){
   assert.ok(!fundMarketWithWork||crossPeriod,'earned market funding requires the real settlement path');
   assert.ok(Number.isSafeInteger(fundingWorkBudget)&&fundingWorkBudget>0);
   assert.ok(Array.isArray(fundingSaleItems)&&fundingSaleItems.every(id=>Number.isSafeInteger(id)&&id>=1&&id<=79));
@@ -284,7 +284,19 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
     }
   }
   await boot();ok(await post('/api/initialize'));
-  await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
+  let initialIcon;
+  if(selectOwnerIcon){
+    const before=state.world,form=await request('/api/owner-icon-form?kind=open');
+    assert.equal(form.icons.length,25);assert.ok(form.randomIcon>=1&&form.randomIcon<=25);
+    assert.deepEqual((await request('/api/state')).world,before);
+    initialIcon=form.randomIcon;
+    for(const icon of [0,26,'1']){
+      const bad=await post('/api/open-shop',{expectedRevision:state.world.revision,ownerName:'來源玩家',shopName:'高階鍛造實測',icon});
+      assert.equal(bad.ok,false);assert.deepEqual(state.world,before);
+    }
+  }
+  await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測',...(selectOwnerIcon?{icon:initialIcon}:{})});
+  if(selectOwnerIcon)assert.equal(state.shop.icon,initialIcon);
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   assert.equal(Boolean(state.reviewedFullCommerce),fullCommerce);

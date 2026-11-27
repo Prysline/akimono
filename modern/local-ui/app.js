@@ -110,8 +110,8 @@ function showIconList(){
   for(let i=0;i<iconChoices.length;i+=5){
     const tr=document.createElement('tr');
     for(const item of iconChoices.slice(i,i+5)){
-      const td=document.createElement('td'),img=document.createElement('img'),label=document.createElement('span');
-      img.width=item.width;img.height=item.height;td.append(img,label);portrait(img,label,item.id,'頭像 '+item.id);tr.append(td);
+      const td=document.createElement('td'),img=document.createElement('img'),label=document.createElement('span'),number=document.createElement('span');
+      number.textContent=String(item.id)+' ';img.width=item.width;img.height=item.height;td.append(number,img,label);portrait(img,label,item.id,'頭像 '+item.id);tr.append(td);
     }
     grid.append(tr);
   }

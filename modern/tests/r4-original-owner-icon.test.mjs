@@ -29,3 +29,13 @@ test('R4 frozen icon handler and form boundaries, one request-local draw and no 
  assert.equal(world.shops[0].lastlogin,90);
  assert.throws(()=>reviewOriginalOwnerIcon({...sources,listSource:sources.listSource+' '}),/source drift/);
 });
+
+test('R4 original creation and procedures form preselect at page render',()=>{
+ const expressions=[sources.newFormSource,sources.formSource].map(s=>s.match(/\$i_rand=int\(rand\(\$ICON_NUMBER\)\)\+1;/)[0]);
+ const oracle='use JSON::PP; $ICON_NUMBER=25; my @r; for my $seed (0..99) { srand($seed); my $raw=rand($ICON_NUMBER); srand($seed); '+expressions[0]+' my $first=$i_rand; srand($seed); '+expressions[1]+' push @r,[$raw,$first,$i_rand]; } print encode_json(\\@r);';
+ const rows=JSON.parse(execFileSync('perl',['-e',oracle],{encoding:'utf8'}));
+ for(const [raw,newIcon,procedureIcon] of rows){
+   const form=describeOriginalOwnerIconForm(review,()=>Math.floor(raw));
+   assert.equal(form.randomIcon,newIcon);assert.equal(form.randomIcon,procedureIcon);
+ }
+});
