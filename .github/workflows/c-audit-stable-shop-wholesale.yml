@@ -1,0 +1,77 @@
+name: C audit - stable shop wholesale wire boundary
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  d45-stable-wholesale-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '64af1d22d18b5971c62dddc9955c037372600ee5'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and oracle pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/d45-wire"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            test "$(git rev-parse HEAD)" = '64af1d22d18b5971c62dddc9955c037372600ee5'
+            test "$(git rev-parse 'HEAD^{tree}')" = '5664b686ad0caedfd0628dfd76fa95a51470ed1d'
+            test "$(git hash-object modern/tests/r4-source-two-shop-play.test.mjs)" = 'f4f1151515edefeccf0367596a0807aa95451e57'
+            test "$(git hash-object modern/tests/original-perl/original-r4-data-write-files-probe.pl)" = 'efd6e604ac697644cb84c2c449ea1af96012f1d7'
+            test "$(git hash-object modern/src/original-r4-period-play-file.mjs)" = '15a818fcfd4572d30837884946e3b64e0711db75'
+            test "$(git hash-object modern/src/world-wholesale-codec.mjs)" = '2714020cb3fb2d555062cbbaa1c42a8601e2bb50'
+            test "$(git hash-object modern/tests/original-perl/inc-func.cgi)" = 'e7a8add7b0291901e71fe797783b664dff1568a0'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Execute unchanged D45 test
+        id: original
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test modern/tests/r4-source-two-shop-play.test.mjs 2>&1 | tee "$RUNNER_TEMP/d45-wire/original.log"
+      - name: Execute independent numeric input adapter observation
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          copy=modern/tests/c-audit-d45-source-two-shop-play.test.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const source=readFileSync('modern/tests/r4-source-two-shop-play.test.mjs','utf8');
+          const anchor="const world={...c.input,nextid:101,wholesaleCsv:rows[2]};";
+          const replacement="assert.equal(c.input.wholesale.length,79);\n    assert.ok(c.input.wholesale.every(v=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0||typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v)&&Number.isSafeInteger(Number(v))));\n    const wholesale=c.input.wholesale.map(Number);\n    console.log('C65_WHOLESALE_TYPES '+JSON.stringify({round:cases.indexOf(c)+1,length:wholesale.length,types:[...new Set(c.input.wholesale.map(v=>typeof v))],stringCells:c.input.wholesale.filter(v=>typeof v==='string').length,rawMatchesNumeric:rows[2].split(',').every((v,i)=>Number(v)===wholesale[i])}));\n    const world={...c.input,nextid:101,wholesaleCsv:rows[2],wholesale};\n    const mismatch=[...wholesale];mismatch[0]+=1;\n    assert.throws(()=>write({...world,wholesale:mismatch}),/sparse wholesale numeric view mismatch/);";
+          if(source.split(anchor).length!==2)throw Error('nonunique anchor');
+          writeFileSync('modern/tests/c-audit-d45-source-two-shop-play.test.mjs',source.replace(anchor,replacement),{flag:'wx'});
+          NODE
+          git diff --no-index -- modern/tests/r4-source-two-shop-play.test.mjs "$copy" > "$RUNNER_TEMP/d45-wire/observation.diff" || test "$?" = 1
+          cat "$RUNNER_TEMP/d45-wire/observation.diff"
+          node --test "$copy" 2>&1 | tee "$RUNNER_TEMP/d45-wire/observation.log"
+          rm -f "$copy"
+          trap - EXIT
+          test "$(git hash-object modern/tests/r4-source-two-shop-play.test.mjs)" = 'f4f1151515edefeccf0367596a0807aa95451e57'
+          test "$(git hash-object modern/tests/original-perl/original-r4-data-write-files-probe.pl)" = 'efd6e604ac697644cb84c2c449ea1af96012f1d7'
+          test "$(git hash-object modern/src/original-r4-period-play-file.mjs)" = '15a818fcfd4572d30837884946e3b64e0711db75'
+          test "$(git hash-object modern/src/world-wholesale-codec.mjs)" = '2714020cb3fb2d555062cbbaa1c42a8601e2bb50'
+          test "$(git hash-object modern/tests/original-perl/inc-func.cgi)" = 'e7a8add7b0291901e71fe797783b664dff1568a0'
+          test -z "$(git status --porcelain)"
+      - name: Preserve separate original and observation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c65-d45-stable-wholesale-exact
+          path: ${{ runner.temp }}/d45-wire/
+          if-no-files-found: warn
+          retention-days: 30
