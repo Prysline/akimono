@@ -14,7 +14,7 @@ test('R4 owner icon form read, exact CAS, silent logs and v2 replay',async t=>{
    const r=await p.post('/api/owner-icon',{expectedRevision:rev,...bad});
    assert.equal(r.ok,false);assert.deepEqual(p.state.world,before);
  }
- const r=await p.post('/api/owner-icon',{expectedRevision:rev,icon:25});assert.equal(r.ok,true,JSON.stringify(r.details));
+ const r=await p.post('/api/owner-icon',{expectedRevision:rev,icon:25});assert.equal(r.ok,true,JSON.stringify({code:r.code,error:r.error,details:r.details}));
  assert.deepEqual(p.state.shop,{...before.shops[0],icon:25,lastlogin:before.nowSeconds});
  assert.equal(p.state.world.revision,rev+1);assert.equal(p.state.world.nowSeconds,before.nowSeconds);
  assert.deepEqual(p.state.world.market,before.market);

@@ -37,7 +37,7 @@ export function isReviewedWorldTimeCommand(command){
     Number.isSafeInteger(command.minutes)&&command.minutes>=1&&command.minutes<=60;
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
-const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item','sweep-shop','edit-shop-comment'];
+const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item','sweep-shop','edit-shop-comment','edit-owner-icon'];
 export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedFullCommerce=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   if(typeof enableReviewedFullCommerce!=='boolean')fail('explicit full commerce review');

@@ -8,7 +8,7 @@ import {reviewOriginalOwnerRename,planOriginalOwnerRename} from '../src/original
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const f=n=>read('./original-perl/'+n);
 const sources={formSource:f('core-other.cgi'),submitSource:f('core-user-settings.cgi'),nameSource:f('core-name.cgi'),configSource:read('../../_config.cgi'),readSource:f('inc-func.cgi'),writeSource:f('write.cgi'),logSource:f('pinned-log.cgi'),loginSource:f('core-rename-login.cgi')};
-const review=reviewOriginalOwnerRename(sources);
+const reviewed=reviewOriginalOwnerRename(sources);
 test('A33 source candidate matches real frozen Perl name handlers and file lookup (not account integration)',t=>{
  const dir=mkdtempSync(join(tmpdir(),'akimono-rename-oracle-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
  mkdirSync(join(dir,'street','data'),{recursive:true});mkdirSync(join(dir,'work'));
