@@ -7,6 +7,8 @@ use File::Spec;
 use File::Path qw(make_path);
 use JSON::PP;
 binmode STDOUT, ':raw';
+my $two_active=@ARGV==1 && $ARGV[0] eq '--two-active';
+die 'unknown probe arguments' if @ARGV && !$two_active;
 
 # Executes pinned ORIGINAL write.cgi DataWrite + DataCommitOrAbort,
 # original inc-func.cgi AutoVar::Get, DataRead, GetDTPoint, GetPath and
@@ -119,14 +121,32 @@ $initial{itemtoday}={};
 $initial{exp}={};
 $initial{user}={};
 $initial{guild}='';
+if($two_active){
+  $initial{$_}='' for qw(pass comment remoteaddr blocklogin nocheckip);
+  $initial{guild}='alpha';
+  $initial{rank}=1000;
+}
 my %closed=%initial;
 $closed{id}=2;
 $closed{name}='closed';
 $closed{status}=0;
 $closed{money}=0;
+if($two_active){
+  $closed{status}=1;
+  $closed{name}='bob';
+  $closed{shopname}='second source shop';
+  $closed{money}=23000;
+  $closed{guild}='beta';
+  $closed{rank}=100;
+  $closed{rankingyesterday}=1;
+  $closed{item}=[(0)x79];
+  $closed{item}[78]=2;
+  $closed{showcase}=[79];
+  $closed{price}=[10000];
+}
 @DT=(\%initial,\%closed);
 %id2idx=(1=>0,2=>1);
-%name2idx=(alice=>0,closed=>1);
+%name2idx=(alice=>0,($two_active?'bob':'closed')=>1);
 @DTwholestore=(0)x79;
 %DTevent=();
 $STATE={map{($_,0)}@STATEnamelist};
@@ -137,10 +157,22 @@ for my $round(1..2) {
     # continue the SAME shop/state rather than reset or use a second fixture.
     @DT=();%id2idx=();%name2idx=();%name2pass=();
     DataRead();
-    die 'source reload did not retain one active shop'
-      unless @DT==1 && $DT[0]{id}==1;
-    $DT[0]{money}=16900;
-    $DT[0]{saletoday}=100;
+    if($two_active){
+      die 'source reload did not retain two sorted active shops'
+        unless @DT==2 && $DT[0]{id}==2 && $DT[1]{id}==1
+          && $id2idx{1}==1 && $id2idx{2}==0
+          && $name2idx{alice}==1 && $name2idx{bob}==0 && $DTnextid==3;
+      $DT[$id2idx{1}]{money}=16900;
+      $DT[$id2idx{1}]{saletoday}=100;
+      $DT[$id2idx{1}]{rankingyesterday}=1;
+      $DT[$id2idx{1}]{rank}=1500;
+      die 'second shop inventory lost' unless $DT[$id2idx{2}]{item}[78]==2;
+    }else{
+      die 'source reload did not retain one active shop'
+        unless @DT==1 && $DT[0]{id}==1;
+      $DT[0]{money}=16900;
+      $DT[0]{saletoday}=100;
+    }
     $DTlasttime=2000;
   }
   my $input=copyData({
@@ -163,6 +195,15 @@ for my $round(1..2) {
     stagedMoved=>(!-e File::Spec->catfile($TEMP_DIR,'play.cgi'))
       ? JSON::PP::true : JSON::PP::false,
   };
+}
+if($two_active){
+  @DT=();%id2idx=();%name2idx=();%name2pass=();
+  DataRead();
+  die 'second committed reload lost the sorted two shops'
+    unless @DT==2 && $DT[0]{id}==1 && $DT[1]{id}==2 &&
+      $id2idx{1}==0 && $id2idx{2}==1 && $name2idx{alice}==0 &&
+      $name2idx{bob}==1 && $DT[0]{money}==16900 &&
+      $DT[1]{money}==23000 && $DT[1]{item}[78]==2;
 }
 print JSON::PP->new->canonical->utf8->encode({
   source=>'pinned write.cgi::DataWrite/DataCommitOrAbort with pinned inc-func DataRead, GetPath, AutoVar and original SortDT',
