@@ -22,7 +22,7 @@ function fixture(row){
 }
 test('LC-D2 voluntary close delegates native archive and source prune, localizes exact original logs',()=>{
   const runner=fileURLToPath(new URL('./original-perl/original-r4-close-shop-archive-file-probe.pl',import.meta.url));
-  const proof=JSON.parse(execFileSync('perl',[runner],{encoding:'utf8'}));
+  const proof=JSON.parse(execFileSync('perl',[runner,'--full-commerce-shape'],{encoding:'utf8'}));
   for(const row of proof.cases.filter(r=>r.kind!=='missing')){
     const input=fixture(row),before=structuredClone(input.world),got=projectR4VoluntaryCloseState(input);
     // This oracle uses a single-key map and original true file append. Only

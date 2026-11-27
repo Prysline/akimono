@@ -191,3 +191,7 @@ Actual server-private session issuance/resolution/replacement/revocation and tim
 
 ## D36｜B 雙店原版 wire/排序來源閉包
 B verified 4415c294644a3846a4db0001d3d87caf925409d7/tree5a1b408de6a5bdac829610747fb76e872fb8d0e6 run46022490817/job140585385334 actual5ac41a8a8f2ddae4c1a7f31f366b9613583fbb5c exact tree JS1713/1713 Perl3273/98 PASS; two-shop JS ok1433/1434. Select only B twoShopSource opt-in, source order by prior ranking then true GetDTPoint, stable ties, unique id/name, nextid > active ID; default one-shop and crossPeriod gate unchanged. Exact B shared point helper, optional --two-active source probe (default old single-store path preserved), exact two source tests and original two-shop identity oracle/docs. No B signedCash/lord/manual EVENT override, no formal multi-shop CAS or auth, no reopening ID1 or archive guard bypass. D36 CI pending. This is prerequisite for canonical ID wire, not full formal registration.
+
+
+## D37｜自主閉店完整商業測試前提修復
+Static review found D34 reused the legacy archive oracle with showcasecount=0 despite one shelf/price entry. Add explicit --full-commerce-shape to the existing Perl probe, preserve default legacy oracle, invoke it only from D34 test. Exact bytes remain produced by original CloseShop; no runtime guard relaxed or frozen source modified. D37 CI pending; no claimed verified fix yet.

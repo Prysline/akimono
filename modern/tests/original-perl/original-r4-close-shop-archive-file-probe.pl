@@ -82,6 +82,9 @@ sub runCase {
   @shop{qw(id name shopname money rank status foundation)}=
     (1,'source-owner','來源原版關店',12345,20,1,555);
   $shop{showcase}=[10];
+  # Preserve the historic default oracle; full-commerce callers need a
+  # source-consistent scalar matching the actual shelf and price arrays.
+  $shop{showcasecount}=1 if @ARGV==1 && $ARGV[0] eq '--full-commerce-shape';
   $shop{price}=[100];
   $shop{item}=[(0)x79];
   $shop{itemtoday}={10=>2};
