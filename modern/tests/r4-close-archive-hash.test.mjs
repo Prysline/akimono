@@ -82,11 +82,12 @@ test('R4 voluntary close replays current native DataRead map order with no time 
   const world={...a.world,streetId:'standard-street'},input={reviewed,world,shopId:1};
   const before=structuredClone(world),got=resolveR4VoluntaryCloseArchiveHashOrders(input);
   const maps=['itemyesterday','itemtoday','exp','user'];
-  const readLine=sources.readSource.split('\\n').find(l=>l.includes('@DT{qw(itemyesterday itemtoday exp)}='));
+  const readLine=sources.readSource.split('\n').find(l=>l.includes('@DT{qw(itemyesterday itemtoday exp)}='));
+  assert.ok(readLine&&!readLine.includes('\n'));
   const originalJoins=maps.map(k=>{const s='join(",",%{$DT->{'+k+'}})';assert.ok(sources.writeSource.includes(s));return s;});
   const script=['use strict;use warnings;use JSON::PP;local $/;my $in=decode_json(<STDIN>);',
     'my @list=("","","",@{$in->{maps}});my %DT;',readLine,
-    '$DT{user}={};my $DT=\\\\%DT;', 'print encode_json(['+originalJoins.join(',')+']);'].join('\\n');
+    '$DT{user}={};my $DT=\\%DT;', 'print encode_json(['+originalJoins.join(',')+']);'].join('\n');
   const native=JSON.parse(execFileSync('perl',['-e',script],{encoding:'utf8',env:{...process.env,PERL_HASH_SEED:got.seed,PERL_PERTURB_KEYS:'0'},input:JSON.stringify({maps:maps.slice(0,3).map(k=>Object.entries(shop[k]).flat().join(','))})}));
   assert.deepEqual(native,maps.map(k=>got.archiveHashOrders[k].flatMap(id=>[id,shop[k][id]]).join(',')));
   assert.equal(got.policy,R4_VOLUNTARY_CLOSE_HASH_POLICY);assert.equal(got.committable,false);
