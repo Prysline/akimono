@@ -1,5 +1,6 @@
 // LC-D1 preflight only: no session issuer, game mutation, CAS or publication.
 import {validateMemoryWorld,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
+import {reviewShopLifecycleSources,projectShopLifecycleSource} from './original-r4-shop-lifecycle-source.mjs';
 
 const confirmations=Object.freeze({'restart-shop':'restart','close-shop':'closeshop'});
 const refuse=reason=>{throw new RangeError('LC-D1 preflight: '+reason);};
@@ -25,7 +26,10 @@ function snapshot(readWorld){
  * A returned candidate is never an authorization token or executable command.
  * Future publication must reauthenticate/recheck the same owner and CAS.
  */
-export function createLifecycleCommandPreflight({readWorld,resolveAuthenticatedActor}={}){
+export function createLifecycleCommandPreflight(dependencies){
+  return createLifecyclePreparation(dependencies);
+}
+function createLifecyclePreparation({readWorld,resolveAuthenticatedActor}={},plan){
   if(typeof readWorld!=='function'||typeof resolveAuthenticatedActor!=='function')
     refuse('trusted world reader and actor resolver required');
   return async function prepare({kind,body,request}){
@@ -56,12 +60,47 @@ export function createLifecycleCommandPreflight({readWorld,resolveAuthenticatedA
     const shop=current.shops.find(row=>row.id===actor.shopId);
     if(!shop||shop.status!==1||shop.name!==actor.ownerName)
       refuse('current active owner required');
-    return Object.freeze({
+    const prepared=Object.freeze({
       committable:false,worldStateWritten:false,
       expectedRevision,now:current.nowSeconds,
       actorRef:Object.freeze({worldId:current.worldId,street:current.streetId,
         shopId:shop.id,ownerName:shop.name}),
       command:Object.freeze({kind,confirmation}),
     });
+    if(!plan)return prepared;
+    const candidate=plan({prepared,current,shop});
+    if(encodeMemorySnapshot(snapshot(readWorld))!==encodeMemorySnapshot(current))
+      refuse('world changed during source planning');
+    return candidate;
   };
+}
+
+// LC-D1 source planning uses only the same current authenticated world.
+// Internal planning evidence, never a public response or CAS authorization.
+// readSubdataNames is a trusted synchronous scoped inventory reader; no body
+// fields, paths, source snapshot, credentials or mutation callbacks are accepted.
+function deepFreeze(value){
+  if(value&&typeof value==='object'&&!Object.isFrozen(value)){
+    for(const v of Object.values(value))deepFreeze(v);
+    Object.freeze(value);
+  }
+  return value;
+}
+export function createLifecycleSourcePlanner({readWorld,resolveAuthenticatedActor,sourceTexts,readSubdataNames}={}){
+  if(typeof readSubdataNames!=='function')refuse('trusted subdata reader required');
+  const review=reviewShopLifecycleSources(sourceTexts);
+  return createLifecyclePreparation({readWorld,resolveAuthenticatedActor},({prepared,current,shop})=>{
+    const {actorRef,command,expectedRevision,now}=prepared;
+    const target={id:shop.id,status:shop.status,name:shop.name,
+      shopname:shop.shopname,foundation:shop.foundation};
+    if(command.kind==='close-shop')target.remoteaddr=shop.remoteaddr;
+    // Other shops are represented only by IDs, sufficient for source identity
+    // uniqueness; no passwords, session tokens or unrelated shop data cross.
+    const sourceSnapshot={worldId:current.worldId,street:current.streetId,
+      revision:current.revision,shops:current.shops.map(row=>row.id===shop.id?target:{id:row.id})};
+    const names=readSubdataNames(actorRef);
+    const effect=projectShopLifecycleSource({review,snapshot:sourceSnapshot,
+      actorRef,command,expectedRevision,now,subdataNames:names});
+    return deepFreeze({prepared,effect,committable:false,worldStateWritten:false});
+  });
 }
