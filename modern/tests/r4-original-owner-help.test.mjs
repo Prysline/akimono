@@ -33,6 +33,8 @@ test('frozen HelpMessage and DevelopImage match all local threshold and stocked-
     'すぐに在庫を補充するか，代わりのものを売りに出しましょう。':'要馬上補充庫存還是更換商品販售嗎。',
     'お店はいまのところ順調ですよ。':'店裡的營運情況非常順利。',
   };
+  const fresh=structuredClone(cases[0]);delete fresh.shops[0].trush;
+  assert.deepEqual(describeOriginalOwnerHelp({reviewed,world:fresh}),describeOriginalOwnerHelp({reviewed,world:cases[0]}));
   const before=structuredClone(cases);
   for(let i=0;i<cases.length;i++){
     const actual=describeOriginalOwnerHelp({reviewed,world:cases[i]});

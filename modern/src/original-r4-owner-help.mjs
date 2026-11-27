@@ -13,8 +13,9 @@ const safe=n=>Number.isSafeInteger(n)&&n>=0;
 export function describeOriginalOwnerHelp({reviewed,world}){
   if(!reviews.has(reviewed))throw new RangeError('R4 owner help review required');
   if(!world||world.shops?.length!==1||world.shops[0].id!==1||world.shops[0].status!==1)return null;
-  const s=world.shops[0];
-  if(![world.nowSeconds,s.foundation,s.trush,s.showcasecount].every(safe)||world.nowSeconds<s.foundation||
+  const s=world.shops[0],trush=s.trush??0;
+  // Original new.cgi leaves garbage unset until the first update.
+  if(![world.nowSeconds,s.foundation,trush,s.showcasecount].every(safe)||world.nowSeconds<s.foundation||
       s.showcasecount<1||s.showcasecount>8||!Array.isArray(s.showcase)||s.showcase.length!==s.showcasecount||
       !Array.isArray(s.item)||s.item.length!==79||s.item.some(n=>!safe(n))||
       s.showcase.some(n=>!safe(n)||n>79))throw new RangeError('R4 owner help invalid source shop');
@@ -23,7 +24,7 @@ export function describeOriginalOwnerHelp({reviewed,world}){
   // The original's first branch is mail. Mail does not exist in this
   // independent runtime; B/D must wire that branch with actual mail state.
   if(world.nowSeconds-s.foundation<3*3600)return {...common,kind:'new-shop',lines:['很高興見到你，我是店裡的小幫手。','店長，那麼接下來，看過[遊戲遊玩]了嗎？'],libraryChapter:1};
-  if(s.trush>4000000)return {...common,kind:'dirty',lines:['店長您回來了啊。','店裡越來越髒。來打掃一下如何？'],libraryChapter:null};
+  if(trush>4000000)return {...common,kind:'dirty',lines:['店長您回來了啊。','店裡越來越髒。來打掃一下如何？'],libraryChapter:null};
   if(!hasDisplayedStock)return {...common,kind:'empty',lines:['店長，已經沒有商品可以賣囉。','要馬上補充庫存還是更換商品販售嗎。'],libraryChapter:null};
   return {...common,kind:'normal',lines:['店長您回來了啊。','店裡的營運情況非常順利。'],libraryChapter:null};
 }
