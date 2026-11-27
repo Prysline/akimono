@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createPeriodMemoryWorld} from '../src/game-core-contract.mjs';
 import {createStableOwnerSessions} from '../src/r4-stable-owner-sessions.mjs';
-import {createOwnerCredentialRecord,verifyOwnerCredential,createCredentialOwnerAuthenticator} from '../src/r4-owner-credential-record.mjs';
+import {createOwnerCredentialRecord,verifyOwnerCredential,createCredentialOwnerAuthenticator,validateCommittedOwnerCredentials,createCommittedOwnerCredentialReader} from '../src/r4-owner-credential-record.mjs';
 import {createLifecycleCommandPreflight} from '../src/reviewed-shop-lifecycle-command.mjs';
 const read=p=>normalizeLocalSourceText(readFileSync(new URL(p,import.meta.url),'utf8'));
 const source={configSource:read('../../_config.cgi'),readSource:read('./original-perl/inc-func.cgi'),loginSource:read('./original-perl/pinned-login.cgi')};
@@ -69,8 +69,8 @@ test('LC-D1 actual private credential verifier binds stable identity and plugs i
  await assert.rejects(createOwnerCredentialRecord({newSource:newSource+' ',binding,password:'old_pw'}),/invalid registration/);
  const authenticateOwner=createCredentialOwnerAuthenticator({
    readCredentials:req=>({ownerName:req.name,password:req.password}),
-   // Controlled committed-record reader; not a persistent account authority.
-   readCredentialRecord:()=>record,
+   // The controlled fixture stands in for the future single committed publisher.
+   readCredentialRecord:createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>({world:f.world,ownerCredentials:[record]})}),
  });
  const a=createStableOwnerSessions({...f.deps,authenticateOwner});
  await assert.rejects(a.issue({name:'owner',password:'wrong_pw'}),/login denied/);
@@ -86,4 +86,47 @@ test('LC-D1 actual private credential verifier binds stable identity and plugs i
  const next=await a.issue({name:'owner',password:'new_pw'});
  assert.equal(a.resolveAuthenticatedActor({request:{cookie:next.token},world:f.world}).shopId,2);
  assert.notEqual(old.token,next.token);
+});
+
+test('LC-D1 complete private committed set rejects partial, duplicate, retired or cross-world records',()=>{
+ const f=fixture();
+ const first={schema:'r4-owner-scrypt.v1',binding:{worldId:'w',streetId:'s',shopId:1,ownerName:'owner'},salt:'a'.repeat(32),hash:'b'.repeat(64)};
+ const second={...first,binding:{...first.binding,shopId:2,ownerName:'peer'}};
+ const world={...f.world,shops:[...f.world.shops,{id:2,name:'peer',status:1}]};
+ const validate=(records,w=world)=>validateCommittedOwnerCredentials({world:w,records});
+ const rows=validate([second,first]);assert.deepEqual(rows,[first,second]);
+ assert.ok(Object.isFrozen(rows)&&Object.isFrozen(rows[0])&&Object.isFrozen(rows[0].binding));
+ assert.notEqual(rows[0],first);assert.notEqual(rows[0].binding,first.binding);
+ assert.throws(()=>validate([first]),/invalid registration credential/);
+ assert.throws(()=>validate([first,first]),/invalid registration credential/);
+ assert.throws(()=>validate([first,{...second,binding:{...second.binding,streetId:'other'}}]),/invalid registration credential/);
+ assert.throws(()=>validate([first,{...second,binding:{...second.binding,ownerName:'owner'}}]),/invalid registration credential/);
+ assert.throws(()=>validate([first,{...second,hash:second.hash+'\n'}]),/invalid registration credential/);
+ assert.throws(()=>validate([first,{...second,password:'synthetic'}]),/invalid registration credential/);
+ assert.throws(()=>validate([first,second],{...world,shops:[world.shops[0],{...world.shops[1],status:0}]}),/invalid registration credential/);
+ assert.throws(()=>validate([first,second],{...world,shops:[world.shops[0],{...world.shops[1],name:'owner'}]}),/invalid registration credential/);
+ assert.throws(()=>validate([first,second],{...world,shops:[world.shops[0],{...world.shops[1],pass:'legacy'}]}),/invalid registration credential/);
+ assert.deepEqual(validate([],{...world,shops:[]}),[]);
+ assert.throws(()=>validate([first],{...world,shops:[]}),/invalid registration credential/);
+ assert.ok(!JSON.stringify(world).includes(first.hash));
+});
+
+test('LC-D1 trusted committed reader samples once, refuses same-revision divergence and never retains stale records',()=>{
+ const f=fixture(),binding={worldId:'w',streetId:'s',shopId:1,ownerName:'owner'};
+ const record={schema:'r4-owner-scrypt.v1',binding:{...binding},salt:'a'.repeat(32),hash:'b'.repeat(64)};
+ let committed={world:f.world,ownerCredentials:[record]},reads=0;
+ const read=createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>{reads++;return committed;}});
+ const old=read({world:f.world,binding});assert.deepEqual(old,record);assert.equal(reads,1);
+ record.hash='c'.repeat(64);assert.equal(old.hash,'b'.repeat(64));record.hash='b'.repeat(64);
+ assert.equal(read({world:{...f.world,nowSeconds:f.world.nowSeconds+1},binding}),null);
+ assert.equal(read({world:{...f.world,revision:f.world.revision+1},binding}),null);
+ assert.equal(read({world:f.world,binding:{...binding,worldId:'other'}}),null);
+ committed={world:{...f.world,revision:8,shops:[]},ownerCredentials:[]};
+ assert.equal(read({world:f.world,binding}),null);
+ assert.equal(read({world:committed.world,binding}),null);
+ committed={world:f.world,ownerCredentials:[record],extra:true};
+ assert.throws(()=>read({world:f.world,binding}),/invalid registration credential/);
+ const bad=createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>{throw Error('private read failure');}});
+ assert.throws(()=>bad({world:f.world,binding}),/private read failure/);
+ assert.throws(()=>createCommittedOwnerCredentialReader({}),/trusted committed reader/);
 });
