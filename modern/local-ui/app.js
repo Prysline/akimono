@@ -301,6 +301,22 @@ function renderSourceUseEntry(row,offer){
   li.append(entry);
   return li;
 }
+function renderDiscardPresentation(s,item,shop,canDiscard){
+  const flags=item?.flagRaw?.split('|')??[];
+  const reviewed=s.reviewedDiscard===true;
+  const prohibited=reviewed&&flags.includes('notrash');
+  const verb=reviewed&&flags.includes('human')?'解雇':'丟棄';
+  $('discard-form').hidden=!shop||!item||prohibited;
+  $('discard-title').hidden=prohibited;
+  $('discard-note').hidden=!shop||!item;
+  text('discard-title',verb==='解雇'?'解雇':'丟棄商品');
+  text('discard-choice-caption',verb+'數量');
+  text('discard-submit',verb);
+  $('discard-submit').disabled=!canDiscard;
+  text('discard-note',prohibited?'※'+item.name+'是無法'+verb+'的':
+    !canDiscard?'此商品不可'+verb+'或沒有持有數量。':
+    '不消耗行動時間；'+verb+'後無法復原。');
+}
 function renderItemInfo(s){
   const item=catalogItem(s,selectedItemId);
   const shop=s.shop;
@@ -364,7 +380,7 @@ function renderItemInfo(s){
   const canDiscard=Boolean(shop&&item&&
     shop.item[item.itemId-1]>0&&
     !item.flagRaw.split('|').includes('notrash'));
-  $('discard-form').hidden=!shop||!item;
+  renderDiscardPresentation(s,item,shop,canDiscard);
   const discardQuote=(s.discardOffers??[]).find(o=>o.itemId===item?.itemId);
   $('discard-choice-label').hidden=!s.reviewedDiscard;
   const discardOptions=$('discard-options'),discardCount=$('discard-count'),oldChoice=discardOptions.value;
@@ -376,10 +392,6 @@ function renderItemInfo(s){
   else if([...discardOptions.options].some(o=>o.value===oldChoice))discardOptions.value=oldChoice;
   if(s.reviewedDiscard)discardCount.removeAttribute('max');
   else discardCount.max=String(shop&&item?shop.item[item.itemId-1]:0);
-  $('discard-submit').disabled=!canDiscard;
-  text('discard-note',!canDiscard?
-    '此商品不可丟棄或沒有持有數量。':
-    '不消耗行動時間；丟棄後無法復原。');
   const useList=$('use-offers');
   useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
@@ -1224,11 +1236,12 @@ $('discard-form').addEventListener('submit',async event=>{
     feedback('丟棄數量不正確或此商品不可丟棄。',null,true);
     return;
   }
-  if(!confirm('確定丟棄 '+item.name+' × '+number(Math.min(count,shop.item[itemId-1]))+
-    '？丟棄後無法復原，且不消耗行動時間。'))return;
+  const verb=snapshot.reviewedDiscard&&item.flagRaw.split('|').includes('human')?'解雇':'丟棄';
+  if(!confirm('確定'+verb+' '+item.name+' × '+number(Math.min(count,shop.item[itemId-1]))+
+    '？'+verb+'後無法復原，且不消耗行動時間。'))return;
   await call('/api/discard',{
     expectedRevision:snapshot.world.revision,itemId,count,
-  },'丟棄商品：'+item.name,data=>{
+  },verb+'商品：'+item.name,data=>{
     if(snapshot?.reviewedDiscard){feedback(data.details.originalMessage,data.details);$('discard-count').value='';$('discard-options').value='0';}
   });
 });

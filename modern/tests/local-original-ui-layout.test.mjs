@@ -540,3 +540,31 @@ test('source stocked showcase links preserve shelf identity, current price and r
   assert.match(script,/openItem\(target\.itemId,target\)/);
   assert.match(script,/selectTab\(itemBackTab\)/);
 });
+
+test('reviewed discard presentation hides source flag t forms and distinguishes human flag h',()=>{
+  const fn=script.slice(script.indexOf('function renderDiscardPresentation('),script.indexOf('function renderItemInfo('));
+  const nodes=new Map();
+  const $=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const render=new Function('$','text',fn+';return renderDiscardPresentation;')($,(id,value)=>{$(id).textContent=value});
+  const reviewed={reviewedDiscard:true},shop={};
+  for(const [flagRaw,verb,prohibited] of [['notrash','丟棄',true],['human|notrash','解雇',true],['human','解雇',false],['','丟棄',false]]){
+    render(reviewed,{name:'測試商品',flagRaw},shop,!prohibited);
+    assert.equal($('discard-form').hidden,prohibited);
+    assert.equal($('discard-title').hidden,prohibited);
+    assert.equal($('discard-submit').disabled,prohibited);
+    assert.equal($('discard-submit').textContent,verb);
+    assert.equal($('discard-choice-caption').textContent,verb+'數量');
+    if(prohibited)assert.equal($('discard-note').textContent,'※測試商品是無法'+verb+'的');
+  }
+  render(reviewed,{name:'測試人員',flagRaw:'human'},shop,false);
+  assert.equal($('discard-form').hidden,false);
+  assert.equal($('discard-submit').disabled,true);
+  render({}, {name:'舊模式',flagRaw:'human|notrash'},shop,false);
+  assert.equal($('discard-form').hidden,false);
+  assert.equal($('discard-submit').textContent,'丟棄');
+  render(reviewed,null,null,false);
+  assert.equal($('discard-form').hidden,true);
+  assert.equal($('discard-note').hidden,true);
+  assert.match(script,/renderDiscardPresentation\(s,item,shop,canDiscard\)/);
+  for(const id of ['discard-title','discard-choice-caption','discard-submit','discard-note'])assert.ok(html.includes('id="'+id+'"'));
+});
