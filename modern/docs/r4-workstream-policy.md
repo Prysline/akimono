@@ -19,3 +19,7 @@ A：正常取得、USE、EXP、上架、售出、回呼、EVENT、維持費、�
 每功能包列 exact source SHA/tree、來源路徑/原版預期、檔案與 import 閉包、測試路徑/類型、成功/拒絕/副作用、CI checkout SHA/tree、失敗/跳過原因、外部依賴、四維狀態、未提交/未推送狀況。D 從正式基線逐批選擇性適配，不整支合併 #18/#22、不覆蓋 P1–P5。合併正式基線另需授權。C 保留真玩家原測試、原斷言、原始失敗及缺證，不重選世界或修改 RNG/機率求通過。
 
 參見 [整合責任](r4-integration-ownership.md)、[狀態清冊](r4-migration-status.md)、[收錄紀錄](r4-integration-manifest.md)、[驗證政策](r4-validation-policy.md)、[正式基線](current-baseline-status.md)。
+
+## 2026-11-28｜F 分工補充（取代舊一般 UI 施工分配）
+
+F 為一般前端唯一施工者（work/r4-frontend-ui）；D 唯一正式後端/整合、API/授權/response DTO、CAS/v2/history/replay 與 CI/E2E。A/B 交來源與規則包及必要隔離 harness，保留舊 UI 證據但停止新增一般 UI；C 不改產品 runtime。按 [責任](r4-integration-ownership.md) 與 [HTTP 契約](r4-frontend-api-contract.md) 交付精確差分；不擴張正式 merge/保護授權。未發布能力、mock 與正式權威分列。

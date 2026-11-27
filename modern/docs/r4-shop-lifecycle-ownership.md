@@ -56,3 +56,7 @@ B 只寫 B source/isolated candidate；既有 B 外部候選的共用檔案差�
 B 優先讀本文件及 A 交接，從當下 HEAD 續作 LC-B1/B2；交付 exact head/tree/source pins/差分及原始 CI，列已審來源、候選、正式接線、玩家證據四維，不提交 D 代碼。D 先處理 D9 相關 B-41 guard（選擇性收錄完整正常時間依賴，不僅擴白名單），同時可審查 source package；LC-D1–3 按依賴逐批接入，不重做 D6/D8。A 續 A05–09/其他正常經營；C 維持原有驗證及新 lifecycle evidence plan，不等待 D 才做無關稽核。所有分支 no force/no merge，#25 永遠 CI-only。未經使用者授權不得合併 #18/#22/#27 或變正式基線。
 
 現在沒有額外原版規則決策需求：time callback 已找到明確來源，待真 oracle；若 B 發現真正無法由原版分辨的 gameplay/外部生命週期歧義、重大保存/權限架構衝突或超出授權，附 exact source/可驗證差異與選項交 D，再必要時提使用者。普通技術缺口不要求使用者決策。ENV D10 獨立持續，Windows 實機/完整 CI 仍待驗證；不能因此停其他工作。
+
+## 2026-11-28｜F 前端責任補充
+
+LC-B1/B2、LC-D1/D2/D3 的來源、正式 command、ACL、CAS、保存與必要整合分工不變；上文 LC-D3 的一般玩家 UI 實作由 F 獨占，D 提供真 HTTP/錯誤/能力與 DTO 契約、必要 E2E、正式差分整合。候選 restart-shop/close-shop 不得於 UI 啟用，直到 D 發布權威。reset 仍是本機測試維護而非玩家再出發。保留全部歷史證據。

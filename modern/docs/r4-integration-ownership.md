@@ -26,3 +26,9 @@ GameCore 唯一交易/USE 入口；StreetModule 提供已審閱 registry/callbac
 ## 店舖生命週期（已授權責任分配，2026-11-27）
 
 以 [店舖生命週期唯一施工責任與介面契約](r4-shop-lifecycle-ownership.md) 為準：B 獨占自主 restart/cls 的來源 wrapper、帳號/session/registration/子資料及外部效果候選；D 獨占正式入口、owner ACL、GameCore/CAS、同一 v2/replay、封存與日誌發布及 HTTP/UI；A 重用既有 close 來源、續正常經營，不再寫兩個入口；C 獨立驗證。不將測試 reset 作玩家再出發，不變正式基線或合併授權。
+
+## 2026-11-28｜F 窗前端唯一施工責任（本次交接生效；正式基線待審閱）
+
+本節取代上方舊 A/B/D 一般 UI 作者責任，不刪除歷史證據。F 獨占 work/r4-frontend-ui 的一般玩家 UI：modern/local-ui/app.js、index.html、style.css、前端素材、API client、DOM/layout/互動測試；A/B 不再平行新增正式頁面，保留已有成果及測試、原版來源與隔離 harness。D 獨占 integration/r4-unified-migration-20261126、modern/src/ 共用核心、modern/scripts/dev-local.mjs、HTTP/ACL/CAS/v2/history/replay、正式 CI/必要 E2E；選擇性收錄 F 完整差分，緊急安全修補碰 UI 時先明示最小範圍並同步 F。C 獨立驗證，P 唯讀。F mock/fixture 不得成為正式狀態或授權權威。
+
+F 交付 exact HEAD/tree、base、檔案/blob、原版來源/選單/拒絕、API 版本及前端測試；D 核對後選擇性收錄完整閉包，保留 P1–P5、原拒絕及來源 pins，不整支合併。D API 變更即通知 F；未發布 route/能力維持 disabled，沒有資料即明示未知。F 不寫 D 分支，D 不寫 F 分支。參見 [HTTP 契約清冊](r4-frontend-api-contract.md)。工作窗分工已生效，正式文件收錄待審閱，未變更 CI/正式基線/merge 授權。
