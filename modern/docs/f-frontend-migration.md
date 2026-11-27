@@ -42,3 +42,6 @@ F1 來源已核對（限展示架連結）；前端候選；受控 CI 待驗；�
 
 ## F2 — 共用提交與錯誤呈現（候選）
 D50 app.js 原 call 未限制同時 POST，reset 另有獨立 handler；初次 GET 可和操作競跑，catch 亦將已提交但畫面失敗當普通失敗。F2 增加全頁 single-flight（含 reset）、初次讀取防競跑、revision conflict 明示重新確認、斷線/JSON 未確認結果不誤判已拒絕、不自動重試、已確認提交但畫面失敗另提示。沿用全部原請求欄位、CAS、state 及確認 reset；不修改後端權限、不創建新儲存。新增受控函式測試：並發、初讀、stale、斷線、render failure，reset wiring。此為前端保護，不代表 server transaction 成功率或正式玩家驗收。F1 run46061544570 最後查詢 in_progress；F2 CI 待查。
+
+## F3 — 原版丟棄／解雇表單（限 D50 bounded discard contract）
+實讀 D50 core-item-detail.cgi 及 A39 pinned core-inc-item-throw.cgi 714e623b9fd1f40ce7c51b89503d2a801330f1bb：t/notrash 禁止表單、h/human 解雇、1/10/100/1000/10000/全部或全員及零預設。前端依 server catalog/owned 呈現選項；不自行改庫存、金錢、垃圾或批發。維持 D50 POST discard {expectedRevision,itemId,count} 及 count<=owned，沒有模擬原版超量裁切、垃圾、批發、log 或 lastlogin。A 已有完整 source runtime/quote，D 尚未接，整合後應採 D projection 而非平行權威。新增原版 Perl 頁面選項差分與 t/h 呈現測試；CI 待驗。F1/2 受控實跑結果見 PR28 留言；非完整 Node/HTTP/browser。
