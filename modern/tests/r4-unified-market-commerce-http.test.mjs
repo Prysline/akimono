@@ -13,6 +13,8 @@ test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and t
   assert.equal(p.state.marketPageRows,25);
   assert.deepEqual(p.state.marketOffers.map(x=>x.shelf),p.state.marketOffers.map((_,i)=>i));
   assert.equal(p.stock(63),1);
+  const openingRow=[p.state.world.nowSeconds,1,0,'高階鍛造實測開設新商店了。'].join('\t')+'\n';
+  assert.equal(p.state.world.period.disk.live['log0.cgi'].bytes,openingRow,'source new.cgi public log after FUNCNEW');
   await p.discard(63);
   let q;
   for(let n=0;n<120;n++){
@@ -40,6 +42,7 @@ test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and t
   assert.deepEqual(p.state.world,after);assert.equal(p.state.historyCommands,history);
   assert.equal(await readFile(join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(after),'play.cgi'),'utf8'),after.period.disk.live['play.cgi'].bytes);
   assert.deepEqual(await p.saveAndRestart(0),after);
+  assert.equal(['log0.cgi','log1.cgi','log2.cgi'].flatMap(k=>p.state.world.period.disk.live[k].bytes.split('\n')).filter(row=>row===openingRow.trimEnd()).length,1,'opening source log appears once after reload');
   await p.discard(63);
   await p.enoughTime(600);
   const beforeClear=p.state.world;

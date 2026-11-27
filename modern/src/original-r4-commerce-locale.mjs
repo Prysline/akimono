@@ -19,6 +19,7 @@ export function reviewOriginalCommerceLocale(sources){
     '時間':'小時','市場':'市場','分':'分','秒':'秒','日':'日',
     '棚%1に%2を%3で陳列しました。':'將%2%3陳列在展示架%1上了。',
     '棚%1への陳列をやめました。':'從展示架%1下架了。',
+    '%1が新装開店しました。':'%1開設新商店了。',
   };
   for(const [id,value] of Object.entries(keys)){
     const marker='msgid '+JSON.stringify(id)+'\n';

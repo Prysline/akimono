@@ -35,6 +35,11 @@ export function createIndependentDiskProjection({sources,sort,street}){
   // Source log activation follows the existing staged market-commerce
   // capability. Legacy adapter logs stay unchanged in the default mode.
   const reviewedLocale=street.marketBuy?.reviewedVoucher?reviewOriginalCommerceLocale(sources):null;
+  // Frozen new.cgi emits PushLog after FUNCNEW unless NOLOG is set.
+  // The exact reviewed Standard Street DSL only comments out that option.
+  if(reviewedLocale&&(sha1(sources.itemDsl)!=='7a18185e98b32aee82ca1ce30d6f3c395157dbcb'||
+    !sources.newSource.includes('PushLog(1,0,l("%1が新装開店しました。",$Q{sname})) if !$DEFINE_FUNCNEW || !$DEFINE_FUNCNEW_NOLOG;')))
+    fail('frozen new-shop announcement source');
   const buyLog=reviewedLocale?reviewOriginalWholesaleBuyLog({...sources,catalog:street.catalog,reviewedLocale}):null;
   const showcaseLog=reviewedLocale?reviewOriginalShowcaseLog({...sources,catalog:street.catalog,reviewedLocale}):null;
   function wire(world){
@@ -80,7 +85,8 @@ export function createIndependentDiskProjection({sources,sort,street}){
     const newRows=[...logRows];
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
-    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
+    // Source locale is enabled only in the same staged commerce mode.
+    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+(reviewedLocale?'開設新商店了。':'が新装開店しました。')].join('\t')+'\n');
     const sourceShowcase=showcaseLog&&command.kind==='edit-showcase';
     const sourceBuy=buyLog&&command.kind==='market-buy';
     if(sourceShowcase)newRows.unshift(projectOriginalShowcaseLog({reviewed:showcaseLog,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
