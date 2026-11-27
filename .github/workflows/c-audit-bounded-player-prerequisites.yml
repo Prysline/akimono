@@ -1,0 +1,118 @@
+name: C audit - bounded player prerequisite diagnostics
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  observe:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [high-forge-66, p5-funds]
+    env:
+      AUDIT_CASE: ${{ matrix.case }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'b3e9b4956b2091b4175b89b446628d7139f45540'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin actual candidate and unchanged test sources
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c69"; mkdir -p "$out"
+          git rev-parse HEAD 'HEAD^{tree}' | tee "$out/environment.log"
+          test "$(git rev-parse HEAD)" = 'b3e9b4956b2091b4175b89b446628d7139f45540'
+          test "$(git rev-parse 'HEAD^{tree}')" = '689d8d37d2c4fb4d008e7798917e0fc5bcfbdbc6'
+          test "$(git hash-object modern/tests/p3-v2-high-forge-66.test.mjs)" = 'ae6f58c0a212c544504128d6c9c5172b6d8ea932'
+          test "$(git hash-object modern/tests/support/p3-high-forge.mjs)" = '187b03899bd092dfa2935d13a81dedf10d103c87'
+          test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+          test "$(git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test -z "$(git status --porcelain)"
+      - name: Execute unchanged original
+        id: original
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c69"
+          if [ "$AUDIT_CASE" = high-forge-66 ]; then
+            target=tests/p3-v2-high-forge-66.test.mjs
+          else
+            target=tests/p5-book-work-v2-player-http.test.mjs
+          fi
+          set +e
+          node --test "$target" >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          cat "$out/original.log"
+          printf '%s\n' "$status" >"$out/original-exit.txt"
+          exit "$status"
+      - name: Independent observation with unchanged guards and original budget
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c69"
+          target=tests/c69-player-observation.mjs
+          support=tests/support/c69-genuine-player.mjs
+          forge=tests/support/c69-high-forge.mjs
+          test ! -e "$target" && test ! -e "$support" && test ! -e "$forge"
+          trap 'rm -f "$target" "$support" "$forge"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const read=p=>readFileSync(p,'utf8');
+          const write=(p,s)=>writeFileSync(p,s,{flag:'wx'});
+          const swap=(s,a,b)=>{if(s.split(a).length!==2)throw Error('nonunique anchor: '+a);return s.replace(a,()=>b);};
+          if(process.env.AUDIT_CASE==='high-forge-66'){
+            const anchor='      await tick(crossPeriod?60:Math.min(60,Math.floor((boundary()-1)/60)));';
+            write('tests/support/c69-genuine-player.mjs',swap(read('tests/support/p3-genuine-v2-player.mjs'),anchor,
+              "      t.diagnostic('C69_MARKET_WAIT '+JSON.stringify({id,needed,partial,sell,stock:stock(id),money:state.shop.money,remaining:remaining(),boundary:boundary(),nextMinutes:crossPeriod?60:Math.min(60,Math.floor((boundary()-1)/60)),revision:state.world.revision,offer:offer?{canBuy:offer.canBuy,marketStock:offer.marketStock,limit:offer.limit,price:offer.price,timeSeconds:offer.timeSeconds}:null}));\n"+anchor));
+            write('tests/support/c69-high-forge.mjs',swap(read('tests/support/p3-high-forge.mjs'),'./p3-genuine-v2-player.mjs','./c69-genuine-player.mjs'));
+            write('tests/c69-player-observation.mjs',swap(read('tests/p3-v2-high-forge-66.test.mjs'),'./support/p3-high-forge.mjs','./support/c69-high-forge.mjs'));
+          }else{
+            let s=read('tests/p5-book-work-v2-player-http.test.mjs');
+            const delta='      nonWorkFunds+=Math.max(0,r.state.shop.money-before.shops[0].money);';
+            s=swap(s,delta,delta+"\n      if(r.state.shop.money>before.shops[0].money||r.state.world.period.settledCount!==before.period.settledCount)t.diagnostic('C69_P5_NONWORK '+JSON.stringify({beforeMoney:before.shops[0].money,afterMoney:r.state.shop.money,delta:r.state.shop.money-before.shops[0].money,periodBefore:before.period.settledCount,periodAfter:r.state.world.period.settledCount,revision:r.state.world.revision,nonWorkFunds,totalPaid}));");
+            const loop='  for(let n=0;totalPaid<=nonWorkFunds&&n<32;n++){';
+            s=swap(s,loop,loop+"\n    t.diagnostic('C69_P5_ITER '+JSON.stringify({n,cap:32,totalPaid,nonWorkFunds,requiredPurchases:Math.max(0,Math.floor((nonWorkFunds-totalPaid)/5000)+1),money:p.state.shop.money,revision:p.state.world.revision,period:p.state.world.period.settledCount}));");
+            const assertion="  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');";
+            s=swap(s,assertion,"  t.diagnostic('C69_P5_FINAL '+JSON.stringify({cap:32,totalPaid,nonWorkFunds,workFundedPurchase,money:p.state.shop.money,revision:p.state.world.revision,period:p.state.world.period.settledCount,requiredPurchases:Math.max(0,Math.floor((nonWorkFunds-totalPaid)/5000)+1)}));\n"+assertion);
+            write('tests/c69-player-observation.mjs',s);
+          }
+          NODE
+          if [ "$AUDIT_CASE" = high-forge-66 ]; then
+            git diff --no-index -- tests/p3-v2-high-forge-66.test.mjs "$target" >"$out/test.diff" || test "$?" = 1
+            git diff --no-index -- tests/support/p3-genuine-v2-player.mjs "$support" >"$out/player.diff" || test "$?" = 1
+            git diff --no-index -- tests/support/p3-high-forge.mjs "$forge" >"$out/forge.diff" || test "$?" = 1
+            node --check "$support"; node --check "$forge"
+          else
+            git diff --no-index -- tests/p5-book-work-v2-player-http.test.mjs "$target" >"$out/test.diff" || test "$?" = 1
+          fi
+          cat "$out/"*.diff
+          node --check "$target"
+          set +e
+          node --test "$target" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          cat "$out/observation.log"
+          printf '%s\n' "$status" >"$out/observation-exit.txt"
+          rm -f "$target" "$support" "$forge"
+          test "$(git hash-object tests/p3-v2-high-forge-66.test.mjs)" = 'ae6f58c0a212c544504128d6c9c5172b6d8ea932'
+          test "$(git hash-object tests/support/p3-high-forge.mjs)" = '187b03899bd092dfa2935d13a81dedf10d103c87'
+          test "$(git hash-object tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+          test "$(git hash-object tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c69-${{ matrix.case }}-exact-observations
+          path: ${{ runner.temp }}/c69/
+          if-no-files-found: warn
+          retention-days: 30
