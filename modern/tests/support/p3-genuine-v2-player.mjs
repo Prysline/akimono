@@ -107,8 +107,16 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,fullCommer
       await enoughTime(offer.timePerUseSeconds*count);
     }
     const offer=quote(id,useId);
+    // Snapshot after all time waits. A real advance may legitimately emit
+    // EVENT/settlement logs; the callback-free gift command itself may not.
+    const silentGift=fullCommerce&&crossPeriod&&id===79;
+    const beforeLogs=silentGift?Object.fromEntries(['log0.cgi','log1.cgi','log2.cgi'].map(name=>[name,structuredClone(state.world.period.disk.live[name])])):null;
     const result=await command('/api/use',{itemId:id,useId,requestedCount:count,...(offer.targetShopId?{targetShopId:offer.targetShopId}:{})});
     assert.equal(result.details.effectiveCount,count);
+    if(silentGift){
+      assert.ok(!Object.hasOwn(result.details,'originalInlineLogCalls'));
+      for(const [name,entry] of Object.entries(beforeLogs))assert.deepEqual(state.world.period.disk.live[name],entry,'original silent gift #79/'+useId+': '+name);
+    }
     return result;
   }
   async function deny(id,useId,extra={}){

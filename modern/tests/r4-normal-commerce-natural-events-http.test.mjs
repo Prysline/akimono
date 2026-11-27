@@ -72,7 +72,10 @@ test('R4 genuine ten natural durable EVENT lifecycles, DataRead effects, logs an
       for(const [id,code,override] of plusEffects){
         const row=slice.eventCommerce.plusChanges.find(x=>x.itemId===id);
         assert.equal(row?.plusSeconds,own(initial,code)?override:-1200);
-        assert.equal(row.signedDelta,row.units*Math.sign(row.plusSeconds));
+        // This is a JSON HTTP receipt: JSON.stringify(-0) is "0".
+        // Preserve exact nonzero signed amount, RNG and all stock assertions.
+        assert.ok(Number.isSafeInteger(row.units)&&row.units>=0);
+        assert.equal(row.signedDelta,row.units===0?0:row.units*Math.sign(row.plusSeconds));
         assert.ok(row.drawsUsed===1||row.drawsUsed===2);
       }
       for(const row of d.shelfSales.filter(row=>row.sliceIndex===index)){
