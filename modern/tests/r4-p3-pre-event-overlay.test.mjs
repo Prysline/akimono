@@ -13,7 +13,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
 
 import {reviewR4SortedPreEvent,projectR4SortedInventoryPreEventTurn} from '../src/original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay} from '../src/original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay,projectR4CommerceReadItems} from '../src/original-r4-pre-event-item-overlay.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const locations=[
  ['itemDsl','custom/inc-item-data.cgi'],
@@ -707,4 +707,22 @@ test('D13 source compiler matches all 79 A metadata rows and admits reviewed mar
   assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(forged,1,Array(121).fill(0),marketStreet),reviewedR4,reviewedDataRead,activeOrder:[]}),/holding cap/);
   const fake={...marketStreet,reviewedB41:{...marketStreet.reviewedB41}};
   assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,1,Array(121).fill(0),fake),reviewedR4,reviewedDataRead,activeOrder:[]}),/inventory\/shelf supported/);
+});
+
+
+test('D24 read-only full ITEM projection uses source POP overlay without expanding P3 sale authority',async()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  const metadata=reviewNormalCommerceItems({itemDsl:source.itemDsl,compilerSource:source.originalCompilerSource,
+    turnSource:source.originalTurnSource,showcaseSource:await readFile(path.join(root,'modern/tests/original-perl/sc-s.cgi'),'utf8')});
+  const input={reviewed:reviewedDataRead,world,normalCommerce:metadata,plusReview:street.reviewedAllPlus};
+  const baseline=projectR4CommerceReadItems(input);
+  assert.deepEqual(baseline,metadata.items);
+  world.period.eventState={'boom-posyon':world.nowSeconds+1000};
+  const before=structuredClone(world),projected=projectR4CommerceReadItems(input);
+  for(const id of [1,30,31,32,33,34])assert.equal(projected[id-1].popular,Math.trunc(metadata.items[id-1].popular/1.5));
+  assert.equal(projected[62].popular,metadata.items[62].popular);
+  assert.deepEqual(world,before);
+  assert.throws(()=>projectR4CommerceReadItems({...input,normalCommerce:{...metadata}}),/reviewed read-only ITEM context/);
+  world.period.eventState={rebel:world.nowSeconds+1000};
+  assert.throws(()=>projectR4CommerceReadItems(input),/reviewed read-only ITEM context/);
 });

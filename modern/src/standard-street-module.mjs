@@ -1,3 +1,4 @@
+import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
@@ -61,7 +62,7 @@ import {reviewOriginalB60HappyEvent}
   from './original-b60-happy-event-nowfunc.mjs';
 import {reviewOriginalB61SwordDemand}
   from './original-b61-sword-demand-event.mjs';
-import {reviewR4PreEventItemOverlay,validateR4OrdinaryEventContext} from './original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,validateR4OrdinaryEventContext,projectR4CommerceReadItems} from './original-r4-pre-event-item-overlay.mjs';
 import {attachR4ReviewedTimeController} from './original-r4-reviewed-world-time.mjs';
 import {reviewR4WorldTransitionGate,allowR4UnsettledWorldTransition}
   from './original-r4-world-transition-gate.mjs';
@@ -631,6 +632,22 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   if(reviewedMarketToolMetadata!==null&&
      (marketBuy?.getRule(63)?.zeroPriceReviewed!==true||giftMap.limits[62]?.limit!==1||giftMap.limits[62]?.wslimit!==1))
     bad('reviewed market tool holding and buy contract');
+  const reviewedBuyDetail=reviewedBuyForm&&reviewedMarketToolMetadata&&ordinaryEventReview?
+    reviewOriginalBuyDetail({buyFormSource:originalBuyFormSource,wholeSource:originalWholeSource,
+      compilerSource:originalCompilerSource,itemDsl}):null;
+  function buyDetailItems(world){
+    if(!reviewedBuyDetail||!world?.period?.eventState||world.shops?.length!==1||
+       world.shops[0].id!==1||world.shops[0].status!==1||world.shops[0].guild||!knownOrdinaryEvents(world))return null;
+    const input=enableReviewedCrossPeriod?independentCandidateWorld(world):world;
+    return projectR4CommerceReadItems({reviewed:ordinaryEventReview,world:input,normalCommerce:reviewedMarketToolMetadata,
+      plusReview:reviewedAllPlus,candidateSettled:enableReviewedCrossPeriod});
+  }
+  function addBuyDetail(offer,items){
+    if(!items)return offer;
+    const item=items[offer.itemId-1];
+    const detail=describeOriginalBuyDetail({reviewed:reviewedBuyDetail,offer,item,popular:item.popular});
+    return detail?Object.freeze({...offer,detail}):offer;
+  }
   const reviewedB41=reviewedMarketBuy10&&reviewedNaturalPlus?
     reviewB41Sale({reviewedNatural:reviewedNaturalPlus,
        itemDsl,rebelDsl,turnSource:originalTurnSource,
@@ -1088,5 +1105,15 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       bad('unreviewed Standard Street action '+command.kind);
     },
   });
-  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:base,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod}):base;
+  // Read projections share the authoritative Registry; no change to command application.
+  const withDetails=reviewedBuyDetail?Object.freeze({...base,
+    quoteMarketOffer(world,itemId){return addBuyDetail(base.quoteMarketOffer(world,itemId),buyDetailItems(world));},
+    listMarketOffers(world){
+      const offers=base.listMarketOffers(world);
+      if(!offers.length)return offers;
+      const items=buyDetailItems(world);
+      return items?Object.freeze(offers.map(offer=>addBuyDetail(offer,items))):offers;
+    },
+  }):base;
+  return enableReviewedNormalTime?attachR4ReviewedTimeController({street:withDetails,sources:r4Sources,reviewedDataRead:ordinaryEventReview,enableReviewedCrossPeriod}):withDetails;
 }

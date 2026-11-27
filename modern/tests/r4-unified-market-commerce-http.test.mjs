@@ -28,6 +28,12 @@ test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and t
   q=p.state.marketOffers.find(x=>x.itemId===63);
   assert.equal(q.form.source,'r4-frozen-buy-form.v1');
   assert.equal(q.form.available,true);
+  assert.equal(q.detail.source,'r4-frozen-buy-detail.v1');
+  assert.equal(q.detail.name,q.name);
+  assert.equal(q.detail.price,q.price);
+  assert.equal(q.detail.marketStock,q.marketStock);
+  assert.equal(q.detail.owned,q.owned);
+  assert.equal(q.detail.saleWarning,null,'no POP warning for original noshowcase item');
   assert.deepEqual(q.form.options,[{count:1,label:'1（倉庫最多）'}]);
   const before=p.state.world,cmd={expectedRevision:before.revision,itemId:63,requestedCount:2,marketShelf:q.shelf,expectedPrice:q.price};
   const bought=await p.post('/api/buy',cmd);
@@ -41,7 +47,9 @@ test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and t
   const stale=await p.post('/api/buy',cmd);assert.equal(stale.ok,false);
   assert.deepEqual(p.state.world,after);assert.equal(p.state.historyCommands,history);
   assert.equal(await readFile(join(p.directory,PERIOD_DISK_DIRECTORY,independentPeriodDiskDigest(after),'play.cgi'),'utf8'),after.period.disk.live['play.cgi'].bytes);
+  const offersBeforeReload=structuredClone(p.state.marketOffers);
   assert.deepEqual(await p.saveAndRestart(0),after);
+  assert.deepEqual(p.state.marketOffers,offersBeforeReload);
   assert.equal(['log0.cgi','log1.cgi','log2.cgi'].flatMap(k=>p.state.world.period.disk.live[k].bytes.split('\n')).filter(row=>row===openingRow.trimEnd()).length,1,'opening source log appears once after reload');
   await p.discard(63);
   await p.enoughTime(600);
