@@ -195,3 +195,7 @@ B verified 4415c294644a3846a4db0001d3d87caf925409d7/tree5a1b408de6a5bdac82961074
 
 ## D37｜自主閉店完整商業測試前提修復
 Static review found D34 reused the legacy archive oracle with showcasecount=0 despite one shelf/price entry. Add explicit --full-commerce-shape to the existing Perl probe, preserve default legacy oracle, invoke it only from D34 test. Exact bytes remain produced by original CloseShop; no runtime guard relaxed or frozen source modified. D37 CI pending; no claimed verified fix yet.
+
+
+## D38｜原版登記 header 與 DataRead 有效 nextid
+Pinned registration/membership/DataRead/DataWrite source header projector. Registration records raw allocated nextid vs canonical nextid+1 after read, first-shop lasttime, remoteaddr/blockip; restart preserves header and close uses persisted actor address including blank after restart. Isolated original two-shop Perl test emits optional synthetic header observation, existing assertions unchanged; JS compares exact raw/reloaded header and allocation. Other source branches tested as controlled projections. Not registration authorization, no world schema/publication change, no reuse of old ID. D38 CI pending.

@@ -200,6 +200,16 @@ is((split(/,/,$rows[8],-1))[0],1,'Alice sorted second');
 
 DataRead();
 is($DTnextid,4,'actual DataRead repairs next ID after new-shop publication');
+if($ENV{R4_LIFECYCLE_HEADER_EVIDENCE}){
+  my @priorRows=split(/\n/,$before);
+  my @priorHeader=split(/,/,$priorRows[1],-1);
+  note('R4_HEADER_JSON '.JSON::PP->new->canonical->ascii->encode({
+    before=>{lasttime=>0+$priorRows[0],nextid=>0+$priorHeader[1],blockip=>$priorHeader[2]},
+    after=>{lasttime=>0+$rows[0],nextid=>0+$header[1],blockip=>$header[2]},
+    reload=>{lasttime=>0+$DTlasttime,nextid=>0+$DTnextid,blockip=>$DTblockip},
+    allocatedId=>0+$DT[$id2idx{3}]{id},nowSeconds=>0+$NOW_TIME
+  }));
+}
 is($id2idx{3},0,'new ID maps to current first row');
 is($id2idx{1},1,'existing ID maps to current second row');
 is($DT[$id2idx{3}]{money},100000,'new shop core cash');
