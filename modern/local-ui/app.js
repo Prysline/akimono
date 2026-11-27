@@ -72,6 +72,51 @@ function updateNavigation(){
     (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
   syncStatusVisibility();
 }
+let openIconLoaded=false,iconFormSequence=0,iconChoices=[];
+function portrait(img,placeholder,id,alt){
+  placeholder.textContent=id?'頭像 '+id+'（圖片未提供）':'頭像未設定';
+  img.alt=alt??'';
+  if(!Number.isSafeInteger(id)||id<1||id>25){img.hidden=true;placeholder.hidden=false;img.removeAttribute('src');return;}
+  const src='/image/kao/kao'+id+'.png';
+  if(img.getAttribute('src')===src)return;
+  img.hidden=true;placeholder.hidden=false;
+  img.onload=()=>{img.hidden=false;placeholder.hidden=true;};
+  img.onerror=()=>{img.hidden=true;placeholder.hidden=false;};
+  img.src=src;
+}
+async function loadIconForm(kind){
+  const open=kind==='open',select=$(open?'open-icon':'owner-icon-select'),seq=++iconFormSequence;
+  select.disabled=true;
+  if(!open)$('owner-icon-submit').disabled=true;
+  try{
+    const res=await fetch('/api/owner-icon-form?kind='+kind),data=await res.json();
+    if(!res.ok)throw Error(data.error);
+    if(seq!==iconFormSequence)return;
+    iconChoices=data.icons;
+    select.replaceChildren();
+    for(const [id,label] of [[data.randomIcon,'隨機'],...data.icons.map(x=>[x.id,'頭像'+x.id])]){
+      const opt=document.createElement('option');opt.value=String(id);opt.textContent=label;select.append(opt);
+    }
+    select.selectedIndex=0;select.disabled=false;
+    if(!open){$('owner-icon-submit').disabled=false;text('owner-icon-status','');}
+  }catch(error){
+    if(seq!==iconFormSequence)return;
+    if(open){openIconLoaded=false;feedback('頭像選項載入失敗：'+error.message,null,true);}
+    else text('owner-icon-status','頭像選項載入失敗：'+error.message);
+  }
+}
+function showIconList(){
+  const grid=$('owner-icon-grid');grid.replaceChildren();
+  for(let i=0;i<iconChoices.length;i+=5){
+    const tr=document.createElement('tr');
+    for(const item of iconChoices.slice(i,i+5)){
+      const td=document.createElement('td'),img=document.createElement('img'),label=document.createElement('span');
+      img.width=item.width;img.height=item.height;td.append(img,label);portrait(img,label,item.id,'頭像 '+item.id);tr.append(td);
+    }
+    grid.append(tr);
+  }
+  $('owner-icon-dialog').showModal();
+}
 function selectTab(name,libraryChapter=null){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
@@ -79,6 +124,7 @@ function selectTab(name,libraryChapter=null){
   if(name==='army')currentGroup='facility';
   if(name==='news'||name==='library')currentGroup='info';
   if(name==='library')void renderLibrary(libraryChapter);
+  if(name==='procedures'&&snapshot?.shop&&snapshot.reviewedOwnerIcon)void loadIconForm('procedures');
   updateNavigation();
 }
 function selectGroup(name){
@@ -685,6 +731,11 @@ function showState(s){
     (eventDefinitionLabel?' '+eventDefinitionLabel:''));
   text('store-name',shop?.shopname??'未開店');
   text('owner-name',shop?.name??'—');
+  portrait($('owner-portrait'),$('owner-portrait-placeholder'),shop?.icon,shop?.name);
+  $('owner-icon-form').hidden=!(shop&&s.reviewedOwnerIcon);
+  $('open-icon-label').hidden=$('open-icon-list-button').hidden=Boolean(shop)||!s.reviewedOwnerIcon;
+  if(shop)openIconLoaded=false;
+  else if(s.reviewedOwnerIcon&&!openIconLoaded){openIconLoaded=true;void loadIconForm('open');}
   text('shop-title','店內');
   text('shop-info-name',shop?.shopname??'尚未開店');
   text('shop-info-money',money(shop?.money));
@@ -926,6 +977,15 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+$('open-icon-list-button').addEventListener('click',showIconList);
+$('owner-icon-list-button').addEventListener('click',showIconList);
+$('owner-icon-form').addEventListener('submit',async event=>{
+  event.preventDefault();const before=snapshot,button=$('owner-icon-submit'),select=$('owner-icon-select');
+  if(button.disabled||select.disabled||!before?.shop||!before.reviewedOwnerIcon)return;
+  button.disabled=true;
+  try{await call('/api/owner-icon',{expectedRevision:before.world.revision,icon:Number(select.value)},'頭像修改');}
+  finally{button.disabled=false;}
+});
 for(const [form,input] of [['comment-form','shop-comment-input'],['owner-comment-form','owner-comment-input']]){
   $(form).addEventListener('submit',async event=>{
     event.preventDefault();const before=snapshot,buttons=[$('comment-submit'),$('owner-comment-submit')];
@@ -1028,9 +1088,12 @@ $('reset-world').addEventListener('click',async()=>{
 });
 $('initialize').addEventListener('click',()=>call('/api/initialize',{},'初始化來源世界'));
 $('open-shop').addEventListener('submit',async e=>{
-  e.preventDefault();await call('/api/open-shop',{
+  e.preventDefault();
+  if(snapshot?.reviewedOwnerIcon&&$('open-icon').disabled)return;
+  await call('/api/open-shop',{
     expectedRevision:snapshot?.world?.revision,
     ownerName:$('owner').value,shopName:$('shop-name').value,
+    ...(snapshot?.reviewedOwnerIcon?{icon:Number($('open-icon').value)}:{}),
   },'開店');
 });
 $('supply').addEventListener('click',()=>call('/api/supply',{

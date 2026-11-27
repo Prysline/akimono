@@ -455,3 +455,8 @@ test('R4 original comment has two local owner form entries sharing one HTTP comm
  assert.match(html,/id="tab-procedures"[\s\S]*?id="comment-form"[\s\S]*?id="shop-comment-input"/);
  assert.match(html,/id="tab-shop"[\s\S]*?id="owner-comment-form"[\s\S]*?id="owner-comment-input"/);
 });
+
+test('R4 icon form offers separate registration and procedures entries with concrete IDs',()=>{
+ assert.match(html,/id="open-icon"/);assert.match(html,/id="owner-icon-select"/);
+ assert.match(html,/id="owner-icon-dialog"/);assert.match(html,/id="owner-portrait"/);
+});

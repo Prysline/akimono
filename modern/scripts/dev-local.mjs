@@ -11,7 +11,8 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,randomInt} from 'node:crypto';
+import {isOwnerIcon} from '../src/original-r4-owner-icon.mjs';
 import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
@@ -116,6 +117,7 @@ const {
 
 const originalUseFormSource=await readPinnedSource('modern/tests/original-perl/core-item-m.cgi');
 const [originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource]=await Promise.all(['core-other.cgi','core-user-settings.cgi','core-name.cgi'].map(name=>readPinnedSource('modern/tests/original-perl/'+name)));
+const [originalIconListSource,originalIconPluginSource,originalIconNewFormSource]=await Promise.all(['modern/tests/original-perl/core-icon.cgi','modern/tests/original-perl/core-img.cgi','custom/inc-new.cgi'].map(readPinnedSource));
 const reviewedUseForm=reviewOriginalUseForm({formSource:originalUseFormSource,itemDsl,compilerSource:originalCompilerSource,calcSource:originalBuyCalcSource,configSource:originalConfigSource});
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
@@ -138,6 +140,7 @@ const streetModule=createStandardStreetModule({
   originalBuyFormSource,
   originalMarketListSource,
   originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalCommentOwnerMainSource:originalIncMainSource,
+  originalIconListSource,originalIconPluginSource,originalIconNewFormSource,
   originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
@@ -194,7 +197,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-       originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalIconListSource,originalIconPluginSource,originalIconNewFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -236,6 +239,7 @@ function state(){
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
     reviewedShopComment:streetModule.reviewedShopComment===true,
+    reviewedOwnerIcon:streetModule.reviewedOwnerIcon===true,
     ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
     ownerScene:reviewedFullCommerce?describeOriginalOwnerScene({reviewed:reviewedOwnerHelp,world}):null,
     ownerClock:reviewedFullCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
@@ -414,6 +418,13 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 async function api(req,res,url){
+  if(url.pathname==='/api/owner-icon-form'){
+    if(req.method!=='GET')return send(res,405,{ok:false,error:'頭像選項為唯讀'});
+    const kind=url.searchParams.get('kind'),hasShop=Boolean(repo?.read().shops.length);
+    if(!streetModule.reviewedOwnerIcon||[...url.searchParams].length!==1||
+      !((kind==='open'&&!hasShop)||(kind==='procedures'&&hasShop)))return send(res,409,{ok:false,error:'頭像表單尚未開放'});
+    return send(res,200,streetModule.describeOwnerIconForm(n=>randomInt(n)));
+  }
   if(url.pathname==='/api/library'){
     if(req.method!=='GET')return send(res,405,{ok:false,error:'圖書館為唯讀'});
     const entries=[...url.searchParams];
@@ -522,13 +533,15 @@ async function api(req,res,url){
     }
     case '/api/open-shop': {
       const ownerName=body.ownerName,shopName=body.shopName;
+      const hasIcon=Object.hasOwn(body,'icon');
+      if(hasIcon&&(!streetModule.reviewedOwnerIcon||!isOwnerIcon(body.icon)||!exactKeys(body,'expectedRevision,ownerName,shopName,icon')))throw Error('頭像必須是表單編號 1 至 25');
       if(typeof ownerName!=='string'||typeof shopName!=='string')
         throw Error('店主與店名必須是文字');
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       if(repo.read().shops.length) return send(res,409,
         {ok:false,error:'B-40 本機來源限定單店；已經開店',state:state()});
       result=commit({kind:'open-shop',expectedRevision:ensureRevision(body),
-        shopId:1,ownerName,shopName});
+        shopId:1,ownerName,shopName,...(hasIcon?{icon:body.icon}:{})});
       break;
     }
     case '/api/r2/advertisement-package-market-preflight':
@@ -589,6 +602,12 @@ async function api(req,res,url){
       if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
       result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
         expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/owner-icon': {
+      if(!repo||!streetModule.reviewedOwnerIcon)return send(res,409,{ok:false,error:'頭像需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,icon')||!isOwnerIcon(body.icon))throw Error('頭像只接受 expectedRevision、1 至 25 的 icon');
+      result=commit({kind:'edit-owner-icon',expectedRevision:ensureRevision(body),shopId:1,icon:body.icon});
       break;
     }
     case '/api/shop-comment': {
@@ -670,6 +689,13 @@ const server=http.createServer(async (req,res)=>{
   try{
     const url=new URL(req.url,'http://127.0.0.1');
     if(url.pathname.startsWith('/api/'))return await api(req,res,url);
+    // Only explicitly known portrait paths; never proxy or enumerate arbitrary files.
+    if(req.method==='GET'&&/^\/image\/kao\/kao(?:[1-9]|1[0-9]|2[0-5])\.png$/.test(url.pathname)){
+      try{
+        const image=await readFile(path.join(root,url.pathname.slice(1)));
+        res.writeHead(200,{'content-type':'image/png','x-content-type-options':'nosniff','cache-control':'no-store'});return res.end(image);
+      }catch(error){if(error.code!=='ENOENT')throw error;return send(res,404,{ok:false,error:'原版圖片尚未提供'});}
+    }
     if(req.method!=='GET'||!statics.has(url.pathname))
       return send(res,404,{ok:false,error:'頁面不存在'});
     const mime=url.pathname.endsWith('.js')?'text/javascript':

@@ -78,6 +78,8 @@
         <form id="open-shop" class="inline-form">
           <label>店主 <input id="owner" maxlength="100" required placeholder="店主名稱"></label>
           <label>店名 <input id="shop-name" maxlength="100" required placeholder="商店名稱"></label>
+          <label id="open-icon-label" hidden>頭像 <select id="open-icon" disabled></select></label>
+          <button id="open-icon-list-button" type="button" hidden>頭像一覽</button>
           <button class="primary" type="submit">② 開店</button>
         </form>
       </div>
@@ -99,7 +101,7 @@
       </section>
       <h3 class="sub-title">店家資訊</h3>
       <div class="table-scroll"><table class="shop-info-table"><tbody>
-        <tr><td rowspan="7" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
+        <tr><td rowspan="7" class="shop-icon-cell"><img id="owner-portrait" width="48" height="48" alt="" hidden><span id="owner-portrait-placeholder" class="portrait-placeholder">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
         <tr><th scope="row">店主</th><td id="owner-name">—</td></tr>
         <tr><th scope="row">資金</th><td id="shop-info-money">—</td></tr>
         <tr><th scope="row">行動時間</th><td id="shop-info-time">—</td></tr>
@@ -325,7 +327,13 @@
         <label>評論 <input id="shop-comment-input" type="text" size="36"></label>
         <button id="comment-submit" type="submit">變更</button>
       </form>
-      <p>店長圖像、店名、店長名、密碼、再出發及閉店手續尚未開放。</p>
+            <form id="owner-icon-form" class="inline-form" hidden>
+        <label>店長頭像修改 <select id="owner-icon-select" disabled></select></label>
+        <button id="owner-icon-list-button" type="button">頭像一覽</button>
+        <button id="owner-icon-submit" type="submit" disabled>變更</button>
+        <span id="owner-icon-status" role="status"></span>
+      </form>
+      <p>店名、店長名、密碼、再出發及閉店手續尚未開放。</p>
     </section>
     <section id="tab-sweep" class="section pane" hidden>
       <h2 class="section-title">● 打掃</h2>
@@ -447,5 +455,6 @@
 
     <footer>商人物語・標準街｜單機測試版本；未完成的功能不會模擬正式交易。</footer>
   </main>
+  <dialog id="owner-icon-dialog"><h2>頭像一覽</h2><table><tbody id="owner-icon-grid"></tbody></table><form method="dialog"><button>關閉</button></form></dialog>
 </body>
 </html>

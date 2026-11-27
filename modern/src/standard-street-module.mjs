@@ -1,3 +1,4 @@
+import {reviewOriginalOwnerIcon,describeOriginalOwnerIconForm,projectOriginalOwnerIcon,isOwnerIcon} from './original-r4-owner-icon.mjs';
 import {reviewOriginalShopComment,projectOriginalShopComment} from './original-r4-shop-comment.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {compileReviewedNoGuildAdvertiseUse,projectOriginalNoGuildAdvertisement} from './reviewed-guild-advertise-no-guild-use.mjs';
@@ -189,6 +190,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalUserSource=null,originalErrorSource=null,
   originalPalaceViewSource=null,originalPalaceCommandSource=null,originalPalaceConfigSource=null,
   originalArmyViewSource=null,originalArmyCommandSource=null,originalArmyFileSource=null,
+  originalIconListSource=null,originalIconPluginSource=null,originalIconNewFormSource=null,
   originalCommentFormSource=null,originalCommentSubmitSource=null,originalCommentNameSource=null,originalCommentOwnerMainSource=null,
   originalDiscardFormSource=null,originalDiscardSubmitSource=null,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
@@ -222,6 +224,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const commentInputs=[originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalCommentOwnerMainSource];
   if(commentInputs.some(s=>s!==null)&&commentInputs.some(s=>s===null))bad('incomplete original comment source set');
   const reviewedComment=enableReviewedFullCommerce&&commentInputs.every(s=>s!==null)?reviewOriginalShopComment({ownerMainSource:originalCommentOwnerMainSource,formSource:originalCommentFormSource,submitSource:originalCommentSubmitSource,nameSource:originalCommentNameSource,configSource:originalConfigSource,readSource:originalDataReadSource,logSource:originalLogSource}):null;
+  const iconInputs=[originalIconListSource,originalIconPluginSource,originalIconNewFormSource];
+  if(iconInputs.some(s=>s!==null)&&iconInputs.some(s=>s===null))bad('incomplete original icon source set');
+  const reviewedIcon=enableReviewedFullCommerce&&iconInputs.every(s=>s!==null)?reviewOriginalOwnerIcon({formSource:originalCommentFormSource,submitSource:originalCommentSubmitSource,listSource:originalIconListSource,imagePluginSource:originalIconPluginSource,configSource:originalConfigSource,readSource:originalDataReadSource,newSource:originalNewSource,newFormSource:originalIconNewFormSource,ownerMainSource:originalCommentOwnerMainSource}):null;
   const discardInputs=[originalDiscardFormSource,originalDiscardSubmitSource];
   if(discardInputs.some(s=>s!==null)&&discardInputs.some(s=>s===null))bad('incomplete original discard source set');
   const reviewedDiscard=enableReviewedFullCommerce&&discardInputs.every(s=>s!==null)?reviewOriginalDiscard({
@@ -699,6 +704,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     capabilities:Object.freeze([...actions,
       ...(reviewedSweep?['sweep-shop']:[]),
       ...(reviewedComment?['edit-shop-comment']:[]),
+      ...(reviewedIcon?['edit-owner-icon']:[]),
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
@@ -721,6 +727,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     ...(reviewedDiscard?{reviewedDiscard:true,listDiscardOffers:world=>listOriginalDiscardOffers({reviewed:reviewedDiscard,world})}:{}),
     ...(reviewedSweep?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:reviewedSweep,world})}:{}),
     ...(reviewedComment?{reviewedShopComment:true}:{}),
+    ...(reviewedIcon?{reviewedOwnerIcon:true,describeOwnerIconForm:draw=>describeOriginalOwnerIconForm(reviewedIcon,draw)}:{}),
     reviewedBootstrap,
     reviewedSparsePlus,
     reviewedMultiPlus,
@@ -959,7 +966,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         integer(command.shopId,'shopId',1);
         name(command.ownerName,'ownerName');
         name(command.shopName,'shopName');
-        if(command.icon!==undefined)integer(command.icon,'icon');
+        if(command.icon!==undefined){integer(command.icon,'icon');if(reviewedIcon&&!isOwnerIcon(command.icon))bad('owner icon form value');}
         if(world.shops.some(s=>s.id===command.shopId))bad('duplicate shop id');
         const created=createStandardStreetShop(model,{
           now:world.nowSeconds,id:command.shopId,name:command.ownerName,
@@ -1072,6 +1079,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='edit-owner-icon'){
+        if(!reviewedIcon)bad('original owner icon source review required');
+        return projectOriginalOwnerIcon({reviewed:reviewedIcon,world,command});
       }
       if(command.kind==='edit-shop-comment'){
         if(!reviewedComment)bad('original comment source review required');
