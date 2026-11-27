@@ -347,3 +347,92 @@ jobs:
           path: ${{ runner.temp }}/p3-nayuta/
           if-no-files-found: warn
           retention-days: 30
+
+  lifecycle-compiler-section-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact B lifecycle failure
+        uses: actions/checkout@v4
+        with:
+          ref: '0936465451c7da47e28eb6b3ceb0e0cebb7b3671'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify candidate and unchanged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = '0936465451c7da47e28eb6b3ceb0e0cebb7b3671'
+            test "$(git rev-parse 'HEAD^{tree}')" = 'acc49e65ad033ac6311317c4a0c3c92b44487a32'
+            test "$(git hash-object modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = 'edf97c6055936875ca613b774e3d236832bdb8aa'
+            test "$(git hash-object custom/inc-item-data.cgi)" = '7a18185e98b32aee82ca1ce30d6f3c395157dbcb'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Reproduce original unmodified oracle
+        id: original
+        working-directory: modern/tests/original-perl
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          set +e
+          prove -v original-r4-shop-lifecycle-wrapper.t >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original.log"
+          exit "$status"
+      - name: Isolated one-regex diagnostic copy, all original assertions retained
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern/tests/original-perl
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          original=original-r4-shop-lifecycle-wrapper.t
+          copy=c-audit-lifecycle-section-observation.t
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const src=readFileSync('original-r4-shop-lifecycle-wrapper.t','utf8');
+          const old=src.split('\n').filter(s=>s.startsWith('while($dsl=~'));
+          if(old.length!==1)throw Error('nonunique original section parser');
+          const a='^\\@\\@(?:ITEM|USE|EVENT|FUNC\\w+|END)';
+          const b='^[ \\t]*\\@\\@(?:ITEM|USE|EVENT|FUNC\\w+|END)';
+          if(!old[0].includes(a)||!old[0].endsWith('/mg){'))throw Error('unexpected original parser');
+          const fixed=old[0].replace(a,b).replace('/mg){','/mgi){');
+          writeFileSync('c-audit-lifecycle-section-observation.t',src.replace(old[0],fixed),{flag:'wx'});
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/diagnostic-only.diff" || test "$?" = 1
+          cat "$out/diagnostic-only.diff"
+          set +e
+          prove -v "$copy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          cat "$out/observation.log"
+          rm -f "$copy"
+          trap - EXIT
+          test "$(git hash-object "$original")" = 'edf97c6055936875ca613b774e3d236832bdb8aa'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve separate original and diagnostic TAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-compiler-section-b-0936465
+          path: ${{ runner.temp }}/lifecycle-compiler/
+          if-no-files-found: warn
+          retention-days: 30
