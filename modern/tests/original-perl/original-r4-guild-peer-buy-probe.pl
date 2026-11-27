@@ -93,9 +93,23 @@ my @spec=(
  {name=>'time-cap-existing-sales',bg=>'alpha',sg=>'beta',stock=>2,want=>1,offer=>12500,time=>700000,sold=>4},
  {name=>'time-debt',bg=>'alpha',sg=>'beta',stock=>1,want=>1,offer=>12500,time=>1000001,reject=>1},
 );
+if (@ARGV && $ARGV[0] eq '--normal-items') {
+  # Representative normal purchases, not a full player-flow acceptance suite.
+  $ITEM[1]={price=>50,limit=>4000,name=>'藥草',scale=>'份',flag=>'',funcbuy=>0};
+  $ITEM[40]={price=>1200,limit=>600,name=>'木刀',scale=>'把',flag=>'',funcbuy=>0};
+  $ITEM[65]={price=>50000,limit=>1,name=>'禁斷之書',scale=>'本',flag=>'',funcbuy=>0};
+  @spec=(
+    {name=>'herb-same-guild-third-shelf',itemId=>1,shelf=>2,bg=>'alpha',sg=>'alpha',stock=>40,want=>20,base=>50,offer=>43},
+    {name=>'sword-other-guild-eighth-shelf',itemId=>40,shelf=>7,bg=>'alpha',sg=>'beta',stock=>5,want=>2,base=>1200,offer=>1500,sellerMoney=>-500},
+    {name=>'forbidden-book-zero-pop-listable',itemId=>65,shelf=>1,bg=>'',sg=>'',stock=>1,want=>1,base=>50000,offer=>50000},
+    {name=>'rebel-tax-exempt-peer-sale',itemId=>40,shelf=>1,bg=>'',sg=>'',stock=>5,want=>2,base=>1200,offer=>1200,rebel=>1,taxmode=>2},
+    {name=>'herb-inventory-cap',itemId=>1,shelf=>0,bg=>'',sg=>'',stock=>10,want=>4,held=>3999,base=>50,offer=>50},
+  );
+}
 my @cases;
 for my $s(@spec){
-    %DTevent=();@trace=();@rank_draws=@{$s->{draws}//[]};@rank_ranges=();
+    my $it=$s->{itemId}//79;my $sc=$s->{shelf}//0;my $ix=$it-1;
+    %DTevent=$s->{rebel}?(rebel=>1):();@trace=();@rank_draws=@{$s->{draws}//[]};@rank_ranges=();
     delete $INC{$callback};
     my $ledgerpath=File::Spec->catfile($TEMP_DIR,$GUILDBAL_FILE);
     unlink $ledgerpath if -e $ledgerpath;
@@ -103,14 +117,14 @@ for my $s(@spec){
                  beta=>{money=>20000,in=>0,out=>0,atk=>100,def=>100});
     $DT={id=>1,status=>1,guild=>$s->{bg},money=>$s->{money}//100000,time=>$s->{time}//956800,
          paytoday=>0,item=>[(0)x79]};
-    $DT->{item}[78]=$s->{held}//0;
-    $DTS={id=>2,status=>1,guild=>$s->{sg},money=>100000,time=>956800,
+    $DT->{item}[$ix]=$s->{held}//0;
+    $DTS={id=>2,status=>1,guild=>$s->{sg},money=>$s->{sellerMoney}//100000,time=>956800,
           rank=>$s->{rank}//1000,taxmode=>$s->{taxmode}//0,trush=>0,saletoday=>0,taxtoday=>0,
-          itemtoday=>($s->{sold}?{79=>$s->{sold}}:{}),item=>[(0)x79],showcasecount=>1,showcase=>[79],price=>[$s->{base}//10000]};
-    $DTS->{item}[78]=$s->{stock};
+          itemtoday=>($s->{sold}?{$it=>$s->{sold}}:{}),item=>[(0)x79],showcasecount=>$sc+1,showcase=>[(0)x$sc,$it],price=>[(0)x$sc,$s->{base}//10000]};
+    $DTS->{item}[$ix]=$s->{stock};
     @DT=($DT,$DTS);
-    $id=2;$itemno=79;$showcase=0;$price=$s->{offer};$TIME_SEND_ITEM=1200;
-    $num=CheckCount($s->{want},0,0,$ITEM[79]{limit}-$DT->{item}[78]);
+    $id=2;$itemno=$it;$showcase=$sc;$price=$s->{offer};$TIME_SEND_ITEM=1200;
+    $num=CheckCount($s->{want},0,0,$ITEM[$it]{limit}-$DT->{item}[$ix]);
     my $before=dclone({buyer=>$DT,seller=>$DTS,ledgers=>\%GUILD_DATA});
     my $receipt=eval {$fn->()};my $error=$@;
     die "unexpected source failure: $error" if !$receipt && $error!~/^SOURCE_REFUSAL:/;

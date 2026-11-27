@@ -1,10 +1,11 @@
-/** R4 exact-source peer #79 purchase candidate, including global FUNCBUY no-op
+/** R4 exact-source normal peer purchase candidate, including global FUNCBUY no-op
  * for a non-market purchase. This never authorizes players, CAS or disk commits.
  * Controlled RNG values are source differential inputs, never runtime evidence.
  */
 import {createHash} from 'node:crypto';
 import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {quoteUnguildedPurchase} from './economy-model.mjs';
+import {compileLiteralItemLimit} from './item-limit-model.mjs';
 const pins=Object.freeze({
   buy:'6ba8df9a733ed16c490389414cd94934fe1185ca',
   calc:'586354a9a300e26d0e12a4efa512fa25760e3197',
@@ -31,24 +32,33 @@ export function reviewGuildPeerPurchase(sources){
   const item=model.items.find(x=>x.id===79);
   if(!item||item.price!==10000||item.limitRaw!=='10/0'||item.funcbRaw!==null)fail('ITEM 79 metadata');
   const r=Object.freeze({source:'r4-guild-peer-purchase-candidate.v1',committable:false});
-  models.set(r,model);return r;
+  const eligible=model.items.filter(x=>x.price>0&&!x.flagRaw.split('|').includes('noshowcase')&&x.funcbRaw===null);
+  const limits=new Map(eligible.map(x=>[x.id,compileLiteralItemLimit(x.limitRaw).limit]));
+  if(limits.size!==67)fail('frozen normal peer catalog');
+  models.set(r,{model,limits});return r;
+}
+export function listReviewedGuildPeerItems(reviewed){
+  const review=models.get(reviewed);if(!review)fail('reviewed peer catalog required');
+  return Object.freeze([...review.limits].map(([itemId,limit])=>Object.freeze({itemId,limit})).sort((a,b)=>a.itemId-b.itemId));
 }
 function checkShop(s){
-  if(!plain(s)||!int(s.id,1)||s.status!==1||typeof s.guild!=='string'||!int(s.money)||!signed(s.time)||
+  if(!plain(s)||!int(s.id,1)||s.status!==1||typeof s.guild!=='string'||!signed(s.money)||!signed(s.time)||
      !Array.isArray(s.item)||s.item.length!==79||!s.item.every(x=>int(x)))fail('explicit active shop');
 }
-export function projectGuildPeerPurchase({reviewed,before,definitions,command,nowSeconds,townTaxRate,sendItemTime,rankDraws=[]}){
-  const model=models.get(reviewed);
-  if(!model||!plain(before)||!plain(definitions)||!plain(before.ledgers)||!sameKeys(definitions,before.ledgers)||
-     !plain(command)||!int(command.requestedCount)||!int(command.offeredPrice)||command.itemId!==79||command.shelf!==0||
+export function projectGuildPeerPurchase({reviewed,before,definitions,command,nowSeconds,townTaxRate,sendItemTime,rankDraws=[],rebelActive=false}){
+  const review=models.get(reviewed);
+  if(!review||!plain(before)||!plain(definitions)||!plain(before.ledgers)||!sameKeys(definitions,before.ledgers)||
+     !plain(command)||!int(command.requestedCount)||!int(command.offeredPrice)||!review.limits.has(command.itemId)||!int(command.shelf,0,7)||typeof rebelActive!=='boolean'||
      !int(nowSeconds,259200)||!int(townTaxRate,0,40)||sendItemTime!==1200||
      !Array.isArray(rankDraws)||rankDraws.length>1||!rankDraws.every(x=>int(x,0,999999)))fail('explicit reviewed peer context');
+  const {model,limits}=review;
+  const {itemId,shelf}=command,index=itemId-1,limit=limits.get(itemId);
   const {buyer,seller,ledgers}=before;
   checkShop(buyer);checkShop(seller);
   if(!int(buyer.paytoday)||!int(seller.rank,0,10000)||![0,1,2].includes(seller.taxmode)||
      !int(seller.trush)||!int(seller.saletoday)||!int(seller.taxtoday)||!plain(seller.itemtoday)||
-     !int(seller.itemtoday[79]??0)||seller.showcasecount!==1||seller.showcase?.length!==1||
-     seller.price?.length!==1||!int(seller.price[0]))fail('reviewed seller fields');
+     !int(seller.itemtoday[itemId]??0)||!int(seller.showcasecount,1,8)||!Array.isArray(seller.showcase)||seller.showcase.length!==seller.showcasecount||
+     !Array.isArray(seller.price)||seller.price.length!==seller.showcasecount||!seller.price.every(p=>int(p))||shelf>=seller.showcasecount)fail('reviewed seller fields');
   for(const [id,def] of Object.entries(definitions)){
     const g=ledgers[id];
     if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(id)||['constructor','prototype'].includes(id)||
@@ -61,9 +71,9 @@ export function projectGuildPeerPurchase({reviewed,before,definitions,command,no
     return {ok:false,reason,after:structuredClone(before),receipt:null,rankRanges:[],stages:[],committable:false};
   };
   if(buyer.id===seller.id)return refusal('self-purchase');
-  let count=Math.min(command.requestedCount,10-buyer.item[78]);
+  let count=Math.min(command.requestedCount,limit-buyer.item[index]);
   if(count<=0)return refusal('quantity');
-  const baseprice=seller.price[0];
+  const baseprice=seller.price[shelf];
   let type=buyer.guild&&seller.guild?(buyer.guild===seller.guild?1:2):0;
   const deal=type?definitions[seller.guild].dealrate:0;
   if(!signed(baseprice*deal))fail('margin overflow');
@@ -72,22 +82,22 @@ export function projectGuildPeerPurchase({reviewed,before,definitions,command,no
   if(type===1&&margin&&ledgers[buyer.guild].money<10000){type=-1;margin=0;}
   const saleprice=baseprice+(type===1?-margin:margin);
   if(!int(saleprice))fail('sale price overflow');
-  if(seller.showcase[0]!==79||command.offeredPrice!==saleprice||!seller.item[78])return refusal('stale quote or stock');
-  count=Math.min(count,seller.item[78],saleprice?Math.trunc(buyer.money/saleprice):Number.MAX_SAFE_INTEGER);
+  if(seller.showcase[shelf]!==itemId||command.offeredPrice!==saleprice||!seller.item[index])return refusal('stale quote or stock');
+  count=Math.min(count,seller.item[index],saleprice?Math.max(0,Math.trunc(buyer.money/saleprice)):Number.MAX_SAFE_INTEGER);
   if(!count)return refusal('cash or stock');
   if(nowSeconds<buyer.time)return refusal('time debt');
   if(!signed(baseprice*count)||!signed(saleprice*count)||!signed(margin*count))fail('total overflow');
   const q=quoteUnguildedPurchase(model,{...buyer,guild:'',money:baseprice*count},{...seller,guild:''},{
-    shelf:0,itemId:79,offeredPrice:baseprice,requestedCount:count,itemLimit:10,
-    baseTaxRate:seller.taxmode===1?0:seller.taxmode===2?2*townTaxRate:townTaxRate,sendItemTime,
+    shelf,itemId,offeredPrice:baseprice,requestedCount:count,itemLimit:limit,
+    baseTaxRate:rebelActive||seller.taxmode===1?0:seller.taxmode===2?2*townTaxRate:townTaxRate,sendItemTime,
   });
   const after=structuredClone(before),b=after.buyer,s=after.seller;
-  b.item[78]+=count;s.item[78]-=count;b.money-=saleprice*count;b.paytoday+=saleprice*count;
+  b.item[index]+=count;s.item[index]-=count;b.money-=saleprice*count;b.paytoday+=saleprice*count;
   b.time=Math.max(b.time,nowSeconds-259200)+q.timeSeconds;
   s.money+=q.sellerProceeds;s.saletoday+=baseprice*count;s.taxtoday+=q.tax;s.trush+=q.sellerTrashIncrease;
-  s.itemtoday[79]=(s.itemtoday[79]??0)+count;
+  s.itemtoday[itemId]=(s.itemtoday[itemId]??0)+count;
   const rankRanges=[];
-  if(s.item[78]===0&&type!==1&&type!==-1){
+  if(s.item[index]===0&&type!==1&&type!==-1){
     let down=(s.rank/100)**3/1000;
     if(down>0&&down<1){
       if(rankDraws.length!==1)fail('missing fractional rank draw');
@@ -99,10 +109,10 @@ export function projectGuildPeerPurchase({reviewed,before,definitions,command,no
   if(rankRanges.length!==rankDraws.length)fail('unused rank draw');
   if(type===1){after.ledgers[buyer.guild].money-=margin*count;after.ledgers[buyer.guild].out+=margin*count;}
   if(type===2){after.ledgers[seller.guild].money+=margin*count;after.ledgers[seller.guild].in+=margin*count;}
-  if(![b.money,b.paytoday,b.time,s.money,s.saletoday,s.taxtoday,s.trush,s.itemtoday[79],...Object.values(after.ledgers).flatMap(g=>Object.values(g))].every(signed))fail('result overflow');
+  if(![b.money,b.paytoday,b.time,s.money,s.saletoday,s.taxtoday,s.trush,s.itemtoday[itemId],...Object.values(after.ledgers).flatMap(g=>Object.values(g))].every(signed))fail('result overflow');
   // Actual buy-s calls global FUNCBUY after the buy log. For a peer, BUY.whole
   // is false, so the pinned Standard Street callback cannot award vouchers.
-  // Item 79 has no per-item buy callback. Stage order is a trace, not a commit.
+  // The reviewed 67 normal listable items have no per-item buy callback. Stage order is a trace, not a commit.
   const stages=['buy-log','item-init','global-funcbuy',...(type>0?['guild-ledger-stage']:[]),'renew-log','data-write','commit-request','unlock'];
   return {ok:true,after,receipt:{type,rate,margin,baseprice,count,saleprice,tax:q.tax,taxrate:q.taxRate,usetime:q.timeSeconds},
     rankRanges,stages,ledgerWriteRequired:type>0,committable:false};
