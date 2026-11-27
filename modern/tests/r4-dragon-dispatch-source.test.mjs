@@ -45,6 +45,7 @@ test('R4 actual slime request dispatcher strict due boundaries and priority',()=
  compare({now,drTime:[now-1,now+1,now+1]},'training');
 });
 test('R4 actual slime initial clock, publication before street read and equality',()=>{
+ assert.deepEqual(compare({now:6000000,drTime:null},'initialize').clock,[6026400,6012000,6008400]);
  for(const now of [6000000,64800,86400+50400,86400+46800]){const a=compare({now,drTime:null},'initialize');assert.ok(a.clock.every(x=>x>now));}
  assert.throws(()=>projectDragonDispatch({review,now:1,drTime:[1,2]}),/reviewed clock/);
 });
