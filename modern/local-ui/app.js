@@ -255,6 +255,18 @@ function renderMarketSurvey(s){
   body.append(tr);
  }
 }
+function renderSourceUseEntry(row,offer){
+  const li=document.createElement('li');
+  const entry=document.createElement(row.sourceUseOk&&offer?'button':'span');
+  if(row.sourceUseOk&&offer){
+    entry.type='button';entry.className='text-link use-action-link';
+    entry.dataset.openUse=String(row.useId);
+    entry.dataset.useItem=String(row.itemId);
+  }else entry.className='use-unavailable';
+  entry.textContent=row.sourceDisplayName;
+  li.append(entry);
+  return li;
+}
 function renderItemInfo(s){
   const item=catalogItem(s,selectedItemId);
   const shop=s.shop;
@@ -337,6 +349,12 @@ function renderItemInfo(s){
   const useList=$('use-offers');
   useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
+  if(Array.isArray(s.sourceUseDisclosure)){
+    const rows=s.sourceUseDisclosure.filter(row=>row.itemId===selectedItemId);
+    $('use-section').hidden=rows.length===0;
+    for(const row of rows)useList.append(renderSourceUseEntry(row,useOffers.find(q=>q.useId===row.useId)));
+    return;
+  }
   // Only hide products with no source USE at all. Disabled or
   // material-blocked USEs still show their original eligibility reasons.
   $('use-section').hidden=useOffers.length===0;
@@ -405,7 +423,7 @@ $('use-offers').addEventListener('click',event=>{
   const useId=Number(button.dataset.openUse);
   const offer=snapshot?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
-  if(!offer?.canUse||selectedItemId!==itemId)return;
+  if(!offer||(offer.sourceUseOk??offer.canUse)!==true||selectedItemId!==itemId)return;
   selectedUseId=useId;
   $('use-count').value='';
   $('use-count-presets').value='';
@@ -413,7 +431,7 @@ $('use-offers').addEventListener('click',event=>{
 });
 function renderUseDetail(s){
   const offer=(s.useOffers??[]).find(row=>
-    row.itemId===selectedItemId&&row.useId===selectedUseId);
+    row.itemId===selectedItemId&&row.useId===selectedUseId&&row.sourceUseOk!==false);
   const catalog=s.itemCatalog??[];
   const nameFor=id=>catalog.find(row=>row.itemId===id)?.name??'商品 #'+id;
   text('use-detail-name',offer?.useName??'請返回商品明細選擇操作');
@@ -444,9 +462,9 @@ function renderUseDetail(s){
     (maximum>0?(detail?.noCount?'單次操作':detail&&detail.sourceMaximum!==maximum?
       '最大回數 '+number(detail.sourceMaximum)+'；目前可執行 '+number(maximum)+' '+detail.scale:
       '最多 '+number(maximum)+' '+(detail?.scale??'次')+'（'+limitName+'）'):
-      (offer.reason??'目前不可執行')):'—');
+      (offer.sourceUseOk&&detail&&!detail.noCount?'最大回數 '+number(detail.sourceMaximum)+'；目前不可執行':(offer.reason??'目前不可執行'))):'—');
   const form=$('use-action-form');
-  form.hidden=!offer;
+  form.hidden=!offer||(offer.sourceUseOk===true&&!offer.canUse);
   const presets=$('use-count-presets');
   const previous=Number(presets.value);
   presets.replaceChildren();
@@ -1229,7 +1247,7 @@ $('use-action-form').addEventListener('submit',async event=>{
   const itemId=selectedItemId,useId=selectedUseId;
   const offer=before?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
-  if(!offer?.canUse||currentTab!=='use'||!before?.world)return;
+  if(!offer?.canUse||offer.sourceUseOk===false||currentTab!=='use'||!before?.world)return;
   const manual=$('use-count').value.trim();
   const requestedCount=offer.detail?.noCount?1:Number(manual!==''?manual:$('use-count-presets').value);
   if(!Number.isSafeInteger(requestedCount)||requestedCount<1||

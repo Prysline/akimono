@@ -466,3 +466,18 @@ test('R4 owner portrait is shared by shop and source balance view',()=>{
   assert.match(html,/id="balance-portrait-placeholder"/);
   assert.match(script,/portrait\(\$\('balance-portrait'\),\$\('balance-portrait-placeholder'\),shop\?\.icon,shop\?\.name\)/);
 });
+
+test('source USE list renders projected names and original entry eligibility',()=>{
+  const fn=script.slice(script.indexOf('function renderSourceUseEntry('),script.indexOf('function renderItemInfo('));
+  const document={createElement:tag=>({tag,dataset:{},children:[],append(x){this.children.push(x)}})};
+  const render=new Function('document',fn+';return renderSourceUseEntry;')(document);
+  const hidden=render({itemId:10,useId:0,sourceUseOk:false,sourceDisplayName:'？？？？？？？？'},{canUse:false,useName:'秘密',materialRoutes:[{name:'秘密'}]});
+  assert.equal(hidden.children[0].tag,'span');
+  assert.equal(hidden.children[0].textContent,'？？？？？？？？');
+  assert.equal(hidden.children.length,1);
+  const visible=render({itemId:10,useId:0,sourceUseOk:true,sourceDisplayName:'寫作'},{canUse:false});
+  assert.equal(visible.children[0].tag,'button');
+  assert.deepEqual(visible.children[0].dataset,{openUse:'0',useItem:'10'});
+  assert.equal(visible.children[0].textContent,'寫作');
+  assert.match(script,/offer\.sourceUseOk===false\|\|currentTab/);
+});

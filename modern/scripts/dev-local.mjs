@@ -23,6 +23,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
 import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp,describeOriginalOwnerScene} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalUseDisclosure,listOriginalUseDisclosure} from '../src/original-r4-use-disclosure.mjs';
 import {reviewOriginalUseForm,describeOriginalUseForm} from '../src/original-r4-use-form.mjs';
 import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
@@ -118,6 +119,9 @@ const {
 const originalUseFormSource=await readPinnedSource('modern/tests/original-perl/core-item-m.cgi');
 const [originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource]=await Promise.all(['core-other.cgi','core-user-settings.cgi','core-name.cgi'].map(name=>readPinnedSource('modern/tests/original-perl/'+name)));
 const [originalIconListSource,originalIconPluginSource,originalIconNewFormSource]=await Promise.all(['modern/tests/original-perl/core-icon.cgi','modern/tests/original-perl/core-img.cgi','custom/inc-new.cgi'].map(readPinnedSource));
+const originalUseListSource=await readPinnedSource('modern/tests/original-perl/core-item-detail.cgi');
+const originalUseSubmitSource=await readPinnedSource('modern/tests/original-perl/core-item-submit.cgi');
+const reviewedUseDisclosure=reviewedFullCommerce?reviewOriginalUseDisclosure({itemDsl,listSource:originalUseListSource,formSource:originalUseFormSource,submitSource:originalUseSubmitSource,useSource:originalUseSource,compilerSource:originalCompilerSource,helperSource:originalItemHelperSource}):null;
 const reviewedUseForm=reviewOriginalUseForm({formSource:originalUseFormSource,itemDsl,compilerSource:originalCompilerSource,calcSource:originalBuyCalcSource,configSource:originalConfigSource});
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
@@ -197,7 +201,7 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
   originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
   originalBuyFormSource,
   originalMarketListSource,
-       originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalIconListSource,originalIconPluginSource,originalIconNewFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
+       originalUseListSource,originalUseSubmitSource,originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalIconListSource,originalIconPluginSource,originalIconNewFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -231,6 +235,8 @@ function state(){
   const nextSettlementAtSeconds=world?
     (Math.floor((world.nowSeconds+shift)/period)+1)*period-shift:null;
   const marketOffers=world?.market?streetModule.listMarketOffers(world):[];
+  const sourceUseDisclosure=reviewedUseDisclosure?listOriginalUseDisclosure({reviewed:reviewedUseDisclosure,shop:world?.shops[0]??null}):null;
+  const disclosureByKey=new Map((sourceUseDisclosure??[]).map(row=>[row.itemId+':'+row.useId,row]));
   return {
     world,
     save,
@@ -275,7 +281,8 @@ function state(){
           info:item?.infoRaw??null,
         };
       }),
-    useOffers:streetModule.listUseOffers(world).map(offer=>reviewedFullCommerce?{...offer,detail:describeOriginalUseForm({reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule(offer.itemId,offer.useId),shop:world?.shops[0]??null,nowSeconds:world?.nowSeconds??null})}:offer),
+    sourceUseDisclosure,
+    useOffers:streetModule.listUseOffers(world).map(offer=>reviewedFullCommerce?{...offer,...disclosureByKey.get(offer.itemId+':'+offer.useId),detail:describeOriginalUseForm({reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule(offer.itemId,offer.useId),shop:world?.shops[0]??null,nowSeconds:world?.nowSeconds??null})}:offer),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
     reviewedFullCommerce,
     showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?
