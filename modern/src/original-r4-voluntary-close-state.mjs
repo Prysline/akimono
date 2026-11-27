@@ -13,7 +13,8 @@ const fail=m=>{throw new RangeError('R4 voluntary close state: '+m)};
 const blob=s=>typeof s==='string'?createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex'):null;
 const reviews=new WeakMap();
 const localized=Object.freeze({'自主閉店':'自行關店','%1が閉店しました。':'%1將店鋪關閉了。','%1が気持ちを新たに出直しました。':'%1重新出發了。'});
-export function reviewR4VoluntaryCloseState({sourceTexts,detailSource,configSource,turnSource,errorSource,localeSources}){
+export function reviewR4VoluntaryCloseState({sourceTexts,detailSource,configSource,turnSource,errorSource,localeSources},{stableSingleSource=false}={}){
+  if(typeof stableSingleSource!=='boolean')fail('explicit stable single shop review');
   const source=reviewShopLifecycleSources(sourceTexts);
   if(blob(detailSource)!=='9a83d26fb29edee4032958f1e6de837a250f3384'||
      blob(configSource)!=='87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0')fail('source drift');
@@ -29,11 +30,12 @@ export function reviewR4VoluntaryCloseState({sourceTexts,detailSource,configSour
   const hash=reviewR4CloseArchiveHash({readSource,turnSource,writeSource,userSource});
   const archive=reviewR4CloseShopArchiveSource({errorSource,userSource});
   const token=Object.freeze({committable:false});
-  reviews.set(token,{source,close,prune,hash,archive});return token;
+  reviews.set(token,{source,close,prune,hash,archive,stableSingleSource});return token;
 }
 export function projectR4VoluntaryCloseState({reviewed,world,actorRef,expectedRevision,confirmation,subdataNames,archiveContext,expectedInterpreter=null}){
   const r=reviews.get(reviewed),disk=world?.period?.disk;
-  if(!r||world?.shops?.length!==1||world.shops[0].id!==1||disk?.source!==R4_INDEPENDENT_DISK||
+  if(!r||world?.shops?.length!==1||(!r.stableSingleSource&&world.shops[0].id!==1)||
+    !Number.isSafeInteger(world.shops[0].id)||world.shops[0].id<1||disk?.source!==R4_INDEPENDENT_DISK||
     !disk.live||!Object.hasOwn(disk.live,'play.cgi'))fail('reviewed D single-store disk world required');
   const shop=world.shops[0];
   if(shop.pass!=='')fail('private legacy credential archive not yet supported by local world');

@@ -9,6 +9,8 @@ use Storable qw(dclone);
 use Encode qw(decode FB_CROAK);
 use JSON::PP;
 binmode STDOUT,':raw';
+my $stable_single=@ARGV==1 && $ARGV[0] eq '--stable-full-commerce-shape';
+my $shop_id=$stable_single?100:1;
 
 # True pinned unmodified CloseShop + SetUserData (a no-op) + WriteErrorLog.
 # Only GetPath / GetTrueIP are injected external context, never IO recorders.
@@ -75,16 +77,16 @@ sub runCase {
   my $oldpath=File::Spec->catfile($LOG_DIR,'delete-old.cgi');
   my $logpath=File::Spec->catfile($LOG_DIR,'delete.cgi');
   putFile($logpath,$prior) if defined $prior;
-  for my $name ('1-alpha.cgi','2-keep.cgi') {
+  for my $name ("$shop_id-alpha.cgi",'2-keep.cgi',($stable_single?('1-keep.cgi','1000-keep.cgi'):())) {
     putFile(File::Spec->catfile($SUBDATA_DIR,$name),'real source session');
   }
   my %shop=map{$_=>0}@DTindexnamelist;
   @shop{qw(id name shopname money rank status foundation)}=
-    (1,'source-owner','來源原版關店',12345,20,1,555);
+    ($shop_id,'source-owner','來源原版關店',12345,20,1,555);
   $shop{showcase}=[10];
   # Preserve the historic default oracle; full-commerce callers need a
   # source-consistent scalar matching the actual shelf and price arrays.
-  $shop{showcasecount}=1 if @ARGV==1 && $ARGV[0] eq '--full-commerce-shape';
+  $shop{showcasecount}=1 if $stable_single || (@ARGV==1 && $ARGV[0] eq '--full-commerce-shape');
   $shop{price}=[100];
   $shop{item}=[(0)x79];
   $shop{itemtoday}={10=>2};
@@ -95,8 +97,8 @@ sub runCase {
   $shop{blocklogin}='';
   my $input=dclone(\%shop);
   @DT=(\%shop);
-  %id2idx=(1=>0);
-  CloseShop(1,'経営者不在');
+  %id2idx=($shop_id=>0);
+  CloseShop($shop_id,'経営者不在');
   my $after=dclone($DT[0]);
   opendir my $dir,$SUBDATA_DIR or die $!;
   my @left=sort grep{$_ ne '.'&&$_ ne '..'}readdir($dir);

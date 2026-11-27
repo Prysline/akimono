@@ -48,3 +48,31 @@ test('LC-D2 voluntary close delegates native archive and source prune, localizes
   }
   assert.throws(()=>reviewR4VoluntaryCloseState({...sources,configSource:sources.configSource+'\n'}),/source drift/);
 });
+
+
+test('LC-D2 stable source shop ID100 close uses actual original archive ID and exact subdata scope',()=>{
+  const runner=fileURLToPath(new URL('./original-perl/original-r4-close-shop-archive-file-probe.pl',import.meta.url));
+  const proof=JSON.parse(execFileSync('perl',[runner,'--stable-full-commerce-shape'],{encoding:'utf8'}));
+  const stable=reviewR4VoluntaryCloseState(sources,{stableSingleSource:true});
+  const fields=sourceTexts.core.match(/@DTindexnamelist=\s*qw\(([\s\S]*?)\)\s*;/)[1].trim().split(/\s+/);
+  for(const row of proof.cases.filter(r=>r.kind!=='missing')){
+    assert.equal(row.input.shop.id,100);assert.equal(row.output.shop.id,100);
+    const original=fixture(row);
+    const input={...original,reviewed:stable,actorRef:{...original.actorRef,shopId:100},subdataNames:['100-alpha.cgi','2-keep.cgi','1-keep.cgi','1000-keep.cgi']};
+    const before=structuredClone(input.world),got=projectR4VoluntaryCloseState(input);
+    const prior=row.kind==='append'?row.input.logPrior:'';
+    const lines=row.output.liveLog.slice(prior.length).split('\n');
+    const header=lines[0].split('\t');header[5]=input.archiveContext.user;header[6]='自行關店';
+    const cols=lines[1].split(',');assert.equal(cols[fields.indexOf('id')],'100');cols[fields.indexOf('pass')]='';cols[fields.indexOf('remoteaddr')]='192.0.2.5';
+    lines[0]=header.join('\t');lines[1]=cols.join(',');
+    assert.equal(got.archiveGeneration.live.bytes,prior+lines.join('\n'));
+    assert.equal(got.archiveGeneration.old?.bytes??null,row.output.oldLog);
+    assert.equal(got.archiveGeneration.rotated,row.kind==='rotate');
+    assert.deepEqual(got.subdataDeletionSelection,['100-alpha.cgi']);
+    assert.deepEqual(input.subdataNames.filter(n=>!got.subdataDeletionSelection.includes(n)).sort(),row.output.remainingSessions);
+    assert.deepEqual(got.activeShops,[]);assert.equal(got.committable,false);assert.deepEqual(input.world,before);
+    assert.throws(()=>projectR4VoluntaryCloseState({...input,reviewed}),/single-store disk world/);
+    assert.throws(()=>projectR4VoluntaryCloseState({...input,actorRef:{...input.actorRef,shopId:1}}),/R4 lifecycle/);
+    assert.throws(()=>projectR4VoluntaryCloseState({...input,world:{...input.world,shops:[input.world.shops[0],{...input.world.shops[0],id:101}]}}),/single-store disk world/);
+  }
+});
