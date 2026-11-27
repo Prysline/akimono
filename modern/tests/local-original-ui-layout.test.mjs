@@ -410,3 +410,10 @@ test('source wholesale details present server ITEM text and warnings without cha
  assert.match(script,/offer\.detail\?\.actionLabel/);
  assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
 });
+
+test('original library opens its eight source chapters without HTML injection',()=>{
+  assert.match(html,/data-tab="library"/);assert.match(html,/id="tab-library"/);
+  assert.match(script,/fetch\('\/api\/library'/);assert.match(script,/node\.textContent=part\.text/);
+  assert.match(adapter,/url\.pathname==='\/api\/library'/);
+  assert.match(css,/#library-body\{white-space:pre-wrap/);
+});

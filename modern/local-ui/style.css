@@ -323,3 +323,6 @@ footer{margin-top:12px;font-size:10px}
 .source-market-bar.shortage{background:#ff0000}
 .source-market-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media(max-width:540px){.source-market-graph{display:none}.source-market-text{position:static;width:auto;height:auto;overflow:visible;clip-path:none}}
+
+#library-list{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+#library-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
