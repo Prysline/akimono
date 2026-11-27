@@ -1,0 +1,169 @@
+name: C audit - lifecycle source boundaries
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  source-boundary:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: voluntary-close-oracle
+            sha: aef09c7628fa698882535a8a2ebaf25263f55d2e
+            tree: 6650d83ab5165b92915e9caa09ce14f46a1d9a5f
+            target: tests/r4-close-archive-hash.test.mjs
+            blob: 08bb7c4d5c5e6f56a4042ee85762c7d23bb432cd
+            module: src/original-r4-close-archive-hash.mjs
+            moduleBlob: a88638b32a97fc56d375dbe8c6aaddcd2f054279
+          - case: request-active-identity
+            sha: 4415c294644a3846a4db0001d3d87caf925409d7
+            tree: 5a1b408de6a5bdac829610747fb76e872fb8d0e6
+            target: tests/r4-request-board-source.test.mjs
+            blob: 6ec166c701ab5b1e168757076dc7989e17f5ec1b
+            module: src/original-r4-request-board.mjs
+            moduleBlob: 84c3ec56edfc9977324154cc3fc3bbb9eb2ec127
+          - case: postal-reserved-sender
+            sha: 4415c294644a3846a4db0001d3d87caf925409d7
+            tree: 5a1b408de6a5bdac829610747fb76e872fb8d0e6
+            target: tests/r4-letter-box-source.test.mjs
+            blob: 1ebe7e045c602e7bb4f4c0bc26a2b6b8514bd92a
+            module: src/original-r4-letter-box.mjs
+            moduleBlob: 5f5e4b1c813700fa2944b15b982b7ae8f31ead83
+    env:
+      AUDIT_CASE: ${{ matrix.case }}
+      CANDIDATE: ${{ matrix.sha }}
+      CANDIDATE_TREE: ${{ matrix.tree }}
+      TARGET: ${{ matrix.target }}
+      TARGET_BLOB: ${{ matrix.blob }}
+      MODULE: ${{ matrix.module }}
+      MODULE_BLOB: ${{ matrix.moduleBlob }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and source/test pins
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c62-source-boundary"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = "$CANDIDATE"
+            test "$(git rev-parse 'HEAD^{tree}')" = "$CANDIDATE_TREE"
+            test "$(git hash-object "$TARGET")" = "$TARGET_BLOB"
+            test "$(git hash-object "$MODULE")" = "$MODULE_BLOB"
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Execute unchanged original test file
+        id: original
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c62-source-boundary"
+          set +e
+          node --test "$TARGET" >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original.log"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Execute separate C-only source observation test copy
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c62-source-boundary"
+          copy=tests/c-audit-lifecycle-source-boundary.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          let src=readFileSync(process.env.TARGET,'utf8');
+          const kind=process.env.AUDIT_CASE;
+          if(kind==='voluntary-close-oracle'){
+            const anchor="test('R4 voluntary close replays current native DataRead map order with no time or sale mutation'";
+            if(src.split(anchor).length!==2)throw Error('nonunique voluntary oracle');
+            const offset=src.indexOf(anchor),head=src.slice(0,offset),tail=src.slice(offset);
+            const bs=String.fromCharCode(92);
+            const badNewline=bs+bs+'n',badReference=bs.repeat(4)+'%DT';
+            if(tail.split(badNewline).length!==3||tail.split(badReference).length!==2)throw Error('unexpected escape anchors');
+            src=head+tail.replaceAll(badNewline,bs+'n').replace(badReference,bs.repeat(2)+'%DT');
+          }else if(kind==='request-active-identity'){
+            src+='\n'+[
+              "test('C62 controlled missing active fulfiller: original request UI branches and source accounting',()=>{",
+              " const fixture={...base,shops:[shop(100),shop(101),shop(102)],actorId:100};",
+              " let x=compare({...fixture,command:{kind:'new',itemno:1,num:20,prn:-1,pr:1000}});",
+              " x=compare({...x,actorId:101,command:{kind:'plus',no:1}});",
+              " assert.equal(parseRequestBoard(x.requestBytes)[0].mode,101);",
+              " const absent={...x,shops:x.shops.filter(s=>s.id!==101)};",
+              " const collected=compare({...absent,actorId:100,command:{kind:'thank',no:1}});",
+              " assert.equal(collected.requestBytes,'');assert.equal(collected.shops[0].money,100900);",
+              " const fulfilledAgain=compare({...absent,actorId:102,command:{kind:'plus',no:1}});",
+              " assert.equal(parseRequestBoard(fulfilledAgain.requestBytes)[0].mode,102);",
+              " assert.equal(fulfilledAgain.shops.find(s=>s.id===102).item[0],120);",
+              " assert.equal(fulfilledAgain.shops.find(s=>s.id===102).money,99000);",
+              "});",
+              "test('C62 controlled original request expiry: equality retains escrow, expired row has no refund',()=>{",
+              " const fixture={...base,shops:[shop(100),shop(101)],actorId:100};",
+              " const x=compare({...fixture,command:{kind:'new',itemno:1,num:20,prn:-1,pr:1000}});",
+              " const withdrawn=compare({...x,nowSeconds:1172800,command:{kind:'end',no:1}});",
+              " assert.equal(withdrawn.shops[0].item[0],100);assert.equal(withdrawn.shops[0].money,99900);",
+              " const next=compare({...x,nowSeconds:1172801,command:{kind:'new',itemno:1,num:20,prn:-1,pr:1000}});",
+              " assert.equal(next.shops[0].item[0],60);assert.equal(next.shops[0].money,99800);",
+              " assert.equal(parseRequestBoard(next.requestBytes).length,1);",
+              "});",
+            ].join('\n')+'\n';
+          }else if(kind==='postal-reserved-sender'){
+            src+='\n'+[
+              "test('C62 controlled original postal source reserves sender ID1; ordinary local identity collision',()=>{",
+              " const normal=compare({...base,command:{kind:'send',toTown:'other',toId:101,title:'ordinary',msg:'hello'}});",
+              " const normalRead=compare({...normal,street:'other',actor:b,command:{kind:'read'}});",
+              " assert.equal(parseLetterBox(normalRead.letterBytes)[0].mode,0);",
+              " const alias=compare({...base,actor:{id:1,shopname:'local ordinary shop'},directory:{street:[1],other:[101]},command:{kind:'send',toTown:'other',toId:101,title:'ordinary',msg:'hello'}});",
+              " assert.equal(parseLetterBox(alias.letterBytes)[0].fromid,1);",
+              " const aliasRead=compare({...alias,street:'other',actor:b,command:{kind:'read'}});",
+              " assert.equal(aliasRead.letterBytes,'');",
+              "});",
+            ].join('\n')+'\n';
+          }else throw Error('unknown C62 case');
+          writeFileSync('tests/c-audit-lifecycle-source-boundary.mjs',src,{flag:'wx'});
+          NODE
+          git diff --no-index -- "$TARGET" "$copy" >"$out/observation-only.diff" || test "$?" = 1
+          cat "$out/observation-only.diff"
+          node --check "$copy"
+          set +e
+          node --test "$copy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          cat "$out/observation.log"
+          rm -f "$copy"
+          trap - EXIT
+          test "$(git hash-object "$TARGET")" = "$TARGET_BLOB"
+          test "$(git hash-object "$MODULE")" = "$MODULE_BLOB"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve independent source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c62-source-boundary-${{ matrix.case }}
+          path: ${{ runner.temp }}/c62-source-boundary/
+          if-no-files-found: warn
+          retention-days: 30
