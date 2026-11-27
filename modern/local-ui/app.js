@@ -639,8 +639,8 @@ function showState(s){
   $('load-world').disabled=Boolean(w)||!save.available;
   $('reset-world').disabled=!w&&!save.available&&!save.unreadable;
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
-  const left=s.secondsUntilSettlement;
-  text('settlement-status',w?(s.reviewedCrossPeriod?'獨立單店跨期決算已啟用':'決算功能尚未開放'):'');
+  text('settlement-status',w?(s.settlementMenu?.label??'決算功能尚未開放'):'');
+  $('settlement-status').title=s.settlementMenu?'原版決算顯示時區（UTC+9）':'';
   text('local-mode-note',s.reviewedCrossPeriod?'單機獨立店鋪：跨期決算已啟用，存檔需手動儲存。':'目前為單機測試：存檔需手動儲存；尚未開放跨期決算。');
   const periodState=w?.period??null;
   text('city-seed',periodState?

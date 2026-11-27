@@ -22,6 +22,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
 import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
@@ -111,6 +112,7 @@ const {
   originalMarketListSource:'modern/tests/original-perl/core-shop-m.cgi',
 }).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
+const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -224,6 +226,7 @@ function state(){
     save,
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
+    settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
     ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
     // Original point calculation; RANK is unknown until true multi-shop

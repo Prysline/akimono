@@ -423,3 +423,8 @@ test('original local owner help uses source projection and opens original librar
   assert.match(script,/renderOwnerHelp\(s\)/);assert.match(script,/selectTab\('library',id\)/);
   assert.match(adapter,/describeOriginalOwnerHelp\(\{reviewed:reviewedOwnerHelp,world\}\)/);
 });
+
+test('original settlement notice uses the server source clock, not browser time',()=>{
+  assert.match(script,/s\.settlementMenu\?\.label/);
+  assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
+});
