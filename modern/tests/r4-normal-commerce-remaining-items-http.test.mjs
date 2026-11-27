@@ -184,6 +184,15 @@ test('R4 genuine source rank prizes, individual celebration USEs and sales, ten-
   assert.deepEqual(exchanged.d.originalUseItem,[[79,10]]);
   assert.deepEqual(exchanged.d.originalAddItem,[[20,1],[21,1],[22,1],[23,1]]);
   assert.equal(p.stock(79),0);
+  assert.equal(p.state.shop.money,exchanged.shop.money);
+  assert.equal(p.state.shop.paytoday,exchanged.shop.paytoday);
+  const exchangeWorld=structuredClone(p.state.world),exchangeHistory=p.state.historyCommands;
+  const logNames=['log0.cgi','log1.cgi','log2.cgi'];
+  for(const name of logNames)assert.deepEqual(exchangeWorld.period.disk.live[name],exchanged.before.period.disk.live[name]);
+  assert.ok(!Object.hasOwn(exchanged.d,'originalInlineLogCalls'));
+  const stale=await p.post('/api/use',{expectedRevision:exchanged.before.revision,itemId:79,useId:2,requestedCount:1});
+  assert.equal(stale.ok,false);assert.deepEqual(p.state.world,exchangeWorld);assert.equal(p.state.historyCommands,exchangeHistory);
+  t.diagnostic(JSON.stringify({sourceExchange:'79/2',revision:exchangeWorld.revision,period:exchangeWorld.period.settledCount,spent:exchanged.d.originalUseItem,acquired:exchanged.d.originalAddItem,silentFiles:logNames,staleRejected:true}));
   for(const [id,msg] of [[27,'肚子真飽'],[28,'感覺很好'],[29,'獨占了所有人的視線']]){
     await collect(()=>p.stock(id)===1);
     assert.ok(awards.some(row=>row.itemId===id&&row.granted===1));

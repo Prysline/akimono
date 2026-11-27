@@ -6,6 +6,8 @@ import {reviewCommerceUseLogs,projectReviewedCommerceUseLogRows,reviewPeriodLog,
 import {reviewOriginalSilentUseLogs,isOriginalSilentUse} from '../src/original-r4-silent-use-log.mjs';
 import {loadNormalCommerceAuditSources} from '../scripts/audit-normal-commerce.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
+import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,executeMemoryCommand} from '../src/game-core-contract.mjs';
+import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed} from '../src/original-period-world-seed.mjs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const sources={helperSource:read('./original-perl/core-inc-item.cgi'),logSource:read('./original-perl/pinned-log.cgi'),configSource:read('../../_config.cgi')};
 const reviewed=reviewCommerceUseLogs(sources);
@@ -77,5 +79,54 @@ test('R4 independent ranking locale matches frozen period.cgi PushLog without ch
     assert.notDeepEqual(actual.slice(0,2),identity.slice(0,2));
     assert.deepEqual(actual.slice(2),identity.slice(2),'prize and other source rows unchanged');
     assert.throws(()=>projectB50PeriodLogRows({...args,independentPeriod:false,localizedRanking:true}),/ranking locale only/);
+  }
+});
+
+test('R4 controlled ten-voucher exchange matches actual frozen USE, full-commerce CAS and reviewed silence receipt',async()=>{
+  const input=await loadNormalCommerceAuditSources();
+  // Deliberately no cross-period disk authority in this controlled fixture.
+  // Real full-commerce USE and memory CAS execute; the cross-period source
+  // reviewer only classifies the resulting receipt. No fabricated save,
+  // history, HTTP player, or settled-world provenance.
+  const street=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedFullCommerce:true});
+  const cross=createStandardStreetModule({...input,enableReviewedNormalTime:true,enableReviewedFullCommerce:true,enableReviewedCrossPeriod:true});
+  const period=createOriginalPeriodSeed(reviewOriginalPeriodBootstrap({
+    periodSource:input.originalPeriodSource,adminSource:input.originalAdminInitSource,
+    readSource:input.originalDataReadSource,writeSource:input.originalDataWriteSource,
+    reviewedB41:street.reviewedB41,
+  }));
+  const repo=createSourceReviewedMemoryWorldAdapter({initialWorld:createPeriodMemoryWorld({worldId:'controlled-ten-gift',streetId:street.id,nowSeconds:1000000,period}),streetModule:street});
+  const run=(repository,kind,fields={})=>executeMemoryCommand({repository,streetModule:street,command:{kind,expectedRevision:repository.read().revision,...fields}});
+  for(const [kind,fields] of [['initialize-source-market',{}],['open-shop',{shopId:1,ownerName:'來源測試',shopName:'受控高級書籍'}]])
+    assert.equal(run(repo,kind,fields).ok,true);
+  const seed=repo.read(),command={kind:'use-item',shopId:1,itemId:79,useId:2,requestedCount:1};
+  const rule=cross.useItem.getRule(79,2),reviewed=cross.reviewedSilentUseLogs;
+  for(const count of [5,9,10]){
+    const world=structuredClone(seed);world.shops[0].item[78]=count;
+    const trial=createSourceReviewedMemoryWorldAdapter({initialWorld:world,streetModule:street});
+    const before=trial.read();
+    const expected=JSON.parse(execFileSync('perl',['original-r2-gift-use-variants-probe.pl',
+      JSON.stringify({useId:2,initialGift:count,initialWholesale:before.market.wholesale,requestedCount:1})],
+      {cwd:new URL('./original-perl/',import.meta.url),encoding:'utf8',timeout:15000})).result;
+    const offer=street.listUseOffers(before).find(x=>x.itemId===79&&x.useId===2);
+    assert.equal(offer.canUse,count===10);
+    const result=run(trial,'use-item',{shopId:1,itemId:79,useId:2,requestedCount:1});
+    if(count<10){
+      assert.equal(expected.count,0);assert.equal(result.ok,false);assert.deepEqual(trial.read(),before);continue;
+    }
+    assert.equal(result.code,'COMMITTED',JSON.stringify(result.details));
+    const after=trial.read(),s=after.shops[0],d=result.details;
+    assert.equal(d.effectiveCount,expected.count);
+    assert.deepEqual(s.item,expected.item);
+    assert.deepEqual(after.market.wholesale,expected.wholesale);
+    assert.deepEqual([s.money,s.time,s.paytoday],[expected.money,expected.time,expected.paytoday]);
+    assert.deepEqual(d.originalUseItem,expected.useitem);
+    assert.deepEqual(d.originalAddItem,expected.additem);
+    assert.deepEqual(d.originalUseItem,[[79,10]]);
+    assert.deepEqual(d.originalAddItem,[[20,1],[21,1],[22,1],[23,1]]);
+    assert.equal(after.revision,before.revision+1);assert.equal(after.nowSeconds,before.nowSeconds);
+    assert.equal(isOriginalSilentUse({reviewed,rule,command,receipt:d}),true);
+    const stale=executeMemoryCommand({repository:trial,streetModule:street,command:{...command,expectedRevision:before.revision}});
+    assert.equal(stale.code,'REVISION_CONFLICT');assert.deepEqual(trial.read(),after);
   }
 });
