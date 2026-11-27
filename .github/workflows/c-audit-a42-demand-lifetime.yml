@@ -1,0 +1,163 @@
+name: C audit - A42 command local demand lifetime
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  demand-lifetime:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '32fa13df5209168e58002425fcf8aaadf3088de4'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and source blobs
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c70"; mkdir -p "$out"
+          git rev-parse HEAD 'HEAD^{tree}' | tee "$out/environment.log"
+          test "$(git rev-parse HEAD)" = '32fa13df5209168e58002425fcf8aaadf3088de4'
+          test "$(git rev-parse 'HEAD^{tree}')" = '1e00dc3ea6d6bc6f4d43c24ed630fbf1c7309007'
+          test "$(git hash-object modern/tests/original-perl/inc-turn.cgi)" = 'b8a4980275f475a952846a8d6072fad45f8dff50'
+          test "$(git hash-object modern/tests/original-perl/market.cgi)" = '1aca77e9b373c25e53e445d64c101a7cc2246825'
+          test "$(git hash-object modern/tests/r4-normal-commerce-items.test.mjs)" = 'e4a7dbb896d9d2e500f09b7aee378f8f70371bcc'
+          test "$(git hash-object modern/tests/original-perl/original-normal-commerce-same-command-probe.pl)" = 'b2effcd243222a2bb641a2b0dc8799df44c46794'
+          test "$(git hash-object modern/tests/r4-p3-pre-event-overlay.test.mjs)" = '9a8fb49381a0f79d4b5c93a54f5f6caf3884fc2d'
+          test "$(git hash-object modern/src/original-r4-cross-period-candidate.mjs)" = '7b57cc37c363b3f0b44ec9facfb0c73290f1476d'
+          test "$(git hash-object modern/src/shared-natural-sale-core.mjs)" = '31947b5b43361de07fd60413d021409b01336266'
+          test "$(git hash-object modern/src/original-r4-reviewed-world-time.mjs)" = 'da6f618f0dced235abdb47358ffda227a16ce3cf'
+          test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '1f6c39ac00add1f38e8997846df95231d51a836d'
+          test -z "$(git status --porcelain)"
+      - name: Original A42 isolated source tests unchanged
+        id: original
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          node --test tests/r4-normal-commerce-items.test.mjs | tee "$RUNNER_TEMP/c70/original.log"
+      - name: Independent controlled coordinator and HTTP lifetime contracts
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c70"
+          target=tests/c70-demand-coordinator.mjs
+          http=tests/c70-demand-http.mjs
+          test ! -e "$target" && test ! -e "$http"
+          trap 'rm -f "$target" "$http"' EXIT
+          cp tests/r4-p3-pre-event-overlay.test.mjs "$target"
+          cat >> "$target" <<'NODE'
+
+          test('C70 A42 controlled actual coordinator carries only within one command',async t=>{
+            const closureSources={...boundarySources,turnSource:source.originalTurnSource,
+              writeSource:source.originalDataWriteSource,wholeSource:source.originalWholeSource,
+              showcaseSource:await readPerl('sc-s.cgi'),userSource:await readPerl('pinned-user.cgi')};
+            const r4CloseReview=reviewR4IndependentCloseCandidate(closureSources);
+            const reviewedPeriod=reviewOriginalSoloPeriodPhaseChain({...closureSources,
+              includeReviewedMultiShelf:true,includeReviewedSaleTax:true,
+              includeReviewedActualCloseShop:true,includeReviewedFullCommerceClose:true});
+            const fullStreet=Object.freeze({...street,reviewedNormalCommerce:reviewNormalCommerceItems(closureSources)});
+            const {repository}=fresh(true),world=structuredClone(repository.read());
+            world.nowSeconds=1025980;
+            world.period.eventState={};
+            Object.assign(world.shops[0],{pass:'',comment:'',remoteaddr:'',dignity:0,rankingcount:0,
+              profitstock:0,taxmode:0,drmoney:0,trush:0,guild:'',blocklogin:'',nocheckip:'',
+              job:'weapon',exp:{14:20,37:200},user:{},money:100000,
+              itemtoday:{},itemyesterday:{},saletoday:0,taxtoday:0,
+              showcasecount:1,showcase:[40],price:[1200]});
+            world.shops[0].item[39]=100;
+            const prior=JSON.stringify(world);
+            const args={world,minutes:1,street:fullStreet,reviewedR4,reviewedDataRead,
+              reviewedHash:hashReview,reviewedEvents:eventReview,reviewedPeriod,r4CloseReview,sessionFileNames:[]};
+            const result=projectR4CrossPeriodCandidate(args);
+            assert.equal(result.committable,false);
+            assert.equal(result.worldStateWritten,false);
+            assert.equal(result.shops.length,1);
+            assert.deepEqual(result.evidence.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+            const [first,second]=result.evidence.slices;
+            assert.ok(first.shop.item[39]>0 && second.shop.item[39]>0);
+            assert.deepEqual(first.preEvent.sourceDemandBase,{40:1});
+            assert.deepEqual(second.preEvent.sourceDemandBase,{40:2});
+            assert.ok(Object.isFrozen(first.preEvent.sourceDemandBase));
+            assert.ok(Object.isFrozen(second.preEvent.sourceDemandBase));
+            assert.equal(JSON.stringify(world),prior);
+            assert.deepEqual(projectR4CrossPeriodCandidate(args),result);
+            const next=continueR4CrossPeriodCandidate({previous:result,minutes:1});
+            assert.equal(next.shops.length,1);
+            assert.deepEqual(next.evidence.slices[0].preEvent.sourceDemandBase,{40:1});
+            assert.deepEqual(continueR4CrossPeriodCandidate({previous:result,minutes:1}),next);
+            for(const candidate of [result,next]){
+              const {shops,market,period}=candidate;
+              assert.ok(!JSON.stringify({shops,market,period}).includes('"sourceDemandBase"'));
+            }
+            t.diagnostic('C70_A42_CARRY '+JSON.stringify({first:first.preEvent.sourceDemandBase,
+              second:second.preEvent.sourceDemandBase,next:next.evidence.slices[0].preEvent.sourceDemandBase,
+              initialStock:100,firstStock:first.shop.item[39],secondStock:second.shop.item[39]}));
+          });
+          NODE
+          cat > "$http" <<'NODE'
+          import test from 'node:test';
+          import assert from 'node:assert/strict';
+          import {readFile,readdir} from 'node:fs/promises';
+          import {join} from 'node:path';
+          import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
+          const absent=value=>assert.ok(!JSON.stringify(value).includes('"sourceDemandBase"') &&
+            !JSON.stringify(value).includes('"sourceDemandBaseBefore"'),'internal carry leaked into public/persistent data');
+          test('C70 A42 controlled fixed-clock HTTP rejects carry injection and persists no command-local carry',async t=>{
+            const p=await genuinePlayer(t,{now:'1022380',crossPeriod:true,fullCommerce:true});
+            await p.tick(60);
+            assert.equal(p.state.world.nowSeconds,1025980);
+            const prior=structuredClone(p.state.world),history=p.state.historyCommands;
+            for(const key of ['sourceDemandBase','sourceDemandBaseBefore']){
+              const rejected=await p.post('/api/advance-reviewed-time',{expectedRevision:prior.revision,minutes:1,[key]:{40:1000}});
+              assert.equal(rejected.ok,false);
+              assert.deepEqual(rejected.state.world,prior);
+              assert.equal(rejected.state.historyCommands,history);
+            }
+            const first=await p.tick(1);
+            assert.deepEqual(first.details.sourceTrace.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[1,20],[0,40]]);
+            absent(first);
+            const saved=await p.saveAndRestart(0);
+            absent(saved);absent(p.state);
+            const next=await p.tick(1);
+            assert.deepEqual(next.details.sourceTrace.slices.map(s=>[s.dateupdate,s.spanSeconds]),[[0,60]]);
+            absent(next);
+            await p.saveAndRestart(1);
+            absent(p.state);
+            const slots=(await readdir(p.directory)).filter(x=>/^world-[ab]\.json$/.test(x));
+            assert.equal(slots.length,2);
+            for(const file of slots){
+              const record=JSON.parse(await readFile(join(p.directory,file),'utf8'));
+              absent(JSON.parse(record.world));
+              absent(JSON.parse(record.careerProof));
+            }
+            t.diagnostic('C70_A42_WIRE '+JSON.stringify({revision:p.state.world.revision,period:p.state.world.period.settledCount,slots}));
+          });
+          NODE
+          git diff --no-index -- tests/r4-p3-pre-event-overlay.test.mjs "$target" >"$out/coordinator.diff" || test "$?" = 1
+          cat "$out/coordinator.diff"
+          cp "$http" "$out/http-test.mjs"
+          node --check "$target"; node --check "$http"
+          set +e
+          node --test --test-name-pattern='C70 A42 controlled actual coordinator' "$target" >"$out/coordinator.log" 2>&1
+          a=$?
+          node --test "$http" >"$out/http.log" 2>&1
+          b=$?
+          set -e
+          cat "$out/coordinator.log" "$out/http.log"
+          printf '%s %s\n' "$a" "$b" >"$out/exit.txt"
+          rm -f "$target" "$http"
+          test -z "$(git status --porcelain)"
+          test "$a" = 0 && test "$b" = 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c70-a42-exact-demand-lifetime
+          path: ${{ runner.temp }}/c70/
+          if-no-files-found: warn
+          retention-days: 30
