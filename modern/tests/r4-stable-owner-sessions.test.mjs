@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createPeriodMemoryWorld} from '../src/game-core-contract.mjs';
 import {createStableOwnerSessions} from '../src/r4-stable-owner-sessions.mjs';
+import {createOwnerCredentialRecord,verifyOwnerCredential,createCredentialOwnerAuthenticator} from '../src/r4-owner-credential-record.mjs';
 import {createLifecycleCommandPreflight} from '../src/reviewed-shop-lifecycle-command.mjs';
 const read=p=>normalizeLocalSourceText(readFileSync(new URL(p,import.meta.url),'utf8'));
 const source={configSource:read('../../_config.cgi'),readSource:read('./original-perl/inc-func.cgi'),loginSource:read('./original-perl/pinned-login.cgi')};
@@ -47,4 +48,38 @@ test('LC-D1 authentication race, credential-bearing binding and source drift rej
  const extra=createStableOwnerSessions({...f.deps,authenticateOwner:()=>({worldId:'w',streetId:'s',shopId:1,ownerName:'owner',revision:8,password:'secret'})});
  await assert.rejects(extra.issue({}),/login denied/);
  assert.throws(()=>createStableOwnerSessions({...f.deps,loginSource:source.loginSource+'\n'}),/source drift/);
+});
+
+test('LC-D1 actual private credential verifier binds stable identity and plugs into existing session service',async()=>{
+ const f=fixture(),newSource=read('./original-perl/new.cgi');
+ const binding={worldId:'w',streetId:'s',shopId:1,ownerName:'owner'};
+ let record=await createOwnerCredentialRecord({newSource,binding,password:'old_pw'});
+ assert.ok(Object.isFrozen(record)&&Object.isFrozen(record.binding));
+ assert.ok(!JSON.stringify(record).includes('old_pw'));
+ assert.equal(await verifyOwnerCredential({record,binding,password:'wrong_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record,binding:{...binding,streetId:'other'},password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record:{...record,hash:'x'},binding,password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record:{...record,binding:{...binding,shopId:2}},binding:{...binding,shopId:2},password:'old_pw'}),false);
+ await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'owner'}),/invalid registration/);
+ await assert.rejects(createOwnerCredentialRecord({newSource,binding,password:'x:y'}),/invalid registration/);
+ await assert.rejects(createOwnerCredentialRecord({newSource:newSource+' ',binding,password:'old_pw'}),/invalid registration/);
+ const authenticateOwner=createCredentialOwnerAuthenticator({
+   readCredentials:req=>({ownerName:req.name,password:req.password}),
+   // Controlled committed-record reader; not a persistent account authority.
+   readCredentialRecord:()=>record,
+ });
+ const a=createStableOwnerSessions({...f.deps,authenticateOwner});
+ await assert.rejects(a.issue({name:'owner',password:'wrong_pw'}),/login denied/);
+ const old=await a.issue({name:'owner',password:'old_pw'});
+ const request={cookie:old.token};
+ assert.equal(a.resolveAuthenticatedActor({request,world:f.world}).shopId,1);
+ f.world={...f.world,revision:8,shops:[{id:2,name:'owner',status:1}]};
+ a.reconcileCommittedWorld();
+ await assert.rejects(a.issue({name:'owner',password:'old_pw'}),/login denied/);
+ assert.throws(()=>a.resolveAuthenticatedActor({request,world:f.world}),/session denied/);
+ record=await createOwnerCredentialRecord({newSource,binding:{...binding,shopId:2},password:'new_pw'});
+ await assert.rejects(a.issue({name:'owner',password:'old_pw'}),/login denied/);
+ const next=await a.issue({name:'owner',password:'new_pw'});
+ assert.equal(a.resolveAuthenticatedActor({request:{cookie:next.token},world:f.world}).shopId,2);
+ assert.notEqual(old.token,next.token);
 });
