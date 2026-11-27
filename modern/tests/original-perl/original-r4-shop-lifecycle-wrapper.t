@@ -25,6 +25,8 @@ our ($DATA_DIR,$TEMP_DIR,$BACKUP_DIR,$FILE_EXT,$DATA_FILE,$COMMIT_FILE,
   $MYDIR,@OtherDir,@NG_SHOP_NAME,$MOBILE,$CHECK_IP,$TZ_JST,$ITEM_DIR,
   @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
 my %pins=(
+  'pinned-colock.cgi'=>'99ff12db08135879e1a570cef1424f6dd5bec151',
+  'pinned-inc-gd-entry.cgi'=>'f28cdcc1778534cbf1c84195df7ab749519be5a6',
   'pinned-army.cgi'=>'cd29bcbfe52bac84794c4c79426bd559d7616d85',
   'pinned-guild.cgi'=>'6593aa8a3ae4a1695c2418f12a3776f0053454ac',
   'pinned-gd-m.cgi'=>'b18dd3166709e270e5cb2d525ce404bca80551ca',
@@ -460,6 +462,119 @@ for my $action(qw(restart cls)){
   ok(!exists $id2idx{1},'closed owner not recreated by payout') unless $active;
   is(raw_file("$COMMON_DIR/drapay-other.cgi"),$files{"$COMMON_DIR/drapay-other.cgi"},"$action other street payout untouched");
 }
+
+
+# LC-B2 actual two street registration and invitation join after lifecycle.
+# Only preloaded guild definition is a controlled fixture; registration, auth,
+# street/common locks, join, both writers/commits and subsequent reads are real.
+our($COLOCKED,$COLOCKED_LEVEL,%GUILD,%GUILD_DETAIL,$GUILDIDX_name);
+require "$FindBin::Bin/pinned-colock.cgi";
+$COLOCKED='';$COLOCKED_LEVEL=0;
+put_file("$COMMON_DIR/$LOCK_FILE",'available common lock');
+%GUILD=(7=>['Guild Seven',0,0]);%GUILD_DETAIL=(7=>{member=>'Member'});
+$GUILDIDX_name=0;
+sub visit_other_street {
+  my($fn)=@_;
+  my $previous=getcwd();
+  local $MYDIR='other';
+  local $DATA_DIR="$root/$MYDIR/data";
+  local $TEMP_DIR="$DATA_DIR/temp";
+  local $BACKUP_DIR="$DATA_DIR/backup";
+  local $SESSION_DIR="$DATA_DIR/session";
+  local $SUBDATA_DIR="$DATA_DIR/subdata";
+  local @OtherDir=('street');
+  local $NEW_OTHERTOWN_BLOCK=1;
+  chdir "$root/$MYDIR" or die $!;
+  my $ok=eval { $fn->();1 };
+  my $error=$@;
+  chdir $previous or die $!;
+  die $error unless $ok;
+}
+sub join_current_guild {
+  my($name,$token)=@_;
+  local %Q=(nm=>$name,ss=>$token,key=>'gd-m',edit=>'join',guild=>7);
+  $MASTER_USER=$GUEST_USER=0;
+  # Same lock order and source handler as gd-m.cgi, without its HTML renderer.
+  my($out,$error);
+  {local *STDOUT;open STDOUT,'>',\$out or die $!;
+    eval { CoLock();Lock();DataRead();CheckUserPass();ReadEntry();
+      my $ok=do "$FindBin::Bin/pinned-inc-gd-entry.cgi";
+      die($@||$!||'source join returned false') unless $ok;
+    };
+    $error=$@;
+  }
+  UnLock() if $LOCKED ne '';
+  CoUnLock() if $COLOCKED ne '';
+  return $error;
+}
+my($localToken,$localPeer)=two_shop_case();
+my $localData=$DATA_DIR;
+my $otherData="$root/other/data";
+make_path("$otherData/temp","$otherData/backup","$otherData/session","$otherData/subdata");
+my @emptyStreet=@initial[0..5];
+my @otherHeader=split(/,/,$emptyStreet[1],-1);
+$otherHeader[1]=1;$otherHeader[2]='';$emptyStreet[1]=join(',',@otherHeader);
+put_file("$otherData/play.cgi",encode_utf8(join("\n",@emptyStreet)."\n"));
+put_file("$otherData/lasttime.cgi",'time');
+put_file("$otherData/user.cgi",'');
+put_file("$otherData/$LOCK_FILE",'held by nobody');
+put_file("$otherData/backup/play.cgi",'fresh backup');
+utime($NOW_TIME-1,$NOW_TIME-1,"$otherData/backup/play.cgi") or die $!;
+my $otherToken;
+visit_other_street(sub {
+  my $before=raw_file("$DATA_DIR/play.cgi");
+  like(registration(name=>'alice',shop=>'other street shop',ip=>'192.0.2.5'),
+    qr/他の街ですでに店舗を持っています/,'actual enabled cross-street IP gate denies active local directory record');
+  is(raw_file("$DATA_DIR/play.cgi"),$before,'cross-street gate denial no play publication');
+  local $NEW_OTHERTOWN_BLOCK=0;
+  delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  like(registration(name=>'alice',shop=>'other street shop',ip=>'192.0.2.5'),
+    qr/__SOURCE_RENDER__/,'actual disabled cross-street gate permits registration');
+  DataRead();
+  is($DT[$id2idx{1}]{name},'alice','actual separate street allocated same numeric ID and owner name');
+  ok(!auth(name=>'alice',token=>$localToken)->{ok},'local street token does not create other-street session');
+  ok(!auth(name=>'alice',password=>'alpha_pw')->{ok},'local password not accepted for other street account');
+  my $login=auth(name=>'alice',password=>'beta_pw',ip=>'192.0.2.5');
+  ok($login->{ok}&&$login->{id}==1,'other street own password selects its own ID');
+  $otherToken=$login->{token};
+});
+DataRead();
+my $otherPlay=raw_file("$otherData/play.cgi");
+my $otherDirectory=raw_file("$otherData/user.cgi");
+my $otherSession=raw_file("$otherData/session/alice.cgi");
+my $entryPath=GetPath($COMMON_DIR,'entry');
+my $localEntry="1,".($NOW_TIME+60).",street,1,7\n";
+my $otherEntry="2,".($NOW_TIME+60).",other,1,7\n";
+put_file($entryPath,$localEntry.$otherEntry);
+delete $INC{"$ITEM_DIR/funcnew.cgi"};
+like((submit('pinned-membership-user.cgi',$localToken,'restart','restart'))[0],qr/__SOURCE_RENDER__/,'actual local restart before join');
+is(raw_file($entryPath),$localEntry.$otherEntry,'both street invitations retained after restart');
+DataRead();
+ok(!$DT[$id2idx{1}]{guild},'restarted shop has no membership before join');
+is(join_current_guild('alice',$localToken),'','actual restarted actor joins through source handler');
+DataRead();
+is($DT[$id2idx{1}]{guild},7,'source local join persists membership on reload');
+is(raw_file($entryPath),$otherEntry,'actual common publication consumes local invitation only');
+ok(-e "$COMMON_DIR/$LOCK_FILE"&&! -e GetPath($COMMON_DIR,$COMMIT_FILE),'actual common lock/marker cleared');
+like((submit('pinned-membership-user.cgi',$localToken,'cls','closeshop'))[0],qr/__SOURCE_RENDER__/,'actual local voluntary close after join');
+DataRead();
+ok(!exists $id2idx{1} && exists $id2idx{$localPeer},'local close removes only local actor');
+ok(!auth(name=>'alice',token=>$localToken)->{ok},'closed local actor no longer authenticates');
+is(raw_file($entryPath),$otherEntry,'local close leaves other street invitation');
+is(raw_file("$otherData/play.cgi"),$otherPlay,'local lifecycle and join do not alter other street play');
+is(raw_file("$otherData/user.cgi"),$otherDirectory,'local lifecycle does not alter other street directory');
+is(raw_file("$otherData/session/alice.cgi"),$otherSession,'local lifecycle does not alter other street session bytes');
+visit_other_street(sub {
+  DataRead();
+  ok(auth(name=>'alice',token=>$otherToken)->{ok},'other street same numeric ID remains authenticated after local close');
+  ok(!$DT->{guild},'other street actor has independent guild membership');
+  is(join_current_guild('alice',$otherToken),'','actual other street actor joins using retained invitation');
+  DataRead();
+  is($DT[$id2idx{1}]{guild},7,'other street source membership persists');
+  is(raw_file($entryPath),'','other street join consumes its own invitation');
+});
+DataRead();
+ok(!exists $id2idx{1},'other street join does not resurrect closed local ID');
 
 chdir $cwd or die 'restore cwd';
 done_testing();
