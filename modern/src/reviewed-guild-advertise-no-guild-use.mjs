@@ -20,34 +20,3 @@ export function projectOriginalNoGuildAdvertisement({rule,shop,count}){
   if(!rules.has(rule)||count!==1||shop?.status!==1||![undefined,null,'',0,false].includes(shop.guild)||shop.item?.[61]!==0)fail('only original post-consumption no-guild branch');
   return Object.freeze({returned:'沒有加入商會無法進行商會廣告',logCalls:Object.freeze([])});
 }
-
-
-// Source callback after the ordinary UseItem material/time stage.
-// D must resolve the actor, exact current street order and guild definition
-// from the same authoritative world. No direct storage or API authority.
-const guildRules=new WeakSet();
-export function compileReviewedGuildAdvertiseUse(input){
-  const base=compileReviewedNoGuildAdvertiseUse(input);
-  const rule=Object.freeze({...base,source:'original-reviewed-guild-advertisement',inlineCallback:Object.freeze({kind:'advertise-guild'}),scope:'normal same-street guild callback after UseItem consumption; candidate only'});
-  guildRules.add(rule);return rule;
-}
-export function projectOriginalGuildAdvertisement({rule,shops,actorId,definitions,count}){
-  const failGuild=s=>{throw new RangeError('R4 #62/2 guild advertisement: '+s)};
-  if(!guildRules.has(rule)||count!==1||!Array.isArray(shops)||!definitions||Object.getPrototypeOf(definitions)!==Object.prototype||
-     shops.some(s=>!s||s.status!==1||!Number.isSafeInteger(s.id)||s.id<1||typeof s.guild!=='string'||typeof s.shopname!=='string'||!Number.isSafeInteger(s.rank)||s.rank<0||s.rank>10000)||
-     new Set(shops.map(s=>s.id)).size!==shops.length)failGuild('reviewed current street rows required');
-  const actor=shops.find(s=>s.id===actorId);
-  if(!actor||actor.item?.[61]!==0)failGuild('post-consumption actor required');
-  const after=structuredClone(shops),logs=[];
-  if(!actor.guild)return {shops:after,returned:'沒有加入商會無法進行商會廣告',logCalls:logs,committable:false};
-  const name=Object.hasOwn(definitions,actor.guild)?definitions[actor.guild]?.name:null;
-  if(typeof name!=='string'||!name)failGuild('authoritative guild definition required');
-  logs.push([3,0,actor.shopname+'的商會「'+name+'」進行了廣告宣傳']);
-  for(const shop of after){
-    if(shop.guild!==actor.guild)continue;
-    const up=Math.trunc(500*(2-shop.rank/5000));
-    shop.rank=Math.min(10000,shop.rank+up);
-    logs.push([0,actor.id,'進行商會廣告後，'+shop.shopname+'的人氣上升了'+Math.trunc(up/100)+'%']);
-  }
-  return {shops:after,returned:'進行商會廣告',logCalls:logs,committable:false};
-}
