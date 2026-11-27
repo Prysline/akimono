@@ -85,6 +85,9 @@ export function resolveR4CloseArchiveHashOrders({reviewed,world,minutes,shopAfte
   if(stock.some((n,i)=>n!==after.item[i])||wire(today,'itemtoday')!==expected.itemtoday||
      maps.filter(k=>k!=='itemtoday').some(k=>initial[k]!==expected[k]))
     fail('source sale mutations do not reconstruct archive maps');
+  return resolveNativeArchiveOrders({seed,initial,after,sales,expectedInterpreter,policy:R4_CLOSE_HASH_POLICY});
+}
+function resolveNativeArchiveOrders({seed,initial,after,sales,expectedInterpreter,policy}){
   let native;
   try{
     const env={...process.env,PERL_HASH_SEED:seed,PERL_PERTURB_KEYS:'0'};
@@ -112,6 +115,26 @@ export function resolveR4CloseArchiveHashOrders({reviewed,world,minutes,shopAfte
     }
     orders[k]=Object.freeze(keys);
   }
-  return Object.freeze({policy:R4_CLOSE_HASH_POLICY,seed,interpreter,
+  return Object.freeze({policy,seed,interpreter,
     archiveHashOrders:Object.freeze(orders),committable:false});
+}
+
+// Voluntary close starts at the current DataRead wire, without time advancement
+// or sale mutations. Separate deterministic domain; not a historical CGI seed.
+export const R4_VOLUNTARY_CLOSE_HASH_POLICY='akimono.r4.perl-voluntary-close-archive-hash-replay.v1';
+export function resolveR4VoluntaryCloseArchiveHashOrders({reviewed,world,shopId,expectedInterpreter=null}){
+  if(!reviews.has(reviewed))fail('pinned source review required');
+  if(typeof world?.worldId!=='string'||!world.worldId||world.worldId.length>100||
+     typeof world.streetId!=='string'||!world.streetId||world.streetId.length>100||
+     !safe(world.revision)||!safe(world.nowSeconds)||!safe(shopId)||shopId<1||
+     !Array.isArray(world.shops)||world.shops.length!==1)
+    fail('one current command-start shop and server identity required');
+  const shop=world.shops[0];
+  if(!shelfShape(shop)||shop.id!==shopId||shop.status!==1)
+    fail('exact current active source shelf state required');
+  const initial=Object.fromEntries(maps.map(k=>[k,wire(shop[k],k)]));
+  const seed='0x'+createHash('sha256').update(JSON.stringify([
+    R4_VOLUNTARY_CLOSE_HASH_POLICY,world.worldId,world.streetId,world.revision,world.nowSeconds,shopId,
+  ])).digest('hex').slice(0,32);
+  return resolveNativeArchiveOrders({seed,initial,after:shop,sales:[],expectedInterpreter,policy:R4_VOLUNTARY_CLOSE_HASH_POLICY});
 }

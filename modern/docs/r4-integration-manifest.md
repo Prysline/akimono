@@ -153,3 +153,7 @@ B 3d5d5bb23774375e2c7b60f5e97eeb11a9029583 / 96d3fad2b18522583aa79389b3d005f4ece
 
 ## D27｜LC-D1 來源計畫接線（internal noncommittable）
 D25 preflight 原契約保持不變；新增 createLifecycleSourcePlanner，使用同一 validated v2 current snapshot、server actor resolver、source pin review 和 trusted scoped subdata reader，把 D streetId/nowSeconds/owner shop fields 適配至 B lifecycle source wrapper。只傳 actor 所需欄位、其他店 ID；不傳密碼、session secret，close raw blockIP effect 只在內部計畫，非 public response。計畫深凍結且 committable:false，source planning 後重讀完整 world；同 revision 非 revision 資料漂移也拒絕。真 B projector 測 restart #63/#79、source time、close archive delegation、scope、3h normal UI、source drift、body 注入與 CAS rejection，不另建權威。未接 HTTP/session issuer、subdata storage、正式 state mutation、archive publication/replay；D26/D27 必要 CI 待證，不宣稱完成 LC-D1。既有 D25 tests 原樣保留。無 frozen source、正式基線、其他窗、workflow 變更。
+
+
+## D28｜LC-D2 自主閉店 native hash 前置閉包
+既有 D6 close archive hash helper 僅支援 minutes 1..60 的自然售賣 mutation replay；自主閉店不能偽造時間/售賣。抽出共用 native map join/verification（舊 R4_CLOSE_HASH_POLICY/seed/guard 不改），新增獨立 voluntary-close domain：server worldId/streetId/revision/nowSeconds/shopId，現有 canonical numeric DataRead maps、無 sales、同 native Perl interpreter fingerprint。單店 active shop、空 user map 既有限制保留；不宣稱多店或任意 AutoVar wire。新增真 pinned DataRead/CloseShop join differential、replay、身分/多店/未審 user 拒絕，原自然售賣 tests 全保留。新 source policy 只是 replay 決定性，不是歷史 Perl seed 或 gameplay 調整。尚未接 archive publication、session、正式 CAS/HTTP；不接受玩家提供 permutation，不解除 v2 layout guard。D28 CI 待證。

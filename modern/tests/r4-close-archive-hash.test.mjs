@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {r4HashSeed} from '../src/original-r4-perl-hash-replay.mjs';
-import {reviewR4CloseArchiveHash,resolveR4CloseArchiveHashOrders} from '../src/original-r4-close-archive-hash.mjs';
+import {reviewR4CloseArchiveHash,resolveR4CloseArchiveHashOrders,resolveR4VoluntaryCloseArchiveHashOrders,R4_VOLUNTARY_CLOSE_HASH_POLICY} from '../src/original-r4-close-archive-hash.mjs';
 
 const paths={readSource:'inc-func.cgi',turnSource:'inc-turn.cgi',writeSource:'write.cgi',userSource:'pinned-user.cgi'};
 const sources=Object.fromEntries(await Promise.all(Object.entries(paths).map(async([k,p])=>[
@@ -74,4 +74,27 @@ test('R4 native archive hash preserves empty maps without inventing sales',()=>{
   s.itemyesterday={};s.itemtoday={};s.exp={};
   a.shopAfterSale=structuredClone(s);a.shelfSales=[];
   assert.deepEqual(resolveR4CloseArchiveHashOrders(a).archiveHashOrders,{itemyesterday:[],itemtoday:[],exp:[],user:[]});
+});
+
+
+test('R4 voluntary close replays current native DataRead map order with no time or sale mutation',()=>{
+  const a=example(),shop=a.world.shops[0];shop.status=1;
+  const world={...a.world,streetId:'standard-street'},input={reviewed,world,shopId:1};
+  const before=structuredClone(world),got=resolveR4VoluntaryCloseArchiveHashOrders(input);
+  const maps=['itemyesterday','itemtoday','exp','user'];
+  const readLine=sources.readSource.split('\\n').find(l=>l.includes('@DT{qw(itemyesterday itemtoday exp)}='));
+  const originalJoins=maps.map(k=>{const s='join(",",%{$DT->{'+k+'}})';assert.ok(sources.writeSource.includes(s));return s;});
+  const script=['use strict;use warnings;use JSON::PP;local $/;my $in=decode_json(<STDIN>);',
+    'my @list=("","","",@{$in->{maps}});my %DT;',readLine,
+    '$DT{user}={};my $DT=\\\\%DT;', 'print encode_json(['+originalJoins.join(',')+']);'].join('\\n');
+  const native=JSON.parse(execFileSync('perl',['-e',script],{encoding:'utf8',env:{...process.env,PERL_HASH_SEED:got.seed,PERL_PERTURB_KEYS:'0'},input:JSON.stringify({maps:maps.slice(0,3).map(k=>Object.entries(shop[k]).flat().join(','))})}));
+  assert.deepEqual(native,maps.map(k=>got.archiveHashOrders[k].flatMap(id=>[id,shop[k][id]]).join(',')));
+  assert.equal(got.policy,R4_VOLUNTARY_CLOSE_HASH_POLICY);assert.equal(got.committable,false);
+  assert.deepEqual(resolveR4VoluntaryCloseArchiveHashOrders({...input,expectedInterpreter:got.interpreter}),got);
+  assert.notEqual(resolveR4VoluntaryCloseArchiveHashOrders({...input,world:{...world,revision:13}}).seed,got.seed);
+  assert.deepEqual(world,before);
+  assert.throws(()=>resolveR4VoluntaryCloseArchiveHashOrders({...input,shopId:2}),/active source/);
+  assert.throws(()=>resolveR4VoluntaryCloseArchiveHashOrders({...input,expectedInterpreter:'wrong'}),/fingerprint/);
+  assert.throws(()=>resolveR4VoluntaryCloseArchiveHashOrders({...input,world:{...world,shops:[shop,{...shop,id:2}]}}),/one current/);
+  assert.throws(()=>resolveR4VoluntaryCloseArchiveHashOrders({...input,world:{...world,shops:[{...shop,user:{a:'b'}}]}}),/nonempty original user/);
 });
