@@ -14,7 +14,7 @@ test('all original library titles, order and full bodies match executed frozen C
     'local $/;my $source=decode_json(<STDIN>);',
     'sub l {$_[0]} sub GetTagImgKao {""} sub GetMenuTag {push @menu,[@_];return ""} sub OutSkin {}',
     'eval $source;die $@ if $@;',
-    'print encode_json({titles=>\@TITLE,contents=>\@CONTENT,menu=>\@menu});',
+    'print encode_json({titles=>[@TITLE],contents=>[@CONTENT],menu=>[@menu]});',
   ].join('\n');
   const expected=JSON.parse(execFileSync('perl',['-e',perl],{input:JSON.stringify(source),encoding:'utf8'}));
   const list=describeOriginalLibrary(reviewed);

@@ -20,7 +20,7 @@ test('frozen HelpMessage and DevelopImage match all local threshold and stocked-
     'sub GetTagImgKao{""} sub GetMenuTag{$_[1]} sub GetTagImgItemType{"ITEM"} sub l{push @msg,$_[0];return $_[0]}',
     'my $source=$in->{source};$source=substr($source,index($source,"sub HelpMessage"));eval $source;die $@ if $@;',
     'my @out;for my $world (@{$in->{cases}}){$DT=$world->{shops}[0];$NOW_TIME=$world->{nowSeconds};$NeverR=0;$gold="G";$trush="T";$disp="";@msg=();DevelopImage();HelpMessage();push @out,{show=>$show?1:0,msg=>[@msg]};}',
-    'print encode_json(\@out);',
+    'print encode_json([@out]);',
   ].join('\n');
   const expected=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify({source,cases})}));
   const locale={
