@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 import {reviewLetterBox,projectLetterBox,parseLetterBox} from '../src/original-r4-letter-box.mjs';
 const cwd=new URL('./original-perl/',import.meta.url);
 const read=p=>readFileSync(new URL(p,cwd),'utf8');
-const reviewed=reviewLetterBox({wrapper:read('pinned-letter.cgi'),edit:read('pinned-inc-letter-edit.cgi'),form:read('pinned-inc-letter-form.cgi'),view:read('pinned-inc-letter.cgi'),helper:read('pinned-plug-letter.cgi'),sub:read('pinned-plug-sub.cgi'),query:read('inc-func.cgi'),config:read('../../../_config.cgi')});
+const reviewed=reviewLetterBox({wrapper:read('pinned-letter.cgi'),edit:read('pinned-inc-letter-edit.cgi'),form:read('pinned-inc-letter-form.cgi'),view:read('pinned-inc-letter.cgi'),helper:read('pinned-plug-letter.cgi'),sub:read('pinned-sub.cgi'),query:read('inc-func.cgi'),config:read('../../../_config.cgi')});
 const perl=String.raw`use utf8;use JSON::PP;use File::Temp qw(tempdir);
 my $in=JSON::PP->new->utf8->decode(do{local $/;<STDIN>});
 our($COMMON_DIR,$COTEMP_DIR,$BOX_FILE,$BOX_STOCK_TIME,$NOW_TIME,$MYDIR,$DT,%Q,@OtherDir,$WriteFlag,$disp,$COLOCKED,@LETTER);
@@ -20,7 +20,7 @@ sub GetTime2HMS {$_[0]}
 sub GetTime2FormatTime {$_[0]}
 sub OutError {die "SOURCE_REFUSAL:$_[0]"}
 open my $f,'>:encoding(UTF-8)',GetPath($COMMON_DIR,$BOX_FILE) or die $!;print {$f}$in->{letterBytes};close $f;
-require './pinned-plug-letter.cgi';require './pinned-plug-sub.cgi';
+require './pinned-plug-letter.cgi';require './pinned-sub.cgi';
 ReadLetter();$WriteFlag=0;
 my $c=$in->{command};
 if($c->{kind} eq 'send'){

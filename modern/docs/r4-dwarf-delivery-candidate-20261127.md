@@ -1,0 +1,3 @@
+# R4 宅配便正常功能來源包
+
+標準街 menu 明列宅配便，當前 repository 無 trade.cgi（原版以檔案存在判斷跨主機 trade），本包只移植啟用的本街正常送貨、付款收貨、拒收、寄件者刪除/未收貨返還、可選通知。原版 new/plus/delete、ReadDwarf/WriteDwarf、form capacity MAX_BOX=5、48h、value 1/2–2 倍、norequest、寄件即扣庫存與基本稅，收件才付款給寄件者並增加 saletoday，收貨 cap；已收貨刪除不返貨，其他狀態刪除返貨不退稅。無 time charge。原通知先 WriteLetter/CoDataCA/CoUnLock，後 street DataWrite/WriteDwarf/commit；候選僅 source stage intents，D 保留單一正式交易權威，未把 raw 原版部分發布當現代要求。缺少可確認的 sender identity 時拒絕，屬資料完整性而非新增遊戲規則；不製造收款者。共用已移植 letter-box 的通知，不重做 codec。新增四份 exact pins 與兩個代表性原版直接 wrapper 流程（send/notice/receive/delete，send/reject/delete）；原版 calc/ReadDwarf/WriteDwarf/NoticeDwarf/ReadLetter/WriteLetter 真 temp files；locale, locks, auth, actual street publication adapters。CI 待驗，無長程或完整正式玩家驗收前置。
