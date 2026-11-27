@@ -28,3 +28,33 @@ export function describeOriginalOwnerHelp({reviewed,world}){
   if(!hasDisplayedStock)return {...common,kind:'empty',lines:['店長，已經沒有商品可以賣囉。','要馬上補充庫存還是更換商品販售嗎。'],libraryChapter:null};
   return {...common,kind:'normal',lines:['店長您回來了啊。','店裡的營運情況非常順利。'],libraryChapter:null};
 }
+
+/** Original DevelopImage + CharaDefine. Pure view; no customer/sale/RNG effect.
+ * The original binary scene assets are not in this branch. Keep source sprite
+ * indices and placement in the contract, render the actual translated speech
+ * as text rather than inventing assets or customers.
+ */
+const speech=Object.freeze([
+  '庫存都賣光了。真是抱歉…','唔哇，什麼都沒有賣呢，真困擾。',
+  '好不容易來買東西竟然什麼都沒有…。該怎麼辦呢？','沒辦法呢。你可以再等一下嗎？',
+  '大姊姊~ 為什麼這邊東西什麼都沒有啊？','我看看，今天要買啥好呢…',
+  '嗯~ 請給我這個。','嗯，這是一家不錯的店，不過...',
+  '感覺像是另一種聲音…','這裡真是個好地方。','是啊。這是我也常來的商店。',
+]);
+export function describeOriginalOwnerScene({reviewed,world}){
+  const help=describeOriginalOwnerHelp({reviewed,world});
+  if(help===null)return null;
+  const s=world.shops[0];
+  if(!Number.isSafeInteger(s.money)||!safe(s.rank)||s.rank>10000)throw new RangeError('R4 owner scene invalid source shop');
+  const phase=Math.trunc(world.nowSeconds/3600)%3;
+  const staffed=help.hasDisplayedStock;
+  const ids=!staffed?[[1,null],[null,2,3],[4]][phase]:
+    phase===0?[null,5]:phase===1?[6,null]:s.rank<5500?[7,8,null]:[null,9,10];
+  const n=Math.trunc(0.9+(s.trush??0)/1000000);
+  const garbageRows=n<1?[]:n>3?[Math.min(3,n-3),3]:[n];
+  return {source:'r4-frozen-owner-scene.v1',phase,hasDisplayedStock:staffed,
+    goldCount:Math.min(6,Math.max(0,Math.trunc(s.money/5000000))),garbageRows,
+    displayedItems:s.showcase.filter(id=>id>0&&s.item[id-1]>0),
+    helper:{sprite:0,text:staffed?'歡迎光臨':speech[0]},
+    customers:ids.map(id=>id===null?null:{sprite:id,text:speech[id]})};
+}

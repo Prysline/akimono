@@ -434,3 +434,9 @@ test('owner time label uses the original server clock on all owner views',()=>{
   for(const id of ['time','shop-info-time','balance-time'])assert.ok(script.includes("text('"+id+"',actionTime)"));
   assert.match(adapter,/ownerClock:reviewedFullCommerce\?describeOriginalOwnerClock/);
 });
+
+test('original shop scene renders source dialogue as text, without synthetic customer effects',()=>{
+  assert.match(html,/id="owner-scene"/);
+  assert.match(script,/p\.textContent=customer\.text/);
+  assert.match(adapter,/ownerScene:reviewedFullCommerce\?describeOriginalOwnerScene/);
+});

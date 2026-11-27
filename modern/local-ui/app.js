@@ -139,6 +139,14 @@ function renderOwnerHelp(s){
     const p=document.createElement('div');p.textContent=line;lines.append(p);
   }
   $('owner-help-library').hidden=!Number.isSafeInteger(help?.libraryChapter);
+  const scene=s.ownerScene;
+  $('owner-scene').hidden=!scene;
+  text('owner-scene-helper',scene?'小幫手：'+scene.helper.text:'');
+  const customers=$('owner-scene-customers');customers.replaceChildren();
+  for(const customer of scene?.customers??[]){
+    if(customer===null)continue;
+    const p=document.createElement('p');p.textContent=customer.text;customers.append(p);
+  }
 }
 
 

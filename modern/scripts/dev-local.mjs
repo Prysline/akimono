@@ -21,7 +21,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
-import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp,describeOriginalOwnerScene} from '../src/original-r4-owner-help.mjs';
 import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
@@ -231,6 +231,7 @@ function state(){
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
     ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
+    ownerScene:reviewedFullCommerce?describeOriginalOwnerScene({reviewed:reviewedOwnerHelp,world}):null,
     ownerClock:reviewedFullCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.

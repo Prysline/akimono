@@ -21,6 +21,9 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.ownerHelp.kind,'new-shop');
  assert.equal(p.state.ownerHelp.libraryChapter,1);
  assert.equal(p.state.ownerHelp.mailSupported,false);
+ assert.equal(p.state.ownerScene.hasDisplayedStock,false);
+ assert.equal(p.state.ownerScene.helper.text,'庫存都賣光了。真是抱歉…');
+ assert.deepEqual(p.state.ownerScene.displayedItems,[]);
  assert.equal(row(79).count,5);assert.equal(row(79).marketPrice,null);assert.deepEqual(p.state.warehouse.survey,[]);
  const logsBeforeGift=structuredClone(p.state.news.rows);
  await p.use(79,0);assert.equal(p.stock(9),1);assert.equal(row(9).count,1);assert.equal(row(9).storage,true);
@@ -28,6 +31,8 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.world.period.disk.live['log0.cgi'].bytes,opening[0].wire+'\n');
  await p.list(79);
  assert.equal(p.state.ownerHelp.hasDisplayedStock,true);
+ assert.equal(p.state.ownerScene.helper.text,'歡迎光臨');
+ assert.deepEqual(p.state.ownerScene.displayedItems,[79]);
  assert.deepEqual(p.state.showcaseView.rows,[{shelf:0,itemId:79,taxRate:0,tax:0}]);
  assert.equal(p.state.news.rows[0].message,'將禮物卷\\10,000陳列在展示架1上了。');
  assert.equal(p.state.news.rows[0].private,true);
@@ -59,6 +64,7 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.stock(79),beforeRemove.shops[0].item[78]);
  assert.deepEqual(p.state.showcaseView.rows,[{shelf:0,itemId:0,taxRate:null,tax:null}]);
  assert.equal(p.state.ownerHelp.hasDisplayedStock,false);
+ assert.deepEqual(p.state.ownerScene.displayedItems,[]);
  assert.equal(p.state.news.rows[0].message,'從展示架1下架了。');
  assert.equal(p.state.news.rows[0].private,true);
 });
