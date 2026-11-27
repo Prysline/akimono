@@ -115,7 +115,7 @@ test('original item-m rejection checks report all source conditions in source or
     'sub l{my %labels=("資金が足りません"=>"money","時間が足りません"=>"time","熟練度が足りません"=>"experience","必要な職業に就いていません"=>"job","点数が足りません"=>"point","人気が足りません"=>"popularity","このコマンドには特定のイベントの発生が必要です"=>"event");return $labels{$_[0]}}',
     'my @out;for my $row (@$rows){$USE=$row;$DT={money=>0,time=>1000000,point=>0,rank=>0};$NOW_TIME=1000000;my $exp=0;$nonuse=0;$disp="";',
     code,
-    'my @codes=($disp=~/<B>([^<]+)<\/B>/g);push @out,{codes=>\@codes,allowed=>$nonuse?JSON::PP::false:JSON::PP::true};}print encode_json(\@out);'
+    String.raw`my @codes=($disp=~/<B>([^<]+)<\/B>/g);push @out,{codes=>\@codes,allowed=>$nonuse?JSON::PP::false:JSON::PP::true};}print encode_json(\@out);`
   ].join('\n');
   const result=JSON.parse(execFileSync('perl',['-e',perl],{encoding:'utf8',input:JSON.stringify(rows)}));
   assert.equal(rows.length,116);

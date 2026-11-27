@@ -438,6 +438,7 @@ function renderUseDetail(s){
   text('use-detail-item',offer?nameFor(offer.itemId):'—');
   text('use-detail-owned',offer?number(offer.owned):'—');
   const detail=offer?.detail;
+  const canSubmit=Boolean(offer?.canUse&&detail?.sourceFormAllowed!==false);
   const suffix=detail?(detail.noCount?'':'（1'+detail.scale+'）'):'（每次）';
   text('use-materials-label','所需材料'+suffix);text('use-money-label','費用'+suffix);text('use-time-label','時間'+suffix);
   $('use-info-row').hidden=!detail;text('use-detail-info',detail?.info??'');
@@ -464,7 +465,7 @@ function renderUseDetail(s){
       '最多 '+number(maximum)+' '+(detail?.scale??'次')+'（'+limitName+'）'):
       (offer.sourceUseOk&&detail&&!detail.noCount?'最大回數 '+number(detail.sourceMaximum)+'；目前不可執行':(offer.reason??'目前不可執行'))):'—');
   const form=$('use-action-form');
-  form.hidden=!offer||(offer.sourceUseOk===true&&!offer.canUse);
+  form.hidden=!offer||(offer.sourceUseOk===true&&!canSubmit);
   const presets=$('use-count-presets');
   const previous=Number(presets.value);
   presets.replaceChildren();
@@ -475,16 +476,16 @@ function renderUseDetail(s){
   for(const {count:n,label} of options){
     const option=document.createElement('option');option.value=String(n);option.textContent=label;presets.append(option);
   }
-  presets.disabled=!offer?.canUse||!choices.length;
+  presets.disabled=!canSubmit||!choices.length;
   presets.value=choices.includes(previous)?String(previous):String(choices[0]??'');
   const count=$('use-count');
   count.max=offer?.firstUseOnly||offer?.singleUseOnly||detail?.noCount?'1':'';
   for(const id of ['use-count-label','use-count-presets','use-count-first-unit','use-count','use-count-last-unit'])$(id).hidden=Boolean(detail?.noCount);
   text('use-count-first-unit',(detail?.scale??'次')+'，或自訂');text('use-count-last-unit',detail?.scale??'次');
   text('perform-use',detail?.action??'執行操作');
-  $('perform-use').disabled=!offer?.canUse||maximum<=0;
+  $('perform-use').disabled=!canSubmit||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
-    offer.canUse?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
+    canSubmit?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
       ([...(detail?.sourceFormRejections??[]).map(x=>x.label),...(offer.reason?[offer.reason]:[])].filter((x,i,a)=>a.indexOf(x)===i).join('；')||'目前無法執行'));
   updateUseEstimate();
 }
@@ -497,7 +498,7 @@ function updateUseEstimate(){
   const offer=snapshot?.useOffers?.find(row=>
     row.itemId===selectedItemId&&row.useId===selectedUseId);
   const requested=selectedUseCount();
-  if(!offer?.canUse||offer.sourceUseOk===false||!Number.isSafeInteger(requested)||requested<1){
+  if(!offer?.canUse||offer.sourceUseOk===false||offer.detail?.sourceFormAllowed===false||!Number.isSafeInteger(requested)||requested<1){
     text('use-estimated-time','本次預估行動時間：—');
     return;
   }
@@ -1247,7 +1248,7 @@ $('use-action-form').addEventListener('submit',async event=>{
   const itemId=selectedItemId,useId=selectedUseId;
   const offer=before?.useOffers?.find(row=>
     row.itemId===itemId&&row.useId===useId);
-  if(!offer?.canUse||offer.sourceUseOk===false||currentTab!=='use'||!before?.world)return;
+  if(!offer?.canUse||offer.sourceUseOk===false||currentTab!=='use'||offer.detail?.sourceFormAllowed===false||!before?.world)return;
   const manual=$('use-count').value.trim();
   const requestedCount=offer.detail?.noCount?1:Number(manual!==''?manual:$('use-count-presets').value);
   if(!Number.isSafeInteger(requestedCount)||requestedCount<1||

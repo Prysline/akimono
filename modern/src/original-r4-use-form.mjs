@@ -94,6 +94,7 @@ export function describeOriginalUseForm({reviewed,offer,rule,shop,nowSeconds}){
     if(row.sourceNeedPoint&&(shop.point??0)<row.sourceNeedPoint)sourceFormRejections.push({code:'point',label:'點數不足'});
   }
   const sourceFormAllowed=Boolean(shop&&offer.sourceUseOk!==false&&sourceFormRejections.length===0);
+  if(offer.sourceUseOk===true&&!sourceFormAllowed)options=[];
   const requiredJob=rule.needJob?r.jobs.get(rule.needJob):null;
   if(rule.needJob&&!requiredJob)fail('source job label');
   return {source,...row,materials,sourceMaximum,options,sourceFormAllowed,sourceFormRejections,
