@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {projectRaceProgress,reviewRaceProgressConfig} from '../src/original-r4-dragon-race-progress.mjs';
 const cwd=new URL('./original-perl/',import.meta.url);
-const pins={'inc-dr-edit2':'4085a0743b1a8e59d2d1eb0da62ca5af222f9f75','inc-dragon':'76bb00f247733630cbcc374a82f693638f653b71','drreadb':'1b13a1a855490c80c88b0fa117676c68b6440753','drreada':'01110533ae1a223f687f13b02f0aaeebd30c3155','drreadc':'f363bcdab6022581976b6b99dd5e095b51f5f238','drwrite':'0abc25f24ea6bd06576d5d1ba31eeb82419a2fee','drlog':'e60cda027c87de25585ee59bf64a4cb24b9d1476'};
+const pins={'slime':'2eccc7ccc5bc493596b51542509c0244795abdd0','inc-dr-edit2':'4085a0743b1a8e59d2d1eb0da62ca5af222f9f75','inc-dragon':'76bb00f247733630cbcc374a82f693638f653b71','drreadb':'1b13a1a855490c80c88b0fa117676c68b6440753','drreada':'01110533ae1a223f687f13b02f0aaeebd30c3155','drreadc':'f363bcdab6022581976b6b99dd5e095b51f5f238','drwrite':'0abc25f24ea6bd06576d5d1ba31eeb82419a2fee','drlog':'e60cda027c87de25585ee59bf64a4cb24b9d1476'};
 const read=name=>readFileSync(new URL('pinned-'+name+'.cgi',cwd));for(const [name,sha] of Object.entries(pins)){const b=read(name);assert.equal(createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex'),sha,name);}
 const review=reviewRaceProgressConfig(read('inc-dragon').toString('utf8'));
 const perl=String.raw`use utf8; use JSON::PP; use File::Temp qw(tempdir);
@@ -26,9 +26,25 @@ sub RenameAndCheck {rename($_[0],$_[1]) or die $!}
 sub CoDataCA {push @trace,'common-commit';1}
 sub CoUnLock {push @trace,'common-unlock';1}
 require './pinned-inc-dragon.cgi';require './pinned-drreadb.cgi';require './pinned-drreada.cgi';require './pinned-drreadc.cgi';require './pinned-drwrite.cgi';require './pinned-drlog.cgi';@DRTIME=@{$in->{drTime}};
-my $ok=do './pinned-inc-dr-edit2.cgi';die "unexpected closure failure $@ $!" unless $ok;
+my $ok;
+if($in->{outer}){
+  undef $i;
+  put(GetPath($COMMON_DIR,'dr-last'),'@DRTIME=('.join(',',@DRTIME).");\n1;\n");
+  $ok=do './pinned-slime.cgi';
+}else{$ok=do './pinned-inc-dr-edit2.cgi';}
+die "unexpected closure failure $@ $!" unless $ok;
+sub CoLock {push @trace,'common-lock';1}
+sub DataRead {push @trace,'street-read';1}
+sub CheckUserPass {die 'expected guest allowed' unless $_[0]==1;push @trace,'guest-allowed-auth';1}
+sub GetMenuTag {''}
+sub OutSkin {push @trace,'render';1}
+sub RequireFile {my($n)=@_;if($n eq 'inc-dragon.cgi'){require './pinned-inc-dragon.cgi'}
+ elsif($n eq 'inc-dr-edit2.cgi'){my $ok=do './pinned-inc-dr-edit2.cgi';die($@||$!||'source race returned false') unless $ok}
+ elsif($n eq 'inc-dragon-info.cgi'){push @trace,'view'}
+ else{die "unexpected outer include $n"}return 1;}
+
 my(@r,@log);for my $c(0,1){my $p=GetPath($COTEMP_DIR,"dra-rd$c");push @r,get(-e $p?$p:GetPath($COMMON_DIR,"dra-rd$c"));$p=GetPath($COMMON_DIR,"dra-rlog$c");push @log,(-e $p?get($p):undef);}
-print JSON::PP->new->utf8->encode({raceCode=>0+$rcode,raceByCode=>\@r,raceLogByCode=>\@log,dragonText=>get(GetPath($COTEMP_DIR,'dra-dr')),jockeyText=>get(GetPath($COTEMP_DIR,'dra-jk')),drTime=>\@DRTIME,drLastText=>get(GetPath($COTEMP_DIR,'dr-last')),newLogText=>get(GetPath($COTEMP_DIR,'dra-log0')),drawBounds=>\@bounds,trace=>\@trace});
+print JSON::PP->new->utf8->encode({globalIndexDefined=>defined($i)?JSON::PP::true:JSON::PP::false,raceCode=>0+$rcode,raceByCode=>\@r,raceLogByCode=>\@log,dragonText=>get(GetPath($COTEMP_DIR,'dra-dr')),jockeyText=>get(GetPath($COTEMP_DIR,'dra-jk')),drTime=>\@DRTIME,drLastText=>get(GetPath($COTEMP_DIR,'dr-last')),newLogText=>get(GetPath($COTEMP_DIR,'dra-log0')),drawBounds=>\@bounds,trace=>\@trace});
 `;
 const oracle=input=>JSON.parse(execFileSync('perl',['-e',perl],{cwd,input:JSON.stringify(input),encoding:'utf8'}));
 const RF='no dr birth fm color name ranch rcname stable stname jock jkname prize strate sp1 sp2 sp3 sp4 pop time str lose'.split(' ');
@@ -55,4 +71,14 @@ test('R4 actual Race2 and Race3 cumulative time, leader changes and append comme
 });
 test('R4 race progress denies non-due, missing draw, zero source divisor and unreviewed global index',()=>{
   for(const input of [fixture({draws:[]}),fixture({sourceGlobalIndex:99}),fixture({drTime:[now-1,now-1,now-1]}),fixture({raceByCode:['1,0,0\n'+row(1,{sp1:0})+row(2)+row(3),'']})])assert.throws(()=>projectRaceProgress({...input,review}),/R4 race progress:/);
+});
+
+test('R4 actual slime outer wrapper invokes Race1/Race2 with unassigned source global i',()=>{
+  const x=fixture(),a=oracle({...x,outer:true}),b=oracle(x);
+  assert.equal(a.globalIndexDefined,false);
+  for(const k of ['raceCode','raceByCode','raceLogByCode','drTime','drLastText','drawBounds'])assert.deepEqual(a[k],b[k],k);
+  assert.deepEqual(a.trace,['common-lock','street-read','guest-allowed-auth','dra-rd0','dr-last','common-commit','common-unlock','view','render']);
+  const y=fixture({raceByCode:b.raceByCode,raceLogByCode:b.raceLogByCode,draws:[.5]});
+  const c=oracle({...y,outer:true}),d=oracle(y);
+  assert.equal(c.globalIndexDefined,false);assert.deepEqual(c.raceLogByCode,d.raceLogByCode);assert.deepEqual(c.raceByCode,d.raceByCode);
 });
