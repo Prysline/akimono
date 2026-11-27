@@ -323,3 +323,11 @@ test('original library opens its eight source chapters without HTML injection',(
   assert.match(adapter,/url\.pathname==='\/api\/library'/);
   assert.match(css,/#library-body\{white-space:pre-wrap/);
 });
+
+test('original settlement and owner time labels are source server views',()=>{
+  assert.match(script,/s\.settlementMenu\?\.label/);
+  assert.match(script,/s\.ownerClock\?\.label/);
+  for(const id of ['time','shop-info-time','balance-time'])assert.ok(script.includes("text('"+id+"',actionTime)"));
+  assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
+  assert.match(adapter,/ownerClock:reviewedMarketCommerce\?describeOriginalOwnerClock/);
+});
