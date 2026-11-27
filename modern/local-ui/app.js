@@ -71,11 +71,11 @@ function updateNavigation(){
     (currentTab===null?' > 尚未開放':' > '+tabNames[currentTab]));
   syncStatusVisibility();
 }
-function selectTab(name){
+function selectTab(name,libraryChapter=null){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
   currentGroup=name==='market'?'trade':name==='library'?'info':'self';
-  if(name==='library')void renderLibrary();
+  if(name==='library')void renderLibrary(libraryChapter);
   updateNavigation();
 }
 function selectGroup(name){
@@ -121,6 +121,20 @@ async function renderLibrary(id=null){
   }catch(error){if(request===libraryRequest)text('library-status','無法讀取圖書館：'+error.message);}
 }
 $('library-back').addEventListener('click',()=>void renderLibrary());
+$('owner-help-library').addEventListener('click',()=>{
+  const id=snapshot?.ownerHelp?.libraryChapter;
+  if(Number.isSafeInteger(id))selectTab('library',id);
+});
+function renderOwnerHelp(s){
+  const help=s.ownerHelp;
+  $('owner-help').hidden=!help;
+  const lines=$('owner-help-lines');lines.replaceChildren();
+  text('owner-help-speaker',help?help.speaker+'：':'');
+  for(const line of help?.lines??[]){
+    const p=document.createElement('div');p.textContent=line;lines.append(p);
+  }
+  $('owner-help-library').hidden=!Number.isSafeInteger(help?.libraryChapter);
+}
 const toggle=$('dev-toggle');
 toggle.addEventListener('click',()=>{
   const enabled=document.body.classList.toggle('dev-mode');
@@ -427,6 +441,7 @@ function renderMarketOffers(s){
 }
 function showState(s){
   snapshot=s;
+  renderOwnerHelp(s);
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
   const catalog=s.itemCatalog??[];
   text('world-id',w?.worldId??'尚未建立');

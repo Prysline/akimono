@@ -331,3 +331,9 @@ test('original settlement and owner time labels are source server views',()=>{
   assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
   assert.match(adapter,/ownerClock:reviewedMarketCommerce\?describeOriginalOwnerClock/);
 });
+
+test('original local owner help uses server projection and links the tutorial',()=>{
+  assert.match(html,/id="owner-help"/);assert.match(html,/id="owner-help-library"/);
+  assert.match(script,/renderOwnerHelp\(s\)/);assert.match(script,/selectTab\('library',id\)/);
+  assert.match(adapter,/describeOriginalOwnerHelp\(\{reviewed:reviewedOwnerHelp,world\}\)/);
+});

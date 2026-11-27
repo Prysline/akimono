@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
+test('D owner help follows source shop age and shelf stock across HTTP reads and reload',async t=>{
+  const p=await genuinePlayer(t,{crossPeriod:true,marketCommerce:true});
+  assert.equal(p.state.ownerHelp.kind,'new-shop');
+  assert.equal(p.state.ownerHelp.libraryChapter,1);
+  assert.equal(p.state.ownerHelp.mailSupported,false);
+  for(let n=0;n<3;n++)await p.tick(60);
+  assert.ok(p.state.world.nowSeconds-p.state.shop.foundation>=10800);
+  assert.equal(p.state.ownerHelp.kind,'empty');
+  assert.equal(p.state.ownerHelp.hasDisplayedStock,false);
+  assert.equal(p.state.ownerHelp.libraryChapter,null);
+  const before=structuredClone(p.state.world),help=structuredClone(p.state.ownerHelp),history=p.state.historyCommands;
+  const read=await p.request('/api/state');
+  assert.deepEqual(read.ownerHelp,help);assert.deepEqual(read.world,before);
+  assert.equal(read.historyCommands,history);
+  await p.saveAndRestart(0);
+  assert.deepEqual(p.state.ownerHelp,help);assert.deepEqual(p.state.world,before);
+});

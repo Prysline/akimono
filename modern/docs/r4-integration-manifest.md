@@ -171,3 +171,7 @@ D26 exact tree run46022295540/job140584718086 checkout bd034c31f2239d8a64895cfb2
 
 ## D31｜原版決算及店主行動時間唯讀投影
 A25 exact ab0ed3a79c2e6aded694f0243759c06a2d3b69b4/tree541df3ffd45885708f85362bbfc420ca02bf80b1, run45977525122/job140432890345 checkout3337b83c428d74020e519ad7d652dfd2c808246e, JS1579/1579 Perl2778/94 PASS. Intake exact 9ec84c60337683e09f5261a58a2c455c1522bbbb + main/info frozen fixture blobs; D already has same balance formatter, time source pinned-time.cgi (same blob as A core-time). Preserve 33+18 source oracle cases, adapt alias only. D state read-only settlement uses existing crossPeriod clock, owner label staged market gate; three UI fields same server label, 72h positive cap and negative wait string; no change to action/time/period rules. Genuine HTTP tick/reload and layout tests added; D31 CI pending. No new authority or checkpoint bypass.
+
+
+## D32｜原版小幫手正常本機提示
+A corrected 4b631090e66d4c3580128f4de4de84aa42ebb9b4/tree4ce96bd4d2a8d81e27a0e30be61e58ec313a7b01 exact actual396398bb266f1f00baf212e54d19c6fce78a7c11 run45977137460 JS1575/1575 Perl2778/94 PASS; A25 also PASS. Exact A module 5aaac695c7a863d196fce5328ec17429efe8ba9a and 72-case oracle 3419522e67fd3344ab209b500beb69144f2808d0. D31 existing main pin reused; staged market state and safe text UI, original chapter1 link; no mail authority or fake unread count, no scene assets, no mutation. Add genuine HTTP read/stock/reload assertion; new D CI pending.

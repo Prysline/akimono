@@ -20,6 +20,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
+import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp} from '../src/original-r4-owner-help.mjs';
 import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
@@ -78,7 +79,9 @@ const [
 ].map(readPinnedSource));
 
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:await readPinnedSource('modern/tests/original-perl/pinned-time.cgi')});
-const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi'),infoSource:await readPinnedSource('modern/tests/original-perl/core-inc-info.cgi')});
+const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
+const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:await readPinnedSource('modern/tests/original-perl/core-inc-info.cgi')});
+const reviewedOwnerHelp=reviewOriginalOwnerHelp(originalIncMainSource);
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -187,6 +190,7 @@ function state(){
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     ownerClock:reviewedMarketCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
+    ownerHelp:reviewedMarketCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
     shop:world?.shops[0]??null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.
