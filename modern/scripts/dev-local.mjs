@@ -52,7 +52,7 @@ const [
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
-  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,
+  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -71,7 +71,7 @@ const [
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
   'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi','modern/tests/original-perl/sc-s.cgi',
-  'modern/tests/original-perl/pinned-core-zh_TW.po','locale/zh_TW.po','custom/inc-locale.cgi','modern/tests/original-perl/core-buy-view.cgi',
+  'modern/tests/original-perl/pinned-core-zh_TW.po','locale/zh_TW.po','custom/inc-locale.cgi','modern/tests/original-perl/core-buy-view.cgi','modern/tests/original-perl/core-shop-m.cgi','modern/tests/original-perl/core-page.cgi',
 ].map(readPinnedSource));
 
 const streetModule=createStandardStreetModule({
@@ -82,7 +82,7 @@ const streetModule=createStandardStreetModule({
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
-  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,
+  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
   expectedNativeInterpreter:runtimeEnvironment.interpreter,
 });
@@ -128,7 +128,7 @@ const checkpointRuntime=fingerprintReviewedCheckpointRuntime({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource]:[])],
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource]:[])],
 });
 if(checkpointRuntime.interpreter!==runtimeEnvironment.interpreter)
   throw Error('AKIMONO_PERL_FINGERPRINT: native interpreter changed during startup');
@@ -188,6 +188,7 @@ function state(){
       rankPosition:null,
     },
     marketOffers,
+    marketPageRows:streetModule.marketPageRows??null,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -560,6 +561,7 @@ async function api(req,res,url){
 const statics=new Map([
   ['/','modern/local-ui/index.html'],
   ['/app.js','modern/local-ui/app.js'],
+  ['/news-query.js','modern/src/shared-source-news-query.mjs'],
   ['/style.css','modern/local-ui/style.css'],
 ]);
 const server=http.createServer(async (req,res)=>{

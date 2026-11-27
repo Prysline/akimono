@@ -10,6 +10,8 @@ import {independentPeriodDiskDigest,PERIOD_DISK_DIRECTORY} from '../src/r4-indep
 test('D9 reviewed market HTTP replenishes #63, retains stale CAS rejection and two v2 generations',async t=>{
   const p=await genuinePlayer(t,{crossPeriod:true,marketCommerce:true});
   assert.equal(p.state.reviewedMarketCommerce,true);
+  assert.equal(p.state.marketPageRows,25);
+  assert.deepEqual(p.state.marketOffers.map(x=>x.shelf),p.state.marketOffers.map((_,i)=>i));
   assert.equal(p.stock(63),1);
   await p.discard(63);
   let q;

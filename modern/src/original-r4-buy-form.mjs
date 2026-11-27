@@ -7,7 +7,15 @@ export function reviewOriginalBuyForm(sources){
  for(const [k,sha] of Object.entries(pins)){
   const s=sources[k];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+k);
  }
- const reviewed=Object.freeze({source:'r4-frozen-buy-form.v1'});reviews.add(reviewed);return reviewed;
+ const paging=[sources.marketListSource,sources.pageSource];
+ if(paging.some(s=>s!=null)&&paging.some(s=>s==null))fail('incomplete market list paging sources');
+ if(paging.every(s=>s!=null)){
+  for(const [key,sha] of [['marketListSource','0f40e0939c5376deb5257632feef39abfdf7a096'],['pageSource','aa8b04dcec124276cb5b4eeeba650137b4449779']]){
+   const s=sources[key];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+key);
+  }
+  if(!/\$LIST_PAGE_ROWS_PC\s*=25\s*;/.test(sources.configSource))fail('source market page rows');
+ }
+ const reviewed=Object.freeze({source:'r4-frozen-buy-form.v1',pageRows:paging.every(s=>s!=null)?25:null});reviews.add(reviewed);return reviewed;
 }
 export function describeOriginalBuyForm({reviewed,offer,shop,nowSeconds}){
  if(!reviews.has(reviewed))fail('source review required');

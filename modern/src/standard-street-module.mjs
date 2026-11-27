@@ -177,7 +177,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalTurnSource=null,originalWholeSource=null,originalConfigSource=null,
   originalCompilerSource=null,
   originalMarketSource=null,originalItemSource=null,originalDetailSource=null,
-  originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,originalBuyFormSource=null,
+  originalBuySource=null,originalBuyItemSource=null,originalBuyCalcSource=null,originalBuyFormSource=null,originalMarketListSource=null,originalMarketPageSource=null,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
   coreLocaleSource=null,localLocaleSource=null,localeLoaderSource=null,
@@ -355,7 +355,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // Read-only form uses the same quote and never grants purchase authority.
   const reviewedBuyForm=enableReviewedMarketCommerce&&originalBuyFormSource!==null?
     reviewOriginalBuyForm({formSource:originalBuyFormSource,submitSource:originalBuySource,
-      calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource}):null;
+      calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,configSource:originalConfigSource,
+      marketListSource:originalMarketListSource,pageSource:originalMarketPageSource}):null;
   const reviewedVoucher=enableReviewedMarketCommerce?reviewOriginalWholesaleVoucher({itemDsl,buySource:originalBuySource,helperSource:originalItemHelperSource}):null;
   if(reviewedVoucher&&(giftMap.limits[78]?.limit!==reviewedVoucher.limit||giftMap.limits[78]?.wslimit!==0))bad('reviewed #79 capacity');
   const marketBuy=Object.freeze({
@@ -723,6 +724,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     },
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
+    ...(reviewedBuyForm?.pageRows?{marketPageRows:reviewedBuyForm.pageRows}:{}),
     useItem,
     // R2-E: read-only view of the SAME source-reviewed USE registry that
     // GameCore executes. This is UI affordance, never a second USE preflight.

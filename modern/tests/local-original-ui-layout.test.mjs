@@ -299,3 +299,12 @@ test('source market buy form retains source presets and server-only transaction 
  assert.match(script,/requestedCount:requested/);
  assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
 });
+
+test('source market list pages keep full server offer identity and original page controls',()=>{
+ for(const id of ['market-page-top','market-page-bottom'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(adapter,/marketPageRows:streetModule\.marketPageRows/);
+ assert.match(script,/sourcePage\(offers\.length,s\.marketPageRows,marketPage\)/);
+ assert.match(script,/offers\.slice\(page\.start,page\.end\+1\)/);
+ assert.match(script,/sourcePageNumbers\(page\.page,page\.pageMax\)/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
