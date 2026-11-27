@@ -22,3 +22,36 @@ const required={newShop:'9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7',login:'1e5963
 const reviews=new WeakSet();
 export function reviewLifecycleDirectorySources(sources){for(const [key,sha] of Object.entries(required)){const s=sources?.[key];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)throw new RangeError('source drift: '+key);}const token=Object.freeze({committable:false});reviews.add(token);return token;}
 export function projectLifecycleDirectory({review,...input}){if(!reviews.has(review))throw new RangeError('reviewed source required');return project(input);}
+
+
+// Raw ordered lookup evidence only. The complete-directory gate above is a
+// restricted candidate, not a claim that absent legacy files are scanned.
+const rawLookupReviews=new WeakSet();
+export function reviewOriginalRegistrationLookup({newShop,name}){
+  for(const [s,sha] of [[newShop,'9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7'],[name,'ae3b3a862fc78b8775795ed88d5d1911861b3d80']]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)throw new RangeError('registration lookup source drift');
+  }
+  const token=Object.freeze({committable:false});rawLookupReviews.add(token);return token;
+}
+export function projectOriginalRegistrationLookup({review,kind,currentTown,otherDir,files,otherTownBlockEnabled,value}){
+  const fail=m=>{throw new RangeError('R4 raw registration lookup: '+m)};
+  const text=s=>typeof s==='string'&&s.length>0&&!/[\t\r\n\0]/.test(s);
+  const town=s=>typeof s==='string'&&/^[A-Za-z][A-Za-z0-9_]*$/.test(s);
+  if(!rawLookupReviews.has(review)||!['double-ip','double-name'].includes(kind)||!town(currentTown)||!Array.isArray(otherDir)||!otherDir.every(town)||typeof otherTownBlockEnabled!=='boolean'||!text(value)||!files||Object.getPrototypeOf(files)!==Object.prototype)fail('reviewed ordered source input required');
+  for(const [k,rows] of Object.entries(files)){
+    if(!town(k)||!(rows===null||Array.isArray(rows)&&rows.every(x=>x&&Object.keys(x).length===2&&text(x.ip)&&text(x.shopName))))fail('invalid sanitized source rows');
+  }
+  // Original GetDoubleName's conditional lexical @OtherDir shadows the
+  // package array. With NEW_OTHERTOWN_BLOCK enabled it is empty in Perl 5.40.
+  const order=kind==='double-ip'?otherDir:otherTownBlockEnabled?[]:[currentTown];
+  const visited=[];let matchCount=0,stoppedOnMissing=null;
+  for(const t of order){
+    visited.push(t);
+    if(!Object.hasOwn(files,t))fail('missing directory provenance '+t);
+    const rows=files[t];
+    if(rows===null){stoppedOnMissing=t;break;}
+    matchCount=rows.filter(x=>(kind==='double-ip'?x.ip:x.shopName)===value).length;
+    if(matchCount)break;
+  }
+  return {matchCount,visited,stoppedOnMissing,committable:false,worldStateWritten:false};
+}
