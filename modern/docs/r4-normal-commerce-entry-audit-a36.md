@@ -18,3 +18,6 @@ A36 來源 inc-main.cgi upstream 與 frozen core-inc-main.cgi 同 blob 5cd020011
 
 ## A37：已陳列商品直接進入調價表單
 實讀 upstream `inc-sc.cgi`（2e328443f3f83bd862f56a540e1357b31917651d，與既有 frozen fixture 內容一致）、`inc-item-show.cgi`（040665122724efadf530bd935ac448c680ec44bd）、`sc-s.cgi`（0bada620cff769bed782707d61b87e48cce0a58c）。原版僅 stock>0 的展示架商品產生 item link，帶 no、sc（1-based）、pr、bk；表單原本選定 sc、比例100、直接價 pr。舊 UI 只提供下架或去倉庫，缺直接操作入口。同品不同架不可用 ITEM ID 選第一架替代。新 full-commerce UI 以現行 snapshot 重新驗證實際架與庫存，導入原架、原售價及返回店內；維持空架選貨延伸、倉庫入口與既有真 /api/showcase CAS。新增實際原版 CGI HTML 差分、DOM/選架契約與受控 HTTP 同品雙架調價、stale CAS、保存重載測試，完整 CI 待核證。未改 src、adapter、凍結資料、交易規則或 fingerprint 輸入；非正式玩家驗收。
+
+## A40：商品計量單位顯示
+固定 Core item.cgi 9b4db56d6702d6b3475af0331fdcf1a27ed8d3c8、inc-sc.cgi 2e328443f3f83bd862f56a540e1357b31917651d、inc-item-throw.cgi 714e623b9fd1f40ce7c51b89503d2a801330f1bb、buy.cgi 79ec6f92d873883dddc5e6442dcb4694638515d2、stock.cgi 8465b8dd3c0d2ef8c81078b617806fcc9ed469ae、shop-m.cgi 0f40e0939c5376deb5257632feef39abfdf7a096。原版 item 持有量、展示架三個數量欄（含零及未決算時前期0）、丟棄與購買兩種數量輸入有 ITEM scale；stock.cgi 倉庫數量/上限與本期/前期純數字，不全面添加單位。full-commerce adapter itemCatalog 投影現有 scaleRaw，不新增人工商品表；購買使用現有 detail.scale。舊模式不變。HTTP catalog/reload 和 DOM 測試待完整 CI；無經濟/交易/保存規則變更。

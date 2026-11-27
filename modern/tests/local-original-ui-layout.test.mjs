@@ -195,7 +195,7 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
   assert.match(script,/money\(shop\.price\[index\]\)/);
-  assert.match(script,/number\(shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
+  assert.match(script,/sourceItemQuantity\(s,info,shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
 });
 
 
@@ -567,4 +567,28 @@ test('reviewed discard presentation hides source flag t forms and distinguishes 
   assert.equal($('discard-note').hidden,true);
   assert.match(script,/renderDiscardPresentation\(s,item,shop,canDiscard\)/);
   for(const id of ['discard-title','discard-choice-caption','discard-submit','discard-note'])assert.ok(html.includes('id="'+id+'"'));
+});
+
+test('source ITEM scale is rendered only on the source quantity surfaces',()=>{
+  const fn=script.slice(script.indexOf('function sourceItemQuantity('),script.indexOf('function renderItemInfo('));
+  const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const api=new Function('number','$','text',fn+';return {sourceItemQuantity,renderDiscardPresentation};')(n=>Number.isSafeInteger(n)?String(n):'—',$,(id,value)=>{$(id).textContent=value});
+  const s={reviewedFullCommerce:true,reviewedDiscard:true},gift={name:'禮物卷',scale:'枚',flagRaw:''},human={name:'人員',scale:'人',flagRaw:'human'};
+  assert.equal(api.sourceItemQuantity(s,gift,5,' '),'5 枚');
+  assert.equal(api.sourceItemQuantity(s,gift,0),'0枚');
+  assert.equal(api.sourceItemQuantity(s,human,2),'2人');
+  assert.equal(api.sourceItemQuantity({},gift,5),'5');
+  assert.equal(api.sourceItemQuantity(s,null,5),'5');
+  assert.equal(api.sourceItemQuantity(s,gift,undefined),'—');
+  api.renderDiscardPresentation(s,gift,{},true);
+  assert.equal($('discard-preset-unit').textContent,'枚');assert.equal($('discard-custom-unit').textContent,'枚');
+  api.renderDiscardPresentation(s,human,{},true);
+  assert.equal($('discard-preset-unit').textContent,'人');assert.equal($('discard-custom-unit').textContent,'人');
+  api.renderDiscardPresentation({},human,{},true);
+  assert.equal($('discard-preset-unit').textContent,'');assert.equal($('discard-custom-unit').textContent,'');
+  assert.match(adapter,/scale:item\?\.scaleRaw/);
+  assert.match(script,/sourceItemQuantity\(s,item,shop\.item\[item\.itemId-1\],' '\)/);
+  assert.match(script,/sourceItemQuantity\(s,info,shop\.itemyesterday\?\.\[itemId\]\?\?0\)/);
+  assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
+  for(const id of ['discard-preset-unit','discard-custom-unit'])assert.ok(html.includes('id="'+id+'"'));
 });

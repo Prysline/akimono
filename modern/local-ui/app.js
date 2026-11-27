@@ -301,6 +301,10 @@ function renderSourceUseEntry(row,offer){
   li.append(entry);
   return li;
 }
+function sourceItemQuantity(s,item,value,separator=''){
+  const scale=s.reviewedFullCommerce&&typeof item?.scale==='string'?item.scale:'';
+  return number(value)+(scale&&Number.isSafeInteger(value)?separator+scale:'');
+}
 function renderDiscardPresentation(s,item,shop,canDiscard){
   const flags=item?.flagRaw?.split('|')??[];
   const reviewed=s.reviewedDiscard===true;
@@ -311,6 +315,8 @@ function renderDiscardPresentation(s,item,shop,canDiscard){
   $('discard-note').hidden=!shop||!item;
   text('discard-title',verb==='解雇'?'解雇':'丟棄商品');
   text('discard-choice-caption',verb+'數量');
+  const scale=reviewed?item?.scale??'':'';
+  text('discard-preset-unit',scale);text('discard-custom-unit',scale);
   text('discard-submit',verb);
   $('discard-submit').disabled=!canDiscard;
   text('discard-note',prohibited?'※'+item.name+'是無法'+verb+'的':
@@ -334,7 +340,7 @@ function renderItemInfo(s){
   $('item-sale-warning-row').hidden=!warning;
   text('item-sale-warning',warning==='not-listable'?'無法販售'+(item?.name??'此商品'):warning==='no-sales'?'這個產品即使陳列了也無法販售':warning==='rare-sales'?'這個產品即使陳列了也很難販售':'');
   text('item-detail-name',item?.name??'請從倉庫選擇商品');
-  text('item-detail-owned',shop&&item?number(shop.item[item.itemId-1]):'—');
+  text('item-detail-owned',shop&&item?sourceItemQuantity(s,item,shop.item[item.itemId-1],' '):'—');
   text('item-detail-price',item?.basePrice===null||!item?'—':money(item.basePrice));
   text('item-detail-type',item?.type??'—');
   text('item-detail-cost',Number.isSafeInteger(item?.compiledCost)?money(item.compiledCost):sourceUpkeep(item?.costRaw));
@@ -728,8 +734,8 @@ function renderMarketOffers(s){
       product.append(details);
     }
     cell(offer.price===null?'—':money(offer.price));
-    cell(offer.marketStock);
-    cell(offer.owned+'／'+offer.limit);
+    cell(offer.detail?number(offer.marketStock)+offer.detail.scale:offer.marketStock);
+    cell(offer.detail?number(offer.owned)+offer.detail.scale+'／'+offer.limit:offer.owned+'／'+offer.limit);
     cell(Number.isSafeInteger(offer.timeSeconds)?
       conciseTimeText(offer.timeSeconds):'—');
     const tdAction=document.createElement('td');
@@ -747,6 +753,7 @@ function renderMarketOffers(s){
       presets.disabled=!available;
       presets.addEventListener('change',()=>{count.value='';});
       actions.append(presets);
+      if(offer.detail?.scale){const unit=document.createElement('span');unit.textContent=offer.detail.scale;actions.append(unit);}
       count.placeholder='自訂';
     }
     const button=document.createElement('button');
@@ -756,7 +763,9 @@ function renderMarketOffers(s){
     button.disabled=!available;
     button.title=offer.form?.reason??offer.reason??(offer.marketStock===0?'市場缺貨':
       !shop?'請先開店':'來源市場或持有上限暫不可交易');
-    actions.append(count,button);tdAction.append(actions);tr.append(tdAction);
+    actions.append(count);
+    if(offer.form&&offer.detail?.scale){const unit=document.createElement('span');unit.textContent=offer.detail.scale;actions.append(unit);}
+    actions.append(button);tdAction.append(actions);tr.append(tdAction);
     marketBody.append(tr);
   }
 }
@@ -865,10 +874,10 @@ function showState(s){
     cell(hasItem?money(info?.basePrice):'—');
     const shelfTax=s.showcaseView?.rows[index];
     cell(hasItem&&shelfTax?.tax!==null&&shelfTax?money(shelfTax.tax)+'（稅率'+shelfTax.taxRate+'%）':'—');
-    cell(hasItem?number(shop.item[itemId-1]):'—');
-    cell(hasItem?number(shop.itemtoday?.[itemId]??0):'—');
-    cell(hasItem&&w?.period?.settledCount>0?
-      number(shop.itemyesterday?.[itemId]??0):'—');
+    cell(hasItem?sourceItemQuantity(s,info,shop.item[itemId-1]):'—');
+    cell(hasItem?sourceItemQuantity(s,info,shop.itemtoday?.[itemId]??0):'—');
+    cell(hasItem&&(s.reviewedFullCommerce||w?.period?.settledCount>0)?
+      sourceItemQuantity(s,info,shop.itemyesterday?.[itemId]??0):'—');
     const td=document.createElement('td');
     const button=document.createElement('button');
     button.type='button';button.className='text-link shelf-action-link';

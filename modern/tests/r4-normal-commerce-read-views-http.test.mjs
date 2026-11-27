@@ -24,6 +24,10 @@ test('R4 original warehouse and balance read models survive real local actions a
  assert.equal(p.state.ownerScene.hasDisplayedStock,false);
  assert.equal(p.state.ownerScene.helper.text,'庫存都賣光了。真是抱歉…');
  assert.deepEqual(p.state.ownerScene.displayedItems,[]);
+ assert.ok(p.state.itemCatalog.length>0);
+ assert.ok(p.state.itemCatalog.every(x=>typeof x.scale==='string'&&x.scale.length>0));
+ assert.equal(p.state.itemCatalog.find(x=>x.itemId===79).scale,'枚');
+ assert.equal(p.state.itemCatalog.find(x=>x.itemId===78).scale,'組');
  assert.equal(row(79).count,5);assert.equal(row(79).marketPrice,null);assert.deepEqual(p.state.warehouse.survey,[]);
  const gift=p.quote(79,0).detail;
  assert.equal(gift.source,'r4-frozen-use-form.v1');
@@ -53,7 +57,9 @@ test('R4 original warehouse and balance read models survive real local actions a
  const before=structuredClone({warehouse:p.state.warehouse,balance:p.state.balance,news:p.state.news,showcaseView:p.state.showcaseView});
  assert.equal(before.news.source,'r4-frozen-news-owner.v1');
  assert.ok(before.news.rows.some(row=>row.id===0));
+ const catalogBefore=structuredClone(p.state.itemCatalog);
  const first=await p.saveAndRestart(0);
+ assert.deepEqual(p.state.itemCatalog,catalogBefore);
  assert.deepEqual({warehouse:p.state.warehouse,balance:p.state.balance,news:p.state.news,showcaseView:p.state.showcaseView},before);
  assert.equal(p.state.news.rows.filter(row=>row.wire===opening[0].wire).length,1);
  const denied=await p.post('/api/discard',{itemId:9,count:1,expectedRevision:first.revision-1});

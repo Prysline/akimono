@@ -275,6 +275,7 @@ function state(){
           itemId:e.itemId,name:e.itemName,
           basePrice:e.basePrice,stockLimit:e.stockLimit,
           flagRaw:item?.flagRaw??'',
+          ...(reviewedFullCommerce?{scale:item?.scaleRaw??''}:{}),
           type:item?.typeRaw??null,
           costRaw:item?.costRaw??null,
           ...(streetModule.reviewedNormalCommerce?{compiledCost:streetModule.reviewedNormalCommerce.upkeepCosts[e.itemId]}:{}),
