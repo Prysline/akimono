@@ -497,7 +497,7 @@ function updateUseEstimate(){
   const offer=snapshot?.useOffers?.find(row=>
     row.itemId===selectedItemId&&row.useId===selectedUseId);
   const requested=selectedUseCount();
-  if(!offer?.canUse||!Number.isSafeInteger(requested)||requested<1){
+  if(!offer?.canUse||offer.sourceUseOk===false||!Number.isSafeInteger(requested)||requested<1){
     text('use-estimated-time','本次預估行動時間：—');
     return;
   }
