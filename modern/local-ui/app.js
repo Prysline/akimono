@@ -6,7 +6,7 @@ let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
-let selectedShelfIndex=0;
+let selectedShelfIndex=0,pendingShelfIndex=null,itemBackTab='stock';
 let lastPricingItemId=null,lastDiscardItemId=null;
 let palaceSubmitting=false,armySubmitting=false,sweepSubmitting=false;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
@@ -120,6 +120,7 @@ function showIconList(){
 function selectTab(name,libraryChapter=null){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
+  if(name!=='stock'&&name!=='item')pendingShelfIndex=null;
   currentGroup=['market','palace','survey'].includes(name)?'trade':'self';
   if(name==='army')currentGroup='facility';
   if(name==='news'||name==='library')currentGroup='info';
@@ -217,7 +218,7 @@ toggle.addEventListener('click',()=>{
 });
 document.querySelectorAll('[data-go-tab]').forEach(button=>
   button.addEventListener('click',()=>selectTab(button.dataset.goTab)));
-$('back-to-stock').addEventListener('click',()=>selectTab('stock'));
+$('back-to-stock').addEventListener('click',()=>selectTab(itemBackTab));
 $('back-to-item').addEventListener('click',()=>selectTab('item'));
 $('result-back-to-item').addEventListener('click',()=>selectTab('item'));
 const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
@@ -230,11 +231,31 @@ function showcaseSlotDescription(s,index){
   return itemId===0?'空架':
     catalogItem(s,itemId)?.name??'未知商品';
 }
-function openItem(itemId){
+// Original inc-sc.cgi links only stocked shelves, carrying the actual
+// zero-based modern shelf (original query sc is one-based) and price.
+function sourceShelfItemTarget(s,shelf){
+  const shop=s?.shop;
+  if(!s?.reviewedFullCommerce||!shop||!Number.isSafeInteger(shelf)||shelf<0||shelf>=shop.showcasecount)return null;
+  const itemId=shop.showcase[shelf],price=shop.price[shelf];
+  if(!Number.isSafeInteger(itemId)||itemId<1||!Number.isSafeInteger(shop.item[itemId-1])||shop.item[itemId-1]<=0||
+     !Number.isSafeInteger(price)||price<1)return null;
+  return {itemId,shelf,price};
+}
+function openItem(itemId,shelfTarget=null){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
   selectedItemId=itemId;
   selectedUseId=null;
+  itemBackTab=shelfTarget?'shop':'stock';
+  text('back-to-stock',shelfTarget?'［返回店內］':'［返回倉庫］');
+  if(snapshot?.reviewedFullCommerce){
+    selectedShelfIndex=shelfTarget?.shelf??pendingShelfIndex??0;
+    pendingShelfIndex=null;
+    lastPricingItemId=null;
+  }
   selectTab('item');
+  // inc-item-show.cgi initializes per=100 and pre-fills pr from the
+  // source link. The existing direct-price input takes precedence.
+  if(shelfTarget)$('shelf-price-direct').value=String(shelfTarget.price);
 }
 function marketBalanceText(b){return b?b.label+(b.percent===null?'':' '+number(b.percent)+'%'):'—';}
 function renderMarketBalance(cell,b,graph){
@@ -821,7 +842,13 @@ function showState(s){
       td.textContent=String(value);tr.append(td);return td;
     };
     cell('第 '+(index+1)+' 架');
-    cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
+    const productCell=cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
+    const target=sourceShelfItemTarget(s,index);
+    if(target){
+      const link=document.createElement('button');link.type='button';link.className='text-link item-link';
+      link.dataset.shelfIndex=String(index);link.dataset.shelfAction='detail';
+      link.textContent=productCell.textContent;productCell.textContent='';productCell.append(link);
+    }
     cell(hasItem?money(shop.price[index]):'—');
     cell(hasItem?money(info?.basePrice):'—');
     const shelfTax=s.showcaseView?.rows[index];
@@ -1108,6 +1135,9 @@ $('reset-world').addEventListener('click',async()=>{
     selectedItemId=null;
     selectedUseId=null;
     lastPricingItemId=null;
+    pendingShelfIndex=null;
+    itemBackTab='stock';
+    text('back-to-stock','［返回倉庫］');
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
@@ -1139,8 +1169,14 @@ $('showcase-shelves').addEventListener('click',async event=>{
   const shelf=Number(button.dataset.shelfIndex);
   if(!Number.isSafeInteger(shelf)||shelf<0||
      shelf>=snapshot.shop.showcasecount)return;
+  if(button.dataset.shelfAction==='detail'){
+    const target=sourceShelfItemTarget(snapshot,shelf);
+    if(target)openItem(target.itemId,target);
+    return;
+  }
   if(button.dataset.shelfAction==='open'){
     selectedShelfIndex=shelf;
+    pendingShelfIndex=shelf;
     selectTab('stock');
     return;
   }

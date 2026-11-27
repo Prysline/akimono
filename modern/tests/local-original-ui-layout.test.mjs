@@ -507,3 +507,30 @@ test('owner scene uses source gold, garbage rows, duplicate shelves and genuine 
   }
   assert.ok(script.includes('()=>selectTab(button.dataset.goTab)'));
 });
+
+test('source stocked showcase links preserve shelf identity, current price and return entry',()=>{
+  const fn=script.slice(script.indexOf('function sourceShelfItemTarget('),script.indexOf('function renderSourceUseEntry('));
+  // Only the two functions are evaluated; no browser state or runtime writes.
+  const code=fn.slice(0,fn.indexOf('\n}',fn.indexOf('function openItem('))+2);
+  const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:''});return nodes.get(id)};
+  const state={reviewedFullCommerce:true,shop:{showcasecount:3,showcase:[79,79,10],price:[10000,12345,5000],item:Array(79).fill(0)}};
+  state.shop.item[78]=3;
+  const harness=new Function('$','text','snapshot','selectTab','code',
+    'let selectedItemId=null,selectedUseId=null,selectedShelfIndex=0,pendingShelfIndex=null,itemBackTab="stock",lastPricingItemId=null;'+code+';return {sourceShelfItemTarget,openItem,setPending:n=>pendingShelfIndex=n,get:()=>({selectedItemId,selectedShelfIndex,itemBackTab,lastPricingItemId})};');
+  const tabs=[],api=harness($,(id,value)=>{$(id).textContent=value},state,t=>tabs.push(t),code);
+  assert.equal(api.sourceShelfItemTarget(state,2),null);
+  assert.equal(api.sourceShelfItemTarget({...state,reviewedFullCommerce:false},0),null);
+  assert.equal(api.sourceShelfItemTarget(state,-1),null);
+  const target=api.sourceShelfItemTarget(state,1);
+  assert.deepEqual(target,{itemId:79,shelf:1,price:12345});
+  api.openItem(target.itemId,target);
+  assert.deepEqual(api.get(),{selectedItemId:79,selectedShelfIndex:1,itemBackTab:'shop',lastPricingItemId:null});
+  assert.equal($('shelf-price-direct').value,'12345');assert.equal($('back-to-stock').textContent,'［返回店內］');
+  api.openItem(79);assert.equal(api.get().selectedShelfIndex,0);assert.equal(api.get().itemBackTab,'stock');
+  api.setPending(2);api.openItem(79);assert.equal(api.get().selectedShelfIndex,2);
+  assert.deepEqual(tabs,['item','item','item']);
+  assert.match(script,/link\.dataset\.shelfAction='detail'/);
+  assert.match(script,/sourceShelfItemTarget\(snapshot,shelf\)/);
+  assert.match(script,/openItem\(target\.itemId,target\)/);
+  assert.match(script,/selectTab\(itemBackTab\)/);
+});
