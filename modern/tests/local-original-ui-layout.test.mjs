@@ -36,7 +36,7 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(html,/id="tab-use"/);
   assert.match(html,/id="tab-use-result"/);
   assert.match(script,/catalog\.filter\(item=>shop\.item\[item\.itemId-1\]>0\)/);
-  assert.match(script,/item\.flagRaw\.includes\('s'\)/);
+  assert.match(script,/warehouse\?item\.storage:item\.flagRaw\.split\('\|'\)\.includes\('noshowcase'\)/);
   assert.match(script,/link\.dataset\.openItem=String\(item\.itemId\)/);
   assert.match(script,/selectedItemId=itemId/);
   assert.match(script,/renderItemInfo\(s\)/);
@@ -46,7 +46,9 @@ test('warehouse categories link to original-style item details without fabricate
   assert.match(adapter,/costRaw:item\?\.costRaw/);
   assert.match(html,/class="muted dev-panel" data-dev-panel>熟練度來源：商品 EXP/);
   assert.match(html,/<th>持有／上限<\/th><th>熟練度<\/th>/);
-  assert.match(html,/<th>數量／上限<\/th><th>熟練度<\/th><th>陳列<\/th>/);
+  assert.match(html,/<th>數量／上限<\/th><th>售出／前期<\/th><th>熟練度<\/th><th>陳列<\/th><th>市價<\/th><th>供需平衡<\/th>/);
+  assert.match(html,/id="warehouse-type"/);
+  assert.match(adapter,/warehouse:world&&streetModule\.describeWarehouse/);
   assert.match(script,/sourceProficiency\(shop,item\.itemId\)/);
   assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
   assert.match(script,/dev\.className='dev-panel dev-raw-value'/);
@@ -164,7 +166,7 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/shop\.showcasecount/);
   assert.match(html,/id="source-shelf-sale-boundary"/);
   assert.match(script,/const sourceSaleSupported=Boolean\(shop&&/);
-  assert.match(script,/shop\.showcasecount>=1&&shop\.showcasecount<=\(snapshot\?\.reviewedTimeMode===true\?1:8\)/);
+  assert.match(script,/shop\.showcasecount>=1&&shop\.showcasecount<=\(snapshot\?\.reviewedTimeMode===true&&!snapshot\?\.reviewedFullCommerce\?1:8\)/);
   assert.match(script,/shop\.showcasecount===1\|\|w\?\.period\?\.eventState!==null/);
   assert.match(script,/shop&&shop\.showcasecount>1\?/);
   assert.match(html,/id="showcase-shelf"/);
@@ -181,13 +183,19 @@ test('shop overview and shelf restore original compact data tables without dupli
   assert.match(script,/cell\(Number\.isSafeInteger\(offer\.timeSeconds\)\?\s*conciseTimeText\(offer\.timeSeconds\):'—'\)/);
   assert.match(script,/\$\('showcase-shelves'\)\.addEventListener\('click'/);
   assert.match(script,/expectedRevision:snapshot\.world\.revision,itemId:0,per:100,shelf/);
-  assert.doesNotMatch(shop,/data-go-tab=/,
-    'top navigation replaces redundant in-shop links');
+  // A36 restores the three source inc-main.cgi scene actions, not duplicate navigation elsewhere.
+  const sceneStart=shop.indexOf('id="owner-scene"');
+  const sceneEnd=shop.indexOf('id="shop-shelf-maintenance"');
+  assert.ok(sceneStart>=0&&sceneEnd>sceneStart);
+  const scene=shop.slice(sceneStart,sceneEnd);
+  assert.deepEqual([...scene.matchAll(/data-go-tab="([^"]+)"/g)].map(m=>m[1]),['news','stock','sweep']);
+  assert.doesNotMatch(shop.slice(0,sceneStart)+shop.slice(sceneEnd),/data-go-tab=/,
+    'no redundant in-shop links outside the original scene');
   assert.match(css,/#tab-shop \.shop-info-table,#tab-shop \.shelf-table/);
   assert.match(script,/text\('shop-info-popularity',Number\.isSafeInteger\(shop\?\.rank\)\?/);
   assert.match(script,/Math\.trunc\(shop\.rank\/100\)\+'%'/);
   assert.match(script,/money\(shop\.price\[index\]\)/);
-  assert.match(script,/number\(shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
+  assert.match(script,/sourceItemQuantity\(s,info,shop\.itemtoday\?\.\[itemId\]\?\?0\)/);
 });
 
 
@@ -217,7 +225,7 @@ test('original-style USE flow has a compact list, detail form and result page',(
   assert.match(script,/function updateUseEstimate\(\)/);
   assert.match(script,/const timeSuffix=Number\.isSafeInteger\(row\.timePerUseSeconds\)/);
   assert.match(script,/use-count'\)\.addEventListener\('input',updateUseEstimate/);
-  assert.match(script,/const requestedCount=Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
+  assert.match(script,/const requestedCount=offer\.detail\?\.noCount\?1:Number\(manual!==''\?manual:\$\('use-count-presets'\)\.value\)/);
   assert.match(script,/text\('shop-points',number\(s\.shopSummary\?\.point\)\)/);
   assert.match(css,/\.use-action-list\{/);
   assert.match(css,/\.use-detail-table\{/);
@@ -297,10 +305,290 @@ test('palace page uses the server audience quote and revision-only completion, n
   assert.match(html,/id="tab-palace"/);
   for(const id of ['palace-point','palace-required-point','palace-dignity','palace-mission','palace-item','palace-stock','palace-complete'])
     assert.ok(html.includes('id="'+id+'"'),id);
-  assert.match(script,/currentGroup=\['market','palace'\]\.includes\(name\)\?'trade':'self'/);
+  assert.match(script,/currentGroup=\['market','palace','survey'\]\.includes\(name\)\?'trade':'self'/);
   assert.match(script,/const p=s\?\.palace/);
   assert.match(script,/\$\('palace-mission'\)\.hidden=!canMeet/);
   assert.match(script,/palaceSubmitting\|\|!s\?\.world\|\|!canMeet\|\|p\?\.canComplete!==true/);
   assert.match(script,/await call\('\/api\/palace-complete',\{expectedRevision:before\.world\.revision\}/);
   assert.match(adapter,/case '\/api\/palace-complete'/);
+});
+
+
+test('full commerce USE result shows original message branch and zero-retained output',async()=>{
+  const originalSubmit=await load('./original-perl/core-item-submit.cgi');
+  assert.match(originalSubmit,/if\(\$USE->\{result\}->\{additem\}\[0\]\)/);
+  assert.match(originalSubmit,/\$USE->\{result\}->\{message\}->\{resultok\}/);
+  assert.match(originalSubmit,/\$USE->\{result\}->\{message\}->\{resultng\}/);
+  const start=script.indexOf('function renderUseResult(');
+  const end=script.indexOf("\n$('inventory').addEventListener",start);
+  assert.ok(start>=0&&end>start);
+  const render=new Function('text','number','money','conciseTimeText',script.slice(start,end)+'\nreturn renderUseResult;');
+  const run=(data)=>{
+    const fields={};
+    render((id,value)=>fields[id]=value,String,String,String)(data,{useName:'測試'},[{itemId:16,name:'皮革加工入門'}]);
+    return fields;
+  };
+  const base={originalResultOk:'寫作完成',originalResultNg:'寫作失敗',effectiveCount:1,moneySpent:0,timeSpentSeconds:5400};
+  assert.equal(run({...base,originalAddItem:[]})['use-result-message'],'寫作失敗');
+  const success=run({...base,originalAddItem:[[16,0]]});
+  assert.equal(success['use-result-message'],'寫作完成');
+  assert.equal(success['use-result-acquired'],'皮革加工入門 × 0');
+  assert.equal(run({...base,originalAddItem:[[16,2]],originalFunctionReturn:'回呼',originalAddMsg:['取得訊息',null],originalUseMsg:['消耗訊息']})['use-result-message'],'回呼；取得訊息；寫作完成；消耗訊息');
+  assert.equal(run({originalResultOk:'舊 receipt',originalAddItem:[]})['use-result-message'],'舊 receipt');
+});
+
+
+test('source discard and sweep use server quotes, original controls and strict revision contracts',()=>{
+  assert.match(html,/data-tab="sweep"/);
+  for(const id of ['discard-options','sweep-form','sweep-options','sweep-hours','sweep-report','stock-trash-warning','stock-list-content','shop-info-clean'])assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(script,/discardQuote=\(s\.discardOffers\?\?\[\]\)/);
+  assert.match(script,/if\(s\.reviewedDiscard\)discardCount\.removeAttribute\('max'\)/);
+  assert.match(script,/\$\('stock-list-content'\)\.hidden=Boolean\(q\?\.stockBlocked\)/);
+  assert.match(script,/call\('\/api\/sweep',\{expectedRevision:before\.world\.revision,requestedHours\}/);
+  assert.match(adapter,/exactKeys\(body,'expectedRevision,requestedHours'\)/);
+});
+
+
+test('source balance view displays source-ledger maintenance, historical taxes, job and elapsed founding time',()=>{
+  for(const id of ['balance-prev-cost','balance-prev-tax','balance-base-tax','balance-exp','balance-job','balance-dignity','balance-wins','balance-clean'])assert.ok(html.includes('id="'+id+'"'),id);
+  assert.match(adapter,/balance:world&&streetModule\.describeBalance/);
+  assert.match(script,/money\(balance\.accruedMaintenance\)\+' \+ '\+money\(balance\.shelfMaintenance\)/);
+  assert.match(script,/text\('balance-founded',balance\.foundedLabel\)/);
+});
+
+
+test('original market survey and product detail use server market status, separate from wholesale offers',()=>{
+ assert.match(html,/data-tab="survey"/);
+ for(const id of ['market-survey-rows','item-market-price','item-market-low','item-market-high','item-market-balance'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(script,/s\.warehouse\?\.survey/);
+ assert.match(script,/s\.warehouse\?\.marketItems\?\.find/);
+});
+
+
+test('source newspaper shows authorized bulletin rows with literal query, private markers and pagination',()=>{
+ for(const id of ['news-search','news-target','news-keyword','news-mode','news-events','news-rows','news-prev','news-page','news-next'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(html,/data-tab="news"/);
+ assert.match(adapter,/news:world&&streetModule\.describeNews/);
+ assert.match(script,/queryOriginalNews\(source,newsQuery\)/);
+ assert.match(script,/p\.textContent=row\.private/);
+});
+
+
+test('source shelf tax and owner event/topic and special sale warnings are visible',()=>{
+ for(const id of ['shop-shelf-tax-heading','shop-shelf-maintenance','shop-recent-title','shop-recent-rows','item-sale-warning'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(adapter,/showcaseView:world&&streetModule\.describeShowcase/);
+ assert.match(script,/s\.showcaseView\?\.rows\[index\]/);
+ assert.match(script,/source\?\.recentRows/);
+ assert.match(script,/status\?\.saleWarning/);
+});
+
+
+test('source market buy form retains source presets and server-only transaction identity',()=>{
+ assert.match(script,/offer\.form\?offer\.form\.available:offer\.canBuy/);
+ assert.match(script,/presets\.dataset\.marketPreset/);
+ assert.match(script,/requestedCount:requested/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+
+test('source supply graph geometry is shared by all three retail read views',()=>{
+ assert.match(script,/renderMarketBalance\(balance,row\.balance,row\.graph\)/);
+ assert.match(script,/renderMarketBalance\(\$\('item-market-balance'\),status\?\.balance,status\?\.graph\)/);
+ assert.match(script,/renderMarketBalance\(addCell\(tr,'—'\),warehouse\?item\.balance:null,warehouse\?item\.graph:null\)/);
+ assert.match(css,/\.source-market-bar\.saturated/);
+ assert.match(css,/\.source-market-bar\.shortage/);
+});
+
+
+test('source market list pages keep full server offer identity and original page controls',()=>{
+ for(const id of ['market-page-top','market-page-bottom'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(adapter,/marketPageRows:streetModule\.marketPageRows/);
+ assert.match(script,/sourcePage\(offers\.length,s\.marketPageRows,marketPage\)/);
+ assert.match(script,/offers\.slice\(page\.start,page\.end\+1\)/);
+ assert.match(script,/sourcePageNumbers\(page\.page,page\.pageMax\)/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+test('source wholesale details present server ITEM text and warnings without changing purchase identity',()=>{
+ assert.match(script,/if\(offer\.detail\)/);
+ assert.match(script,/d\.info\.split/);
+ assert.match(script,/d\.saleWarning/);
+ assert.match(script,/offer\.detail\?\.actionLabel/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+test('original library opens its eight source chapters without HTML injection',()=>{
+  assert.match(html,/data-tab="library"/);assert.match(html,/id="tab-library"/);
+  assert.match(script,/fetch\('\/api\/library'/);assert.match(script,/node\.textContent=part\.text/);
+  assert.match(adapter,/url\.pathname==='\/api\/library'/);
+  assert.match(css,/#library-body\{white-space:pre-wrap/);
+});
+
+test('original local owner help uses source projection and opens original library chapter',()=>{
+  assert.match(html,/id="owner-help"/);assert.match(html,/id="owner-help-library"/);
+  assert.match(script,/renderOwnerHelp\(s\)/);assert.match(script,/selectTab\('library',id\)/);
+  assert.match(adapter,/describeOriginalOwnerHelp\(\{reviewed:reviewedOwnerHelp,world\}\)/);
+});
+
+test('original settlement notice uses the server source clock, not browser time',()=>{
+  assert.match(script,/s\.settlementMenu\?\.label/);
+  assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
+});
+
+test('owner time label uses the original server clock on all owner views',()=>{
+  assert.match(script,/s\.ownerClock\?\.label/);
+  for(const id of ['time','shop-info-time','balance-time'])assert.ok(script.includes("text('"+id+"',actionTime)"));
+  assert.match(adapter,/ownerClock:reviewedFullCommerce\?describeOriginalOwnerClock/);
+});
+
+test('original shop scene renders source dialogue as text, without synthetic customer effects',()=>{
+  assert.match(html,/id="owner-scene"/);
+  assert.match(script,/p\.textContent=customer\.text/);
+  assert.match(adapter,/ownerScene:reviewedFullCommerce\?describeOriginalOwnerScene/);
+});
+
+test('original USE form uses reviewed count choices, material consumption and nocount presentation',()=>{
+  assert.match(adapter,/describeOriginalUseForm\(\{reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule/);
+  for(const id of ['use-detail-info','use-detail-requirements','use-count-first-unit','use-count-last-unit'])assert.ok(html.includes('id="'+id+'"'));
+  assert.match(script,/row\.consumptionLabel/);assert.match(script,/detail\.options\.filter/);
+  assert.match(script,/\$\(id\)\.hidden=Boolean\(detail\?\.noCount\)/);
+  assert.match(script,/text\('perform-use',detail\?\.action/);
+});
+
+
+test('R4 original comment has two local owner form entries sharing one HTTP command',()=>{
+ assert.match(html,/data-tab="procedures"/);
+ assert.match(html,/id="tab-procedures"[\s\S]*?id="comment-form"[\s\S]*?id="shop-comment-input"/);
+ assert.match(html,/id="tab-shop"[\s\S]*?id="owner-comment-form"[\s\S]*?id="owner-comment-input"/);
+});
+
+test('R4 icon form offers separate registration and procedures entries with concrete IDs',()=>{
+ assert.match(html,/id="open-icon"/);assert.match(html,/id="owner-icon-select"/);
+ assert.match(html,/id="owner-icon-dialog"/);assert.match(html,/id="owner-portrait"/);
+});
+
+test('R4 owner portrait is shared by shop and source balance view',()=>{
+  assert.match(html,/<img id="balance-portrait" width="48" height="48"/);
+  assert.match(html,/id="balance-portrait-placeholder"/);
+  assert.match(script,/portrait\(\$\('balance-portrait'\),\$\('balance-portrait-placeholder'\),shop\?\.icon,shop\?\.name\)/);
+});
+
+test('source USE list renders projected names and original entry eligibility',()=>{
+  const fn=script.slice(script.indexOf('function renderSourceUseEntry('),script.indexOf('function renderItemInfo('));
+  const document={createElement:tag=>({tag,dataset:{},children:[],append(x){this.children.push(x)}})};
+  const render=new Function('document',fn+';return renderSourceUseEntry;')(document);
+  const hidden=render({itemId:10,useId:0,sourceUseOk:false,sourceDisplayName:'？？？？？？？？'},{canUse:false,useName:'秘密',materialRoutes:[{name:'秘密'}]});
+  assert.equal(hidden.children[0].tag,'span');
+  assert.equal(hidden.children[0].textContent,'？？？？？？？？');
+  assert.equal(hidden.children.length,1);
+  const visible=render({itemId:10,useId:0,sourceUseOk:true,sourceDisplayName:'寫作'},{canUse:false});
+  assert.equal(visible.children[0].tag,'button');
+  assert.deepEqual(visible.children[0].dataset,{openUse:'0',useItem:'10'});
+  assert.equal(visible.children[0].textContent,'寫作');
+  assert.match(script,/offer\.sourceUseOk===false\|\|currentTab/);
+});
+
+test('owner scene uses source gold, garbage rows, duplicate shelves and genuine navigation',()=>{
+  const fn=script.slice(script.indexOf('function renderOwnerHelp('),script.indexOf('const toggle='));
+  const nodes=new Map();
+  const node=()=>({hidden:false,textContent:'',children:[],replaceChildren(){this.children=[]},append(x){this.children.push(x)}});
+  const $=id=>{if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)};
+  const render=new Function('$','text','document','catalogItem',fn+';return renderOwnerHelp;')($,(id,value)=>{$(id).textContent=value},{createElement:node},(s,id)=>s.itemCatalog.find(x=>x.itemId===id));
+  const ownerScene={goldCount:6,garbageRows:[1,3],displayedItems:[79,79],helper:{sprite:0,text:'歡迎光臨'},customers:[null,{sprite:5,text:'購物'}]};
+  render({ownerScene,itemCatalog:[{itemId:79,name:'禮物'}]});
+  assert.equal($('owner-scene').hidden,false);
+  assert.equal($('owner-scene-gold').textContent,'金幣 × 6（圖片未提供）');
+  assert.deepEqual($('owner-scene-garbage').children.map(x=>x.textContent),['垃圾袋 × 1（圖片未提供）','垃圾袋 × 3（圖片未提供）']);
+  assert.equal($('owner-scene-items').textContent,'店內陳列：禮物、禮物（圖片未提供）');
+  assert.equal($('owner-scene-sweep').hidden,false);
+  assert.deepEqual($('owner-scene-customers').children.map(x=>x.textContent),['（原版空位）','購物']);
+  render({ownerScene:{...ownerScene,goldCount:0,garbageRows:[],displayedItems:[],customers:[]},itemCatalog:[]});
+  assert.equal($('owner-scene-gold').hidden,true);assert.equal($('owner-scene-items').hidden,true);
+  assert.equal($('owner-scene-sweep').hidden,true);assert.deepEqual($('owner-scene-garbage').children,[]);
+  render({ownerScene:null,itemCatalog:[]});assert.equal($('owner-scene').hidden,true);
+  const sceneHtml=html.slice(html.indexOf('id="owner-scene"'),html.indexOf('id="shop-shelf-maintenance"'));
+  for(const tab of ['news','stock','sweep']){
+    assert.ok(sceneHtml.includes('data-go-tab="'+tab+'"'));
+    assert.ok(html.includes('id="tab-'+tab+'"'));
+  }
+  assert.ok(script.includes('()=>selectTab(button.dataset.goTab)'));
+});
+
+test('source stocked showcase links preserve shelf identity, current price and return entry',()=>{
+  const fn=script.slice(script.indexOf('function sourceShelfItemTarget('),script.indexOf('function renderSourceUseEntry('));
+  // Only the two functions are evaluated; no browser state or runtime writes.
+  const code=fn.slice(0,fn.indexOf('\n}',fn.indexOf('function openItem('))+2);
+  const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:''});return nodes.get(id)};
+  const state={reviewedFullCommerce:true,shop:{showcasecount:3,showcase:[79,79,10],price:[10000,12345,5000],item:Array(79).fill(0)}};
+  state.shop.item[78]=3;
+  const harness=new Function('$','text','snapshot','selectTab','code',
+    'let selectedItemId=null,selectedUseId=null,selectedShelfIndex=0,pendingShelfIndex=null,itemBackTab="stock",lastPricingItemId=null;'+code+';return {sourceShelfItemTarget,openItem,setPending:n=>pendingShelfIndex=n,get:()=>({selectedItemId,selectedShelfIndex,itemBackTab,lastPricingItemId})};');
+  const tabs=[],api=harness($,(id,value)=>{$(id).textContent=value},state,t=>tabs.push(t),code);
+  assert.equal(api.sourceShelfItemTarget(state,2),null);
+  assert.equal(api.sourceShelfItemTarget({...state,reviewedFullCommerce:false},0),null);
+  assert.equal(api.sourceShelfItemTarget(state,-1),null);
+  const target=api.sourceShelfItemTarget(state,1);
+  assert.deepEqual(target,{itemId:79,shelf:1,price:12345});
+  api.openItem(target.itemId,target);
+  assert.deepEqual(api.get(),{selectedItemId:79,selectedShelfIndex:1,itemBackTab:'shop',lastPricingItemId:null});
+  assert.equal($('shelf-price-direct').value,'12345');assert.equal($('back-to-stock').textContent,'［返回店內］');
+  api.openItem(79);assert.equal(api.get().selectedShelfIndex,0);assert.equal(api.get().itemBackTab,'stock');
+  api.setPending(2);api.openItem(79);assert.equal(api.get().selectedShelfIndex,2);
+  assert.deepEqual(tabs,['item','item','item']);
+  assert.match(script,/link\.dataset\.shelfAction='detail'/);
+  assert.match(script,/sourceShelfItemTarget\(snapshot,shelf\)/);
+  assert.match(script,/openItem\(target\.itemId,target\)/);
+  assert.match(script,/selectTab\(itemBackTab\)/);
+});
+
+test('reviewed discard presentation hides source flag t forms and distinguishes human flag h',()=>{
+  const fn=script.slice(script.indexOf('function renderDiscardPresentation('),script.indexOf('function renderItemInfo('));
+  const nodes=new Map();
+  const $=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const render=new Function('$','text',fn+';return renderDiscardPresentation;')($,(id,value)=>{$(id).textContent=value});
+  const reviewed={reviewedDiscard:true},shop={};
+  for(const [flagRaw,verb,prohibited] of [['notrash','丟棄',true],['human|notrash','解雇',true],['human','解雇',false],['','丟棄',false]]){
+    render(reviewed,{name:'測試商品',flagRaw},shop,!prohibited);
+    assert.equal($('discard-form').hidden,prohibited);
+    assert.equal($('discard-title').hidden,prohibited);
+    assert.equal($('discard-submit').disabled,prohibited);
+    assert.equal($('discard-submit').textContent,verb);
+    assert.equal($('discard-choice-caption').textContent,verb+'數量');
+    if(prohibited)assert.equal($('discard-note').textContent,'※測試商品是無法'+verb+'的');
+  }
+  render(reviewed,{name:'測試人員',flagRaw:'human'},shop,false);
+  assert.equal($('discard-form').hidden,false);
+  assert.equal($('discard-submit').disabled,true);
+  render({}, {name:'舊模式',flagRaw:'human|notrash'},shop,false);
+  assert.equal($('discard-form').hidden,false);
+  assert.equal($('discard-submit').textContent,'丟棄');
+  render(reviewed,null,null,false);
+  assert.equal($('discard-form').hidden,true);
+  assert.equal($('discard-note').hidden,true);
+  assert.match(script,/renderDiscardPresentation\(s,item,shop,canDiscard\)/);
+  for(const id of ['discard-title','discard-choice-caption','discard-submit','discard-note'])assert.ok(html.includes('id="'+id+'"'));
+});
+
+test('source ITEM scale is rendered only on the source quantity surfaces',()=>{
+  const fn=script.slice(script.indexOf('function sourceItemQuantity('),script.indexOf('function renderItemInfo('));
+  const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)};
+  const api=new Function('number','$','text',fn+';return {sourceItemQuantity,renderDiscardPresentation};')(n=>Number.isSafeInteger(n)?String(n):'—',$,(id,value)=>{$(id).textContent=value});
+  const s={reviewedFullCommerce:true,reviewedDiscard:true},gift={name:'禮物卷',scale:'枚',flagRaw:''},human={name:'人員',scale:'人',flagRaw:'human'};
+  assert.equal(api.sourceItemQuantity(s,gift,5,' '),'5 枚');
+  assert.equal(api.sourceItemQuantity(s,gift,0),'0枚');
+  assert.equal(api.sourceItemQuantity(s,human,2),'2人');
+  assert.equal(api.sourceItemQuantity({},gift,5),'5');
+  assert.equal(api.sourceItemQuantity(s,null,5),'5');
+  assert.equal(api.sourceItemQuantity(s,gift,undefined),'—');
+  api.renderDiscardPresentation(s,gift,{},true);
+  assert.equal($('discard-preset-unit').textContent,'枚');assert.equal($('discard-custom-unit').textContent,'枚');
+  api.renderDiscardPresentation(s,human,{},true);
+  assert.equal($('discard-preset-unit').textContent,'人');assert.equal($('discard-custom-unit').textContent,'人');
+  api.renderDiscardPresentation({},human,{},true);
+  assert.equal($('discard-preset-unit').textContent,'');assert.equal($('discard-custom-unit').textContent,'');
+  assert.match(adapter,/scale:item\?\.scaleRaw/);
+  assert.match(script,/sourceItemQuantity\(s,item,shop\.item\[item\.itemId-1\],' '\)/);
+  assert.match(script,/sourceItemQuantity\(s,info,shop\.itemyesterday\?\.\[itemId\]\?\?0\)/);
+  assert.match(script,/number\(item\.count\)\+'／'\+number\(item\.stockLimit\)/);
+  for(const id of ['discard-preset-unit','discard-custom-unit'])assert.ok(html.includes('id="'+id+'"'));
 });

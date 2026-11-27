@@ -6,6 +6,7 @@
  * Unknown or stocked callbacks fail closed; no executable Perl in Node.
  */
 import {parseDsl} from './parse-dsl.mjs';
+import {createHash} from 'node:crypto';
 import {projectNayutaCallbackOnly} from './original-nayuta-functurn.mjs';
 export const R3_ITEM_CALLBACK_STAGE='r3-standard-item-callbacks-source-v1';
 const fail=reason=>{throw new RangeError('R3 item callbacks: '+reason);};
@@ -61,16 +62,28 @@ export function reviewR3ItemCallbackStage({itemDsl,rebelDsl,turnSource}){
     itemSource:turn[0].file+':'+turn[0].startLine,
   });
 }
-export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraws,reviewedNayuta=null}){
+const emptyStreetReviews=new WeakSet();
+export function reviewR4EmptyStreetItemCallbacks({itemDsl,turnSource}){
+  for(const [s,sha] of [[itemDsl,'7a18185e98b32aee82ca1ce30d6f3c395157dbcb'],[turnSource,'b8a4980275f475a952846a8d6072fad45f8dff50']]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)
+      fail('empty street source drift');
+  }
+  const r=Object.freeze({source:'r4-empty-street-item-callbacks',committable:false});
+  emptyStreetReviews.add(r);return r;
+}
+export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraws,reviewedNayuta=null,r4EmptyStreetReview=null}){
   if(reviewed?.source!==R3_ITEM_CALLBACK_STAGE||
      reviewed.turnIds?.join(',')!=='70'||
      reviewed.saleIds?.length!==0||
      reviewed.firstRandomThresholdSeconds!==86.4)
     fail('reviewed ITEM source contract absent');
-  if(!shop||!Array.isArray(shop.item)||shop.item.length!==79||
-     shop.item.some(x=>!Number.isSafeInteger(x)||x<0))
+  const emptyStreet=r4EmptyStreetReview!==null;
+  if(emptyStreet&&(!emptyStreetReviews.has(r4EmptyStreetReview)||shop!==null))
+    fail('reviewed empty street item callbacks require zero shops');
+  if(!emptyStreet&&(!shop||!Array.isArray(shop.item)||shop.item.length!==79||
+     shop.item.some(x=>!Number.isSafeInteger(x)||x<0)))
     fail('original shop inventory');
-  if(shop.item[69]>0&&!reviewedNayuta)
+  if(!emptyStreet&&shop.item[69]>0&&!reviewedNayuta)
     fail('stocked ITEM #70 FUNCTURN not yet integrated');
   if(!Number.isSafeInteger(spanSeconds)||spanSeconds<1)
     fail('invalid original time span');
@@ -81,12 +94,12 @@ export function projectR3ItemCallbackStage({reviewed,shop,spanSeconds,randomDraw
     fail('missing original #70 rand(1)');
   // Actual original FUNCSALE stage deletes _sale_count_ before later PLUS.
   // Keep the projection pure: do not mutate the prior natural-sale proposal.
-  const cleanedShop={...shop};
-  delete cleanedShop._sale_count_;
+  const cleanedShop=emptyStreet?null:{...shop};
+  if(cleanedShop!==null)delete cleanedShop._sale_count_;
   // Original dispatcher considers only shops with stock AFTER natural sale.
   // The existing reviewed #70 callback supplies the exact rank/RNG arithmetic.
   let affected=0;
-  if(shop.item[69]>0){
+  if(!emptyStreet&&shop.item[69]>0){
     const callback=projectNayutaCallbackOnly({reviewed:reviewedNayuta,
       rank:shop.rank,showcaseItemId:shop.showcase[0]===70?70:0,
       listedPrice:shop.price[0],timespanSeconds:spanSeconds,

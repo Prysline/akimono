@@ -103,3 +103,26 @@ test('R4 multi EVENT rejects unknown keys, malformed source ordering, callbacks,
   }),/drift/);
   assert.equal(JSON.stringify(first),snapshot);
 });
+
+import {reviewManualCommerceEvents,projectManualCommerceEventItems,reviewedManualSaleRule,isReviewedManualSaleRule} from '../src/original-r4-manual-commerce-events.mjs';
+test('R4 manual four industry EVENT overlays match actual compiler POINT values and strict expiry',()=>{
+  const manual=reviewManualCommerceEvents({itemDsl,rebelDsl,turnSource,compilerSource,readSource});
+  const oracle=JSON.parse(execFileSync('perl',['original-r4-manual-event-source-probe.pl'],{cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'}));
+  const combined=reviewOriginalR4MultiEventFixture({compiledCatalog:catalog,reviewedSeven:seven,turnSource,readSource,reviewedManualCommerce:manual});
+  const expiry=1028800;
+  for(const row of oracle.cases){
+    const base=row.timeline[3].point.map((point,i)=>({itemId:i+1,point}));
+    const overlay=projectManualCommerceEventItems({reviewed:manual,code:row.code,items:base});
+    assert.deepEqual(overlay.map(r=>r.point),row.timeline[0].point);
+    for(const rule of overlay.filter(r=>r.point<0)){
+      assert.ok(isReviewedManualSaleRule(reviewedManualSaleRule({reviewed:manual,rule,activeOrder:[row.code]})));
+      assert.throws(()=>reviewedManualSaleRule({reviewed:manual,rule,activeOrder:[]}),/active manual/);
+    }
+    for(const [i,start,span] of [[0,expiry-3601,3600],[1,expiry-3600,3600],[2,expiry,1]]){
+      const projected=projectOriginalR4MultiEventFixture({reviewed:combined,items:base,activeUntilSeconds:{[row.code]:expiry},activeHashOrderFixture:[row.code],eventHashOrderFixture:combined.eventCodes,randomDraws:Array(17).fill(999999),startSeconds:start,spanSeconds:span});
+      assert.deepEqual(projected.dataReadItems.map(r=>r.point),row.timeline[i].point);
+      assert.equal(Object.hasOwn(projected.activeUntilSeconds,row.code),row.timeline[i].activeAfter);
+      assert.deepEqual(projected.logs,row.timeline[i].logs);
+    }
+  }
+});

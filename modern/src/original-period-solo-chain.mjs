@@ -42,6 +42,8 @@ const safe=(n,label,min=0)=>{
   if(!Number.isSafeInteger(n)||n<min)bad(label);
   return n;
 };
+const multiShelfChainReviews=new WeakSet();
+const fullCommerceCloseReviews=new WeakSet();
 export function reviewOriginalSoloPeriodPhaseChain({
   periodSource,configSource,itemDsl,model,compilerSource,
   writeSource=null,
@@ -51,16 +53,32 @@ export function reviewOriginalSoloPeriodPhaseChain({
   includeReviewedPostTech=false,includeReviewedShopExpiry=false,
   includeReviewedActualCloseShop=false,
   includeReviewedPeriodBackup=false,includeReviewedSaleTax=false,
+  includeReviewedMultiShelf=false,includeReviewedFullCommerceClose=false,includeReviewedLocalizedClose=false,
 }){
+  if(typeof includeReviewedMultiShelf!=='boolean')bad('explicit multi-shelf period opt-in');
+  if(typeof includeReviewedFullCommerceClose!=='boolean'||
+     includeReviewedFullCommerceClose&&(!includeReviewedMultiShelf||
+       !includeReviewedShopExpiry||!includeReviewedActualCloseShop||
+       includeReviewedDragon||includeReviewedGuild||includeReviewedPostTech||includeReviewedPeriodBackup))
+    bad('explicit independent full commerce CloseShop source review required');
+  if(typeof includeReviewedLocalizedClose!=='boolean'||includeReviewedLocalizedClose&&!includeReviewedFullCommerceClose)
+    bad('localized CloseShop requires reviewed independent full commerce');
+  // The new opt-in is only the independent prize/ledger/territory prefix.
+  // External dragon, guild, archive and post-tech source branches retain
+  // their single-shelf review except the independently reviewed full
+  // commerce CloseShop archive + ledger chain. No external IO is enabled.
+  if(includeReviewedMultiShelf&&(includeReviewedDragon||includeReviewedGuild||
+     includeReviewedPostTech||includeReviewedActualCloseShop&&!includeReviewedFullCommerceClose||includeReviewedPeriodBackup))
+    bad('unreviewed multi-shelf external period dependencies');
   if(!Array.isArray(compiledLimits)||compiledLimits.length!==79||
      compiledLimits.some(x=>!Number.isSafeInteger(x)||x<0))
     bad('exact original compiled 79 item limits required');
   const soloSort=reviewOriginalSoloSort({detailSource,readSource});
   const topPrize=reviewOriginalTopPrize({
-    itemDsl,model,originalAddItemSource,periodSource,
+    itemDsl,model,originalAddItemSource,periodSource,includeReviewedMultiShelf,
   });
   const ledger=reviewOriginalPeriodShopLedger({
-    periodSource,configSource,itemDsl,model,compilerSource,
+    periodSource,configSource,itemDsl,model,compilerSource,includeReviewedMultiShelf,
   });
   if(typeof includeReviewedDragon!=='boolean'||
      typeof includeReviewedDignity!=='boolean'||
@@ -79,11 +97,11 @@ export function reviewOriginalSoloPeriodPhaseChain({
   const postTech=includeReviewedPostTech?
     reviewR4PostPeriodTechLoss({itemDsl,model,periodSource}):null;
   const shopExpiry=includeReviewedShopExpiry?
-    reviewR4PeriodShopExpiry({periodSource,configSource}):null;
+    reviewR4PeriodShopExpiry({periodSource,configSource,localized:includeReviewedLocalizedClose}):null;
   if(includeReviewedActualCloseShop&&!shopExpiry)
     bad('real CloseShop requires the source period owner-expiry gate');
   const actualClose=includeReviewedActualCloseShop?
-    reviewR4CloseShopEffects({writeSource,readSource,configSource}):null;
+    reviewR4CloseShopEffects({writeSource,readSource,configSource},{fullCommerce:includeReviewedFullCommerceClose}):null;
   const closedPrune=actualClose?
     reviewR4ClosedShopPrune({
       detailSource,writeSource,reviewedClose:actualClose,
@@ -121,7 +139,7 @@ export function reviewOriginalSoloPeriodPhaseChain({
   if(!periodSource.includes('require "$ITEM_DIR/funcupdate.cgi" if $DEFINE_FUNCUPDATE;')||
      !periodSource.includes('DragonBalance();'))
     bad('external update/dragon dependencies changed');
-  return Object.freeze({
+  const reviewed=Object.freeze({
     source:B50_INTEGRATED_SOURCE,
     soloSort,topPrize,ledger,territory,dragon,dignity,guild,postTech,
     shopExpiry,actualClose,closedPrune,periodBackup,
@@ -145,6 +163,9 @@ export function reviewOriginalSoloPeriodPhaseChain({
       'reviewed source opt-in single-shop original finances, actual CloseShop/SortDT pruning and/or frozen backup/session source tail; isolated Perl files verified but user/archive/guild IO only recorded, no atomic WorldState commit':
       'reviewed one active shop, no stale close/dragon/guild/events, exp sum <=4000, no skill items, source stage chain ONLY; not full period',
   });
+  if(includeReviewedMultiShelf)multiShelfChainReviews.add(reviewed);
+  if(includeReviewedFullCommerceClose)fullCommerceCloseReviews.add(reviewed);
+  return reviewed;
 }
 /**
  * This pure phase chain takes the SAME object through source-backed stages.
@@ -156,16 +177,18 @@ export function projectOriginalSoloPeriodPhaseChain({
   awardDrawMillionths,territoryDrawMillionths,
   payoutText=null,dignityDrawMillionths=null,guildContext=null,
   postTechDraws=null,nowSeconds=null,
-  sessionFileNames=null,periodBackupState=null,
+  sessionFileNames=null,periodBackupState=null,archiveHashOrders=null,
 }){
   if(reviewed?.source!==B50_INTEGRATED_SOURCE||
      reviewed.nonCommittable!==true)
     bad('reviewed non-committable sources required');
   if(!shop||shop.id!==1||shop.status!==1||
      !Array.isArray(shop.item)||shop.item.length!==79||
-     !Array.isArray(shop.showcase)||shop.showcase.length!==1||
-     !Array.isArray(shop.price)||shop.price.length!==1||
-     shop.showcasecount!==1||
+     !Array.isArray(shop.showcase)||!Array.isArray(shop.price)||
+     (multiShelfChainReviews.has(reviewed)?
+       !Number.isSafeInteger(shop.showcasecount)||shop.showcasecount<1||shop.showcasecount>8||
+       shop.showcase.length!==shop.showcasecount||shop.price.length!==shop.showcasecount:
+       shop.showcasecount!==1||shop.showcase.length!==1||shop.price.length!==1)||
      (!reviewed.guild&&!(shop.guild===undefined||shop.guild===''))||
      (!reviewed.dragon&&![undefined,0].includes(shop.dragon))||
      (!reviewed.dignity&&![undefined,0].includes(shop.dignity))||
@@ -227,6 +250,10 @@ export function projectOriginalSoloPeriodPhaseChain({
     bad('true frozen CloseShop and SortDT reviewer required');
   if(reviewed.actualClose===null&&sessionFileNames!==null)
     bad('unreviewed external CloseShop session inventory cannot be supplied');
+  const fullCommerceClose=fullCommerceCloseReviews.has(reviewed);
+  if(Boolean(reviewed.actualClose?.fullCommerceArchive)!==fullCommerceClose||
+     (!fullCommerceClose&&archiveHashOrders!==null))
+    bad('unreviewed full commerce CloseShop archive hash order');
   if(reviewed.periodBackup!==null&&(
      reviewed.periodBackup.source!==R4_PERIOD_BACKUP_SOURCE||
      reviewed.periodBackup.committable!==false||
@@ -275,10 +302,12 @@ export function projectOriginalSoloPeriodPhaseChain({
   if(reviewed.actualClose!==null&&expiryEffect?.expiredOwner&&
      !Array.isArray(sessionFileNames))
     bad('real CloseShop requires explicit source session file inventory');
+  if(fullCommerceClose&&!expiryEffect?.expiredOwner&&archiveHashOrders!==null)
+    bad('no archive order before actual CloseShop');
   const actualCloseEffect=reviewed.actualClose&&expiryEffect?.expiredOwner?
     projectR4CloseShopEffects({
       reviewed:reviewed.actualClose,shopId:shop.id,
-      shop:award.shop,sessionFileNames,reason:'経営者不在',
+      shop:award.shop,sessionFileNames,reason:expiryEffect.closeCalls[0].reason,archiveHashOrders,
     }):null;
   const shopAfterClose=actualCloseEffect?.shop??award.shop;
   const dragonSettlement=reviewed.dragon?

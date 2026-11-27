@@ -11,7 +11,8 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,randomInt} from 'node:crypto';
+import {isOwnerIcon} from '../src/original-r4-owner-icon.mjs';
 import {sourceCommandDraws}
   from '../src/local-source-command-draws.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
@@ -20,6 +21,11 @@ import {isReviewedOrdinaryCommand} from '../src/reviewed-ordinary-command-policy
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
+import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
+import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp,describeOriginalOwnerScene} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalUseDisclosure,listOriginalUseDisclosure} from '../src/original-r4-use-disclosure.mjs';
+import {reviewOriginalUseForm,describeOriginalUseForm} from '../src/original-r4-use-form.mjs';
+import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
@@ -28,6 +34,8 @@ import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntim
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+// Explicit real HTTP candidate; existing v2 player mode stays compatible.
+const reviewedFullCommerce=process.env.AKIMONO_REVIEWED_FULL_COMMERCE==='1';
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -36,38 +44,87 @@ const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
-const [
+const reviewedLibrary=reviewOriginalLibrary(await readPinnedSource('custom/library.cgi'));
+const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
+const reviewedOwnerHelp=reviewOriginalOwnerHelp(originalIncMainSource);
+// Bind source names to paths directly: adding a source cannot shift the next input.
+const {
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
   originalConfigSource,originalCompilerSource,originalBuySource,
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
-  originalNewSource,originalCustomSource,originalLogSource,
-  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
+  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
-]=await Promise.all([
-  'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
-  'modern/tests/original-perl/core-inc-admin-func.cgi',
-  'modern/tests/original-perl/inc-func.cgi',
-  'modern/tests/original-perl/write.cgi',
-  'modern/tests/original-perl/inc-turn.cgi',
-  'modern/tests/original-perl/whole.cgi','_config.cgi',
-  'modern/tests/original-perl/inc-makeitem.cgi',
-  'modern/tests/original-perl/buy-s.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/calc.cgi',
-  'modern/tests/original-perl/market.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/core-detail.cgi',
-  'modern/tests/original-perl/period.cgi',
-  'modern/tests/original-perl/use.cgi',
-  'modern/tests/original-perl/core-inc-item.cgi',
-  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
-  'modern/tests/original-perl/pinned-palace.cgi','modern/tests/original-perl/pinned-palace-s.cgi','custom/inc-palace.cgi',
-  'modern/tests/original-perl/pinned-army-view.cgi','modern/tests/original-perl/pinned-army-s.cgi','modern/tests/original-perl/pinned-army.cgi',
-].map(readPinnedSource));
+  originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
+  originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
+  originalMarketListSource,
+}=Object.fromEntries(await Promise.all(Object.entries({
+  itemDsl:'custom/inc-item-data.cgi',
+  rebelDsl:'custom/inc-rebel-data.cgi',
+  originalAdminInitSource:'modern/tests/original-perl/core-inc-admin-func.cgi',
+  originalDataReadSource:'modern/tests/original-perl/inc-func.cgi',
+  originalDataWriteSource:'modern/tests/original-perl/write.cgi',
+  originalTurnSource:'modern/tests/original-perl/inc-turn.cgi',
+  originalWholeSource:'modern/tests/original-perl/whole.cgi',
+  originalConfigSource:'_config.cgi',
+  originalCompilerSource:'modern/tests/original-perl/inc-makeitem.cgi',
+  originalBuySource:'modern/tests/original-perl/buy-s.cgi',
+  originalBuyItemSource:'modern/tests/original-perl/item.cgi',
+  originalBuyCalcSource:'modern/tests/original-perl/calc.cgi',
+  originalMarketSource:'modern/tests/original-perl/market.cgi',
+  originalItemSource:'modern/tests/original-perl/item.cgi',
+  originalDetailSource:'modern/tests/original-perl/core-detail.cgi',
+  originalPeriodSource:'modern/tests/original-perl/period.cgi',
+  originalUseSource:'modern/tests/original-perl/use.cgi',
+  originalItemHelperSource:'modern/tests/original-perl/core-inc-item.cgi',
+  originalNewSource:'modern/tests/original-perl/new.cgi',
+  originalCustomSource:'modern/tests/original-perl/pinned-custom.cgi',
+  originalLogSource:'modern/tests/original-perl/pinned-log.cgi',
+  originalUserSource:'modern/tests/original-perl/pinned-user.cgi',
+  originalErrorSource:'modern/tests/original-perl/pinned-error.cgi',
+  originalPalaceViewSource:'modern/tests/original-perl/pinned-palace.cgi',
+  originalPalaceCommandSource:'modern/tests/original-perl/pinned-palace-s.cgi',
+  originalPalaceConfigSource:'custom/inc-palace.cgi',
+  originalShowcaseSource:'modern/tests/original-perl/sc-s.cgi',
+  originalArmyViewSource:'modern/tests/original-perl/pinned-army-view.cgi',
+  originalArmyCommandSource:'modern/tests/original-perl/pinned-army-s.cgi',
+  originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
+  originalDiscardFormSource:'modern/tests/original-perl/core-inc-item-throw.cgi',
+  originalDiscardSubmitSource:'modern/tests/original-perl/core-item-t.cgi',
+  originalSweepFormSource:'modern/tests/original-perl/core-sweep.cgi',
+  originalSweepSubmitSource:'modern/tests/original-perl/core-sweep-s.cgi',
+  originalStockViewSource:'modern/tests/original-perl/core-stock.cgi',
+  originalBalanceViewSource:'modern/tests/original-perl/core-balance.cgi',
+  originalInfoViewSource:'modern/tests/original-perl/core-inc-info.cgi',
+  originalMarketSurveySource:'modern/tests/original-perl/core-shop-c.cgi',
+  originalNewsViewSource:'modern/tests/original-perl/core-log-view.cgi',
+  originalNewsHtmlSource:'modern/tests/original-perl/core-inc-html-log.cgi',
+  originalNewsPageSource:'modern/tests/original-perl/core-page.cgi',
+  originalNewsTimeSource:'modern/tests/original-perl/core-time.cgi',
+  originalShowcaseViewSource:'modern/tests/original-perl/core-inc-sc.cgi',
+  originalItemDetailViewSource:'modern/tests/original-perl/core-item-view.cgi',
+  originalOwnerMainSource:'modern/tests/original-perl/core-main.cgi',
+  originalBuyFormSource:'modern/tests/original-perl/core-buy-view.cgi',
+  originalMarketListSource:'modern/tests/original-perl/core-shop-m.cgi',
+}).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
+const originalUseFormSource=await readPinnedSource('modern/tests/original-perl/core-item-m.cgi');
+const [originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource]=await Promise.all(['core-other.cgi','core-user-settings.cgi','core-name.cgi'].map(name=>readPinnedSource('modern/tests/original-perl/'+name)));
+const [originalIconListSource,originalIconPluginSource,originalIconNewFormSource]=await Promise.all(['modern/tests/original-perl/core-icon.cgi','modern/tests/original-perl/core-img.cgi','custom/inc-new.cgi'].map(readPinnedSource));
+const originalUseListSource=await readPinnedSource('modern/tests/original-perl/core-item-detail.cgi');
+const originalUseSubmitSource=await readPinnedSource('modern/tests/original-perl/core-item-submit.cgi');
+const reviewedUseDisclosure=reviewedFullCommerce?reviewOriginalUseDisclosure({itemDsl,listSource:originalUseListSource,formSource:originalUseFormSource,submitSource:originalUseSubmitSource,useSource:originalUseSource,compilerSource:originalCompilerSource,helperSource:originalItemHelperSource}):null;
+const reviewedUseForm=reviewOriginalUseForm({formSource:originalUseFormSource,itemDsl,compilerSource:originalCompilerSource,calcSource:originalBuyCalcSource,configSource:originalConfigSource});
+const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:originalNewsTimeSource});
+const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:originalInfoViewSource});
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -75,9 +132,20 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
+  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
   originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
   originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
+  originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
+  originalMarketListSource,
+  originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalCommentOwnerMainSource:originalIncMainSource,
+  originalIconListSource,originalIconPluginSource,originalIconNewFormSource,
+  originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
 });
 if(!['initialize-source-market','open-shop',
@@ -122,9 +190,18 @@ const checkpointStore=createReviewedHistoryCheckpointStore({
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
-       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource],
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,originalUserSource,originalErrorSource,
+       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
+       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,
+  originalDiscardFormSource,originalDiscardSubmitSource,
+  originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalBalanceViewSource,originalInfoViewSource,
+  originalMarketSurveySource,
+  originalNewsViewSource,originalNewsHtmlSource,originalNewsPageSource,originalNewsTimeSource,
+  originalShowcaseViewSource,originalItemDetailViewSource,originalOwnerMainSource,
+  originalBuyFormSource,
+  originalMarketListSource,
+       originalUseListSource,originalUseSubmitSource,originalUseFormSource,originalIncMainSource,originalCommentFormSource,originalCommentSubmitSource,originalCommentNameSource,originalIconListSource,originalIconPluginSource,originalIconNewFormSource,reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -158,12 +235,20 @@ function state(){
   const nextSettlementAtSeconds=world?
     (Math.floor((world.nowSeconds+shift)/period)+1)*period-shift:null;
   const marketOffers=world?.market?streetModule.listMarketOffers(world):[];
+  const sourceUseDisclosure=reviewedUseDisclosure?listOriginalUseDisclosure({reviewed:reviewedUseDisclosure,shop:world?.shops[0]??null}):null;
+  const disclosureByKey=new Map((sourceUseDisclosure??[]).map(row=>[row.itemId+':'+row.useId,row]));
   return {
     world,
     save,
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
+    settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     shop:world?.shops[0]??null,
+    reviewedShopComment:streetModule.reviewedShopComment===true,
+    reviewedOwnerIcon:streetModule.reviewedOwnerIcon===true,
+    ownerHelp:reviewedFullCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
+    ownerScene:reviewedFullCommerce?describeOriginalOwnerScene({reviewed:reviewedOwnerHelp,world}):null,
+    ownerClock:reviewedFullCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.
     shopSummary:{
@@ -172,7 +257,15 @@ function state(){
     },
     palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
     army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
+    sweep:world&&streetModule.reviewedSweep?streetModule.describeSweep(world):null,
+    reviewedDiscard:streetModule.reviewedDiscard===true,
+    discardOffers:world&&streetModule.reviewedDiscard?streetModule.listDiscardOffers(world):[],
     marketOffers,
+    marketPageRows:streetModule.marketPageRows??null,
+    warehouse:world&&streetModule.describeWarehouse?streetModule.describeWarehouse(world):null,
+    balance:world&&streetModule.describeBalance?streetModule.describeBalance(world):null,
+    news:world&&streetModule.describeNews?streetModule.describeNews(world):null,
+    showcaseView:world&&streetModule.describeShowcase?streetModule.describeShowcase(world):null,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -182,15 +275,19 @@ function state(){
           itemId:e.itemId,name:e.itemName,
           basePrice:e.basePrice,stockLimit:e.stockLimit,
           flagRaw:item?.flagRaw??'',
+          ...(reviewedFullCommerce?{scale:item?.scaleRaw??''}:{}),
           type:item?.typeRaw??null,
           costRaw:item?.costRaw??null,
+          ...(streetModule.reviewedNormalCommerce?{compiledCost:streetModule.reviewedNormalCommerce.upkeepCosts[e.itemId]}:{}),
           info:item?.infoRaw??null,
         };
       }),
-    useOffers:streetModule.listUseOffers(world),
+    sourceUseDisclosure,
+    useOffers:streetModule.listUseOffers(world).map(offer=>reviewedFullCommerce?{...offer,...disclosureByKey.get(offer.itemId+':'+offer.useId),detail:describeOriginalUseForm({reviewed:reviewedUseForm,offer,rule:streetModule.useItem.getRule(offer.itemId,offer.useId),shop:world?.shops[0]??null,nowSeconds:world?.nowSeconds??null})}:offer),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(world?.shops?.[0]?.showcasecount===1?
-       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
+    reviewedFullCommerce,
+    showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?
+       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{}))
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
         const owned=shop?.item?.[rule.itemId-1]??0;
@@ -201,12 +298,13 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店',reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
+    capabilities:['建立來源世界','原版開店',reviewedFullCommerce?'來源審閱的多架時間推進候選':reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
       reviewedCrossPeriod?'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
-    disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
+    disabled:[...(reviewedCrossPeriod?[streetModule.reviewedOwnerClosure?'公會／龍族／外部帳號及軍隊關店效果':'公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
+    reviewedOwnerClosure:Boolean(streetModule.reviewedOwnerClosure),
     reviewedCrossPeriod,
     reviewedTimeMode:true,
     historyCommands:careerProof?.commands.length??null,
@@ -303,7 +401,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='advertise-self'?1:
+      inline==='advertise-self'||inline==='local-self-rumor'||inline==='local-self-industry-rumor'?1:
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
@@ -328,6 +426,21 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 async function api(req,res,url){
+  if(url.pathname==='/api/owner-icon-form'){
+    if(req.method!=='GET')return send(res,405,{ok:false,error:'頭像選項為唯讀'});
+    const kind=url.searchParams.get('kind'),hasShop=Boolean(repo?.read().shops.length);
+    if(!streetModule.reviewedOwnerIcon||[...url.searchParams].length!==1||
+      !((kind==='open'&&!hasShop)||(kind==='procedures'&&hasShop)))return send(res,409,{ok:false,error:'頭像表單尚未開放'});
+    return send(res,200,streetModule.describeOwnerIconForm(n=>randomInt(n)));
+  }
+  if(url.pathname==='/api/library'){
+    if(req.method!=='GET')return send(res,405,{ok:false,error:'圖書館為唯讀'});
+    const entries=[...url.searchParams];
+    if(entries.length===0)return send(res,200,describeOriginalLibrary(reviewedLibrary));
+    if(entries.length!==1||entries[0][0]!=='t'||!/^[0-7]$/.test(entries[0][1]))
+      return send(res,400,{ok:false,error:'圖書館項目不存在'});
+    return send(res,200,describeOriginalLibrary(reviewedLibrary,Number(entries[0][1])));
+  }
   if(req.method==='GET'&&url.pathname==='/api/state'){
     return send(res,200,state());
   }
@@ -428,13 +541,15 @@ async function api(req,res,url){
     }
     case '/api/open-shop': {
       const ownerName=body.ownerName,shopName=body.shopName;
+      const hasIcon=Object.hasOwn(body,'icon');
+      if(hasIcon&&(!streetModule.reviewedOwnerIcon||!isOwnerIcon(body.icon)||!exactKeys(body,'expectedRevision,ownerName,shopName,icon')))throw Error('頭像必須是表單編號 1 至 25');
       if(typeof ownerName!=='string'||typeof shopName!=='string')
         throw Error('店主與店名必須是文字');
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       if(repo.read().shops.length) return send(res,409,
         {ok:false,error:'B-40 本機來源限定單店；已經開店',state:state()});
       result=commit({kind:'open-shop',expectedRevision:ensureRevision(body),
-        shopId:1,ownerName,shopName});
+        shopId:1,ownerName,shopName,...(hasIcon?{icon:body.icon}:{})});
       break;
     }
     case '/api/r2/advertisement-package-market-preflight':
@@ -462,8 +577,10 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      if(Object.hasOwn(body,'targetShopId'))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const rule=streetModule.useItem.getRule(body.itemId,body.useId);
+      const localTarget=rule?.localSelfTarget===true;
+      if(Object.hasOwn(body,'targetShopId')&&(!localTarget||body.targetShopId!==1))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',...(localTarget?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -478,7 +595,7 @@ async function api(req,res,url){
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
-        ...(randomDraws.length?{randomDraws}:{})});
+        ...(localTarget?{targetShopId:1}:{}),...(randomDraws.length?{randomDraws}:{})});
       break;
     }
     case '/api/palace-complete': {
@@ -493,6 +610,24 @@ async function api(req,res,url){
       if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
       result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
         expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/owner-icon': {
+      if(!repo||!streetModule.reviewedOwnerIcon)return send(res,409,{ok:false,error:'頭像需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,icon')||!isOwnerIcon(body.icon))throw Error('頭像只接受 expectedRevision、1 至 25 的 icon');
+      result=commit({kind:'edit-owner-icon',expectedRevision:ensureRevision(body),shopId:1,icon:body.icon});
+      break;
+    }
+    case '/api/shop-comment': {
+      if(!repo||!streetModule.reviewedShopComment)return send(res,409,{ok:false,error:'店鋪評論需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,comment')||typeof body.comment!=='string')throw Error('評論只接受 expectedRevision、comment 文字');
+      result=commit({kind:'edit-shop-comment',expectedRevision:ensureRevision(body),shopId:1,comment:body.comment});
+      break;
+    }
+    case '/api/sweep': {
+      if(!repo||!streetModule.reviewedSweep)return send(res,409,{ok:false,error:'清掃需已審閱的正常經營模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,requestedHours'))throw Error('清掃只接受 expectedRevision、requestedHours');
+      result=commit({kind:'sweep-shop',expectedRevision:ensureRevision(body),shopId:1,requestedHours:commandNumber(body.requestedHours,'requestedHours',1)});
       break;
     }
     case '/api/discard': {
@@ -510,8 +645,8 @@ async function api(req,res,url){
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
       const p3Shelf=repo.read().shops[0]?.showcasecount===1;
-      const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
-        streetModule.reviewedB41?.saleRules?.[itemId])??null;
+      const sourceRule=(streetModule.reviewedNormalCommerce?.saleRules[itemId]??(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
+        streetModule.reviewedB41?.saleRules?.[itemId]))??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const keys=Object.keys(body);
@@ -555,12 +690,20 @@ async function api(req,res,url){
 const statics=new Map([
   ['/','modern/local-ui/index.html'],
   ['/app.js','modern/local-ui/app.js'],
+  ['/news-query.js','modern/src/shared-source-news-query.mjs'],
   ['/style.css','modern/local-ui/style.css'],
 ]);
 const server=http.createServer(async (req,res)=>{
   try{
     const url=new URL(req.url,'http://127.0.0.1');
     if(url.pathname.startsWith('/api/'))return await api(req,res,url);
+    // Only explicitly known portrait paths; never proxy or enumerate arbitrary files.
+    if(req.method==='GET'&&/^\/image\/kao\/kao(?:[1-9]|1[0-9]|2[0-5])\.png$/.test(url.pathname)){
+      try{
+        const image=await readFile(path.join(root,url.pathname.slice(1)));
+        res.writeHead(200,{'content-type':'image/png','x-content-type-options':'nosniff','cache-control':'no-store'});return res.end(image);
+      }catch(error){if(error.code!=='ENOENT')throw error;return send(res,404,{ok:false,error:'原版圖片尚未提供'});}
+    }
     if(req.method!=='GET'||!statics.has(url.pathname))
       return send(res,404,{ok:false,error:'頁面不存在'});
     const mime=url.pathname.endsWith('.js')?'text/javascript':

@@ -63,7 +63,7 @@ function jobsFor(block,define){
   if(d.length!==1||jobRecord.length!==1)fail('source job rate drift');
   return Object.freeze({job:code,numerator:2,denominator:3});
 }
-export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
+export function compileReviewedDeclarativeUses({itemDsl,model,limits,jobFallback=null}){
   if(typeof itemDsl!=='string'||model?.items?.length!==79||
      !Array.isArray(limits)||limits.length!==79)
     fail('source DSL/model/79-slot limits');
@@ -201,6 +201,7 @@ export function compileReviewedDeclarativeUses({itemDsl,model,limits}){
         needExperience:requiredExperience,
         limits,resultOk:first(block,'okmsg')??null,
         resultNg:first(block,'ngmsg')??null,
+        ...(jobFallback?.get(itemId,useId)?{fallbackJobTimeModifier:jobFallback.get(itemId,useId)}:{}),
         marketCodec:'source-sparse',jobTimeModifier,experienceCallback,
         ...(afterCallback?{afterCallback}:{}),
         ...(festival?{

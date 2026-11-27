@@ -183,7 +183,7 @@ body.dev-mode .local-note{display:block}
 .shop-info-table td{white-space:nowrap}
 .shop-icon-cell{background:#fff;vertical-align:middle;padding:5px 7px}
 .portrait-placeholder{display:grid;place-items:center;background:#f4f3f7;
-  width:46px;height:46px;border:1px solid #c8c8d0;color:#888;font-size:19px}
+  box-sizing:border-box;width:48px;height:48px;border:1px solid #c8c8d0;color:#666;font-size:10px;line-height:1.15;text-align:center;white-space:normal;overflow-wrap:anywhere}
 #tab-shop .shelf-table th{background:#e8e8ef;font-weight:normal}
 #tab-shop .shelf-table td:not(:nth-child(2)){text-align:center}
 #tab-shop .shelf-table td:nth-child(2){text-align:left}
@@ -314,3 +314,15 @@ footer{margin-top:12px;font-size:10px}
   white-space:nowrap
 }
 .discard-section #discard-count{width:72px}
+
+/* Frozen market.cgi desktop geometry; CSS substitutes for unavailable legacy GIFs.
+ * Text remains accessible and is the original compact/mobile variant. */
+.source-market-graph{display:inline-flex;align-items:center;white-space:nowrap;gap:0;font-size:12px;vertical-align:middle}
+.source-market-spacer,.source-market-bar{height:12px;flex:none;display:inline-block}
+.source-market-bar.saturated{background:#0000ff}
+.source-market-bar.shortage{background:#ff0000}
+.source-market-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:540px){.source-market-graph{display:none}.source-market-text{position:static;width:auto;height:auto;overflow:visible;clip-path:none}}
+
+#library-list{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+#library-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}

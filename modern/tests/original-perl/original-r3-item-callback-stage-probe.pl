@@ -42,6 +42,14 @@ my @cases=(
   {name=>'owned-shown-60-low',span=>60,owned=>1,show=>70,draw=>0},
   {name=>'owned-shown-60-high',span=>60,owned=>1,show=>70,draw=>999999},
 );
+my $emptyStreet=@ARGV&&$ARGV[0] eq '--empty-street';
+@cases=(
+  {name=>'zero-shops-1s',span=>1,owned=>0,show=>0,draw=>0},
+  {name=>'zero-shops-60-low',span=>60,owned=>0,show=>0,draw=>0},
+  {name=>'zero-shops-60-high',span=>60,owned=>0,show=>0,draw=>999999},
+  {name=>'zero-shops-87s',span=>87,owned=>0,show=>0,draw=>0},
+  {name=>'zero-shops-3600s',span=>3600,owned=>0,show=>0,draw=>0},
+) if $emptyStreet;
 my @out;
 for my $case (@cases){
   OriginalNayutaFuncturnHarness::prepare_items();
@@ -59,12 +67,13 @@ for my $case (@cases){
     price=>[$case->{show}==70?50000:0],
     _sale_count_=>{10=>{count=>1,price=>5000}},
   };
-  @main::DT=($shop);
+  @main::DT=$emptyStreet?():($shop);
   $main::B35_USED=0;
   @main::B35_DRAWS=($case->{draw});
   @main::B39_DEBUG_LOG=();
   main::R3OriginalItemCallbacks($case->{span});
   push @out,{
+    ($emptyStreet?(activeShops=>scalar(@main::DT)):()),
     name=>$case->{name},span=>$case->{span},
     owned=>$case->{owned},show=>$case->{show},
     draw=>$case->{draw},drawsUsed=>0+$main::B35_USED,

@@ -10,6 +10,7 @@ import {reviewOriginalSparseMultiPlus} from './original-sparse-multi-plus.mjs';
 import {B59_IRON_SOURCE} from './original-b59-iron-event-lifecycle.mjs';
 import {reviewedR4OverlayPlus} from './original-r4-pre-event-item-overlay.mjs';
 import {PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
+import {createHash} from 'node:crypto';
 
 export const ALL_PLUS_SOURCE='core-b37-all-59-plus-original-sequence';
 export const ORIGINAL_PLUS_PIN="-20m|-20m|-20m|-20m|-20m|-20m|-20m|6h|1h|20m|10m|1h|10h|1h|20h|20h|20h|-|-|20h|20h|20h|20h|-|1d|-|-|-|-|2h|-1h|5h|-1h|-1h|-|-|1d|-|5h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|-1h|5d|1d|30m|1d|20h|-|-1h|-1h|-|-|-|-|-|-|-|-|1h|-";
@@ -58,11 +59,29 @@ export function reviewOriginalSparseAllPlus({
   });
 }
 
+const emptyStreetReviews=new WeakSet();
+/** Zero active shops still execute original PLUS and CheckWholeStore.
+ * Opt-in only, no authority to close a shop or write a WorldState.
+ */
+export function reviewR4EmptyStreetPlus({turnSource,wholeSource}){
+  const pins=[
+    [turnSource,'b8a4980275f475a952846a8d6072fad45f8dff50'],
+    [wholeSource,'778badaf157326bcfd1f8fa1e310d94f94995eb3'],
+  ];
+  for(const [source,sha] of pins){
+    if(typeof source!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(source)+'\0').update(source).digest('hex')!==sha)
+      bad('empty street source drift');
+  }
+  const review=Object.freeze({source:'r4-empty-street-original-plus',committable:false});
+  emptyStreetReviews.add(review);return review;
+}
+
 export function projectOriginalSparseAllPlus({
   world,reviewed,compiled,timespanSeconds,randomDraws,
   reviewedB39Span8640=false,
   reviewedB59Iron=null,ironEventActive=false,
   reviewedEventTimeSlice=false,r4PeriodPopulation=false,r4DataReadOverlay=null,
+  r4EmptyStreetReview=null,
 }){
   if(reviewed?.source!==ALL_PLUS_SOURCE||
     reviewed.population!==500000||reviewed.maxUsers!==50||
@@ -77,10 +96,14 @@ export function projectOriginalSparseAllPlus({
   if(!Array.isArray(randomDraws)||randomDraws.length>118||
     randomDraws.some(v=>!Number.isSafeInteger(v)||v<0||v>=1000000))
     bad('explicit random millionths, maximum 118 samples');
+  const emptyStreet=r4EmptyStreetReview!==null;
+  if(emptyStreet&&(!emptyStreetReviews.has(r4EmptyStreetReview)||
+     r4PeriodPopulation!==true||world?.shops?.length!==0))
+    bad('reviewed empty street requires zero shops and R4 population');
   if(world?.market?.source!==ORIGINAL_SPARSE_MARKET_SOURCE||
     !validateSourceSparseMarket(world.market)||
     world.events!==null||!Array.isArray(world.shops)||
-    world.shops.length!==1)
+    world.shops.length!==(emptyStreet?0:1))
     bad('requires original sparse market and exactly one shop');
   if(!Array.isArray(compiled?.limits)||compiled.limits.length!==79)
     bad('79 source caps required');
@@ -126,9 +149,11 @@ export function projectOriginalSparseAllPlus({
   const sourcePopulation=r4PeriodPopulation?
     world.period.dtPeople:reviewed.population;
   const derivedPlus=r4DataReadOverlay===null?null:reviewedR4OverlayPlus(r4DataReadOverlay,world,reviewed);
-  const shop=world.shops[0];
-  if(!Array.isArray(shop?.item)||shop.item.length!==79||
-    shop.item.some(v=>!Number.isSafeInteger(v)||v<0))
+  // Original CheckWholeStore sums holdings over @DT, so an empty street
+  // contributes zero inventory. Its positive caps still use shopcount||=1.
+  const holdings=emptyStreet?Array(79).fill(0):world.shops[0]?.item;
+  if(!Array.isArray(holdings)||holdings.length!==79||
+    holdings.some(v=>!Number.isSafeInteger(v)||v<0))
     bad('79 safe shop inventories required');
   const next=[...world.market.wholesale];
   const slots=new Set(world.market.sparseWrittenSlots);
@@ -166,8 +191,8 @@ export function projectOriginalSparseAllPlus({
     const cap=limit.wslimit<0?-limit.wslimit:
       Math.trunc(limit.wslimit*(world.shops.length||1)+0.99);
     safe(cap,'compiled source CheckWholeStore cap');
-    if(shop.item[i]+next[i]>cap){
-      next[i]=cap-Math.min(shop.item[i],cap);
+    if(holdings[i]+next[i]>cap){
+      next[i]=cap-Math.min(holdings[i],cap);
       slots.add(i);
     }
     if(next[i]<0){next[i]=0;slots.add(i);}

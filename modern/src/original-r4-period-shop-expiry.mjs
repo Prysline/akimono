@@ -8,7 +8,9 @@
 export const R4_EXPIRED_SHOP_SOURCE='r4-frozen-period-absent-owner-close-call';
 const fail=s=>{throw new RangeError('R4 original absent shop closure: '+s);};
 const safe=n=>Number.isSafeInteger(n)&&n>=0;
-export function reviewR4PeriodShopExpiry({periodSource,configSource}){
+const localizedReviews=new WeakSet();
+export function reviewR4PeriodShopExpiry({periodSource,configSource,localized=false}){
+  if(typeof localized!=='boolean')fail('explicit source expiry locale');
   if(typeof periodSource!=='string'||typeof configSource!=='string'||
      !/\$EXPIRE_TIME\s*=\s*3600\*24\*7\s*;/.test(configSource))
     fail('original EXPIRE_TIME seven-day source changed');
@@ -28,12 +30,14 @@ export function reviewR4PeriodShopExpiry({periodSource,configSource}){
     if(i<=cursor)fail('original CloseShop source/order drift '+marker);
     cursor=i;
   }
-  return Object.freeze({
+  const reviewed=Object.freeze({
     source:R4_EXPIRED_SHOP_SOURCE,
     committable:false,closeShopEffectKnown:false,
     minimumShopAgeSeconds:43200,absenceLimitSeconds:604800,
     sourceScope:'frozen period.cgi condition and CloseShop/PushLog call recorder only; no actual close, DeleteShop or durable save',
   });
+  if(localized)localizedReviews.add(reviewed);
+  return reviewed;
 }
 export function projectR4PeriodShopExpiry({
   reviewed,shop,nowSeconds,
@@ -50,6 +54,10 @@ export function projectR4PeriodShopExpiry({
      typeof shop.shopname!=='string'||!shop.shopname||
      !safe(nowSeconds))
     fail('original shop owner timestamps and blocklogin required');
+  // Frozen Core zh_TW.po a512f6887cee214e66828769a382ad2b18bcd5b3.
+  // The local player uses the actual translated reason and announcement;
+  // the original identity-locale probes retain their historical strings.
+  const localized=localizedReviews.has(reviewed);
   const expired=nowSeconds-shop.foundation>43200&&
     shop.blocklogin!=='stop'&&
     shop.lastlogin+604800<nowSeconds;
@@ -58,10 +66,10 @@ export function projectR4PeriodShopExpiry({
     expiredOwner:expired,
     shop:Object.freeze({...shop}),
     closeCalls:Object.freeze(expired?[
-      Object.freeze({shopId:shop.id,reason:'経営者不在'}),
+      Object.freeze({shopId:shop.id,reason:localized?'沒有上線':'経営者不在'}),
     ]:[]),
     logs:Object.freeze(expired?[
-      Object.freeze([1,0,shop.shopname+'が経営者不在のため閉店しました。']),
+      Object.freeze([1,0,shop.shopname+(localized?'因為沒有上線所以店鋪被關閉了。':'が経営者不在のため閉店しました。')]),
     ]:[]),
     sourceScope:reviewed.sourceScope,
   });

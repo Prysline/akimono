@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /**
  * R4 reviewed multi-key EVENT fixture: the exact Perl order is supplied by
  * a *same-process original-source oracle*, not derived from DSL or JS maps.
@@ -24,6 +25,20 @@ import {R4_GUILDBATTLE_END_SOURCE,projectR4GuildbattleEndCallback}
 import {R4_REBEL_NOW_SOURCE,projectR4RebelNow}
   from './original-r4-rebel-now.mjs';
 
+import {createHash} from 'node:crypto';
+const emptyEventReviews=new WeakSet();
+/** Empty @DT still traverses the complete source EVENT hash.
+ * Source-pinned opt-in for the independent normal EVENT domain only.
+ */
+export function reviewR4EmptyStreetEvents({itemDsl,turnSource}){
+  for(const [s,sha] of [[itemDsl,'7a18185e98b32aee82ca1ce30d6f3c395157dbcb'],[turnSource,'b8a4980275f475a952846a8d6072fad45f8dff50']]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)
+      throw new RangeError('R4 empty street EVENT source drift');
+  }
+  const r=Object.freeze({source:'r4-empty-street-original-events',committable:false});
+  emptyEventReviews.add(r);return r;
+}
+
 export const R4_MULTI_EVENT_FIXTURE_SOURCE='r4-original-17-hash-seven-event-interleaved-source-fixture';
 const fail=s=>{throw new RangeError('R4 17-hash EVENT fixture: '+s);};
 const safe=(n,s)=>{if(!Number.isSafeInteger(n)||n<0)fail(s);return n;};
@@ -41,7 +56,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
   reviewedHappyEvent=null,reviewedIronEvent=null,
   reviewedSwordEvent=null,reviewedGuildbattleEvent=null,
-  reviewedRebelEvent=null}){
+  reviewedRebelEvent=null,reviewedManualCommerce=null}){
+  if(reviewedManualCommerce!==null&&!isReviewedManualCommerceEvents(reviewedManualCommerce))fail('source-reviewed manual commerce events required');
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -160,7 +176,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
     happy:reviewedHappyEvent,iron:reviewedIronEvent,
     sword:reviewedSwordEvent,guildbattle:reviewedGuildbattleEvent,
-    rebel:reviewedRebelEvent,committable:false,
+    rebel:reviewedRebelEvent,manualCommerce:reviewedManualCommerce,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
     scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
@@ -176,7 +192,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null}){
+  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null,r4EmptyStreetReview=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -192,9 +208,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const keys=Object.keys(activeUntilSeconds);
   if(keys.length>(7+(reviewed.happy!==null?1:0)+
     (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0)+
-    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0))||
+    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0)+(reviewed.manualCommerce?4:0))||
     keys.some(code=>
-    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
+    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code))||
       (code==='happy'&&reviewed.happy!==null)||
       (code===B59_IRON_CODE&&reviewed.iron!==null)||
       (code===B61_SWORD_CODE&&reviewed.sword!==null)||
@@ -206,10 +222,15 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   if(!sameKeys(activeHashOrderFixture,keys)||
      !sameKeys(eventHashOrderFixture,reviewed.eventCodes))
     fail('exact Perl active and 17 EVENT key permutations required');
-  if((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null&&shop!==null)||
+  const emptyStreet=r4EmptyStreetReview!==null;
+  if(emptyStreet&&(!emptyEventReviews.has(r4EmptyStreetReview)||shop!==null||
+     !reviewed.support||!reviewed.instant||!reviewed.loto||!reviewed.happy||
+     reviewed.rebel!==null||reviewed.guildbattle!==null))
+    fail('reviewed empty street EVENT domain required');
+  if(!emptyStreet&&((reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null&&shop!==null)||
      ((reviewed.support!==null||reviewed.instant!==null||reviewed.loto!==null||reviewed.happy!==null||reviewed.rebel!==null)&&
        (!shop||shop.id!==1||shop.status!==1||
-        !Array.isArray(shop.item)||shop.item.length!==79)))
+        !Array.isArray(shop.item)||shop.item.length!==79))))
     fail('supported callback requires one real source shop');
   if(((reviewed.guildbattle!==null&&
        (own(activeUntilSeconds,'guildbattle')||guildContext!==null))&&(
@@ -255,14 +276,26 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   for(const code of activeHashOrderFixture){
     // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
     if(code==='happy'||code==='guildbattle'||code==='rebel')continue;
+    if(R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      current=projectManualCommerceEventItems({reviewed:reviewed.manualCommerce,code,items:current});continue;
+    }
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
   const next={...activeUntilSeconds},logs=[],started=[],expired=[],
     zeroStartTransient=[],skippedByGroup=[],ranges=[],supportCallbacks=[],
     instantCallbacks=[],lotoCallbacks=[],happyNowCallbacks=[],
-    guildEndCallbacks=[],rebelNowCallbacks=[];
+    guildEndCallbacks=[],rebelNowCallbacks=[],happyEffects=[],instantEffects=[];
   let nextShop=shop===null?null:{...shop,item:[...shop.item]};
+  // Full-commerce-only read-only snapshots of the actual callback stages.
+  // Never use these receipts as input, a grant, or a second RNG stream.
+  const effectShop=s=>({money:s.money,rank:s.rank,item:[...s.item],
+    showcase:[...s.showcase],price:[...s.price],shopname:s.shopname});
+  const recordInstant=(code,callback,samples,calls)=>{
+    if(reviewedInventory?.normalCommerce)instantEffects.push({code,
+      before:effectShop(nextShop),after:effectShop(callback.shop),
+      samples:[...samples],logs:calls.map(row=>[...row])});
+  };
   let nextGuild=guildContext===null?null:{
     dominion:guildContext.dominion,
     guilds:guildContext.guilds.map(g=>({...g})),
@@ -278,6 +311,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const groups=new Set();
   const end=startSeconds+spanSeconds;
   for(const code of activeHashOrderFixture){
+    if(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      // Original OutEventData omits START=-1 from %EVENT; the generated
+      // DataRead overlay exists but END has no registered endmsg/callback.
+      if(next[code]<end){delete next[code];expired.push(code);}
+      else groups.add('');
+      continue;
+    }
     const event=reviewed.catalog.find(e=>e.code===code);
     if(next[code]<end){
       delete next[code];
@@ -357,15 +397,17 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
        reviewed.support!==null){
       // The frozen source STARTFUNC returns 0: it consumes one rand(1000),
       // logs a message on hit, and reserves neither group nor DTevent.
+      if(emptyStreet){supportCallbacks.push(code);continue;}
       const sample=peek(1000);
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
         reviewed:reviewed.support,eventCode:code,shop:nextShop,
-        randomDraws:[sample],
+        randomDraws:[sample],reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==1)
         fail('reviewed support STARTFUNC must return 0');
+      recordInstant(code,callback,[sample],callback.message===null?[]:[[2,0,callback.message]]);
       nextShop=callback.shop;
       supportCallbacks.push(code);
       if(callback.message!==null)logs.push([2,0,callback.message]);
@@ -374,6 +416,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       // Actual frozen source: each callback scans the reviewed one shop;
       // first rand(1000) decides hit, and robot-protected manbiki consumes
       // a SECOND rand(1000). If source STARTFUNC returns 0, do not hold group.
+      if(emptyStreet){instantCallbacks.push(code);continue;}
       const firstSample=peek(1000);
       const firstValue=draw(1000);
       const takesRobotDraw=code==='manbiki'&&
@@ -390,24 +433,30 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==samples.length)
         fail('reviewed instant STARTFUNC must return 0');
+      recordInstant(code,callback,samples,callback.message===null?[]:[[2,0,callback.message]]);
       nextShop=callback.shop;
       instantCallbacks.push(code);
       if(callback.message!==null)logs.push([2,0,callback.message]);
     }else if(code==='loto'&&reviewed.loto!==null){
       // Consume exactly one original rand(6096454) per owned ticket, in
       // the same sequence as the other 17 hash-gated event callbacks.
+      if(emptyStreet){
+        // Source WriteLog precedes foreach @DT; the announcement remains.
+        lotoCallbacks.push(code);logs.push([2,0,'抽獎卷的開獎開始了']);continue;
+      }
       const count=nextShop?.item?.[10];
       if(!Number.isSafeInteger(count)||count<0||count>50)
         fail('source lotto ticket count out of bounds');
       const ticketDraws=[];
       for(let i=0;i<count;i++)ticketDraws.push(Math.trunc(draw(LOTO_RANGE)));
       const callback=projectOriginalLotoStartfunc({
-        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,
+        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==count||
          callback.ticketCountConsumed!==count)
         fail('reviewed loto STARTFUNC must consume all tickets and return zero');
+      recordInstant(code,callback,ticketDraws,callback.logs.map(log=>[log.level,log.shopId,log.message]));
       nextShop=callback.shop;
       lotoCallbacks.push(code);
       for(const log of callback.logs)logs.push([log.level,log.shopId,log.message]);
@@ -431,6 +480,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       fail('exact Perl post-START active EVENT hash order (pre-NOW EVENT hash traversal) required');
     for(const code of nowOrder){
       if(code==='happy'){
+        if(emptyStreet){happyNowCallbacks.push(code);continue;}
         const range=Math.trunc(Math.min(spanSeconds,
           reviewed.happy.maxNowSpanSeconds)/36);
         if(range<1&&!reviewedSubminute)fail('source happy NOWFUNC rand(0) not reviewed');
@@ -443,6 +493,10 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         if(callback.returnCode!==0||callback.randomDrawsUsed!==1||
            callback.randMax!==range)
           fail('reviewed happy NOWFUNC contract violation');
+        if(reviewedInventory?.normalCommerce)happyEffects.push({
+          rankBefore:callback.rankBefore,rankAfter:callback.rankAfter,
+          rankRoll:callback.rankRoll,randMax:callback.randMax,sample,
+        });
         nextShop=callback.shop;
         happyNowCallbacks.push(code);
       }else if(code==='rebel'){
@@ -513,11 +567,12 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     randomDrawRanges:Object.freeze(ranges),drawsUsed:used,
     ...(randomDrawProvider===null?{}:{consumedSamples:Object.freeze(consumed)}),
     ...(reviewed.support===null&&reviewed.instant===null&&reviewed.loto===null&&reviewed.happy===null&&reviewed.rebel===null?{}:{
-      shop:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
+      shop:emptyStreet?null:Object.freeze({...nextShop,item:Object.freeze([...nextShop.item])}),
       supportCallbacks:Object.freeze(supportCallbacks),
       instantCallbacks:Object.freeze(instantCallbacks),
       lotoCallbacks:Object.freeze(lotoCallbacks),
       happyNowCallbacks:Object.freeze(happyNowCallbacks),
+      ...(reviewedInventory?.normalCommerce?{happyEffects:Object.freeze(happyEffects),instantEffects:Object.freeze(instantEffects)}:{}),
     }),
     ...(guildContext===null?{}:{
       guildContext:Object.freeze({

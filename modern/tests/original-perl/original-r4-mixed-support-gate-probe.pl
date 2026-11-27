@@ -372,8 +372,10 @@ sub step {
   # $ITEM[64]{name} for the robot message); keep numeric DataRead snapshots
   # separate from the source callback display metadata.
   $ITEM[64]{name}='看門機器人';
-  my $initial=$o{shop} or die 'single real callback shop needed';
-  my $shop={%$initial,item=>[@{$initial->{item}}],
+  my $empty=$o{emptyStreet}//0;
+  my $initial=$o{shop};
+  die 'explicit empty or single real callback shop needed' if $empty?defined($initial):!$initial;
+  my $shop=$empty?undef:{%$initial,item=>[@{$initial->{item}}],
     showcase=>[@{$initial->{showcase}}],price=>[@{$initial->{price}}]};
   my $guildInput=$o{guildContext};
   %GUILD=();%GUILD_DATA=();$DOMINION='';
@@ -411,7 +413,7 @@ sub step {
     $BAL_JOB=$rebelInput->{balJob};
     $BAL_NAME=$rebelInput->{balName};
   }
-  %id2idx=($shop->{id}=>0);
+  %id2idx=$empty?():($shop->{id}=>0);
   my @startOrder=keys(%EVENT);
   die 'source original 17-key order unexpectedly unstable' unless
     join("\0",@startOrder)eq join("\0",@runtimeHashKeys);
@@ -425,7 +427,7 @@ sub step {
   my $happyStillActive=exists($DTevent{happy}) &&
     $DTevent{happy}>=$begin+$span;
   my $happyStarted=0;
-  my $robot=$shop->{item}[63];
+  my $robot=$empty?0:$shop->{item}[63];
   for my $code(@startOrder){
     my $e=$EVENT{$code};
     next if $groups{$e->{group}};
@@ -467,8 +469,9 @@ sub step {
         $e->{startfunc} eq '_local_start'&&
         $e->{startfuncparam}==$argsFor{$code}&&
         !$e->{basetime}&&!$e->{plustime};
-      push @samples,$o{supportDraws}{$code}//0;
+      push @samples,$o{supportDraws}{$code}//0 unless $empty;
     }elsif($start&&$instant{$code}){
+      next if $empty;
       die 'actual source instant STARTFUNC compiled arguments drift' unless
         $e->{startfunc} eq '_local_start' &&
         $e->{startfuncparam} eq $instantArgs{$code} &&
@@ -493,7 +496,7 @@ sub step {
         !$e->{basetime}&&!$e->{plustime}&&
         $e->{startproba}==500;
       my $draws=($o{lotoDraws}//{})->{$code}//[];
-      my $tickets=$shop->{item}[10];
+      my $tickets=$empty?0:$shop->{item}[10];
       die 'source loto requires exactly one draw per owned ticket' unless
         ref($draws)eq'ARRAY'&&$tickets>=0&&$tickets<=50&&
         @$draws==$tickets;
@@ -527,11 +530,11 @@ sub step {
     }
   }else{
     push @samples,($o{happyNowDraw}//900000)
-      if $happyStillActive||$happyStarted;
+      if !$empty&&($happyStillActive||$happyStarted);
   }
   @R4_MULTI_DRAWS=@samples;
   @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
-  @DT=($shop);
+  @DT=$empty?():($shop);
   my $result=R4MultiOriginalEventSlice();
   die 'original multi-event RNG unused samples' if @R4_MULTI_DRAWS;
   my %state=%{$result->{state}};
@@ -653,7 +656,7 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   die 'unused full-command source RNG' if @R4_MULTI_DRAWS;
   die 'wrong source command end' unless $cursor==$in->{settlement}{commandNowSeconds};
   my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor):undef;
-  print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor,($disk?(disk=>$disk):())});
+  print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor,($disk?(disk=>$disk):()),($in->{actualClose}?(close=>OriginalR4PreEventHarness::close_evidence()):())});
   exit 0;
 }
 if(@ARGV&&$ARGV[0] eq '--cross-period-events'){
@@ -1045,7 +1048,21 @@ my @territoryMixedCases=(
     periodDraws=>[0,0,0,0,299999],nowDraws=>[900000,500000],armyById=>{},riotIds=>[]),
 );
 
+# Isolated actual empty-street source slices; no injected player state.
+my @emptyStreetCases;
+%DTevent=();
+push @emptyStreetCases,step(name=>'empty-all-normal-callbacks-and-happy-start',
+  begin=>1000000,prior=>{},emptyStreet=>1,
+  supportStarts=>{getmoney=>1,getpop=>1},instantStarts=>{manbiki=>1,goutou=>1},
+  lotoStarts=>{loto=>1},happyStarts=>{happy=>1});
+%DTevent=%{$emptyStreetCases[0]{output}{activeUntilSeconds}};
+push @emptyStreetCases,step(name=>'empty-happy-active-and-loto',
+  begin=>1003600,prior=>{%DTevent},emptyStreet=>1,lotoStarts=>{loto=>1});
+%DTevent=%{$emptyStreetCases[1]{output}{activeUntilSeconds}};
+push @emptyStreetCases,step(name=>'empty-happy-expired',
+  begin=>1100000,prior=>{%DTevent},emptyStreet=>1);
 print JSON::PP->new->canonical->utf8->encode({
+  emptyStreetCases=>\@emptyStreetCases,
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,

@@ -57,9 +57,12 @@ export function projectSharedUseItem({world,command,useItem}){
   // as caller-supplied shop objects or callback payloads.
   const isTargetAdvertisement=rule.itemId===62&&rule.useId===1&&
     rule.inlineCallback?.kind==='advertise-other';
-  if(!isTargetAdvertisement&&Object.hasOwn(command,'targetShopId'))
-    fail('targetShopId is only reviewed for original #62/1');
-  if(isTargetAdvertisement)int(command.targetShopId,'targetShopId',1);
+  const isLocalTarget=rule.localSelfTarget===true;
+  if(!isTargetAdvertisement&&!isLocalTarget&&Object.hasOwn(command,'targetShopId'))
+    fail('targetShopId is only reviewed for original #62/1 or explicitly reviewed local self target');
+  if(isTargetAdvertisement||isLocalTarget)int(command.targetShopId,'targetShopId',1);
+  if(isLocalTarget&&(world.shops.length!==1||command.targetShopId!==command.shopId||command.shopId!==1))
+    fail('only the existing local shop is authorized as target');
   const effects=readCommonUseEffectPlan(rule);
   if(!world.market||!Array.isArray(world.market.wholesale)||
      world.market.wholesale.length!==rule.limits.length)
@@ -97,7 +100,8 @@ export function projectSharedUseItem({world,command,useItem}){
      world.market.wholesale.length!==rule.limits.length)
     fail('missing explicit 79-slot source wholesale or marked test fixture');
   world.market.wholesale.forEach((n,i)=>int(n,'wholesale '+i));
-  for(const key of ['money','paytoday','time','rank'])int(shop[key],key);
+  int(shop.money,'money',useItem.reviewedSignedCash===true?-Number.MAX_SAFE_INTEGER:0);
+  for(const key of ['paytoday','time','rank'])int(shop[key],key);
   if(rule.singleUseOnly&&command.requestedCount!==1)
     fail('unreviewed original multiple USE');
   const expRecord=shop.exp??{};
@@ -210,7 +214,18 @@ export function projectSharedUseItem({world,command,useItem}){
   };
   let inlineShowcase=null,inlineDairy=null,inlineWork=null;
   let inlineCareer=null,inlineParty=null,inlineAdvertisement=null;
-  let inlineTargetAdvertisement=null;
+  let inlineTargetAdvertisement=null,inlineNoGuildAdvertisement=null,inlineLocalTarget=null;
+  if(isLocalTarget){
+    if(!rule.singleUseOnly||original.count!==1||typeof useItem.runInlineCallback!=='function')fail('local target source callback');
+    inlineLocalTarget=useItem.runInlineCallback({rule,shop:nextShop,count:original.count,random,world});
+    if(!inlineLocalTarget||typeof inlineLocalTarget.returned!=='string'||!Array.isArray(inlineLocalTarget.logCalls)||
+      !Number.isSafeInteger(inlineLocalTarget.rank)||inlineLocalTarget.rank<0||inlineLocalTarget.rank>10000||
+      !inlineLocalTarget.exp||typeof inlineLocalTarget.exp!=='object'||Array.isArray(inlineLocalTarget.exp))fail('local target callback result');
+    if(inlineLocalTarget.eventState!==undefined&&(rule.inlineCallback.kind!=='local-self-industry-rumor'||!world.period||!inlineLocalTarget.manualEventActivation))fail('unreviewed local EVENT callback');
+    nextShop.rank=inlineLocalTarget.rank;
+    nextShop.exp={...inlineLocalTarget.exp};
+    functionReturn=inlineLocalTarget.returned;
+  }
   if(isTargetAdvertisement){
     if(!rule.singleUseOnly||original.count!==1||
        typeof useItem.runInlineCallback!=='function')
@@ -245,6 +260,12 @@ export function projectSharedUseItem({world,command,useItem}){
       fail('original advertising callback invalid');
     nextShop.rank=inlineAdvertisement.rank;
     functionReturn=inlineAdvertisement.returned;
+  }
+  if(rule.inlineCallback?.kind==='advertise-no-guild'){
+    if(rule.itemId!==62||rule.useId!==2||!rule.singleUseOnly||original.count!==1||typeof useItem.runInlineCallback!=='function')fail('unreviewed no-guild advertisement');
+    inlineNoGuildAdvertisement=useItem.runInlineCallback({rule,shop:nextShop,count:original.count,random});
+    if(typeof inlineNoGuildAdvertisement?.returned!=='string'||!Array.isArray(inlineNoGuildAdvertisement.logCalls)||inlineNoGuildAdvertisement.logCalls.length!==0)fail('no-guild callback result');
+    functionReturn=inlineNoGuildAdvertisement.returned;
   }
   if(rule.inlineCallback?.kind==='party-popularity'){
     if(rule.itemId!==77||rule.useId!==0||
@@ -289,7 +310,7 @@ export function projectSharedUseItem({world,command,useItem}){
       rule,shop:nextShop,count:original.count,random,
     });
     if(!inlineWork||!Number.isSafeInteger(inlineWork.moneyAfter)||
-       inlineWork.moneyAfter<0||
+       (useItem.reviewedSignedCash!==true&&inlineWork.moneyAfter<0)||
        inlineWork.moneyBefore!==nextShop.money||
        inlineWork.earned!==(rule.useId===0?3000:10000)*original.count||
        !Array.isArray(inlineWork.logCalls))
@@ -342,9 +363,10 @@ export function projectSharedUseItem({world,command,useItem}){
     fail('extra random samples beyond original call sequence');
   let experienceGain=0,experienceReductions=[];
   if(rule.experienceCallback){
-    const next=originalUseExperience({records:expRecord,itemId:rule.itemId,
+    const next=originalUseExperience({records:inlineLocalTarget?nextShop.exp:expRecord,itemId:rule.itemId,
       points:effects.expPoints,count:original.count,
-      limit:3600});
+      limit:3600,resolveOrder:typeof useItem.resolveExperienceOrder==='function'?
+        args=>useItem.resolveExperienceOrder({...args,world,command}):null});
     nextShop.exp=next.exp;
     experienceGain=next.gained;
     experienceReductions=next.reductions;
@@ -363,6 +385,7 @@ export function projectSharedUseItem({world,command,useItem}){
     }));
   return {
     shops:nextShops,market,
+    ...(inlineLocalTarget?.eventState?{period:{...world.period,eventState:inlineLocalTarget.eventState}}:{}),
     receipt:{
       action:USE_ITEM_COMMAND,shopId:command.shopId,
       itemId:rule.itemId,useId:rule.useId,source:rule.source,
@@ -372,6 +395,7 @@ export function projectSharedUseItem({world,command,useItem}){
       moneySpent:original.moneySpent,timeSpentSeconds:original.timeSpentSeconds,
       ...(inlineWork?{moneyEarned:inlineWork.earned}:{}),
       experienceGain,experienceReductions,
+      ...(inlineLocalTarget?.manualEventActivation?{manualEventActivation:inlineLocalTarget.manualEventActivation}:{}),
       useTimeSeconds:original.useTimeSeconds,
       originalUseItem:useItems,originalUseMsg:useMsgs,
       originalAddItem:added,
@@ -380,12 +404,14 @@ export function projectSharedUseItem({world,command,useItem}){
           inlineDairy.addMessages[index-original.multiItem.added.length]:
           rule.outputMessages?.[id]??null),
       originalFunctionReturn:functionReturn,originalResultOk:resultOk,
+      ...(useItem.reviewedSourceUseMessages===true?{originalResultNg:rule.resultNg??null}:{}),
       ...(inlineDairy||inlineWork||inlineCareer||inlineParty||
-         inlineAdvertisement||inlineTargetAdvertisement?{
-        originalInlineLogCalls:(inlineTargetAdvertisement?.logCalls??
+         inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement||inlineLocalTarget||
+         (inlineShowcase&&useItem.reviewedSourceLogs===true)?{
+        originalInlineLogCalls:(inlineLocalTarget?.logCalls??inlineTargetAdvertisement?.logCalls??inlineNoGuildAdvertisement?.logCalls??
           inlineAdvertisement?.logCalls??inlineParty?.logCalls??
           inlineCareer?.logCalls??inlineDairy?.logCalls??
-          inlineWork.logCalls),
+          inlineShowcase?.logCalls??inlineWork.logCalls),
       }:{}),
       ...(inlineShowcase?{
         showcaseCountBefore:inlineShowcase.showcaseCountBefore,
@@ -397,7 +423,7 @@ export function projectSharedUseItem({world,command,useItem}){
         'check-use','account','materials','make-amount','check-whole-store',
         ...(rule.afterCallback?['after-use']:[]),
         ...(inlineShowcase||inlineDairy||inlineWork||inlineCareer||
-           inlineParty||inlineAdvertisement||inlineTargetAdvertisement?
+           inlineParty||inlineAdvertisement||inlineTargetAdvertisement||inlineNoGuildAdvertisement||inlineLocalTarget?
            ['source-inline-callback']:[]),
         ...(rule.experienceCallback?['experience']:[]),
       ]),
@@ -407,7 +433,7 @@ export function projectSharedUseItem({world,command,useItem}){
       gainedMaps:added,
       mapBefore:shop.item[rule.itemId-1],
       mapAfter:nextShop.item[rule.itemId-1],
-      ...(isTargetAdvertisement?{targetShopId:command.targetShopId}:{}),
+      ...((isTargetAdvertisement||isLocalTarget)?{targetShopId:command.targetShopId}:{}),
       sourceScope:rule.scope,
     },
   };

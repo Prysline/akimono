@@ -63,10 +63,11 @@ for my $spec (
 sub fresh_shop {
   my($case)=@_;
   my @item=(0)x79;
-  $item[62]=1; $item[78]=5;
+  my $n=$case->{shelves}//1;
+  $item[62]=$n==1?1:0; $item[78]=5;
   return {
     id=>1,status=>1,shopname=>'原版商店',
-    item=>\@item,showcasecount=>1,showcase=>[0],price=>[0],
+    item=>\@item,showcasecount=>$n,showcase=>[(0)x$n],price=>[(0)x$n],
     money=>$case->{money},rank=>$case->{rank},
   };
 }
@@ -83,6 +84,15 @@ my @rows=(
   {name=>'pop-upper-cap',code=>'getpop',money=>100000,rank=>9950,draw=>0},
   {name=>'pop-already-capped',code=>'getpop',money=>100000,rank=>10000,draw=>0},
 );
+if(@ARGV){
+  die 'expected --multi-shelf' unless @ARGV==1 && $ARGV[0] eq '--multi-shelf';
+  @rows=();
+  for my $n(1..8){
+    push @rows,
+      {name=>"funding-shelves-$n",code=>'getmoney',money=>100000,rank=>5000,draw=>0,shelves=>$n},
+      {name=>"pop-shelves-$n",code=>'getpop',money=>100000,rank=>5000,draw=>0,shelves=>$n};
+  }
+}
 my @results;
 for my $case(@rows){
   my $shop=fresh_shop($case);

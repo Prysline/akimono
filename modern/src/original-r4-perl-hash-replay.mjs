@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** Candidate local replay policy for original Perl EVENT hashes.
  * No time command, WorldState mutation, arbitrary Perl evaluation or commit authority.
  * Actual Perl keys(), under explicitly fixed seed/perturbation and interpreter
@@ -10,14 +11,15 @@ export const R4_HASH_POLICY='akimono.r4.perl-event-hash-replay.v1';
 const fail=s=>{throw new RangeError('R4 hash replay: '+s)};
 const reviewedPolicies=new WeakSet();
 const pins={itemDsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',rebelDsl:'923634e58a05beca9ab004515fc7669d53a1ba3a',compilerSource:'1da8cce1e76ad6159325a37faec68efaa82c7f69',turnSource:'b8a4980275f475a952846a8d6072fad45f8dff50',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0',writeSource:'203f33b37511e838800a45b84183af98fcf46e4c'};
-export function reviewR4HashPolicy(sources){
+export function reviewR4HashPolicy(sources,{manualCommerce=null}={}){
+  if(manualCommerce!==null&&!isReviewedManualCommerceEvents(manualCommerce))fail('source manual EVENT hash review');
   for(const [key,sha] of Object.entries(pins)){
     const s=sources[key];
     if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+key);
   }
   const catalog=reviewOriginalCompiledEventCatalog(sources);
   const order=catalog.compiled.map(e=>e.code);
-  const p=Object.freeze({policy:R4_HASH_POLICY,declarationOrder:Object.freeze(order),catalog,committable:false});
+  const p=Object.freeze({policy:R4_HASH_POLICY,declarationOrder:Object.freeze(order),activeCodes:Object.freeze([...order,...(manualCommerce?R4_MANUAL_COMMERCE_EVENT_CODES:[])]),catalog,committable:false});
   reviewedPolicies.add(p);return p;
 }
 // Static bridge: only native hash assignment, traversal, deletion and insertion.
@@ -44,7 +46,7 @@ export function resolveR4HashOrders({reviewed,world,minutes,expired=[],started=[
   const map=world?.period?.eventState;
   if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
   const active=Object.entries(map),keys=active.map(([k])=>k);
-  if(active.some(([k,v])=>!reviewed.declarationOrder.includes(k)||!integer(v))||keys.length>17)fail('invalid active EVENT wire');
+  if(active.some(([k,v])=>!reviewed.activeCodes.includes(k)||!integer(v))||keys.length>reviewed.activeCodes.length)fail('invalid active EVENT wire');
   if(!Array.isArray(expired)||new Set(expired).size!==expired.length||expired.some(k=>!keys.includes(k)))fail('invalid expired operations');
   const survivors=keys.filter(k=>!expired.includes(k));
   if(!Array.isArray(started)||started.length>17||started.some(row=>!Array.isArray(row)||row.length!==2||!reviewed.declarationOrder.includes(row[0])||survivors.includes(row[0])||!integer(row[1]))||new Set(started.map(row=>row[0])).size!==started.length)fail('invalid started operations');
@@ -85,7 +87,7 @@ export function resolveR4CommandHashOrders({reviewed,world,minutes,steps=[],expe
   const seed=r4HashSeed({world,minutes}),map=world?.period?.eventState;
   if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
   const active=Object.entries(map),keys=active.map(([k])=>k);
-  if(active.some(([k,v])=>!reviewed.declarationOrder.includes(k)||!integer(v)))fail('invalid active EVENT wire');
+  if(active.some(([k,v])=>!reviewed.activeCodes.includes(k)||!integer(v)))fail('invalid active EVENT wire');
   let known=keys;const expected=[];
   for(const step of steps){
     if(!step||Object.keys(step).sort().join(',')!=='expired,started')fail('exact hash mutation step');

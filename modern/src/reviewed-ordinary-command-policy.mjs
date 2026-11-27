@@ -8,7 +8,8 @@ export function isReviewedOrdinaryCommand(c,street){
   switch(c.kind){
     case 'complete-palace-mission':return street.reviewedPalace===true&&exact(c,'expectedRevision,kind,shopId');
     case 'hire-army':case 'fire-army':return street.reviewedArmy===true&&exact(c,common+'requestedCount')&&int(c.requestedCount,1);
-    case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
+    case 'open-shop':return (exact(c,common+'ownerName,shopName')||(street.reviewedOwnerIcon===true&&exact(c,common+'ownerName,shopName,icon')&&int(c.icon,1,25)))&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
+    case 'edit-owner-icon':return street.reviewedOwnerIcon===true&&exact(c,common+'icon')&&int(c.icon,1,25);
     case 'market-buy':{
       const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;
       return exact(c,common+'itemId,requestedCount,marketShelf,expectedPrice')&&
@@ -16,11 +17,15 @@ export function isReviewedOrdinaryCommand(c,street){
         (rule.zeroPriceReviewed===true?c.expectedPrice===0:int(c.expectedPrice,1));
     }
     case 'edit-showcase':return exact(c,common+'shelf,itemId,per,priceOverride')&&int(c.shelf,0,7)&&int(c.itemId,0,79)&&int(c.per,1,200)&&int(c.priceOverride,0,999999999);
+    case 'edit-shop-comment':return street.reviewedShopComment===true&&exact(c,common+'comment')&&typeof c.comment==='string';
+    case 'sweep-shop':return street.reviewedSweep===true&&exact(c,common+'requestedHours')&&int(c.requestedHours,1);
     case 'discard-item':return exact(c,common+'itemId,count')&&int(c.itemId,1,79)&&int(c.count,1);
     case 'use-item':{
       const draws=Object.hasOwn(c,'randomDraws');
-      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':''))&&int(c.itemId,1,79)&&int(c.useId)&&
-        Boolean(street.useItem?.getRule(c.itemId,c.useId))&&int(c.requestedCount,1)&&
+      const rule=int(c.itemId,1,79)&&int(c.useId)?street.useItem?.getRule(c.itemId,c.useId):null;
+      const localTarget=rule?.localSelfTarget===true;
+      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':'')+(localTarget?',targetShopId':''))&&
+        Boolean(rule)&&(!localTarget||c.targetShopId===c.shopId)&&int(c.requestedCount,1)&&
         (!draws||(Array.isArray(c.randomDraws)&&c.randomDraws.length>=1&&c.randomDraws.length<=128&&c.randomDraws.every(n=>int(n,0,999999))));
     }
     default:return false;

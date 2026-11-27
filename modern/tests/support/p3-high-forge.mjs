@@ -1,6 +1,8 @@
 /** Real source player progression, same production v2 path for every tier.
  * Mine/transfer only earned EXP; use real quotes, skills, ore, and sale revenue.
- * All time advances stop strictly before the source settlement boundary. */
+ * Four original forging routes retain the non-crossing budget. #66 has
+ * real settlements and P5 earned funding because two skills and its fixed
+ * 50000 G book can exceed the arbitrary first-period liquidity budget. */
 import assert from 'node:assert/strict';
 import {genuinePlayer} from './p3-genuine-v2-player.mjs';
 export async function highForge(t,book){
@@ -9,8 +11,16 @@ export async function highForge(t,book){
     22:{skill:18,products:[53,54,55,56],career:6,gates:[200,400,600]},
     23:{skill:19,products:[58,59,60,61],career:7,gates:[250,500,700]},
     66:{skill:18,products:[67,68,69],career:3,gates:[250,500]}};
-  const r=recipes[book],p=await genuinePlayer(t);
+  const r=recipes[book],crossPeriod=book===66,p=await genuinePlayer(t,{crossPeriod,fundMarketWithWork:crossPeriod});
   await p.use(79,0);await p.use(79,3);
+  if(crossPeriod){
+    // Acquire the fixed-price book and career guide before tying up cash
+    // and incurring maintenance on hundreds of units of ore.
+    await p.market(13);
+    const work=await p.use(13,1);
+    assert.equal(work.details.moneyEarned,10000);
+    await p.market(book);await p.market(78);
+  }
   // Mining before the legitimate career change supplies raw stock and donor EXP.
   // Use the deeper mines for each scarce ore, not forged EXP or wholesale.
   await p.ore(6,book===66?25:book===23?20:25);
@@ -21,8 +31,16 @@ export async function highForge(t,book){
     if(book===66)await p.market(37);
     await p.stones(30);await p.use(37,1);
   }
-  await p.market(book);
-  await p.market(78);
+  if(!p.stock(book))await p.market(book);
+  if(!p.stock(78))await p.market(78);
+  if(crossPeriod){
+    for(let n=0;;n++){
+      assert.ok(n<24,'source mining EXP after real settlement decay');
+      await p.enoughTime(p.quote(78,r.career).timePerUseSeconds);
+      if(p.exp(9)>=200&&p.remaining()>=p.quote(78,r.career).timePerUseSeconds)break;
+      if(p.exp(9)<200)await p.ore(5,p.stock(5)+1);
+    }
+  }
   const earned=p.exp(9);
   assert.ok(earned>=200);
   await p.use(78,r.career);
@@ -34,12 +52,19 @@ export async function highForge(t,book){
       ...(book===23?[[8,[2,4,6,10][useId]]]:[])];
   let first=null;
   async function craft(useId,{checkpoint=false}={}){
-    if(!p.stock(book))await p.market(book,1,{sell:r.products});
-    for(const [id,n] of materials(useId)){
-      if(id===8)await p.stones(n,r.products);else await p.ore(id,n);
+    for(let n=0;;n++){
+      assert.ok(n<64,'source recipe readiness after settlement decay #'+book+'/'+useId);
+      if(!p.stock(book))await p.market(book,1,{sell:r.products});
+      for(const [id,count] of materials(useId)){
+        if(id===8)await p.stones(count,r.products);else await p.ore(id,count);
+      }
+      await p.enoughTime(p.quote(book,useId).timePerUseSeconds);
+      const readyExp=useId===0||p.exp(book)>=r.gates[useId-1];
+      const readyTime=p.remaining()>=p.quote(book,useId).timePerUseSeconds;
+      if(readyExp&&readyTime)break;
+      assert.ok(crossPeriod,'unexpected EXP or quote change in non-crossing route');
+      if(!readyExp)await craft(0);
     }
-    const offer=p.quote(book,useId);
-    await p.enoughTime(offer.timePerUseSeconds);
     if(checkpoint){
       // Save after all legitimate gates and materials are ready, not at the
       // beginning of another long grinding segment. Replay remains exact;
@@ -69,7 +94,10 @@ export async function highForge(t,book){
       assert.equal(p.quote(book,useId).maxUseCount,0);
       await p.deny(book,useId);
     }
-    while(p.exp(book)<gate)await craft(0);
+    for(let n=0;p.exp(book)<gate;n++){
+      assert.ok(n<64,'source craft EXP progression #'+book+'/'+useId);
+      await craft(0);
+    }
     assert.ok(p.exp(book)>=gate);
     await craft(useId,{checkpoint:i===r.gates.length-1});
   }

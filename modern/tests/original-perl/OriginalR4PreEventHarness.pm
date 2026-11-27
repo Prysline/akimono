@@ -9,6 +9,60 @@ use OriginalNayutaFuncturnHarness;
 
 # Shared exact source extraction for the isolated pre-EVENT probe and
 # continuous cross-period command oracle. No source disk tail in this module.
+
+# Opt-in same-process CloseShop oracle. The actual pinned function unlinks
+# temporary session files; its archive argument is captured at WriteErrorLog.
+# Disk publication and HTTP career provenance are separate acceptance layers.
+my ($closeDir,$closeShop,@closeArchives);
+sub prepare_close {
+  my ($input,$read)=@_;
+  die 'closure oracle requires a single source shop and no disk adapter'
+    unless !$input->{disk} && ref($input->{shop}) eq 'HASH'
+      && $input->{shop}{showcasecount}==1 && ref($input->{sessionFileNames}) eq 'ARRAY'
+      && ref($input->{shop}{user}) eq 'HASH' && !keys(%{$input->{shop}{user}});
+  require File::Temp;
+  $closeDir=File::Temp::tempdir(CLEANUP=>1);
+  $main::SUBDATA_DIR=$closeDir;
+  $main::LOG_DELETESHOP_FILE='delete';
+  my %seen;
+  for my $name(@{$input->{sessionFileNames}}){
+    die 'invalid source oracle session filename' unless $name=~/\A[0-9]+-[A-Za-z0-9_-]*\.cgi\z/ && !$seen{$name}++;
+    open my $f,'>',"$closeDir/$name" or die $!;
+    print {$f} $name;close $f or die $!;
+  }
+  my ($fields)=$read=~/\@DTindexnamelist\s*=\s*qw\(([^)]*)\)/s;
+  die 'source CloseShop index fields missing' unless defined $fields;
+  @main::DTindexnamelist=split /\s+/, $fields;
+  @main::DTindexnamelist=grep {length} @main::DTindexnamelist;
+  die 'source CloseShop 32 fields required' unless @main::DTindexnamelist==32;
+  my $write=OriginalGiftMapUseHarness::source('write.cgi');
+  my $user=OriginalGiftMapUseHarness::source('pinned-user.cgi');
+  my ($close)=$write=~/(^sub CloseShop\n\{[\s\S]*?^\})/m;
+  my ($setUser)=$user=~/(^sub SetUserData\n\{[\s\S]*?^\})/m;
+  die 'pinned CloseShop/SetUserData moved' unless $close&&$setUser;
+  eval "package main;no strict;no warnings;use utf8;\n$close\n$setUser\n1;" or die $@;
+  {no warnings 'redefine';
+    *main::WriteErrorLog=sub {push @closeArchives,[@_];1};
+    *main::l=sub {my($s,@args)=@_;$s=~s/%(\d+)/$args[$1-1]/ge;return $s};
+  }
+  $closeShop=$input->{shop};
+  @closeArchives=();
+  # Same original DataRead map insertion sequence as command-start wire;
+  # JSON object decoder hash order is not the original serialization order.
+  my @list=('','','',map {my $m=$closeShop->{$_};join(',',map {($_,$m->{$_})} sort {$a<=>$b} keys %$m)} qw(itemyesterday itemtoday exp));
+  @{$closeShop}{qw(itemyesterday itemtoday exp)}=map {{split(/,/,$_)}} @list[3,4,5];
+  $closeShop->{user}={};
+}
+sub close_evidence {
+  die 'closure oracle was not enabled' unless defined $closeDir;
+  opendir my $d,$closeDir or die $!;
+  my @names=sort grep {$_ ne '.' && $_ ne '..'} readdir $d;
+  closedir $d;
+  return {archives=>\@closeArchives,remainingSessions=>\@names,
+    status=>$closeShop->{status},money=>$closeShop->{money},rank=>$closeShop->{rank},
+    rankingcount=>$closeShop->{rankingcount},costyesterday=>$closeShop->{costyesterday}};
+}
+
 sub prepare {
 my($input,$preserveLogs)=@_;
 OriginalNayutaFuncturnHarness::bootstrap();
@@ -87,7 +141,8 @@ if(exists $input->{settlement}){
   $main::EXPIRE_TIME=604800;$main::DEFINE_FUNCUPDATE=0;
   $main::PROFIT_DAY_COUNT=3;$main::EXP_DOWN_RATE=60;$main::EXP_DOWN_POINT=5;
   @main::SHOWCASE_COST=(0,2000,4000,8000);%main::GUILD=();%main::GUILD_DATA=();
-  $periodCall='ActualBoundaryPeriod() if $dateupdate;';
+  $periodCall='ActualBoundaryPeriod() if $dateupdate && scalar(@DT);';
+  prepare_close($input,$read) if $input->{actualClose};
 }
 my $ok=eval "package main;no strict;no warnings;use utf8;sub ActualPreEvent {my(\$timespan,\$dateupdate)=\@_; \$TIMESPAN=\$timespan;\$item::TIMESPAN=\$timespan;\n$natural\n$funct\n$functail\n$periodCall\nB35SourceStep(\$timespan);1;}\n1;";
 die "original pre-EVENT source compile failed $@" unless $ok;

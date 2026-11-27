@@ -34,8 +34,12 @@ async function milk(p,count){
   return deaths;
 }
 
-test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal replacement',async t=>{
-  const p=await genuinePlayer(t,{now:null,crossPeriod:true});
+// Both the existing restricted P4 domain and full R4 opt-in retain
+// the same mandatory genuine death/NEED/replacement assertions.
+for(const fullCommerce of [false,true])test(fullCommerce?
+  'R4 genuine full commerce cow mortality, persisted NEED denial, lawful replacement and fermentation':
+  'P4 actual cow mortality: save before replacing, reload, NEED denial, legal replacement',async t=>{
+  const p=await genuinePlayer(t,{now:null,crossPeriod:true,fullCommerce});
   await p.market(25,2,{partial:true});
   await p.use(79,4,3);
   assert.equal(p.stock(25),5);
@@ -45,7 +49,11 @@ test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal
   // Bounded genuine production, no seed selection or client RNG. Sale of
   // excess milk funds upkeep and ordinary commands retain the owner session.
   let opportunities=0;
-  for(let n=0;n<30;n++){
+  // 2400 genuine opportunities at original 4/1000 per count. A
+  // surviving herd is a failed experiment, not skipped or rerolled.
+  // Stop at the first naturally observed death; all preceding actions
+  // remain committed and paid for on this same player.
+  for(let n=0;n<150;n++){
     if(p.stock(26)>100)await p.list(26);
     await p.enoughTime(p.quote(25,1).timePerUseSeconds*16+(p.state.shop.showcase[0]===26?600:0));
     await p.list(0);
@@ -87,7 +95,7 @@ test('P4 actual cow mortality: save before replacing, reload, NEED denial, legal
     return;
   }
   t.diagnostic('P4 NO DEATH OBSERVED: '+opportunities+' real RNG opportunities; no death acceptance');
-  t.skip('No cow death occurred in bounded real player experiment');
+  assert.fail('No cow death occurred in '+opportunities+' bounded real player opportunities');
 });
 
 test('P4 fresh v2 dairy rejects independent stock, career, EXP, history, RNG and invalid latest files',async t=>{

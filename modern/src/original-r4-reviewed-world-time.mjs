@@ -1,4 +1,7 @@
 import {createHash} from 'node:crypto';
+import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
+import {reviewR4IndependentCloseCandidate} from './original-r4-independent-close-candidate.mjs';
+import {projectSharedUseItem} from './shared-use-item-core.mjs';
 import {isReviewedHistoryCheckpointStore} from './reviewed-history-checkpoint-store.mjs';
 /** Opt-in source-reviewed local normal-time command and exact CAS reviewer.
  * No crossing settlement, external special EVENT context, arbitrary draw or
@@ -11,11 +14,17 @@ import {loadStandardStreetModel} from './standard-street-model.mjs';
 import {createIndependentDiskProjection,independentCandidateWorld,R4_SETTLED_STATE} from './original-r4-independent-world-disk.mjs';
 import {applyGameCommand,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewR4SortedPreEvent} from './original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
+import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {reviewOriginalShowcaseView,describeOriginalShowcase} from './original-r4-showcase-view.mjs';
+import {reviewOriginalNews,describeOriginalNews} from './original-r4-news-view.mjs';
+import {reviewOriginalBalanceView,describeOriginalBalance} from './original-r4-balance-view.mjs';
+import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
+import {reviewR4PreEventItemOverlay,validateR4PreEventPeriod,projectR4PreEventItemOverlay,validateR4OrdinaryEventContext} from './original-r4-pre-event-item-overlay.mjs';
 import {reviewR4HashPolicy} from './original-r4-perl-hash-replay.mjs';
 import {reviewOriginalR4DeclarativeEventCycle} from './original-r4-declarative-event-cycle.mjs';
 import {reviewOriginalR4MultiEventFixture} from './original-r4-multi-event-order-fixture.mjs';
 import {projectR4NormalTurnCandidate,R4_NORMAL_TURN_PROJECTION} from './original-r4-normal-turn-candidate.mjs';
+import {reviewNormalCommerceItems,validateNormalCommerceInventory,capReviewedCommerceCash} from './reviewed-normal-commerce-items.mjs';
 import {validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {validateSourceSparseMarket} from './original-admin-world-bootstrap.mjs';
 import {PALACE_COMMAND} from './original-r4-palace-mission.mjs';
@@ -29,21 +38,57 @@ export function isReviewedWorldTimeCommand(command){
     Number.isSafeInteger(command.minutes)&&command.minutes>=1&&command.minutes<=60;
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
-const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
-export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false}){
+const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item','sweep-shop','edit-shop-comment','edit-owner-icon'];
+export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false,enableReviewedFullCommerce=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
+  if(typeof enableReviewedFullCommerce!=='boolean')fail('explicit full commerce review');
+  const normalCommerce=enableReviewedFullCommerce?reviewNormalCommerceItems(sources):null;
+  if(normalCommerce!==null){
+    if(!sources.writeSource.includes('$DT->{money}=$MAX_MONEY if $DT->{money}>$MAX_MONEY;'))fail('original DataWrite money cap required');
+    street=Object.freeze({...street,reviewedNormalCommerce:normalCommerce});
+  }
+  const validateTimeShop=shop=>normalCommerce===null?validateP3Inventory(shop,street.reviewedGiftMapUse,street.reviewedB41):validateNormalCommerceInventory(shop,street.reviewedGiftMapUse,normalCommerce);
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
+  const warehouse=normalCommerce&&sources.stockViewSource!=null?reviewOriginalWarehouse(sources):null;
+  const buyDetail=normalCommerce&&sources.buyFormSource!=null?reviewOriginalBuyDetail(sources):null;
+  function buyDetailOverlay(world){
+    if(!buyDetail||world?.shops?.[0]?.id!==1||world.shops[0].status!==1||world.shops[0].guild)return null;
+    const input=disk?independentCandidateWorld(world):world;
+    if(!validateR4OrdinaryEventContext({reviewed:data,world:input,candidateSettled:Boolean(disk)}))return null;
+    return projectR4PreEventItemOverlay({reviewed:data,world:input,activeOrder:Object.keys(input.period.eventState),saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled:Boolean(disk),normalCommerce});
+  }
+  function addBuyDetail(offer,overlay){
+    if(!overlay)return offer;
+    const item=normalCommerce.items[offer.itemId-1];
+    const detail=describeOriginalBuyDetail({reviewed:buyDetail,offer,item,popular:overlay.saleRules[offer.itemId]?.popularSeconds??item.popular});
+    return detail?Object.freeze({...offer,detail}):offer;
+  }
+  const balanceInputs=[sources.balanceViewSource,sources.infoViewSource];
+  if(balanceInputs.some(s=>s!=null)&&balanceInputs.some(s=>s==null))fail('incomplete original balance source set');
+  const balance=normalCommerce&&balanceInputs.every(s=>s!=null)?reviewOriginalBalanceView(sources):null;
+  const newsInputs=[sources.newsViewSource,sources.newsHtmlSource,sources.newsPageSource,sources.newsTimeSource];
+  if(newsInputs.some(s=>s!=null)&&newsInputs.some(s=>s==null))fail('incomplete original news source set');
+  const news=normalCommerce&&enableReviewedCrossPeriod&&newsInputs.every(s=>s!=null)?reviewOriginalNews(sources):null;
+  const showcaseView=normalCommerce&&sources.showcaseViewSource!=null?reviewOriginalShowcaseView(sources):null;
   const sorted=reviewR4SortedPreEvent(sources);
-  const hash=reviewR4HashPolicy(sources);
+  // Frozen DataRead recomputes GetDTPoint before every CGI action. Match
+  // the existing disk finalizer at the non-crossing command boundary, not
+  // just in the read-only owner summary. Leave prior commerce mode intact.
+  const finalizeNonDisk=p=>normalCommerce===null?p:{...p,shops:p.shops.map(s=>
+    capReviewedCommerceCash(projectOriginalSoloSort({shop:s,reviewed:sorted.sort}).shop,normalCommerce))};
+  const hash=reviewR4HashPolicy(sources,{manualCommerce:data.manual??null});
   const seven=reviewOriginalR4DeclarativeEventCycle({
     compiledCatalog:street.reviewedEventCatalog,reviewedParams:data.params,itemDsl:sources.itemDsl,turnSource:sources.turnSource,readSource:sources.readSource});
   const events=reviewOriginalR4MultiEventFixture({
     compiledCatalog:street.reviewedEventCatalog,reviewedSeven:seven,turnSource:sources.turnSource,readSource:sources.readSource,
     reviewedSupportCallbacks:street.reviewedSupportEventCallbacks,reviewedInstantCallbacks:street.reviewedInstantEventCallbacks,
-    reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword});
-  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street}):null;
+    reviewedLotoCallbacks:street.reviewedLoto,reviewedHappyEvent:street.reviewedB60Happy,reviewedIronEvent:street.reviewedB59Iron,reviewedSwordEvent:street.reviewedB61Sword,reviewedManualCommerce:data.manual??null});
+  const closeInputs=[sources.userSource,sources.errorSource];
+  if(enableReviewedCrossPeriod&&enableReviewedFullCommerce&&closeInputs.some(s=>s!=null)&&closeInputs.some(s=>s==null))fail('incomplete original closure sources');
+  const closeReview=enableReviewedCrossPeriod&&enableReviewedFullCommerce&&closeInputs.every(s=>s!=null)?reviewR4IndependentCloseCandidate(sources):null;
+  const disk=enableReviewedCrossPeriod?createIndependentDiskProjection({sources,sort:sorted.sort,street,r4CloseReview:closeReview}):null;
   const allowedOrdinary=k=>ordinaryKinds.includes(k)||(Boolean(disk?.palace)&&k===PALACE_COMMAND)||(Boolean(disk?.army)&&ARMY_COMMANDS.includes(k));
-  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true}):null;
+  const reviewedPeriod=enableReviewedCrossPeriod?reviewOriginalSoloPeriodPhaseChain({...sources,model:loadStandardStreetModel(sources.itemDsl,sources.rebelDsl),bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',compiledLimits:street.reviewedGiftMapUse.limits.map(x=>x.limit),includeReviewedDignity:true,includeReviewedShopExpiry:true,includeReviewedSaleTax:true,includeReviewedMultiShelf:enableReviewedFullCommerce,includeReviewedActualCloseShop:Boolean(closeReview),includeReviewedFullCommerceClose:Boolean(closeReview),includeReviewedLocalizedClose:Boolean(closeReview&&sources.ownerMainSource!=null)}):null;
   // A structurally valid settled snapshot is NOT an acquisition proof.
   // Only exact derived successors or an authenticated replay anchor may
   // initialize the crossing CAS adapter. Retain bounded canonical digests.
@@ -57,8 +102,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     if(disk){
       if(world.revision===0&&(world.market!==null||world.shops.length!==0||period.settledCount!==0||world.period.disk!==undefined))fail('revision zero requires fresh source seed');
       if(period.settledCount>0&&world.period.state!==R4_SETTLED_STATE)fail('committed settlement state required');
-      if(period.settledCount>0&&(period.lastSettledBoundarySeconds!==Math.floor((world.nowSeconds+10800)/129600)*129600-10800))fail('settled clock lineage');
       disk.validate(world);
+      const latestBoundary=Math.floor((world.nowSeconds+10800)/129600)*129600-10800;
+      if(period.settledCount>0&&(disk.hasClosed(world)?period.lastSettledBoundarySeconds>latestBoundary:period.lastSettledBoundarySeconds!==latestBoundary))fail('settled clock lineage');
+      if(period.settledCount>0&&world.shops.length===0&&!disk.hasClosed(world))fail('empty settled world requires archived local career');
     }
     validateR4PreEventPeriod({reviewed:data,period,activeOrder:Object.keys(period.eventState??{}),candidateSettled:Boolean(disk)});
     if(world.market===null){
@@ -81,34 +128,47 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         !/^[1-9][0-9]*$/.test(id)||Number(id)>79||
         !Number.isSafeInteger(n)||n<0||n>1000)||Object.values(exp).reduce((a,b)=>a+b,0)>3600)
         fail('ordinary source EXP bounds');
+      if(normalCommerce!==null){validateTimeShop(shop);if(!Number.isSafeInteger(shop.money)||shop.money>normalCommerce.maxMoney)fail('source committed cash bound');}
     }
     return true;
   }
   function propose(world,command){
     if(!isReviewedWorldTimeCommand(command)||command.expectedRevision!==world.revision)fail('exact reviewed time command and revision');
     validate(world);
-    if(world.shops.length!==1)fail('reviewed time requires one shop');
-    validateP3Inventory(world.shops[0],street.reviewedGiftMapUse,street.reviewedB41);
+    if(world.shops.length!==1&&!disk?.hasClosed(world))fail('reviewed time requires one shop or archived local career');
+    for(const shop of world.shops)validateTimeShop(shop);
     const input=disk?independentCandidateWorld(world):world;
-    const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod};
+    const args={world:input,minutes:command.minutes,street,reviewedR4:sorted,reviewedDataRead:data,reviewedHash:hash,reviewedEvents:events,reviewedPeriod,...(closeReview?{r4CloseReview:closeReview,sessionFileNames:[]}: {})};
     const crossing=disk&&projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+command.minutes*60}).crossesSettlement;
     if(disk&&(crossing||world.period.settledCount>0)){
       const candidate=(world.period.settledCount>0?projectR4SettledPeriodCandidate:projectR4CrossPeriodCandidate)(args);
       const {shops,market,period,nowSeconds,evidence}=candidate;
       if(candidate.source!==R4_CROSS_PERIOD_CANDIDATE||candidate.committable!==false||nowSeconds!==world.nowSeconds+command.minutes*60)fail('complete crossing source candidate required');
-      validateP3Inventory(shops[0],street.reviewedGiftMapUse,street.reviewedB41);
-      const trace={drawPolicy:evidence.drawPolicy,hashPolicy:evidence.hashPolicy,seed:evidence.seed,interpreter:evidence.interpreter,slices:evidence.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,logs:s.eventLogs}))};
+      for(const shop of shops)validateTimeShop(shop);
+      const trace={drawPolicy:evidence.drawPolicy,hashPolicy:evidence.hashPolicy,seed:evidence.seed,interpreter:evidence.interpreter,slices:evidence.slices.map(s=>({dateupdate:s.dateupdate,spanSeconds:s.spanSeconds,activeOrder:s.activeOrder,eventOrder:s.eventOrder,nowOrder:s.nowOrder,preEventDraws:s.preEventDraws,eventDrawRanges:s.eventDrawRanges,eventSamples:s.eventSamples,logs:s.eventLogs,
+        ...(normalCommerce!==null?{eventCommerce:s.preEvent.receipt.eventCommerce??null,happyEffects:s.happyEffects??[],instantEffects:s.instantEffects??[]}: {})}))};
       // Compact source-derived receipts for actual player acceptance. These
       // are derived from the same reviewed candidate, not a second formula.
       const itemTurnAffectedSlices=evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.itemCallbackStage.itemTurnAffectedShops,0);
-      const boundary=evidence.slices.find(s=>s.dateupdate===1)?.preEvent;
+      const boundary=evidence.slices.find(s=>s.preEvent.settlement)?.preEvent;
+      const closeEffect=boundary?.settlement.actualCloseEffect??null;
+      const ledgerShop=boundary?.settlement.shop??boundary?.settlement.closedShop;
+      const closureReceipt=closeEffect?{shopId:closeEffect.shop.id,reason:boundary.settlement.shopExpiry.closeCalls[0].reason,archiveHash:boundary.closeHashEvidence,
+        deletedSessions:closeEffect.deletedSessions,remainingSessions:closeEffect.remainingSessions}:null;
       const settlementReceipt=boundary?{prize:boundary.settlement.prize,maintenance:boundary.settlement.maintenance,
         naturalSaleCount:boundary.receipt.naturalSaleCount,soldItemId:boundary.receipt.soldItemId,
-        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:boundary.settlement.shop.money,
+        ...(normalCommerce!==null?{soldByItem:boundary.receipt.soldByItem,
+          shelfSales:boundary.receipt.shelfSales.map(row=>({...row,sliceIndex:0})),
+          // Preserve the exact round-trippable decimal, not a fractional JSON
+          // number outside GameCore's receipt integer contract.
+          costBeforeLedger:String(boundary.periodLogInput.shop.costtoday)}:{}),
+        cashBeforeLedger:boundary.periodLogInput.shop.money,cashAfterLedger:ledgerShop.money,
         saleBeforeLedger:boundary.periodLogInput.shop.saletoday,payBeforeLedger:boundary.periodLogInput.shop.paytoday,
-        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:boundary.settlement.shop.rankingcount,
-        expAfterLedger:boundary.settlement.shop.exp,cityTaxIn:boundary.settlement.town.in}:null;
-      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),itemTurnAffectedSlices,settlementReceipt,sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate)});
+        taxBeforeLedger:boundary.periodLogInput.shop.taxtoday,rankingCount:ledgerShop.rankingcount,
+        expAfterLedger:ledgerShop.exp,cityTaxIn:boundary.settlement.town.in}:null;
+      const soldByItem={},shelfSales=normalCommerce===null?null:evidence.slices.flatMap((s,sliceIndex)=>s.preEvent.receipt.shelfSales.map(row=>({...row,sliceIndex})));
+      if(normalCommerce!==null)for(const slice of evidence.slices)for(const [id,n] of Object.entries(slice.preEvent.receipt.soldByItem))soldByItem[id]=(soldByItem[id]??0)+n;
+      return disk.finalize({before:world,command,applied:{shops,market,period,nowSeconds,receipt:{action:REVIEWED_WORLD_TIME_COMMAND,source:R4_CROSS_PERIOD_CANDIDATE,minutes:command.minutes,elapsedSeconds:command.minutes*60,naturalSaleCount:evidence.slices.reduce((n,s)=>n+s.preEvent.receipt.naturalSaleCount,0),...(normalCommerce!==null?{soldByItem,shelfSales}:{}),itemTurnAffectedSlices,settlementReceipt,...(closeReview?{closureReceipt}:{}),sourceTrace:trace,preEventDrawCount:evidence.slices.reduce((n,s)=>n+s.preEventDraws.length,0),totalDraws:evidence.drawsUsed,scope:'reviewed independent local world crossing and subsequent source time'}},logRows:disk.crossLogs(candidate),closeEffect});
     }
     const candidate=projectR4NormalTurnCandidate(args);
     if(candidate.source!==R4_NORMAL_TURN_PROJECTION||candidate.committable!==false||
@@ -118,31 +178,66 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
     const {shops,market,period,nowSeconds,evidence}=candidate;
     // Separate reviewed command adapter owns the complete successor and
     // exact CAS recheck. Never pass a partial noncommittable proposal to Core.
-    if(!disk)validate({...world,shops,market,period,nowSeconds,revision:world.revision+1});
-    validateP3Inventory(shops[0],street.reviewedGiftMapUse,street.reviewedB41);
+    if(!disk)validate({...world,shops:finalizeNonDisk({shops}).shops,market,period,nowSeconds,revision:world.revision+1});
+    validateTimeShop(shops[0]);
     const {preEventReceipt,...trace}=evidence;
+    if(normalCommerce!==null)trace.eventCommerce=preEventReceipt.eventCommerce;
     const applied={shops,market,period,nowSeconds,receipt:{
       action:REVIEWED_WORLD_TIME_COMMAND,source:R4_NORMAL_TURN_PROJECTION,
       minutes:command.minutes,elapsedSeconds:command.minutes*60,
       naturalSaleCount:preEventReceipt.naturalSaleCount,
+      ...(normalCommerce!==null?{soldByItem:preEventReceipt.soldByItem,
+        shelfSales:preEventReceipt.shelfSales.map(row=>({...row,sliceIndex:0}))}:{}),
       itemTurnAffectedSlices:preEventReceipt.itemCallbackStage.itemTurnAffectedShops,settlementReceipt:null,
       sourceTrace:trace,preEventDrawCount:evidence.preEventDraws.length,
       totalDraws:evidence.preEventDraws.length+evidence.eventSamples.length,
       scope:'source-reviewed local single-shop nonsettling normal time; no external special EVENT or 36h settlement',
     }};
-    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):applied;
+    return disk?disk.finalize({before:world,command,applied,logRows:disk.normalLogs(trace.logs,nowSeconds)}):finalizeNonDisk(applied);
   }
   const wrapped=Object.freeze({...street,
     capabilities:Object.freeze([...street.capabilities.filter(k=>ordinaryKinds.includes(k)),REVIEWED_WORLD_TIME_COMMAND,...(disk?.palace?[PALACE_COMMAND]:[]),...(disk?.army?ARMY_COMMANDS:[])]),
     reviewedNormalTime:true,
     reviewedCrossPeriod:Boolean(disk),
+    reviewedOwnerClosure:Boolean(closeReview),
+    ...(buyDetail?{quoteMarketOffer(world,itemId){
+      const offer=street.quoteMarketOffer(world,itemId);
+      return addBuyDetail(offer,buyDetailOverlay(world));
+    },listMarketOffers(world){
+      const offers=street.listMarketOffers(world);
+      if(!offers.length)return offers;
+      const overlay=buyDetailOverlay(world);
+      return Object.freeze(offers.map(offer=>addBuyDetail(offer,overlay)));
+    }}:{}),
+    ...(showcaseView?{describeShowcase(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      return describeOriginalShowcase({reviewed:showcaseView,world,normalCommerce});
+    }}:{}),
+    ...(news?{describeNews(world){
+      if(!world?.shops?.length||!world.period?.disk)return null;
+      validate(world);
+      return describeOriginalNews({reviewed:news,world});
+    }}:{}),
+    ...(balance?{describeBalance(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      return describeOriginalBalance({reviewed:balance,world});
+    }}:{}),
+    ...(warehouse?{describeWarehouse(world){
+      if(!world?.shops?.length)return null;
+      validate(world);
+      const input=disk?independentCandidateWorld(world):world;
+      const overlay=projectR4PreEventItemOverlay({reviewed:data,world:input,activeOrder:Object.keys(input.period.eventState),saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled:Boolean(disk),normalCommerce});
+      return describeOriginalWarehouse({reviewed:warehouse,world:input,normalCommerce,overlay,order:street.marketBuyRegistry.entries.map(e=>e.itemId),limits:street.reviewedGiftMapUse.limits});
+    }}:{}),
     ...(disk?.palace?{reviewedPalace:true,describePalace:world=>{validate(world);return world.period.disk?disk.describePalace(world):null;}}:{}),
     ...(disk?.army?{reviewedArmy:true,describeArmy:world=>{validate(world);return world.period.disk?disk.describeArmy(world):null;}}:{}),
-    ...(disk?{finalizeReviewedTransition({before,command,applied}){
+    ...((disk||normalCommerce!==null)?{finalizeReviewedTransition({before,command,applied}){
       validate(before);
       if(command.kind===REVIEWED_WORLD_TIME_COMMAND)return applied;
       if(!allowedOrdinary(command.kind)||command.kind==='reviewed-sparse-all-plus')fail('unreviewed independent ordinary command');
-      return disk.finalize({before,command,applied});
+      return disk?disk.finalize({before,command,applied}):finalizeNonDisk(applied);
     }}:{}),
     validateReviewedWorldTimeState:validate,
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
@@ -177,7 +272,11 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
         let applied;
         if(command.kind===PALACE_COMMAND)applied=disk.applyPalace(before,command);
         else if(ARMY_COMMANDS.includes(command.kind))applied=disk.applyArmy(before,command);
-        else{
+        else if(command.kind==='use-item'&&street.useItem?.getRule(command.itemId,command.useId)?.inlineCallback?.kind==='local-self-industry-rumor'){
+          if(command.expectedRevision!==before.revision)fail('manual EVENT USE revision');
+          // Recompute shared USE directly; outer reviewer owns period mutation.
+          applied=projectSharedUseItem({world:before,command,useItem:street.useItem});
+        }else{
           const result=applyGameCommand({world:before,command,streetModule:street});
           if(!result.ok)fail('source ordinary replay rejected');
           applied={shops:result.world.shops,market:result.world.market,period:result.world.period,receipt:result.details};

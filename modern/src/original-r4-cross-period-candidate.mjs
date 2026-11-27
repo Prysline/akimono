@@ -1,3 +1,5 @@
+import {resolveR4ExactPreEventPrefix} from './r4-exact-pre-event-prefix.mjs';
+import {isR4IndependentCloseReview,projectR4EmptyStreetPreEvent} from './original-r4-independent-close-candidate.mjs';
 /** Source-only crossing command candidate. One DataRead overlay and
  * native hash mutation lineage; one server tape spans both source slices.
  * The B50 disk tail/commit is NOT yet included. Never publish as WorldState.
@@ -7,7 +9,8 @@ import {projectOriginalR4TimeSlices} from './original-r4-time-slices.mjs';
 import {projectR4PreEventItemOverlay,validateR4PreEventPeriod} from './original-r4-pre-event-item-overlay.mjs';
 import {projectOriginalR4MultiEventFixture,R4_MULTI_EVENT_FIXTURE_SOURCE} from './original-r4-multi-event-order-fixture.mjs';
 import {resolveR4CommandHashOrders} from './original-r4-perl-hash-replay.mjs';
-import {createR4CrossPeriodDraws} from './r4-time-command-draws.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
+import {R4_FULL_CROSS_SLICE_DRAWS,createR4CrossPeriodDraws} from './r4-time-command-draws.mjs';
 import {LOTO_RANGE} from './original-b58-loto-startfunc.mjs';
 import {R4_SORTED_PRE_EVENT_SOURCE} from './original-r4-sorted-pre-event.mjs';
 export const R4_CROSS_PERIOD_CANDIDATE='r4-reviewed-cross-period-candidate.v1';
@@ -29,51 +32,66 @@ export function continueR4CrossPeriodCandidate({previous,minutes}){
   if(!prior)fail('source candidate lineage required');
   return projectCandidate({...prior,world:structuredClone(prior.world),minutes},true);
 }
-function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,reviewedHash,reviewedEvents,reviewedPeriod,expectedInterpreter=null},candidateSettled){
-  if(world?.schema!=='akimono.memory-world.v2'||world.events!==null||world.shops?.length!==1||
+function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,reviewedHash,reviewedEvents,reviewedPeriod,expectedInterpreter=null,r4CloseReview=null,sessionFileNames=null},candidateSettled){
+  const closeEnabled=r4CloseReview!==null;
+  if(closeEnabled&&(!isR4IndependentCloseReview(r4CloseReview)||!street?.reviewedNormalCommerce||
+     reviewedPeriod?.actualClose?.fullCommerceArchive!==true||!Array.isArray(sessionFileNames)))fail('reviewed independent closure candidate required');
+  if(!closeEnabled&&sessionFileNames!==null)fail('unreviewed session inventory');
+  if(world?.schema!=='akimono.memory-world.v2'||world.events!==null||(world.shops?.length!==1&&!(closeEnabled&&candidateSettled&&world.shops?.length===0))||
      world.streetId!=='standard-street'||reviewedR4?.source!==R4_SORTED_PRE_EVENT_SOURCE||
      reviewedR4.committable!==false||reviewedEvents?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      !reviewedEvents.support||!reviewedEvents.instant||!reviewedEvents.loto||!reviewedEvents.happy||
      !reviewedEvents.iron||!reviewedEvents.sword||reviewedEvents.guildbattle!==null||reviewedEvents.rebel!==null)
     fail('reviewed independent single-shop source dependencies required');
   if(reviewedEvents.eventCodes.join(',')!==reviewedHash?.declarationOrder?.join(','))fail('EVENT catalog mismatch');
-  const tape=createR4CrossPeriodDraws({world,minutes});
+  const tape=createR4CrossPeriodDraws({world,minutes,fullCommerce:street.reviewedNormalCommerce!==undefined});
+  const normalCommerce=street.reviewedNormalCommerce??null;
+  const maxDraws=normalCommerce===null?125:R4_FULL_CROSS_SLICE_DRAWS;
   const plan=projectOriginalR4TimeSlices({reviewed:street.reviewedB41.turnSlices,lastSeconds:world.nowSeconds,nowSeconds:world.nowSeconds+minutes*60});
   if(plan.effectiveSlices.length<1||plan.effectiveSlices.length>2||(!plan.crossesSettlement&&!candidateSettled)||plan.effectiveSlices[0].dateupdate!==(plan.crossesSettlement?1:0))
     fail('one actual source settlement required');
   const initialHash=resolveR4CommandHashOrders({reviewed:reviewedHash,world,minutes,expectedInterpreter});
   validateR4PreEventPeriod({reviewed:reviewedDataRead,period:world.period,activeOrder:initialHash.initialOrder,candidateSettled});
-  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initialHash.initialOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled});
+  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:initialHash.initialOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus,candidateSettled,normalCommerce});
   const steps=[],slices=[];let cursor=world,hash=initialHash,used=0,settlement=null;
+  // One transient @ITEM demand hash per original CGI command, never
+  // inherited from a previous command, save or checkpoint. Preserve prior
+  // commerce behavior until D reviews migration of that separate mode.
+  let sourceDemandBase=normalCommerce===null?null:{};
   for(const [i,part] of plan.effectiveSlices.entries()){
     const args={world:cursor,minutes,shopId:1,reviewed:street.reviewedB41,
       reviewedAllPlus:street.reviewedAllPlus,compiled:street.reviewedGiftMapUse,
       reviewedB59Iron:street.reviewedB59Iron,reviewedB60Happy:street.reviewedB60Happy,
       reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
       reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta,
-      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,
+      reviewedPeriod,candidateSettled,r4ReviewedSort:reviewedR4.sort,normalCommerce,
+      ...(sourceDemandBase===null?{}:{sourceDemandBaseBefore:sourceDemandBase}),
+      ...(closeEnabled?{r4CloseReview,sessionFileNames,expectedInterpreter:initialHash.interpreter}:{}),
       r4DataRead:{reviewed:reviewedDataRead,activeOrder:initialHash.initialOrder}};
-    const project=!plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:i===0?projectR4BoundaryPreEventCandidate:
+    const project=cursor.shops.length===0?a=>projectR4EmptyStreetPreEvent({reviewed:r4CloseReview,
+      world:cursor,originWorld:world,street,reviewedDataRead,activeOrder:initialHash.initialOrder,
+      candidateSettled,spanSeconds:part.timespanSeconds,dateupdate:part.dateupdate,randomDraws:a.randomDraws}):
+      !plan.crossesSettlement?projectR4PostSettlementPreEventCandidate:i===0?projectR4BoundaryPreEventCandidate:
       a=>projectR4ResidualPreEventCandidate({...a,originWorld:world});
-    let pre=null;const samples=[];
-    for(let n=0;n<=125;n++){
-      try{pre=project({...args,randomDraws:samples});break;}
-      catch(e){
-        if(!/missing.*(draw|sample|rand\(1\))|requires.*random|random.*required|rand\(1\).*required|explicit.*maximum 118/.test(e.message))throw e;
-        if(n===125)fail('pre-EVENT draw budget exhausted');
-        samples.push(tape.unit(used+n));
-      }
-    }
-    if(!pre||pre.receipt.totalDraws!==samples.length||pre.nowSeconds!==cursor.nowSeconds+part.timespanSeconds)
-      fail('exact source slice and draw accounting');
+    const {pre,samples}=resolveR4ExactPreEventPrefix({maxDraws,unit:index=>tape.unit(used+index),
+      project:randomDraws=>project({...args,randomDraws})});
+    if(pre.nowSeconds!==cursor.nowSeconds+part.timespanSeconds)fail('exact source slice and draw accounting');
     used+=samples.length;
-    if(part.dateupdate===1){settlement=pre.settlement;if(!settlement?.shop)fail('missing source settlement');}
+    if(sourceDemandBase!==null&&cursor.shops.length){
+      if(!pre.sourceDemandBase)fail('missing command-local source demand base');
+      sourceDemandBase=pre.sourceDemandBase;
+    }
+    if(part.dateupdate===1&&cursor.shops.length){
+      settlement=pre.settlement;
+      if(!settlement?.shop&&!(closeEnabled&&settlement?.actualCloseEffect?.closed===true&&pre.shops.length===0))fail('missing source settlement');
+    }else if(pre.settlement!==null)fail('unexpected source settlement');
     let finalHash=null;
     const event=projectOriginalR4MultiEventFixture({
-      reviewed:reviewedEvents,items:overlay.baseItems,shop:pre.shops[0],
+      reviewed:reviewedEvents,items:overlay.baseItems,shop:pre.shops[0]??null,
+      ...(pre.shops.length===0?{r4EmptyStreetReview:r4CloseReview.emptyEvents}:{}),
       startSeconds:cursor.nowSeconds,spanSeconds:part.timespanSeconds,activeUntilSeconds:cursor.period.eventState,
       activeHashOrderFixture:hash.nowOrder,eventHashOrderFixture:hash.eventOrder,
-      reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse},
+      reviewedInventory:{sale:street.reviewedB41,compiled:street.reviewedGiftMapUse,normalCommerce},
       exactTicketDraws:true,reviewedSubminute:true,
       randomDrawProvider:(index,range)=>range===LOTO_RANGE?tape.lottery(used+index):tape.unit(used+index),
       resolveNowOrder:({expired,started,activeUntilSeconds})=>{
@@ -83,11 +101,14 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
         steps.push(op);return finalHash.nowOrder;
       }
     });
-    if(!finalHash||!event.shop||event.committable!==false)fail('complete source EVENT successor required');
+    if(!finalHash||event.committable!==false||(pre.shops.length===0?event.shop!==null:!event.shop))fail('complete source EVENT successor required');
     used+=event.drawsUsed;
-    validateP3Inventory(event.shop,street.reviewedGiftMapUse,street.reviewedB41);
+    if(event.shop!==null){
+      if(normalCommerce!==null)validateNormalCommerceInventory(event.shop,street.reviewedGiftMapUse,normalCommerce);
+      else validateP3Inventory(event.shop,street.reviewedGiftMapUse,street.reviewedB41);
+    }
     const period={...cursor.period,
-      ...(part.dateupdate===1?{town:settlement.town,dtPeople:settlement.dtPeople,
+      ...(pre.settlement?{town:settlement.town,dtPeople:settlement.dtPeople,
         settledCount:cursor.period.settledCount+1,lastSettledBoundarySeconds:pre.nowSeconds,
         state:'source-cross-period-candidate-not-committed'}:{}),
       eventState:Object.fromEntries(finalHash.nowOrder.map(code=>[code,event.activeUntilSeconds[code]]))};
@@ -95,14 +116,16 @@ function projectCandidate({world,minutes,street,reviewedR4,reviewedDataRead,revi
       startSeconds:cursor.nowSeconds,nowSeconds:pre.nowSeconds,preEvent:pre,
       preEventDraws:[...samples],activeOrder:[...hash.nowOrder],eventOrder:[...hash.eventOrder],
       nowOrder:[...finalHash.nowOrder],eventDrawRanges:event.randomDrawRanges,eventSamples:event.consumedSamples,
-      eventLogs:event.logs,eventState:period.eventState,shop:event.shop});
-    cursor={...cursor,shops:[event.shop],market:pre.market,period,nowSeconds:pre.nowSeconds};hash=finalHash;
+      eventLogs:event.logs,eventState:period.eventState,shop:event.shop,
+      ...(normalCommerce!==null?{happyEffects:event.happyEffects,instantEffects:event.instantEffects}: {})});
+    cursor={...cursor,shops:event.shop===null?[]:[event.shop],market:pre.market,period,nowSeconds:pre.nowSeconds};hash=finalHash;
   }
-  if(cursor.nowSeconds!==plan.nowAfter||Boolean(settlement)!==plan.crossesSettlement)fail('complete crossing command required');
+  if(cursor.nowSeconds!==plan.nowAfter||Boolean(settlement)!==(plan.crossesSettlement&&world.shops.length===1))fail('complete crossing command required');
   const result=Object.freeze({source:R4_CROSS_PERIOD_CANDIDATE,committable:false,worldStateWritten:false,
     shops:cursor.shops,market:cursor.market,period:cursor.period,nowSeconds:cursor.nowSeconds,
     evidence:{drawPolicy:tape.policy,hashPolicy:hash.policy,seed:hash.seed,interpreter:hash.interpreter,
       dataReadOrder:initialHash.initialOrder,plusSeconds:overlay.plusSeconds,drawsUsed:used,slices}});
-  lineage.set(result,{world:structuredClone({...cursor,revision:world.revision+1}),street,reviewedR4,reviewedDataRead,reviewedHash,reviewedEvents,reviewedPeriod,expectedInterpreter:hash.interpreter});
+  lineage.set(result,{world:structuredClone({...cursor,revision:world.revision+1}),street,reviewedR4,reviewedDataRead,reviewedHash,reviewedEvents,reviewedPeriod,expectedInterpreter:hash.interpreter,r4CloseReview,
+    sessionFileNames:closeEnabled?[...(settlement?.actualCloseEffect?.remainingSessions??sessionFileNames)]:null});
   return result;
 }

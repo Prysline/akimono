@@ -2,6 +2,7 @@
  * Explicit isolated source fixture, not a production logging/commit API.
  */
 import {createHash} from 'node:crypto';
+import {isR4IndependentCloseReview} from './original-r4-independent-close-candidate.mjs';
 import {readFile,writeFile,lstat,realpath,rename} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -32,20 +33,36 @@ function row(time,mode,id,msg,armyConflictLog=false){
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
  * identity fixtures as the original probe, not real localization/currency.
  */
-export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false}){
+export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false,r4CloseReview=null,localizedRanking=false}){
   check(reviewed);
   if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
-     (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||result.actualCloseEffect||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
+     (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||(result.actualCloseEffect&&(!isR4IndependentCloseReview(r4CloseReview)||result.shop!==null||result.actualCloseEffect.closed!==true))||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
+  if(typeof localizedRanking!=='boolean'||localizedRanking&&!independentPeriod)fail('independent ranking locale only');
   const count=shop.rankingcount+1,p=result.prize,head='本次優勝';
+  // Core locale/zh_TW.po a512f6887cee214e66828769a382ad2b18bcd5b3.
+  // The translated winner message deliberately omits %2 (win count).
+  // Only normal independent ranking announcements use this locale; B50
+  // identity-locale differential and city/army logs stay intact.
+  const winner=localizedRanking?'「本次的優勝店鋪為'+shop.shopname+'。」':'「今期の優勝店は'+shop.shopname+'さんでした。'+(count===1?'初優勝':count+'度目の優勝')+'おめでとうございます」';
+  const points=localizedRanking?'「點數為'+result.pointsBefore+'點」':'「点数は'+result.pointsBefore+'点でした」';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
   const calls=[
-    [1,0,'「今期の優勝店は'+shop.shopname+'さんでした。'+(count===1?'初優勝':count+'度目の優勝')+'おめでとうございます」'],
-    [1,0,'「点数は'+result.pointsBefore+'点でした」'],
+    [1,0,winner],
+    [1,0,points],
     [2,0,head+shop.shopname+'收到'+(p.index<5?'禮物卷':p.index===5?'機器人':'慶祝用品')],
     [0,shop.id,head+'作為'+p.itemName+'的獎品，獲得'+p.wanted+scale],
   ];
   if(p.discarded)calls.push([0,shop.id,'但是由於超過了最大持有數量，'+p.discarded+scale+'被丟棄了']);
-  if(result.actualCloseEffect)calls.push([1,0,shop.shopname+'が経営者不在のため閉店しました。']);
+  if(result.actualCloseEffect){
+    const expiry=result.shopExpiry,call=expiry?.closeCalls?.[0],announcement=expiry?.logs?.[0];
+    const suffix=call?.reason==='沒有上線'?'因為沒有上線所以店鋪被關閉了。':
+      call?.reason==='経営者不在'?'が経営者不在のため閉店しました。':null;
+    if(expiry?.expiredOwner!==true||expiry.closeCalls.length!==1||expiry.logs?.length!==1||
+      call.shopId!==shop.id||suffix===null||!Array.isArray(announcement)||announcement.length!==3||
+      announcement[0]!==1||announcement[1]!==0||announcement[2]!==shop.shopname+suffix||
+      result.actualCloseEffect.archived.split('\n')[0]!==call.reason)fail('source closure locale identity');
+    calls.push(announcement);
+  }
   calls.push(...(result.dragonLogs??[]));
   if(town.army+town.robina<10000)calls.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
   if(town.money+(independentPeriod?shop.taxtoday:0)-result.town.out<0)calls.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
@@ -83,14 +100,15 @@ export function projectReviewedEventLogRows({reviewed,logs,nowSeconds}){
     return row(nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]);
   }).reverse();
 }
-export function projectCrossPeriodLogRows({reviewed,candidate}){
+export function projectCrossPeriodLogRows({reviewed,candidate,r4CloseReview=null,localizedRanking=false}){
   check(reviewed);
   if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
   const calls=[];
   for(const slice of candidate.evidence.slices){
     if(slice.dateupdate===1){
       const {periodLogInput,settlement}=slice.preEvent;
-      calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true}));
+      if(settlement!==null)calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true,r4CloseReview,localizedRanking}));
+      else if(!isR4IndependentCloseReview(r4CloseReview)||slice.preEvent.shops.length!==0||slice.preEvent.receipt.periodDraws!==0)fail('unreviewed skipped settlement');
     }
     for(const call of slice.eventLogs){
       if(!Array.isArray(call)||![3,4,5].includes(call.length))fail('unreviewed EVENT log call');
@@ -118,6 +136,37 @@ export function projectReviewedArmyConflictLogRows({reviewed,candidate,nowSecond
   return logs.map(call=>{
     if(!Array.isArray(call)||call.length!==3||call[0]!==mode||call[1]!==0)
       fail('original conflict log mode');
+    return row(nowSeconds,...call,true);
+  }).reverse();
+}
+
+/** Full-commerce-only review of actual item::WriteLog (three arguments),
+ * distinct from main::WriteLog's older four-argument compatibility wrapper.
+ * The frozen item helper delegates to PushLog with the same mode/id/msg.
+ */
+const commerceLogReviews=new WeakSet();
+export function reviewCommerceUseLogs({helperSource,logSource,configSource}){
+  for(const [s,sha] of [[helperSource,'bb0244748088be0c5f1d24de7f9f7f05225278cb'],[logSource,pins.log],[configSource,pins.config]]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source commerce log drift');
+  }
+  if(!helperSource.includes('main::PushLog($_[0],$_[1],$_[2]);')||
+     !logSource.includes('unshift(@LOG,"$NOW_TIME\\t$mode\\t$id\\t$msg\\n");'))fail('source commerce WriteLog/PushLog bridge');
+  const r=Object.freeze({source:'r4-frozen-item-writelog-three-argument.v1',moneyPrefix:'\\',moneySuffix:''});
+  commerceLogReviews.add(r);return r;
+}
+export function projectReviewedCommerceUseLogRows({reviewed,rule,command,receipt,nowSeconds}){
+  if(!commerceLogReviews.has(reviewed)||command?.kind!=='use-item'||command.shopId!==1||
+     rule?.supported!==true||rule.itemId!==command.itemId||rule.useId!==command.useId||
+     receipt?.action!=='use-item'||receipt.shopId!==command.shopId||
+     receipt.itemId!==command.itemId||receipt.useId!==command.useId||receipt.source!==rule.source||
+     !receipt.callbackOrder?.includes('source-inline-callback'))fail('reviewed commerce callback log identity');
+  const kinds=['book-work','showcase-resize','career-change','milk-cow','drink-milk','party-popularity',
+    'advertise-self','advertise-no-guild','local-self-advertise-other','local-self-rumor','local-self-theft','local-self-industry-rumor'];
+  const calls=receipt.originalInlineLogCalls;
+  if(!kinds.includes(rule.inlineCallback?.kind)||!Array.isArray(calls)||calls.length>79)fail('reviewed commerce callback log shape');
+  return calls.map(call=>{
+    if(!Array.isArray(call)||call.length!==3||![0,2,3].includes(call[0])||
+      call[1]!== (call[0]===0?command.shopId:0))fail('reviewed commerce callback log target');
     return row(nowSeconds,...call,true);
   }).reverse();
 }
