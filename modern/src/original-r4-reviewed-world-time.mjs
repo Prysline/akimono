@@ -140,6 +140,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       return disk.finalize({before,command,applied});
     }}:{}),
     validateReviewedWorldTimeState:validate,
+    ...(disk?{readReviewedLifecycleHeader(world){
+      validate(world);requireProvenance(world);
+      return disk.readLifecycleHeader(world);
+    }}:{}),
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
       if(!isReviewedHistoryCheckpointStore(checkpointStore)||proof.anchor!==encodeMemorySnapshot(world))fail('authenticated checkpoint anchor required');
       checkpointStore.verifyChain(proof,generation);validate(world);remember(world);

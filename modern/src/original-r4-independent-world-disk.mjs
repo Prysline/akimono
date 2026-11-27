@@ -123,6 +123,14 @@ export function createIndependentDiskProjection({sources,sort,street}){
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+  // Internal source header read: use the same exact world/disk validation,
+  // never trust a header supplied by a player or create another allocator.
+  function readLifecycleHeader(world){
+    validate(world);
+    if(!world.period.disk)fail('initialized source disk required');
+    const {lasttime,nextid,blockip}=parsePeriodPlay({...codec,bytes:world.period.disk.live['play.cgi'].bytes});
+    return Object.freeze({lasttime,nextid,blockip});
+  }
+  return Object.freeze({validate,finalize,readLifecycleHeader,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }

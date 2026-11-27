@@ -1,6 +1,9 @@
 // LC-D1 preflight only: no session issuer, game mutation, CAS or publication.
 import {validateMemoryWorld,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
 import {reviewShopLifecycleSources,projectShopLifecycleSource} from './original-r4-shop-lifecycle-source.mjs';
+import {reviewR4LifecycleHeader,projectR4LifecycleHeader} from './original-r4-lifecycle-header.mjs';
+import {reviewR4RestartState,projectR4RestartState} from './original-r4-restart-shop-state.mjs';
+import {reviewR4VoluntaryCloseState,projectR4VoluntaryCloseState} from './original-r4-voluntary-close-state.mjs';
 
 const confirmations=Object.freeze({'restart-shop':'restart','close-shop':'closeshop'});
 const refuse=reason=>{throw new RangeError('LC-D1 preflight: '+reason);};
@@ -102,5 +105,35 @@ export function createLifecycleSourcePlanner({readWorld,resolveAuthenticatedActo
     const effect=projectShopLifecycleSource({review,snapshot:sourceSnapshot,
       actorRef,command,expectedRevision,now,subdataNames:names});
     return deepFreeze({prepared,effect,committable:false,worldStateWritten:false});
+  });
+}
+
+
+/** Internal LC-D1/D2 composition, using the same authenticated snapshot and
+ * trusted independent-disk header reader. No publication/CAS authority.
+ * The caller must keep this private: the close effect includes archive bytes.
+ * Existing source planner and default ID1 behavior remain unchanged.
+ */
+export function createLifecycleStatePlanner({readWorld,resolveAuthenticatedActor,readReviewedLifecycleHeader,
+    readSubdataNames,readArchiveContext,sources,expectedInterpreter=null,stableSingleSource=false}={}){
+  if([readReviewedLifecycleHeader,readSubdataNames,readArchiveContext].some(fn=>typeof fn!=='function')||
+     typeof stableSingleSource!=='boolean')refuse('trusted disk, scoped subdata and archive context readers required');
+  const sourceTexts=sources?.sourceTexts;
+  const headerReview=reviewR4LifecycleHeader({read:sourceTexts?.core,write:sourceTexts?.writer,register:sources?.newSource,membership:sourceTexts?.membership});
+  const restart=reviewR4RestartState({sourceTexts,detailSource:sources.detailSource},{stableSingleSource});
+  const close=reviewR4VoluntaryCloseState(sources,{stableSingleSource});
+  return createLifecyclePreparation({readWorld,resolveAuthenticatedActor},({prepared,current,shop})=>{
+    const {actorRef,command,expectedRevision,now}=prepared;
+    if(current.shops.length!==1)refuse('reviewed single active shop required');
+    const header=readReviewedLifecycleHeader(current);
+    const headerEffect=projectR4LifecycleHeader({reviewed:headerReview,header,shops:current.shops,
+      nowSeconds:now,operation:command.kind,actorId:shop.id});
+    const names=readSubdataNames(actorRef);
+    const input={world:current,actorRef,expectedRevision,confirmation:command.confirmation,subdataNames:names};
+    const effect=command.kind==='restart-shop'?projectR4RestartState({...input,reviewed:restart}):
+      projectR4VoluntaryCloseState({...input,reviewed:close,archiveContext:readArchiveContext(actorRef),expectedInterpreter});
+    if(command.kind==='close-shop'&&headerEffect.canonicalReloadHeader.blockip!==effect.blockIpEffect.value)
+      refuse('source header and close block IP differ');
+    return deepFreeze({prepared,headerEffect,effect,committable:false,worldStateWritten:false});
   });
 }
