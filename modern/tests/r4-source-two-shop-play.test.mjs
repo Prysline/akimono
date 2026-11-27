@@ -69,7 +69,16 @@ test('R4 stable single-store cross-period wire preserves source ID100, canonical
     const before=structuredClone(c.input);
     // Original registration writes allocated ID; modern canonical wire uses
     // the effective allocator after DataRead, as independently proved in D38.
-    const world={...c.input,nextid:101,wholesaleCsv:rows[2]};
+    // DataRead uses Perl split, so the second JSON observation contains
+    // decimal strings rather than the JS runtime's canonical numeric stock.
+    // Normalize only the oracle boundary, not the production sparse guard.
+    assert.equal(c.input.wholesale.length,79);
+    const wholesale=c.input.wholesale.map((v,i)=>{
+      assert.match(String(v),/^(0|[1-9]\d*)$/,'source wholesale cell '+(i+1));
+      const n=Number(v);assert.ok(Number.isSafeInteger(n));return n;
+    });
+    assert.equal(wholesale[9],7);assert.equal(wholesale[78],2);
+    const world={...c.input,nextid:101,wholesale,wholesaleCsv:rows[2]};
     const header=rows[1].split(',');header[1]='101';rows[1]=header.join(',');
     const canonical=rows.join('\n');
     assert.equal(write(world),canonical);
@@ -77,6 +86,11 @@ test('R4 stable single-store cross-period wire preserves source ID100, canonical
     assert.equal(loaded.shops[0].id,100);assert.equal(loaded.shops[0].showcasecount,2);
     assert.equal(loaded.nextid,101);assert.equal(loaded.blockip,'192.0.2.6');
     assert.equal(write(loaded),canonical);
+    assert.deepEqual(loaded.wholesale,wholesale);
+    const wrongStock=[...wholesale];wrongStock[9]++;
+    assert.throws(()=>write({...world,wholesale:wrongStock}),/sparse wholesale numeric view mismatch/);
+    const stringStock=wholesale.map(String);
+    assert.throws(()=>write({...world,wholesale:stringStock}),/sparse wholesale numeric view mismatch/);
     assert.deepEqual(c.input,before);
     assert.throws(()=>serializePeriodPlay({reviewed:legacy,townReview,world}),/unreviewed B50 shop/);
     assert.throws(()=>parsePeriodPlay({reviewed:legacy,townReview,bytes:canonical}),/unreviewed B50 shop/);

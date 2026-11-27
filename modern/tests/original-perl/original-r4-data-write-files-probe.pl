@@ -162,6 +162,7 @@ if($stable_single){
   %name2idx=(alice=>0,($two_active?'bob':'closed')=>1);
 }
 @DTwholestore=(0)x79;
+if($stable_single){$DTwholestore[9]=7;$DTwholestore[78]=2;}
 %DTevent=();
 $STATE={map{($_,0)}@STATEnamelist};
 my @cases;
