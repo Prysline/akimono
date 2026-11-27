@@ -39,3 +39,6 @@ D50 tree 無 PNG/GIF/JPG/WebP 遊戲素材；index.html portrait-placeholder 是
 
 F1 來源已核對（限展示架連結）；前端候選；受控 CI 待驗；沿用既有 API（未新增）；瀏覽器、整合回歸、D 收錄、C 驗證、正式玩家驗收均待。尚需 F2 共用提交鎖與拒絕提示；續作來源對照、A/B UI 選擇性整合、待接線頁面與素材。
 容器 git DNS 無法解析 GitHub；Node22/Perl5.40 可用但未有完整 repo；GitHub connector 可讀寫，CI 為完整驗證。無法核對使用者本機 worktree；不宣稱本機全測。
+
+## F2 — 共用提交與錯誤呈現（候選）
+D50 app.js 原 call 未限制同時 POST，reset 另有獨立 handler；初次 GET 可和操作競跑，catch 亦將已提交但畫面失敗當普通失敗。F2 增加全頁 single-flight（含 reset）、初次讀取防競跑、revision conflict 明示重新確認、斷線/JSON 未確認結果不誤判已拒絕、不自動重試、已確認提交但畫面失敗另提示。沿用全部原請求欄位、CAS、state 及確認 reset；不修改後端權限、不創建新儲存。新增受控函式測試：並發、初讀、stale、斷線、render failure，reset wiring。此為前端保護，不代表 server transaction 成功率或正式玩家驗收。F1 run46061544570 最後查詢 in_progress；F2 CI 待查。

@@ -2,6 +2,7 @@ import {sourcePage,sourcePageNumbers} from '/news-query.js';
 const $=id=>document.getElementById(id);
 const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
+let mutationPending=false,stateLoading=false;
 let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
@@ -664,15 +665,33 @@ function feedback(message,receipt=null,failed=false){
   pre.hidden=!receipt;
   pre.textContent=receipt?JSON.stringify(receipt,null,2):'';
 }
+// A single UI flight is not authorization: every POST still uses server CAS.
+function beginMutation(label){
+  if(mutationPending)return false;
+  if(stateLoading){feedback('正在讀取遊戲狀態，請讀取完成後再操作。');return false;}
+  mutationPending=true;
+  feedback(label+'處理中…');
+  return true;
+}
+function endMutation(){mutationPending=false;}
+function rejectionReason(data){
+  const reason=data.details?.reason??data.error??data.code??'未知原因';
+  const conflict=[data.code,data.error].some(value=>value==='REVISION_CONFLICT'||value==='RESET_CONFLICT');
+  return conflict?reason+'。遊戲狀態已變更，請確認最新畫面後再操作。':reason;
+}
 async function call(path,payload={},label='操作',onSuccess=null){
+  if(!beginMutation(label))return false;
   const before=snapshot;
+  let outcome=null,responseData=null;
   try{
     const res=await fetch(path,{method:'POST',
       headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
     const data=await res.json();
+    responseData=data;
+    outcome=res.ok&&data.ok===true;
     if(data.state)showState(data.state);
-    if(!res.ok||!data.ok){
-      feedback(label+'遭拒絕：'+(data.details?.reason??data.error??data.code??'未知原因'),
+    if(!outcome){
+      feedback(label+'遭拒絕：'+rejectionReason(data),
         {result:data.code??'拒絕',beforeRevision:before?.world?.revision,
          afterRevision:data.state?.world?.revision,
          moneyBefore:before?.shop?.money,moneyAfter:data.state?.shop?.money,
@@ -687,7 +706,12 @@ async function call(path,payload={},label='操作',onSuccess=null){
        paid:[before?.shop?.paytoday??null,after.shop?.paytoday??null]});
     onSuccess?.(data);
     return true;
-  }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
+  }catch(error){
+    if(outcome===true)feedback(label+'已由伺服器確認完成，但畫面更新失敗：'+error.message+'。請重新整理確認狀態。',null,true);
+    else if(outcome===false)feedback(label+'遭拒絕：'+rejectionReason(responseData)+'；畫面更新失敗，請重新整理。',null,true);
+    else feedback(label+'結果未能確認：'+error.message+'。請重新整理確認狀態，勿直接重試。',null,true);
+    return false;
+  }finally{endMutation();}
 }
 $('save-world').addEventListener('click',()=>call('/api/save',{
   expectedRevision:snapshot?.world?.revision,
@@ -695,12 +719,15 @@ $('save-world').addEventListener('click',()=>call('/api/save',{
 },'儲存本機世界'));
 $('load-world').addEventListener('click',()=>call('/api/load',{},'載入本機磁碟世界'));
 $('reset-world').addEventListener('click',async()=>{
+  if(mutationPending||stateLoading)return;
   const before=snapshot;
   if(!before?.world&&!before?.save?.available&&!before?.save?.unreadable)return;
   if(!window.confirm('確定要刪除目前店家及整個測試世界嗎？\n'+
     '兩份本機磁碟存檔也會刪除，無法復原。'))return;
+  if(!beginMutation('重置測試世界'))return;
   const button=$('reset-world');
   button.disabled=true;
+  let outcome=null,responseData=null;
   try{
     const res=await fetch('/api/reset',{method:'POST',
       headers:{'content-type':'application/json'},
@@ -712,9 +739,11 @@ $('reset-world').addEventListener('click',async()=>{
       }),
     });
     const data=await res.json();
+    responseData=data;
+    outcome=res.ok&&data.ok===true;
     if(data.state)showState(data.state);
-    if(!res.ok||!data.ok){
-      feedback('重置遭拒絕：'+(data.error??data.code??'未知原因'),null,true);
+    if(!outcome){
+      feedback('重置遭拒絕：'+rejectionReason(data),null,true);
       return;
     }
     selectedItemId=null;
@@ -728,8 +757,11 @@ $('reset-world').addEventListener('click',async()=>{
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
       ' 份磁碟存檔）。可以重新初始化世界並開店。');
   }catch(error){
-    feedback('重置失敗：'+error.message,null,true);
+    if(outcome===true)feedback('伺服器已確認重置完成，但畫面更新失敗。請重新整理確認狀態。',null,true);
+    else if(outcome===false)feedback('重置遭拒絕：'+rejectionReason(responseData)+'；畫面更新失敗，請重新整理。',null,true);
+    else feedback('重置結果未能確認：'+error.message+'。請重新整理確認狀態，勿直接重試。',null,true);
   }finally{
+    endMutation();
     button.disabled=!snapshot?.world&&!snapshot?.save?.available&&
       !snapshot?.save?.unreadable;
   }
@@ -900,8 +932,11 @@ $('use-action-form').addEventListener('submit',async event=>{
   }
 });
 async function refresh(){
+  stateLoading=true;
   try{const res=await fetch('/api/state',{cache:'no-store'});
+    if(!res.ok)throw Error('HTTP '+res.status);
     showState(await res.json());}
   catch(error){feedback('無法連線至本機 Node 服務：'+error.message,null,true);}
+  finally{stateLoading=false;}
 }
 selectTab(currentTab);refresh();
