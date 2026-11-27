@@ -460,3 +460,9 @@ test('R4 icon form offers separate registration and procedures entries with conc
  assert.match(html,/id="open-icon"/);assert.match(html,/id="owner-icon-select"/);
  assert.match(html,/id="owner-icon-dialog"/);assert.match(html,/id="owner-portrait"/);
 });
+
+test('R4 owner portrait is shared by shop and source balance view',()=>{
+  assert.match(html,/<img id="balance-portrait" width="48" height="48"/);
+  assert.match(html,/id="balance-portrait-placeholder"/);
+  assert.match(script,/portrait\(\$\('balance-portrait'\),\$\('balance-portrait-placeholder'\),shop\?\.icon,shop\?\.name\)/);
+});

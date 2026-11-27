@@ -814,6 +814,7 @@ function showState(s){
   text('shop-sales',money(shop?.saletoday));
   text('balance-name',shop?.shopname??'—');
   text('balance-owner',shop?.name??'—');
+  portrait($('balance-portrait'),$('balance-portrait-placeholder'),shop?.icon,shop?.name);
   text('balance-money',money(shop?.money));
   text('balance-time',actionTime);
   text('balance-popularity',Number.isSafeInteger(shop?.rank)?
