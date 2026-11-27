@@ -28,7 +28,16 @@ test('R4 registration state reuses initializer and canonical next ID against act
   Object.assign(expected,{status:1,point:p.point,showcase:p.showcase.map(Number),price:p.price.map(Number),
     item:p.item.map(Number),itemyesterday:{},itemtoday:{},exp:{},user:{}});
   assert.deepEqual(p.mapSizes,[0,0,0,0]);
-  assert.deepEqual(got.shop,expected);
+  // new.cgi initializes this runtime-only scalar, but DataRead does not persist it.
+  assert.match(sources.register,/\$DT->\{moneystock\}\s*=\s*0\s*;/);
+  const fields=sources.read.match(/@DTindexnamelist=\s*qw\(([\s\S]*?)\)\s*;/)[1].trim().split(/\s+/);
+  assert.equal(fields.length,32);
+  assert.deepEqual(Object.keys(p.scalars).sort(),[...fields].sort());
+  assert.ok(!fields.includes('moneystock'));
+  const {moneystock,...persistedShop}=got.shop;
+  assert.equal(moneystock,0);
+  // Compare every remaining field: do not silently filter unknown extra keys.
+  assert.deepEqual(persistedShop,expected);
   assert.equal(got.shop.id,p.before.nextid);
   assert.ok(got.shop.id>1,'distinct source replacement identity');
   assert.deepEqual(got.headerEffect.canonicalReloadHeader,p.reload);
