@@ -40,7 +40,10 @@ require './calc.cgi';require './pinned-guild.cgi';
 my $ok=do './pinned-gd-s.cgi';die "source handler $@ $!" unless $ok;
 die 'unused draw' if @draws;
 my @removed=sort grep{!-e "$COMMON_DIR/$_.pl"}keys %GUILD;
-print JSON::PP->new->utf8->encode({actor=>$DT,ledgers=>\%GUILD_DATA,drawRanges=>\@ranges,definitionRemoval=>\@removed});
+# ReadGuildData returns textual wire values for fields not touched this turn.
+# Compare decoded numeric ledger semantics, not Perl scalar flags.
+my %decoded=map {my $k=$_;($k=>{map {$_=>0+$GUILD_DATA{$k}{$_}} qw(money in out atk def)})} keys %GUILD_DATA;
+print JSON::PP->new->utf8->encode({actor=>$DT,ledgers=>\%decoded,drawRanges=>\@ranges,definitionRemoval=>\@removed});
 `;
 const oracle=input=>JSON.parse(execFileSync('perl',['-e',perl],{cwd,input:JSON.stringify(input),encoding:'utf8'}));
 const f={actor:{id:1,status:1,shopname:'Shop A',guild:'alpha',money:1000000,paytoday:0,saletoday:0,time:956800,user:{_so_e:1}},street:'street',
