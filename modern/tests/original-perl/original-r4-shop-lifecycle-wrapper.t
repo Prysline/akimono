@@ -25,6 +25,9 @@ our ($DATA_DIR,$TEMP_DIR,$BACKUP_DIR,$FILE_EXT,$DATA_FILE,$COMMIT_FILE,
   $MYDIR,@OtherDir,@NG_SHOP_NAME,$MOBILE,$CHECK_IP,$TZ_JST,$ITEM_DIR,
   @image,$idx,$disp,$TB,$TR,$TD,$TRE,$TBE,$LOG_ERROR_FILE,$LOG_MARK_FILE,$SUBDATA_DIR,$LOG_DELETESHOP_FILE,$ICON_NUMBER,$METHOD,@term,@ITEM,$g_define,$g_item,@errormsg,@dispmsg);
 my %pins=(
+  'pinned-inc-gd.cgi'=>'fc29abc74d79ee282b86a05a5fa56d9ffd35aa2c',
+  'pinned-guildsub.cgi'=>'4dee1edeeedf3b482b8786111e1e5d626095f8d5',
+  'pinned-config.cgi'=>'010e43766c1b78c7572cbc0aded2daf03dc07a1e',
   'pinned-colock.cgi'=>'99ff12db08135879e1a570cef1424f6dd5bec151',
   'pinned-inc-gd-entry.cgi'=>'f28cdcc1778534cbf1c84195df7ab749519be5a6',
   'pinned-army.cgi'=>'cd29bcbfe52bac84794c4c79426bd559d7616d85',
@@ -602,6 +605,73 @@ ok(!auth(name=>'alice',password=>'alpha_pw')->{ok},'retired account password not
 ok(auth(name=>'alice',password=>'beta_pw')->{ok},'replacement account password accepted');
 # Do not assert random regenerated token differs: source token collision is possible.
 # No real credentials are emitted, and no change to modern auth or public policy.
+
+
+# Actual original guild menu/read and period fee slice after lifecycle.
+# Controlled guild membership and sales are fixture input; not player evidence.
+our($GUILDIDX_feerate,$GUILDIDX_dealrate);
+require "$FindBin::Bin/pinned-guildsub.cgi";
+my($readConfig)=$source{'pinned-config.cgi'}=~/(^sub ReadConfig\n\{[\s\S]*?^\}\n)/m;
+die 'missing source ReadConfig' unless defined $readConfig;
+eval "package main; no strict; no warnings; use utf8;\n$readConfig\n1;" or die $@;
+my $feeSlice=block($source{'period.cgi'},"\t\t#ギルド会費","\t\t\$DT->{costyesterday}");
+eval "package main; no strict; no warnings; use utf8;\nsub LifecycleGuildFeeSlice{foreach my \$DT (\@DT){\n$feeSlice\n}}\n1;" or die $@;
+my @menuCalls;
+sub GetMenuTag {push @menuCalls,[@_];return '';}
+sub guild_menu {
+  my($id)=@_;
+  $DT=$DT[$id2idx{$id}];$GUEST_USER=0;@menuCalls=();$disp='';
+  my $ok=do "$FindBin::Bin/pinned-inc-gd.cgi";
+  die($@||$!||'original guild menu failed') unless $ok;
+  return [map {$_->[1]} @menuCalls];
+}
+# Remove opaque test-owned fixture from earlier scenario; not source gameplay.
+unlink "$COMMON_DIR/7.pl" or die $!;
+for my $action(qw(restart cls)){
+  my($leaderToken,$peerId)=two_shop_case();
+  DataRead();
+  for my $id(1,$peerId){$DT[$id2idx{$id}]{guild}='alpha';$DT[$id2idx{$id}]{user}{_so_e}='Title';}
+  Lock();DataWrite();DataCommitOrAbort();UnLock();DataRead();
+  my $roleText="name=Guild Alpha\nshortname=Alpha\nmember=Member\ndealrate=10\nfeerate=50\nleadt=street\nleader=1\nstreet=$peerId\nother=1\n";
+  put_file("$COMMON_DIR/alpha.pl",$roleText);
+  put_file("$DATA_DIR/guildbal.cgi","alpha\tmoney\t20000\tin\t0\tout\t0\tatk\t100\tdef\t100\n");
+  %GUILD=(alpha=>['Alpha',10,50]);$GUILDIDX_name=0;$GUILDIDX_dealrate=1;$GUILDIDX_feerate=2;
+  ok(grep($_ eq '[執務室]',@{guild_menu(1)}),'original active leader sees headquarters menu');
+  delete $INC{"$ITEM_DIR/funcnew.cgi"};
+  my $confirmation=$action eq 'restart'?'restart':'closeshop';
+  like((submit('pinned-membership-user.cgi',$leaderToken,$action,$confirmation))[0],qr/__SOURCE_RENDER__/,"actual guild leader $action");
+  DataRead();
+  ReadGuild('alpha');
+  is($GUILD_DETAIL{alpha}{leader},1,"$action original role config retains former leader ID");
+  is($GUILD_DETAIL{alpha}{leadt},'street',"$action original headquarters street unchanged");
+  is($GUILD_DETAIL{alpha}{street},$peerId,"$action original representative unchanged");
+  is(raw_file("$COMMON_DIR/alpha.pl"),$roleText,"$action exact guild role file preserved");
+  is($DT[$id2idx{$peerId}]{guild},'alpha',"$action peer remains member");
+  my $menu=guild_menu($peerId);
+  ok(grep($_ eq '[人事室]',@$menu),"$action original representative still sees personnel");
+  ok(!grep($_ eq '[執務室]',@$menu),"$action original representative not automatically promoted to leader");
+  if($action eq 'restart'){
+    ok(!$DT[$id2idx{1}]{guild}&&!$DT[$id2idx{1}]{user}{_so_e},'restarted leader lost local membership/title');
+    my $former=guild_menu(1);
+    ok(grep($_ eq '[入団手続]',@$former),'restarted leader sees ordinary join menu');
+    ok(!grep($_ eq '[執務室]',@$former),'retained external role does not grant normal menu without membership');
+    $DT[$id2idx{1}]{saleyesterday}=10000;
+  }else{
+    ok(!exists $id2idx{1},'closed leader absent before later period');
+  }
+  # Invoke only exact per-shop period fee slice on already-reloaded rows.
+  $DT[$id2idx{$peerId}]{saleyesterday}=20000;
+  my $peerCash=$DT[$id2idx{$peerId}]{money};
+  my $formerCash=$action eq 'restart'?$DT[$id2idx{1}]{money}:0;
+  ReadGuildData();LifecycleGuildFeeSlice();
+  is($DT[$id2idx{$peerId}]{money},$peerCash-1000,"$action surviving member pays original 5 percent source fee");
+  is($GUILD_DATA{alpha}{money},21000,"$action only surviving member contributes fee");
+  is($GUILD_DATA{alpha}{in},1000,"$action original fee ledger income");
+  is($GUILD_DATA{alpha}{atk},96,"$action original attack decay once");
+  is($GUILD_DATA{alpha}{def},91,"$action original defense update once");
+  is($DT[$id2idx{1}]{money},$formerCash,'restarted nonmember pays no invented guild fee') if $action eq 'restart';
+  is(raw_file("$COMMON_DIR/alpha.pl"),$roleText,"$action later fee slice does not transfer leadership");
+}
 
 chdir $cwd or die 'restore cwd';
 done_testing();
