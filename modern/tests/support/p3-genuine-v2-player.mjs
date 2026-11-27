@@ -57,7 +57,27 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,marketComm
     const before=state.world;
     const nowSeconds=before.nowSeconds,revision=before.revision;
     const priorPeriods=state.world.period.settledCount,crosses=minutes*60>=boundary();
-    const result=await command('/api/advance-reviewed-time',{minutes});
+    let result;
+    try {
+      result=await command('/api/advance-reviewed-time',{minutes});
+    } catch (error) {
+      // Observation only: preserve the genuine player failure and every
+      // assertion. Never log credentials, world IDs, or raw save records.
+      const summarize=world=>({
+        revision:world.revision,nowSeconds:world.nowSeconds,
+        settledCount:world.period?.settledCount,
+        eventKeys:Object.keys(world.period?.eventState??{}),
+        shops:world.shops.map(s=>Object.fromEntries(
+          ['id','status','showcasecount','showcase','price','item','exp','time',
+           'money','rank','trush','paytoday','costtoday','saletoday','taxtoday',
+           'taxmode'].map(k=>[k,s[k]===undefined?null:s[k]]))),
+      });
+      t.diagnostic('P3 rejected tick '+JSON.stringify({
+        minutes,crossPeriod,marketCommerce,before:summarize(before),
+        after:summarize(state.world),reason:error.message,
+      }));
+      throw error;
+    }
     assert.equal(state.world.nowSeconds,nowSeconds+minutes*60);
     assert.equal(state.world.revision,revision+1);
     assert.equal(state.world.period.settledCount,priorPeriods+(crosses?1:0));
