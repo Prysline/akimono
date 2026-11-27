@@ -175,3 +175,7 @@ A25 exact ab0ed3a79c2e6aded694f0243759c06a2d3b69b4/tree541df3ffd45885708f85362bb
 
 ## D32｜原版小幫手正常本機提示
 A corrected 4b631090e66d4c3580128f4de4de84aa42ebb9b4/tree4ce96bd4d2a8d81e27a0e30be61e58ec313a7b01 exact actual396398bb266f1f00baf212e54d19c6fce78a7c11 run45977137460 JS1575/1575 Perl2778/94 PASS; A25 also PASS. Exact A module 5aaac695c7a863d196fce5328ec17429efe8ba9a and 72-case oracle 3419522e67fd3344ab209b500beb69144f2808d0. D31 existing main pin reused; staged market state and safe text UI, original chapter1 link; no mail authority or fake unread count, no scene assets, no mutation. Add genuine HTTP read/stock/reload assertion; new D CI pending.
+
+
+## D33｜LC-D2 restart canonical state projection
+Reuse B actual lifecycle reviewer/projector + D original solo SortDT; derive 32 scalar schema from pinned readSource; preserve only 5 source identity fields, project compiled FUNCNEW, normalize source blank numeric fields and sparse arrays to existing dense D numeric representation. Explicitly not raw wire equality; no replacement of new.cgi defaults, no reset, no clock/market/peer mutation or CAS. D one active shop ID1 current constraint. Added conditional ASCII synthetic TAP note to existing actual Perl handler/compile/write/read oracle, no assertion removed; new test compares all 32 scalar and seven section semantics and source point, identity/scope/rejection. D33 CI pending; internal projection can contain existing private shop fields, never public API. Formal session, archive/subdata/registration publication/history remain pending.

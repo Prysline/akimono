@@ -275,6 +275,13 @@ for my $age(10799,10800,10801){
   like($err,qr/__SOURCE_RENDER__/,"actual raw restart handler accepted $age");
   is($renewSnapshots[0]{time},$NOW_TIME-43200,'compiled callback sets time before DataWrite');
   DataRead();my $s=$DT[$id2idx{1}];
+  if($age==10801 && $ENV{AKIMONO_D_RESTART_WIRE_ORACLE}){
+    # ASCII TAP note, only synthetic test fixture; not a production export.
+    note('D_RESTART_WIRE '.JSON::PP->new->ascii->canonical->encode({
+      before=>decode_utf8($before),after=>decode_utf8(raw_file("$DATA_DIR/play.cgi")),
+      point=>0+$s->{point},now=>0+$NOW_TIME,
+    }));
+  }
   is($s->{money},100000,'actual source restart money');
   is($s->{rank},5010,'actual source restart rank');
   is($s->{point},5010,'actual reread point');
