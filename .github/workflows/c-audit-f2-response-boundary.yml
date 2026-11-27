@@ -1,0 +1,93 @@
+name: C audit - F2 mutation response boundary
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  f2-response-envelope:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'bcd058b4cdd38f98da8b3e82addbc4387171e1c6'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact F2 candidate and execute unchanged test
+        id: original
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = 'bcd058b4cdd38f98da8b3e82addbc4387171e1c6'
+          test "$(git rev-parse 'HEAD^{tree}')" = '94306e3fe3bd4e90520f7ffce0391679e4329b47'
+          test "$(git hash-object modern/local-ui/app.js)" = '437da0a4bf101aba68068d45d8285bd8c10729df'
+          test "$(git hash-object modern/tests/f2-ui-mutation.test.mjs)" = '068474829aacba67273999a2bd03bb461b0039b3'
+          test "$(git hash-object modern/scripts/dev-local.mjs)" = '4cd9936436e7e46708bbe747384026f0b6bf4655'
+          test -z "$(git status --porcelain)"
+          node --test modern/tests/f2-ui-mutation.test.mjs
+      - name: Strict independent synthetic response envelope repro
+        if: ${{ steps.original.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c68-f2"; mkdir -p "$out"
+          cat >"$out/strict.mjs" <<'NODE'
+          import test from 'node:test';
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const script=readFileSync('modern/local-ui/app.js','utf8');
+          const start='function beginMutation(';
+          const end="$('save-world').addEventListener";
+          assert.equal(script.split(start).length,2);
+          assert.equal(script.split(end).length,2);
+          const logic=script.slice(script.indexOf(start),script.indexOf(end));
+          const harness=new Function('fetch',logic+`
+            let mutationPending=false,stateLoading=false,snapshot={world:{revision:1},shop:{money:100}};
+            const notices=[];const feedback=(...args)=>notices.push(args);
+            const showState=data=>{snapshot=data;};
+            return {call,notices,read:()=>snapshot};
+          `);
+          const invoke=async(status,body)=>{
+            let requests=0;
+            const h=harness(async()=>{requests++;return {status,ok:status>=200&&status<300,json:async()=>body};});
+            const returned=await h.call('/api/buy',{expectedRevision:1},'購買');
+            const actual={requests,returned,message:h.notices.at(-1)[0],revision:h.read().world.revision};
+            console.log('C68_F2 '+JSON.stringify({status,body,...actual}));
+            assert.equal(actual.requests,1);
+            assert.equal(actual.returned,false);
+            return actual;
+          };
+          test('control: explicit revision conflict renders actual new state',async()=>{
+            const a=await invoke(409,{ok:false,code:'REVISION_CONFLICT',state:{world:{revision:2},shop:{money:80}}});
+            assert.equal(a.revision,2);
+            assert.match(a.message,/遭拒絕.*REVISION_CONFLICT.*確認最新畫面/);
+          });
+          for(const [label,status,body] of [['gateway JSON',502,{error:'Bad Gateway'}],['missing outcome',200,{}],['missing commit state',200,{ok:true}]]){
+            test('unconfirmed response: '+label,async()=>{
+              const a=await invoke(status,body);
+              assert.equal(a.revision,1);
+              assert.match(a.message,/結果未能確認.*勿直接重試/);
+              assert.doesNotMatch(a.message,/遭拒絕|已由伺服器確認完成/);
+            });
+          }
+          NODE
+          node --check "$out/strict.mjs"
+          set +e
+          node --test "$out/strict.mjs" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          cat "$out/observation.log"
+          printf '%s\n' "$status" >"$out/exit.txt"
+          test "$(git hash-object modern/local-ui/app.js)" = '437da0a4bf101aba68068d45d8285bd8c10729df'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c68-f2-response-envelope
+          path: ${{ runner.temp }}/c68-f2/
+          if-no-files-found: warn
+          retention-days: 30
