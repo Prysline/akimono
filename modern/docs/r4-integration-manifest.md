@@ -157,3 +157,9 @@ D25 preflight 原契約保持不變；新增 createLifecycleSourcePlanner，使�
 
 ## D28｜LC-D2 自主閉店 native hash 前置閉包
 既有 D6 close archive hash helper 僅支援 minutes 1..60 的自然售賣 mutation replay；自主閉店不能偽造時間/售賣。抽出共用 native map join/verification（舊 R4_CLOSE_HASH_POLICY/seed/guard 不改），新增獨立 voluntary-close domain：server worldId/streetId/revision/nowSeconds/shopId，現有 canonical numeric DataRead maps、無 sales、同 native Perl interpreter fingerprint。單店 active shop、空 user map 既有限制保留；不宣稱多店或任意 AutoVar wire。新增真 pinned DataRead/CloseShop join differential、replay、身分/多店/未審 user 拒絕，原自然售賣 tests 全保留。新 source policy 只是 replay 決定性，不是歷史 Perl seed 或 gameplay 調整。尚未接 archive publication、session、正式 CAS/HTTP；不接受玩家提供 permutation，不解除 v2 layout guard。D28 CI 待證。
+
+
+## D29 — Original library (2026-11-27)
+- Imported A's exact source projection blob `e082192f6406044d4c6b0ebbe3de240233949349` from A corrected candidate `4b631090e66d4c3580128f4de4de84aa42ebb9b4` (A CI run 45977137460, JS 1575/1575, Perl 2778/2778; original library oracle and HTTP tests passed). Frozen `custom/library.cgi` remains `b2f6bd867fb87fd3bd7153b0fdb173de97726e76`.
+- Ported the eight chapters, original order/text, read-only GET with strict single chapter parameter, UI navigation and safe text rendering. Historical multiplayer content remains explicitly informational. No world mutation, gameplay authorization or save authority change.
+- Preserved A's corrected source oracle and HTTP/reload test; adapted only player helper configuration to D's marketCommerce gate and exposed an HTTP GET helper. Added original UI layout assertions. D CI pending; A success is not D integration proof.

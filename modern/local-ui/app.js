@@ -34,7 +34,7 @@ const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
 const tabNames={shop:'店內',stock:'倉庫',market:'市場',
-  balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
+  balance:'收支',library:'圖書館',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
   $('status-summary').hidden=!snapshot?.shop||
@@ -74,7 +74,8 @@ function updateNavigation(){
 function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
-  currentGroup=name==='market'?'trade':'self';
+  currentGroup=name==='market'?'trade':name==='library'?'info':'self';
+  if(name==='library')void renderLibrary();
   updateNavigation();
 }
 function selectGroup(name){
@@ -89,6 +90,37 @@ tabs.forEach(tab=>tab.addEventListener('click',()=>selectTab(tab.dataset.tab)));
 groups.forEach(group=>group.addEventListener('click',
   ()=>selectGroup(group.dataset.group)));
 function text(id,value){$(id).textContent=String(value);}
+let libraryRequest=0;
+async function renderLibrary(id=null){
+  const request=++libraryRequest;
+  $('library-list').replaceChildren();
+  $('library-chapter').hidden=true;
+  text('library-status','讀取原版說明…');
+  try{
+    const response=await fetch('/api/library'+(id===null?'':'?t='+id),{cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error??'讀取失敗');
+    if(request!==libraryRequest)return;
+    text('library-status','');
+    if(id===null){
+      for(const chapter of data.chapters){
+        const button=document.createElement('button');
+        button.type='button';button.className='text-link';button.textContent='● '+chapter.title;
+        button.addEventListener('click',()=>void renderLibrary(chapter.id));
+        $('library-list').append(button);
+      }
+    }else{
+      text('library-title',data.chapter.title);
+      const body=$('library-body');body.replaceChildren();
+      for(const part of data.chapter.parts){
+        const node=document.createElement(part.heading?'strong':'span');
+        node.textContent=part.text;body.append(node);
+      }
+      $('library-chapter').hidden=false;
+    }
+  }catch(error){if(request===libraryRequest)text('library-status','無法讀取圖書館：'+error.message);}
+}
+$('library-back').addEventListener('click',()=>void renderLibrary());
 const toggle=$('dev-toggle');
 toggle.addEventListener('click',()=>{
   const enabled=document.body.classList.toggle('dev-mode');

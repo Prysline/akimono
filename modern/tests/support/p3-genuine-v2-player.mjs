@@ -39,6 +39,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,marketComm
     }),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('player startup timeout '+stderr)),15000);})]).finally(()=>clearTimeout(timer));
     state=await(await fetch(url+'/api/state')).json();
   }
+  async function request(route){return (await fetch(url+route)).json();}
   async function post(route,body={}){
     const response=await fetch(url+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const result={status:response.status,...await response.json()};
@@ -239,5 +240,5 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,marketComm
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
   assert.equal(Boolean(state.reviewedMarketCommerce),marketCommerce);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post};
+  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post,request};
 }

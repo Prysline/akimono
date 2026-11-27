@@ -38,7 +38,7 @@
         <span class="subgroup" data-subgroup="info" hidden>
           <button type="button" disabled>［風景］</button>
           <button type="button" disabled>［新聞］</button>
-          <button type="button" disabled>［圖書館］</button>
+          <button type="button" data-tab="library">［圖書館］</button>
         </span>
         <span class="subgroup" data-subgroup="facility" hidden>
           <button type="button" disabled>［領主邸］</button>
@@ -298,6 +298,18 @@
         <tr><th scope="row">前期營業額</th><td id="balance-prev-sales">—</td><th scope="row">前期支出</th><td id="balance-prev-paid">—</td></tr>
       </tbody></table>
       <p class="muted" id="balance-note">其他店舖資訊尚未開放。</p>
+    </section>
+
+    <section id="tab-library" class="section pane" hidden>
+      <h2 class="section-title">圖書館</h2>
+      <p class="muted">原版說明原文；內含尚未開放的多人功能及歷史遊戲規則，不代表目前版本已支援。</p>
+      <p id="library-status" role="status"></p>
+      <div id="library-list"></div>
+      <article id="library-chapter" hidden>
+        <button type="button" class="text-link" id="library-back">［返回項目一覽］</button>
+        <h3 id="library-title"></h3>
+        <div id="library-body"></div>
+      </article>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>

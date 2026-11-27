@@ -19,6 +19,7 @@ import {isReviewedOrdinaryCommand} from '../src/reviewed-ordinary-command-policy
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
+import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
@@ -44,6 +45,7 @@ const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
+const reviewedLibrary=reviewOriginalLibrary(await readPinnedSource('custom/library.cgi'));
 const [
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -345,6 +347,14 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 async function api(req,res,url){
+  if(url.pathname==='/api/library'){
+    if(req.method!=='GET')return send(res,405,{ok:false,error:'圖書館為唯讀'});
+    const entries=[...url.searchParams];
+    if(entries.length===0)return send(res,200,describeOriginalLibrary(reviewedLibrary));
+    if(entries.length!==1||entries[0][0]!=='t'||!/^[0-7]$/.test(entries[0][1]))
+      return send(res,400,{ok:false,error:'圖書館項目不存在'});
+    return send(res,200,describeOriginalLibrary(reviewedLibrary,Number(entries[0][1])));
+  }
   if(req.method==='GET'&&url.pathname==='/api/state'){
     return send(res,200,state());
   }
