@@ -42,6 +42,7 @@ function syncStatusVisibility(){
     currentTab==='shop'||currentTab==='balance';
 }
 function updateNavigation(){
+  $('market-result-actions').hidden=true;
   for(const group of groups){
     const selected=group.dataset.group===currentGroup;
     group.classList.toggle('selected',selected);
@@ -691,7 +692,14 @@ function showState(s){
   if(currentTab==='use')renderUseDetail(s);
   syncStatusVisibility();
 }
+function showMarketResultActions(data){
+  // buy-s.cgi offers stock / continue shopping only after a committed purchase.
+  if(data?.ok===true&&data.state?.shop&&currentTab==='market'){
+    $('market-result-actions').hidden=false;
+  }
+}
 function feedback(message,receipt=null,failed=false){
+  $('market-result-actions').hidden=true;
   text('feedback',message);
   const panel=document.querySelector('.feedback');panel.classList.toggle('error',failed);
   const pre=$('receipt');
@@ -939,7 +947,7 @@ $('market-offers').addEventListener('click',event=>{
     expectedRevision:snapshot.world.revision,itemId,
     requestedCount:requested,
     marketShelf:offer.shelf,expectedPrice:offer.price,
-  },'來源市場進貨 #'+itemId+' '+offer.name);
+  },'來源市場進貨 #'+itemId+' '+offer.name,showMarketResultActions);
 });
 $('use-count-presets').addEventListener('change',()=>{
   $('use-count').value='';

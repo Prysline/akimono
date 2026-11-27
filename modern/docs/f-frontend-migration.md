@@ -45,3 +45,7 @@ D50 app.js 原 call 未限制同時 POST，reset 另有獨立 handler；初次 G
 
 ## F3 — 原版丟棄／解雇表單（限 D50 bounded discard contract）
 實讀 D50 core-item-detail.cgi 及 A39 pinned core-inc-item-throw.cgi 714e623b9fd1f40ce7c51b89503d2a801330f1bb：t/notrash 禁止表單、h/human 解雇、1/10/100/1000/10000/全部或全員及零預設。前端依 server catalog/owned 呈現選項；不自行改庫存、金錢、垃圾或批發。維持 D50 POST discard {expectedRevision,itemId,count} 及 count<=owned，沒有模擬原版超量裁切、垃圾、批發、log 或 lastlogin。A 已有完整 source runtime/quote，D 尚未接，整合後應採 D projection 而非平行權威。新增原版 Perl 頁面選項差分與 t/h 呈現測試；CI 待驗。F1/2 受控實跑結果見 PR28 留言；非完整 Node/HTTP/browser。
+
+## F4 — 市場進貨成功的後續入口（候選）
+實讀 pinned buy-s.cgi 6ba8df9a733ed16c490389414cd94934fe1185ca，DataCommitOrAbort 後原版市場回 stock 或 shop-m（其他商店是 shop-a，尚未接線）。F4 在既有回饋區補前往倉庫／繼續進貨，僅 /api/buy 成功且 state 已呈現、玩家仍在市場時可見；拒絕、未確認或新操作／離開頁面不留舊連結。不改 API、回饋收據或交易權威。測試來源 pin 與顯示/導航契約，瀏覽器待驗。
+F3 原版 Perl pin 在本機 git hash-object 核對，18/18 stock × human 差分與遠端 JS V8 投影一致；不代表 HTTP runtime 完成。
