@@ -276,3 +276,22 @@ D54 raw CI reconfirmed JS1457/1458 fail0 skip1 (P4 bounded natural cow death not
 
 ## D56｜LC-D1 private account generation candidate in the existing B-43 store
 Opt-in trusted accountMode on existing two-slot local-world-save-store, no second account file/store. Same generation binds canonical active credential set, exact world, history proof, source fingerprint/interpreter/hash/draw policy under distinct account HMAC domain using existing checkpoint key; fresh as well as checkpoint envelopes require MAC. Same-revision private changes rejected, source replay and existing disk stage/verify remain required, wrong mode never imports or resets recognizable other-mode slots. Private loader returns only world+ownerCredentials to committed reader; ordinary load/status/save receipts remain credential-free; 0600 slots/private directory, existing old v2/default envelope behavior retained; account-mode reset disabled. No key creation during account preflight; lost key, runtime drift, wrong mode refuse overwrite; no old-v2 migration or archive guard unlock. Two new tests exercise real two-slot fsync/rename and HMAC with controlled two-world replay oracle and synthetic credentials from actual pinned codec, not production account replay. Includes prewrite disk stage failure, stale generation, same revision, stale name, checksum-correct forged verifier recovery, restart, legacy/reset/key/fingerprint rejection. Post-rename fsync/readback ambiguity and in-memory CAS + account command replay integration still require formal publisher; do not claim end-to-end rollback or enable account mode in dev-local. D55 CI 46130202324 in progress at construction; D56 full CI pending. No formal player acceptance, no source/UI or other-branch changes. Local Git DNS remains unavailable; local Perl source-condition probe 8/8 (registration/repass predicates and exact CheckPassword body, not full handler), no full Node/Perl checkout run.
+
+
+### D57 — A42 demand-core and A33 rename source intake
+
+- A43 `f365dc7222774b54235976901f94ab2ce9059d9f` is the immutable source of the eleven exact blobs below; A42 runtime `32fa13df5209168e58002425fcf8aaadf3088de4`. Only the common natural-sale core and its tests replace existing blobs, both byte-identical to A41 before intake. New command-local denominator map is optional and is not serialized. No D crossing coordinator or adapter replacement: full-commerce wiring remains pending, and prior D callers keep their behavior.
+- A33 rename source planner, original handler pins and original Perl comparison are included without any registration, HTTP or name-authority enablement. Trusted duplicate checks, atomic private credential update, session invalidation and command replay remain D obligations.
+- Source/test intake is not formal player acceptance, nor proof of a deployed normal-commerce feature. D55/D56 candidate CI still pending at time of intake.
+
+- `modern/src/shared-natural-sale-core.mjs` `31947b5b43361de07fd60413d021409b01336266`
+- `modern/tests/r4-normal-commerce-items.test.mjs` `e4a7dbb896d9d2e500f09b7aee378f8f70371bcc`
+- `modern/tests/original-perl/original-normal-commerce-same-command-probe.pl` `b2effcd243222a2bb641a2b0dc8799df44c46794`
+- `modern/docs/r4-normal-commerce-a42-same-command-demand.md` `0fe1cd79e5f0d6fedd2dd5481c4d644c10f1fc08`
+- `modern/src/original-r4-owner-rename.mjs` `cbfe67b0fee68dce7ad142c7ce0aa3b710808e38`
+- `modern/tests/r4-original-owner-rename.test.mjs` `4acf4d373d8d592a6dc840917b1b2a1605b5eda7`
+- `modern/docs/r4-owner-rename-handoff-a33.md` `b26d1b85d7e161327612e22ce041b064b092e393`
+- `modern/tests/original-perl/core-other.cgi` `2463a62fb4cac2364a7c8c7f8f0823d619396157`
+- `modern/tests/original-perl/core-user-settings.cgi` `8e817c535d4cd17e68d65f0e2f67846a344b5094`
+- `modern/tests/original-perl/core-name.cgi` `ae3b3a862fc78b8775795ed88d5d1911861b3d80`
+- `modern/tests/original-perl/core-rename-login.cgi` `1e5963c52a4ca82d75922b5a1ca3b3db14fef436`

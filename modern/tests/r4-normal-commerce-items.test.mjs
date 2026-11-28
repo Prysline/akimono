@@ -140,3 +140,33 @@ test('R4 four original manual EVENTs change actual natural-sale POINT and rank, 
   }
   assert.equal(beforeByCode.size,4);
 });
+
+test('R4 full-commerce same-command natural demand survives slice boundary but resets for a new CGI command',()=>{
+  const cases=perl('original-normal-commerce-same-command-probe.pl');
+  assert.deepEqual(cases.map(x=>x.name),['one','duplicate','mixed']);
+  for(const row of cases){
+    let carry={};
+    for(const [i,slice] of row.slices.entries()){
+      if(i===2)carry={};
+      const prior=JSON.stringify(carry),shop=slice.input;
+      const actual=projectSharedNaturalSale({shop,
+        rule:shop.showcasecount===1?review.saleRules[shop.showcase[0]]:null,
+        saleRules:shop.showcasecount>1?review.saleRules:null,
+        upkeepCosts:review.upkeepCosts,spanSeconds:1800,randomDraws:slice.draws,
+        sourceDemandBaseBefore:carry});
+      assert.equal(JSON.stringify(carry),prior,'trial projection does not mutate previous carry');
+      assert.deepEqual(actual.sourceDemandBase,slice.demandBase,row.name+' demand carry '+i);
+      assert.equal(actual.drawsUsed,slice.used,row.name+' RNG '+i);
+      for(const key of ['item','itemtoday','_sale_count_','money','rank','temprank','trush','saletoday','taxtoday'])
+        assert.deepEqual(actual.shop[key],slice.output[key],row.name+' '+i+' '+key);
+      assert.ok(Math.abs(actual.shop.costtoday-slice.output.costtoday)<1e-8);
+      carry=actual.sourceDemandBase;
+    }
+    assert.equal(row.slices[1].demandBase[40],2*row.slices[0].demandBase[40]);
+    assert.equal(row.slices[2].demandBase[40],row.slices[0].demandBase[40]);
+  }
+  const row=cases[0],second=row.slices[1];
+  const reset=projectSharedNaturalSale({shop:second.input,rule:review.saleRules[40],
+    upkeepCosts:review.upkeepCosts,spanSeconds:1800,randomDraws:Array(121).fill(500000)});
+  assert.notDeepEqual(reset.shop._sale_count_,second.output._sale_count_);
+});

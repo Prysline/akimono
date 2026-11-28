@@ -22,6 +22,7 @@ export function projectSharedNaturalSale({
   shop,rule=null,saleRules=null,upkeepCosts,spanSeconds,randomDraws,
   popularOverride=null,population=500000,saleSpeed=12,
   popDownRate=5,baseUpkeep=0,reviewedSignedCash=false,recordShelfSales=false,
+  sourceDemandBaseBefore=null,
 }){
   int(spanSeconds,'timespan',1);int(population,'population',1);
   int(saleSpeed,'speed',1);int(popDownRate,'pop down',1);
@@ -40,6 +41,15 @@ export function projectSharedNaturalSale({
      typeof saleRules!=='object'||popularOverride!==null))
     fail('multi-shelf source rules or EVENT overlay not reviewed');
 
+  // Original @ITEM is loaded once per inc-turn command. Across its time
+  // slices buypeoplebase is +=, not reset by GetMarketStatus or settlement.
+  // Only the trusted crossing coordinator supplies this transient map.
+  if(sourceDemandBaseBefore!==null&&(!sourceDemandBaseBefore||
+     typeof sourceDemandBaseBefore!=='object'||Array.isArray(sourceDemandBaseBefore)||
+     Object.entries(sourceDemandBaseBefore).some(([id,n])=>
+       !/^[1-9]\d*$/.test(id)||Number(id)>79||!Number.isFinite(n)||n<0)))
+    fail('invalid command-local source demand base');
+  const sourceDemandBase=sourceDemandBaseBefore===null?null:{...sourceDemandBaseBefore};
   const active=[],market=new Map(),displayedTypes=new Set();
   let sourceGroup=null,demandScanOpen=true;
   const sourceRule=id=>shelfCount===1?rule:saleRules?.[id]??null;
@@ -78,11 +88,15 @@ export function projectSharedNaturalSale({
     if(!Number.isFinite(weight)||weight<0)
       fail('unsafe original per-shelf demand ratio');
     const existing=market.get(id)??{
-      stock:0,weightedPrice:0,buypeoplebase:0,rule:r,
+      stock:0,weightedPrice:0,buypeoplebase:sourceDemandBase?.[id]??0,rule:r,
     };
     existing.stock+=stock; // Original GetMarketStatus counts each occupied shelf
     existing.weightedPrice+=stock*listed;
     if(demandScanOpen)existing.buypeoplebase+=weight;
+    if(sourceDemandBase!==null&&existing.buypeoplebase>0){
+      if(!Number.isFinite(existing.buypeoplebase))fail('unsafe command-local source demand base');
+      sourceDemandBase[id]=existing.buypeoplebase;
+    }
     market.set(id,existing);
     active.push({shelf,id,listed,ratio,weight,rule:r});
   }
@@ -186,5 +200,6 @@ export function projectSharedNaturalSale({
   return {shop:{
       ...shop,item,itemtoday,money,trush,saletoday,taxtoday,rank,temprank,
       costtoday,_sale_count_:saleRecords,
-    },sold,soldByItem,...(recordShelfSales?{shelfSales}:{}),drawsUsed:used};
+    },sold,soldByItem,...(recordShelfSales?{shelfSales}:{}),drawsUsed:used,
+    ...(sourceDemandBase===null?{}:{sourceDemandBase:Object.freeze(sourceDemandBase)})};
 }
