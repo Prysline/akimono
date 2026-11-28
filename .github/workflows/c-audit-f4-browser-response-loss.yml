@@ -1,0 +1,212 @@
+name: C audit - F4 Chromium actual market and response loss
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  f4-browser:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '1a9e9ad59cd91c5814e68f22a822c06c856a2a9e'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify F4 exact tree and install isolated Chromium harness
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = '1a9e9ad59cd91c5814e68f22a822c06c856a2a9e'
+          test "$(git rev-parse 'HEAD^{tree}')" = '146e04ae0be75ae49b2c890ccc77294c991e06a4'
+          test "$(git hash-object modern/local-ui/app.js)" = '5e10d5bc3fd27ff0b21f56ea85fc272b13c0ac31'
+          test "$(git hash-object modern/local-ui/index.html)" = 'c2275ffaaf5aab15663589c0cdb10641dd6be53e'
+          test "$(git hash-object modern/scripts/dev-local.mjs)" = '4cd9936436e7e46708bbe747384026f0b6bf4655'
+          test -z "$(git status --porcelain)"
+          mkdir -p "$RUNNER_TEMP/c71-browser" "$RUNNER_TEMP/c71-pw"
+          npm install --prefix "$RUNNER_TEMP/c71-pw" --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/c71-pw/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Chromium actual DOM and HTTP with isolated post-commit response loss
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c71-browser"
+          cat >"$RUNNER_TEMP/c71-pw/test.mjs" <<'NODE'
+          import assert from 'node:assert/strict';
+          import {spawn} from 'node:child_process';
+          import {mkdtemp,rm} from 'node:fs/promises';
+          import {join} from 'node:path';
+          import {tmpdir} from 'node:os';
+          import {chromium} from 'playwright';
+          const out=process.env.RUNNER_TEMP+'/c71-browser';
+          const directory=await mkdtemp(join(tmpdir(),'c71-f4-'));
+          const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
+            AKIMONO_E2E_FIXED_NOW:'896401',AKIMONO_E2E_DETERMINISTIC_RNG:'0',
+            AKIMONO_REVIEWED_CROSS_PERIOD:'1',AKIMONO_REVIEWED_MARKET_COMMERCE:'1'};
+          const child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd:'modern',env,stdio:['ignore','pipe','pipe']});
+          let browser,page,stderr='',timer,stage='boot',failures=0;
+          child.stderr.on('data',b=>stderr+=b);
+          const log=(label,data)=>console.log('C71 '+label+' '+JSON.stringify(data));
+          try {
+            const url=await Promise.race([new Promise((resolve,reject)=>{
+              let s='';child.stdout.on('data',b=>{s+=b;const m=s.match(/http:\/\/127\.0\.0\.1:\d+/);if(m)resolve(m[0]);});
+              child.once('error',reject);child.once('exit',code=>reject(Error('server exited '+code+' '+stderr)));
+            }),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('startup timeout '+stderr)),30000);})]).finally(()=>clearTimeout(timer));
+            browser=await chromium.launch({headless:true});
+            page=await browser.newPage({viewport:{width:1280,height:900}});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));
+            const state=async()=>await (await fetch(url+'/api/state')).json();
+            const post=async(path,body)=>await (await fetch(url+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
+            const actions=page.locator('#market-result-actions');
+            const msg=()=>page.locator('#feedback').innerText();
+            const revision=s=>s.world.revision;
+            const offer=s=>s.marketOffers.find(o=>o.itemId===10);
+            const snap=s=>({revision:revision(s),money:s.shop.money,owned:s.shop.item[9],history:s.historyCommands});
+            const response=async(path,click)=>{
+              const pending=page.waitForResponse(r=>r.url()===url+path&&r.request().method()==='POST');
+              await click();const r=await pending;const data=await r.json();
+              await page.waitForFunction(()=>!document.getElementById('feedback').textContent.endsWith('處理中…'));
+              return {status:r.status(),data,request:r.request().postDataJSON()};
+            };
+            const ok=async(path,click)=>{
+              const r=await response(path,click);assert.equal(r.data.ok,true,JSON.stringify({path,status:r.status,error:r.data.error,code:r.data.code}));return r;
+            };
+            const market=async()=>{
+              await page.locator('[data-group=trade]').click();
+              const buy=page.locator('[data-market-buy="10"]');
+              for(let n=0;!(await buy.count())&&n<5;n++){
+                const next=page.locator('#market-page-top button').filter({hasText:/^＞$/});
+                if(!(await next.count())||!(await next.isEnabled()))break;
+                await next.click();
+              }
+              await buy.waitFor({state:'visible'});
+              assert.equal(await buy.isEnabled(),true);
+              return buy;
+            };
+            const expectCommand=(r,s)=>{
+              const q=offer(s);
+              assert.deepEqual(r.request,{expectedRevision:revision(s),itemId:10,requestedCount:1,marketShelf:q.shelf,expectedPrice:q.price});
+            };
+            stage='initialize/open';
+            await page.goto(url);
+            await page.waitForFunction(()=>document.getElementById('world-id').textContent==='尚未建立');
+            // Ensure the initial network GET has finished and the UI handler can submit.
+            await page.waitForFunction(()=>document.getElementById('market-offers').textContent.includes('請先建立商店或載入存檔'));
+            await ok('/api/initialize',()=>page.locator('#initialize').click());
+            await page.locator('#owner').fill('C71驗證');
+            await page.locator('#shop-name').fill('C71商店');
+            await ok('/api/open-shop',()=>page.locator('#open-shop button[type=submit]').click());
+            await page.locator('#dev-toggle').click();
+            await page.locator('details').filter({has:page.locator('#advance-time-form')}).locator('summary').click();
+            stage='bounded lawful supply';
+            let s=await state(),ticks=0;
+            while(!(offer(s)?.canBuy&&offer(s).marketStock>=4&&s.world.nowSeconds-s.shop.time>=offer(s).timeSeconds*4)&&ticks<48){
+              await ok('/api/advance-reviewed-time',()=>page.locator('button[data-minutes="60"]').click());
+              s=await state();ticks++;
+            }
+            log('PREREQUISITE',{ticks,quote:offer(s),remaining:s.world.nowSeconds-s.shop.time});
+            assert.ok(offer(s)?.canBuy&&offer(s).marketStock>=4&&s.world.nowSeconds-s.shop.time>=offer(s).timeSeconds*4,'bounded legal source market prerequisite not reached');
+            stage='first purchase and warehouse navigation';
+            let buy=await market(),before=await state();
+            assert.equal(await actions.isVisible(),false);
+            await page.locator('[data-market-count="10"]').fill('1');
+            let r=await ok('/api/buy',()=>buy.click());
+            expectCommand(r,before);
+            let after=await state();
+            assert.equal(revision(after),revision(before)+1);
+            assert.equal(after.shop.item[9],before.shop.item[9]+1);
+            assert.equal(r.data.details.purchasedCount,1);
+            assert.equal(await actions.isVisible(),true);
+            log('REAL_BUY',{before:snap(before),after:snap(after),request:r.request});
+            await page.screenshot({path:out+'/01-buy.png'});
+            await actions.locator('[data-go-tab=stock]').click();
+            assert.equal(await page.locator('#tab-stock').isVisible(),true);
+            assert.equal(await actions.isVisible(),false);
+            assert.equal(await page.locator('[data-open-item="10"]').count(),1);
+            stage='second purchase and continue navigation';
+            buy=await market();before=await state();
+            await page.locator('[data-market-count="10"]').fill('1');
+            r=await ok('/api/buy',()=>buy.click());expectCommand(r,before);
+            after=await state();assert.equal(after.shop.item[9],before.shop.item[9]+1);
+            assert.equal(await actions.isVisible(),true);
+            await actions.locator('[data-go-tab=market]').click();
+            assert.equal(await page.locator('#tab-market').isVisible(),true);
+            assert.equal(await actions.isVisible(),false);
+            stage='real stale CAS rejection';
+            buy=await market();before=await state();
+            await page.locator('[data-market-count="10"]').fill('1');
+            const other=await post('/api/advance-reviewed-time',{expectedRevision:revision(before),minutes:1});
+            assert.equal(other.ok,true);
+            const committed=await state();
+            r=await response('/api/buy',()=>buy.click());expectCommand(r,before);
+            assert.equal(r.data.ok,false);
+            assert.match(await msg(),/遭拒絕.*確認最新畫面/);
+            assert.equal(await actions.isVisible(),false);
+            assert.deepEqual((await state()).world,committed.world);
+            log('REAL_STALE',{status:r.status,request:r.request,after:snap(committed),message:await msg()});
+            await page.screenshot({path:out+'/02-stale.png'});
+            assert.deepEqual(errors,[]);
+            stage='controlled post-commit response loss';
+            // A real upstream purchase is sent exactly once; only its response is
+            // replaced in this isolated browser. No runtime/source/RNG modification.
+            buy=await market();before=await state();
+            await page.locator('[data-market-count="10"]').fill('1');
+            let upstream,requests=0;
+            await page.route('**/api/buy',async route=>{
+              requests++;const real=await route.fetch({maxRetries:0});
+              upstream=await real.json();
+              await route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'Bad Gateway'})});
+            });
+            r=await response('/api/buy',()=>buy.click());expectCommand(r,before);
+            await page.unroute('**/api/buy');
+            after=await state();
+            assert.equal(requests,1);
+            assert.equal(upstream?.ok,true);
+            assert.equal(upstream.details.purchasedCount,1);
+            assert.equal(revision(after),revision(before)+1);
+            assert.equal(after.shop.item[9],before.shop.item[9]+1);
+            assert.equal(await actions.isVisible(),false);
+            const message=await msg();
+            log('CONTROLLED_RESPONSE_LOSS',{requests,upstreamCode:upstream.code,visibleStatus:r.status,before:snap(before),after:snap(after),message});
+            await page.screenshot({path:out+'/03-response-loss.png'});
+            try {
+              assert.match(message,/結果未能確認.*勿直接重試/);
+              assert.doesNotMatch(message,/遭拒絕|已由伺服器確認完成/);
+            }catch(e){failures++;console.error('C71 STRICT RESPONSE LOSS FAIL',e.message);}
+            // Reload is observation only, not an automatic retry.
+            await page.reload();
+            await page.waitForFunction(n=>document.getElementById('revision').textContent===String(n),revision(after));
+            assert.deepEqual((await state()).world,after.world);
+            assert.deepEqual(errors,[]);
+            log('COMPLETE',{realNavigationAndCAS:true,controlledResponseLossPass:failures===0});
+            assert.equal(failures,0,'strict response loss contract failed');
+          }catch(e){
+            console.error('C71 stage='+stage,e);
+            if(page)await page.screenshot({path:out+'/failure.png'}).catch(()=>{});
+            process.exitCode=1;
+          }finally{
+            clearTimeout(timer);
+            if(browser)await browser.close();
+            if(child.exitCode===null&&child.signalCode===null)await new Promise(resolve=>{child.once('exit',resolve);child.kill();});
+            await rm(directory,{recursive:true,force:true});
+          }
+          NODE
+          node --check "$RUNNER_TEMP/c71-pw/test.mjs"
+          set +e
+          node "$RUNNER_TEMP/c71-pw/test.mjs" 2>&1 | tee "$out/browser.log"
+          status=$?
+          set -e
+          test "$(git hash-object modern/local-ui/app.js)" = '5e10d5bc3fd27ff0b21f56ea85fc272b13c0ac31'
+          test "$(git hash-object modern/local-ui/index.html)" = 'c2275ffaaf5aab15663589c0cdb10641dd6be53e'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c71-f4-browser-evidence
+          path: ${{ runner.temp }}/c71-browser/
+          if-no-files-found: warn
+          retention-days: 30

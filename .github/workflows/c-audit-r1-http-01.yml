@@ -1,0 +1,438 @@
+# C-window-only diagnostic. Not a shared CI policy or a merge candidate.
+# Executes the already-existing strict repro on the exact batch-55 candidate.
+name: C audit - R1-HTTP-01 strict reproduction (PR 26 only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [migration/standard-street-s1]
+
+jobs:
+  strict-r1-http-01:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pinned candidate (not synthetic merge)
+        uses: actions/checkout@v4
+        with:
+          ref: '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and record environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/r1-http-01"
+          {
+            git rev-parse HEAD
+            git rev-parse 'HEAD^{tree}'
+            git --version
+            node --version
+            perl -v
+            uname -a
+            cat /etc/os-release
+            printf 'runner_os=%s runner_arch=%s\n' "$RUNNER_OS" "$RUNNER_ARCH"
+            git status --porcelain
+            git hash-object modern/scripts/r1-http-extra-fields-repro.mjs
+            git hash-object modern/tests/support/r1-http-audit-player.mjs
+            printf '%s\n' 'command: cd modern && node --test scripts/r1-http-extra-fields-repro.mjs'
+            printf '%s\n' 'Harness uses isolated temp saves, clears fixed time/RNG, and enables reviewed cross-period mode.'
+            test "$(git rev-parse HEAD)" = '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+            test "$(git rev-parse 'HEAD^{tree}')" = 'ede2b15cfcdb0077b026c2a25b2386a84eefd003'
+            test "$(git hash-object modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+            test "$(git hash-object modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$RUNNER_TEMP/r1-http-01/environment.log"
+      - name: Execute unchanged strict repro (failure remains failure)
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r1-http-01"
+          set +e
+          node --test scripts/r1-http-extra-fields-repro.mjs >"$out/stdout.log" 2>"$out/stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/exit-code.txt"
+          printf '%s\n' '--- STDOUT ---'
+          cat "$out/stdout.log"
+          printf '%s\n' '--- STDERR ---'
+          cat "$out/stderr.log"
+          exit "$status"
+      - name: Preserve full diagnostic output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-http-01-pinned-630e987
+          path: ${{ runner.temp }}/r1-http-01/
+          if-no-files-found: warn
+          retention-days: 30
+
+  p5-historical-funds-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact historical failed candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 'e4771dc5c21663509777e6c351436f05732ed105'
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify checkout and original test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/p5-funds"
+          {
+            git rev-parse HEAD
+            git rev-parse 'HEAD^{tree}'
+            git --version
+            node --version
+            perl -v
+            uname -a
+            cat /etc/os-release
+            git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs
+            git hash-object modern/tests/support/p3-genuine-v2-player.mjs
+            test "$(git rev-parse HEAD)" = 'e4771dc5c21663509777e6c351436f05732ed105'
+            test "$(git rev-parse 'HEAD^{tree}')" = '44de9a170cf71cbc75c137b06215d2626411017a'
+            test "$(git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+            test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$RUNNER_TEMP/p5-funds/environment.log"
+      - name: Run original P5 file without modifications
+        id: original
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p5-funds"
+          set +e
+          node --test tests/p5-book-work-v2-player-http.test.mjs >"$out/original-stdout.log" 2>"$out/original-stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original-stdout.log"
+          cat "$out/original-stderr.log"
+          exit "$status"
+      - name: Observe funds in a separate fresh run (temporary diagnostic copy only)
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p5-funds"
+          trace=tests/p5-audit-funds-observation.mjs
+          test ! -e "$trace"
+          trap 'rm -f "$trace"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const original='tests/p5-book-work-v2-player-http.test.mjs';
+          let src=readFileSync(original,'utf8');
+          function appendOnce(line,addition){
+            if(src.split(line).length!==2)throw Error('diagnostic anchor not unique: '+line);
+            src=src.replace(line,line+'\n'+addition);
+          }
+          appendOnce('let nonWorkFunds=100000,totalPaid=0,workFundedPurchase=null;',
+            "  t.after(()=>t.diagnostic('P5_AUDIT_FINAL '+JSON.stringify({nonWorkFunds,totalPaid,workFundedPurchase,purchases,works})));");
+          appendOnce('nonWorkFunds+=Math.max(0,r.state.shop.money-before.shops[0].money);',
+            "      t.diagnostic('P5_AUDIT_TICK '+JSON.stringify({revision:r.state.world.revision,period:r.state.world.period.settledCount,before:before.shops[0].money,after:r.state.shop.money,nonWorkFunds,totalPaid,sourceTrace:r.state.shop.money>before.shops[0].money?r.details.sourceTrace:null}));");
+          appendOnce('totalPaid+=d.totalPaid;',
+            "      t.diagnostic('P5_AUDIT_BUY '+JSON.stringify({revision:r.state.world.revision,itemId:d.itemId,count:d.purchasedCount,paid:d.totalPaid,totalPaid,nonWorkFunds,before:old.money,after:after.money}));");
+          appendOnce('nonWorkFunds+=Math.max(0,p.state.shop.money-beforeCareerMoney);',
+            "  t.diagnostic('P5_AUDIT_CAREER '+JSON.stringify({before:beforeCareerMoney,after:p.state.shop.money,nonWorkFunds,totalPaid}));");
+          // Add a pre-assertion diagnostic without removing or altering any assertion.
+          const anchor="  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');";
+          if(src.split(anchor).length!==2)throw Error('proof anchor');
+          src=src.replace(anchor,"  t.diagnostic('P5_AUDIT_PROOF '+JSON.stringify({nonWorkFunds,totalPaid,workFundedPurchase,period:p.state.world.period.settledCount,money:p.state.shop.money,revision:p.state.world.revision,works,purchases}));\n"+anchor);
+          writeFileSync('tests/p5-audit-funds-observation.mjs',src,{flag:'wx'});
+          NODE
+          git diff --no-index -- tests/p5-book-work-v2-player-http.test.mjs "$trace" >"$out/diagnostic-only.diff" || test "$?" = 1
+          cat "$out/diagnostic-only.diff"
+          set +e
+          node --test --test-name-pattern='P5 new player:' "$trace" >"$out/observation-stdout.log" 2>"$out/observation-stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          cat "$out/observation-stdout.log"
+          cat "$out/observation-stderr.log"
+          rm -f "$trace"
+          test "$(git hash-object tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve original and observation outputs separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p5-funds-pinned-e4771dc
+          path: ${{ runner.temp }}/p5-funds/
+          if-no-files-found: warn
+          retention-days: 30
+
+  strict-r1-http-01-d13:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout D13 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 'ffeba863c06dbeb8ae3521897320e0f057f0878e'
+          path: candidate
+          persist-credentials: false
+      - name: Checkout original C55 strict and helper
+        uses: actions/checkout@v4
+        with:
+          ref: '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+          path: evidence
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify pins and execute original C strict against D13 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/r1-http-d13"
+          mkdir -p "$out"
+          {
+            git -C candidate log -1 --format='%H %T'
+            git -C evidence log -1 --format='%H %T'
+            node --version
+            perl -v
+            test "$(git -C candidate rev-parse HEAD)" = 'ffeba863c06dbeb8ae3521897320e0f057f0878e'
+            test "$(git -C candidate rev-parse 'HEAD^{tree}')" = '1a6a8912da4c354150bd4dd75743dcc2979cff82'
+            test "$(git -C evidence rev-parse HEAD)" = '630e98795ef957272e49c8a7cabb5c6f1ce992b2'
+            test "$(git -C evidence rev-parse 'HEAD^{tree}')" = 'ede2b15cfcdb0077b026c2a25b2386a84eefd003'
+            test -z "$(git -C candidate status --porcelain)"
+            test -z "$(git -C evidence status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+          test ! -e candidate/modern/scripts/r1-http-extra-fields-repro.mjs
+          test "$(git hash-object evidence/modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+          test "$(git hash-object evidence/modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+          test "$(git hash-object candidate/modern/tests/support/r1-http-audit-player.mjs)" = '19244d0b636e393a2f7a26fcd033fe78e0c3d003'
+          cp candidate/modern/tests/support/r1-http-audit-player.mjs "$out/d13-helper.original.mjs"
+          restore() {
+            rm -f candidate/modern/scripts/r1-http-extra-fields-repro.mjs
+            cp "$out/d13-helper.original.mjs" candidate/modern/tests/support/r1-http-audit-player.mjs
+          }
+          trap restore EXIT
+          cp evidence/modern/scripts/r1-http-extra-fields-repro.mjs candidate/modern/scripts/
+          cp evidence/modern/tests/support/r1-http-audit-player.mjs candidate/modern/tests/support/
+          test "$(git hash-object candidate/modern/scripts/r1-http-extra-fields-repro.mjs)" = 'e43339680eda08d30ebc9a5c70f56635361ace12'
+          test "$(git hash-object candidate/modern/tests/support/r1-http-audit-player.mjs)" = '0aa7dc6127e94bece6d43fa778ccf2fd7f3a2016'
+          git -C candidate status --porcelain | tee "$out/test-overlay-status.txt"
+          git -C candidate diff -- modern/tests/support/r1-http-audit-player.mjs >"$out/test-overlay.diff"
+          test -z "$(git -C candidate diff --name-only -- modern/src modern/scripts/dev-local.mjs)"
+          set +e
+          (cd candidate/modern && env -u AKIMONO_REVIEWED_MARKET_COMMERCE node --test scripts/r1-http-extra-fields-repro.mjs) >"$out/stdout.log" 2>"$out/stderr.log"
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/exit-code.txt"
+          cat "$out/stdout.log"
+          cat "$out/stderr.log"
+          restore
+          trap - EXIT
+          test -z "$(git -C candidate status --porcelain)"
+          test -z "$(git -C evidence status --porcelain)"
+          exit "$status"
+      - name: Preserve independent strict output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-http-01-independent-d13-ffeba86
+          path: ${{ runner.temp }}/r1-http-d13/
+          if-no-files-found: warn
+          retention-days: 30
+
+  p3-nayuta-boundary-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact C58 failed candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 'c777fe921737a381b64e6d906857cc34c31a249e'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and untouched tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p3-nayuta"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = 'c777fe921737a381b64e6d906857cc34c31a249e'
+            test "$(git rev-parse 'HEAD^{tree}')" = '59b338c5d659d001f5310dfa318877aef73cd4b3'
+            test "$(git hash-object modern/tests/p3-v2-cross-period-nayuta.test.mjs)" = '9372b12a733f3a754bd3d6aa5df407fe7f34db26'
+            test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+            test "$(git hash-object modern/src/original-b41-playable-sale.mjs)" = '47100f2d430e4bb7a59d49ccb3f7a07a931caf9f'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Run original unchanged test
+        id: original
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p3-nayuta"
+          set +e
+          node --test tests/p3-v2-cross-period-nayuta.test.mjs >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original.log"
+          exit "$status"
+      - name: Run separate diagnostic test and helper copies
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p3-nayuta"
+          testcopy=tests/p3-audit-nayuta-observation.mjs
+          helpercopy=tests/support/p3-audit-nayuta-player.mjs
+          test ! -e "$testcopy" && test ! -e "$helpercopy"
+          trap 'rm -f "$testcopy" "$helpercopy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const test=readFileSync('tests/p3-v2-cross-period-nayuta.test.mjs','utf8');
+          const helper=readFileSync('tests/support/p3-genuine-v2-player.mjs','utf8');
+          const swap=(s,a,b)=>{if(s.split(a).length!==2)throw Error('nonunique diagnostic anchor');return s.replace(a,b);};
+          const observed=swap(helper,
+            "const command=async(route,body)=>ok(await post(route,{expectedRevision:state.world.revision,...body}));",
+            "const command=async(route,body)=>{const before=state; const r=await post(route,{expectedRevision:state.world.revision,...body}); const snapshot=s=>({revision:s?.world?.revision,clock:s?.world?.nowSeconds,period:s?.world?.period?.settledCount,activeEvents:s?.world?.period?.eventState,shop:s?.shop&&Object.fromEntries(['id','status','showcasecount','showcase','price','item','time','job','money','exp','rank','trush','costtoday','paytoday','saletoday','taxtoday','taxmode'].map(k=>[k,s.shop[k]])),history:s?.historyCommands,generation:s?.save?.generation}); t.diagnostic('P3_NAYUTA_AUDIT '+JSON.stringify({route,body,code:r.code,reason:r.details?.reason,before:snapshot(before),after:snapshot(state),worldUnchanged:JSON.stringify(before.world)===JSON.stringify(state.world)})); return ok(r);};");
+          writeFileSync('tests/support/p3-audit-nayuta-player.mjs',observed,{flag:'wx'});
+          writeFileSync('tests/p3-audit-nayuta-observation.mjs',swap(test,"./support/p3-genuine-v2-player.mjs","./support/p3-audit-nayuta-player.mjs"),{flag:'wx'});
+          NODE
+          git diff --no-index -- tests/p3-v2-cross-period-nayuta.test.mjs "$testcopy" >"$out/test-copy.diff" || test "$?" = 1
+          git diff --no-index -- tests/support/p3-genuine-v2-player.mjs "$helpercopy" >"$out/helper-copy.diff" || test "$?" = 1
+          cat "$out/test-copy.diff" "$out/helper-copy.diff"
+          set +e
+          node --test "$testcopy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          grep -E 'SOURCE_BOUNDARY_REJECTED|^not ok|^ok |^# (tests|pass|fail|skipped|cancelled)|P3 #66/3|P3 #70' "$out/observation.log" || true
+          rm -f "$testcopy" "$helpercopy"
+          trap - EXIT
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve original and diagnostic outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p3-nayuta-boundary-c58
+          path: ${{ runner.temp }}/p3-nayuta/
+          if-no-files-found: warn
+          retention-days: 30
+
+  lifecycle-compiler-section-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact B lifecycle failure
+        uses: actions/checkout@v4
+        with:
+          ref: '0936465451c7da47e28eb6b3ceb0e0cebb7b3671'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify candidate and unchanged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = '0936465451c7da47e28eb6b3ceb0e0cebb7b3671'
+            test "$(git rev-parse 'HEAD^{tree}')" = 'acc49e65ad033ac6311317c4a0c3c92b44487a32'
+            test "$(git hash-object modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = 'edf97c6055936875ca613b774e3d236832bdb8aa'
+            test "$(git hash-object custom/inc-item-data.cgi)" = '7a18185e98b32aee82ca1ce30d6f3c395157dbcb'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Reproduce original unmodified oracle
+        id: original
+        working-directory: modern/tests/original-perl
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          set +e
+          prove -v original-r4-shop-lifecycle-wrapper.t >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original.log"
+          exit "$status"
+      - name: Isolated one-regex diagnostic copy, all original assertions retained
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern/tests/original-perl
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lifecycle-compiler"
+          original=original-r4-shop-lifecycle-wrapper.t
+          copy=c-audit-lifecycle-section-observation.t
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const src=readFileSync('original-r4-shop-lifecycle-wrapper.t','utf8');
+          const old=src.split('\n').filter(s=>s.startsWith('while($dsl=~'));
+          if(old.length!==1)throw Error('nonunique original section parser');
+          const a='^\\@\\@(?:ITEM|USE|EVENT|FUNC\\w+|END)';
+          const b='^[ \\t]*\\@\\@(?:ITEM|USE|EVENT|FUNC\\w+|END)';
+          if(!old[0].includes(a)||!old[0].endsWith('/mg){'))throw Error('unexpected original parser');
+          const fixed=old[0].replace(a,b).replace('/mg){','/mgi){');
+          writeFileSync('c-audit-lifecycle-section-observation.t',src.replace(old[0],fixed),{flag:'wx'});
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/diagnostic-only.diff" || test "$?" = 1
+          cat "$out/diagnostic-only.diff"
+          set +e
+          prove -v "$copy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          cat "$out/observation.log"
+          rm -f "$copy"
+          trap - EXIT
+          test "$(git hash-object "$original")" = 'edf97c6055936875ca613b774e3d236832bdb8aa'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve separate original and diagnostic TAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-compiler-section-b-0936465
+          path: ${{ runner.temp }}/lifecycle-compiler/
+          if-no-files-found: warn
+          retention-days: 30

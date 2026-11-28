@@ -1,0 +1,105 @@
+name: C audit - B guild view source edges
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  guild-view-edges:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'b541dfe66aafcaf2842919605283ce52a6d1dce7'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin exact B source candidate and original unchanged tests
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = 'b541dfe66aafcaf2842919605283ce52a6d1dce7'
+          test "$(git rev-parse 'HEAD^{tree}')" = 'f5f7238ddc80464f379b5cbb4f918b482b66333a'
+          test "$(git hash-object modern/src/original-r4-guild-hall-view.mjs)" = '705a697c7a84073f021c1c490053c291ee0c74b8'
+          test "$(git hash-object modern/src/original-r4-guild-intelligence.mjs)" = '5b84e4ff1bb4a625c0215ba5b5142f64faf633d0'
+          test "$(git hash-object modern/tests/r4-guild-hall-view-source.test.mjs)" = 'de2fd9e59afbb68591a342ca4855e4e2171caeb8'
+          test "$(git hash-object modern/tests/r4-guild-intelligence-source.test.mjs)" = 'f64029277e77bc56ac9f69672757540afd5da4fd'
+          test "$(git hash-object modern/tests/original-perl/original-r4-guild-hall-probe.pl)" = '6339c4014502135d469fb5349451185d51ac64a7'
+          test "$(git hash-object modern/tests/original-perl/original-r4-guild-intelligence-probe.pl)" = 'f0c353dd5cccce15c2c9db5f0d54225ab74fbe99'
+          test -z "$(git status --porcelain)"
+      - name: Independent controlled source comparisons only
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c74-guild-views"
+          mkdir -p "$out"
+          hall=modern/tests/c74-guild-hall-edge.mjs
+          intel=modern/tests/c74-guild-intelligence-edge.mjs
+          origHall=modern/tests/r4-guild-hall-view-source.test.mjs
+          origIntel=modern/tests/r4-guild-intelligence-source.test.mjs
+          test ! -e "$hall" && test ! -e "$intel"
+          trap 'rm -f "$hall" "$intel"' EXIT
+          cp "$origHall" "$hall"
+          cp "$origIntel" "$intel"
+          cat >>"$hall" <<'NODE'
+
+          // C74: check original inc-gd autovivification before GuildRanking.
+          // Controlled missing-detail snapshot, not a real persisted corrupt guild.
+          test('C74 own guild missing detail versus nonmember, actual original ranking and repair trace',t=>{
+            const guilds=[guild('a',100,null),guild('b',90),guild('c',80)];
+            function observe(actorId) {
+              const input={...base,guilds,actorId,battleEnd:0};
+              const p=spawnSync('perl',[fileURLToPath(new URL('original-r4-guild-hall-probe.pl',dir))],{input:JSON.stringify(input),encoding:'utf8'});
+              assert.equal(p.status,0,p.stderr);
+              const original=JSON.parse(p.stdout);
+              const snapshot={...input,guilds:original.order.map(c=>guilds.find(g=>g.code===c))};
+              const before=JSON.stringify(snapshot);
+              const actual=projectGuildHall({...snapshot,review});
+              assert.equal(JSON.stringify(snapshot),before);
+              assert.equal(actual.committable,false);
+              t.diagnostic('C74_HALL '+JSON.stringify({actorId,original:{mode:original.mode,rows:original.rows.map(r=>({code:r.code,rank:r.rank,member:r.member,comment:r.comment})),writes:original.writes},candidate:{mode:actual.mode,rows:actual.rows.map(r=>({code:r.code,rank:r.rank,member:r.member,comment:r.comment})),repair:actual.repairNeededCodes}}));
+              return {original,actual};
+            }
+            const control=observe(4),member=observe(1);
+            const trace=['Lock','MakeGuildFile','WriteGuildData','DataWrite','RenewLog','DataCommitOrAbort','UnLock'];
+            assert.deepEqual(control.actual.rows,control.original.rows);
+            assert.deepEqual(control.original.writes,trace);
+            assert.deepEqual(control.actual.repairNeededCodes,['a']);
+            assert.deepEqual(member.actual.rows,member.original.rows,'own missing-detail rank/rows must match source');
+            assert.deepEqual(member.original.writes,member.actual.repairNeededCodes.length?trace:[],'own missing-detail repair trace must match source');
+          });
+          NODE
+          cat >>"$intel" <<'NODE'
+
+          // C74: actual count is global across pages and IDs are exact raw strings.
+          test('C74 intelligence last mobile page, exact raw ID and global masking boundary',t=>{
+            const first=records(20);
+            const a=compare({log0:first,log1:'1700000000\t1\t010\tpadded\n',mobile:true,page:4});
+            const b=compare({log0:first,log1:'1700000000\t1\t10\tcanonical\n',mobile:true,page:4});
+            const c=compare({log0:records(19),log1:'1700000000\t1\t10\tcanonical\n',mobile:true,page:3});
+            assert.equal(a.count,21);assert.equal(a.rows[0].shopName,'？？？？？？');
+            assert.equal(b.count,21);assert.equal(b.rows[0].shopName,'甲');
+            assert.equal(c.count,20);assert.equal(c.rows.at(-1).shopName,'？？？？？？');
+            t.diagnostic('C74_INTEL '+JSON.stringify({padded:a.rows[0],canonical:b.rows[0],at20:c.rows.at(-1),count21:a.count,count20:c.count}));
+          });
+          NODE
+          git diff --no-index -- "$origHall" "$hall" >"$out/hall.diff" || test "$?" = 1
+          git diff --no-index -- "$origIntel" "$intel" >"$out/intel.diff" || test "$?" = 1
+          node --check "$hall"
+          node --check "$intel"
+          set +e
+          node --test --test-name-pattern='C74 ' "$hall" "$intel" 2>&1 | tee "$out/observations.log"
+          status=$?
+          set -e
+          rm -f "$hall" "$intel"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c74-guild-view-edges
+          path: ${{ runner.temp }}/c74-guild-views/
+          if-no-files-found: warn
+          retention-days: 30

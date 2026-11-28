@@ -1,0 +1,98 @@
+name: C audit - archive re-registration source boundary
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  d40-archive-pin-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '6530714075282af97873732354ad296f91fb4cc4'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and source pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/d40-archive"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = '6530714075282af97873732354ad296f91fb4cc4'
+            test "$(git rev-parse 'HEAD^{tree}')" = '42638239833ec4ecb1ab0c707dd80c42ad6fbbae'
+            test "$(git hash-object modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = 'cac03756483f7f23db1e3fa3ab3629035084abca'
+            test "$(git hash-object modern/tests/r4-source-restart-state.test.mjs)" = '16a91e7307da8732947b508ad3435dfcaa910ac2'
+            test "$(git hash-object _config.cgi)" = '87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0'
+            test "$(git hash-object modern/tests/original-perl/pinned-error.cgi)" = '16b619dffd91a3b67095177b7da464de264f1aa3'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Execute unchanged D40 source and JS tests
+        id: original
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/d40-archive"
+          set +e
+          perl modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t >"$out/original-perl.log" 2>&1
+          ps=$?
+          node --test modern/tests/r4-source-restart-state.test.mjs >"$out/original-js.log" 2>&1
+          ns=$?
+          set -e
+          printf '%s\n' "$ps" >"$out/original-perl-exit.txt"
+          printf '%s\n' "$ns" >"$out/original-js-exit.txt"
+          cat "$out/original-perl.log" "$out/original-js.log"
+          test -z "$(git status --porcelain)"
+          test "$ps" = 0 && test "$ns" = 0
+      - name: Execute independent pin-only Perl and JS copies
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/d40-archive"
+          pc=modern/tests/original-perl/c-audit-d40-lifecycle-wrapper.t
+          jc=modern/tests/c-audit-d40-restart-state.mjs
+          test ! -e "$pc" && test ! -e "$jc"
+          trap 'rm -f "$pc" "$jc"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const once=(s,a,b)=>{if(s.split(a).length!==2)throw Error('nonunique audit anchor');return s.replace(a,b);};
+          const p=readFileSync('modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t','utf8');
+          const j=readFileSync('modern/tests/r4-source-restart-state.test.mjs','utf8');
+          writeFileSync('modern/tests/original-perl/c-audit-d40-lifecycle-wrapper.t',once(p,'87e4fd4eefba063d982e3b79aa7cfa6565e1a0','87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0'),{flag:'wx'});
+          writeFileSync('modern/tests/c-audit-d40-restart-state.mjs',once(j,'original-r4-shop-lifecycle-wrapper.t','c-audit-d40-lifecycle-wrapper.t'),{flag:'wx'});
+          NODE
+          git diff --no-index -- modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t "$pc" >"$out/perl-pin-only.diff" || test "$?" = 1
+          git diff --no-index -- modern/tests/r4-source-restart-state.test.mjs "$jc" >"$out/js-copy-only.diff" || test "$?" = 1
+          cat "$out/perl-pin-only.diff" "$out/js-copy-only.diff"
+          set +e
+          perl "$pc" >"$out/observation-perl.log" 2>&1
+          ps=$?
+          node --test "$jc" >"$out/observation-js.log" 2>&1
+          ns=$?
+          set -e
+          printf '%s\n' "$ps" >"$out/observation-perl-exit.txt"
+          printf '%s\n' "$ns" >"$out/observation-js-exit.txt"
+          cat "$out/observation-perl.log" "$out/observation-js.log"
+          rm -f "$pc" "$jc"
+          trap - EXIT
+          test "$(git hash-object modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = 'cac03756483f7f23db1e3fa3ab3629035084abca'
+          test "$(git hash-object modern/tests/r4-source-restart-state.test.mjs)" = '16a91e7307da8732947b508ad3435dfcaa910ac2'
+          test -z "$(git status --porcelain)"
+          test "$ps" = 0 && test "$ns" = 0
+      - name: Preserve original and pin-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c64-d40-archive-pin-exact
+          path: ${{ runner.temp }}/d40-archive/
+          if-no-files-found: warn
+          retention-days: 30

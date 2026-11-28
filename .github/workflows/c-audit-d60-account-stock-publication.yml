@@ -1,0 +1,106 @@
+name: C audit - D60 account ordinary stock publication
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  ordinary-stock-publication:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '4122fe928a728d8b6c77dada69542925da4c3930'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact D60 and pin publisher fixture
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = '4122fe928a728d8b6c77dada69542925da4c3930'
+          test "$(git rev-parse 'HEAD^{tree}')" = '5943019fa9422fa5401be9e7e472edde94d14af7'
+          test "$(git hash-object modern/tests/r4-account-world-publisher.test.mjs)" = 'd3614ea7c23e5151a7b3eb0b8cae43783f22108d'
+          test "$(git hash-object modern/src/r4-account-world-publisher.mjs)" = '982e3db6512277bdac21b18325d28e54b8cabc12'
+          test -z "$(git status --porcelain)"
+      - name: Controlled actual source discard through durable publisher and fresh replay
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c76-stock-publication"
+          mkdir -p "$out"
+          original=modern/tests/r4-account-world-publisher.test.mjs
+          copy=modern/tests/c76-stock-publication.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          cp "$original" "$copy"
+          # Copy the already-pinned D60 fixture bootstrap verbatim into a new
+          # independent test; do not change its original test or source files.
+          printf '\ntest("C76 ordinary stock discard durable publication and exact replay",async t=>{\n' >>"$copy"
+          sed -n '/^ const directory=await mkdtemp(/,/^ const publisher=makePublisher(store);/p' "$original" >>"$copy"
+          cat >>"$copy" <<'NODE'
+            const before=publisher.read();
+            const oldSlot=join(directory,'world-b.json'),nextSlot=join(directory,'world-a.json');
+            const oldBytes=await readFile(oldSlot,'utf8');
+            assert.equal(before.shops[0].item[62],1,'source open-shop starter tool');
+            const discard={kind:'discard-item',expectedRevision:before.revision,shopId:1,itemId:63,count:1};
+            const reader=createCommittedOwnerCredentialReader({readCommittedSnapshot:publisher.readCommittedSnapshot});
+            assert.deepEqual(reader({world:before,binding}),record);
+            const invalid=publisher.commit({...discard,count:2});
+            assert.equal(invalid.ok,false);
+            assert.equal(encodeMemorySnapshot(publisher.read()),encodeMemorySnapshot(before));
+            assert.deepEqual(publisher.status(),{generation:1,revision:2});
+            assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+            await assert.rejects(readFile(nextSlot,'utf8'),{code:'ENOENT'});
+            const memory=createSourceReviewedMemoryWorldAdapter({initialWorld:before,streetModule});
+            const expected=executeMemoryCommand({repository:memory,streetModule,command:discard});
+            assert.equal(expected.ok,true,JSON.stringify(expected.details));
+            const result=publisher.commit(discard);
+            assert.equal(result.ok,true,JSON.stringify(result.details));
+            assert.equal(result.code,'COMMITTED');
+            assert.equal(encodeMemorySnapshot(result.world),encodeMemorySnapshot(expected.world));
+            assert.deepEqual(result.details,expected.details);
+            assert.equal(result.world.shops[0].item[62],0);
+            assert.equal(result.world.shops[0].money,before.shops[0].money);
+            assert.equal(result.world.shops[0].time,before.shops[0].time);
+            assert.equal(result.world.nowSeconds,before.nowSeconds);
+            assert.deepEqual(result.world.market,before.market);
+            assert.equal(result.details.timeSpentSeconds,0);
+            assert.equal(reader({world:before,binding}),null);
+            assert.deepEqual(reader({world:result.world,binding}),record);
+            assert.ok(!JSON.stringify(result).includes(record.hash));
+            const nextBytes=await readFile(nextSlot,'utf8');
+            const recoveredStore=openStore(),recovered=makePublisher(recoveredStore);
+            const snapshot=recoveredStore.loadCommittedAccountState();
+            assert.deepEqual(recovered.status(),{generation:2,revision:3});
+            assert.equal(encodeMemorySnapshot(recovered.read()),encodeMemorySnapshot(result.world));
+            assert.deepEqual(snapshot.ownerCredentials,[record]);
+            assert.deepEqual(snapshot.careerProof.commands.at(-1),discard);
+            assert.equal(snapshot.careerProof.commands.length,careerProof.commands.length+1);
+            assert.equal(recovered.commit(discard).code,'REVISION_CONFLICT');
+            assert.equal(recovered.commit({...discard,expectedRevision:3}).ok,false);
+            assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+            assert.equal(await readFile(nextSlot,'utf8'),nextBytes);
+            assert.deepEqual(recovered.status(),{generation:2,revision:3});
+            t.diagnostic('C76_STOCK '+JSON.stringify({stockBefore:1,stockAfter:0,sourceCASMatched:true,preRejected:true,oldRevision:2,newRevision:3,generation:2,historyCommands:snapshot.careerProof.commands.length,privateRecordMatched:true,staleRejected:true,emptyStockRejected:true,bothSlotsPreserved:true,formalAccountBootstrap:false}));
+          });
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/addition.diff" || test "$?" = 1
+          node --check "$copy"
+          set +e
+          node --test --test-name-pattern='C76 ' "$copy" 2>&1 | tee "$out/observation.log"
+          status=$?
+          set -e
+          rm -f "$copy"
+          test "$(git hash-object "$original")" = 'd3614ea7c23e5151a7b3eb0b8cae43783f22108d'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c76-stock-publication
+          path: ${{ runner.temp }}/c76-stock-publication/
+          if-no-files-found: warn
+          retention-days: 30

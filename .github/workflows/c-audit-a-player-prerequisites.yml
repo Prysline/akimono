@@ -1,0 +1,129 @@
+name: C audit - A player prerequisite observations
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  a-prerequisite-observation:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: advanced-showcase
+            sha: b099a743110b70cc6e497d3b72fa7a6e291645cf
+            tree: ffcb0bf7c8f2b6885c081f9d8637da59367a9db9
+            target: tests/r4-normal-commerce-wood-iron-packages-http.test.mjs
+            blob: a1ef87575496639e8b3e9564116e5e76d0633f12
+            pattern: 'advanced dismantling, all sixteen manufactured components'
+          - case: sword-funding
+            sha: 04772ca4ea25cdbf4b343db1e75b28795a5af8ed
+            tree: 77b08a4a04a9c40bc7690ac27147181289645d27
+            target: tests/r4-normal-commerce-remaining-items-http.test.mjs
+            blob: 37976a707490cc625a3a3e6ae130ee739c13fa74
+            pattern: 'all mining and mountain maps, sword-market doubled and lostbook'
+    env:
+      AUDIT_CASE: ${{ matrix.case }}
+      CANDIDATE: ${{ matrix.sha }}
+      CANDIDATE_TREE: ${{ matrix.tree }}
+      TARGET: ${{ matrix.target }}
+      TARGET_BLOB: ${{ matrix.blob }}
+      PATTERN: ${{ matrix.pattern }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and original test
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/a-prerequisites"
+          mkdir -p "$out"
+          {
+            git rev-parse HEAD 'HEAD^{tree}'
+            node --version
+            perl -v
+            test "$(git rev-parse HEAD)" = "$CANDIDATE"
+            test "$(git rev-parse 'HEAD^{tree}')" = "$CANDIDATE_TREE"
+            test "$(git hash-object "$TARGET")" = "$TARGET_BLOB"
+            test "$(git hash-object tests/support/p3-genuine-v2-player.mjs)" = 'fbd0d685d98e93ff83258b6a6a7b8d4e0f62a1a3'
+            test -z "$(git status --porcelain)"
+          } 2>&1 | tee "$out/environment.log"
+      - name: Run original targeted test, no retry or seed selection
+        id: original
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/a-prerequisites"
+          set +e
+          node --test --test-name-pattern="$PATTERN" "$TARGET" >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/original-exit.txt"
+          cat "$out/original.log"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Observe separate new world using temporary test-only copy
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/a-prerequisites"
+          copy=tests/c-audit-a-prerequisite-observation.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          let src=readFileSync(process.env.TARGET,'utf8');
+          const insert=(anchor,extra)=>{
+            if(src.split(anchor).length!==2)throw Error('nonunique diagnostic anchor: '+anchor);
+            src=src.replace(anchor,extra+'\n'+anchor);
+          };
+          const state="({revision:p.state.world.revision,clock:p.state.world.nowSeconds,period:p.state.world.period.settledCount,money:p.state.shop.money,costtoday:p.state.shop.costtoday,paytoday:p.state.shop.paytoday,saleToday:p.state.shop.saletoday,remaining:p.remaining(),showcase:p.state.shop.showcase,stock:p.state.shop.item,history:p.state.historyCommands,generation:p.state.save?.generation})";
+          if(process.env.AUDIT_CASE==='advanced-showcase'){
+            insert('  await p.enoughTime(4*600);\n  for(const [shelf,g] of goods.entries()){',
+              "  t.diagnostic('C61_SHOWCASE_BEFORE_WAIT '+JSON.stringify("+state+"));");
+            insert("    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:g.id,per:120});",
+              "    t.diagnostic('C61_SHOWCASE_REQUEST '+JSON.stringify({shelf,itemId:g.id,per:120,state:"+state+"}));");
+            const anchor="    const r=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,shelf,itemId:g.id,per:120});\n    assert.equal(r.code,'COMMITTED',JSON.stringify(r.details??r.error));";
+            if(src.split(anchor).length!==2)throw Error('nonunique showcase result anchor');
+            src=src.replace(anchor,anchor.replace('\n    assert.equal',"\n    t.diagnostic('C61_SHOWCASE_RESULT '+JSON.stringify({shelf,itemId:g.id,code:r.code,reason:r.details?.reason,error:r.error,state:"+state+"}));\n    assert.equal"));
+          }else if(process.env.AUDIT_CASE==='sword-funding'){
+            insert("      assert.ok(j<20,'actual sword trip funding');",
+              "      t.diagnostic('C61_SWORD_BEFORE_WAIT '+JSON.stringify({n,j,state:"+state+"}));");
+            insert("      if(p.state.shop.money>=12000+Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000))break;",
+              "      t.diagnostic('C61_SWORD_AFTER_WAIT '+JSON.stringify({n,j,required:12000+Math.max(45000,Math.ceil(p.state.shop.costtoday)+10000),state:"+state+"}));");
+          }else throw Error('unknown case');
+          writeFileSync('tests/c-audit-a-prerequisite-observation.mjs',src,{flag:'wx'});
+          NODE
+          git diff --no-index -- "$TARGET" "$copy" >"$out/diagnostic-only.diff" || test "$?" = 1
+          cat "$out/diagnostic-only.diff"
+          set +e
+          node --test --test-name-pattern="$PATTERN" "$copy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" | tee "$out/observation-exit.txt"
+          grep -E '^not ok|^ok |^# (tests|pass|fail|skipped|cancelled)|C61_SHOWCASE|C61_SWORD|SOURCE_BOUNDARY_REJECTED|actual sword trip funding' "$out/observation.log" || true
+          rm -f "$copy"
+          trap - EXIT
+          test "$(git hash-object "$TARGET")" = "$TARGET_BLOB"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - name: Preserve original and diagnostic results separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c61-a-prerequisite-${{ matrix.case }}
+          path: ${{ runner.temp }}/a-prerequisites/
+          if-no-files-found: warn
+          retention-days: 30

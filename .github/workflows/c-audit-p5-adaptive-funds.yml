@@ -1,0 +1,65 @@
+name: C audit - P5 adaptive funds proof
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  p5-adaptive-funds:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '16f17336403e8e9b587e71d17bbd34464b39fa43'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact candidate and untouched P5 inputs
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c66-p5"; mkdir -p "$out"
+          git rev-parse HEAD 'HEAD^{tree}' | tee "$out/environment.log"
+          test "$(git rev-parse HEAD)" = '16f17336403e8e9b587e71d17bbd34464b39fa43'
+          test "$(git rev-parse 'HEAD^{tree}')" = 'b998de5707eed38fcb13e9032daaaf7e4ad3f0f3'
+          test "$(git hash-object modern/tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = '547208190d5ec6d26af293e1ed0d0ded5f649a44'
+          test -z "$(git status --porcelain)"
+      - name: Execute independent fresh P5 copy with live funding budget
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c66-p5"
+          copy=tests/c-audit-p5-adaptive-funds.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          let src=readFileSync('tests/p5-book-work-v2-player-http.test.mjs','utf8');
+          function swap(a,b){if(src.split(a).length!==2)throw Error('nonunique anchor');src=src.replace(a,b);}
+          swap("  for(let n=0;totalPaid<=nonWorkFunds&&n<32;n++){","  const proofBudget=256;\n  let attempts=0;\n  t.diagnostic('C66_P5_PRE '+JSON.stringify({nonWorkFunds,totalPaid,proofBudget,requiredPurchases:Math.max(1,Math.floor((nonWorkFunds-totalPaid)/5000)+1)}));\n  for(;(!workFundedPurchase||totalPaid<=nonWorkFunds)&&attempts<proofBudget;attempts++){");
+          swap("  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');","  t.diagnostic('C66_P5_PROOF '+JSON.stringify({attempts,proofBudget,nonWorkFunds,totalPaid,workFundedPurchase,revision:p.state.world.revision,period:p.state.world.period.settledCount,requiredAdditionalPurchases:Math.max(0,Math.floor((nonWorkFunds-totalPaid)/5000)+1)}));\n  if(attempts===proofBudget&&(!workFundedPurchase||totalPaid<=nonWorkFunds))t.diagnostic('C66_P5_PROOF_BUDGET_EXHAUSTED');\n  assert.ok(workFundedPurchase,'real purchases must exceed all non-work funds');");
+          writeFileSync('tests/c-audit-p5-adaptive-funds.mjs',src,{flag:'wx'});
+          NODE
+          git diff --no-index -- tests/p5-book-work-v2-player-http.test.mjs "$copy" >"$out/independent.diff" || test "$?" = 1
+          cat "$out/independent.diff"
+          node --check "$copy"
+          set +e
+          node --test "$copy" >"$out/observation.log" 2>&1
+          status=$?
+          set -e
+          cat "$out/observation.log"
+          printf '%s\n' "$status" >"$out/exit.txt"
+          rm -f "$copy"
+          test "$(git hash-object tests/p5-book-work-v2-player-http.test.mjs)" = '97a9b57a8f51f72643f363d3bc21370323428be9'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c66-p5-adaptive-funds-exact
+          path: ${{ runner.temp }}/c66-p5/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,679 @@
+{
+  "baseline": {
+    "head": "08fdd3b31ff130e66d0337360430fda3d73fdc8d",
+    "tree": "9a6c0d5837042c276eda13f78394025016d332b5"
+  },
+  "scope": "B41–B63; first-pass evidence supplement to PR #23; no real player acceptance",
+  "counts": {
+    "歷史": 14,
+    "有效": 28
+  },
+  "tests": [
+    {
+      "path": "modern/tests/b41-real-playable-sale.test.mjs",
+      "sha": "d317a6c419be9d40c41e6cae0deef9a080349003",
+      "originalSource": "buy-s.cgi、sc-s.cgi、inc-turn.cgi、whole.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+      ],
+      "executionPath": "GameCore market-buy/edit-showcase → advance-source-time；legacy-dev-local",
+      "evidenceLevel": "舊 HTTP／CAS＋Perl 差分",
+      "status": "歷史",
+      "assertions": "30/60 分自然賣出實買 #10；拒絕缺來源能力；原價、貨架、金錢、庫存、revision",
+      "risk": "自然售賣量、時間、成交與帳本",
+      "disposition": "R3/R4 正式 reviewed time 另證；保留舊來源差分",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b41-real-sale.t",
+      "sha": "cee0262a106ba901e05b8b485cf2ce4c7b840e23",
+      "originalSource": "buy-s.cgi、sc-s.cgi、inc-turn.cgi、whole.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b41-real-sale-probe.pl；Node 對照 b41-real-playable-sale.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "實買 #10、兩交易提交、30/60 分、自然售賣、5000G 及雙帳本",
+      "risk": "自然售賣量、時間、成交與帳本",
+      "disposition": "保留原版來源斷言及探針；R3/R4 正式 reviewed time 另證；保留舊來源差分",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b42-continuous-shop.test.mjs",
+      "sha": "0c1377fd821302addd0467600a98c51e520651bf",
+      "originalSource": "buy-s.cgi、inc-turn.cgi、whole.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+      ],
+      "executionPath": "GameCore advance-source-time；legacy-dev-local",
+      "evidenceLevel": "舊 HTTP／CAS＋Perl 差分",
+      "status": "歷史",
+      "assertions": "同一世界兩輪真原版供貨、購買、售出及空架；市場 CSV、收支、時間片",
+      "risk": "第二輪狀態重設、稀疏市場漂移",
+      "disposition": "R5 同一世界續營另證；保留原兩輪 oracle",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b42-two-rounds.t",
+      "sha": "2f39241eadafdfd8486b2351efab2d1e378535cb",
+      "originalSource": "buy-s.cgi、inc-turn.cgi、whole.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b41-real-sale-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b41-real-sale-probe.pl；Node 對照 b42-continuous-shop.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "第二次買賣同一原版店、累計 10000G 收支、空架",
+      "risk": "第二輪狀態重設、稀疏市場漂移",
+      "disposition": "保留原版來源斷言及探針；R5 同一世界續營另證；保留原兩輪 oracle",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b43-durable-world-save.test.mjs",
+      "sha": "fdce6b7d885e314b99b9cfc99ed640204d45305a",
+      "originalSource": "write.cgi、lock.cgi、buy-s.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-market-buy10-probe.pl"
+      ],
+      "executionPath": "legacy-world-save-store / legacy-dev-local",
+      "evidenceLevel": "舊存檔／HTTP/CAS fixture",
+      "status": "歷史",
+      "assertions": "兩代存檔、損毀回退、generation、身分、續買賣；固定 clock/RNG",
+      "risk": "把舊格式當正式 v2 或移除磁碟拒絕",
+      "disposition": "P3–P5 v2 證據接替玩家保存；保留隔離負例，非一比一替代",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b44-period-ledger.test.mjs",
+      "sha": "9eb39c6cba6e3dcbf27296d3d0e2962d666444c3",
+      "originalSource": "period.cgi、_config.cgi、inc-makeitem.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b44-period-ledger-probe.pl"
+      ],
+      "executionPath": "original-period-shop-ledger",
+      "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
+      "status": "有效",
+      "assertions": "三組期末帳本、維持費、庫存、EXP 衰減、利潤；未知外部狀態拒絕",
+      "risk": "維持費截斷、EXP、昨日帳本或外部狀態",
+      "disposition": "保留；#22 多架決算另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b44-period-ledger.t",
+      "sha": "7138c295180aed031439839b06fb276c82bd35dd",
+      "originalSource": "period.cgi、_config.cgi、inc-makeitem.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b44-period-ledger-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b44-period-ledger-probe.pl；Node 對照 b44-period-ledger.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "79 欄、三帳本案、維持費15、EXP衰減、昨日欄位",
+      "risk": "維持費截斷、EXP、昨日帳本或外部狀態",
+      "disposition": "保留原版來源斷言及探針；保留；#22 多架決算另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b45-period-top-prize.test.mjs",
+      "sha": "5631a576bf55ed6cf21753edcb9308c454f3e05d",
+      "originalSource": "custom/inc-item-data.cgi FUNCUPDATE、use.cgi、period.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b45-top-prize-probe.pl"
+      ],
+      "executionPath": "original-period-top-prize",
+      "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
+      "status": "有效",
+      "assertions": "九種頭名獎品、十案含溢出、rankingcount、亂數及未知庫存拒絕",
+      "risk": "獎品越界、發獎重複、排序與 RNG",
+      "disposition": "保留；多店排名與正式 CAS 由 R4 補",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b45-top-prize.t",
+      "sha": "f8ecb35dba0839bbf202fdb5f0d28aed441a8970",
+      "originalSource": "custom/inc-item-data.cgi FUNCUPDATE、use.cgi、period.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b45-top-prize-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b45-top-prize-probe.pl；Node 對照 b45-period-top-prize.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "九選項、十案、#79 上限10及 rankingcount",
+      "risk": "獎品越界、發獎重複、排序與 RNG",
+      "disposition": "保留原版來源斷言及探針；保留；多店排名與正式 CAS 由 R4 補",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b46-period-territory.test.mjs",
+      "sha": "ea64d199acb18c55daaf47d984f1b16cebe0e4dc",
+      "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b46-territory-probe.pl"
+      ],
+      "executionPath": "original-period-territory",
+      "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
+      "status": "有效",
+      "assertions": "初期、後期、資不抵債三案；人口、發展、治安、志願兵；2 RNG",
+      "risk": "人口及領主／軍隊外部狀態誤套",
+      "disposition": "保留；#18 外部功能需獨立整合",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b46-territory.t",
+      "sha": "496ae141ccf9651325881cc1c64ad7746a30cc34",
+      "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b46-territory-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b46-territory-probe.pl；Node 對照 b46-period-territory.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "三案、人口374050→336550、發展治安與兵狀態",
+      "risk": "人口及領主／軍隊外部狀態誤套",
+      "disposition": "保留原版來源斷言及探針；保留；#18 外部功能需獨立整合",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b47-period-solo-sort.test.mjs",
+      "sha": "cb54e0e7cbf598293926b0286d5d43144cece187",
+      "originalSource": "core-detail.cgi、inc-func.cgi GetDTPoint/SortDT",
+      "probes": [
+        "modern/tests/original-perl/original-b47-solo-sort-probe.pl"
+      ],
+      "executionPath": "original-period-solo-sort",
+      "evidenceLevel": "Perl Oracle／Node 差分（純投影）",
+      "status": "有效",
+      "assertions": "開店、兩次售賣、高利潤、虧損；單店 id/name index；拒絕非法多來源",
+      "risk": "排序與 point、非單店誤許",
+      "disposition": "保留；#22 多架同世界與完整時序另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b47-solo-sort.t",
+      "sha": "7ba59eff7bf218bf098e4fcd0566a766a9c03303",
+      "originalSource": "core-detail.cgi、inc-func.cgi GetDTPoint/SortDT",
+      "probes": [
+        "modern/tests/original-perl/original-b47-solo-sort-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b47-solo-sort-probe.pl；Node 對照 b47-period-solo-sort.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "四案、point 5010、單店 id/name index、盈虧點數",
+      "risk": "排序與 point、非單店誤許",
+      "disposition": "保留原版來源斷言及探針；保留；#22 多架同世界與完整時序另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b48-original-event-start.test.mjs",
+      "sha": "1dcf75347648df6ff23f55aecf1d474712d3461c",
+      "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b48-event-start-probe.pl"
+      ],
+      "executionPath": "original-event-start-gate",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控）",
+      "status": "有效",
+      "assertions": "0 與 -1 不同、五種 start gate、群組、duration、RNG、拒絕不支援 callback",
+      "risk": "錯編停用 EVENT 或消耗亂數",
+      "disposition": "保留；不等同所有 EVENT 玩家生命週期",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b48-event-start.t",
+      "sha": "d4b54b9aebca9b3784869e00cd228911837dc83b",
+      "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b48-event-start-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b48-event-start-probe.pl；Node 對照 b48-original-event-start.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "五案、0 gate 消耗亂數、群組、期限計算",
+      "risk": "錯編停用 EVENT 或消耗亂數",
+      "disposition": "保留原版來源斷言及探針；保留；不等同所有 EVENT 玩家生命週期",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b49-original-event-lifecycle.test.mjs",
+      "sha": "1649d60e70524f6623ace59cf322869698db80d1",
+      "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b49-event-lifecycle-probe.pl"
+      ],
+      "executionPath": "original-event-lifecycle",
+      "evidenceLevel": "Perl Oracle／Node 差分（受控）",
+      "status": "有效",
+      "assertions": "六種 expiry/start/rand；等於片尾仍未過期、群組與未知 callback 拒絕",
+      "risk": "邊界提前失效、重啟或錯序",
+      "disposition": "保留；#22 真 reviewed time 另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b49-event-lifecycle.t",
+      "sha": "a3a1108f409fd9e056074ee36ce1781a65108731",
+      "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b49-event-lifecycle-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b49-event-lifecycle-probe.pl；Node 對照 b49-original-event-lifecycle.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "六案、expiry equality、active 無 draw、重觸發",
+      "risk": "邊界提前失效、重啟或錯序",
+      "disposition": "保留原版來源斷言及探針；保留；#22 真 reviewed time 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b50-period-same-state-chain.test.mjs",
+      "sha": "08e089855a7e2ec39c27fca56fe25ddc7bfa7e3e",
+      "originalSource": "period.cgi、inc-func.cgi、use.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b50-period-chain-probe.pl"
+      ],
+      "executionPath": "original-period-solo-chain；明示 nonCommittable",
+      "evidenceLevel": "Perl Oracle／Node 差分（不可提交前綴）",
+      "status": "有效",
+      "assertions": "同店同城市連續兩期、七階段、兩次排名／回呼、庫存、人口；禁止 CAS",
+      "risk": "把前綴當完整決算或重設城市",
+      "disposition": "保留不可提交拒絕；#18/#22 完整鏈另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b50-period-chain.t",
+      "sha": "970c942d44825df21fc2865d110ad24e4c392a36",
+      "originalSource": "period.cgi、inc-func.cgi、use.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b50-period-chain-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b50-period-chain-probe.pl；Node 對照 b50-period-same-state-chain.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "兩期同一原版店城、排名、禮券、機器人及帳本",
+      "risk": "把前綴當完整決算或重設城市",
+      "disposition": "保留原版來源斷言及探針；保留不可提交拒絕；#18/#22 完整鏈另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b51-source-city-period-world.test.mjs",
+      "sha": "0e2ba0214e22d9f8197a888212a2be1fc83ff4ee",
+      "originalSource": "period.cgi、core-inc-admin-func.cgi、inc-func.cgi、write.cgi、_config.cgi",
+      "probes": [],
+      "executionPath": "original-period-world-seed；GameCore period memory；legacy-world-save-store",
+      "evidenceLevel": "fixture／舊 CAS 存檔",
+      "status": "歷史",
+      "assertions": "129600s 期界、10800s shift、500000 人口、bootstrap-only envelope；拒絕偽造期別",
+      "risk": "混淆 memory v2 和磁碟 v2、城市偽造",
+      "disposition": "保留 seed 及拒絕；P3 v2 存檔另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b52-event-bootstrap-source.test.mjs",
+      "sha": "9c857d66673409a20b5b49b1c1d36eba4d60271a",
+      "originalSource": "core-inc-admin-func.cgi、inc-func.cgi、write.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b52-event-wire-probe.pl"
+      ],
+      "executionPath": "original-event-world-bootstrap / original-period-world-seed",
+      "evidenceLevel": "Perl Oracle／Node 差分",
+      "status": "有效",
+      "assertions": "空 EVENT CSV、單 active expiry 往返、null 未知與空 map 區分、拒絕偽造活動事件",
+      "risk": "未知 EVENT 被當空、虛構 expiry",
+      "disposition": "保留；現行時間 unknown gate 另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b52-event-wire.t",
+      "sha": "1ed198a5e6bab1152e76644e9fec94696cf7bb38",
+      "originalSource": "core-inc-admin-func.cgi、inc-func.cgi、write.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b52-event-wire-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b52-event-wire-probe.pl；Node 對照 b52-event-bootstrap-source.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "空 CSV、rebel expiry 123456、真讀寫",
+      "risk": "未知 EVENT 被當空、虛構 expiry",
+      "disposition": "保留原版來源斷言及探針；保留；現行時間 unknown gate 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b53-event-catalog-source.test.mjs",
+      "sha": "bdaba6a5853bd835e92841b8c7c0beef24181eaf",
+      "originalSource": "inc-makeitem.cgi GetNumber/GetTime、inc-turn.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b53-event-catalog-probe.pl"
+      ],
+      "executionPath": "original-event-compiled-catalog",
+      "evidenceLevel": "Perl Oracle／Node 差分（編譯）",
+      "status": "有效",
+      "assertions": "25 宣告、17 compiled、8 停用、START 覆寫與 callback metadata；runtimeSupported=false",
+      "risk": "將編譯當執行、把停用當缺失",
+      "disposition": "保留；#22 逐 EVENT 玩家支援另證",
+      "reason": "當前基線的獨立來源/純投影證據；不等於玩家完成",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b53-event-catalog.t",
+      "sha": "d66fd10bc2d9bfc5424c2ca8def97ab5adeab672",
+      "originalSource": "inc-makeitem.cgi GetNumber/GetTime、inc-turn.cgi、兩 DSL",
+      "probes": [
+        "modern/tests/original-perl/original-b53-event-catalog-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b53-event-catalog-probe.pl；Node 對照 b53-event-catalog-source.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "25/17/8、2 zero、15 positive、START覆寫及時間",
+      "risk": "將編譯當執行、把停用當缺失",
+      "disposition": "保留原版來源斷言及探針；保留；#22 逐 EVENT 玩家支援另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b54-repeatable-source-command-draws.test.mjs",
+      "sha": "533ad00ca9f6e9bc981375248f4d9fa98d216939",
+      "originalSource": "inc-turn.cgi 亂數使用；現代 replay policy（非原版 PRNG）",
+      "probes": [],
+      "executionPath": "local-source-command-draws；advance-source-time / reviewed-sparse-all-plus",
+      "evidenceLevel": "fixture／現代 policy",
+      "status": "歷史",
+      "assertions": "相同世界/命令 121 draws 重播；domain separation、範圍、非法欄位拒絕",
+      "risk": "舊 replay policy 被誤認 Perl hash/PRNG",
+      "disposition": "保留舊 policy；正式 r4-time-command-draws / history 另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b55-source-event-callbacks-live-cas.test.mjs",
+      "sha": "e6a43f621e7260cac85bbc23b9e4162f20f8301b",
+      "originalSource": "兩 DSL STARTFUNC manbiki/goutou、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b55-instant-event-callback-probe.pl"
+      ],
+      "executionPath": "original-instant-event-callbacks；reviewed-instant-event-callback-fixture；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "十案損失、保安機器人、人氣、log、RNG、return 0 無 active event；實買店 fixture CAS",
+      "risk": "把注入事件當自然觸發或持久化",
+      "disposition": "保留 source；#22 正式 EVENT+time 另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b55-instant-event-callback.t",
+      "sha": "2621b7c32db8ea6e83efbe69e3aa447f33766c0d",
+      "originalSource": "兩 DSL STARTFUNC manbiki/goutou、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b55-instant-event-callback-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b55-instant-event-callback-probe.pl；Node 對照 b55-source-event-callbacks-live-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "十案偷竊/搶劫/機器人、庫存與人氣",
+      "risk": "把注入事件當自然觸發或持久化",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 正式 EVENT+time 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b56-source-event-time-slice.test.mjs",
+      "sha": "23f61d009dc750169fa6faa3c0c0d221a751be9c",
+      "originalSource": "inc-turn.cgi、inc-makeitem.cgi、兩 DSL",
+      "probes": [],
+      "executionPath": "original-b56-event-time-slice / projectR3PreEventTurn；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "fixture CAS",
+      "status": "歷史",
+      "assertions": "明示 17 鍵排列非 Perl hash；sale/PLUS/搶劫、第二次 gate、null unknown、拒絕跨期／壞輸入",
+      "risk": "固定順序冒充真來源 hash",
+      "disposition": "#23 已分類；本表僅交叉核對，保留 fixture；#22 真時間另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b57-source-support-events-live-cas.test.mjs",
+      "sha": "4faa0d78e2f66630243eecdc77cf85caefa0cdfb",
+      "originalSource": "兩 DSL STARTFUNC getmoney/getpop、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b57-support-event-probe.pl"
+      ],
+      "executionPath": "original-b57-support-event-callbacks；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "十一案資金／人氣、300 gate、999999999 cap、log、RNG、return 0",
+      "risk": "錯誤收入、超額、虛構 durable EVENT",
+      "disposition": "保留 source；#22 自然觸發與 v2 另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b57-support-event.t",
+      "sha": "724907644bc4ee64c87c585c1b1e609c5c61d82f",
+      "originalSource": "兩 DSL STARTFUNC getmoney/getpop、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b57-support-event-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b57-support-event-probe.pl；Node 對照 b57-source-support-events-live-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "十一案 getmoney/getpop、上限、門檻",
+      "risk": "錯誤收入、超額、虛構 durable EVENT",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 自然觸發與 v2 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b58-source-loto-real-ticket-cas.test.mjs",
+      "sha": "b8375c16be1385c9c223c6a22f98579484ea5ee4",
+      "originalSource": "兩 DSL loto STARTFUNC、buy-s.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b58-loto-event-probe.pl"
+      ],
+      "executionPath": "original-b58-loto-startfunc；market-buy；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "十五案五獎級、邊界、沒券、扣券、上限、log/RNG；實買 #11 但固定事件抽樣",
+      "risk": "假獎金、券重複、亂數順序",
+      "disposition": "保留 source；#22 真 time/收入/存檔另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b58-loto-event.t",
+      "sha": "399b9ed529234431d39d8ea668f75d1b6b3a0373",
+      "originalSource": "兩 DSL loto STARTFUNC、buy-s.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b58-loto-event-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b58-loto-event-probe.pl；Node 對照 b58-source-loto-real-ticket-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "十五案、五獎級、6096454 RNG 範圍、消耗券",
+      "risk": "假獎金、券重複、亂數順序",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 真 time/收入/存檔另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b59-source-iron-event-live-lifecycle.test.mjs",
+      "sha": "e50493a0f5ced40be3038babae4501e008213367",
+      "originalSource": "inc-makeitem.cgi、inc-turn.cgi、兩 DSL plusup-tetu",
+      "probes": [
+        "modern/tests/original-perl/original-b59-iron-event-probe.pl"
+      ],
+      "executionPath": "original-b59-iron-event-lifecycle；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "#5 PLUS -1200→720、五種期限/重觸發、59 PLUS 市場差分",
+      "risk": "漏 overlay 或過期後永久修正",
+      "disposition": "保留 source；#22 真 EVENT overlay 另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b59-iron-event.t",
+      "sha": "bc2faadd100696f0f1e20b21903bf2c1e9ad8275",
+      "originalSource": "inc-makeitem.cgi、inc-turn.cgi、兩 DSL plusup-tetu",
+      "probes": [
+        "modern/tests/original-perl/original-b59-iron-event-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b59-iron-event-probe.pl；Node 對照 b59-source-iron-event-live-lifecycle.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "#5 PLUS -1200→720、五案、期限、log",
+      "risk": "漏 overlay 或過期後永久修正",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 真 EVENT overlay 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b60-source-happy-nowfunc-live-cas.test.mjs",
+      "sha": "212c6f2acd5a66d64306525c34afa5335b5204c4",
+      "originalSource": "兩 DSL happy NOWFUNC、inc-makeitem.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b60-happy-event-probe.pl"
+      ],
+      "executionPath": "original-b60-happy-event-nowfunc；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "九案 start/NOWFUNC 同片、人氣、rand(time)、期限等於片尾及續存",
+      "risk": "漏同片 callback 或錯亂數範圍",
+      "disposition": "保留 source；#22 自然事件、正式 v2 另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b60-happy-event.t",
+      "sha": "e7a92b5927b5a15d7806af564f6e1a1f3a55a073",
+      "originalSource": "兩 DSL happy NOWFUNC、inc-makeitem.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b60-happy-event-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b60-happy-event-probe.pl；Node 對照 b60-source-happy-nowfunc-live-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "九案、_local_now、人氣、期限、rand",
+      "risk": "漏同片 callback 或錯亂數範圍",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 自然事件、正式 v2 另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b61-source-sword-demand-live-cas.test.mjs",
+      "sha": "c7b4e4e0f7eb81965c35d3cf912e1c4de92f7251",
+      "originalSource": "兩 DSL ken-sale PARAM、inc-makeitem.cgi、market.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b61-sword-demand-probe.pl"
+      ],
+      "executionPath": "original-b61-sword-demand-event；advance-source-time-reviewed-events；legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "五劍 POP/2、原價不變、需求 point 54→27、五種 END/START；限定售賣能力",
+      "risk": "市場均價與需求混淆、漏活動 overlay",
+      "disposition": "保留 source；#22 全商品正式售賣另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b61-sword-demand.t",
+      "sha": "0ca111a3497d625f6aed1348727a7398fc9a23fc",
+      "originalSource": "兩 DSL ken-sale PARAM、inc-makeitem.cgi、market.cgi、inc-turn.cgi",
+      "probes": [
+        "modern/tests/original-perl/original-b61-sword-demand-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b61-sword-demand-probe.pl；Node 對照 b61-source-sword-demand-live-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "五 POP/2 行、原價1200、point54→27、END/START",
+      "risk": "市場均價與需求混淆、漏活動 overlay",
+      "disposition": "保留原版來源斷言及探針；保留 source；#22 全商品正式售賣另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b62-real-sword-market-map-sale-cas.test.mjs",
+      "sha": "396f1b491f44310aecc04791b1fbbd305914de9c",
+      "originalSource": "buy-s.cgi、use.cgi、inc-makeitem.cgi、兩 DSL #14",
+      "probes": [
+        "modern/tests/original-perl/original-b62-sword-map-use-probe.pl"
+      ],
+      "executionPath": "GameCore market-buy/use-item；original-b62-sword-map-acquisition；舊 EVENT/time、legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "原版 PLUS #14、買入、7200s/12000G/EXP20、十木刀、回呼窄分支、上架",
+      "risk": "舊專用 map 或假造庫存",
+      "disposition": "保留 source；R2 共用 USE 與 B63 擴充不可刪",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b62-sword-map-use.t",
+      "sha": "4b715fe9da1f611028fba16a4ec4a1bcdd2232ce",
+      "originalSource": "buy-s.cgi、use.cgi、inc-makeitem.cgi、兩 DSL #14",
+      "probes": [
+        "modern/tests/original-perl/original-b62-sword-map-use-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b62-sword-map-use-probe.pl；Node 對照 b62-real-sword-market-map-sale-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "#14 7200s、12000G、EXP20、五產物、十木刀",
+      "risk": "舊專用 map 或假造庫存",
+      "disposition": "保留原版來源斷言及探針；保留 source；R2 共用 USE 與 B63 擴充不可刪",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/b63-source-all-sword-map-outcomes-cas.test.mjs",
+      "sha": "3e50357f6bb4ac04f08c22a544c383178c328d8b",
+      "originalSource": "use.cgi GetBuffer/UseItemSub/MakeAmount、core-inc-item.cgi、兩 DSL #14 lostbook",
+      "probes": [
+        "modern/tests/original-perl/original-b63-sword-map-all-outcomes-probe.pl"
+      ],
+      "executionPath": "GameCore market-buy/use-item；original-b63-sword-map-all-outcomes；舊 EVENT/time、legacy save",
+      "evidenceLevel": "Perl 差分＋fixture CAS",
+      "status": "歷史",
+      "assertions": "六情境五劍、52/12 RNG、加倍、損毀、收支/EXP/時間、舊命令拒絕",
+      "risk": "回呼次序與抽樣邊界、錯誤存檔",
+      "disposition": "保留 source；R2 正式共用入口與 R5 同世界另證",
+      "reason": "仍有來源或拒絕證據；未使用正式真時鐘 HTTP/v2 路徑",
+      "realPlayer": false
+    },
+    {
+      "path": "modern/tests/original-perl/original-b63-sword-map-all-outcomes.t",
+      "sha": "a849ff3a098f3a9abbe2e5c0dd1ace9d3f961291",
+      "originalSource": "use.cgi GetBuffer/UseItemSub/MakeAmount、core-inc-item.cgi、兩 DSL #14 lostbook",
+      "probes": [
+        "modern/tests/original-perl/original-b63-sword-map-all-outcomes-probe.pl"
+      ],
+      "executionPath": "Perl .t → original-b63-sword-map-all-outcomes-probe.pl；Node 對照 b63-source-all-sword-map-outcomes-cas.test.mjs",
+      "evidenceLevel": "Perl Oracle（受控）",
+      "status": "有效",
+      "assertions": "六情境，五劍及加倍/損毀、52/12 RNG、來源 callback",
+      "risk": "回呼次序與抽樣邊界、錯誤存檔",
+      "disposition": "保留原版來源斷言及探針；保留 source；R2 正式共用入口與 R5 同世界另證",
+      "reason": "隔離原版執行證據，非現代正式玩家入口",
+      "realPlayer": false
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+name: C audit - D61 repass publication fault
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  repass-publication:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'c99236c77051469cb165eaf591fa1079a3d07069'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin D61 checkout and fixture
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = 'c99236c77051469cb165eaf591fa1079a3d07069'
+          test "$(git rev-parse 'HEAD^{tree}')" = 'ea043886bdab14367d14309f6fff92a7e7f82baf'
+          test "$(git hash-object modern/tests/r4-account-password-command.test.mjs)" = 'a5916f87fc97a46234674e555c94fb7a559474f7'
+          test "$(git hash-object modern/src/r4-account-world-publisher.mjs)" = 'ec5df8121fd824ddf6451d54a173e29b95af4bca'
+          test "$(git hash-object modern/src/r4-stable-owner-sessions.mjs)" = '0fa8fd512252d70b79099391d4efad33f24146d6'
+          test -z "$(git status --porcelain)"
+      - name: Independent repass before and after physical slot rename
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c77-repass-fault"
+          mkdir -p "$out"
+          original=modern/tests/r4-account-password-command.test.mjs
+          copy=modern/tests/c77-repass-fault.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          cp "$original" "$copy"
+          printf '\nimport fs from "node:fs";\nimport {AccountPublicationUncertainError} from "../src/local-world-save-store.mjs";\ntest("C77 repass prepublication rejection and postpublication authority fence",async t=>{\n' >>"$copy"
+          sed -n '/^ const directory=await mkdtemp(/,/^ const body=(expectedRevision/p' "$original" >>"$copy"
+          cat >>"$copy" <<'NODE'
+            const before=publisher.read();
+            const oldSlot=join(directory,'world-b.json'),newSlot=join(directory,'world-a.json');
+            const oldBytes=await readFile(oldSlot,'utf8');
+            const realRename=fs.renameSync,realUnlink=fs.unlinkSync;
+            let preFaults=0;
+            const pre=t.mock.method(fs,'renameSync',(from,to)=>{
+              if(to===newSlot){preFaults++;throw Error('C77 isolated prepublication fault');}
+              return realRename(from,to);
+            });
+            try{
+              const rejected=await publisher.changePassword({request,body:body(2,'new_pw')});
+              assert.equal(rejected.code,'PERSISTENCE_REJECTED');
+            }finally{pre.mock.restore();}
+            assert.equal(preFaults,1);
+            assert.deepEqual(publisher.status(),{generation:1,revision:2});
+            assert.equal(encodeMemorySnapshot(publisher.read()),encodeMemorySnapshot(before));
+            assert.deepEqual(publisher.readCommittedSnapshot().ownerCredentials,[record]);
+            assert.equal(sessions.resolveAuthenticatedActor({request,world:before}).shopId,1);
+            assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+            await assert.rejects(readFile(newSlot,'utf8'),{code:'ENOENT'});
+            let fromRenamed=null,postFaults=0;
+            const renameHook=t.mock.method(fs,'renameSync',(from,to)=>{
+              const v=realRename(from,to);if(to===newSlot)fromRenamed=from;return v;
+            });
+            const unlinkHook=t.mock.method(fs,'unlinkSync',name=>{
+              if(fromRenamed!==null&&name===fromRenamed){postFaults++;throw Object.assign(Error('C77 isolated cleanup fault'),{code:'EACCES'});}
+              return realUnlink(name);
+            });
+            const uncertain=e=>e instanceof AccountPublicationUncertainError&&e.code==='ACCOUNT_PUBLICATION_UNCERTAIN'&&e.attemptedGeneration===2&&e.attemptedRevision===3;
+            try{await assert.rejects(publisher.changePassword({request,body:body(2,'new_pw')}),uncertain);}
+            finally{unlinkHook.mock.restore();renameHook.mock.restore();}
+            assert.ok(fromRenamed);assert.equal(postFaults,1);
+            assert.throws(()=>publisher.read(),uncertain);
+            assert.throws(()=>publisher.status(),uncertain);
+            assert.throws(()=>publisher.readCommittedSnapshot(),uncertain);
+            assert.throws(()=>publisher.commit({kind:'edit-showcase',expectedRevision:2,shopId:1,itemId:0,shelf:0,per:100,priceOverride:0}),uncertain);
+            assert.throws(()=>sessions.resolveAuthenticatedActor({request,world:before}),uncertain);
+            await assert.rejects(publisher.changePassword({request,body:body(2,'new_pw')}),uncertain);
+            await assert.rejects(login('old_pw'),uncertain);
+            const newBytes=await readFile(newSlot,'utf8');
+            assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+            const recoveredStore=openStore(),state=recoveredStore.loadCommittedAccountState();
+            assert.equal(state.generation,2);assert.equal(state.world.revision,3);
+            assert.deepEqual(state.careerProof.commands.at(-1),{kind:'change-owner-password',expectedRevision:2,shopId:1});
+            assert.equal(await verifyOwnerCredential({record:state.ownerCredentials[0],binding,password:'new_pw'}),true);
+            assert.equal(await verifyOwnerCredential({record:state.ownerCredentials[0],binding,password:'old_pw'}),false);
+            let recovered;
+            const freshReader=createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>recovered.readCommittedSnapshot()});
+            const freshSessions=createStableOwnerSessions({configSource:sources.originalConfigSource,readSource:sources.originalDataReadSource,loginSource,
+              readWorld:()=>recovered.read(),authenticateOwner:createCredentialOwnerAuthenticator({readCredentialRecord:freshReader,readCredentials:r=>r.credentials}),readSessionToken:r=>r.token,clock:()=>1000000});
+            recovered=createAccountWorldPublisher({saveStore:recoveredStore,streetModule,historyPolicy,checkpointStore,passwordChange:{membershipSource,readSource:sources.originalDataReadSource,itemDsl:sources.itemDsl,sessions:freshSessions}});
+            assert.throws(()=>freshSessions.resolveAuthenticatedActor({request,world:state.world}),/session denied/);
+            await assert.rejects(freshSessions.issue({credentials:{ownerName:'owner',password:'old_pw'}}),/login denied/);
+            const fresh=await freshSessions.issue({credentials:{ownerName:'owner',password:'new_pw'}});
+            assert.equal(freshSessions.resolveAuthenticatedActor({request:fresh,world:state.world}).shopId,1);
+            assert.equal((await recovered.changePassword({request:fresh,body:body(2,'new_pw')})).code,'REVISION_CONFLICT');
+            assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+            assert.equal(await readFile(newSlot,'utf8'),newBytes);
+            t.diagnostic('C77_REPASS '+JSON.stringify({preFaults,postFaults,preRejected:true,preSessionValid:true,postUncertain:true,liveAuthorityFenced:true,recoveredGeneration:2,recoveredRevision:3,oldPasswordDenied:true,oldTokenDenied:true,newPasswordAccepted:true,staleRejected:true,bothSlotsPreserved:true,formalBootstrap:false}));
+          });
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/addition.diff" || test "$?" = 1
+          node --check "$copy"
+          set +e
+          node --test --test-name-pattern='C77 ' "$copy" 2>&1 | tee "$out/observation.log"
+          status=$?
+          set -e
+          rm -f "$copy"
+          test "$(git hash-object "$original")" = 'a5916f87fc97a46234674e555c94fb7a559474f7'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c77-repass-fault
+          path: ${{ runner.temp }}/c77-repass-fault/
+          if-no-files-found: warn
+          retention-days: 30

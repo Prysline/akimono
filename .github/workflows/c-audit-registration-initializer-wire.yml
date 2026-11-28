@@ -1,0 +1,94 @@
+name: C audit - registration initializer and wire
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  d50-registration:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '6440e6b371881be102e21eac0c0552d167d7ef7c'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact D50 and source pins
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c67-registration"; mkdir -p "$out"
+          git rev-parse HEAD 'HEAD^{tree}' | tee "$out/environment.log"
+          test "$(git rev-parse HEAD)" = '6440e6b371881be102e21eac0c0552d167d7ef7c'
+          test "$(git rev-parse 'HEAD^{tree}')" = 'efc7533224860eb962998fa4cc9c17cfaf9d8f84'
+          test "$(git hash-object modern/tests/r4-registration-state.test.mjs)" = '368f3f8e1546c8876d57911f9be401bbf6bc82ed'
+          test "$(git hash-object modern/tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = '4a4eb3af70d5d9bd9a0300209201d759594a719e'
+          test "$(git hash-object modern/src/original-r4-registration-state.mjs)" = '93c8fdc05828d0c7d860e7a460e1a5d74f91779a'
+          test "$(git hash-object modern/tests/original-perl/new.cgi)" = '9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7'
+          test "$(git hash-object modern/tests/original-perl/inc-func.cgi)" = 'e7a8add7b0291901e71fe797783b664dff1568a0'
+          test "$(git hash-object modern/tests/original-perl/write.cgi)" = '203f33b37511e838800a45b84183af98fcf46e4c'
+          test "$(git hash-object modern/src/standard-street-model.mjs)" = 'c624fbb9f2c141bd539b7dfec86a48d3ba373efc'
+          test -z "$(git status --porcelain)"
+      - name: Execute unchanged D50 registration test
+        id: original
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c67-registration"
+          set +e
+          node --test tests/r4-registration-state.test.mjs >"$out/original.log" 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" >"$out/original-exit.txt"
+          cat "$out/original.log"
+          exit "$status"
+      - name: Execute independent source observation and full initializer comparison
+        if: ${{ !cancelled() && (steps.original.outcome == 'success' || steps.original.outcome == 'failure') }}
+        working-directory: modern
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c67-registration"
+          js=tests/c-audit-registration-initializer.mjs
+          pl=tests/original-perl/c-audit-registration-wrapper.t
+          test ! -e "$js" && test ! -e "$pl"
+          trap 'rm -f "$js" "$pl"' EXIT
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const swap=(s,a,b)=>{if(s.split(a).length!==2)throw Error('nonunique anchor');return s.replace(a,()=>b);};
+          const pl=readFileSync('tests/original-perl/original-r4-shop-lifecycle-wrapper.t','utf8');
+          const js=readFileSync('tests/r4-registration-state.test.mjs','utf8');
+          writeFileSync('tests/original-perl/c-audit-registration-wrapper.t',swap(pl,"DataRead();\nok($replacementId!=1 && exists $id2idx{$replacementId},'replacement name has distinct source shop ID');","my @c67_pre=grep { defined($_) && $_->{id} == $replacementId } @DT;\nis(scalar @c67_pre,1,'C67 exact replacement before explicit DataRead');\nok(exists $c67_pre[0]{moneystock},'C67 registration initializes transient moneystock');\nis($c67_pre[0]{moneystock},0,'C67 actual initial transient value');\nok(!grep($_ eq 'moneystock',@DTindexnamelist),'C67 transient value absent from original persisted schema');\nmy $c67_initial=0+$c67_pre[0]{moneystock};\nDataRead();\nok($replacementId!=1 && exists $id2idx{$replacementId},'replacement name has distinct source shop ID');\nok(!exists $DT[$id2idx{$replacementId}]{moneystock},'C67 actual DataRead does not restore transient value');\nnote('C67_REGISTRATION_TRANSIENT '.JSON::PP->new->ascii->canonical->encode({initial=>$c67_initial,reloadedPresent=>exists($DT[$id2idx{$replacementId}]{moneystock})?JSON::PP::true:JSON::PP::false,persistedCount=>scalar @DTindexnamelist}));"),{flag:'wx'});
+          writeFileSync('tests/c-audit-registration-initializer.mjs',swap(swap(js,"./original-perl/original-r4-shop-lifecycle-wrapper.t",'./original-perl/c-audit-registration-wrapper.t'),"  assert.deepEqual(got.shop,expected);","  const observed=output.split('\\n').find(s=>s.startsWith('# C67_REGISTRATION_TRANSIENT '));\n  assert.ok(observed,'actual source initialization and DataRead observation required');\n  const transient=JSON.parse(observed.slice('# C67_REGISTRATION_TRANSIENT '.length));\n  assert.deepEqual(transient,{initial:0,reloadedPresent:false,persistedCount:32});\n  assert.equal(Object.hasOwn(p.scalars,'moneystock'),false);\n  assert.equal(Object.hasOwn(got.shop,'moneystock'),true);\n  assert.equal(got.shop.moneystock,transient.initial);\n  // Compare the complete initializer using the independently observed source value.\n  assert.deepEqual(got.shop,{...expected,moneystock:transient.initial});\n  const {moneystock,...persistedProjection}=got.shop;\n  assert.deepEqual(persistedProjection,expected);\n  console.log('C67_REGISTRATION_TRANSIENT '+JSON.stringify(transient));"),{flag:'wx'});
+          NODE
+          git diff --no-index -- tests/r4-registration-state.test.mjs "$js" >"$out/js.diff" || test "$?" = 1
+          git diff --no-index -- tests/original-perl/original-r4-shop-lifecycle-wrapper.t "$pl" >"$out/perl.diff" || test "$?" = 1
+          cat "$out/js.diff" "$out/perl.diff"
+          node --check "$js"
+          set +e
+          AKIMONO_D_REGISTRATION_WIRE_ORACLE=1 prove "$pl" >"$out/perl.log" 2>&1
+          perlstatus=$?
+          node --test "$js" >"$out/js.log" 2>&1
+          jsstatus=$?
+          set -e
+          printf 'perl=%s\njs=%s\n' "$perlstatus" "$jsstatus" >"$out/observation-exit.txt"
+          cat "$out/perl.log" "$out/js.log"
+          rm -f "$js" "$pl"
+          test "$(git hash-object tests/r4-registration-state.test.mjs)" = '368f3f8e1546c8876d57911f9be401bbf6bc82ed'
+          test "$(git hash-object tests/original-perl/original-r4-shop-lifecycle-wrapper.t)" = '4a4eb3af70d5d9bd9a0300209201d759594a719e'
+          test "$(git hash-object src/original-r4-registration-state.mjs)" = '93c8fdc05828d0c7d860e7a460e1a5d74f91779a'
+          test "$(git hash-object tests/original-perl/new.cgi)" = '9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7'
+          test "$(git hash-object tests/original-perl/inc-func.cgi)" = 'e7a8add7b0291901e71fe797783b664dff1568a0'
+          test "$(git hash-object tests/original-perl/write.cgi)" = '203f33b37511e838800a45b84183af98fcf46e4c'
+          test "$(git hash-object src/standard-street-model.mjs)" = 'c624fbb9f2c141bd539b7dfec86a48d3ba373efc'
+          test -z "$(git status --porcelain)"
+          test "$perlstatus" = 0 && test "$jsstatus" = 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c67-d50-registration-initializer-exact
+          path: ${{ runner.temp }}/c67-registration/
+          if-no-files-found: warn
+          retention-days: 30
