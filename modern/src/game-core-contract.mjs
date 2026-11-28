@@ -220,11 +220,12 @@ export function applyGameCommand({world,command,streetModule}){
  * crash recovery and concurrent processes are NOT implemented by this adapter.
  */
 export function createMemoryWorldAdapter(initialWorld,{
-  reviewPeriodTransition=null,
+  reviewPeriodTransition=null,beforePublish=null,
 }={}){
   if(reviewPeriodTransition!==null&&
      typeof reviewPeriodTransition!=='function')
     reject('source period CAS reviewer must be a function');
+  if(beforePublish!==null&&typeof beforePublish!=='function')reject('trusted publication hook must be a function');
   let current=snapshot(initialWorld);
   return Object.freeze({
     read(){return snapshot(current);},
@@ -257,6 +258,10 @@ export function createMemoryWorldAdapter(initialWorld,{
           });
         }
       }
+      // Trusted synchronous server hook: source checks and CAS guards have
+      // all completed. A durable publisher may persist here; throwing
+      // leaves this in-memory CAS unchanged. Never pass client callbacks.
+      if(beforePublish!==null)beforePublish({before:snapshot(current),after:proposed,command});
       current=proposed;
       return answer(true,'COMMITTED',snapshot(current));
     },
@@ -269,7 +274,7 @@ export function createMemoryWorldAdapter(initialWorld,{
  * This adapter is local/in-memory, not a distributed transaction manager.
  */
 export function createSourceReviewedMemoryWorldAdapter({
-  initialWorld,streetModule,
+  initialWorld,streetModule,beforePublish=null,
 }){
   const initial=snapshot(initialWorld);
   if(initial.schema!==PERIOD_WORLD_SCHEMA||
@@ -292,6 +297,7 @@ export function createSourceReviewedMemoryWorldAdapter({
       (error instanceof Error?error.message:'source reviewer rejected'));
   }
   return createMemoryWorldAdapter(initial,{
+    beforePublish,
     reviewPeriodTransition:({before,after,command})=>
       streetModule.reviewPeriodTransition({before,after,command}),
   });

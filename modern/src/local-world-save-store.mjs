@@ -15,6 +15,8 @@ import {validateMemoryWorld,encodeMemorySnapshot,decodeMemorySnapshot,
 export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v2';
 const MAX_BYTES=2200000;
 const slotNames=['world-a.json','world-b.json'];
+const accountStores=new WeakSet();
+export const isAccountLocalWorldSaveStore=store=>accountStores.has(store);
 const fail=message=>{throw new RangeError('B-43 local save: '+message);};
 /** The account slot may already contain the successor. This is NOT a
  * transaction rejection or permission to retry. Fence the entire live
@@ -193,11 +195,16 @@ export function createLocalWorldSaveStore({directory,historyReplay,accountMode=f
   }
   // Private reader for the existing committed-credential authenticator.
   // Public load/status/receipt deliberately remain unchanged.
-  function loadCommittedSnapshot(){
+  function loadCommittedAccountState(){
     if(!accountMode)fail('account persistence disabled');
     const {latest}=scan();
     if(!latest)fail('no authenticated account generation');
-    return Object.freeze({world:latest.world,ownerCredentials:latest.ownerCredentials});
+    return Object.freeze({world:latest.world,ownerCredentials:latest.ownerCredentials,
+      generation:latest.generation,careerProof:structuredClone(latest.proof)});
+  }
+  function loadCommittedSnapshot(){
+    const {world,ownerCredentials}=loadCommittedAccountState();
+    return Object.freeze({world,ownerCredentials});
   }
   function prepareRecord(world,{generation,careerProof=null,ownerCredentials,signAccount=false}){
     safeInt(generation,'next save generation',1);
@@ -338,5 +345,7 @@ export function createLocalWorldSaveStore({directory,historyReplay,accountMode=f
       generation:0,
     });
   }
-  return Object.freeze({status,load,save,clear,preflight,...(accountMode?{loadCommittedSnapshot}:{})});
+  const api=Object.freeze({status,load,save,clear,preflight,...(accountMode?{loadCommittedSnapshot,loadCommittedAccountState}:{})});
+  if(accountMode)accountStores.add(api);
+  return api;
 }
