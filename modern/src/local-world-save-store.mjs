@@ -16,6 +16,18 @@ export const LOCAL_SAVE_FORMAT='akimono.local-world-save.v2';
 const MAX_BYTES=2200000;
 const slotNames=['world-a.json','world-b.json'];
 const fail=message=>{throw new RangeError('B-43 local save: '+message);};
+/** The account slot may already contain the successor. This is NOT a
+ * transaction rejection or permission to retry. Fence the entire live
+ * account authority; recover from authenticated disk with a new instance. */
+export class AccountPublicationUncertainError extends Error{
+  constructor(attemptedGeneration,attemptedRevision){
+    super('Account publication outcome uncertain; recover authenticated generation before serving requests');
+    this.name='AccountPublicationUncertainError';
+    this.code='ACCOUNT_PUBLICATION_UNCERTAIN';
+    this.attemptedGeneration=attemptedGeneration;
+    this.attemptedRevision=attemptedRevision;
+  }
+}
 function safeInt(value,label,min=0){
   if(!Number.isSafeInteger(value)||value<min)fail(label);
   return value;
@@ -128,7 +140,15 @@ export function createLocalWorldSaveStore({directory,historyReplay,accountMode=f
   const dir=path.resolve(directory);
   // Bounded to the two physical slots. Not an authorization cache.
   const verifiedSlots=[null,null];
+  // A post-rename error cannot establish that the previous generation is
+  // still authoritative. No reads (including auth), preflight or writes on
+  // this instance until the owner stops serving and reconstructs authority.
+  let uncertain=null;
+  function assertAccountPublicationCertain(){
+    if(uncertain)throw new AccountPublicationUncertainError(uncertain.generation,uncertain.revision);
+  }
   function scan(reuseVerifiedReplay=false){
+    assertAccountPublicationCertain();
     if(fs.existsSync(dir)){
       const st=fs.lstatSync(dir);
       if(!st.isDirectory()||st.isSymbolicLink())fail('save path is not a real directory');
@@ -206,12 +226,14 @@ export function createLocalWorldSaveStore({directory,historyReplay,accountMode=f
     return {encoded,proofText,record,privateWire,records};
   }
   function preflight(world,{expectedGeneration,careerProof=null,ownerCredentials}){
+    assertAccountPublicationCertain();
     safeInt(expectedGeneration,'expected save generation');
     prepareRecord(world,{generation:expectedGeneration+1,careerProof,ownerCredentials});
     historyReplay?.periodDiskStore?.stage(world);
     return true;
   }
   function save(raw,{expectedGeneration,careerProof=null,ownerCredentials}){
+    assertAccountPublicationCertain();
     safeInt(expectedGeneration,'expected save generation');
     const world=verifiedCheckpoint(raw,historyReplay,careerProof,expectedGeneration+1);
     const before=scan();
@@ -235,32 +257,48 @@ export function createLocalWorldSaveStore({directory,historyReplay,accountMode=f
     const slot=nextGen%2;
     const dest=sourceFile(dir,slotNames[slot]);
     const temp=sourceFile(dir,'.world-'+randomUUID()+'.tmp');
-    let fd;
+    let renamed=false;
     try{
-      fd=fs.openSync(temp,c.O_CREAT|c.O_EXCL|c.O_WRONLY|(c.O_NOFOLLOW??0),0o600);
-      fs.writeFileSync(fd,record,'utf8');
-      fs.fsyncSync(fd);
-      fs.closeSync(fd);fd=undefined;
-      // Atomic on the same local filesystem; previous generation remains.
-      fs.renameSync(temp,dest);
-      // Windows does not support fsync on directory handles. The save
-      // file itself was fsync'd before atomic rename; directory durability
-      // is best-effort on Windows rather than falsely reporting a failure.
-      if(process.platform!=='win32'){
-        const folderFd=fs.openSync(dir,c.O_RDONLY);
-        try{fs.fsyncSync(folderFd);}finally{fs.closeSync(folderFd);}
+      let fd;
+      try{
+        fd=fs.openSync(temp,c.O_CREAT|c.O_EXCL|c.O_WRONLY|(c.O_NOFOLLOW??0),0o600);
+        fs.writeFileSync(fd,record,'utf8');
+        fs.fsyncSync(fd);
+        fs.closeSync(fd);fd=undefined;
+        // Atomic on the same local filesystem; previous generation remains.
+        fs.renameSync(temp,dest);
+        renamed=true;
+        // Windows does not support fsync on directory handles. The save
+        // file itself was fsync'd before atomic rename; directory durability
+        // is best-effort on Windows rather than falsely reporting a failure.
+        if(process.platform!=='win32'){
+          const folderFd=fs.openSync(dir,c.O_RDONLY);
+          try{fs.fsyncSync(folderFd);}finally{fs.closeSync(folderFd);}
+        }
+      }finally{
+        if(fd!==undefined)fs.closeSync(fd);
+        try{fs.unlinkSync(temp);}catch(error){if(error.code!=='ENOENT')throw error;}
       }
-    }finally{
-      if(fd!==undefined)fs.closeSync(fd);
-      try{fs.unlinkSync(temp);}catch(error){if(error.code!=='ENOENT')throw error;}
+      const checked=scan();
+      if(checked.latest?.generation!==nextGen||
+         encodeMemorySnapshot(checked.latest.world)!==encoded||
+         (checked.latest.proof===null?null:JSON.stringify(checked.latest.proof))!==proofText||
+         (accountMode&&JSON.stringify(checked.latest.ownerCredentials)!==privateWire))
+        fail('post-save integrity re-read failed');
+      return Object.freeze({generation:nextGen,revision:world.revision});
+    }catch(error){
+      // The successful rename is the point after which ordinary rejection
+      // is unsafe, even when a later authenticated re-read sees the old slot.
+      // Do not roll back by deleting/rewriting either recovery generation.
+      // No raw filesystem/replay error (possibly containing private data) is
+      // exposed in the typed uncertainty outcome.
+      if(accountMode&&renamed){
+        uncertain={generation:nextGen,revision:world.revision};
+        verifiedSlots.fill(null);
+        assertAccountPublicationCertain();
+      }
+      throw error;
     }
-    const checked=scan();
-    if(checked.latest?.generation!==nextGen||
-       encodeMemorySnapshot(checked.latest.world)!==encoded||
-       (checked.latest.proof===null?null:JSON.stringify(checked.latest.proof))!==proofText||
-       (accountMode&&JSON.stringify(checked.latest.ownerCredentials)!==privateWire))
-      fail('post-save integrity re-read failed');
-    return Object.freeze({generation:nextGen,revision:world.revision});
   }
   // Local test-only deletion. Never remove the save directory: it can be
   // configured by AKIMONO_SAVE_DIR and may contain unrelated user files.

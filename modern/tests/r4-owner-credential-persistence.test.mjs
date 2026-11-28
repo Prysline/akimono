@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,readFile,writeFile,rename,lstat} from 'node:fs/promises';
-import {readFileSync} from 'node:fs';
+import fs,{readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {createPeriodMemoryWorld,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
-import {createLocalWorldSaveStore,LOCAL_SAVE_FORMAT} from '../src/local-world-save-store.mjs';
+import {createLocalWorldSaveStore,LOCAL_SAVE_FORMAT,AccountPublicationUncertainError} from '../src/local-world-save-store.mjs';
 import {createReviewedHistoryCheckpointStore,CHECKPOINT_DIRECTORY} from '../src/reviewed-history-checkpoint-store.mjs';
 import {createOwnerCredentialRecord,rebindOwnerCredentialForRename,verifyOwnerCredential,createCommittedOwnerCredentialReader} from '../src/r4-owner-credential-record.mjs';
 
@@ -24,14 +24,14 @@ const second={...first,revision:3,shops:[{...first.shops[0],name:'renamed'}]};
 const proof1={anchorKind:'fresh',anchor:encodeMemorySnapshot(origin),commands:[{kind:'controlled-register'}]};
 const proof2={...proof1,commands:[...proof1.commands,{kind:'controlled-rename'}]};
 const fingerprint='a'.repeat(64);
-function setup(directory,{accountMode=true,sourceFingerprint=fingerprint,stage}={}){
+function setup(directory,{accountMode=true,sourceFingerprint=fingerprint,stage,verifyDisk}={}){
  const checkpointStore=createReviewedHistoryCheckpointStore({directory,sourceFingerprint,interpreter:'controlled-storage'});
  const historyReplay={checkpointStore,verify({world,proof}){
    const expected=world.revision===2?[first,proof1]:world.revision===3?[second,proof2]:null;
    if(!expected||encodeMemorySnapshot(world)!==encodeMemorySnapshot(expected[0])||
       JSON.stringify(proof)!==JSON.stringify(expected[1]))throw Error('controlled replay mismatch');
    return expected[0];
- },...(stage?{periodDiskStore:{stage,verify:()=>true}}:{})};
+ },...((stage||verifyDisk)?{periodDiskStore:{stage:stage??(()=>true),verify:verifyDisk??(()=>true)}}:{})};
  return createLocalWorldSaveStore({directory,historyReplay,accountMode});
 }
 const options=(expectedGeneration,careerProof,record)=>({expectedGeneration,careerProof,ownerCredentials:[record]});
@@ -118,4 +118,85 @@ test('LC-D1 account storage refuses lost key, runtime drift and legacy-mode rese
  assert.equal(account.status().unreadable,true);
  assert.throws(()=>account.save(first,options(0,proof1,record)),/all existing save records are invalid/);
  assert.equal(await readFile(legacySlot,'utf8'),legacyBefore);
+});
+
+function assertUncertain(fn){
+ assert.throws(fn,error=>error instanceof AccountPublicationUncertainError&&
+   error.code==='ACCOUNT_PUBLICATION_UNCERTAIN'&&error.attemptedGeneration===2&&
+   error.attemptedRevision===3&&!error.message.includes('old_pw'));
+}
+async function verifyFencedRecovery({directory,record,successor,store,oldBytes}){
+ assertUncertain(()=>store.status());
+ assertUncertain(()=>store.load());
+ assertUncertain(()=>store.loadCommittedSnapshot());
+ assertUncertain(()=>store.preflight(second,options(1,proof2,successor)));
+ assertUncertain(()=>store.save(second,options(1,proof2,successor)));
+ const oldSlot=join(directory,'world-b.json'),newSlot=join(directory,'world-a.json');
+ assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+ const nextBytes=await readFile(newSlot,'utf8');
+ const recovered=setup(directory);
+ assert.equal(recovered.load().generation,2);
+ const committed=recovered.loadCommittedSnapshot();
+ assert.equal(encodeMemorySnapshot(committed.world),encodeMemorySnapshot(second));
+ assert.deepEqual(committed.ownerCredentials,[successor]);
+ const reader=createCommittedOwnerCredentialReader({readCommittedSnapshot:recovered.loadCommittedSnapshot});
+ assert.equal(reader({world:first,binding}),null);
+ assert.equal(reader({world:second,binding}),null);
+ assert.equal(await verifyOwnerCredential({record:reader({world:second,binding:nextBinding}),binding:nextBinding,password:'old_pw'}),true);
+ assert.throws(()=>recovered.save(second,options(1,proof2,successor)),/世代衝突/);
+ assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+ assert.equal(await readFile(newSlot,'utf8'),nextBytes);
+ assert.notDeepEqual(committed.ownerCredentials,[record]);
+}
+test('D59 account post-rename directory fsync failure fences live reader and writer, recovery verifies both private and public successor',async t=>{
+ const {directory,record,successor}=await fixture(t);
+ const store=setup(directory);
+ store.save(first,options(0,proof1,record));
+ const oldBytes=await readFile(join(directory,'world-b.json'),'utf8');
+ // POSIX directory fsync path; Windows has no such call by contract.
+ if(process.platform==='win32'){
+   assert.deepEqual(store.save(second,options(1,proof2,successor)),{generation:2,revision:3});
+   assert.deepEqual(store.loadCommittedSnapshot().ownerCredentials,[successor]);
+   return;
+ }
+ const original=fs.fsyncSync;
+ let faultCount=0;
+ const fault=t.mock.method(fs,'fsyncSync',fd=>{
+   if(fs.fstatSync(fd).isDirectory()){
+     faultCount++;
+     throw Error('controlled directory fsync failure');
+   }
+   return original(fd);
+ });
+ try{assertUncertain(()=>store.save(second,options(1,proof2,successor)));}
+ finally{fault.mock.restore();}
+ assert.equal(faultCount,1);
+ await verifyFencedRecovery({directory,record,successor,store,oldBytes});
+});
+test('D59 account post-rename readback verification failure fences authority; pre-rename failure remains an ordinary rejection',async t=>{
+ const {directory,record,successor}=await fixture(t);
+ let renamed=false,readbackFaults=0;
+ const store=setup(directory,{verifyDisk(world){
+   if(renamed&&world.revision===3){readbackFaults++;throw Error('controlled readback failure');}
+   return true;
+ }});
+ store.save(first,options(0,proof1,record));
+ const oldBytes=await readFile(join(directory,'world-b.json'),'utf8');
+ const newSlot=join(directory,'world-a.json'),original=fs.renameSync;
+ const beforeFault=t.mock.method(fs,'renameSync',(from,to)=>{
+   if(to===newSlot)throw Error('controlled pre-rename failure');
+   return original(from,to);
+ });
+ try{assert.throws(()=>store.save(second,options(1,proof2,successor)),/controlled pre-rename failure/);}
+ finally{beforeFault.mock.restore();}
+ assert.equal(store.load().generation,1);
+ assert.deepEqual(store.loadCommittedSnapshot().ownerCredentials,[record]);
+ await assert.rejects(lstat(newSlot),{code:'ENOENT'});
+ const afterFault=t.mock.method(fs,'renameSync',(from,to)=>{
+   const result=original(from,to);if(to===newSlot)renamed=true;return result;
+ });
+ try{assertUncertain(()=>store.save(second,options(1,proof2,successor)));}
+ finally{afterFault.mock.restore();}
+ assert.equal(readbackFaults,1);
+ await verifyFencedRecovery({directory,record,successor,store,oldBytes});
 });
