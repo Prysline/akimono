@@ -1,4 +1,5 @@
 import {reviewOriginalSweep,describeOriginalSweep,projectOriginalSweep} from './original-r4-sweep.mjs';
+import {reviewOriginalAccountPasswordChange,projectOriginalAccountPasswordChange} from './original-r4-account-password-command.mjs';
 import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
@@ -185,6 +186,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   coreLocaleSource=null,localLocaleSource=null,localeLoaderSource=null,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
   enableReviewedSweep=false,
+  enableReviewedAccountPasswordChange=false,originalMembershipSource=null,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,expectedNativeInterpreter=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
@@ -195,6 +197,9 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // history/disk authority; isolated source differential tests may use base.
   if(typeof enableReviewedMarketCommerce!=='boolean'||enableReviewedMarketCommerce&&enableReviewedNormalTime&&!enableReviewedCrossPeriod)bad('market commerce requires reviewed crossing');
   if(typeof enableReviewedSweep!=='boolean'||enableReviewedSweep&&!enableReviewedNormalTime)bad('sweep requires reviewed normal time');
+  if(typeof enableReviewedAccountPasswordChange!=='boolean'||enableReviewedAccountPasswordChange&&!enableReviewedCrossPeriod)
+    bad('account password change requires reviewed crossing');
+  const passwordChangeReview=enableReviewedAccountPasswordChange?reviewOriginalAccountPasswordChange({membershipSource:originalMembershipSource,readSource:originalDataReadSource,itemDsl}):null;
   const sweepReview=enableReviewedSweep?reviewOriginalSweep({formSource:originalSweepFormSource,submitSource:originalSweepSubmitSource,stockViewSource:originalStockViewSource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,itemDsl,compilerSource:originalCompilerSource,configSource:originalConfigSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,customSource:originalCustomSource}):null;
   const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,showcaseSource:originalShowcaseSource,buySubmitSource:originalBuySource,wholeSource:originalWholeSource,coreLocaleSource,localLocaleSource,localeLoaderSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
@@ -699,6 +704,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     id:STANDARD_STREET_ID,
     capabilities:Object.freeze([...actions,
       ...(sweepReview?['sweep-shop']:[]),
+      ...(passwordChangeReview?['change-owner-password']:[]),
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
@@ -746,6 +752,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       });
     },
     ...(sweepReview?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:sweepReview,world})}:{}),
+    ...(passwordChangeReview?{reviewedAccountPasswordChange:true}:{}),
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
     ...(reviewedBuyForm?.pageRows?{marketPageRows:reviewedBuyForm.pageRows}:{}),
@@ -936,6 +943,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
     },
     apply({world,command}){
       if(world.streetId!==STANDARD_STREET_ID)bad('street mismatch');
+      if(command.kind==='change-owner-password'&&passwordChangeReview)
+        return projectOriginalAccountPasswordChange({reviewed:passwordChangeReview,world,command});
       if(command.kind==='open-shop'){
         ownKeysExact(command,['shopId','ownerName','shopName'],['icon']);
         integer(command.shopId,'shopId',1);

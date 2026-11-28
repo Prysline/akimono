@@ -15,6 +15,8 @@ const exactBinding=x=>x&&Object.getPrototypeOf(x)===Object.prototype&&
   });
 const stable=b=>JSON.stringify([b.worldId,b.streetId,b.shopId,b.ownerName]);
 const tokenPattern=/^[a-f0-9]{64}$/;
+const sessionAuthorities=new WeakSet();
+export const isStableOwnerSessionAuthority=value=>sessionAuthorities.has(value);
 export function createStableOwnerSessions({configSource,readSource,loginSource,readWorld,authenticateOwner,readSessionToken,clock=()=>Math.floor(Date.now()/1000)}={}){
   if(blob(configSource)!=='87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0'||
     blob(readSource)!=='e7a8add7b0291901e71fe797783b664dff1568a0'||
@@ -73,5 +75,6 @@ export function createStableOwnerSessions({configSource,readSource,loginSource,r
     if(typeof token!=='string'||!tokenPattern.test(token))return false;
     const hash=digest(token),present=byHash.has(hash);remove(hash);return present;
   }
-  return Object.freeze({issue,resolveAuthenticatedActor,reconcileCommittedWorld,revoke});
+  const authority=Object.freeze({issue,resolveAuthenticatedActor,reconcileCommittedWorld,revoke});
+  sessionAuthorities.add(authority);return authority;
 }
