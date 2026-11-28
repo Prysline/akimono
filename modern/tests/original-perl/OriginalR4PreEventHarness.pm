@@ -12,6 +12,8 @@ use OriginalNayutaFuncturnHarness;
 sub prepare {
 my($input,$preserveLogs)=@_;
 OriginalNayutaFuncturnHarness::bootstrap();
+my $full;
+if($input->{fullCommerce}){require OriginalNormalCommerceItemHarness;$full=OriginalNormalCommerceItemHarness::compiled_items();}
 OriginalNayutaFuncturnHarness::prepare_items();
 # Reuse P3's exact source-compiled holding cost setup; all 79 items are
 # initialized before the actual generated EVENT overlays execute.
@@ -20,7 +22,7 @@ for my $id(1..79){
   for my $key(qw(price popular point cost)){
     $main::ITEM[$id]{$key}=$row->{$key} if defined $row->{$key};
   }
-  $main::ITEM[$id]{type}=10;
+  $main::ITEM[$id]{type}=$full?$full->[$id-1]{type}:10;
 }
 $main::ITEM[63]{cost}=0;
 $main::ITEM[70]{functurn}='_local_';$main::ITEM[70]{no}=70;
@@ -84,9 +86,10 @@ if(exists $input->{settlement}){
   my $s=$input->{settlement};
   $main::STATE=$s->{town};$main::DTpeople=$s->{dtPeople};$main::DTusercount=1;
   $main::NOW_TIME=$s->{commandNowSeconds};
+  if($input->{externalCandidate}){$main::BAL_JOB='外敵';$main::BAL_NAME='首領';}
   $main::EXPIRE_TIME=604800;$main::DEFINE_FUNCUPDATE=0;
   $main::PROFIT_DAY_COUNT=3;$main::EXP_DOWN_RATE=60;$main::EXP_DOWN_POINT=5;
-  @main::SHOWCASE_COST=(0,2000,4000,8000);%main::GUILD=();%main::GUILD_DATA=();
+  @main::SHOWCASE_COST=(0,2000,4000,8000,16000,32000,64000,128000);%main::GUILD=();%main::GUILD_DATA=();
   $periodCall='ActualBoundaryPeriod() if $dateupdate;';
 }
 my $ok=eval "package main;no strict;no warnings;use utf8;sub ActualPreEvent {my(\$timespan,\$dateupdate)=\@_; \$TIMESPAN=\$timespan;\$item::TIMESPAN=\$timespan;\n$natural\n$funct\n$functail\n$periodCall\nB35SourceStep(\$timespan);1;}\n1;";
@@ -102,7 +105,7 @@ if(exists $input->{eventWire}) {
 }
 my @order=keys %main::DTevent;
 for my $code(@order){
-  next if $code eq 'happy';
+  next if $code eq 'happy'||($input->{externalCandidate}&&$code eq 'rebel');
   die 'unknown source overlay' unless exists $generated{$code};
   eval "package main;no strict;no warnings;".$generated{$code}."\n1;" or die $@;
 }

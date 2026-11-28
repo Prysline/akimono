@@ -37,6 +37,22 @@ export function reviewOriginalSoloSort({detailSource,readSource}){
     scope:'source-ranked single active store only; no other shops, closures, guilds, period write or side effects',
   });
 }
+/** Shared GetDTPoint arithmetic. Callers own source and shop validation;
+ * never accept a cached or caller-supplied point as an authority. */
+export function calculateSourceShopPoint({rank,profitstock,saletoday,taxtoday,paytoday,rankingcount}){
+  const values=[rank,profitstock,saletoday,taxtoday,paytoday,rankingcount];
+  if(values.some(value=>!Number.isSafeInteger(value))||rank<0||rankingcount<0)
+    fail('invalid source score fields');
+  const numerator=profitstock*3+saletoday-taxtoday-paytoday;
+  if(!Number.isSafeInteger(numerator))fail('source score overflow');
+  let p=numerator/500000+1;
+  const r=0.5+5/(rankingcount+10);
+  if(p>10)p=15-50/p;
+  if(p<1)p=1/(2-p);
+  const point=Math.trunc(rank*r*p);
+  if(!Number.isSafeInteger(point))fail('source score not a safe integer');
+  return point;
+}
 export function projectOriginalSoloSort({shop,reviewed}){
   if(reviewed?.source!==B47_SOLO_RANK_SOURCE)
     fail('source review required');
@@ -50,14 +66,8 @@ export function projectOriginalSoloSort({shop,reviewed}){
   const sale=safe(shop.saletoday,'saletoday');
   const tax=safe(shop.taxtoday,'taxtoday');
   const purchase=safe(shop.paytoday,'paytoday');
-  const numerator=profit*3+sale-tax-purchase;
-  if(!Number.isSafeInteger(numerator))fail('source score overflow');
-  let p=numerator/500000+1;
-  const r=0.5+5/(count+10);
-  if(p>10)p=15-50/p;
-  if(p<1)p=1/(2-p);
-  const point=Math.trunc(rank*r*p);
-  if(!Number.isSafeInteger(point))fail('source score not a safe integer');
+  const point=calculateSourceShopPoint({rank,profitstock:profit,saletoday:sale,
+    taxtoday:tax,paytoday:purchase,rankingcount:count});
   return Object.freeze({
     shop:{...shop,point},
     idToIndex:Object.freeze({[shop.id]:0}),

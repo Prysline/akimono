@@ -40,9 +40,11 @@ function readSlot(dir,slot,historyReplay,verifiedSlots,reuseVerifiedReplay=false
   const name=sourceFile(dir,slotNames[slot]);
   let fd;
   try{
-    fd=fs.openSync(name,c.O_RDONLY|(c.O_NOFOLLOW??0));
+    const before=fs.lstatSync(name);
+    if(!before.isFile()||before.nlink!==1)fail('save slot is not a bounded regular file');
+    fd=fs.openSync(name,c.O_RDONLY|(c.O_NOFOLLOW??0)|(c.O_NONBLOCK??0));
     const st=fs.fstatSync(fd);
-    if(!st.isFile()||st.size>MAX_BYTES||st.size<16)
+    if(!st.isFile()||st.nlink!==1||st.dev!==before.dev||st.ino!==before.ino||st.size>MAX_BYTES||st.size<16)
       fail('save slot is not a bounded regular file');
     const serialized=fs.readFileSync(fd,'utf8');
     if(Buffer.byteLength(serialized,'utf8')>MAX_BYTES)

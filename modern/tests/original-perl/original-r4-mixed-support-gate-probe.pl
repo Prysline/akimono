@@ -618,7 +618,42 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
   {no warnings 'redefine';*CORE::GLOBAL::rand=$rand;}
   my $order=OriginalR4PreEventHarness::prepare($in,1);
   $ITEM_DIR=$callbackRoot;
-  die 'special EVENT not in candidate scope' if exists($DTevent{rebel})||exists($DTevent{guildbattle});
+  my $external=$in->{externalCandidate};
+  die 'special EVENT not in candidate scope' if (!$external&&exists($DTevent{rebel}))||exists($DTevent{guildbattle});
+  my ($armyLive,$armyStage);
+  my $readBytes=sub{my($file)=@_;open my $h,'<:raw',$file or die $!;my $s=do{local $/;<$h>};close $h;return $s};
+  if($external){
+    our $TEMP_DIR;
+    if($in->{disk}){
+      $armyLive="$OriginalR4CrossPeriodDiskHarness::root/army.cgi";
+    }else{
+      $TEMP_DIR="$callbackRoot/army-stage";make_path($TEMP_DIR);
+      $armyLive="$callbackRoot/army-live.cgi";
+    }
+    $armyStage="$TEMP_DIR/army.cgi";
+    open my $h,'>:raw',$armyLive or die $!;print {$h} $in->{liveArmyBytes};close $h or die $!;
+    my $path=\&main::GetPath;
+    no warnings 'redefine';
+    *main::GetPath=sub{
+      return $armyLive if @_==1&&$_[0] eq 'army';
+      return $armyStage if @_==2&&$_[0] eq $TEMP_DIR&&$_[1] eq 'army';
+      return $path->(@_);
+    };
+    *main::OpenAndCheck=sub{open(OUT,'>:encoding(UTF-8)',$_[0]) or die $!};
+    my $src=OriginalGiftMapUseHarness::source('pinned-army.cgi');
+    eval "package main;no strict;no warnings;\n$src\n1;" or die $@;
+    my $read=\&main::ReadArmy;my $write=\&main::WriteArmy;
+    *main::ReadArmy=sub{
+      # The catalog probe above localizes $/ to undef for its JSON slurp.
+      # Frozen ReadArmy uses two physical records, like the real CGI.
+      local $/="\n";
+      $READ_ARMY++;$read->(@_);
+    };
+    *main::WriteArmy=sub{$WRITE_ARMY++;$write->(@_)};
+    # Explicit opt-in for the source-only lord tax differential.
+    $DTTaxrate=$in->{taxRate}//0;
+    die 'bounded lord tax rate' unless $DTTaxrate=~/^[0-9]+$/&&$DTTaxrate<=40;
+  }
   die 'bounded actual boundary slices' unless ref($in->{slices})eq 'ARRAY'&&@{$in->{slices}}>=1&&@{$in->{slices}}<=2;
   @R4_MULTI_DRAWS=@{$in->{samples}};
   my @results;
@@ -631,13 +666,19 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
     my @prior=keys(%DTevent);
     @R4_MULTI_RANGES=();@LOG=();
     my $before=scalar(@R4_MULTI_DRAWS);
+    my $taxEvidence=exists($in->{taxRate})?{townRateBefore=>0+$DTTaxrate,
+      userTaxRate=>0+main::GetUserTaxRate($DT[0],$DTTaxrate),taxMode=>0+($DT[0]{taxmode}//0),
+      rebellionBefore=>$DTevent{rebel}?JSON::PP::true:JSON::PP::false}:undef;
     main::ActualPreEvent($span,$slice->{dateupdate});
     my $preCount=$before-scalar(@R4_MULTI_DRAWS);
+    @prior=keys(%DTevent) if $external;
+    $READ_ARMY=$WRITE_ARMY=0 if $external;
     no warnings 'uninitialized';
     my $pre=$json->decode($json->encode({
       shop=>$DT[0],wholesale=>[map {0+($_//0)} @main::DTwholestore[0..78]],
       csv=>join(',',@main::DTwholestore),town=>$STATE,dtPeople=>0+$main::DTpeople,
       preEventDrawCount=>$preCount,preEventLogs=>[@LOG],
+      demandBase=>{map {$_=>0+($ITEM[$_]{buypeoplebase}//0)}grep{$_} @{$DT[0]{showcase}}},
       plus=>[map {0+($ITEM[$_]{plus}//0)}1..79],
     }));
     @R4_MULTI_RANGES=();@R4_NOW_KEYS=();@LOG=();
@@ -647,12 +688,17 @@ if(@ARGV&&$ARGV[0] eq '--cross-period-turn'){
       preEvent=>$pre,activeOrder=>[@prior],eventOrder=>[@runtimeHashKeys],nowOrder=>[@R4_NOW_KEYS],
       shop=>$DT[0],eventState=>{%DTevent},eventWire=>join(',',%DTevent),
       logs=>[@LOG],ranges=>[@R4_MULTI_RANGES],
+      ($taxEvidence?(lordTax=>{%$taxEvidence,townRateAfter=>0+$DTTaxrate}):()),
+      ($external?(town=>$STATE,afterOrder=>[keys %DTevent],armyRead=>$READ_ARMY,
+        transientArmy=>defined($DT[0]{army})?0+$DT[0]{army}:undef,
+        liveArmyBytes=>$readBytes->($armyLive),
+        stagedArmyBytes=>-e $armyStage?$readBytes->($armyStage):undef):()),
     }));
     $cursor+=$span;
   }
   die 'unused full-command source RNG' if @R4_MULTI_DRAWS;
   die 'wrong source command end' unless $cursor==$in->{settlement}{commandNowSeconds};
-  my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor):undef;
+  my $disk=$in->{disk}?OriginalR4CrossPeriodDiskHarness::finish($cursor,$external):undef;
   print $json->encode({slices=>\@results,dataReadOrder=>$order,nowSeconds=>$cursor,($disk?(disk=>$disk):())});
   exit 0;
 }
@@ -997,11 +1043,59 @@ my $rebelExpired=step(name=>'expired-rebel-has-no-NOW-effect',
   rebelNowDraws=>[],rebelContext=>$rebelContext);
 push @rebelCases,$rebelExpired;
 
+# Actual full territory region + same process EVENT callbacks and RNG tape.
+# This uses the existing isolated source IO adapters; no player state.
+our ($NOW_TIME,$DTpeople,$DTusercount);
+my $territorySource=OriginalGiftMapUseHarness::source('period.cgi');
+my $territoryFrom=index($territorySource,'#領土データ調整');
+my $territoryTo=index($territorySource,'#決算時のカスタム処理（リセット後）',$territoryFrom);
+my $robinFrom=index($territorySource,"sub RebelRobin\n");
+my $robinTo=index($territorySource,'sub DragonBalance',$robinFrom);
+die 'territory source moved' unless $territoryFrom>=0&&$territoryTo>$territoryFrom&&$robinFrom>=0&&$robinTo>$robinFrom;
+my $territoryRegion=substr($territorySource,$territoryFrom,$territoryTo-$territoryFrom);
+my $robinRegion=substr($territorySource,$robinFrom,$robinTo-$robinFrom);
+{no warnings 'redefine';*main::l=sub{my($s,@args)=@_;$s=~s/%([12])/$args[$1-1]/ge;return $s};}
+my $territoryCompiled=eval "package main;use utf8;no strict;no warnings;\n".$robinRegion.
+  "\nsub R4MixedActualTerritory{my \$taxin=shift;\n".$territoryRegion."\nreturn \$armycost;}\n1;";
+die "actual mixed territory compile failed $@" unless $territoryCompiled;
+sub territoryMixedCase{
+  my(%o)=@_;
+  my $begin=1003600;my $span=3600;
+  $NOW_TIME=$begin+$span;$DTpeople=500000;$DTusercount=1;
+  $STATE={%{$o{town}}};%id2idx=(1=>0);%DTevent=(happy=>2000000);
+  $DTevent{rebel}=$o{active} if defined($o{active});
+  $BAL_JOB='外敵';$BAL_NAME='首領';
+  my $input={town=>{%$STATE},events=>{%DTevent},period=>{nowSeconds=>$NOW_TIME,
+     dtPeople=>$DTpeople,dtUserCount=>$DTusercount,activeShopIds=>[1],taxIn=>0}};
+  @R4_MULTI_DRAWS=@{$o{periodDraws}};@R4_MULTI_RANGES=();@LOG=();
+  my $cost=R4MixedActualTerritory(0);
+  die 'mixed territory unused RNG' if @R4_MULTI_DRAWS;
+  my $city={%$STATE};my $periodOutput={town=>{%$STATE},dtPeople=>$DTpeople,
+     activeUntilSeconds=>$DTevent{rebel},armyCost=>$cost,randomDrawRanges=>[@R4_MULTI_RANGES],logs=>[@LOG]};
+  my $people=delete $city->{people};
+  my $context={town=>$city,armyById=>$o{armyById},riotIds=>$o{riotIds},taxRate=>0,balJob=>$BAL_JOB,balName=>$BAL_NAME};
+  my $event=step(name=>$o{name},begin=>$begin,prior=>{%DTevent},shop=>$rebelShop,
+     rebelContext=>$context,rebelNowDraws=>$o{nowDraws},happyNowDraw=>300000);
+  my $finalTown={%{$event->{output}{rebelContext}{town}},people=>$people};
+  return {name=>$o{name},input=>$input,periodOutput=>$periodOutput,event=>$event,
+    randomDraws=>[@{$o{periodDraws}},@{$event->{input}{randomDraws}}],
+    randomDrawRanges=>[@{$periodOutput->{randomDrawRanges}},@{$event->{output}{randomDrawRanges}}],
+    finalTown=>$finalTown,logs=>[@{$periodOutput->{logs}},@{$event->{output}{logs}}]};
+}
+my @territoryMixedCases=(
+ territoryMixedCase(name=>'calm-period-happy-without-army-read',town=>{%townBase,money=>5000000,robinb=>0},
+    periodDraws=>[0,0,0,0],nowDraws=>[],armyById=>{},riotIds=>[]),
+ territoryMixedCase(name=>'past-rebel-extended-before-mixed-NOW',town=>{%townBase,leader=>0,robinb=>0},
+    active=>900000,periodDraws=>[0,0],nowDraws=>[500000],armyById=>{1=>4000},riotIds=>[1]),
+ territoryMixedCase(name=>'period-bandit-start-before-mixed-NOW',town=>{%townBase,money=>5000000,develop=>9000,safety=>9000,robinb=>0},
+    periodDraws=>[0,0,0,0,299999],nowDraws=>[900000,500000],armyById=>{},riotIds=>[]),
+);
+
 print JSON::PP->new->canonical->utf8->encode({
   source=>'frozen Perl 17 EVENT hash and actual inc-turn END/START/NOWFUNC, original happy event-n body, support/instant/loto STARTFUNC and seven ITEM PARAM files',
   compiledCount=>scalar(@compiled),runtimeHashOrder=>\@runtimeHashKeys,
   cases=>\@cases,theftCases=>\@theftCases,lotoCases=>\@lotoCases,
   happyCases=>\@happyCases,durableCases=>\@durableCases,
-  guildCases=>\@guildCases,rebelCases=>\@rebelCases,
+  guildCases=>\@guildCases,rebelCases=>\@rebelCases,territoryMixedCases=>\@territoryMixedCases,
   scope=>'17 original EVENT gates, seven durable events and genuine getmoney/getpop/manbiki/goutou callbacks in shared RNG; single shop, controlled draws, time jump in support cases, not all callbacks or saved world',
 });

@@ -9,6 +9,7 @@
 import {B53_EVENT_CATALOG_SOURCE} from './original-event-compiled-catalog.mjs';
 import {B58_MARKET11_SOURCE} from './original-market-buy11.mjs';
 import {B57_SUPPORT_SOURCE} from './original-b57-support-event-callbacks.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
 export const B58_LOTO_SOURCE='b58-original-loto-startfunc-inventory-prize-log';
 export const LOTO_RANGE=6096454;
 const MAX_MONEY=999999999;
@@ -84,7 +85,9 @@ export function reviewOriginalLotoStartfunc({
     scope:'real source Perl loto STARTFUNC one-shop tickets/award/log emissions; no original hash RNG or persisted world log',
   });
 }
-export function projectOriginalLotoStartfunc({reviewed,shop,randomDraws}){
+export function projectOriginalLotoStartfunc({reviewed,shop,randomDraws,reviewedInventory=null}){
+  const expanded=reviewedInventory?.normalCommerce??null;
+  if(expanded!==null)validateNormalCommerceInventory(shop,reviewedInventory.compiled,expanded);
   if(reviewed?.source!==B58_LOTO_SOURCE||
      reviewed.ticketId!==11||reviewed.stockIndex!==10||
      reviewed.maxTickets!==50||reviewed.startProba!==500||
@@ -94,8 +97,7 @@ export function projectOriginalLotoStartfunc({reviewed,shop,randomDraws}){
      typeof shop.shopname!=='string'||!shop.shopname||
      !Array.isArray(shop.item)||shop.item.length!==79||
      shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
-     !Number.isSafeInteger(shop.money)||shop.money<0||
-     shop.money>MAX_MONEY)
+     !Number.isSafeInteger(shop.money)||(expanded===null&&(shop.money<0||shop.money>MAX_MONEY)))
     FAIL('reviewed real source single-shop or inventory invalid');
   const count=shop.item[10];
   if(count>reviewed.maxTickets)FAIL('original ticket carrying cap exceeded');

@@ -1,7 +1,9 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** B-50-specific play wire: explicit full 32/11 fields, one or zero shops.
  * Older strict one-shop codec is unchanged. This does not authorize CAS.
  */
 import {reviewR4DataWriteFiles} from './original-r4-data-write-files.mjs';
+import {calculateSourceShopPoint} from './original-period-solo-sort.mjs';
 import {parseTownLine,serializeTownLine} from './original-r4-town-files.mjs';
 import {parseWorldWholesaleLine} from './world-wholesale-codec.mjs';
 import {readFile,writeFile,mkdir,lstat,realpath} from 'node:fs/promises';
@@ -21,11 +23,24 @@ function decimal(v,crossPeriod=false){
   if(!pattern.test(s)||!Number.isSafeInteger(Math.trunc(Number(s)))||Number(s)<0)fail('invalid costtoday decimal');
   return s;
 }
-function field(v,k,crossPeriod=false){
+const fieldMin=(k,signedCash)=>k==='profitstock'||(k==='money'&&signedCash)?-Number.MAX_SAFE_INTEGER:0;
+function taxHeader(v,reviewed){
+  const n=integer(v,'taxRate');
+  if(reviewed.lordTaxWire&&n>40)fail('unreviewed lord tax rate');
+  return n;
+}
+function field(v,k,crossPeriod=false,signedCash=false,lordTaxWire=false){
+  // Original taxside/treset deletes taxmode. DataWrite joins undef as
+  // an empty column; DataRead reloads that exact empty string.
+  if(lordTaxWire&&k==='taxmode'){
+    if(v===undefined||v==='')return '';
+    const n=integer(v,k);if(n>2)fail('unreviewed shop tax mode');
+    return String(n);
+  }
   if(textFields.has(k)||crossPeriod&&k==='job')return safeText(v,k);
   if(k==='rankingyesterday'&&v==='')return '';
   if(k==='costtoday')return decimal(v,crossPeriod);
-  return String(integer(v,k,k==='profitstock'?-Number.MAX_SAFE_INTEGER:0));
+  return String(integer(v,k,fieldMin(k,signedCash)));
 }
 const plain=o=>o&&Object.getPrototypeOf(o)===Object.prototype;
 function wireMap(m,k,crossPeriod=false){
@@ -44,17 +59,18 @@ function wireArray(a,k,n){
   return a.map(v=>integer(v,k)).join(',');
 }
 const normalEvents=new Set(['boom-posyon','ken-sale','tate-sale','yoroi-sale','tue-sale','plusdown-yakusou','plusup-tetu','plusup-misuriru','plusup-oriharukon','happy']);
-function eventWire(events){
-  if(!plain(events)||Object.keys(events).length>normalEvents.size)fail('known EVENT map required');
+const knownEvent=(code,reviewed)=>normalEvents.has(code)||(reviewed.externalRebel&&code==='rebel')||Boolean(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code));
+function eventWire(events,reviewed){
+  if(!plain(events)||Object.keys(events).length>normalEvents.size+(reviewed.manualCommerce?4:0)+(reviewed.externalRebel?1:0))fail('known EVENT map required');
   return Object.entries(events).flatMap(([code,until])=>{
-    if(!normalEvents.has(code))fail('unreviewed EVENT '+code);
+    if(!knownEvent(code,reviewed))fail('unreviewed EVENT '+code);
     return [code,String(integer(until,'EVENT expiry',1))];
   }).join(',');
 }
-function readEvents(line){
+function readEvents(line,reviewed){
   if(line==='')return {};
   const a=line.split(','),out={};if(a.length%2)fail('invalid EVENT pairs');
-  for(let i=0;i<a.length;i+=2){if(!normalEvents.has(a[i])||Object.hasOwn(out,a[i]))fail('duplicate or unknown EVENT');out[a[i]]=integer(a[i+1],'EVENT expiry',1);}
+  for(let i=0;i<a.length;i+=2){if(!knownEvent(a[i],reviewed)||Object.hasOwn(out,a[i]))fail('duplicate or unknown EVENT');out[a[i]]=integer(a[i+1],'EVENT expiry',1);}
   return out;
 }
 function sparseWire(world){
@@ -62,26 +78,46 @@ function sparseWire(world){
   if(!Array.isArray(world.wholesale)||world.wholesale.length!==79||p.stock.some((v,i)=>v!==world.wholesale[i]))fail('sparse wholesale numeric view mismatch');
   return p.originalCsv;
 }
-export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false}={}){
-  if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||ordinaryMultiShelf&&!crossPeriod)fail('explicit cross-period wire opt-in');
+export function reviewPeriodPlay(sources,{crossPeriod=false,ordinaryMultiShelf=false,signedCash=false,externalRebel=false,manualCommerce=null,lordTaxWire=false,twoShopSource=false}={}){
+  // Only the isolated two-active-shop DataWrite/DataRead source subset.
+  // Do not extend the existing cross-period or independent CAS capability.
+  if(typeof twoShopSource!=='boolean'||twoShopSource&&crossPeriod)fail('isolated two-shop source review only');
+  if(typeof lordTaxWire!=='boolean'||lordTaxWire&&!crossPeriod)fail('explicit cross-period lord tax wire opt-in');
+  if(manualCommerce!==null&&(!crossPeriod||!isReviewedManualCommerceEvents(manualCommerce)))fail('manual commerce wire review');
+  if(typeof crossPeriod!=='boolean'||typeof ordinaryMultiShelf!=='boolean'||typeof signedCash!=='boolean'||typeof externalRebel!=='boolean'||(ordinaryMultiShelf||signedCash||externalRebel)&&!crossPeriod)fail('explicit cross-period wire opt-in');
   // DataWrite joins the actual arrays; DataRead splits both full arrays.
   // This only extends ordinary disk encoding, not the single-shelf time gate.
   if(ordinaryMultiShelf&&(!sources.writeSource.includes('join(",",@{$DT->{showcase}})')||!sources.writeSource.includes('join(",",@{$DT->{price}})')||!sources.incFuncSource.includes('@DT{qw(showcase price)}=map{[split(/,/,$_)]}@list[0,1];')))fail('source showcase wire drift');
   const data=reviewR4DataWriteFiles(sources);
-  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf});reviews.add(r);return r;
+  const r=Object.freeze({shopFields:data.shopFields,stateFields:data.stateFields,committable:false,crossPeriod,ordinaryMultiShelf,signedCash,manualCommerce,...(twoShopSource?{twoShopSource:true}:{}),...(lordTaxWire?{lordTaxWire:true}:{}),...(externalRebel?{externalRebel:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
+function sourceOrderedShops(world){
+  const ids=new Set(),names=new Set(),nextid=integer(world.nextid,'nextid',1);
+  const ranked=world.shops.map(s=>{
+    if(!plain(s)||s.status!==1)fail('two-shop source requires active shops');
+    const id=integer(s.id,'id',1),name=safeText(s.name,'name');
+    if(!name||ids.has(id)||names.has(name)||id>=nextid)fail('ambiguous shop identity or nextid');
+    ids.add(id);names.add(name);
+    const prior=s.rankingyesterday===''?0:integer(s.rankingyesterday,'rankingyesterday');
+    const point=calculateSourceShopPoint(Object.fromEntries(
+      ['rank','profitstock','saletoday','taxtoday','paytoday','rankingcount'].map(k=>[k,integer(s[k],k,fieldMin(k,false))])));
+    return {s,prior:prior!==0,point};
+  });
+  // SortDT prefers a prior ranking, then descending point. Stable ties retain
+  // input row order; no artificial ID tie-break or cached point authority.
+  return ranked.sort((a,b)=>Number(b.prior)-Number(a.prior)||b.point-a.point).map(x=>x.s);
+}
 export function serializePeriodPlay({reviewed,townReview,world}){
   check(reviewed);
-  if(!plain(world)||!plain(world.events)||(!reviewed.crossPeriod&&Object.keys(world.events).length!==0)||!Array.isArray(world.shops)||world.shops.length>1)fail('explicit empty EVENT and zero/one active shop required');
+  if(!plain(world)||!plain(world.events)||(!reviewed.crossPeriod&&Object.keys(world.events).length!==0)||!Array.isArray(world.shops)||world.shops.length>(reviewed.twoShopSource?2:1))fail(reviewed.twoShopSource?'explicit empty EVENT and reviewed active shop count required':'explicit empty EVENT and zero/one active shop required');
   const lines=[String(integer(world.lasttime,'lasttime',1)),
-    [integer(world.people,'people'),integer(world.nextid,'nextid',1),safeText(world.blockip,'blockip'),integer(world.taxRate,'taxRate'),reviewed.stateFields.map(k=>integer(world.state?.[k],k)).join(':')].join(','),
-    reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
-  if(world.shops.length){
-    const s=world.shops[0];
+    [integer(world.people,'people'),integer(world.nextid,'nextid',1),safeText(world.blockip,'blockip'),taxHeader(world.taxRate,reviewed),reviewed.stateFields.map(k=>integer(world.state?.[k],k)).join(':')].join(','),
+    reviewed.crossPeriod?sparseWire(world):wireArray(world.wholesale,'wholesale',79),reviewed.crossPeriod?eventWire(world.events,reviewed):'',serializeTownLine({reviewed:townReview,town:world.town}),'//'];
+  for(const s of (reviewed.twoShopSource?sourceOrderedShops(world):world.shops)){
     const shelves=integer(s.showcasecount,'showcasecount',1);
-    if(s.status!==1||integer(s.id,'id',1)!==1||integer(s.foundation,'foundation',1)<1||integer(s.money,'money')>1000000000||shelves>(reviewed.ordinaryMultiShelf?8:1))fail('unreviewed B50 shop');
-    lines.push(reviewed.shopFields.map(k=>field(s[k],k,reviewed.crossPeriod)).join(','));
+    if(s.status!==1||(!reviewed.twoShopSource&&integer(s.id,'id',1)!==1)||integer(s.foundation,'foundation',1)<1||integer(s.money,'money',fieldMin('money',reviewed.signedCash))>(reviewed.signedCash?999999999:1000000000)||shelves>(reviewed.ordinaryMultiShelf?8:1))fail('unreviewed B50 shop');
+    lines.push(reviewed.shopFields.map(k=>field(s[k],k,reviewed.crossPeriod,reviewed.signedCash,reviewed.lordTaxWire)).join(','));
     lines.push([wireArray(s.showcase,'showcase',shelves),wireArray(s.price,'price',shelves),wireArray(s.item,'item',79),...['itemyesterday','itemtoday','exp','user'].map(k=>wireMap(s[k],k,reviewed.crossPeriod))].join(':'));
   }
   return lines.join('\n')+'\n';
@@ -97,14 +133,14 @@ export function parsePeriodPlay({reviewed,townReview,bytes}){
   check(reviewed);
   if(typeof bytes!=='string'||!bytes.endsWith('\n'))fail('invalid play bytes');
   const rows=bytes.slice(0,-1).split('\n');
-  if(![6,8].includes(rows.length)||(!reviewed.crossPeriod&&rows[3]!=='')||rows[5]!=='//')fail('unreviewed play layout or EVENT');
+  if(!(reviewed.twoShopSource?[6,8,10]:[6,8]).includes(rows.length)||(!reviewed.crossPeriod&&rows[3]!=='')||rows[5]!=='//')fail('unreviewed play layout or EVENT');
   const h=rows[1].split(',');if(h.length!==5)fail('world header');
   const values=h[4].split(':');if(values.length!==11)fail('state fields');
-  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:integer(h[3],'taxRate'),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3]):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
-  if(rows.length===8){
-    const cols=rows[6].split(',');if(cols.length!==32)fail('shop fields');
-    const s=Object.fromEntries(reviewed.shopFields.map((k,i)=>[k,textFields.has(k)||reviewed.crossPeriod&&k==='job'||k==='rankingyesterday'&&cols[i]===''?cols[i]:k==='costtoday'?Number(decimal(cols[i],reviewed.crossPeriod)):integer(cols[i],k,k==='profitstock'?-Number.MAX_SAFE_INTEGER:0)]));
-    const parts=rows[7].split(':');if(parts.length!==7)fail('shop segments');
+  const world={lasttime:integer(rows[0],'lasttime',1),people:integer(h[0],'people'),nextid:integer(h[1],'nextid',1),blockip:h[2],taxRate:taxHeader(h[3],reviewed),state:Object.fromEntries(reviewed.stateFields.map((k,i)=>[k,integer(values[i],k)])),wholesale:reviewed.crossPeriod?[...parseWorldWholesaleLine(rows[2],79).stock]:rows[2].split(',').map(v=>integer(v,'wholesale')),events:reviewed.crossPeriod?readEvents(rows[3],reviewed):{},...(reviewed.crossPeriod?{wholesaleCsv:rows[2]}:{}),town:parseTownLine({reviewed:townReview,line:rows[4]}),shops:[]};
+  for(let row=6;row<rows.length;row+=2){
+    const cols=rows[row].split(',');if(cols.length!==32)fail('shop fields');
+    const s=Object.fromEntries(reviewed.shopFields.map((k,i)=>[k,textFields.has(k)||reviewed.crossPeriod&&k==='job'||(k==='rankingyesterday'||reviewed.lordTaxWire&&k==='taxmode')&&cols[i]===''?cols[i]:k==='costtoday'?Number(decimal(cols[i],reviewed.crossPeriod)):integer(cols[i],k,fieldMin(k,reviewed.signedCash))]));
+    const parts=rows[row+1].split(':');if(parts.length!==7)fail('shop segments');
     s.status=1;
     for(const [i,k] of ['showcase','price','item'].entries())s[k]=parts[i].split(',').map(v=>integer(v,k));
     for(const [i,k] of ['itemyesterday','itemtoday','exp','user'].entries())s[k]=readMap(parts[i+3],k,reviewed.crossPeriod);

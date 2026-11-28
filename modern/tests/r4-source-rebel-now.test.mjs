@@ -45,10 +45,10 @@ const original=()=>JSON.parse(execFileSync('perl',
   ['original-r4-rebel-now-probe.pl'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
   }));
-test('actual frozen rebel NOWFUNC matches six original Perl city/riot/army branches',()=>{
+test('actual frozen rebel NOWFUNC matches ten original Perl city/riot/army branches',()=>{
   assert.equal(reviewed.source,R4_REBEL_NOW_SOURCE);
   const oracle=original();
-  assert.equal(oracle.cases.length,8);
+  assert.equal(oracle.cases.length,10);
   for(const row of oracle.cases){
     const before=JSON.stringify(row.input);
     const got=projectR4RebelNow({reviewed,...row.input});
@@ -58,6 +58,10 @@ test('actual frozen rebel NOWFUNC matches six original Perl city/riot/army branc
       'randomDrawRanges','drawsUsed','returnCode',
     ])assert.deepEqual(got[key],row.output[key],row.name+' source '+key);
     assert.equal(got.committable,false);
+    if(row.name.includes('sole-current-leader')){
+      assert.equal(got.town.leader,0);assert.equal(got.town.robina,10000);
+      assert.equal(got.eventPersisted,false);assert.equal(got.shops[0].money,1210);
+    }
     if(row.name.includes('boundary'))assert.equal(
       got.town.robinb,row.output.town.robinb,
       'original rand(100)>75 must compare raw float, not rounded integer');

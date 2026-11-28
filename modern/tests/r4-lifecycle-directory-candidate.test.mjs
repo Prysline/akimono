@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {reviewLifecycleDirectorySources,projectLifecycleDirectory} from '../src/original-r4-lifecycle-directory.mjs';
+const read=p=>readFileSync(new URL('./original-perl/'+p,import.meta.url),'utf8');
+const sources={newShop:read('new.cgi'),login:read('pinned-login.cgi'),ip:read('pinned-ip.cgi'),membership:read('pinned-membership-user.cgi')};
+const review=reviewLifecycleDirectorySources(sources);
+const alice={ownerName:'alice',shopName:'Alice shop',shopId:1,ip:'192.0.2.5',userAgent:'test'},bob={ownerName:'bob',shopName:'Bob shop',shopId:3,ip:'192.0.2.6',userAgent:'test'};
+const f={review,activeOwnerNames:['bob'],records:[alice,bob],sourceIP:alice.ip,blockIP:'',blockEnabled:true,kind:'registration'};
+test('R4 source registration gate sees stale IP row before login prune, block IP after',()=>{assert.equal(projectLifecycleDirectory(f).reason,'local-ip-record');const b=projectLifecycleDirectory({...f,kind:'login-directory',actor:bob,sourceIP:bob.ip});assert.deepEqual(b.records,[bob]);assert.equal(projectLifecycleDirectory({...f,records:b.records,blockIP:alice.ip}).reason,'block-ip');assert.equal(projectLifecycleDirectory({...f,records:b.records}).allowedBySourceIpGate,true);assert.deepEqual(f.records,[alice,bob]);});
+test('R4 source directory cross-town block and source overlap distinct from authentication',()=>{assert.equal(projectLifecycleDirectory({...f,records:[],otherTownBlockEnabled:true,otherTownRecords:[alice]}).reason,'other-town-ip-record');assert.equal(projectLifecycleDirectory({...f,records:[],otherTownBlockEnabled:false,otherTownRecords:[alice]}).allowedBySourceIpGate,true);const a=projectLifecycleDirectory({...f,activeOwnerNames:['alice','bob'],kind:'login-directory',actor:bob,sourceIP:alice.ip});assert.equal(a.sourceOverlap,true);assert.equal(a.committable,false);assert.throws(()=>projectLifecycleDirectory({...f,records:[{...alice,password:'synthetic'}]}),/unreviewed directory row/);});

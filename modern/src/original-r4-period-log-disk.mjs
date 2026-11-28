@@ -7,30 +7,34 @@ import path from 'node:path';
 import os from 'node:os';
 const pins={log:'0f9143c49d1552233f27754e3937e1cdc2740f0a',period:'6183e88e9dd69a16606a1064c8084e9a1411dbd5',dsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',config:'87e4fd4eefba063d982e3b79aa7cfa6565e1a1e0'};
 const reviews=new WeakSet();
+const armyCommandPin='6f457b78f530e37aa0ff4074358a57797f5087e2';
 const fail=m=>{throw new RangeError('R4 period log: '+m)};
 export function reviewPeriodLog(sources){
   for(const [k,sha] of Object.entries(pins)){
     const s=sources[k];if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+k);
   }
+  const armyConflictLog=Object.hasOwn(sources,'armyCommand');
+  if(armyConflictLog&&(typeof sources.armyCommand!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(sources.armyCommand)+'\0').update(sources.armyCommand).digest('hex')!==armyCommandPin))
+    fail('source drift armyCommand');
   const scales={};
   for(const block of sources.dsl.split(/^@@ITEM[ \t]*(?:#.*)?\r?\n/mi)){
     const id=block.match(/^\s*no\s+(\d+)\s*(?:#.*)?$/m)?.[1];
     const scale=block.match(/^\s*scale\s+([^\r\n#]+)/m)?.[1]?.trim();
     if(id&&scale)scales[id]=scale;
   }
-  const r=Object.freeze({scales:Object.freeze(scales),committable:false});reviews.add(r);return r;
+  const r=Object.freeze({scales:Object.freeze(scales),committable:false,...(armyConflictLog?{armyConflictLog:true}:{})});reviews.add(r);return r;
 }
 function check(r){if(!reviews.has(r))fail('source review required')}
-function row(time,mode,id,msg){
-  if(!Number.isSafeInteger(time)||time<1||![0,1,2].includes(mode)||!Number.isSafeInteger(id)||id<0||typeof msg!=='string'||/[\r\n\t]/.test(msg))fail('unreviewed log row');
+function row(time,mode,id,msg,armyConflictLog=false){
+  if(!Number.isSafeInteger(time)||time<1||!(armyConflictLog?[0,1,2,3]:[0,1,2]).includes(mode)||!Number.isSafeInteger(id)||id<0||typeof msg!=='string'||/[\r\n\t]/.test(msg))fail('unreviewed log row');
   return [time,mode,id,msg].join('\t')+'\n';
 }
 /** Exact B50 one-shop/no-leader call order. Formatters are the same explicit
  * identity fixtures as the original probe, not real localization/currency.
  */
-export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false}){
+export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,independentPeriod=false,externalRebel=false}){
   check(reviewed);
-  if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||town.leader!==0||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
+  if(result?.source!=='core-original-solo-period-phase-chain-no-world-commit'||result.nonCommittable!==true||shop.id!==1||(externalRebel?(!independentPeriod||![0,1].includes(town.leader)||result.conflictTerritory?.source!=='r4-original-territory-rebel-full-fragment.v1'||result.conflictTerritory.committable!==false):town.leader!==0||Boolean(result.conflictTerritory))||typeof externalRebel!=='boolean'||typeof independentPeriod!=='boolean'||(!independentPeriod&&shop.taxtoday!==0)||
      (independentPeriod&&(!Number.isSafeInteger(shop.taxtoday)||shop.taxtoday<0||result.town.in!==shop.taxtoday||result.actualCloseEffect||result.dragonLogs!==undefined)))fail('reviewed B50 state required');
   const count=shop.rankingcount+1,p=result.prize,head='本次優勝';
   const scale=reviewed.scales[p.itemId];if(!scale)fail('source prize scale missing');
@@ -43,15 +47,18 @@ export function projectB50PeriodLogRows({reviewed,shop,town,result,nowSeconds,in
   if(p.discarded)calls.push([0,shop.id,'但是由於超過了最大持有數量，'+p.discarded+scale+'被丟棄了']);
   if(result.actualCloseEffect)calls.push([1,0,shop.shopname+'が経営者不在のため閉店しました。']);
   calls.push(...(result.dragonLogs??[]));
+  if(externalRebel)calls.push(...result.conflictTerritory.logs);
+  else {
   if(town.army+town.robina<10000)calls.push([2,0,'街の護衛軍が少ないため，治安が悪化しています。']);
   if(town.money+(independentPeriod?shop.taxtoday:0)-result.town.out<0)calls.push([2,0,'街資金が底をつき，街の護衛軍に給料を支払えないようです。']);
+  }
   for(const x of result.postTechLoss?.logs??[])calls.push([x[0],x[1],x[3]]);
   return calls.map(c=>row(nowSeconds,...c));
 }
 async function regular(p){const s=await lstat(p);if(!s.isFile())fail('regular log file required');return s}
 export async function renewPeriodLogDisk({reviewed,directory,rows,nowSeconds}){
   check(reviewed);
-  if(!Number.isSafeInteger(nowSeconds)||nowSeconds<1||!Array.isArray(rows)||!rows.length||rows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('explicit accumulated log rows required');
+  if(!Number.isSafeInteger(nowSeconds)||nowSeconds<1||!Array.isArray(rows)||!rows.length||rows.some(s=>typeof s!=='string'||!(reviewed.armyConflictLog?/^\d+\t[0123]\t\d+\t[^\r\n\t]*\n$/:/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/).test(s)))fail('explicit accumulated log rows required');
   const root=await realpath(directory);
   if(path.dirname(root)!==await realpath(os.tmpdir())||!path.basename(root).startsWith('akimono-r4-period-disk-'))fail('isolated sandbox required');
   const stage=path.join(root,'stage');if(!(await lstat(stage)).isDirectory())fail('real stage required');
@@ -79,14 +86,16 @@ export function projectReviewedEventLogRows({reviewed,logs,nowSeconds}){
     return row(nowSeconds,call[0],call[1],call.length===5?call[3]:call[2]);
   }).reverse();
 }
-export function projectCrossPeriodLogRows({reviewed,candidate}){
+export function projectCrossPeriodLogRows(args){return crossPeriodLogRows(args,false)}
+export function projectExternalCrossPeriodLogRows(args){return crossPeriodLogRows(args,true)}
+function crossPeriodLogRows({reviewed,candidate},externalRebel){
   check(reviewed);
-  if(candidate?.source!=='r4-reviewed-cross-period-candidate.v1'||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
+  if(candidate?.source!==(externalRebel?'r4-external-rebel-cross-period-candidate.v1':'r4-reviewed-cross-period-candidate.v1')||candidate.committable!==false||![0,1].includes(candidate.evidence.slices[0]?.dateupdate))fail('cross-period candidate required');
   const calls=[];
   for(const slice of candidate.evidence.slices){
     if(slice.dateupdate===1){
       const {periodLogInput,settlement}=slice.preEvent;
-      calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true}));
+      calls.push(...projectB50PeriodLogRows({reviewed,...periodLogInput,result:settlement,nowSeconds:candidate.nowSeconds,independentPeriod:true,externalRebel}));
     }
     for(const call of slice.eventLogs){
       if(!Array.isArray(call)||![3,4,5].includes(call.length))fail('unreviewed EVENT log call');
@@ -94,4 +103,57 @@ export function projectCrossPeriodLogRows({reviewed,candidate}){
     }
   }
   return calls.reverse();
+}
+
+/** Source conflict command log adapter; still a noncommittable candidate.
+ * Do not widen ordinary EVENT or formal CAS log acceptance. Original
+ * PushLog(3,0,...) is reserved here for reviewed join/volunteer commands.
+ */
+export function projectReviewedArmyConflictLogRows({reviewed,candidate,nowSeconds}){
+  check(reviewed);
+  if(reviewed.armyConflictLog!==true||candidate?.source!=='r4-frozen-army-conflict-command-candidate.v1'||
+     candidate.committable!==false||candidate.receipt?.source!==candidate.source||
+     candidate.receipt.committable!==false||!Array.isArray(candidate.receipt.logs))
+    fail('reviewed army conflict candidate required');
+  const {action,logs}=candidate.receipt;
+  if(!['start-rebellion','join-rebellion','dispatch-guard'].includes(action)||
+     logs.length>(1)||((action!=='dispatch-guard')&&logs.length!==1))
+    fail('original conflict log count');
+  const mode=action==='start-rebellion'?2:3;
+  return logs.map(call=>{
+    if(!Array.isArray(call)||call.length!==3||call[0]!==mode||call[1]!==0)
+      fail('original conflict log mode');
+    return row(nowSeconds,...call,true);
+  }).reverse();
+}
+
+/** Full-commerce-only review of actual item::WriteLog (three arguments),
+ * distinct from main::WriteLog's older four-argument compatibility wrapper.
+ * The frozen item helper delegates to PushLog with the same mode/id/msg.
+ */
+const commerceLogReviews=new WeakSet();
+export function reviewCommerceUseLogs({helperSource,logSource,configSource}){
+  for(const [s,sha] of [[helperSource,'bb0244748088be0c5f1d24de7f9f7f05225278cb'],[logSource,pins.log],[configSource,pins.config]]){
+    if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source commerce log drift');
+  }
+  if(!helperSource.includes('main::PushLog($_[0],$_[1],$_[2]);')||
+     !logSource.includes('unshift(@LOG,"$NOW_TIME\\t$mode\\t$id\\t$msg\\n");'))fail('source commerce WriteLog/PushLog bridge');
+  const r=Object.freeze({source:'r4-frozen-item-writelog-three-argument.v1',moneyPrefix:'\\',moneySuffix:''});
+  commerceLogReviews.add(r);return r;
+}
+export function projectReviewedCommerceUseLogRows({reviewed,rule,command,receipt,nowSeconds}){
+  if(!commerceLogReviews.has(reviewed)||command?.kind!=='use-item'||command.shopId!==1||
+     rule?.supported!==true||rule.itemId!==command.itemId||rule.useId!==command.useId||
+     receipt?.action!=='use-item'||receipt.shopId!==command.shopId||
+     receipt.itemId!==command.itemId||receipt.useId!==command.useId||receipt.source!==rule.source||
+     !receipt.callbackOrder?.includes('source-inline-callback'))fail('reviewed commerce callback log identity');
+  const kinds=['book-work','showcase-resize','career-change','milk-cow','drink-milk','party-popularity',
+    'advertise-self','advertise-no-guild','local-self-advertise-other','local-self-rumor','local-self-theft','local-self-industry-rumor'];
+  const calls=receipt.originalInlineLogCalls;
+  if(!kinds.includes(rule.inlineCallback?.kind)||!Array.isArray(calls)||calls.length>79)fail('reviewed commerce callback log shape');
+  return calls.map(call=>{
+    if(!Array.isArray(call)||call.length!==3||![0,2,3].includes(call[0])||
+      call[1]!== (call[0]===0?command.shopId:0))fail('reviewed commerce callback log target');
+    return row(nowSeconds,...call,true);
+  }).reverse();
 }

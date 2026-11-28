@@ -8,6 +8,7 @@ import {B53_EVENT_CATALOG_SOURCE}
   from './original-event-compiled-catalog.mjs';
 import {B41_SOURCE,validateP3Inventory} from './original-b41-playable-sale.mjs';
 import {isSourceShowcaseListedPrice} from './shared-showcase-price.mjs';
+import {validateNormalCommerceInventory} from './reviewed-normal-commerce-items.mjs';
 export const B55_SOURCE='original-instant-manbiki-goutou-startfunc';
 const fail=x=>{throw new RangeError('B-55 original EVENT startfunc: '+x);};
 const safe=(v,name,min=0)=>{
@@ -105,7 +106,10 @@ export function projectOriginalInstantEventCallback({
     fail('source-reviewed callback contract required');
   const spec=specs[eventCode];
   if(!spec)fail('unsupported source EVENT callback');
-  if(reviewedInventory!==null){
+  const expanded=reviewedInventory?.normalCommerce??null;
+  if(expanded!==null){
+    validateNormalCommerceInventory(shop,reviewedInventory.compiled,expanded);
+  }else if(reviewedInventory!==null){
     if(reviewedInventory.sale?.source!==B41_SOURCE)fail('reviewed common inventory source required');
     validateP3Inventory(shop,reviewedInventory.compiled,reviewedInventory.sale);
     const id=shop.showcase?.[0],price=shop.price?.[0];
@@ -119,11 +123,11 @@ export function projectOriginalInstantEventCallback({
      shop.item.some(v=>!Number.isSafeInteger(v)||v<0)||
      shop.item[9]>20||shop.item[10]>50||shop.item[63]>1||
      (reviewedInventory===null&&shop.item.some((v,i)=>![9,10,62,63,78].includes(i)&&v!==0))||
-     shop.showcasecount!==1||!Array.isArray(shop.showcase)||
-     shop.showcase.length!==1||(reviewedInventory===null&&![0,10].includes(shop.showcase[0]))||
-     !Array.isArray(shop.price)||shop.price.length!==1||
-     (reviewedInventory===null&&shop.showcase[0]===10&&shop.price[0]!==5000)||
-     (shop.showcase[0]===0&&shop.price[0]!==0)||
+     (expanded===null&&(shop.showcasecount!==1||!Array.isArray(shop.showcase)||
+       shop.showcase.length!==1||(reviewedInventory===null&&![0,10].includes(shop.showcase[0]))||
+       !Array.isArray(shop.price)||shop.price.length!==1||
+       (reviewedInventory===null&&shop.showcase[0]===10&&shop.price[0]!==5000)||
+       (shop.showcase[0]===0&&shop.price[0]!==0)))||
      typeof shop.shopname!=='string'||!shop.shopname||
      !Number.isSafeInteger(shop.rank)||shop.rank<0||shop.rank>10000)
     fail('only reviewed single-shop stock, robot and showcase');
@@ -151,12 +155,16 @@ export function projectOriginalInstantEventCallback({
     }else{
       if(eventCode==='goutou')rank-=Math.trunc(rank/5);
       let value=0;
-      const shelfItem=shop.showcase[0];
-      if(shelfItem){
+      // The original loops shelves, not distinct ITEMs. A repeated item
+      // is reduced again using the stock left by the previous shelf.
+      for(let shelf=0;shelf<shop.showcasecount;shelf++){
+        const shelfItem=shop.showcase[shelf];
+        if(!shelfItem)continue;
         const idx=shelfItem-1;
         const count=Math.trunc(items[idx]/(eventCode==='manbiki'?10:4));
         items[idx]-=count;
-        value=safe(count*shop.price[0],'original theft monetary equivalent');
+        value=safe(value+safe(count*shop.price[shelf],'original theft shelf value'),
+          'original theft monetary equivalent');
       }
       message=value>0?
         shop.shopname+(eventCode==='manbiki'?

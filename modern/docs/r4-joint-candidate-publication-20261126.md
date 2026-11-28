@@ -1,0 +1,7 @@
+# R4 共同發布隔離候選（2026-11-26）
+
+- `r4-joint-source-projection.mjs`：固定原版公會及 DragonBalance/WritePayLog/CoLock/Lock blobs；同一 lineage/revision 內接雙店 #79、guild ledger 與 receipt；付款 producer 原因類別、source action、batch、街道、shop id、row index 形成 identity。兩筆同額不同 action 不去重；同 operation 改 payload/lineage 拒絕；未知店鋪拒絕，保留完整已消費付款 evidence。
+- Consumer 只接真正原版 DragonBalance 前段數值投影，尚未接 UpdateResetBefore、cash settlement、period reset、close shop、archive、B43 或真玩家。每街道只允許一次 consumer stage，避免把舊 dragon 再結算。Producer commonBytes 與 source action 是隔離候選輸入，**不構成真 producer provenance**。
+- `r4-joint-candidate-journal.mjs`：獨立 tmpdir sandbox；每個 generation 存 command、parent digest、source-derived receipt、state digest，重啟由外部固定 genesis 全量 source replay，不接受只重算 hash 的改寫。先 fsync 完整 stage，再以同一檔案系統 exclusive hard link 發布 revision；同 revision 兩程序最多一個成功；原子發布後 fsync directory。stage orphan 不屬於 generation，沒有付款 unlink。
+- 新測試以真 Perl guild oracle 作隔離 fixture（非真玩家）；兩個真正 Node 子程序在同 revision 競爭；SIGKILL 在 stage 後/發布後測 producer/consumer，驗證共同 bytes+receipt+街道累積同一 generation、可重入且不可重複。尚待 CI。這只證明 sandbox process-crash/競爭模型，不宣稱 power-loss durability、跨主機/NFS、B43 接合、正式 common/street locks、auth 或多店 session 已完成。
+- 設計選擇：以單一 revision publication point 驗證 joint CAS，尚不替代既有 B43 slots 或正式 common/street lock contract。正式接合前須決定同一唯一 publication pointer、真正 producer/street replay、guild 定義負金庫生命週期、真原版 log/file/period full chain、歷史遷移和真多玩家 UI/HTTP 驗收。全模組 committable:false，現有 runtime 不開放。

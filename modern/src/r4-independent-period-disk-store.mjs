@@ -20,7 +20,7 @@ function layout(world){
     if(!entries||Object.keys(entries).sort().join(',')!==[...names].sort().join(','))fail('unexpected file layout');
     for(const n of names){const f=entries[n];if(typeof f?.bytes!=='string'||!Number.isSafeInteger(f.mtime)||f.mtime<0||f.mtime>world.nowSeconds)fail('source file entry');out[prefix+n]=f;}
   }
-  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi']);
+  collect('',d.live,[...baseNames,'guild.cgi','lasttime.cgi',...(Object.hasOwn(d.live??{},'army.cgi')?['army.cgi']:[])]);
   collect('backup/',d.backup,baseNames);
   if(!Array.isArray(d.generations)||d.generations.length!==3)fail('three backup generations required');
   d.generations.forEach((g,i)=>{if(g!==null)collect('backup'+(i+1)+'/',g,baseNames)});
@@ -36,8 +36,12 @@ export function createIndependentPeriodDiskStore({directory}){
     if(JSON.stringify(fs.readdirSync(target).sort())!==JSON.stringify(expected))fail('file generation layout mismatch');
     for(const sub of subdirs){const p=path.join(target,sub);dir(p);if(JSON.stringify(fs.readdirSync(p).sort())!==JSON.stringify(baseNames.slice().sort()))fail('backup layout mismatch');}
     for(const [name,f] of Object.entries(files)){
-      const p=path.join(target,name),fd=fs.openSync(p,c.O_RDONLY|(c.O_NOFOLLOW??0));
-      try{const st=fs.fstatSync(fd);if(!st.isFile()||st.nlink!==1||st.size!==Buffer.byteLength(f.bytes)||Math.floor(st.mtimeMs/1000)!==f.mtime||!fs.readFileSync(fd).equals(Buffer.from(f.bytes)))fail('source file bytes or clock mismatch '+name);}
+      const p=path.join(target,name),before=fs.lstatSync(p);
+      if(!before.isFile()||before.nlink!==1)fail('regular independent source file required '+name);
+      // A FIFO substituted for a source file must fail before blocking the
+      // HTTP process; O_NONBLOCK also covers replacement after lstat.
+      const fd=fs.openSync(p,c.O_RDONLY|(c.O_NOFOLLOW??0)|(c.O_NONBLOCK??0));
+      try{const st=fs.fstatSync(fd);if(!st.isFile()||st.nlink!==1||st.dev!==before.dev||st.ino!==before.ino||st.size!==Buffer.byteLength(f.bytes)||Math.floor(st.mtimeMs/1000)!==f.mtime||!fs.readFileSync(fd).equals(Buffer.from(f.bytes)))fail('source file bytes or clock mismatch '+name);}
       finally{fs.closeSync(fd)}
     }
     return true;
@@ -45,9 +49,12 @@ export function createIndependentPeriodDiskStore({directory}){
   function stage(world){
     const files=layout(world);dir(base,true);dir(root,true);syncDir(base);
     const target=path.join(root,independentPeriodDiskDigest(world));
-    try{fs.lstatSync(target);return verify(world)}catch(error){if(error.code!=='ENOENT')throw error;}
-    // A partially present existing generation is corruption, not repair.
-    if(fs.existsSync(target))fail('incomplete immutable generation');
+    let present=true;
+    try{fs.lstatSync(target)}catch(error){if(error.code!=='ENOENT')throw error;present=false;}
+    // ENOENT from a missing member in an EXISTING generation is corruption,
+    // never permission to build or replace that generation (even a symlink
+    // whose target disappeared must not be mistaken for an absent path).
+    if(present)return verify(world);
     const temp=path.join(root,'.stage-'+randomUUID());fs.mkdirSync(temp,{mode:0o700});
     try{
       for(const [name,f] of Object.entries(files)){

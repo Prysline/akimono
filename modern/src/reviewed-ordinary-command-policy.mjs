@@ -6,6 +6,15 @@ export function isReviewedOrdinaryCommand(c,street){
   if(!c||typeof c!=='object'||Array.isArray(c)||c.shopId!==1||!int(c.expectedRevision))return false;
   const common='kind,expectedRevision,shopId,';
   switch(c.kind){
+    case 'complete-palace-mission':return street.reviewedPalace===true&&exact(c,'expectedRevision,kind,shopId');
+    case 'hire-army':case 'fire-army':return street.reviewedArmy===true&&exact(c,common+'requestedCount')&&int(c.requestedCount,1);
+    case 'start-rebellion':case 'join-rebellion':return street.reviewedRebelTime===true&&exact(c,common+'confirmation')&&c.confirmation==='rebel';
+    case 'dispatch-guard':return street.reviewedRebelTime===true&&exact(c,'kind,expectedRevision,shopId');
+    case 'lord-inside':return street.reviewedLordFiscal===true&&exact(c,common+'taxrate,devem,safem')&&[['taxrate',40],['devem',10000000],['safem',10000000]].every(([k,max])=>typeof c[k]==='string'&&c[k].length>0&&!/[^0-9]/.test(c[k])&&int(Number(c[k]),0,max));
+    case 'lord-tax-side':return street.reviewedLordFiscal===true&&exact(c,common+'targetShopId,mode')&&c.targetShopId===1&&['free','double','normal'].includes(c.mode);
+    case 'lord-tax-reset':return street.reviewedLordFiscal===true&&exact(c,'kind,expectedRevision,shopId');
+    case 'lord-outside':case 'lord-outdel':return street.reviewedLordFiscal===true&&exact(c,common+'cnt1,cnt2')&&int(c.cnt1)&&int(c.cnt2);
+    case 'lord-expose':return street.reviewedLordFiscal===true&&exact(c,common+'targetShopId')&&c.targetShopId===1;
     case 'open-shop':return exact(c,common+'ownerName,shopName')&&typeof c.ownerName==='string'&&typeof c.shopName==='string';
     case 'market-buy':{
       const rule=int(c.itemId,1,79)?street.marketBuyRegistry?.getRule(c.itemId):null;
@@ -17,8 +26,10 @@ export function isReviewedOrdinaryCommand(c,street){
     case 'discard-item':return exact(c,common+'itemId,count')&&int(c.itemId,1,79)&&int(c.count,1);
     case 'use-item':{
       const draws=Object.hasOwn(c,'randomDraws');
-      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':''))&&int(c.itemId,1,79)&&int(c.useId)&&
-        Boolean(street.useItem?.getRule(c.itemId,c.useId))&&int(c.requestedCount,1)&&
+      const rule=int(c.itemId,1,79)&&int(c.useId)?street.useItem?.getRule(c.itemId,c.useId):null;
+      const localTarget=rule?.localSelfTarget===true;
+      return exact(c,common+'itemId,useId,requestedCount'+(draws?',randomDraws':'')+(localTarget?',targetShopId':''))&&
+        Boolean(rule)&&(!localTarget||c.targetShopId===c.shopId)&&int(c.requestedCount,1)&&
         (!draws||(Array.isArray(c.randomDraws)&&c.randomDraws.length>=1&&c.randomDraws.length<=128&&c.randomDraws.every(n=>int(n,0,999999))));
     }
     default:return false;

@@ -1,0 +1,3 @@
+## 原版領土決算 → 17 EVENT → 軍隊 live/stage 候選
+
+原版完整 territory region 與 RebelRobin 先於 EVENT END/START/NOW；共用單一 range-aware RNG 游標。反亂 NOW 才讀 live army bytes，不讀前一 slice 的 pending bytes；未執行 NOW 時保留 pending，不解析 live。三個同一 Perl process 來源差分：平靜期、過期反亂先延長、期末盜賊發動。Perl mixed oracle 的 ReadArmy/WriteArmy 仍為隔離 adapter，實際檔案提交已在獨立 army-disk oracle 驗證。本候選未整合完整 pre-event 自然銷售/店鋪帳務/PLUS/wholesale、正式多店、存檔、HTTP 或 CAS，維持 committable:false。

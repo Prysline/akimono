@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /**
  * R4 reviewed multi-key EVENT fixture: the exact Perl order is supplied by
  * a *same-process original-source oracle*, not derived from DSL or JS maps.
@@ -41,7 +42,8 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
   reviewedInstantCallbacks=null,reviewedLotoCallbacks=null,
   reviewedHappyEvent=null,reviewedIronEvent=null,
   reviewedSwordEvent=null,reviewedGuildbattleEvent=null,
-  reviewedRebelEvent=null}){
+  reviewedRebelEvent=null,reviewedManualCommerce=null}){
+  if(reviewedManualCommerce!==null&&!isReviewedManualCommerceEvents(reviewedManualCommerce))fail('source-reviewed manual commerce events required');
   if(compiledCatalog?.source!==B53_EVENT_CATALOG_SOURCE||
      compiledCatalog.compiled?.length!==17||
      reviewedSeven?.source!==R4_DECLARATIVE_EVENT_SOURCE||
@@ -160,7 +162,7 @@ export function reviewOriginalR4MultiEventFixture({compiledCatalog,reviewedSeven
     instant:reviewedInstantCallbacks,loto:reviewedLotoCallbacks,
     happy:reviewedHappyEvent,iron:reviewedIronEvent,
     sword:reviewedSwordEvent,guildbattle:reviewedGuildbattleEvent,
-    rebel:reviewedRebelEvent,committable:false,
+    rebel:reviewedRebelEvent,manualCommerce:reviewedManualCommerce,committable:false,
     orderMode:'explicit-same-Perl-process-hash-order-per-oracle-slice',
     scope:'17 compiled EVENT keys: seven declarative durable events plus optional happy START/END/NOWFUNC, plusup-tetu/ken-sale START/END/DataRead overlays, and getmoney/getpop, manbiki/goutou, loto STARTFUNC; one range-logged RNG; unreviewed rebellion/guild state and WorldState/period still unsupported'});
 }
@@ -176,7 +178,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   eventHashOrderFixture,randomDraws,shop=null,nowHashOrderFixture=null,
   guildContext=null,rebelContext=null,rebelNowDrawCount=null,
   reviewedInventory=null,exactTicketDraws=false,resolveNowOrder=null,
-  randomDrawProvider=null,reviewedSubminute=false}){
+  randomDrawProvider=null,reviewedSubminute=false,reviewedExternalDraws=false,readRebelArmy=null}){
   if(reviewed?.source!==R4_MULTI_EVENT_FIXTURE_SOURCE||
      reviewed.committable!==false||
      reviewed.orderMode!=='explicit-same-Perl-process-hash-order-per-oracle-slice')
@@ -192,9 +194,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const keys=Object.keys(activeUntilSeconds);
   if(keys.length>(7+(reviewed.happy!==null?1:0)+
     (reviewed.iron!==null?1:0)+(reviewed.sword!==null?1:0)+
-    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0))||
+    (reviewed.guildbattle!==null?1:0)+(reviewed.rebel!==null?1:0)+(reviewed.manualCommerce?4:0))||
     keys.some(code=>
-    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||
+    !(R4_DECLARATIVE_EVENT_CODES.includes(code)||(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code))||
       (code==='happy'&&reviewed.happy!==null)||
       (code===B59_IRON_CODE&&reviewed.iron!==null)||
       (code===B61_SWORD_CODE&&reviewed.sword!==null)||
@@ -227,16 +229,21 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       !Array.isArray(rebelContext.riotIds)||
       !rebelContext.town||typeof rebelContext.town!=='object'||
       !rebelContext.armyById||typeof rebelContext.armyById!=='object'||
-      !Number.isInteger(rebelNowDrawCount)||
-      rebelNowDrawCount<0||rebelNowDrawCount>2))||
+      (randomDrawProvider===null?(!Number.isInteger(rebelNowDrawCount)||rebelNowDrawCount<0||rebelNowDrawCount>2):rebelNowDrawCount!==null)))||
      (reviewed.rebel===null&&
        (rebelContext!==null||rebelNowDrawCount!==null)))
     fail('explicit rebel army/city and bounded NOW RNG sample count required');
   if(typeof reviewedSubminute!=='boolean'||typeof exactTicketDraws!=='boolean'||(resolveNowOrder!==null&&typeof resolveNowOrder!=='function')||
      (resolveNowOrder!==null&&nowHashOrderFixture!==null))
     fail('invalid EVENT draw/order adapter');
-  if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||reviewed.rebel!==null||reviewed.guildbattle!==null))
-    fail('provider requires exact normal-event RNG and no external special callbacks');
+  if(typeof reviewedExternalDraws!=='boolean'||(reviewedExternalDraws&&(randomDrawProvider===null||reviewed.rebel===null)))
+    fail('explicit source fixture external draw opt-in requires reviewed rebel');
+  if(readRebelArmy!==null&&(!reviewedExternalDraws||typeof readRebelArmy!=='function'||
+     rebelContext.riotIds.length!==0||Object.keys(rebelContext.armyById).length!==0))
+    fail('lazy army source requires explicit empty placeholder and external fixture review');
+  if(randomDrawProvider!==null&&(typeof randomDrawProvider!=='function'||randomDraws!==undefined||!exactTicketDraws||
+     (!reviewedExternalDraws&&(reviewed.rebel!==null||reviewed.guildbattle!==null))))
+    fail('provider requires exact normal-event RNG and no external special callbacks unless explicitly reviewed fixture');
   if(randomDrawProvider===null&&(!Array.isArray(randomDraws)||randomDraws.length>100||
      randomDraws.some(x=>!unit(x)&&!(exactTicketDraws&&ticket(x)))))
     fail('exact bounded original RNG sequence required');
@@ -250,6 +257,9 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   for(const code of activeHashOrderFixture){
     // happy affects rank only through NOWFUNC; it has no DataRead ITEM overlay.
     if(code==='happy'||code==='guildbattle'||code==='rebel')continue;
+    if(R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      current=projectManualCommerceEventItems({reviewed:reviewed.manualCommerce,code,items:current});continue;
+    }
     current=projectR4EventItemParams({
       reviewed:reviewed.seven.params,eventCode:code,items:current}).items;
   }
@@ -273,6 +283,13 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
   const groups=new Set();
   const end=startSeconds+spanSeconds;
   for(const code of activeHashOrderFixture){
+    if(reviewed.manualCommerce&&R4_MANUAL_COMMERCE_EVENT_CODES.includes(code)){
+      // Original OutEventData omits START=-1 from %EVENT; the generated
+      // DataRead overlay exists but END has no registered endmsg/callback.
+      if(next[code]<end){delete next[code];expired.push(code);}
+      else groups.add('');
+      continue;
+    }
     const event=reviewed.catalog.find(e=>e.code===code);
     if(next[code]<end){
       delete next[code];
@@ -356,7 +373,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       draw(1000);
       const callback=projectOriginalSupportEventCallback({
         reviewed:reviewed.support,eventCode:code,shop:nextShop,
-        randomDraws:[sample],
+        randomDraws:[sample],reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==1)
@@ -397,7 +414,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
       const ticketDraws=[];
       for(let i=0;i<count;i++)ticketDraws.push(Math.trunc(draw(LOTO_RANGE)));
       const callback=projectOriginalLotoStartfunc({
-        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,
+        reviewed:reviewed.loto,shop:nextShop,randomDraws:ticketDraws,reviewedInventory,
       });
       if(callback.returnCode!==0||callback.eventPersisted!==false||
          callback.randomDrawsUsed!==count||
@@ -444,9 +461,18 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
         // Sample count only partitions the shared oracle RNG: the isolated
         // source-reviewed rebel callback still verifies exact 0/1/2 draws.
         if(!nextShop||typeof nextShop.name!=='string'||
-           !Number.isSafeInteger(nextShop.army))
+           !(nextShop.army===null||Number.isSafeInteger(nextShop.army)))
           fail('rebel NOW requires original named shop and army');
-        const samples=randomDraws.slice(used,used+rebelNowDrawCount);
+        if(readRebelArmy!==null){
+          const read=readRebelArmy();
+          if(!read||typeof read!=='object'||Object.keys(read).sort().join(',')!=='armyById,riotIds'||
+             !Array.isArray(read.riotIds)||!read.armyById||typeof read.armyById!=='object')
+            fail('explicit source army read result required');
+          nextRebel={...nextRebel,armyById:{...read.armyById},riotIds:[...read.riotIds]};
+        }
+        const samples=randomDrawProvider===null?randomDraws.slice(used,used+rebelNowDrawCount):null;
+        const beforeDraws=used;
+        const beforeRanges=ranges.length;
         const callback=projectR4RebelNow({
           reviewed:reviewed.rebel,
           startSeconds,spanSeconds,activeUntilSeconds:next.rebel,
@@ -456,13 +482,20 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
             army:nextShop.army}],
           riotIds:nextRebel.riotIds,armyById:nextRebel.armyById,
           taxRate:nextRebel.taxRate,balJob:nextRebel.balJob,
-          balName:nextRebel.balName,randomDraws:samples,
+          balName:nextRebel.balName,
+          ...(samples!==null?{randomDraws:samples}:{randomDrawProvider:(localIndex,range)=>{
+            if(localIndex!==used-beforeDraws)fail('rebel shared RNG cursor mismatch');
+            draw(range);
+            return consumed[used-1];
+          }}),
         });
-        if(callback.drawsUsed!==samples.length||
-           callback.randomDrawRanges.length!==samples.length||
+        if(samples!==null)for(const range of callback.randomDrawRanges)draw(range);
+        if(callback.drawsUsed!==used-beforeDraws||
+           callback.randomDrawRanges.length!==used-beforeDraws||
+           callback.randomDrawRanges.some((range,i)=>range!==ranges[beforeRanges+i])||
+           (samples!==null&&callback.drawsUsed!==samples.length)||
            callback.returnCode!==0)
           fail('original rebel NOW callback RNG and return mismatch');
-        for(const range of callback.randomDrawRanges)draw(range);
         nextShop={...nextShop,money:callback.shops[0].money,
           army:callback.shops[0].army};
         nextRebel={...nextRebel,town:callback.town,
@@ -478,7 +511,7 @@ export function projectOriginalR4MultiEventFixture({reviewed,items,
     }
   }
   if(reviewed.rebel!==null&&rebelNowCallbacks.length===0&&
-     rebelNowDrawCount!==0)
+     randomDrawProvider===null&&rebelNowDrawCount!==0)
     fail('unreviewed rebel NOW RNG without active event');
   if(randomDrawProvider===null&&used!==randomDraws.length)fail('unused original RNG samples');
   return Object.freeze({

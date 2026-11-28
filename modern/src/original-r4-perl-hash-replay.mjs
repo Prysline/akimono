@@ -1,3 +1,4 @@
+import {R4_MANUAL_COMMERCE_EVENT_CODES,isReviewedManualCommerceEvents,projectManualCommerceEventItems,reviewManualCommerceEvents,reviewedManualSaleRule,isReviewedManualSaleRule} from './original-r4-manual-commerce-events.mjs';
 /** Candidate local replay policy for original Perl EVENT hashes.
  * No time command, WorldState mutation, arbitrary Perl evaluation or commit authority.
  * Actual Perl keys(), under explicitly fixed seed/perturbation and interpreter
@@ -10,14 +11,15 @@ export const R4_HASH_POLICY='akimono.r4.perl-event-hash-replay.v1';
 const fail=s=>{throw new RangeError('R4 hash replay: '+s)};
 const reviewedPolicies=new WeakSet();
 const pins={itemDsl:'7a18185e98b32aee82ca1ce30d6f3c395157dbcb',rebelDsl:'923634e58a05beca9ab004515fc7669d53a1ba3a',compilerSource:'1da8cce1e76ad6159325a37faec68efaa82c7f69',turnSource:'b8a4980275f475a952846a8d6072fad45f8dff50',readSource:'e7a8add7b0291901e71fe797783b664dff1568a0',writeSource:'203f33b37511e838800a45b84183af98fcf46e4c'};
-export function reviewR4HashPolicy(sources){
+export function reviewR4HashPolicy(sources,{manualCommerce=null}={}){
+  if(manualCommerce!==null&&!isReviewedManualCommerceEvents(manualCommerce))fail('source manual EVENT hash review');
   for(const [key,sha] of Object.entries(pins)){
     const s=sources[key];
     if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!==sha)fail('source drift '+key);
   }
   const catalog=reviewOriginalCompiledEventCatalog(sources);
   const order=catalog.compiled.map(e=>e.code);
-  const p=Object.freeze({policy:R4_HASH_POLICY,declarationOrder:Object.freeze(order),catalog,committable:false});
+  const p=Object.freeze({policy:R4_HASH_POLICY,declarationOrder:Object.freeze(order),activeCodes:Object.freeze([...order,...(manualCommerce?R4_MANUAL_COMMERCE_EVENT_CODES:[])]),catalog,committable:false});
   reviewedPolicies.add(p);return p;
 }
 // Static bridge: only native hash assignment, traversal, deletion and insertion.
@@ -44,7 +46,7 @@ export function resolveR4HashOrders({reviewed,world,minutes,expired=[],started=[
   const map=world?.period?.eventState;
   if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
   const active=Object.entries(map),keys=active.map(([k])=>k);
-  if(active.some(([k,v])=>!reviewed.declarationOrder.includes(k)||!integer(v))||keys.length>17)fail('invalid active EVENT wire');
+  if(active.some(([k,v])=>!reviewed.activeCodes.includes(k)||!integer(v))||keys.length>reviewed.activeCodes.length)fail('invalid active EVENT wire');
   if(!Array.isArray(expired)||new Set(expired).size!==expired.length||expired.some(k=>!keys.includes(k)))fail('invalid expired operations');
   const survivors=keys.filter(k=>!expired.includes(k));
   if(!Array.isArray(started)||started.length>17||started.some(row=>!Array.isArray(row)||row.length!==2||!reviewed.declarationOrder.includes(row[0])||survivors.includes(row[0])||!integer(row[1]))||new Set(started.map(row=>row[0])).size!==started.length)fail('invalid started operations');
@@ -85,7 +87,7 @@ export function resolveR4CommandHashOrders({reviewed,world,minutes,steps=[],expe
   const seed=r4HashSeed({world,minutes}),map=world?.period?.eventState;
   if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
   const active=Object.entries(map),keys=active.map(([k])=>k);
-  if(active.some(([k,v])=>!reviewed.declarationOrder.includes(k)||!integer(v)))fail('invalid active EVENT wire');
+  if(active.some(([k,v])=>!reviewed.activeCodes.includes(k)||!integer(v)))fail('invalid active EVENT wire');
   let known=keys;const expected=[];
   for(const step of steps){
     if(!step||Object.keys(step).sort().join(',')!=='expired,started')fail('exact hash mutation step');
@@ -115,4 +117,74 @@ export function resolveR4CommandHashOrders({reviewed,world,minutes,steps=[],expe
     initialOrder:Object.freeze(value.initial),eventOrder:Object.freeze(value.all),
     nowOrder:Object.freeze(value.now),steps:Object.freeze(value.steps.map(s=>Object.freeze({prior:Object.freeze(s.prior),now:Object.freeze(s.now)}))),
     committable:false});
+}
+
+
+/** External-event candidate lineage. Unlike normal command replay, period
+ * can assign rebel before END, and the NOW callback can delete itself.
+ * All four orders are observed within a single native Perl hash history.
+ */
+export const R4_EXTERNAL_COMMAND_HASH_POLICY='akimono.r4.perl-command-external-event-hash-replay.v1';
+const externalCommandPerlProgram=[
+  'use strict;use warnings;use JSON::PP;use Config;',
+  'local $/;my $in=decode_json(<STDIN>);',
+  'my %EVENT;for my $code (@{$in->{codes}}){$EVENT{$code}={code=>$code};}',
+  'my %DTevent=split(/,/,join(",",map { @$_ } @{$in->{active}}));',
+  'my @initial=keys(%DTevent);my @all=keys(%EVENT);my @steps;',
+  'for my $step (@{$in->{steps}}){my @before=keys(%DTevent);',
+  'if(defined $step->{periodRebel}){$DTevent{rebel}=$step->{periodRebel};}',
+  'my @prior=keys(%DTevent);',
+  'for my $code (@{$step->{expired}}){delete $DTevent{$code};}',
+  'for my $row (@{$step->{started}}){$DTevent{$row->[0]}=$row->[1];}',
+  'my @now=keys(%DTevent);',
+  'for my $code (@{$step->{nowDeleted}}){delete $DTevent{$code};}',
+  'push @steps,{before=>[@before],prior=>[@prior],now=>[@now],after=>[keys(%DTevent)]};}',
+  'if(defined $in->{pendingPeriodRebel}){$DTevent{rebel}=$in->{pendingPeriodRebel};}',
+  'print encode_json({version=>"$^V",arch=>$Config{archname},initial=>[@initial],all=>[@all],steps=>[@steps],nextPrior=>[keys(%DTevent)]});'
+].join('\n');
+export function resolveR4ExternalCommandHashOrders({reviewed,world,minutes,steps=[],pendingPeriodRebel=null,expectedInterpreter=null}){
+  if(!reviewedPolicies.has(reviewed)||!Array.isArray(steps)||steps.length>2||
+     (pendingPeriodRebel!==null&&(!integer(pendingPeriodRebel)||pendingPeriodRebel===0||steps.length!==0)))
+    fail('bounded external command hash history required');
+  const seed=r4HashSeed({world,minutes}),map=world?.period?.eventState;
+  if(!map||typeof map!=='object'||Array.isArray(map))fail('known source EVENT map required');
+  const active=Object.entries(map),keys=active.map(([k])=>k);
+  if(active.some(([k,v])=>!reviewed.activeCodes.includes(k)||!integer(v)))fail('invalid active EVENT wire');
+  let known=keys;const expected=[];
+  for(const [index,step] of steps.entries()){
+    if(!step||Object.keys(step).sort().join(',')!=='expired,nowDeleted,periodRebel,started')fail('exact external hash mutation step');
+    const {periodRebel,expired,started,nowDeleted}=step;
+    if(periodRebel!==null&&(!integer(periodRebel)||periodRebel===0||index!==0))fail('source period rebel assignment only in first slice');
+    const before=[...known],prior=periodRebel!==null&&!known.includes('rebel')?[...known,'rebel']:[...known];
+    if(!Array.isArray(expired)||new Set(expired).size!==expired.length||expired.some(k=>!prior.includes(k)))fail('invalid external expired operations');
+    const survivors=prior.filter(k=>!expired.includes(k));
+    if(!Array.isArray(started)||started.length>17||started.some(row=>!Array.isArray(row)||row.length!==2||
+       !reviewed.declarationOrder.includes(row[0])||['rebel','guildbattle'].includes(row[0])||survivors.includes(row[0])||!integer(row[1]))||
+       new Set(started.map(row=>row[0])).size!==started.length)fail('invalid external started operations');
+    const now=[...survivors,...started.map(row=>row[0])];
+    if(!Array.isArray(nowDeleted)||nowDeleted.length>1||nowDeleted.some(k=>k!=='rebel'||!now.includes(k)))fail('invalid rebel NOW deletion');
+    known=now.filter(k=>!nowDeleted.includes(k));
+    expected.push({before,prior,now,after:known});
+  }
+  if(pendingPeriodRebel!==null&&!known.includes('rebel'))known=[...known,'rebel'];
+  let value;
+  try{
+    const env={...process.env,PERL_HASH_SEED:seed,PERL_PERTURB_KEYS:'0'};
+    for(const k of ['PERL5OPT','PERL5LIB','PERLLIB','PERL_LOCAL_LIB_ROOT','PERL_MB_OPT','PERL_MM_OPT','PERL_HASH_SEED_DEBUG','PERL_UNICODE'])delete env[k];
+    value=JSON.parse(execFileSync('perl',['-e',externalCommandPerlProgram],{
+      input:JSON.stringify({codes:reviewed.declarationOrder,active,steps,pendingPeriodRebel}),encoding:'utf8',env,timeout:3000,maxBuffer:16384,stdio:['pipe','pipe','pipe']}));
+  }catch{fail('native Perl external command hash helper unavailable or invalid output')}
+  if(typeof value.version!=='string'||typeof value.arch!=='string'||
+     !keysEqual(value.initial,keys)||!keysEqual(value.all,reviewed.declarationOrder)||!keysEqual(value.nextPrior,known)||
+     !Array.isArray(value.steps)||value.steps.length!==steps.length||
+     value.steps.some((s,i)=>['before','prior','now','after'].some(k=>!keysEqual(s[k],expected[i][k]))||
+       s.before.join(',')!==(i?value.steps[i-1].after:value.initial).join(','))||
+     (pendingPeriodRebel===null&&value.nextPrior.join(',')!==(steps.length?value.steps.at(-1).after:value.initial).join(',')))
+    fail('invalid native external command hash history');
+  const interpreter=value.version+'/'+value.arch;
+  if(expectedInterpreter!==null&&interpreter!==expectedInterpreter)fail('interpreter fingerprint mismatch');
+  return Object.freeze({policy:R4_EXTERNAL_COMMAND_HASH_POLICY,seed,interpreter,committable:false,
+    initialOrder:Object.freeze(value.initial),eventOrder:Object.freeze(value.all),nextPriorOrder:Object.freeze(value.nextPrior),
+    steps:Object.freeze(value.steps.map(s=>Object.freeze(Object.fromEntries(
+      ['before','prior','now','after'].map(k=>[k,Object.freeze(s[k])])))))});
 }

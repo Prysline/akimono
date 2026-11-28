@@ -7,6 +7,7 @@ let selectedItemId=null;
 let selectedUseId=null;
 let selectedShelfIndex=0;
 let lastPricingItemId=null;
+let palaceSubmitting=false,armySubmitting=false,lordSubmitting=false,lordViewRevision=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -32,7 +33,7 @@ const conciseTimeText=seconds=>{
 const tabs=[...document.querySelectorAll('[data-tab]')];
 const groups=[...document.querySelectorAll('[data-group]')];
 const groupNames={self:'自店',trade:'交易',info:'情報',facility:'施設',social:'交流'};
-const tabNames={shop:'店內',stock:'倉庫',market:'市場',
+const tabNames={shop:'店內',stock:'倉庫',market:'市場',palace:'宮殿',army:'傭兵所',lord:'領主邸',
   balance:'收支',item:'商品明細',use:'操作明細','use-result':'操作結果'};
 function syncStatusVisibility(){
   // The short global owner strip is redundant on the shop and balance pages.
@@ -73,13 +74,15 @@ function updateNavigation(){
 function selectTab(name){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
-  currentGroup=name==='market'?'trade':'self';
+  currentGroup=['market','palace'].includes(name)?'trade':'self';
+  if(name==='army'||name==='lord')currentGroup='facility';
   updateNavigation();
 }
 function selectGroup(name){
   if(!Object.hasOwn(groupNames,name))return;
   if(name==='self')return selectTab('shop');
   if(name==='trade')return selectTab('market');
+  if(name==='facility')return selectTab('army');
   currentGroup=name;
   currentTab=null;
   updateNavigation();
@@ -199,6 +202,33 @@ function renderItemInfo(s){
       reason.className='muted';
       reason.textContent='（'+(row.reason??'目前不可執行')+'）';
       li.append(reason);
+      for(const route of row.materialRoutes??[]){
+        if(route.missing<=0)continue;
+        const hint=document.createElement('small');
+        hint.className='muted';
+        const providerName=provider=>{
+          const q=(s.useOffers??[]).find(x=>x.itemId===provider.itemId&&x.useId===provider.useId);
+          return q? q.itemName+'／'+q.useName:'商品 #'+provider.itemId+'／操作 '+provider.useId;
+        };
+        let message;
+        if(route.kind==='source-rank-one-prize'){
+          message='跨期排行第一名隨機獎品（'+route.rankOnePrize.choices.length+'/'+
+            route.rankOnePrize.totalChoices+' 種結果；非保證取得）';
+        }else if(route.kind==='registered-use'&&route.provider){
+          message='可嘗試 '+providerName(route.provider)+'（產量及成功率依原版規則）';
+        }else if(route.kind==='upstream-use-not-ready'){
+          message='製作條件未齊：'+route.providerCandidates.map(q=>
+            providerName(q)+'：'+(q.reason??'請確認可用次數')).join('；');
+        }else if(route.kind==='market-stock'){
+          message='市場有貨；請確認實際報價、資金與行動時間';
+        }else if(route.kind==='source-plus'){
+          message='原版市場補貨週期 '+route.sourcePlus+'；實際到貨依時間與亂數';
+        }else{
+          message='目前未找到可用的單店取得提示';
+        }
+        hint.textContent=route.name+'：'+message;
+        li.append(hint);
+      }
       if(Number.isSafeInteger(row.missingMaterialId)){
         const debug=document.createElement('small');
         debug.className='dev-panel dev-raw-value';
@@ -261,7 +291,7 @@ function renderUseDetail(s){
   count.max=offer?.firstUseOnly?'1':'';
   $('perform-use').disabled=!offer?.canUse||maximum<=0;
   text('use-detail-note',!offer?'沒有可執行的操作':
-    offer.canUse?'執行前請確認材料、資金與可用行動時間。':
+    offer.canUse?(offer.targetShopId?'目標：'+offer.targetShopName+'（自己的店舖）。仍依原版扣除費用、材料及時間；請確認後執行。':'執行前請確認材料、資金與可用行動時間。'):
       (offer.reason??'目前無法執行'));
   updateUseEstimate();
 }
@@ -311,6 +341,87 @@ $('storage-inventory').addEventListener('click',event=>{
   const button=event.target.closest('[data-open-item]');
   if(button)openItem(Number(button.dataset.openItem));
 });
+function renderArmy(s){
+  const a=s?.army;
+  const conflict=s?.armyConflict;
+  $('army-conflict-panel').hidden=s?.reviewedRebelTime!==true;
+  $('army-conflict-disabled').hidden=s?.reviewedRebelTime===true;
+  text('army-conflict-status',conflict?(conflict.rebellion?'反亂進行中。':'目前沒有反亂。'):'需要完成來源決算及開店。');
+  for(const [kind,allowed] of [['start-rebellion',conflict?.canStart],['join-rebellion',conflict?.canJoin],['dispatch-guard',conflict?.canDispatch]])$('army-'+kind).disabled=allowed!==true||armySubmitting||!s?.world;
+  text('army-status',a?'矮人兵士正在等待僱用。':s?.reviewedCrossPeriod?'請先建立商店。':'傭兵所需已審閱的跨期模式。');
+  text('army-dignity',number(a?.dignity));
+  text('army-maximum',number(a?.maximum));
+  text('army-count',number(a?.count));
+  text('army-price',number(a?.unitPrice));
+  text('army-riot',a?(a.riot?'反亂':'待機'):'—');
+  const reasons={'dignity-capacity':'爵位所允許的僱用上限不足。',funds:'資金不足。',time:'可用時間不足。','no-army':'目前沒有兵士。'};
+  for(const [mode,allowed,reason,options,max] of [['hire',a?.canHire,a?.hireReason,a?.hireOptions,a?.hireMaximum],['fire',a?.canFire,a?.fireReason,a?.fireOptions,a?.fireMaximum]]){
+    const enabled=allowed===true&&!armySubmitting&&Boolean(s?.world);
+    const select=$('army-'+mode+'-options'),previous=select.value;
+    select.replaceChildren(new Option('請選擇',''),...(options??[]).map(n=>new Option(number(n),String(n))));
+    if((options??[]).some(n=>String(n)===previous))select.value=previous;
+    select.disabled=!enabled;
+    $('army-'+mode+'-count').disabled=!enabled;
+    $('army-'+mode).disabled=!enabled;
+    text('army-'+mode+'-reason',allowed?'本次最多 '+number(max)+' 人。':reasons[reason]??'目前不可操作。');
+  }
+}
+function renderPalace(s){
+  const p=s?.palace;
+  text('palace-point',number(p?.point));
+  text('palace-required-point',number(p?.requiredPoint));
+  text('palace-dignity',number(p?.dignity));
+  const canMeet=p?.canMeet===true;
+  $('palace-mission').hidden=!canMeet;
+  $('palace-complete').disabled=palaceSubmitting||!s?.world||!canMeet||p?.canComplete!==true;
+  if(!s?.reviewedCrossPeriod){
+    text('palace-status','宮殿目前僅在已審閱的獨立跨期模式開放。');
+  }else if(!p){
+    text('palace-status','請先建立商店，再確認面會資格。');
+  }else if(!canMeet){
+    text('palace-status','大臣：國王目前無法與您面會，請先提升經營點數。');
+  }else{
+    text('palace-status',p.canComplete===true?'國王：指定商品已備齊，可以繳交。':'國王：請備齊指定商品。');
+  }
+  // Authority is the returned server quote; never calculate score or a
+  // successor mission in the browser. Hide mission details before audience.
+  text('palace-message',canMeet?p.message:'');
+  text('palace-item',canMeet?(catalogItem(s,p.itemId)?.name??'商品 #'+p.itemId):'—');
+  text('palace-stock',canMeet?number(p.owned)+'／'+number(p.count):'—');
+}
+function renderLord(s){
+  const q=s?.lord,available=s?.reviewedLordFiscal===true&&Boolean(q)&&Boolean(s?.world);
+  $('lord-tab').disabled=!available;
+  $('lord-panel').hidden=!available;
+  if(!available&&currentTab==='lord')selectTab('army');
+  text('lord-status',available?'現任領主：'+s.shop.name:s?.reviewedLordFiscal?'目前沒有領主施政資格。':'領主邸需獨立領主財政審閱模式。');
+  const enabled=available&&!lordSubmitting;
+  for(const id of ['taxrate','devem','safem','inside','tax-side','tax-side-mode','tax-reset'])$('lord-'+id).disabled=!enabled;
+  if(!available){lordViewRevision=null;return;}
+  if(lordViewRevision!==s.world.revision){
+    for(const k of ['taxrate','devem','safem'])$('lord-'+k).value=String(q[k==='taxrate'?'taxRate':k]);
+    $('lord-tax-side-mode').value=q.taxMode===1?'free':q.taxMode===2?'double':'normal';
+    lordViewRevision=s.world.revision;
+  }
+  text('lord-money',money(q.money));text('lord-forecast',money(q.taxForecast));
+  text('lord-tax-target',q.targetShopName);text('lord-tax-mode',q.taxMode===1?'免除':q.taxMode===2?'兩倍':'通常');
+  text('lord-army',number(q.army));text('lord-army-split',number(q.regularArmy)+'／'+number(q.volunteerArmy));
+  text('lord-upkeep',money(q.upkeep));text('lord-unit-upkeep',money(q.unitUpkeep));
+  const reasons={rebellion:'反亂中不可取締。',army:'正規軍不足 2,000 人。',funds:'街資金不足 1,000,000。'};
+  text('lord-expose-status',q.canExpose?(q.canExposeTarget?'取締會使目標人氣降為十分之一。':'目標人氣不足 20%。'):reasons[q.exposeReason]??'無法取締。');
+  $('lord-expose-form').hidden=!q.canExpose;
+  $('lord-expose-target').replaceChildren(new Option(q.targetShopName,'1'));
+  $('lord-expose-target').disabled=!enabled||!q.canExposeTarget;
+  $('lord-expose').disabled=!enabled||!q.canExposeTarget;
+  text('lord-military-status',q.canHire?'可僱用上限 '+number(q.hireMaximum)+'；可解僱上限 '+number(q.fireMaximum):'反亂中或街資金不足，不可調整正規軍。');
+  for(const [kind,allowed,options,maximum] of [['outside',q.canHire,q.hireOptions,q.hireMaximum],['outdel',q.canFire,q.fireOptions,q.fireMaximum]]){
+    const active=enabled&&allowed&&maximum>0,select=$('lord-'+kind+'-options'),previous=select.value;
+    $('lord-'+kind+'-form').hidden=!allowed;
+    select.replaceChildren(new Option('請選擇','0'),...options.map(x=>new Option(x.label.replace('(資金最大)','（資金最大）').replace('(兵士最大)','（兵士最大）'),String(x.count))));
+    if(options.some(x=>String(x.count)===previous))select.value=previous;
+    select.disabled=!active;$('lord-'+kind+'-count').disabled=!active;$('lord-'+kind).disabled=!active;
+  }
+}
 function showState(s){
   snapshot=s;
   const w=s.world,shop=s.shop,offers=s.marketOffers??[];
@@ -328,7 +439,7 @@ function showState(s){
   text('now',w?new Date(w.nowSeconds*1000).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'—');
   const left=s.secondsUntilSettlement;
   text('settlement-status',w?(s.reviewedCrossPeriod?'獨立單店跨期決算已啟用':'決算功能尚未開放'):'');
-  text('local-mode-note',s.reviewedCrossPeriod?'單機獨立店鋪：跨期決算已啟用，存檔需手動儲存。':'目前為單機測試：存檔需手動儲存；尚未開放跨期決算。');
+  text('local-mode-note',s.reviewedCrossPeriod?(s.reviewedRebelTime?'單機獨立店鋪：跨期及反亂審閱模式已啟用，存檔需手動儲存。':'單機獨立店鋪：跨期決算已啟用，存檔需手動儲存。'):'目前為單機測試：存檔需手動儲存；尚未開放跨期決算。');
   const periodState=w?.period??null;
   text('city-seed',periodState?
     (periodState.settledCount?'結算後人口 ':'初始人口 ')+periodState.dtPeople.toLocaleString('zh-TW')+
@@ -353,6 +464,9 @@ function showState(s){
   text('money',money(shop?.money));
   text('rank',number(s.shopSummary?.rankPosition));
   text('shop-points',number(s.shopSummary?.point));
+  renderPalace(s);
+  renderArmy(s);
+  renderLord(s);
   const actionSeconds=shop?w.nowSeconds-shop.time:null;
   const actionTime=actionSeconds===null?'—':
     actionSeconds<0?'距可行動還有 '+timeText(-actionSeconds):
@@ -576,6 +690,81 @@ async function call(path,payload={},label='操作',onSuccess=null){
     return true;
   }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
 }
+for(const [kind,flag,label] of [['start-rebellion','canStart','發動反亂'],['join-rebellion','canJoin','參加反亂'],['dispatch-guard','canDispatch','派遣護衛']]){
+  $('army-'+kind).addEventListener('click',async()=>{
+    const before=snapshot;
+    if(armySubmitting||!before?.world||before.armyConflict?.[flag]!==true)return;
+    if(kind!=='dispatch-guard'&&!window.confirm('確定要'+label+'？'))return;
+    armySubmitting=true;renderArmy(before);
+    try{
+      await call('/api/army-'+kind,{expectedRevision:before.world.revision,...(kind==='dispatch-guard'?{}:{confirmation:'rebel'})},label,data=>feedback('已'+label+'。',data.details));
+    }finally{armySubmitting=false;renderArmy(snapshot);}
+  });
+}
+for(const mode of ['hire','fire']){
+  $('army-'+mode+'-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const before=snapshot,allowed=mode==='hire'?before?.army?.canHire:before?.army?.canFire;
+    if(armySubmitting||!before?.world||allowed!==true)return;
+    const raw=$('army-'+mode+'-count').value||$('army-'+mode+'-options').value;
+    const requestedCount=Number(raw);
+    if(!Number.isSafeInteger(requestedCount)||requestedCount<1){feedback('請輸入正整數人數。',null,true);return;}
+    armySubmitting=true;renderArmy(before);
+    try{
+      await call('/api/army-'+mode,{expectedRevision:before.world.revision,requestedCount},mode==='hire'?'僱用兵士':'解僱兵士',data=>{
+        const r=data.details;
+        feedback('已'+(mode==='hire'?'僱用':'解僱')+' '+number(r.count)+' 名兵士；現有 '+number(r.armyAfter)+' 名。',r);
+        $('army-'+mode+'-count').value='';
+      });
+    }finally{armySubmitting=false;renderArmy(snapshot);}
+  });
+}
+async function submitLord(kind,body,allowed,label){
+  const before=snapshot;
+  if(lordSubmitting||!before?.world||!before.lord||!allowed)return;
+  lordSubmitting=true;renderLord(before);
+  try{await call('/api/lord-'+kind,{expectedRevision:before.world.revision,...body},label,data=>feedback('已完成'+label+'。',data.details));}
+  finally{lordSubmitting=false;renderLord(snapshot);}
+}
+$('lord-inside-form').addEventListener('submit',event=>{
+  event.preventDefault();const body=Object.fromEntries(['taxrate','devem','safem'].map(k=>[k,$('lord-'+k).value]));
+  if(Object.values(body).some(v=>!/^\d+$/.test(v))){feedback('請輸入非負整數。',null,true);return;}
+  return submitLord('inside',body,true,'內政設定');
+});
+$('lord-tax-side-form').addEventListener('submit',event=>{
+  event.preventDefault();return submitLord('tax-side',{targetShopId:1,mode:$('lord-tax-side-mode').value},true,'個別稅率設定');
+});
+$('lord-tax-reset').addEventListener('click',()=>submitLord('tax-reset',{},true,'稅率重設'));
+$('lord-expose-form').addEventListener('submit',event=>{
+  event.preventDefault();if(snapshot?.lord?.canExposeTarget!==true||!window.confirm('確定取締目前店舖並支出 1,000,000 街資金？'))return;
+  return submitLord('expose',{targetShopId:Number($('lord-expose-target').value)},true,'店舖取締');
+});
+for(const [kind,flag] of [['outside','canHire'],['outdel','canFire']]){
+  $('lord-'+kind+'-form').addEventListener('submit',event=>{
+    event.preventDefault();const cnt1=Number($('lord-'+kind+'-options').value),cnt2=Number($('lord-'+kind+'-count').value);
+    if(![cnt1,cnt2].every(n=>Number.isSafeInteger(n)&&n>=0)||!(cnt2||cnt1)){feedback('請輸入正整數人數。',null,true);return;}
+    return submitLord(kind,{cnt1,cnt2},snapshot?.lord?.[flag]===true,kind==='outside'?'護衛軍增強':'護衛軍削減');
+  });
+}
+$('palace-complete').addEventListener('click',async()=>{
+  const before=snapshot;
+  if(palaceSubmitting||!before?.world||before.palace?.canMeet!==true||before.palace?.canComplete!==true)return;
+  palaceSubmitting=true;
+  renderPalace(before);
+  try{
+    await call('/api/palace-complete',{expectedRevision:before.world.revision},'完成國王使命',data=>{
+      const receipt=data.details;
+      if(receipt?.action==='complete-palace-mission'){
+        const name=catalogItem(before,receipt.itemId)?.name??'指定商品';
+        feedback('國王使命完成：已繳交 '+number(receipt.consumedCount)+' 件'+name+
+          '，爵位經驗值 '+number(receipt.dignityBefore)+' → '+number(receipt.dignityAfter)+'。',receipt);
+      }
+    });
+  }finally{
+    palaceSubmitting=false;
+    renderPalace(snapshot);
+  }
+});
 $('save-world').addEventListener('click',()=>call('/api/save',{
   expectedRevision:snapshot?.world?.revision,
   expectedGeneration:snapshot?.save?.generation,
@@ -765,6 +954,7 @@ $('use-action-form').addEventListener('submit',async event=>{
   try{
     await call('/api/use',{
       expectedRevision:before.world.revision,itemId,useId,requestedCount,
+      ...(offer.targetShopId?{targetShopId:offer.targetShopId}:{}),
     },'商品使用／製作：'+offer.useName,data=>{
       if(!data.details||!data.state)return;
       renderUseResult(data.details,offer,before.itemCatalog??[]);

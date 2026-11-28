@@ -1,0 +1,3 @@
+## 外部反亂 EVENT hash lineage 候選
+
+原版 PERIOD 可在 END 前新增或延長 rebel；NOW 內可能刪除自身。既有 normal replay 只記錄 END 刪除與 START 插入，不能拿 pre-NOW order 當下一 slice 的 active hash。新增獨立 static native Perl replay policy（原本 normal policy 不改），每 slice 分別記 before、period assignment 後 prior、pre-NOW、post-NOW after。原版 seed/perturbation 與 interpreter fingerprint 同一 local replay 規則；第二 slice 延用同一 native hash 操作歷史。拒絕非 rebel NOW 刪除、第二 slice period 賦值、zero-start special events 偽造。4 revisions × 新／既有 rebel 以獨立 Perl 程序確認完整 hash order。仍 noncommittable，不接正式 CAS。

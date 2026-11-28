@@ -1,0 +1,3 @@
+## B50 正式接線前的反亂決算來源候選
+
+opt-in `reviewedRebelNow` 將既有 B50 完整店鋪 prefix 的第二次 SortDT 後城鎮階段切換為 exact reviewed territory+RebelRobin；稅收從 accounting.shop.taxyesterday 取得，爵位衰減及 prize 在 territory 前執行。既有無領主路徑不變；明確拒絕 closure/dragon/guild/backup/postTech IO、未審閱的稅收與 context。新增完整真 Perl B50 prefix 三情境（含 tax 1234、dignity 13→11、既有反亂延長或新發動），比較全 shop、city、事件、日誌、rng order；支援固定序列及 provider。仍 noncommittable，尚未接自然銷售／PLUS 跨期候選、正式 CAS 或玩家驗收。

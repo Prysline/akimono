@@ -13,8 +13,12 @@ import {reviewOriginalR4MultiEventFixture,projectOriginalR4MultiEventFixture}
   from '../src/original-r4-multi-event-order-fixture.mjs';
 import {reviewR4GuildbattleEnd}
   from '../src/original-r4-guildbattle-end.mjs';
-import {reviewR4RebelNow}
+import {reviewR4RebelNow,projectR4RebelNow}
   from '../src/original-r4-rebel-now.mjs';
+import {LOTO_RANGE} from '../src/original-b58-loto-startfunc.mjs';
+import {reviewOriginalTerritoryConflict} from '../src/original-period-territory.mjs';
+import {projectR4TerritoryMixedRebelSlice} from '../src/original-r4-territory-mixed-rebel-slice.mjs';
+import {serializeArmyFile} from '../src/original-r4-army-files.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=p=>readFile(path.join(root,p),'utf8');
@@ -168,4 +172,85 @@ test('R4 mixed rebel requires reviewed external state, exact NOW rand count and 
     reviewed,...row,nowHashOrderFixture:[],
   }),/pre-NOW EVENT hash traversal/);
   assert.equal(JSON.stringify(row),before);
+});
+
+test('mixed rebel NOW takes exact branch-dependent draws from the shared range cursor, not a precomputed NOW count',()=>{
+  for(let i=0;i<2;i++)for(const row of original().rebelCases){
+    const {randomDraws,rebelNowDrawCount,...input}=row.input;
+    const samples=randomDraws.map((sample,index)=>row.output.randomDrawRanges[index]===LOTO_RANGE?
+      {range:LOTO_RANGE,result:Math.trunc(sample/1000000*LOTO_RANGE)}:sample);
+    const calls=[];
+    const randomDrawProvider=(index,range)=>{
+      assert.equal(range,row.output.randomDrawRanges[index],row.name+' range '+index);
+      assert.ok(index<samples.length,row.name+' overread');
+      calls.push([index,range]);return samples[index];
+    };
+    const actual=projectOriginalR4MultiEventFixture({reviewed,...input,exactTicketDraws:true,reviewedExternalDraws:true,randomDrawProvider});
+    const expected=projectOriginalR4MultiEventFixture({reviewed,...row.input});
+    for(const key of ['shop','rebelContext','activeUntilSeconds','guildContext','logs','randomDrawRanges','drawsUsed','rebelNowCallbacks','happyNowCallbacks','guildEndCallbacks'])
+      assert.deepEqual(actual[key],expected[key],row.name+' '+key);
+    assert.deepEqual(actual.consumedSamples,samples);
+    assert.equal(actual.drawsUsed,randomDraws.length);
+    assert.deepEqual([...new Set(calls.map(c=>c[0]))],Array.from({length:samples.length},(_,n)=>n));
+    assert.equal(actual.committable,false);
+    assert.throws(()=>projectOriginalR4MultiEventFixture({reviewed,...input,exactTicketDraws:true,randomDrawProvider}),/no external special callbacks/);
+    assert.throws(()=>projectOriginalR4MultiEventFixture({reviewed,...input,exactTicketDraws:true,reviewedExternalDraws:true,randomDrawProvider,rebelNowDrawCount}),/bounded NOW RNG/);
+  }
+});
+test('direct rebel provider consumes 0, 1 or 2 source ranges without a guessed count; missing or malformed samples fail',()=>{
+  const rows=original().rebelCases;
+  for(const r of rows.slice(0,3)){
+    const {rebelContext:c,shop,randomDraws,rebelNowDrawCount,startSeconds,spanSeconds,activeUntilSeconds}=r.input;
+    // Direct callback needs the independent fixture town and just the
+    // source slim shop fields; actual mixed callback may also run happy.
+    const slim={id:shop.id,name:shop.name,shopname:shop.shopname,money:shop.money,army:shop.army};
+    const x={reviewed:rebel,startSeconds,spanSeconds,activeUntilSeconds:activeUntilSeconds.rebel,shops:[slim],...c};
+    const draws=rebelNowDrawCount===2?[900000,500000]:rebelNowDrawCount===1?[500000]:[];
+    const expected=projectR4RebelNow({...x,randomDraws:draws});
+    const ranges=[];
+    const got=projectR4RebelNow({...x,randomDrawProvider:(index,range)=>{assert.equal(index,ranges.length);ranges.push(range);return draws[index]}});
+    assert.deepEqual(got,expected);assert.deepEqual(ranges,expected.randomDrawRanges);
+    assert.throws(()=>projectR4RebelNow({...x,randomDraws:draws,randomDrawProvider:()=>0}),/unreviewed army/);
+    if(draws.length)assert.throws(()=>projectR4RebelNow({...x,randomDrawProvider:()=>undefined}),/sample invalid/);
+  }
+});
+
+test('actual same-process territory and mixed EVENT use one range cursor and lazy live-army staging',()=>{
+ const territory=reviewOriginalTerritoryConflict({periodSource:src.originalPeriodSource,
+   adminSource:src.originalAdminInitSource,readSource:src.originalDataReadSource,
+   bootstrapMeta:'500000,100,,0,0:0:0:0:5001:0:5001:0:0:2000:0',reviewedRebelNow:rebel});
+ const cases=original().territoryMixedCases;
+ assert.equal(cases.length,3);
+ for(const row of cases){
+   const {rebelContext:c,randomDraws,rebelNowDrawCount,activeUntilSeconds,...input}=row.event.input;
+   const live=serializeArmyFile(c,[1]);
+   // Staged bytes from a prior slice deliberately differ; NOW must not read them.
+   const pending='1,1\n1\n',calls=[];
+   const x={reviewedTerritory:territory,reviewedEvent:reviewed,period:row.input.period,
+     ...input,town:row.input.town,activeUntilSeconds:row.input.events,taxRate:c.taxRate,balJob:c.balJob,balName:c.balName,
+     liveArmyBytes:live,pendingArmyBytes:pending,randomDrawProvider:(index,range)=>{
+       assert.equal(index,calls.length);assert.equal(range,row.randomDrawRanges[index],row.name);
+       assert.ok(index<row.randomDraws.length);calls.push(range);
+       return range===LOTO_RANGE?{range,result:Math.trunc(row.randomDraws[index]/1000000*range)}:row.randomDraws[index];
+     }};
+   const actual=projectR4TerritoryMixedRebelSlice(x);
+   for(const [k,v] of Object.entries(row.periodOutput))assert.deepEqual(actual.settlement[k],v,row.name+' period '+k);
+   for(const k of ['shop','activeUntilSeconds','rebelNowCallbacks','randomDrawRanges','logs','drawsUsed'])
+     assert.deepEqual(actual.event[k],row.event.output[k],row.name+' event '+k);
+   assert.deepEqual(actual.town,row.finalTown);
+   assert.deepEqual(actual.logs,row.logs);
+   assert.deepEqual(actual.randomDrawRanges,row.randomDrawRanges);
+   assert.deepEqual(calls,row.randomDrawRanges);
+   assert.equal(actual.armyRead,row.event.output.rebelNowCallbacks.length===1);
+   assert.equal(actual.stagedArmyBytes,actual.armyRead?serializeArmyFile(row.event.output.rebelContext,[1]):pending);
+   assert.equal(actual.liveArmyBytes,live);
+   assert.equal(actual.committable,false);
+   if(!actual.armyRead){
+     // An inactive original callback never opens or validates the file.
+     let seen=0;
+     const inactive=projectR4TerritoryMixedRebelSlice({...x,liveArmyBytes:'not a valid army file',
+       randomDrawProvider:(index,range)=>{assert.equal(index,seen++);return row.randomDraws[index]}});
+     assert.equal(inactive.armyRead,false);assert.equal(inactive.stagedArmyBytes,pending);
+   }
+ }
 });

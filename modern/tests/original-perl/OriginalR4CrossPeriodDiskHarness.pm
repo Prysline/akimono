@@ -98,25 +98,30 @@ sub prepare {
   }
   for my $code(keys %$generated){put("$root/events/$code.cgi","use utf8;\n".$generated->{$code}."\n1;\n")}
   put("$root/events/happy.cgi","1;\n");
+  put("$root/events/rebel.cgi","1;\n") if $in->{externalCandidate};
 }
 sub finish {
-  my($now)=@_;
+  my($now,$external)=@_;
   $main::DTlasttime=$now;
   main::WriteGuildData();main::DataWrite();
   {local @main::LOG=@rows;main::RenewLog();}
   my $stage={map {$_=>get("$root/stage/$_")} qw(guild.cgi guildbal.cgi play.cgi log0.cgi)};
+  $stage->{'army.cgi'}=get("$root/stage/army.cgi") if $external&&-e "$root/stage/army.cgi";
   main::DataCommitOrAbort(0);
   die 'commit marker left behind' if -e "$root/commit.cgi";
   my $live={map {$_=>get("$root/$_")} qw(guild.cgi guildbal.cgi play.cgi log0.cgi log1.cgi log2.cgi)};
+  $live->{'army.cgi'}=get("$root/army.cgi") if $external;
   my @generations=map{snapshot("$root/backup$_")}1..3;
   my $backup=snapshot("$root/backup");
   my $mtime=0+(stat("$root/lasttime.cgi"))[9];
   opendir my $d,"$root/session" or die $!;my @sessions=sort grep{$_ ne '.'&&$_ ne '..'}readdir $d;closedir $d;
   @main::DT=();%main::DTevent=();@main::DTwholestore=();$main::STATE={};$main::DTtown={};
   main::DataRead(); # actual original DataRead and AutoVar, including active event require
+  my $army;
+  if($external){main::ReadArmy();$army={army=>{map{$_=>0+$main::ARMY{$_}}keys %main::ARMY},riot=>[sort{$a<=>$b}map{0+$_}keys %main::RIOT]};}
   my $shop=$main::DT[0];my %scalars=map{$_=>"$shop->{$_}"}@main::DTindexnamelist;
   no warnings 'uninitialized';
-  return {stage=>$stage,live=>$live,generations=>\@generations,backup=>$backup,lasttimeMtime=>$mtime,sessions=>\@sessions,
+  return {($external?(reloadedArmy=>$army,transientArmyPersisted=>exists($shop->{army})?1:0):()),stage=>$stage,live=>$live,generations=>\@generations,backup=>$backup,lasttimeMtime=>$mtime,sessions=>\@sessions,
     rows=>\@rows,reloaded=>{lasttime=>0+$main::DTlasttime,people=>0+$main::DTpeople,events=>{map{$_=>0+$main::DTevent{$_}}keys %main::DTevent},
       state=>{map{$_=>0+$main::STATE->{$_}}@main::STATEnamelist},
       csv=>join(',',@main::DTwholestore),shop=>\%scalars,

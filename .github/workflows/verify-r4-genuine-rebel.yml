@@ -1,0 +1,186 @@
+name: R4 genuine player rebellion acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'modern/src/**'
+      - 'modern/scripts/dev-local.mjs'
+      - 'modern/local-ui/**'
+      - 'modern/tests/local-original-ui-layout.test.mjs'
+      - 'modern/tests/support/p3-genuine-v2-player.mjs'
+      - 'modern/tests/support/r4-genuine-mission-recipe.mjs'
+      - 'modern/tests/r4-genuine-mission-recipe.test.mjs'
+      - 'modern/tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs'
+      - 'modern/tests/acceptance/r4-genuine-ring-inventory.test.mjs'
+      - 'modern/tests/support/p3-high-forge.mjs'
+      - 'modern/tests/r4-p3-pre-event-overlay.test.mjs'
+      - 'modern/tests/r4-rebel-reviewed-runtime.test.mjs'
+      - 'modern/tests/r4-source-rebel-now.test.mjs'
+      - 'modern/tests/b50-period-same-state-chain.test.mjs'
+      - 'modern/tests/p4-dairy-death-and-save-security.test.mjs'
+      - 'modern/tests/r4-guild-peer-buy-source.test.mjs'
+      - 'modern/tests/r4-joint-candidate-publication.test.mjs'
+      - 'modern/tests/support/r4-joint-candidate-*.mjs'
+      - 'modern/tests/r4-lord-*.test.mjs'
+      - 'modern/tests/support/r4-lord-*.mjs'
+      - 'modern/tests/r4-perl-hash-replay.test.mjs'
+      - 'modern/tests/original-perl/**'
+      - '.github/workflows/verify-r4-genuine-rebel.yml'
+
+jobs:
+  lord-fiscal-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated lord fiscal source differential (not genuine player)
+        working-directory: modern
+        run: |
+          node --test tests/r4-lord-inside-source.test.mjs tests/r4-lord-sale-tax-source.test.mjs tests/r4-lord-tax-policy-wire.test.mjs tests/r4-lord-fiscal-runtime.test.mjs tests/r4-lord-guard-source.test.mjs tests/local-original-ui-layout.test.mjs
+          node --test --test-name-pattern='R4 lord tax two-slice source differential' tests/r4-p3-pre-event-overlay.test.mjs
+  genuine-rebel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Record actual checkout
+        run: git log -1 --format='%H %T %P'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Focused external source and CAS regression (not full audit)
+        working-directory: modern
+        run: |
+          node --test --test-name-pattern='(R4 (two-slice external source fixture|opt-in external CAS refuses|external receipt aggregates|residual natural sale)|full actual two-slice source prefix)' tests/r4-p3-pre-event-overlay.test.mjs
+          node --test tests/r4-rebel-reviewed-runtime.test.mjs tests/r4-genuine-mission-recipe.test.mjs tests/r4-source-rebel-now.test.mjs tests/b50-period-same-state-chain.test.mjs tests/r4-perl-hash-replay.test.mjs
+      - name: Run genuine player acceptance (no fixture or skip)
+        working-directory: modern
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs tests/acceptance/r4-genuine-ring-inventory.test.mjs
+  genuine-lord-fiscal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine player wins lordship and operates nonzero fiscal policy
+        working-directory: modern
+        env:
+          AKIMONO_TEST_LORD_FISCAL: '1'
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
+  genuine-lord-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine lord collects city taxes and operates regular guard and expose
+        working-directory: modern
+        env:
+          AKIMONO_TEST_LORD_FISCAL: '1'
+          AKIMONO_TEST_LORD_GUARD: '1'
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
+
+  genuine-lord-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record actual checkout
+        run: git log -1 --format='%H %T %P'
+      - name: Install pinned browser test dependency
+        working-directory: modern
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Genuine lord residence through Chromium (no fixture or skip)
+        working-directory: modern
+        env:
+          AKIMONO_TEST_LORD_FISCAL: '1'
+          AKIMONO_TEST_LORD_GUARD: '1'
+          AKIMONO_TEST_LORD_BROWSER: '1'
+          AKIMONO_LORD_BROWSER_ARTIFACTS: 'lord-browser-evidence'
+        run: node --test tests/acceptance/r4-genuine-rebel-closed-loop.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r4-genuine-lord-browser-evidence
+          path: modern/lord-browser-evidence
+          if-no-files-found: warn
+  genuine-cow-mortality-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require actual mortality and durable legal replacement
+        working-directory: modern
+        env:
+          AKIMONO_TEST_REQUIRE_COW_DEATH: '1'
+        run: node --test --test-name-pattern='P4 actual cow mortality' tests/p4-dairy-death-and-save-security.test.mjs
+
+  guild-peer-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated guild peer numeric, fractional RNG and FUNCBUY differential (not genuine player)
+        working-directory: modern
+        run: |
+          prove tests/original-perl/original-r4-guild-peer-buy.t
+          node --test tests/r4-guild-peer-buy-source.test.mjs
+
+  dragon-payment-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Actual original producer, consumer, crash and lock-domain race (not genuine player)
+        working-directory: modern/tests/original-perl
+        run: prove -v original-r4-dragon-pay-producer.t original-r4-dragon-payout-failure.t original-r4-dragon-pay-race.t
+
+  joint-publication-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated joint revision CAS, actual processes and crash replay (not genuine player)
+        working-directory: modern
+        run: node --test tests/r4-joint-candidate-publication.test.mjs

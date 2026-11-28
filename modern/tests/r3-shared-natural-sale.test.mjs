@@ -333,7 +333,18 @@ test('original frozen inc-turn source oracle spans two through eight shelves',()
     'eight-shelves-shared-stock','eight-shelves-all-empty',
   ]);
 });
-for(const sourceRow of twoShelfOracle.cases){
+const mixedTypeOracle=JSON.parse(execFileSync('perl',
+  ['original-r3-multi-shelf-sale-probe.pl','--mixed-type-audit'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
+  }));
+test('R4 mixed categories source break changes actual demand, not just specialty rank',()=>{
+  assert.equal(mixedTypeOracle.cases.length,4);
+  // At standard price, 1800 seconds and rand(0.5), original denominator
+  // is 1 after the unlike-type break (five wooden swords), not 2 (two).
+  assert.equal(mixedTypeOracle.cases[0].soldByItem[40],5);
+  assert.equal(mixedTypeOracle.cases[1].soldByItem[40],5);
+});
+for(const sourceRow of [...twoShelfOracle.cases,...mixedTypeOracle.cases]){
   test('R3 2..8 shelf source Perl natural market and RNG: '+sourceRow.name,()=>{
     const item=Array(79).fill(0);
     for(const [id,stock] of Object.entries(sourceRow.startingStocks))

@@ -4,6 +4,7 @@
  * Only complete reviewed normal time is admitted; no PLUS-only supply.
  */
 import {originalSourceUseClock} from '../src/shared-use-experience.mjs';
+import {calculateSourceShopPoint} from '../src/original-period-solo-sort.mjs';
 import {projectOriginalUseTransaction}
   from '../src/original-use-transaction-model.mjs';
 import http from 'node:http';
@@ -27,6 +28,12 @@ import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntim
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+const reviewedRebelTime=process.env.AKIMONO_REVIEWED_REBEL_TIME==='1';
+const reviewedLordFiscal=process.env.AKIMONO_REVIEWED_LORD_FISCAL==='1';
+if(reviewedLordFiscal&&(!reviewedRebelTime||!reviewedCrossPeriod||process.env.AKIMONO_REVIEWED_FULL_COMMERCE!=='1'||!process.env.AKIMONO_SAVE_DIR))throw Error('領主財政需要獨立跨期反亂完整商業存檔');
+if(reviewedRebelTime&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('反亂審閱模式需要跨期及明確獨立存檔目錄');
+// Explicit real HTTP candidate; existing v2 player mode stays compatible.
+const reviewedFullCommerce=process.env.AKIMONO_REVIEWED_FULL_COMMERCE==='1';
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
 const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
@@ -35,7 +42,8 @@ const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
-const [
+// Bind source names to paths directly: adding a source cannot shift the next input.
+const {
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
   originalConfigSource,originalCompilerSource,originalBuySource,
@@ -43,25 +51,40 @@ const [
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
   originalNewSource,originalCustomSource,originalLogSource,
-]=await Promise.all([
-  'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
-  'modern/tests/original-perl/core-inc-admin-func.cgi',
-  'modern/tests/original-perl/inc-func.cgi',
-  'modern/tests/original-perl/write.cgi',
-  'modern/tests/original-perl/inc-turn.cgi',
-  'modern/tests/original-perl/whole.cgi','_config.cgi',
-  'modern/tests/original-perl/inc-makeitem.cgi',
-  'modern/tests/original-perl/buy-s.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/calc.cgi',
-  'modern/tests/original-perl/market.cgi',
-  'modern/tests/original-perl/item.cgi',
-  'modern/tests/original-perl/core-detail.cgi',
-  'modern/tests/original-perl/period.cgi',
-  'modern/tests/original-perl/use.cgi',
-  'modern/tests/original-perl/core-inc-item.cgi',
-  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
-].map(readPinnedSource));
+  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
+}=Object.fromEntries(await Promise.all(Object.entries({
+  itemDsl:'custom/inc-item-data.cgi',
+  rebelDsl:'custom/inc-rebel-data.cgi',
+  originalAdminInitSource:'modern/tests/original-perl/core-inc-admin-func.cgi',
+  originalDataReadSource:'modern/tests/original-perl/inc-func.cgi',
+  originalDataWriteSource:'modern/tests/original-perl/write.cgi',
+  originalTurnSource:'modern/tests/original-perl/inc-turn.cgi',
+  originalWholeSource:'modern/tests/original-perl/whole.cgi',
+  originalConfigSource:'_config.cgi',
+  originalCompilerSource:'modern/tests/original-perl/inc-makeitem.cgi',
+  originalBuySource:'modern/tests/original-perl/buy-s.cgi',
+  originalBuyItemSource:'modern/tests/original-perl/item.cgi',
+  originalBuyCalcSource:'modern/tests/original-perl/calc.cgi',
+  originalMarketSource:'modern/tests/original-perl/market.cgi',
+  originalItemSource:'modern/tests/original-perl/item.cgi',
+  originalDetailSource:'modern/tests/original-perl/core-detail.cgi',
+  originalPeriodSource:'modern/tests/original-perl/period.cgi',
+  originalUseSource:'modern/tests/original-perl/use.cgi',
+  originalItemHelperSource:'modern/tests/original-perl/core-inc-item.cgi',
+  originalNewSource:'modern/tests/original-perl/new.cgi',
+  originalCustomSource:'modern/tests/original-perl/pinned-custom.cgi',
+  originalLogSource:'modern/tests/original-perl/pinned-log.cgi',
+  originalPalaceViewSource:'modern/tests/original-perl/pinned-palace.cgi',
+  originalPalaceCommandSource:'modern/tests/original-perl/pinned-palace-s.cgi',
+  originalPalaceConfigSource:'custom/inc-palace.cgi',
+  originalShowcaseSource:'modern/tests/original-perl/sc-s.cgi',
+  originalArmyViewSource:'modern/tests/original-perl/pinned-army-view.cgi',
+  originalArmyCommandSource:'modern/tests/original-perl/pinned-army-s.cgi',
+  originalArmyFileSource:'modern/tests/original-perl/pinned-army.cgi',
+  originalLordViewSource:'modern/tests/original-perl/pinned-lord-f.cgi',
+  originalLordCommandSource:'modern/tests/original-perl/pinned-lord-s.cgi',
+}).map(async ([key,file])=>[key,await readPinnedSource(file)])));
 
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
@@ -71,7 +94,10 @@ const streetModule=createStandardStreetModule({
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
-  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
+  originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,
+  originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
+  originalShowcaseSource,enableReviewedFullCommerce:reviewedFullCommerce,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedRebelTime:reviewedRebelTime,enableReviewedLordFiscal:reviewedLordFiscal,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -110,12 +136,15 @@ const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule)
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
 const checkpointStore=createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,externalRebel:reviewedRebelTime,...fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource],
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
+       originalPalaceViewSource,originalPalaceCommandSource,originalPalaceConfigSource,originalShowcaseSource,
+       originalArmyViewSource,originalArmyCommandSource,originalArmyFileSource,originalLordViewSource,originalLordCommandSource,
+       reviewedFullCommerce?'full-commerce-v1':'prior-commerce-v1',reviewedLordFiscal?'lord-fiscal-v1':'prior-lord-v1'],
   }),
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
@@ -136,19 +165,10 @@ const send=(res,status,obj)=>{
 // guessed score. This is NOT a leaderboard/RANK implementation.
 function sourceShopPoint(shop){
   if(!shop)return null;
-  const keys=['rank','profitstock','saletoday','taxtoday','paytoday',
-    'rankingcount'];
-  const values=keys.map(key=>shop[key]??0);
-  if(values.some(value=>!Number.isSafeInteger(value)))return null;
-  const [rank,profitstock,sales,tax,paid,wins]=values;
-  // Profit and adjustments may be signed; Perl GetDTPoint accepts losses.
-  if(rank<0||wins<0)return null;
-  let profit=(profitstock*3+sales-tax-paid)/500000+1;
-  const winFactor=0.5+5/(wins+10);
-  if(profit>10)profit=15-50/profit;
-  if(profit<1)profit=1/(2-profit);
-  const point=Math.trunc(rank*winFactor*profit);
-  return Number.isSafeInteger(point)?point:null;
+  const keys=['rank','profitstock','saletoday','taxtoday','paytoday','rankingcount'];
+  const fields=Object.fromEntries(keys.map(key=>[key,shop[key]??0]));
+  try{return calculateSourceShopPoint(fields);}
+  catch(error){if(error instanceof RangeError)return null;throw error;}
 }
 function state(){
   const world=repo?.read()??null;
@@ -170,6 +190,10 @@ function state(){
       point:sourceShopPoint(world?.shops?.[0]??null),
       rankPosition:null,
     },
+    palace:world&&streetModule.reviewedPalace?streetModule.describePalace(world):null,
+    army:world&&streetModule.reviewedArmy?streetModule.describeArmy(world):null,
+    ...(reviewedRebelTime?{reviewedRebelTime:true,armyConflict:world?streetModule.describeConflict(world):null}:{}),
+    ...(reviewedLordFiscal?{reviewedLordFiscal:true,lord:world?streetModule.describeLord(world):null}:{}),
     marketOffers,
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
@@ -187,8 +211,9 @@ function state(){
       }),
     useOffers:streetModule.listUseOffers(world),
     showcaseEditTimeSeconds:streetModule.showcaseEditTimeSeconds,
-    showcaseOffers:Object.values(world?.shops?.[0]?.showcasecount===1?
-       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{})
+    reviewedFullCommerce,
+    showcaseOffers:Object.values(streetModule.reviewedNormalCommerce?.saleRules??(world?.shops?.[0]?.showcasecount===1?
+       streetModule.reviewedB41?.p3TurnItems?.rules??{}:streetModule.reviewedB41?.saleRules??{}))
       .map(rule=>{
         const shop=world?.shops?.[0]??null;
         const owned=shop?.item?.[rule.itemId-1]??0;
@@ -199,11 +224,11 @@ function state(){
           canShow:Boolean(shop&&owned>0&&world.nowSeconds>=shop.time),
           source:rule.source};
       }),
-    capabilities:['建立來源世界','原版開店',reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
+    capabilities:['建立來源世界','原版開店',reviewedFullCommerce?'來源審閱的多架時間推進候選':reviewedCrossPeriod?'來源審閱的完整單架跨期時間推進':'來源審閱的完整非跨期時間推進',
       '來源市場實際有貨商品進貨','已審閱 #79／#14 共用 USE／製作',
       '來源 #10／#40～#44 共用展示架；P3 單架製成品可設定售價',
       '原版 #63 擴建/拆卸 USE（1～8 架）','來源物品丟棄（不耗時間）',
-      reviewedCrossPeriod?'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
+      reviewedCrossPeriod?(reviewedRebelTime?(reviewedFullCommerce?'1～8 架已審閱商品跨期及獨立反亂時間推進候選':'單架已審閱庫存跨期及獨立反亂時間推進'):(reviewedFullCommerce?'1～8 架已審閱商品的跨期時間推進':'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）')):(reviewedFullCommerce?'1～8 架已審閱商品的非跨期時間推進':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）')],
     disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
     reviewedCrossPeriod,
     reviewedTimeMode:true,
@@ -301,7 +326,7 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
     if(!trial.performed)return [];
     const inline=rule.inlineCallback?.kind;
     const inlineDraws=inline==='milk-cow'?trial.count+1:
-      inline==='advertise-self'?1:
+      inline==='advertise-self'||inline==='local-self-rumor'||inline==='local-self-industry-rumor'?1:
         inline==='drink-milk'&&trial.count<10?1:0;
     const needed=n+(rule.afterCallback?1:0)+inlineDraws;
     if(needed===0)return [];
@@ -460,8 +485,10 @@ async function api(req,res,url){
     case '/api/use': {
       if(!repo)return send(res,409,{ok:false,
         error:'請先初始化來源世界',state:state()});
-      if(Object.hasOwn(body,'targetShopId'))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
-      const fields=['expectedRevision','itemId','useId','requestedCount'];
+      const rule=streetModule.useItem.getRule(body.itemId,body.useId);
+      const localTarget=rule?.localSelfTarget===true;
+      if(Object.hasOwn(body,'targetShopId')&&(!localTarget||body.targetShopId!==1))return send(res,403,{ok:false,error:'多人目標尚未授權',state:state()});
+      const fields=['expectedRevision','itemId','useId','requestedCount',...(localTarget?['targetShopId']:[])];
       if(Object.keys(body).length!==fields.length||
          fields.some(key=>!Object.hasOwn(body,key)))
         throw Error('USE 僅接受共用 use-item 四欄；不可指定回呼、亂數或舊商品命令');
@@ -476,7 +503,46 @@ async function api(req,res,url){
       const randomDraws=sampleSourceUse(world,{itemId,useId,requestedCount});
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
-        ...(randomDraws.length?{randomDraws}:{})});
+        ...(localTarget?{targetShopId:1}:{}),...(randomDraws.length?{randomDraws}:{})});
+      break;
+    }
+    case '/api/palace-complete': {
+      if(!streetModule.reviewedPalace)return send(res,409,{ok:false,error:'宮殿需已審閱的跨期來源存檔模式',state:state()});
+      if(!exactKeys(body,'expectedRevision'))throw Error('宮殿只接受 expectedRevision，不接受商品、爵位、evt、點數或 RNG');
+      result=commit({kind:'complete-palace-mission',expectedRevision:ensureRevision(body),shopId:1});
+      break;
+    }
+    case '/api/lord-inside':
+    case '/api/lord-tax-side':
+    case '/api/lord-tax-reset':
+    case '/api/lord-outside':
+    case '/api/lord-outdel':
+    case '/api/lord-expose': {
+      if(!streetModule.reviewedLordFiscal)return send(res,409,{ok:false,error:'領主財政需獨立審閱模式',state:state()});
+      const kind=url.pathname.slice('/api/'.length);
+      const fields=kind==='lord-inside'?'taxrate,devem,safem':kind==='lord-tax-side'?'targetShopId,mode':
+        kind==='lord-expose'?'targetShopId':['lord-outside','lord-outdel'].includes(kind)?'cnt1,cnt2':'';
+      if(!exactKeys(body,'expectedRevision'+(fields?','+fields:'')))throw Error('領主指令僅接受原版欄位及版本');
+      result=commit({kind,expectedRevision:ensureRevision(body),shopId:1,...Object.fromEntries(fields?fields.split(',').map(k=>[k,body[k]]):[])});
+      break;
+    }
+    case '/api/army-hire':
+    case '/api/army-fire': {
+      if(!streetModule.reviewedArmy)return send(res,409,{ok:false,error:'傭兵所需已審閱的跨期來源存檔模式',state:state()});
+      if(!exactKeys(body,'expectedRevision,requestedCount'))throw Error('傭兵所只接受 expectedRevision、requestedCount');
+      result=commit({kind:url.pathname==='/api/army-hire'?'hire-army':'fire-army',
+        expectedRevision:ensureRevision(body),shopId:1,requestedCount:commandNumber(body.requestedCount,'requestedCount',1)});
+      break;
+    }
+    case '/api/army-start-rebellion':
+    case '/api/army-join-rebellion':
+    case '/api/army-dispatch-guard': {
+      if(!streetModule.reviewedRebelTime)return send(res,409,{ok:false,error:'反亂操作需獨立審閱模式',state:state()});
+      const kind=url.pathname.slice('/api/army-'.length);
+      const dispatch=kind==='dispatch-guard';
+      if(!exactKeys(body,dispatch?'expectedRevision':'expectedRevision,confirmation')||(!dispatch&&body.confirmation!=='rebel'))
+        throw Error('反亂指令只接受版本及原版確認值，不接受兵力、城市、EVENT 或 RNG');
+      result=commit({kind,expectedRevision:ensureRevision(body),shopId:1,...(dispatch?{}:{confirmation:'rebel'})});
       break;
     }
     case '/api/discard': {
@@ -494,8 +560,8 @@ async function api(req,res,url){
       if(!repo)return send(res,409,{ok:false,error:'請先初始化世界',state:state()});
       const itemId=commandNumber(body.itemId,'itemId');
       const p3Shelf=repo.read().shops[0]?.showcasecount===1;
-      const sourceRule=(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
-        streetModule.reviewedB41?.saleRules?.[itemId])??null;
+      const sourceRule=(streetModule.reviewedNormalCommerce?.saleRules[itemId]??(p3Shelf?streetModule.reviewedB41?.p3TurnItems?.rules?.[itemId]:
+        streetModule.reviewedB41?.saleRules?.[itemId]))??null;
       if(itemId!==0&&!sourceRule)
         throw Error('僅支援已審閱自然販售 ITEM 或清空展示架');
       const keys=Object.keys(body);
