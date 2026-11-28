@@ -3,6 +3,8 @@ import {reviewOriginalAccountPasswordChange,projectOriginalAccountPasswordChange
 import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
+import {reviewOriginalWarehouse,describeOriginalWarehouse} from './original-r4-warehouse-view.mjs';
+import {reviewOriginalShowcaseView,describeOriginalShowcase} from './original-r4-showcase-view.mjs';
 import {reviewOriginalWholesaleVoucher,runReviewedWholesaleVoucher} from './original-r4-wholesale-voucher.mjs';
 import {independentCandidateWorld} from './original-r4-independent-world-disk.mjs';
 /**
@@ -185,6 +187,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
   coreLocaleSource=null,localLocaleSource=null,localeLoaderSource=null,
   originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
+  originalMarketSurveySource=null,originalItemDetailViewSource=null,originalShowcaseViewSource=null,
   enableReviewedSweep=false,
   enableReviewedAccountPasswordChange=false,originalMembershipSource=null,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,expectedNativeInterpreter=null,
@@ -645,13 +648,18 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const reviewedBuyDetail=reviewedBuyForm&&reviewedMarketToolMetadata&&ordinaryEventReview?
     reviewOriginalBuyDetail({buyFormSource:originalBuyFormSource,wholeSource:originalWholeSource,
       compilerSource:originalCompilerSource,itemDsl}):null;
-  function buyDetailItems(world){
-    if(!reviewedBuyDetail||!world?.period?.eventState||world.shops?.length!==1||
+  const warehouseReview=reviewedMarketToolMetadata&&ordinaryEventReview&&originalStockViewSource!==null?
+    reviewOriginalWarehouse({stockViewSource:originalStockViewSource,marketSource:originalMarketSource,itemDsl,configSource:originalConfigSource,marketSurveySource:originalMarketSurveySource,itemDetailViewSource:originalItemDetailViewSource}):null;
+  const showcaseViewReview=reviewedMarketToolMetadata&&ordinaryEventReview&&originalShowcaseViewSource!==null?
+    reviewOriginalShowcaseView({showcaseViewSource:originalShowcaseViewSource,saleTaxSource:originalBuyItemSource,detailSource:originalDetailSource,configSource:originalConfigSource}):null;
+  function commerceReadItems(world){
+    if(!reviewedMarketToolMetadata||!ordinaryEventReview||!world?.period?.eventState||world.shops?.length!==1||
        world.shops[0].id!==1||world.shops[0].status!==1||world.shops[0].guild||!knownOrdinaryEvents(world))return null;
     const input=enableReviewedCrossPeriod?independentCandidateWorld(world):world;
     return projectR4CommerceReadItems({reviewed:ordinaryEventReview,world:input,normalCommerce:reviewedMarketToolMetadata,
       plusReview:reviewedAllPlus,candidateSettled:enableReviewedCrossPeriod});
   }
+  function buyDetailItems(world){return reviewedBuyDetail?commerceReadItems(world):null;}
   function addBuyDetail(offer,items){
     if(!items)return offer;
     const item=items[offer.itemId-1];
@@ -752,6 +760,17 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
       });
     },
     ...(sweepReview?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:sweepReview,world})}:{}),
+    ...(warehouseReview?{describeWarehouse(world){
+      const items=commerceReadItems(world);if(!items)return null;
+      // The read overlay is derived from the existing source ITEM review;
+      // never register these read-only values as a transaction overlay.
+      const overlay={saleRules:Object.fromEntries(items.map(item=>[item.id,{popularSeconds:item.popular}]))};
+      return describeOriginalWarehouse({reviewed:warehouseReview,world,normalCommerce:reviewedMarketToolMetadata,overlay,order:buyRegistry.entries.map(e=>e.itemId),limits:giftMap.limits});
+    }}:{}),
+    ...(showcaseViewReview?{describeShowcase(world){
+      if(!commerceReadItems(world))return null;
+      return describeOriginalShowcase({reviewed:showcaseViewReview,world,normalCommerce:reviewedMarketToolMetadata});
+    }}:{}),
     ...(passwordChangeReview?{reviewedAccountPasswordChange:true}:{}),
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,

@@ -79,6 +79,7 @@ const [
 ].map(readPinnedSource));
 
 const [originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource]=reviewedMarketCommerce?await Promise.all(['modern/tests/original-perl/core-sweep.cgi','modern/tests/original-perl/core-sweep-s.cgi','modern/tests/original-perl/core-stock.cgi'].map(readPinnedSource)):[null,null,null];
+const [originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource]=reviewedMarketCommerce?await Promise.all(['modern/tests/original-perl/core-shop-c.cgi','modern/tests/original-perl/core-item-detail.cgi','modern/tests/original-perl/core-inc-sc.cgi'].map(readPinnedSource)):[null,null,null];
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:await readPinnedSource('modern/tests/original-perl/pinned-time.cgi')});
 const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:await readPinnedSource('modern/tests/original-perl/core-inc-info.cgi')});
@@ -94,6 +95,7 @@ const streetModule=createStandardStreetModule({
   coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
   enableReviewedSweep:reviewedMarketCommerce,originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource,
   expectedNativeInterpreter:runtimeEnvironment.interpreter,
 });
 if(!['initialize-source-market','open-shop',
@@ -138,7 +140,7 @@ const checkpointRuntime=fingerprintReviewedCheckpointRuntime({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,'D58-reviewed-sweep.v1',originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource]:[])],
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,'D58-reviewed-sweep.v1',originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,'D62-reviewed-read-views.v1',originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource]:[])],
 });
 if(checkpointRuntime.interpreter!==runtimeEnvironment.interpreter)
   throw Error('AKIMONO_PERL_FINGERPRINT: native interpreter changed during startup');
@@ -203,6 +205,8 @@ function state(){
     },
     marketOffers,
     marketPageRows:streetModule.marketPageRows??null,
+    ...(streetModule.describeWarehouse?{warehouse:streetModule.describeWarehouse(world)}:{}),
+    ...(streetModule.describeShowcase?{showcaseView:streetModule.describeShowcase(world)}:{}),
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -212,6 +216,7 @@ function state(){
           itemId:e.itemId,name:e.itemName,
           basePrice:e.basePrice,stockLimit:e.stockLimit,
           flagRaw:item?.flagRaw??'',
+          ...(reviewedMarketCommerce?{scale:item?.scaleRaw??''}:{}),
           type:item?.typeRaw??null,
           costRaw:item?.costRaw??null,
           info:item?.infoRaw??null,
