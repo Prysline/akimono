@@ -85,6 +85,10 @@
 
     <section class="section feedback" role="status" aria-live="polite">
       <p id="feedback">請先建立商店，或載入本機存檔。</p>
+      <div id="market-result-actions" hidden>
+        <button type="button" class="text-link" data-go-tab="stock">［前往倉庫］</button>
+        <button type="button" class="text-link" data-go-tab="market">［繼續進貨］</button>
+      </div>
       <details id="receipt-details" class="dev-panel" data-dev-panel hidden>
         <summary>查看操作收據與版本差異</summary>
         <pre id="receipt" hidden></pre>
@@ -236,10 +240,13 @@
         <p class="shelf-time-note">調整展示架消耗 <strong id="showcase-time-cost">—</strong> 行動時間。</p>
       </form>
       <div class="discard-section">
-        <h3 class="sub-title">丟棄商品</h3>
+        <h3 id="discard-title" class="sub-title">丟棄商品</h3>
         <form id="discard-form" class="inline-form">
-          <label>丟棄數量
-            <input type="number" id="discard-count" min="1" step="1" value="1" required>
+          <label><span id="discard-choice-caption">丟棄數量</span>
+            <select id="discard-options"><option value="0">請選擇</option></select>
+          </label>
+          <label>或自訂數量
+            <input type="number" id="discard-count" min="1" step="1">
           </label>
           <button type="submit" id="discard-submit" class="secondary">丟棄</button>
         </form>

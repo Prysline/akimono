@@ -2,12 +2,13 @@ import {sourcePage,sourcePageNumbers} from '/news-query.js';
 const $=id=>document.getElementById(id);
 const money=n=>typeof n==='number'?n.toLocaleString('zh-TW')+' G':'—';
 let snapshot=null;
+let mutationPending=false,stateLoading=false;
 let currentTab='shop';
 let currentGroup='self';
 let selectedItemId=null;
 let selectedUseId=null;
-let selectedShelfIndex=0;
-let lastPricingItemId=null;
+let selectedShelfIndex=0,pendingShelfIndex=null,itemBackTab='stock';
+let lastPricingItemId=null,lastDiscardItemId=null;
 const number=n=>Number.isSafeInteger(n)?n.toLocaleString('zh-TW'):'—';
 const sourceProficiency=(shop,itemId)=>{
   if(!shop)return '—';
@@ -41,6 +42,7 @@ function syncStatusVisibility(){
     currentTab==='shop'||currentTab==='balance';
 }
 function updateNavigation(){
+  $('market-result-actions').hidden=true;
   for(const group of groups){
     const selected=group.dataset.group===currentGroup;
     group.classList.toggle('selected',selected);
@@ -74,6 +76,7 @@ function updateNavigation(){
 function selectTab(name,libraryChapter=null){
   if(!Object.hasOwn(tabNames,name))return;
   currentTab=name;
+  if(name!=='stock'&&name!=='item')pendingShelfIndex=null;
   currentGroup=name==='market'?'trade':name==='library'?'info':'self';
   if(name==='library')void renderLibrary(libraryChapter);
   updateNavigation();
@@ -83,6 +86,7 @@ function selectGroup(name){
   if(name==='self')return selectTab('shop');
   if(name==='trade')return selectTab('market');
   currentGroup=name;
+  pendingShelfIndex=null;
   currentTab=null;
   updateNavigation();
 }
@@ -143,7 +147,7 @@ toggle.addEventListener('click',()=>{
 });
 document.querySelectorAll('[data-go-tab]').forEach(button=>
   button.addEventListener('click',()=>selectTab(button.dataset.goTab)));
-$('back-to-stock').addEventListener('click',()=>selectTab('stock'));
+$('back-to-stock').addEventListener('click',()=>selectTab(itemBackTab));
 $('back-to-item').addEventListener('click',()=>selectTab('item'));
 $('result-back-to-item').addEventListener('click',()=>selectTab('item'));
 const catalogItem=(data,id)=>(data?.itemCatalog??[]).find(row=>row.itemId===id)??null;
@@ -156,11 +160,66 @@ function showcaseSlotDescription(s,index){
   return itemId===0?'空架':
     catalogItem(s,itemId)?.name??'未知商品';
 }
-function openItem(itemId){
+function sourceShelfItemTarget(s,shelf){
+  const shop=s?.shop;
+  if(!shop||!Number.isSafeInteger(shelf)||shelf<0||shelf>=shop.showcasecount||!Array.isArray(shop.showcase)||!Array.isArray(shop.price)||!Array.isArray(shop.item))return null;
+  const itemId=shop.showcase[shelf],price=shop.price[shelf];
+  if(!Number.isSafeInteger(itemId)||itemId<1||!Number.isSafeInteger(shop.item[itemId-1])||shop.item[itemId-1]<=0||
+     !Number.isSafeInteger(price)||price<1)return null;
+  return {itemId,shelf,price};
+}
+function openItem(itemId,shelfTarget=null){
   if(!Number.isSafeInteger(itemId)||itemId<1)return;
   selectedItemId=itemId;
   selectedUseId=null;
+  itemBackTab=shelfTarget?'shop':'stock';
+  text('back-to-stock',shelfTarget?'［返回店內］':'［返回倉庫］');
+  selectedShelfIndex=shelfTarget?.shelf??pendingShelfIndex??0;
+  pendingShelfIndex=null;
+  lastPricingItemId=null;
   selectTab('item');
+  // The original item link includes the actual shelf price.
+  if(shelfTarget)$('shelf-price-direct').value=String(shelfTarget.price);
+}
+// Original inc-item-throw.cgi: count choices are presentation of owned stock,
+// not an authorization or client-side execution of discard.
+function sourceDiscardPresentation(item,owned){
+  const flags=item?.flagRaw?.split('|')??[];
+  const human=flags.includes('human'),prohibited=flags.includes('notrash');
+  const stock=Number.isSafeInteger(owned)&&owned>0?owned:0;
+  const verb=human?'解雇':'丟棄';
+  const options=[{count:0,label:'請選擇'}];
+  if(!prohibited&&stock>0){
+    for(const count of [...new Set([1,10,100,1000,10000,stock])].sort((a,b)=>a-b)){
+      if(count>stock)break;
+      options.push({count,label:count===stock?count+'（'+(human?'全員':'全部')+'）':String(count)});
+    }
+  }
+  return {verb,prohibited,options};
+}
+function renderDiscardPresentation(item,shop,canDiscard){
+  const owned=shop&&item?shop.item[item.itemId-1]:0;
+  const {verb,prohibited,options}=sourceDiscardPresentation(item,owned);
+  const form=$('discard-form'),select=$('discard-options'),input=$('discard-count');
+  form.hidden=!shop||!item||prohibited;
+  $('discard-title').hidden=!shop||!item||prohibited;
+  $('discard-note').hidden=!shop||!item;
+  text('discard-title',verb==='解雇'?verb:verb+'商品');
+  text('discard-choice-caption',verb+'數量');
+  text('discard-submit',verb);
+  $('discard-submit').disabled=!canDiscard;
+  const sameItem=lastDiscardItemId===item?.itemId,oldChoice=select.value;
+  select.replaceChildren();
+  for(const choice of options){
+    const option=document.createElement('option');
+    option.value=String(choice.count);option.textContent=choice.label;select.append(option);
+  }
+  select.value=sameItem&&options.some(x=>String(x.count)===oldChoice)?oldChoice:'0';
+  input.max=String(owned);
+  if(!sameItem){input.value='';lastDiscardItemId=item?.itemId;}
+  text('discard-note',prohibited?'※'+item.name+'是無法'+verb+'的':
+    !canDiscard?'此商品不可'+verb+'或沒有持有數量。':
+    '不消耗行動時間；'+verb+'後無法復原。');
 }
 function renderItemInfo(s){
   const item=catalogItem(s,selectedItemId);
@@ -212,13 +271,7 @@ function renderItemInfo(s){
   const canDiscard=Boolean(shop&&item&&
     shop.item[item.itemId-1]>0&&
     !item.flagRaw.split('|').includes('notrash'));
-  $('discard-form').hidden=!shop||!item;
-  $('discard-count').max=String(shop&&item?
-    shop.item[item.itemId-1]:0);
-  $('discard-submit').disabled=!canDiscard;
-  text('discard-note',!canDiscard?
-    '此商品不可丟棄或沒有持有數量。':
-    '不消耗行動時間；丟棄後無法復原。');
+  renderDiscardPresentation(item,shop,canDiscard);
   const useList=$('use-offers');
   useList.replaceChildren();
   const useOffers=(s.useOffers??[]).filter(row=>row.itemId===selectedItemId);
@@ -514,7 +567,13 @@ function showState(s){
       td.textContent=String(value);tr.append(td);return td;
     };
     cell('第 '+(index+1)+' 架');
-    cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
+    const productCell=cell(hasItem?info?.name??'商品 #'+itemId:'目前空架');
+    const target=sourceShelfItemTarget(s,index);
+    if(target){
+      const link=document.createElement('button');link.type='button';link.className='text-link item-link';
+      link.dataset.shelfIndex=String(index);link.dataset.shelfAction='detail';
+      link.textContent=productCell.textContent;productCell.textContent='';productCell.append(link);
+    }
     cell(hasItem?money(shop.price[index]):'—');
     cell(hasItem?money(info?.basePrice):'—');
     cell(hasItem?number(shop.item[itemId-1]):'—');
@@ -633,7 +692,14 @@ function showState(s){
   if(currentTab==='use')renderUseDetail(s);
   syncStatusVisibility();
 }
+function showMarketResultActions(data){
+  // buy-s.cgi offers stock / continue shopping only after a committed purchase.
+  if(data?.ok===true&&data.state?.shop&&currentTab==='market'){
+    $('market-result-actions').hidden=false;
+  }
+}
 function feedback(message,receipt=null,failed=false){
+  $('market-result-actions').hidden=true;
   text('feedback',message);
   const panel=document.querySelector('.feedback');panel.classList.toggle('error',failed);
   const pre=$('receipt');
@@ -641,15 +707,33 @@ function feedback(message,receipt=null,failed=false){
   pre.hidden=!receipt;
   pre.textContent=receipt?JSON.stringify(receipt,null,2):'';
 }
+// A single UI flight is not authorization: every POST still uses server CAS.
+function beginMutation(label){
+  if(mutationPending)return false;
+  if(stateLoading){feedback('正在讀取遊戲狀態，請讀取完成後再操作。');return false;}
+  mutationPending=true;
+  feedback(label+'處理中…');
+  return true;
+}
+function endMutation(){mutationPending=false;}
+function rejectionReason(data){
+  const reason=data.details?.reason??data.error??data.code??'未知原因';
+  const conflict=[data.code,data.error].some(value=>value==='REVISION_CONFLICT'||value==='RESET_CONFLICT');
+  return conflict?reason+'。遊戲狀態已變更，請確認最新畫面後再操作。':reason;
+}
 async function call(path,payload={},label='操作',onSuccess=null){
+  if(!beginMutation(label))return false;
   const before=snapshot;
+  let outcome=null,responseData=null;
   try{
     const res=await fetch(path,{method:'POST',
       headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
     const data=await res.json();
+    responseData=data;
+    outcome=res.ok&&data.ok===true;
     if(data.state)showState(data.state);
-    if(!res.ok||!data.ok){
-      feedback(label+'遭拒絕：'+(data.details?.reason??data.error??data.code??'未知原因'),
+    if(!outcome){
+      feedback(label+'遭拒絕：'+rejectionReason(data),
         {result:data.code??'拒絕',beforeRevision:before?.world?.revision,
          afterRevision:data.state?.world?.revision,
          moneyBefore:before?.shop?.money,moneyAfter:data.state?.shop?.money,
@@ -664,7 +748,12 @@ async function call(path,payload={},label='操作',onSuccess=null){
        paid:[before?.shop?.paytoday??null,after.shop?.paytoday??null]});
     onSuccess?.(data);
     return true;
-  }catch(error){feedback(label+'失敗：'+error.message,null,true);return false;}
+  }catch(error){
+    if(outcome===true)feedback(label+'已由伺服器確認完成，但畫面更新失敗：'+error.message+'。請重新整理確認狀態。',null,true);
+    else if(outcome===false)feedback(label+'遭拒絕：'+rejectionReason(responseData)+'；畫面更新失敗，請重新整理。',null,true);
+    else feedback(label+'結果未能確認：'+error.message+'。請重新整理確認狀態，勿直接重試。',null,true);
+    return false;
+  }finally{endMutation();}
 }
 $('save-world').addEventListener('click',()=>call('/api/save',{
   expectedRevision:snapshot?.world?.revision,
@@ -672,12 +761,15 @@ $('save-world').addEventListener('click',()=>call('/api/save',{
 },'儲存本機世界'));
 $('load-world').addEventListener('click',()=>call('/api/load',{},'載入本機磁碟世界'));
 $('reset-world').addEventListener('click',async()=>{
+  if(mutationPending||stateLoading)return;
   const before=snapshot;
   if(!before?.world&&!before?.save?.available&&!before?.save?.unreadable)return;
   if(!window.confirm('確定要刪除目前店家及整個測試世界嗎？\n'+
     '兩份本機磁碟存檔也會刪除，無法復原。'))return;
+  if(!beginMutation('重置測試世界'))return;
   const button=$('reset-world');
   button.disabled=true;
+  let outcome=null,responseData=null;
   try{
     const res=await fetch('/api/reset',{method:'POST',
       headers:{'content-type':'application/json'},
@@ -689,21 +781,30 @@ $('reset-world').addEventListener('click',async()=>{
       }),
     });
     const data=await res.json();
+    responseData=data;
+    outcome=res.ok&&data.ok===true;
     if(data.state)showState(data.state);
-    if(!res.ok||!data.ok){
-      feedback('重置遭拒絕：'+(data.error??data.code??'未知原因'),null,true);
+    if(!outcome){
+      feedback('重置遭拒絕：'+rejectionReason(data),null,true);
       return;
     }
     selectedItemId=null;
     selectedUseId=null;
     lastPricingItemId=null;
+    lastDiscardItemId=null;
+    pendingShelfIndex=null;
+    itemBackTab='stock';
+    text('back-to-stock','［返回倉庫］');
     $('setup').open=true;
     selectTab('shop');
     feedback('已重置測試世界（清除 '+data.details.deletedSlots.length+
       ' 份磁碟存檔）。可以重新初始化世界並開店。');
   }catch(error){
-    feedback('重置失敗：'+error.message,null,true);
+    if(outcome===true)feedback('伺服器已確認重置完成，但畫面更新失敗。請重新整理確認狀態。',null,true);
+    else if(outcome===false)feedback('重置遭拒絕：'+rejectionReason(responseData)+'；畫面更新失敗，請重新整理。',null,true);
+    else feedback('重置結果未能確認：'+error.message+'。請重新整理確認狀態，勿直接重試。',null,true);
   }finally{
+    endMutation();
     button.disabled=!snapshot?.world&&!snapshot?.save?.available&&
       !snapshot?.save?.unreadable;
   }
@@ -725,8 +826,14 @@ $('showcase-shelves').addEventListener('click',async event=>{
   const shelf=Number(button.dataset.shelfIndex);
   if(!Number.isSafeInteger(shelf)||shelf<0||
      shelf>=snapshot.shop.showcasecount)return;
+  if(button.dataset.shelfAction==='detail'){
+    const target=sourceShelfItemTarget(snapshot,shelf);
+    if(target)openItem(target.itemId,target);
+    return;
+  }
   if(button.dataset.shelfAction==='open'){
     selectedShelfIndex=shelf;
+    pendingShelfIndex=shelf;
     selectTab('stock');
     return;
   }
@@ -764,21 +871,29 @@ $('shelf-price-per').addEventListener('change',()=>{
   syncShelfCalculatedPrice();
 });
 $('shelf-price-custom').addEventListener('input',syncShelfCalculatedPrice);
+$('discard-options').addEventListener('change',()=>{$('discard-count').value='';});
 $('discard-form').addEventListener('submit',async event=>{
   event.preventDefault();
+  if(mutationPending||stateLoading)return;
   const itemId=selectedItemId;
-  const count=Number($('discard-count').value);
+  const raw=$('discard-count').value.trim();
+  const count=Number(raw===''?$('discard-options').value:raw);
   const item=catalogItem(snapshot,itemId),shop=snapshot?.shop;
+  const {verb,prohibited}=sourceDiscardPresentation(item,shop?.item?.[itemId-1]);
+  // Preserve D50's bounded count contract. Original over-stock clipping
+  // requires A/D's full discard runtime, not a browser-side mutation.
   if(!item||!shop||!Number.isSafeInteger(count)||count<1||
-    count>shop.item[itemId-1]||item.flagRaw.split('|').includes('notrash')){
-    feedback('丟棄數量不正確或此商品不可丟棄。',null,true);
+    count>shop.item[itemId-1]||prohibited){
+    feedback(verb+'數量不正確或此商品不可'+verb+'。',null,true);
     return;
   }
-  if(!confirm('確定丟棄 '+item.name+' × '+number(count)+
-    '？丟棄後無法復原，且不消耗行動時間。'))return;
+  if(!confirm('確定'+verb+' '+item.name+' × '+number(count)+
+    '？'+verb+'後無法復原，且不消耗行動時間。'))return;
   await call('/api/discard',{
     expectedRevision:snapshot.world.revision,itemId,count,
-  },'丟棄商品：'+item.name);
+  },verb+'：'+item.name,()=>{
+    if(selectedItemId===itemId){$('discard-count').value='';$('discard-options').value='0';}
+  });
 });
 $('showcase-form').addEventListener('submit',async event=>{
   event.preventDefault();
@@ -832,7 +947,7 @@ $('market-offers').addEventListener('click',event=>{
     expectedRevision:snapshot.world.revision,itemId,
     requestedCount:requested,
     marketShelf:offer.shelf,expectedPrice:offer.price,
-  },'來源市場進貨 #'+itemId+' '+offer.name);
+  },'來源市場進貨 #'+itemId+' '+offer.name,showMarketResultActions);
 });
 $('use-count-presets').addEventListener('change',()=>{
   $('use-count').value='';
@@ -868,8 +983,11 @@ $('use-action-form').addEventListener('submit',async event=>{
   }
 });
 async function refresh(){
+  stateLoading=true;
   try{const res=await fetch('/api/state',{cache:'no-store'});
+    if(!res.ok)throw Error('HTTP '+res.status);
     showState(await res.json());}
   catch(error){feedback('無法連線至本機 Node 服務：'+error.message,null,true);}
+  finally{stateLoading=false;}
 }
 selectTab(currentTab);refresh();
