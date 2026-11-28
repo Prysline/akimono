@@ -1,0 +1,112 @@
+name: C audit - D59 account cleanup uncertainty fence
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  account-cleanup-edge:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '7cb44a4bc147ebe766880860eb674bd737b330f4'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact D59 candidate and source tests
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = '7cb44a4bc147ebe766880860eb674bd737b330f4'
+          test "$(git rev-parse 'HEAD^{tree}')" = '140f4d6d86a49a9b38d930c9550f0e3b7a8b367e'
+          test "$(git hash-object modern/tests/r4-owner-credential-persistence.test.mjs)" = '5bd17f018188943df5e0c3071dd119de4aeeebfc'
+          test "$(git hash-object modern/src/local-world-save-store.mjs)" = '80ebfc2c2a612524108e1750444423cd3357e87d'
+          test -z "$(git status --porcelain)"
+      - name: Independent post-rename cleanup failure and account fence
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c75-account-cleanup"
+          mkdir -p "$out"
+          original=modern/tests/r4-owner-credential-persistence.test.mjs
+          copy=modern/tests/c75-account-cleanup.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          cp "$original" "$copy"
+          cat >>"$copy" <<'NODE'
+
+          // C75: real slot rename, injected cleanup error with a fixture-only
+          // marker. No real credential printed, no production publisher or crash.
+          test('C75 cleanup fault after rename fences live store without exposing original error',async t=>{
+            const {directory,record,successor}=await fixture(t);
+            const store=setup(directory);
+            const oldSlot=join(directory,'world-b.json'),newSlot=join(directory,'world-a.json');
+            store.save(first,options(0,proof1,record));
+            const oldBytes=await readFile(oldSlot,'utf8');
+            const realRename=fs.renameSync,realUnlink=fs.unlinkSync;
+            const marker='C75_SYNTHETIC_PRIVATE_MARKER';
+            let renamedFrom=null,faultCount=0,caught;
+            const renameHook=t.mock.method(fs,'renameSync',(from,to)=>{
+              const result=realRename(from,to);
+              if(to===newSlot)renamedFrom=from;
+              return result;
+            });
+            const unlinkHook=t.mock.method(fs,'unlinkSync',filename=>{
+              if(renamedFrom!==null&&filename===renamedFrom){
+                faultCount++;
+                throw Object.assign(new Error(marker),{code:'EACCES'});
+              }
+              return realUnlink(filename);
+            });
+            try{
+              try{store.save(second,options(1,proof2,successor));}
+              catch(error){caught=error;}
+            }finally{unlinkHook.mock.restore();renameHook.mock.restore();}
+            assert.ok(renamedFrom);
+            assert.equal(faultCount,1);
+            assert.ok(caught instanceof AccountPublicationUncertainError);
+            assert.equal(caught.code,'ACCOUNT_PUBLICATION_UNCERTAIN');
+            assert.equal(caught.attemptedGeneration,2);
+            assert.equal(caught.attemptedRevision,3);
+            assert.equal(caught.cause,undefined);
+            assert.ok(!String(caught.stack).includes(marker));
+            assert.ok(!JSON.stringify(caught).includes(marker));
+            await assert.rejects(lstat(renamedFrom),{code:'ENOENT'});
+            const newBytes=await readFile(newSlot,'utf8');
+            let diskCalls=0;
+            const realExists=fs.existsSync;
+            const diskHook=t.mock.method(fs,'existsSync',(...args)=>{diskCalls++;return realExists(...args);});
+            try{
+              assertUncertain(()=>store.status());
+              assertUncertain(()=>store.load());
+              assertUncertain(()=>store.loadCommittedSnapshot());
+              assertUncertain(()=>store.preflight(second,options(1,proof2,successor)));
+              assertUncertain(()=>store.save(second,options(1,proof2,successor)));
+              assert.throws(()=>store.clear({expectedGeneration:2}),/cannot use local reset/);
+              assert.equal(diskCalls,0);
+            }finally{diskHook.mock.restore();}
+            await verifyFencedRecovery({directory,record,successor,store,oldBytes});
+            assert.equal(await readFile(newSlot,'utf8'),newBytes);
+            t.diagnostic('C75_CLEANUP '+JSON.stringify({renamed:true,faultCount,code:caught.code,generation:2,revision:3,markerRedacted:true,resetDenied:true,existsSyncCallsWhileFenced:diskCalls,matchedRecovery:true,bothSlotsPreserved:true,crashDurabilityProven:false}));
+          });
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/addition.diff" || test "$?" = 1
+          node --check "$copy"
+          set +e
+          node --test --test-name-pattern='C75 ' "$copy" 2>&1 | tee "$out/observation.log"
+          status=$?
+          set -e
+          rm -f "$copy"
+          test "$(git hash-object "$original")" = '5bd17f018188943df5e0c3071dd119de4aeeebfc'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c75-account-cleanup
+          path: ${{ runner.temp }}/c75-account-cleanup/
+          if-no-files-found: warn
+          retention-days: 30
