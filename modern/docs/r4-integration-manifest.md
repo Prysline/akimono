@@ -295,3 +295,8 @@ Opt-in trusted accountMode on existing two-slot local-world-save-store, no secon
 - `modern/tests/original-perl/core-user-settings.cgi` `8e817c535d4cd17e68d65f0e2f67846a344b5094`
 - `modern/tests/original-perl/core-name.cgi` `ae3b3a862fc78b8775795ed88d5d1911861b3d80`
 - `modern/tests/original-perl/core-rename-login.cgi` `1e5963c52a4ca82d75922b5a1ca3b3db14fef436`
+
+
+### D58 — isolated source sweep through existing D local authority
+
+A43 exact sweep module and three frozen sources; all other source pins match D. The opt-in D9 local crossing runtime now supplies the reviewed sweep capability/quote and exact POST /api/sweep {expectedRevision,requestedHours}; strict local shopId=1; no alternate authority or RNG. Existing ordinary command history, GameCore, disk finalization and replay are used; no PushLog. Account-mode HTTP is still not enabled. Sweep form 1kg threshold is NOT a submit gate. A source oracle test adapted only for D source loader/capability; HTTP test covers actual zero/low garbage path and two v2 saves, not A's full-commerce discard garbage integration or C acceptance. New fingerprint pins sweep source texts. No default/full-commerce enablement; no frontend edits. CI pending.

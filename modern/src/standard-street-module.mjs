@@ -1,3 +1,4 @@
+import {reviewOriginalSweep,describeOriginalSweep,projectOriginalSweep} from './original-r4-sweep.mjs';
 import {reviewOriginalBuyDetail,describeOriginalBuyDetail} from './original-r4-buy-detail.mjs';
 import {reviewOriginalBuyForm,describeOriginalBuyForm} from './original-r4-buy-form.mjs';
 import {reviewNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
@@ -182,6 +183,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   originalUseSource=null,originalItemHelperSource=null,
   originalPeriodSource=null,originalNewSource=null,originalCustomSource=null,originalLogSource=null,originalShowcaseSource=null,
   coreLocaleSource=null,localLocaleSource=null,localeLoaderSource=null,
+  originalSweepFormSource=null,originalSweepSubmitSource=null,originalStockViewSource=null,
+  enableReviewedSweep=false,
   enableReviewedNormalTime=false,enableReviewedCrossPeriod=false,enableReviewedMarketCommerce=false,expectedNativeInterpreter=null,
 }){
   if(typeof itemDsl!=='string'||typeof rebelDsl!=='string')
@@ -191,6 +194,8 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   // D9 market-only staging capability. Live use needs the same crossing
   // history/disk authority; isolated source differential tests may use base.
   if(typeof enableReviewedMarketCommerce!=='boolean'||enableReviewedMarketCommerce&&enableReviewedNormalTime&&!enableReviewedCrossPeriod)bad('market commerce requires reviewed crossing');
+  if(typeof enableReviewedSweep!=='boolean'||enableReviewedSweep&&!enableReviewedNormalTime)bad('sweep requires reviewed normal time');
+  const sweepReview=enableReviewedSweep?reviewOriginalSweep({formSource:originalSweepFormSource,submitSource:originalSweepSubmitSource,stockViewSource:originalStockViewSource,calcSource:originalBuyCalcSource,itemSource:originalBuyItemSource,itemDsl,compilerSource:originalCompilerSource,configSource:originalConfigSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,customSource:originalCustomSource}):null;
   const r4Sources={itemDsl,rebelDsl,compilerSource:originalCompilerSource,turnSource:originalTurnSource,readSource:originalDataReadSource,writeSource:originalDataWriteSource,detailSource:originalDetailSource,periodSource:originalPeriodSource,configSource:originalConfigSource,adminSource:originalAdminInitSource,originalAddItemSource:originalUseSource,newSource:originalNewSource,customSource:originalCustomSource,logSource:originalLogSource,showcaseSource:originalShowcaseSource,buySubmitSource:originalBuySource,wholeSource:originalWholeSource,coreLocaleSource,localLocaleSource,localeLoaderSource};
   const ordinaryEventReview=enableReviewedNormalTime?reviewR4PreEventItemOverlay(r4Sources):null;
   const knownOrdinaryEvents=world=>ordinaryEventReview!==null&&validateR4OrdinaryEventContext({reviewed:ordinaryEventReview,world:enableReviewedCrossPeriod?independentCandidateWorld(world):world,candidateSettled:enableReviewedCrossPeriod});
@@ -693,6 +698,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
   const base=Object.freeze({
     id:STANDARD_STREET_ID,
     capabilities:Object.freeze([...actions,
+      ...(sweepReview?['sweep-shop']:[]),
       ...(reviewedBootstrap?['initialize-source-market']:[]),
       ...(reviewedSparsePlus?['reviewed-sparse-plus']:[]),
       ...(reviewedMultiPlus?['reviewed-sparse-multi-plus']:[]),
@@ -739,6 +745,7 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
         reviewed:reviewedR4Transition,before,after,
       });
     },
+    ...(sweepReview?{reviewedSweep:true,describeSweep:world=>describeOriginalSweep({reviewed:sweepReview,world})}:{}),
     marketBuy:buyRegistry?marketBuy:null,
     marketBuyRegistry:buyRegistry,
     ...(reviewedBuyForm?.pageRows?{marketPageRows:reviewedBuyForm.pageRows}:{}),
@@ -1047,6 +1054,10 @@ export function createStandardStreetModule({itemDsl,rebelDsl,
             scope:effect.scope,
           },
         };
+      }
+      if(command.kind==='sweep-shop'&&sweepReview){
+        ownKeysExact(command,['shopId','requestedHours']);
+        return projectOriginalSweep({reviewed:sweepReview,world,command});
       }
       if(command.kind==='discard-item'){
         ownKeysExact(command,['shopId','itemId','count']);

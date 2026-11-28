@@ -14,6 +14,7 @@ export function isReviewedOrdinaryCommand(c,street){
         (rule.zeroPriceReviewed===true?c.expectedPrice===0:int(c.expectedPrice,1));
     }
     case 'edit-showcase':return exact(c,common+'shelf,itemId,per,priceOverride')&&int(c.shelf,0,7)&&int(c.itemId,0,79)&&int(c.per,1,200)&&int(c.priceOverride,0,999999999);
+    case 'sweep-shop':return street.reviewedSweep===true&&exact(c,common+'requestedHours')&&int(c.requestedHours,1);
     case 'discard-item':return exact(c,common+'itemId,count')&&int(c.itemId,1,79)&&int(c.count,1);
     case 'use-item':{
       const draws=Object.hasOwn(c,'randomDraws');

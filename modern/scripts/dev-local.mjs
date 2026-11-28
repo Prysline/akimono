@@ -78,6 +78,7 @@ const [
   'modern/tests/original-perl/pinned-core-zh_TW.po','locale/zh_TW.po','custom/inc-locale.cgi','modern/tests/original-perl/core-buy-view.cgi','modern/tests/original-perl/core-shop-m.cgi','modern/tests/original-perl/core-page.cgi',
 ].map(readPinnedSource));
 
+const [originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource]=reviewedMarketCommerce?await Promise.all(['modern/tests/original-perl/core-sweep.cgi','modern/tests/original-perl/core-sweep-s.cgi','modern/tests/original-perl/core-stock.cgi'].map(readPinnedSource)):[null,null,null];
 const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:await readPinnedSource('modern/tests/original-perl/pinned-time.cgi')});
 const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
 const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:await readPinnedSource('modern/tests/original-perl/core-inc-info.cgi')});
@@ -92,6 +93,7 @@ const streetModule=createStandardStreetModule({
   originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
   coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
   enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
+  enableReviewedSweep:reviewedMarketCommerce,originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
   expectedNativeInterpreter:runtimeEnvironment.interpreter,
 });
 if(!['initialize-source-market','open-shop',
@@ -136,7 +138,7 @@ const checkpointRuntime=fingerprintReviewedCheckpointRuntime({
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
       originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
-       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource]:[])],
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,'D58-reviewed-sweep.v1',originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource]:[])],
 });
 if(checkpointRuntime.interpreter!==runtimeEnvironment.interpreter)
   throw Error('AKIMONO_PERL_FINGERPRINT: native interpreter changed during startup');
@@ -191,6 +193,7 @@ function state(){
     settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
     ownerClock:reviewedMarketCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
     ownerHelp:reviewedMarketCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
+    ...(streetModule.reviewedSweep?{sweep:streetModule.describeSweep(world)}:{}),
     shop:world?.shops[0]??null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.
@@ -518,6 +521,12 @@ async function api(req,res,url){
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
         ...(randomDraws.length?{randomDraws}:{})});
+      break;
+    }
+    case '/api/sweep': {
+      if(!repo||!streetModule.reviewedSweep)return send(res,409,{ok:false,error:'清掃尚未開通',state:state()});
+      if(Object.keys(body).sort().join(',')!=='expectedRevision,requestedHours')throw Error('清掃僅接受 requestedHours、expectedRevision');
+      result=commit({kind:'sweep-shop',expectedRevision:ensureRevision(body),shopId:1,requestedHours:commandNumber(body.requestedHours,'requestedHours',1)});
       break;
     }
     case '/api/discard': {
