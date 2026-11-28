@@ -27,7 +27,7 @@ export function isReviewedWorldTimeCommand(command){
     Number.isSafeInteger(command.minutes)&&command.minutes>=1&&command.minutes<=60;
 }
 const same=(a,b)=>encodeMemorySnapshot(a)===encodeMemorySnapshot(b);
-const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item'];
+const ordinaryKinds=['initialize-source-market','open-shop','edit-showcase','market-buy','use-item','discard-item','sweep-shop','change-owner-password'];
 export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=null,enableReviewedCrossPeriod=false}){
   if(!street?.reviewedB41||!street.reviewedAllPlus||!street.reviewedNayuta||!street.reviewedEventCatalog||!street.reviewedLoto||!street.reviewedB59Iron||!street.reviewedB60Happy||!street.reviewedB61Sword||!street.reviewedSupportEventCallbacks||!street.reviewedInstantEventCallbacks)fail('all normal source dependencies required');
   const data=reviewedDataRead??reviewR4PreEventItemOverlay(sources);
@@ -140,6 +140,10 @@ export function attachR4ReviewedTimeController({street,sources,reviewedDataRead=
       return disk.finalize({before,command,applied});
     }}:{}),
     validateReviewedWorldTimeState:validate,
+    ...(disk?{readReviewedLifecycleHeader(world){
+      validate(world);requireProvenance(world);
+      return disk.readLifecycleHeader(world);
+    }}:{}),
     ...(disk?{authorizeVerifiedCheckpoint({world,proof,checkpointStore,generation}){
       if(!isReviewedHistoryCheckpointStore(checkpointStore)||proof.anchor!==encodeMemorySnapshot(world))fail('authenticated checkpoint anchor required');
       checkpointStore.verifyChain(proof,generation);validate(world);remember(world);

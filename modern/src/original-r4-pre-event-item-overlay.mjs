@@ -1,3 +1,4 @@
+import {isReviewedNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 /** R4 DataRead overlay for the common single-shop pre-EVENT stage.
  * No EVENT transition, acquisition proof or commit authority is granted.
  */
@@ -36,6 +37,33 @@ export function validateR4PreEventPeriod({reviewed,period,activeOrder,candidateS
   if(groups.some(g=>!g)||new Set(groups).size!==groups.length)fail('conflicting source EVENT groups');
   return true;
 }
+function applyOrdinaryItemParams(reviewed,activeOrder,items){
+  for(const code of activeOrder){
+    if(code==='happy')continue;
+    if(reviewed.params.rules[code].some(r=>!['popular','point','plus'].includes(r.field)))fail('unreviewed field overlay');
+    items=projectR4EventItemParams({reviewed:reviewed.params,eventCode:code,items}).items;
+  }
+  return items;
+}
+// Read-only full ITEM metadata; never registered in the transactional overlay
+// WeakSet. Current ordinary EVENT fields must be order-independent here.
+export function projectR4CommerceReadItems({reviewed,world,normalCommerce,plusReview,candidateSettled=false}){
+  if(!isReviewedNormalCommerceItems(normalCommerce)||plusReview?.plusSeconds?.length!==79||
+     !validateR4OrdinaryEventContext({reviewed,world,candidateSettled}))fail('reviewed read-only ITEM context required');
+  const activeOrder=Object.keys(world.period.eventState),seen=new Map();
+  for(const code of activeOrder){
+    if(code==='happy')continue;
+    for(const r of reviewed.params.rules[code]){
+      const key=r.itemId+':'+r.field;
+      if(seen.has(key)&&seen.get(key)!==code)fail('read-only EVENT order not established');
+      seen.set(key,code);
+    }
+  }
+  const initial=normalCommerce.items.map((item,i)=>({itemId:item.id,popular:item.popular,point:item.point,plus:plusReview.plusSeconds[i]}));
+  const items=applyOrdinaryItemParams(reviewed,activeOrder,initial);
+  if(items.some(item=>!Number.isSafeInteger(item.popular)||item.popular<0))fail('invalid read-only ITEM popularity');
+  return Object.freeze(items.map((item,i)=>Object.freeze({...normalCommerce.items[i],popular:item.popular,point:item.point})));
+}
 export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleReview,plusReview,candidateSettled=false}){
   validateR4PreEventPeriod({reviewed,period:world?.period,activeOrder,candidateSettled});
   if(world.schema!=='akimono.memory-world.v2'||world.events!==null||!saleReview?.p3TurnItems||plusReview?.plusSeconds?.length!==79)fail('source-reviewed P3 inventory and all PLUS required');
@@ -46,11 +74,7 @@ export function projectR4PreEventItemOverlay({reviewed,world,activeOrder,saleRev
     point:saleReview.p3TurnItems.rules[i+1]?.point??0,
     plus:plusReview.plusSeconds[i]}));
   const baseItems=Object.freeze(items.map(item=>Object.freeze({...item})));
-  for(const code of activeOrder){
-    if(code==='happy')continue;
-    if(reviewed.params.rules[code].some(r=>!['popular','point','plus'].includes(r.field)))fail('unreviewed field overlay');
-    items=projectR4EventItemParams({reviewed:reviewed.params,eventCode:code,items}).items;
-  }
+  items=applyOrdinaryItemParams(reviewed,activeOrder,items);
   const saleRules=Object.fromEntries(Object.entries(saleReview.p3TurnItems.rules).map(([id,r])=>[id,Object.freeze({...r,popularSeconds:items[id-1].popular,point:items[id-1].point})]));
   const plusSeconds=items.map(x=>x.plus);
   if(plusSeconds.filter(Boolean).length!==59||plusSeconds.some(n=>!Number.isSafeInteger(n))||Object.values(saleRules).some(r=>!Number.isSafeInteger(r.popularSeconds)||r.popularSeconds<1||!Number.isSafeInteger(r.point)||r.point<0))fail('unreviewed derived ITEM values');

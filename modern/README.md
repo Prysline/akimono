@@ -1,5 +1,17 @@
 # 《商人物語》標準街 — 現代化移植工作區
 
+## 2026-11-27｜新版 runtime 環境前置檢查（D 整合候選）
+
+**Node.js 22+ 與原生 Perl 都是目前本機新版的執行需求。** 即使不跑 Oracle，checkpoint 指紋與 EVENT hash/replay 仍須 Perl；不需要部署原 CGI server。Windows 建議由 [Strawberry Perl](https://strawberryperl.com/) 安裝，重新開啟 PowerShell，確認 Get-Command perl -All、where.exe perl、perl -v；Linux Debian/Ubuntu 可安裝 perl、git，使用 Node 22+。
+
+在 modern/：
+    npm run check:env
+    npm run dev:local
+
+開啟 http://127.0.0.1:4173。若需差分測試，npm run check:env -- --oracle、npm test；原版 Perl 測試另於 tests/original-perl 執行 prove -v *.t。npm run audit:runtime-deps 為不執行 Perl 的唯讀依賴清冊。dev:local 會先檢查原生 Perl Config/JSON::PP/固定 seed hash，缺少時明確拒絕啟動，無跳過 checkpoint 的模式。
+
+**既有存檔注意：** Node/Perl 版本、架構與程式/source fingerprint 可能不相容；本次環境程式變更也會改 runtime fingerprint。先保留完整原存檔目錄與原版執行環境，新候選使用新目錄，不刪 key 或改 proof。Windows 實機全量相容性尚待驗證。詳細見 [執行環境依賴稽核](docs/runtime-environment-audit.md)，包括安裝、錯誤診斷、Hash/RNG/歷史及長期 Perl 限縮策略。本工作不阻擋其他移植，不改原版規則、不強制移除 Perl。
+
 > **2026-11-25｜現行基線同步：** P3 A–E 已通過並由 PR #17 正式合入 migration；下文 2026-11-23 及更早里程碑、未實作判定和 CI 數字均為歷史記錄，不是現行操作指令。 [最新基線、驗收與接續指引](docs/current-baseline-status.md)。
 >
 > **下方為歷史內容，保留原始來源及當時紀錄。**

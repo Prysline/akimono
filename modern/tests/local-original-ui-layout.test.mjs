@@ -291,3 +291,49 @@ test('compact original showcase editor retains each occupied shelf and syncs cus
   assert.match(css,/#tab-item #showcase-shelf\{width:152px/);
   assert.match(css,/\.discard-section \.inline-form label\{[\s\S]*?flex-direction:row/);
 });
+
+
+test('source market buy form retains source presets and server-only transaction identity',()=>{
+ assert.match(script,/offer\.form\?offer\.form\.available:offer\.canBuy/);
+ assert.match(script,/presets\.dataset\.marketPreset/);
+ assert.match(script,/requestedCount:requested/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+test('source market list pages keep full server offer identity and original page controls',()=>{
+ for(const id of ['market-page-top','market-page-bottom'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.match(adapter,/marketPageRows:streetModule\.marketPageRows/);
+ assert.match(script,/sourcePage\(offers\.length,s\.marketPageRows,marketPage\)/);
+ assert.match(script,/offers\.slice\(page\.start,page\.end\+1\)/);
+ assert.match(script,/sourcePageNumbers\(page\.page,page\.pageMax\)/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+test('source wholesale details present server ITEM text and warnings without changing purchase identity',()=>{
+ assert.match(script,/if\(offer\.detail\)/);
+ assert.match(script,/d\.info\.split/);
+ assert.match(script,/d\.saleWarning/);
+ assert.match(script,/offer\.detail\?\.actionLabel/);
+ assert.match(script,/marketShelf:offer\.shelf,expectedPrice:offer\.price/);
+});
+
+test('original library opens its eight source chapters without HTML injection',()=>{
+  assert.match(html,/data-tab="library"/);assert.match(html,/id="tab-library"/);
+  assert.match(script,/fetch\('\/api\/library'/);assert.match(script,/node\.textContent=part\.text/);
+  assert.match(adapter,/url\.pathname==='\/api\/library'/);
+  assert.match(css,/#library-body\{white-space:pre-wrap/);
+});
+
+test('original settlement and owner time labels are source server views',()=>{
+  assert.match(script,/s\.settlementMenu\?\.label/);
+  assert.match(script,/s\.ownerClock\?\.label/);
+  for(const id of ['time','shop-info-time','balance-time'])assert.ok(script.includes("text('"+id+"',actionTime)"));
+  assert.match(adapter,/settlementMenu:world&&reviewedCrossPeriod\?describeOriginalSettlementMenu/);
+  assert.match(adapter,/ownerClock:reviewedMarketCommerce\?describeOriginalOwnerClock/);
+});
+
+test('original local owner help uses server projection and links the tutorial',()=>{
+  assert.match(html,/id="owner-help"/);assert.match(html,/id="owner-help-library"/);
+  assert.match(script,/renderOwnerHelp\(s\)/);assert.match(script,/selectTab\('library',id\)/);
+  assert.match(adapter,/describeOriginalOwnerHelp\(\{reviewed:reviewedOwnerHelp,world\}\)/);
+});

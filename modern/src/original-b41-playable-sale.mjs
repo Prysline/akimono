@@ -6,6 +6,7 @@
  * Original period settlement, other merchandise, auth/disk/multiplayer remain
  * unsupported. Time is advanced by an explicit isolated local test slice.
  */
+import {isReviewedNormalCommerceItems} from './reviewed-normal-commerce-items.mjs';
 import {NATURAL_PLUS_SOURCE} from './original-natural-sale-plus.mjs';
 import {parseDsl} from './parse-dsl.mjs';
 import {projectSharedNaturalSale} from './shared-natural-sale-core.mjs';
@@ -35,6 +36,8 @@ import {projectOriginalSoloPeriodPhaseChain,B50_INTEGRATED_SOURCE} from './origi
 import {B62_MAP_SOURCE} from './original-b62-sword-map-acquisition.mjs';
 import {B63_MAP_SOURCE} from './original-b63-sword-map-all-outcomes.mjs';
 
+// Narrow market time admission tied to an actual frozen metadata review.
+const marketToolTimeReviews=new WeakSet();
 export const B41_SOURCE='b41-real-market10-showcase-natural-region-then-59-plus';
 const bad=x=>{throw new RangeError('B-41 original sale boundary: '+x);};
 const safe=(x,label,min=0)=>{
@@ -160,7 +163,7 @@ export function validateP3Inventory(shop,compiled,reviewed){
 export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   itemDsl,rebelDsl,turnSource,configSource,reviewedMarket11=null,reviewedB59Iron=null,
   reviewedB60Happy=null,reviewedB61Sword=null,reviewedB62Map=null,
-  reviewedB63Map=null}){
+  reviewedB63Map=null,reviewedMarketToolMetadata=null}){
   // Exact fixed Core inc-turn clock: NOW_TIME + TZ_JST - DATE_REVISE_TIME.
   if(typeof configSource!=='string'||
      !/\$ONE_DAY_TIME\s*=\s*3600\*36\s*;/.test(configSource)||
@@ -210,7 +213,17 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
   const r3=reviewR3SourceSaleItems(itemDsl);
   const itemCallbacks=reviewR3ItemCallbackStage({itemDsl,rebelDsl,turnSource});
   const turnSlices=reviewOriginalR4TimeSlices({turnSource,configSource});
-  return Object.freeze({
+  if(reviewedMarketToolMetadata!==null){
+    const tool=reviewedMarketToolMetadata.items?.[62];
+    if(!isReviewedNormalCommerceItems(reviewedMarketToolMetadata)||
+       tool?.id!==63||tool.price!==0||tool.popular!==0||tool.point!==0||tool.cost!==0||
+       tool.flag!=='sr'||Object.hasOwn(reviewedMarketToolMetadata.saleRules,63)||
+       r3.p3TurnItems.costs[63]!==0||Object.hasOwn(r3.p3TurnItems.rules,63)||
+       reviewedAllPlus.plusSeconds?.[62]!==86400||
+       itemCallbacks.turnIds.includes(63)||itemCallbacks.saleIds.includes(63))
+      bad('frozen market tool time metadata or callbacks changed');
+  }
+  const result=Object.freeze({
     source:B41_SOURCE,itemId:10,unitPrice:5000,
     saleRules:r3.rules,upkeepCosts:r3.costs,p3TurnItems:r3.p3TurnItems,itemCallbacks,turnSlices,
     swordOutcomesSource:reviewedB63Map?.source??null,
@@ -222,6 +235,8 @@ export function reviewB41Sale({reviewedNatural,reviewedBuy,reviewedAllPlus,
     maxMinutes:60,periodSeconds:129600,clockShiftSeconds:10800,
     sourceScope:'six source-reviewed ITEM price/POP/POINT/COST; one-shop original 1..200% pricing and GetSaleTax; reviewed empty-holder item callbacks, then 59 PLUS. EVENT, SortDT and 36h settlement still unsupported',
   });
+  if(reviewedMarketToolMetadata!==null)marketToolTimeReviews.add(result);
+  return result;
 }
 
 function projectSourcePreEventSaleSlice({
@@ -310,7 +325,11 @@ function projectSourcePreEventSaleSlice({
     shop.showcase?.length!==shop.showcasecount||
     shop.price?.length!==shop.showcasecount||
     shop.item?.length!==79||shop.item.some(x=>!Number.isSafeInteger(x)||x<0)||
-    (shop.showcasecount===1?shop.item[62]!==1:shop.item[62]!==0)||
+    // Historical starter-tool fixture invariant is not an original rule.
+    // Only reviewed market time, actual overlay and one shelf may hold 0
+    // or 1 tool. validateP3Inventory still checks the compiled holding cap.
+    (!(p3InventoryStage&&overlay!==null&&marketToolTimeReviews.has(reviewed)&&shop.showcasecount===1)&&
+      (shop.showcasecount===1?shop.item[62]!==1:shop.item[62]!==0))||
     (!p3InventoryStage&&(shop.item[78]!==5||
     shop.item.some((n,i)=>!(reviewedB63Map?
       [9,10,13,39,40,41,42,43,62,78]:reviewedB62Map?

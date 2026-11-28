@@ -22,7 +22,7 @@ export function originalUseTimeSeconds({time,exptime,experience}){
  * only when LIMIT_EXP is exceeded. Equal-EXP ties are unreviewed Perl hash
  * iteration order; fail closed if redistribution would depend on them.
  */
-export function originalUseExperience({records={},itemId,points,count,limit=3600}){
+export function originalUseExperience({records={},itemId,points,count,limit=3600,resolveOrder=null}){
   safe(itemId,'itemId',1);safe(points,'exp per use');
   safe(count,'effective count',1);safe(limit,'LIMIT_EXP');
   if(!records||typeof records!=='object'||Array.isArray(records))
@@ -44,10 +44,14 @@ export function originalUseExperience({records={},itemId,points,count,limit=3600
   const reductions=[];
   if(limit>0&&total>limit){
     let excess=total-limit;
-    const keys=Object.keys(exp).sort((a,b)=>exp[a]-exp[b]);
+    let keys=Object.keys(exp).sort((a,b)=>exp[a]-exp[b]);
     const eligible=keys.filter(id=>id!==key);
-    if(eligible.some((id,i)=>i>0&&exp[eligible[i-1]]===exp[id]))
-      fail('ambiguous Perl hash tie in LIMIT_EXP redistribution');
+    if(eligible.some((id,i)=>i>0&&exp[eligible[i-1]]===exp[id])){
+      if(typeof resolveOrder!=='function')fail('ambiguous Perl hash tie in LIMIT_EXP redistribution');
+      const observed=resolveOrder({records,exp:{...exp},itemId});
+      if(!Array.isArray(observed)||observed.length!==keys.length||new Set(observed).size!==keys.length||observed.some((id,i)=>typeof id!=='string'||!Object.hasOwn(exp,id)||i>0&&exp[observed[i-1]]>exp[id]))fail('invalid reviewed EXP order');
+      keys=observed;
+    }
     let remaining=keys.length-1;
     for(const id of keys){
       if(id===key)continue;
@@ -74,15 +78,18 @@ export function originalSourceUseClock({rule,job='',experience}){
   if(typeof job!=='string')fail('shop job');
   let time=safe(rule.time,'source use time',1);
   let exptime=safe(rule.exptime,'source trained time');
-  const modifier=rule.jobTimeModifier;
-  if(modifier){
+  // Original CheckUseItem resolves the explicit function for this job first,
+  // then USE #0's function for the SAME job if the first is absent.
+  const modifiers=[rule.jobTimeModifier,rule.fallbackJobTimeModifier].filter(Boolean);
+  for(const modifier of modifiers){
     if(!['peddle','book','weapon','armor','tool','material','drug','cow'].includes(modifier.job)||
        modifier.numerator!==2||modifier.denominator!==3)
       fail('unreviewed source job modifier');
-    if(job===modifier.job){
-      time=Math.trunc(time*modifier.numerator/modifier.denominator);
-      exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
-    }
+  }
+  const modifier=modifiers.find(m=>m.job===job);
+  if(modifier){
+    time=Math.trunc(time*modifier.numerator/modifier.denominator);
+    exptime=Math.trunc(exptime*modifier.numerator/modifier.denominator);
   }
   return {base:time,trained:exptime,
     seconds:originalUseTimeSeconds({time,exptime,experience})};

@@ -13,7 +13,7 @@ const ok=(r,code='COMMITTED')=>{
   assert.equal(r.code,code,JSON.stringify({code:r.code,error:r.error,reason:r.details?.reason,clock:r.state?.world?.nowSeconds,shop:r.state?.shop?.time,money:r.state?.shop?.money,exp:r.state?.shop?.exp}));
   return r;
 };
-export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=null,onPurchase=null}={}){
+export async function genuinePlayer(t,{now='896401',crossPeriod=false,marketCommerce=false,onTick=null,onPurchase=null}={}){
   const directory=await mkdtemp(join(tmpdir(),'akimono-p3-v2-high-'));
   let child,url,state,stderr='';
   const stop=async()=>{
@@ -24,7 +24,8 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   async function boot(){
     stderr='';
     const env={...process.env,AKIMONO_PORT:'0',AKIMONO_SAVE_DIR:directory,
-      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0'};
+      AKIMONO_E2E_DETERMINISTIC_RNG:'0',AKIMONO_REVIEWED_CROSS_PERIOD:crossPeriod?'1':'0',
+      AKIMONO_REVIEWED_MARKET_COMMERCE:marketCommerce?'1':'0'};
     if(now===null)delete env.AKIMONO_E2E_FIXED_NOW;
     else env.AKIMONO_E2E_FIXED_NOW=now;
     child=spawn(process.execPath,['scripts/dev-local.mjs'],{cwd,env,stdio:['ignore','pipe','pipe']});
@@ -38,6 +39,7 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     }),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('player startup timeout '+stderr)),15000);})]).finally(()=>clearTimeout(timer));
     state=await(await fetch(url+'/api/state')).json();
   }
+  async function request(route){return (await fetch(url+route)).json();}
   async function post(route,body={}){
     const response=await fetch(url+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const result={status:response.status,...await response.json()};
@@ -55,7 +57,27 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     const before=state.world;
     const nowSeconds=before.nowSeconds,revision=before.revision;
     const priorPeriods=state.world.period.settledCount,crosses=minutes*60>=boundary();
-    const result=await command('/api/advance-reviewed-time',{minutes});
+    let result;
+    try {
+      result=await command('/api/advance-reviewed-time',{minutes});
+    } catch (error) {
+      // Observation only: preserve the genuine player failure and every
+      // assertion. Never log credentials, world IDs, or raw save records.
+      const summarize=world=>({
+        revision:world.revision,nowSeconds:world.nowSeconds,
+        settledCount:world.period?.settledCount,
+        eventKeys:Object.keys(world.period?.eventState??{}),
+        shops:world.shops.map(s=>Object.fromEntries(
+          ['id','status','showcasecount','showcase','price','item','exp','time',
+           'money','rank','trush','paytoday','costtoday','saletoday','taxtoday',
+           'taxmode'].map(k=>[k,s[k]===undefined?null:s[k]]))),
+      });
+      t.diagnostic('P3 rejected tick '+JSON.stringify({
+        minutes,crossPeriod,marketCommerce,before:summarize(before),
+        after:summarize(state.world),reason:error.message,
+      }));
+      throw error;
+    }
     assert.equal(state.world.nowSeconds,nowSeconds+minutes*60);
     assert.equal(state.world.revision,revision+1);
     assert.equal(state.world.period.settledCount,priorPeriods+(crosses?1:0));
@@ -198,6 +220,22 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
     await boot();ok(await post('/api/load'),'LOADED');
     assert.deepEqual(state.world,second);
   }
+  async function rejectDamagedLatestDisk(first,second,damage){
+    // Keep the genuine save envelopes untouched. Only corrupt the actual
+    // newest materialized generation, never manufacture a playable world.
+    await stop();
+    const restore=await damage();
+    try{
+      await boot();ok(await post('/api/load'),'LOADED');
+      assert.deepEqual(state.world,first);
+      assert.equal(state.save.recoveryWarning,true);
+      assert.equal(state.save.generation,1);
+    }finally{await stop();await restore();}
+    await boot();ok(await post('/api/load'),'LOADED');
+    assert.deepEqual(state.world,second);
+    assert.equal(state.save.generation,2);
+    assert.equal(state.save.recoveryWarning,false);
+  }
   async function rejectForgedLatest(first,mutate,{restore=false,recompute=true}={}){
     const slot=join(directory,'world-a.json');
     await stop();
@@ -221,5 +259,6 @@ export async function genuinePlayer(t,{now='896401',crossPeriod=false,onTick=nul
   await command('/api/open-shop',{ownerName:'來源玩家',shopName:'高階鍛造實測'});
   assert.equal(state.save.format,'akimono.local-world-save.v2');
   assert.equal(Boolean(state.reviewedCrossPeriod),crossPeriod);
-  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectForgedLatest,post};
+  assert.equal(Boolean(state.reviewedMarketCommerce),marketCommerce);
+  return {directory,get state(){return state},stock,exp,quote,remaining,boundary,tick,enoughTime,use,deny,list,market,ore,gather,stones,discard,saveAndRestart,rejectDamagedOldestPrefix,rejectDamagedNewestPrefix,rejectDamagedLatestDisk,rejectForgedLatest,post,request};
 }

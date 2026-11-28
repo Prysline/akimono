@@ -8,6 +8,10 @@ import {reviewTownFiles} from './original-r4-town-files.mjs';
 import {reviewBackupDisk} from './original-r4-backup-disk.mjs';
 import {reviewPeriodLog,projectCrossPeriodLogRows,projectReviewedEventLogRows} from './original-r4-period-log-disk.mjs';
 import {projectOriginalSoloSort} from './original-period-solo-sort.mjs';
+import {reviewOriginalCommerceLocale} from './original-r4-commerce-locale.mjs';
+import {reviewOriginalWholesaleBuyLog,projectOriginalWholesaleBuyLog} from './original-r4-buy-log.mjs';
+import {reviewOriginalShowcaseLog,projectOriginalShowcaseLog} from './original-r4-showcase-log.mjs';
+import {projectReviewedWholesaleVoucherLogRows} from './original-r4-wholesale-voucher.mjs';
 export const R4_INDEPENDENT_DISK='r4-independent-source-disk.v1';
 export const R4_SETTLED_STATE='source-reviewed-independent-settlement.v1';
 const CANDIDATE='source-cross-period-candidate-not-committed';
@@ -28,6 +32,16 @@ export function createIndependentDiskProjection({sources,sort,street}){
     townReview:reviewTownFiles({custom:sources.customSource,read:sources.readSource,write:sources.writeSource})};
   reviewBackupDisk({period:sources.periodSource,write:sources.writeSource,config:sources.configSource});
   const log=reviewPeriodLog({log:sources.logSource,period:sources.periodSource,dsl:sources.itemDsl,config:sources.configSource});
+  // Source log activation follows the existing staged market-commerce
+  // capability. Legacy adapter logs stay unchanged in the default mode.
+  const reviewedLocale=street.marketBuy?.reviewedVoucher?reviewOriginalCommerceLocale(sources):null;
+  // Frozen new.cgi emits PushLog after FUNCNEW unless NOLOG is set.
+  // The exact reviewed Standard Street DSL only comments out that option.
+  if(reviewedLocale&&(sha1(sources.itemDsl)!=='7a18185e98b32aee82ca1ce30d6f3c395157dbcb'||
+    !sources.newSource.includes('PushLog(1,0,l("%1が新装開店しました。",$Q{sname})) if !$DEFINE_FUNCNEW || !$DEFINE_FUNCNEW_NOLOG;')))
+    fail('frozen new-shop announcement source');
+  const buyLog=reviewedLocale?reviewOriginalWholesaleBuyLog({...sources,catalog:street.catalog,reviewedLocale}):null;
+  const showcaseLog=reviewedLocale?reviewOriginalShowcaseLog({...sources,catalog:street.catalog,reviewedLocale}):null;
   function wire(world){
     if(!world.market||world.period.eventState===null)fail('known source market and events required');
     return serializePeriodPlay({...codec,world:{lasttime:world.nowSeconds,people:world.period.dtPeople,nextid:100,blockip:'',taxRate:0,
@@ -71,9 +85,16 @@ export function createIndependentDiskProjection({sources,sort,street}){
     const newRows=[...logRows];
     // Local ordinary operation messages are explicit adapter logs, not a
     // claim of historical locale / original login / CGI formatting parity.
-    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+'が新装開店しました。'].join('\t')+'\n');
-    if(['edit-showcase','market-buy','use-item'].includes(command.kind))
+    // Source locale is enabled only in the same staged commerce mode.
+    if(command.kind==='open-shop')newRows.unshift([now,1,0,shops[0].shopname+(reviewedLocale?'開設新商店了。':'が新装開店しました。')].join('\t')+'\n');
+    const sourceShowcase=showcaseLog&&command.kind==='edit-showcase';
+    const sourceBuy=buyLog&&command.kind==='market-buy';
+    if(sourceShowcase)newRows.unshift(projectOriginalShowcaseLog({reviewed:showcaseLog,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
+    if(sourceBuy)newRows.unshift(projectOriginalWholesaleBuyLog({reviewed:buyLog,before:before.shops[0],command,receipt:applied.receipt,nowSeconds:now}));
+    if(!sourceShowcase&&!sourceBuy&&['edit-showcase','market-buy','use-item'].includes(command.kind))
       newRows.unshift([now,0,1,'local '+command.kind].join('\t')+'\n');
+    if(command.kind==='market-buy'&&street.marketBuy?.reviewedVoucher)newRows.unshift(...projectReviewedWholesaleVoucherLogRows({
+      review:street.marketBuy.reviewedVoucher,before:before.shops[0],after:shops[0],command,receipt:applied.receipt,nowSeconds:now}));
     if(newRows.some(s=>typeof s!=='string'||!/^\d+\t[012]\t\d+\t[^\r\n\t]*\n$/.test(s)))fail('bounded log rows');
     let d;
     if(!old){
@@ -102,6 +123,14 @@ export function createIndependentDiskProjection({sources,sort,street}){
     validate({...after,period:next.period});
     return next;
   }
-  return Object.freeze({validate,finalize,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
+  // Internal source header read: use the same exact world/disk validation,
+  // never trust a header supplied by a player or create another allocator.
+  function readLifecycleHeader(world){
+    validate(world);
+    if(!world.period.disk)fail('initialized source disk required');
+    const {lasttime,nextid,blockip}=parsePeriodPlay({...codec,bytes:world.period.disk.live['play.cgi'].bytes});
+    return Object.freeze({lasttime,nextid,blockip});
+  }
+  return Object.freeze({validate,finalize,readLifecycleHeader,crossLogs:candidate=>projectCrossPeriodLogRows({reviewed:log,candidate}),
     normalLogs:(logs,nowSeconds)=>projectReviewedEventLogRows({reviewed:log,logs,nowSeconds})});
 }

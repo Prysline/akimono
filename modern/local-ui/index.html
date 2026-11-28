@@ -38,7 +38,7 @@
         <span class="subgroup" data-subgroup="info" hidden>
           <button type="button" disabled>［風景］</button>
           <button type="button" disabled>［新聞］</button>
-          <button type="button" disabled>［圖書館］</button>
+          <button type="button" data-tab="library">［圖書館］</button>
         </span>
         <span class="subgroup" data-subgroup="facility" hidden>
           <button type="button" disabled>［領主邸］</button>
@@ -92,6 +92,11 @@
     </section>
     <section id="tab-shop" class="section pane">
       <h2 class="section-title">● <span id="shop-title">店內</span></h2>
+      <section id="owner-help" class="help-text" hidden aria-label="原版小幫手">
+        <strong id="owner-help-speaker"></strong>
+        <div id="owner-help-lines"></div>
+        <button type="button" class="text-link" id="owner-help-library" hidden>［遊戲遊玩］</button>
+      </section>
       <h3 class="sub-title">店家資訊</h3>
       <div class="table-scroll"><table class="shop-info-table"><tbody>
         <tr><td rowspan="5" class="shop-icon-cell"><span class="portrait-placeholder" aria-hidden="true">店</span></td><th scope="row">店名</th><td id="shop-info-name">尚未開店</td></tr>
@@ -160,12 +165,14 @@
           <button id="supply" class="secondary" type="button">執行供貨</button>
         </div>
       </details>
+      <nav id="market-page-top" class="inline-form" aria-label="市場分頁" hidden></nav>
       <div class="table-scroll">
         <table class="market-table">
           <thead><tr><th>商品名稱</th><th>價格</th><th>存量</th><th>持有／上限</th><th>行動時間</th><th>購買</th></tr></thead>
           <tbody id="market-offers"><tr><td colspan="6">請先初始化來源市場</td></tr></tbody>
         </table>
       </div>
+      <nav id="market-page-bottom" class="inline-form" aria-label="市場分頁" hidden></nav>
       <p class="muted dev-panel" id="market-boundary" data-dev-panel>顯示來源可審閱的商品交易狀態。</p>
 
     </section>
@@ -296,6 +303,18 @@
         <tr><th scope="row">前期營業額</th><td id="balance-prev-sales">—</td><th scope="row">前期支出</th><td id="balance-prev-paid">—</td></tr>
       </tbody></table>
       <p class="muted" id="balance-note">其他店舖資訊尚未開放。</p>
+    </section>
+
+    <section id="tab-library" class="section pane" hidden>
+      <h2 class="section-title">圖書館</h2>
+      <p class="muted">原版說明原文；內含尚未開放的多人功能及歷史遊戲規則，不代表目前版本已支援。</p>
+      <p id="library-status" role="status"></p>
+      <div id="library-list"></div>
+      <article id="library-chapter" hidden>
+        <button type="button" class="text-link" id="library-back">［返回項目一覽］</button>
+        <h3 id="library-title"></h3>
+        <div id="library-body"></div>
+      </article>
     </section>
 
     <section id="tab-pending" class="section pane" hidden>

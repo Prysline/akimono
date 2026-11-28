@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
+import {reviewR4LifecycleHeader,projectR4LifecycleHeader} from '../src/original-r4-lifecycle-header.mjs';
+const read=p=>normalizeLocalSourceText(readFileSync(new URL('./original-perl/'+p,import.meta.url),'utf8'));
+const sources={read:read('inc-func.cgi'),write:read('write.cgi'),register:read('new.cgi'),membership:read('pinned-membership-user.cgi')};
+const reviewed=reviewR4LifecycleHeader(sources);
+test('actual original registration distinguishes published header and DataRead repaired allocator',()=>{
+  const runner=fileURLToPath(new URL('./original-perl/original-r4-two-shop-identity.t',import.meta.url));
+  const output=execFileSync('perl',[runner],{encoding:'utf8',env:{...process.env,R4_LIFECYCLE_HEADER_EVIDENCE:'1'}});
+  const row=output.split('\n').find(s=>s.startsWith('# R4_HEADER_JSON '));
+  assert.ok(row,'actual original header observation required');
+  const proof=JSON.parse(row.slice('# R4_HEADER_JSON '.length));
+  const header=proof.before,shops=[{id:1,status:1,remoteaddr:'192.0.2.5'}],before=structuredClone({header,shops});
+  const got=projectR4LifecycleHeader({reviewed,header,shops,nowSeconds:proof.nowSeconds,operation:'register',registrationIp:'192.0.2.6'});
+  assert.equal(got.allocatedId,proof.allocatedId);assert.deepEqual(got.rawWrittenHeader,proof.after);
+  assert.deepEqual(got.canonicalReloadHeader,proof.reload);assert.equal(got.committable,false);
+  assert.deepEqual({header,shops},before);
+});
+test('header source branches preserve allocator and distinguish direct close from restarted address',()=>{
+  const header={lasttime:100,nextid:4,blockip:'192.0.2.6'},shops=[{id:1,status:1,remoteaddr:'192.0.2.5'},{id:3,status:1,remoteaddr:'192.0.2.6'}];
+  const common={reviewed,header,shops,nowSeconds:200};
+  assert.deepEqual(projectR4LifecycleHeader({...common,operation:'restart-shop',actorId:1}).canonicalReloadHeader,header);
+  assert.deepEqual(projectR4LifecycleHeader({...common,operation:'close-shop',actorId:1}).canonicalReloadHeader,{...header,blockip:'192.0.2.5'});
+  assert.deepEqual(projectR4LifecycleHeader({...common,shops:[{...shops[0],remoteaddr:''},shops[1]],operation:'close-shop',actorId:1}).canonicalReloadHeader,{...header,blockip:''});
+  const first=projectR4LifecycleHeader({...common,shops:[],operation:'register',registrationIp:'192.0.2.7'});
+  assert.deepEqual(first.rawWrittenHeader,{lasttime:200,nextid:4,blockip:'192.0.2.7'});
+  assert.deepEqual(first.canonicalReloadHeader,{...first.rawWrittenHeader,nextid:5});
+  assert.throws(()=>projectR4LifecycleHeader({...common,header:{...header,nextid:3},operation:'register',registrationIp:'192.0.2.7'}),/canonical nextid/);
+  assert.throws(()=>projectR4LifecycleHeader({...common,operation:'close-shop',actorId:2}),/current actor/);
+  assert.throws(()=>reviewR4LifecycleHeader({...sources,register:sources.register+'\n'}),/source drift/);
+});

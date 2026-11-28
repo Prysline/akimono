@@ -18,7 +18,7 @@ const originalBody=[
   'return $ret;',
 ];
 
-export function compileReviewedTargetAdvertiseUse({itemDsl,model,limits}){
+export function compileReviewedTargetAdvertiseUse({itemDsl,model,limits,jobFallback=null}){
   if(typeof itemDsl!=='string'||model?.items?.length!==79||
      !Array.isArray(limits)||limits.length!==79)
     fail('source inputs');
@@ -65,7 +65,8 @@ export function compileReviewedTargetAdvertiseUse({itemDsl,model,limits}){
     uses:Object.freeze([Object.freeze({
       itemId:62,countPerUse:1,probabilityPermille:1000,
     })]),creates:Object.freeze([]),
-    inlineCallback:Object.freeze({kind:'advertise-other'}),
+    ...(jobFallback?.get(62,1)?{fallbackJobTimeModifier:jobFallback.get(62,1)}:{}),
+        inlineCallback:Object.freeze({kind:'advertise-other'}),
     scope:'source #62/1 two-shop memory CAS only; no RNG/EXP; no HTTP authentication or B-43 multi-shop persistence',
   });
 }

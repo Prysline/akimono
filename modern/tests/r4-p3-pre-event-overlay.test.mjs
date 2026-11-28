@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {reviewNormalCommerceItems} from '../src/reviewed-normal-commerce-items.mjs';
 import {createStandardStreetModule} from '../src/standard-street-module.mjs';
 import {createPeriodMemoryWorld,createMemoryWorldAdapter,
   executeMemoryCommand,applyGameCommand,createSourceReviewedMemoryWorldAdapter} from '../src/game-core-contract.mjs';
@@ -12,7 +13,7 @@ import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
 import {projectB41Sale,projectP3PreEventTurn} from '../src/original-b41-playable-sale.mjs';
 
 import {reviewR4SortedPreEvent,projectR4SortedInventoryPreEventTurn} from '../src/original-r4-sorted-pre-event.mjs';
-import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay} from '../src/original-r4-pre-event-item-overlay.mjs';
+import {reviewR4PreEventItemOverlay,projectR4PreEventItemOverlay,projectR4CommerceReadItems} from '../src/original-r4-pre-event-item-overlay.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const locations=[
  ['itemDsl','custom/inc-item-data.cgi'],
@@ -80,22 +81,22 @@ function fresh(fullMarket=false){
   }
   return {repository,command};
 }
-function args(world,minutes,randomDraws){
-  return {world,shopId:1,minutes,randomDraws,reviewed:street.reviewedB41,
-    reviewedAllPlus:street.reviewedAllPlus,compiled:street.reviewedGiftMapUse,
-    reviewedB59Iron:street.reviewedB59Iron,reviewedB60Happy:street.reviewedB60Happy,
-    reviewedB61Sword:street.reviewedB61Sword,reviewedB62Map:street.reviewedB62Map,
-    reviewedB63Map:street.reviewedB63Map,reviewedNayuta:street.reviewedNayuta};
+function args(world,minutes,randomDraws,scope=street){
+  return {world,shopId:1,minutes,randomDraws,reviewed:scope.reviewedB41,
+    reviewedAllPlus:scope.reviewedAllPlus,compiled:scope.reviewedGiftMapUse,
+    reviewedB59Iron:scope.reviewedB59Iron,reviewedB60Happy:scope.reviewedB60Happy,
+    reviewedB61Sword:scope.reviewedB61Sword,reviewedB62Map:scope.reviewedB62Map,
+    reviewedB63Map:scope.reviewedB63Map,reviewedNayuta:scope.reviewedNayuta};
 }
-function compare(world,minutes,draws=Array(121).fill(0)){
+function compare(world,minutes,draws=Array(121).fill(0),scope=street){
   const prior=JSON.stringify(world);
   const perl=JSON.parse(execFileSync('perl',['original-r4-p3-pre-event-overlay-probe.pl'],{
     cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8',
     input:JSON.stringify({shop:world.shops[0],csv:world.market.originalWholesaleCsv,
       span:minutes*60,draws,events:world.period.eventState}),
   }));
-  const result=projectR4SortedInventoryPreEventTurn({...args(world,minutes,perl.consumed),reviewedR4,reviewedDataRead,activeOrder:perl.activeOrder});
-  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:perl.activeOrder,saleReview:street.reviewedB41,plusReview:street.reviewedAllPlus});
+  const result=projectR4SortedInventoryPreEventTurn({...args(world,minutes,perl.consumed,scope),reviewedR4,reviewedDataRead,activeOrder:perl.activeOrder});
+  const overlay=projectR4PreEventItemOverlay({reviewed:reviewedDataRead,world,activeOrder:perl.activeOrder,saleReview:scope.reviewedB41,plusReview:scope.reviewedAllPlus});
   assert.deepEqual(overlay.plusSeconds,perl.plus);
   assert.equal(result.committable,false);assert.equal(result.receipt.originalSortApplied,true);
   assert.equal(JSON.stringify(world),prior,'pure stage cannot mutate input');
@@ -676,4 +677,52 @@ test('R4 reviewed CAS settles two consecutive source boundaries from legal openi
   assert.ok(second.shops[0].rankingcount>=2);
   const final=command('advance-reviewed-world-time',{minutes:1});
   assert.equal(final.world.period.settledCount,2);
+});
+
+test('D13 source compiler matches all 79 A metadata rows and admits reviewed market tool absence in P3 time',async()=>{
+  const originalShowcaseSource=await readFile(path.join(root,'modern/tests/original-perl/sc-s.cgi'),'utf8');
+  const inputs={itemDsl:source.itemDsl,compilerSource:source.originalCompilerSource,
+    showcaseSource:originalShowcaseSource,turnSource:source.originalTurnSource};
+  const review=reviewNormalCommerceItems(inputs);
+  const oracle=JSON.parse(execFileSync('perl',['original-normal-commerce-item-compiler.pl'],{
+    cwd:path.join(root,'modern/tests/original-perl'),encoding:'utf8'}));
+  assert.deepEqual(review.items,oracle);
+  assert.equal(Object.keys(review.upkeepCosts).length,79);
+  assert.equal(Object.keys(review.saleRules).length,67);
+  assert.equal(review.upkeepCosts[63],0);
+  assert.equal(review.saleRules[63],undefined);
+  for(const k of Object.keys(inputs))assert.throws(()=>reviewNormalCommerceItems({...inputs,[k]:inputs[k]+'\n'}),/source drift/);
+  const marketStreet=createStandardStreetModule({...source,originalShowcaseSource,enableReviewedMarketCommerce:true});
+  const {repository,command}=fresh(false);
+  assert.equal(repository.read().shops[0].item[62],1);
+  command('discard-item',{shopId:1,itemId:63,count:1});
+  const world=repository.read();
+  assert.equal(world.shops[0].item[62],0);
+  assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,1,Array(121).fill(0)),reviewedR4,reviewedDataRead,activeOrder:[]}),/inventory\/shelf supported/);
+  for(const [minutes,draw] of [[1,0],[60,500000]]){
+    const result=compare(world,minutes,Array(121).fill(draw),marketStreet);
+    assert.equal(result.shops[0].item[62],0);
+  }
+  const forged=structuredClone(world);forged.shops[0].item[62]=2;
+  assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(forged,1,Array(121).fill(0),marketStreet),reviewedR4,reviewedDataRead,activeOrder:[]}),/holding cap/);
+  const fake={...marketStreet,reviewedB41:{...marketStreet.reviewedB41}};
+  assert.throws(()=>projectR4SortedInventoryPreEventTurn({...args(world,1,Array(121).fill(0),fake),reviewedR4,reviewedDataRead,activeOrder:[]}),/inventory\/shelf supported/);
+});
+
+
+test('D24 read-only full ITEM projection uses source POP overlay without expanding P3 sale authority',async()=>{
+  const {repository}=fresh(true),world=structuredClone(repository.read());
+  const metadata=reviewNormalCommerceItems({itemDsl:source.itemDsl,compilerSource:source.originalCompilerSource,
+    turnSource:source.originalTurnSource,showcaseSource:await readFile(path.join(root,'modern/tests/original-perl/sc-s.cgi'),'utf8')});
+  const input={reviewed:reviewedDataRead,world,normalCommerce:metadata,plusReview:street.reviewedAllPlus};
+  const baseline=projectR4CommerceReadItems(input);
+  assert.deepEqual(baseline,metadata.items);
+  world.period.eventState={'boom-posyon':world.nowSeconds+1000};
+  const before=structuredClone(world),projected=projectR4CommerceReadItems(input);
+  for(const id of [1,30,31,32,33,34])assert.equal(projected[id-1].popular,Math.trunc(metadata.items[id-1].popular/1.5));
+  assert.equal(projected[62].popular,metadata.items[62].popular);
+  assert.deepEqual(world,before);
+  assert.throws(()=>projectR4CommerceReadItems({...input,normalCommerce:{...metadata}}),/reviewed read-only ITEM context/);
+  world.period.eventState={rebel:world.nowSeconds+1000};
+  assert.throws(()=>projectR4CommerceReadItems(input),/reviewed read-only ITEM context/);
 });

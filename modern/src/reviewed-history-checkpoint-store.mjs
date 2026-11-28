@@ -6,7 +6,7 @@
 import fs,{constants as c} from 'node:fs';
 import path from 'node:path';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
-import {execFileSync} from 'node:child_process';
+import {readNativePerlInterpreter} from './runtime-environment.mjs';
 import {R4_HASH_POLICY,R4_COMMAND_HASH_POLICY} from './original-r4-perl-hash-replay.mjs';
 import {R4_TIME_DRAW_POLICY,R4_CROSS_PERIOD_DRAW_POLICY} from './r4-time-command-draws.mjs';
 
@@ -36,10 +36,12 @@ function directory(dir,create=false,privateDir=false){
     fail('unsafe checkpoint directory');
 }
 function readBounded(filename,max,privateFile=false){
-  const fd=fs.openSync(filename,c.O_RDONLY|(c.O_NOFOLLOW??0));
+  const before=fs.lstatSync(filename);
+  if(!before.isFile()||before.nlink!==1)fail('unsafe checkpoint file');
+  const fd=fs.openSync(filename,c.O_RDONLY|(c.O_NOFOLLOW??0)|(c.O_NONBLOCK??0));
   try{
     const st=fs.fstatSync(fd);
-    if(!st.isFile()||st.nlink!==1||st.size>max||
+    if(!st.isFile()||st.nlink!==1||st.dev!==before.dev||st.ino!==before.ino||st.size>max||
        (privateFile&&process.platform!=='win32'&&(st.mode&0o077)!==0))fail('unsafe checkpoint file');
     const result=fs.readFileSync(fd);
     if(result.length>max)fail('oversized checkpoint file');
@@ -53,13 +55,7 @@ export function fingerprintReviewedCheckpointRuntime({sources,sourceDirectory,en
     .map(n=>[n,sha(fs.readFileSync(path.join(sourceDirectory,n)))]);
   const sourceFingerprint=sha(JSON.stringify([FORMAT,process.version,
     inputs,sha(fs.readFileSync(entrypoint)),sources.map(s=>sha(s))]));
-  const env={...process.env};
-  for(const k of Object.keys(env))if(k.startsWith('PERL'))delete env[k];
-  let interpreter;
-  try{interpreter=execFileSync('perl',['-MConfig','-e','print "$^V/$Config{archname}"'],
-    {env,encoding:'utf8',timeout:3000,maxBuffer:1024,stdio:['ignore','pipe','pipe']});}
-  catch{fail('native Perl interpreter unavailable');}
-  if(!interpreter||interpreter.length>120)fail('invalid interpreter fingerprint');
+  const interpreter=readNativePerlInterpreter();
   return {sourceFingerprint,interpreter};
 }
 export function createReviewedHistoryCheckpointStore({directory:saveDirectory,sourceFingerprint,interpreter,crossPeriod=false}){
@@ -181,5 +177,19 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
   function verifyRecord(record){
     if(!equalMac(record.checkpointAuth,recordAuth(record)))fail('checkpoint save authentication failed');
   }
-  const store=Object.freeze({sealVerified,openPrefix,verifyChain,recordAuth,verifyRecord});authenticatedStores.add(store);return store;
+  // Account mode uses the same private key and generation, but a separate
+  // MAC domain. Even a fresh history envelope must authenticate the private
+  // credential bytes and exact runtime, not only a public checksum.
+  function accountRecordAuth({format,generation,world,careerProof,ownerCredentials},{create=false}={}){
+    if(format!=='akimono.local-world-save.v2'||!int(generation)||generation<1||
+       typeof world!=='string'||typeof careerProof!=='string'||typeof ownerCredentials!=='string'||
+       (create&&generation!==1))fail('account save envelope shape');
+    return hmac(key(create),FORMAT+'/account-save.v1',
+      [format,generation,sourceFingerprint,interpreter,hashPolicy,drawPolicy,world,careerProof,ownerCredentials]);
+  }
+  function verifyAccountRecord(record){
+    if(typeof record.checkpointAuth!=='string'||record.checkpointAuth.length!==64||
+       !equalMac(record.checkpointAuth,accountRecordAuth(record)))fail('account save authentication failed');
+  }
+  const store=Object.freeze({sealVerified,openPrefix,verifyChain,recordAuth,verifyRecord,accountRecordAuth,verifyAccountRecord});authenticatedStores.add(store);return store;
 }

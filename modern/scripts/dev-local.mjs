@@ -19,22 +19,35 @@ import {isReviewedOrdinaryCommand} from '../src/reviewed-ordinary-command-policy
 import {reviewOriginalPeriodBootstrap,createOriginalPeriodSeed}
   from '../src/original-period-world-seed.mjs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
+import {reviewOriginalLibrary,describeOriginalLibrary} from '../src/original-library-view.mjs';
+import {reviewOriginalOwnerHelp,describeOriginalOwnerHelp} from '../src/original-r4-owner-help.mjs';
+import {reviewOriginalSettlementMenu,describeOriginalSettlementMenu,reviewOriginalOwnerClock,describeOriginalOwnerClock} from '../src/original-r4-settlement-menu.mjs';
 import {createPeriodMemoryWorld,createSourceReviewedMemoryWorldAdapter,
   applyGameCommand,executeMemoryCommand,encodeMemorySnapshot} from '../src/game-core-contract.mjs';
 
 import {beginReviewedWorldHistory,appendReviewedWorldHistory,verifyReviewedWorldHistory} from '../src/reviewed-world-time-history.mjs';
 import {createReviewedHistoryCheckpointStore,fingerprintReviewedCheckpointRuntime} from '../src/reviewed-history-checkpoint-store.mjs';
 import {createIndependentPeriodDiskStore} from '../src/r4-independent-period-disk-store.mjs';
+import {checkRuntimeEnvironment} from '../src/runtime-environment.mjs';
 // Same v2 authority in both reviewed modes; crossing must be explicitly enabled with a new save directory.
 const reviewedCrossPeriod=process.env.AKIMONO_REVIEWED_CROSS_PERIOD==='1';
+// Temporary D integration gate, not full commerce or an alternate save authority.
+const reviewedMarketCommerce=process.env.AKIMONO_REVIEWED_MARKET_COMMERCE==='1';
+if(reviewedMarketCommerce&&(!reviewedCrossPeriod||!process.env.AKIMONO_SAVE_DIR))throw Error('reviewed market commerce requires crossing and explicit save directory');
 if(process.env.AKIMONO_E2E_DETERMINISTIC_RNG==='1'||process.env.AKIMONO_R2_TARGET_AD_MEMORY_ONLY==='1'||process.env.AKIMONO_REVIEWED_NORMAL_TIME==='0')
   throw Error('唯一新版玩家存檔不支援舊模式、fixture RNG 或多店稽核');
-const exactKeys=(obj,keys)=>Object.keys(obj).sort().join(',')===keys.split(',').sort().join(',');
+// Fail before opening a save store, generating a key or listening on HTTP.
+const runtimeEnvironment=checkRuntimeEnvironment();
+const exactKeys=(obj,keys)=>{
+  const names=Object.keys(obj),expected=keys===''?[]:keys.split(',');
+  return names.length===expected.length&&expected.every(k=>Object.hasOwn(obj,k));
+};
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=rel=>readFile(path.join(root,rel),'utf8');
 // Windows Git checkouts can use CRLF while the frozen source review markers
 // refer to the original LF Git blobs. Normalize only source inputs in memory.
 const readPinnedSource=async rel=>normalizeLocalSourceText(await read(rel));
+const reviewedLibrary=reviewOriginalLibrary(await readPinnedSource('custom/library.cgi'));
 const [
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -42,7 +55,8 @@ const [
   originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalPeriodSource,originalUseSource,originalItemHelperSource,
-  originalNewSource,originalCustomSource,originalLogSource,
+  originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
+  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
 ]=await Promise.all([
   'custom/inc-item-data.cgi','custom/inc-rebel-data.cgi',
   'modern/tests/original-perl/core-inc-admin-func.cgi',
@@ -60,9 +74,16 @@ const [
   'modern/tests/original-perl/period.cgi',
   'modern/tests/original-perl/use.cgi',
   'modern/tests/original-perl/core-inc-item.cgi',
-  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi',
+  'modern/tests/original-perl/new.cgi','modern/tests/original-perl/pinned-custom.cgi','modern/tests/original-perl/pinned-log.cgi','modern/tests/original-perl/sc-s.cgi',
+  'modern/tests/original-perl/pinned-core-zh_TW.po','locale/zh_TW.po','custom/inc-locale.cgi','modern/tests/original-perl/core-buy-view.cgi','modern/tests/original-perl/core-shop-m.cgi','modern/tests/original-perl/core-page.cgi',
 ].map(readPinnedSource));
 
+const [originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource]=reviewedMarketCommerce?await Promise.all(['modern/tests/original-perl/core-sweep.cgi','modern/tests/original-perl/core-sweep-s.cgi','modern/tests/original-perl/core-stock.cgi'].map(readPinnedSource)):[null,null,null];
+const [originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource]=reviewedMarketCommerce?await Promise.all(['modern/tests/original-perl/core-shop-c.cgi','modern/tests/original-perl/core-item-detail.cgi','modern/tests/original-perl/core-inc-sc.cgi'].map(readPinnedSource)):[null,null,null];
+const reviewedSettlementMenu=reviewOriginalSettlementMenu({menuSource:await readPinnedSource('custom/inc-menu.cgi'),configSource:originalConfigSource,readSource:originalDataReadSource,timeSource:await readPinnedSource('modern/tests/original-perl/pinned-time.cgi')});
+const originalIncMainSource=await readPinnedSource('modern/tests/original-perl/core-inc-main.cgi');
+const reviewedOwnerClock=reviewOriginalOwnerClock({reviewed:reviewedSettlementMenu,incMainSource:originalIncMainSource,infoSource:await readPinnedSource('modern/tests/original-perl/core-inc-info.cgi')});
+const reviewedOwnerHelp=reviewOriginalOwnerHelp(originalIncMainSource);
 const streetModule=createStandardStreetModule({
   itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,
   originalDataWriteSource,originalTurnSource,originalWholeSource,
@@ -70,8 +91,12 @@ const streetModule=createStandardStreetModule({
   originalBuySource,originalBuyItemSource,originalBuyCalcSource,
   originalMarketSource,originalItemSource,originalDetailSource,
   originalUseSource,originalItemHelperSource,
-  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,
-  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,
+  originalPeriodSource,originalNewSource,originalCustomSource,originalLogSource,originalShowcaseSource,
+  coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,
+  enableReviewedNormalTime:true,enableReviewedCrossPeriod:reviewedCrossPeriod,enableReviewedMarketCommerce:reviewedMarketCommerce,
+  enableReviewedSweep:reviewedMarketCommerce,originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,
+  originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource,
+  expectedNativeInterpreter:runtimeEnvironment.interpreter,
 });
 if(!['initialize-source-market','open-shop',
   'market-buy','use-item','edit-showcase','advance-reviewed-world-time']
@@ -109,14 +134,18 @@ function verifyOrdinaryDraws(world,command){
 const isOrdinaryCommand=command=>isReviewedOrdinaryCommand(command,streetModule);
 const historyPolicy={streetModule,createInitialWorld,isOrdinaryCommand,verifyOrdinaryDraws};
 const saveDirectory=process.env.AKIMONO_SAVE_DIR??path.join(root,'modern/.local-data');
-const checkpointStore=createReviewedHistoryCheckpointStore({
-  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...fingerprintReviewedCheckpointRuntime({
+const checkpointRuntime=fingerprintReviewedCheckpointRuntime({
     sourceDirectory:path.join(root,'modern/src'),entrypoint:fileURLToPath(import.meta.url),
     sources:[itemDsl,rebelDsl,originalAdminInitSource,originalDataReadSource,originalDataWriteSource,
       originalTurnSource,originalWholeSource,originalConfigSource,originalCompilerSource,originalBuySource,
       originalBuyItemSource,originalBuyCalcSource,originalMarketSource,originalItemSource,originalDetailSource,
-      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource],
-  }),
+      originalPeriodSource,originalUseSource,originalItemHelperSource,originalNewSource,originalCustomSource,originalLogSource,
+       ...(reviewedMarketCommerce?['D9-reviewed-market-commerce.v1',originalShowcaseSource,coreLocaleSource,localLocaleSource,localeLoaderSource,originalBuyFormSource,originalMarketListSource,originalMarketPageSource,'D58-reviewed-sweep.v1',originalSweepFormSource,originalSweepSubmitSource,originalStockViewSource,'D62-reviewed-read-views.v1',originalMarketSurveySource,originalItemDetailViewSource,originalShowcaseViewSource]:[])],
+});
+if(checkpointRuntime.interpreter!==runtimeEnvironment.interpreter)
+  throw Error('AKIMONO_PERL_FINGERPRINT: native interpreter changed during startup');
+const checkpointStore=createReviewedHistoryCheckpointStore({
+  directory:saveDirectory,crossPeriod:reviewedCrossPeriod,...checkpointRuntime,
 });
 const periodDiskStore=reviewedCrossPeriod?createIndependentPeriodDiskStore({directory:saveDirectory}):null;
 const saveStore=createLocalWorldSaveStore({
@@ -163,6 +192,10 @@ function state(){
     save,
     nextSettlementAtSeconds,
     secondsUntilSettlement:world?nextSettlementAtSeconds-world.nowSeconds:null,
+    settlementMenu:world&&reviewedCrossPeriod?describeOriginalSettlementMenu({reviewed:reviewedSettlementMenu,lasttime:world.nowSeconds,nextSettlementAtSeconds}):null,
+    ownerClock:reviewedMarketCommerce?describeOriginalOwnerClock({reviewed:reviewedOwnerClock,world}):null,
+    ownerHelp:reviewedMarketCommerce?describeOriginalOwnerHelp({reviewed:reviewedOwnerHelp,world}):null,
+    ...(streetModule.reviewedSweep?{sweep:streetModule.describeSweep(world)}:{}),
     shop:world?.shops[0]??null,
     // Original point calculation; RANK is unknown until true multi-shop
     // SortDT is available. Do not label the rank field as point or RANK.
@@ -171,6 +204,9 @@ function state(){
       rankPosition:null,
     },
     marketOffers,
+    marketPageRows:streetModule.marketPageRows??null,
+    ...(streetModule.describeWarehouse?{warehouse:streetModule.describeWarehouse(world)}:{}),
+    ...(streetModule.describeShowcase?{showcaseView:streetModule.describeShowcase(world)}:{}),
     // Product names for owned inventory must not disappear when source
     // wholesale stock is sold out; catalog is not the market's offers.
     itemCatalog:(streetModule.marketBuyRegistry?.entries??[])
@@ -180,6 +216,7 @@ function state(){
           itemId:e.itemId,name:e.itemName,
           basePrice:e.basePrice,stockLimit:e.stockLimit,
           flagRaw:item?.flagRaw??'',
+          ...(reviewedMarketCommerce?{scale:item?.scaleRaw??''}:{}),
           type:item?.typeRaw??null,
           costRaw:item?.costRaw??null,
           info:item?.infoRaw??null,
@@ -206,6 +243,7 @@ function state(){
       reviewedCrossPeriod?'單架已審閱庫存的跨期時間推進（外部效果仍拒絕）':'單架已審閱庫存的非跨期時間推進（其他狀態仍拒絕）'],
     disabled:[...(reviewedCrossPeriod?['公會／龍族／關店等外部跨期效果']:['跨期決算']),'完整原版所有商品回呼','多人'],
     reviewedCrossPeriod,
+    reviewedMarketCommerce,
     reviewedTimeMode:true,
     historyCommands:careerProof?.commands.length??null,
     historyCheckpointRevision:careerProof?.checkpoint?.revision??null,
@@ -326,6 +364,14 @@ function sampleSourceUse(world,{itemId,useId,requestedCount}){
   return draws.slice(0,batchGaussian||draws[0]<=100000?12:52);
 }
 async function api(req,res,url){
+  if(url.pathname==='/api/library'){
+    if(req.method!=='GET')return send(res,405,{ok:false,error:'圖書館為唯讀'});
+    const entries=[...url.searchParams];
+    if(entries.length===0)return send(res,200,describeOriginalLibrary(reviewedLibrary));
+    if(entries.length!==1||entries[0][0]!=='t'||!/^[0-7]$/.test(entries[0][1]))
+      return send(res,400,{ok:false,error:'圖書館項目不存在'});
+    return send(res,200,describeOriginalLibrary(reviewedLibrary,Number(entries[0][1])));
+  }
   if(req.method==='GET'&&url.pathname==='/api/state'){
     return send(res,200,state());
   }
@@ -365,6 +411,7 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/load': {
+      if(!exactKeys(body,''))throw Error('載入世界不接受任何欄位');
       if(repo)return send(res,409,{ok:false,
         error:'目前世界已啟用；不能將磁碟世界覆蓋正在營業的記憶體世界',state:state()});
       const saved=saveStore.load();
@@ -401,6 +448,7 @@ async function api(req,res,url){
         state:state()});
     }
     case '/api/initialize': {
+      if(!exactKeys(body,''))throw Error('初始化世界不接受任何欄位');
       if(repo)return send(res,409,{ok:false,error:'世界已存在；請使用當前世界',state:state()});
       const existing=saveStore.status();
       if(existing.available||existing.unreadable)
@@ -425,6 +473,7 @@ async function api(req,res,url){
       break;
     }
     case '/api/open-shop': {
+      if(!exactKeys(body,'expectedRevision,ownerName,shopName'))throw Error('開店僅接受 expectedRevision、ownerName、shopName');
       const ownerName=body.ownerName,shopName=body.shopName;
       if(typeof ownerName!=='string'||typeof shopName!=='string')
         throw Error('店主與店名必須是文字');
@@ -477,6 +526,12 @@ async function api(req,res,url){
       result=commit({kind:'use-item',expectedRevision,
         shopId:1,itemId,useId,requestedCount,
         ...(randomDraws.length?{randomDraws}:{})});
+      break;
+    }
+    case '/api/sweep': {
+      if(!repo||!streetModule.reviewedSweep)return send(res,409,{ok:false,error:'清掃尚未開通',state:state()});
+      if(Object.keys(body).sort().join(',')!=='expectedRevision,requestedHours')throw Error('清掃僅接受 requestedHours、expectedRevision');
+      result=commit({kind:'sweep-shop',expectedRevision:ensureRevision(body),shopId:1,requestedHours:commandNumber(body.requestedHours,'requestedHours',1)});
       break;
     }
     case '/api/discard': {
@@ -539,6 +594,7 @@ async function api(req,res,url){
 const statics=new Map([
   ['/','modern/local-ui/index.html'],
   ['/app.js','modern/local-ui/app.js'],
+  ['/news-query.js','modern/src/shared-source-news-query.mjs'],
   ['/style.css','modern/local-ui/style.css'],
 ]);
 const server=http.createServer(async (req,res)=>{

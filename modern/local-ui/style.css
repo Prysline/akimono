@@ -314,3 +314,6 @@ footer{margin-top:12px;font-size:10px}
   white-space:nowrap
 }
 .discard-section #discard-count{width:72px}
+
+#library-list{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+#library-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
