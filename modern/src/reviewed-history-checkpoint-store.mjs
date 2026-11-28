@@ -177,5 +177,19 @@ export function createReviewedHistoryCheckpointStore({directory:saveDirectory,so
   function verifyRecord(record){
     if(!equalMac(record.checkpointAuth,recordAuth(record)))fail('checkpoint save authentication failed');
   }
-  const store=Object.freeze({sealVerified,openPrefix,verifyChain,recordAuth,verifyRecord});authenticatedStores.add(store);return store;
+  // Account mode uses the same private key and generation, but a separate
+  // MAC domain. Even a fresh history envelope must authenticate the private
+  // credential bytes and exact runtime, not only a public checksum.
+  function accountRecordAuth({format,generation,world,careerProof,ownerCredentials},{create=false}={}){
+    if(format!=='akimono.local-world-save.v2'||!int(generation)||generation<1||
+       typeof world!=='string'||typeof careerProof!=='string'||typeof ownerCredentials!=='string'||
+       (create&&generation!==1))fail('account save envelope shape');
+    return hmac(key(create),FORMAT+'/account-save.v1',
+      [format,generation,sourceFingerprint,interpreter,hashPolicy,drawPolicy,world,careerProof,ownerCredentials]);
+  }
+  function verifyAccountRecord(record){
+    if(typeof record.checkpointAuth!=='string'||record.checkpointAuth.length!==64||
+       !equalMac(record.checkpointAuth,accountRecordAuth(record)))fail('account save authentication failed');
+  }
+  const store=Object.freeze({sealVerified,openPrefix,verifyChain,recordAuth,verifyRecord,accountRecordAuth,verifyAccountRecord});authenticatedStores.add(store);return store;
 }
