@@ -1,0 +1,106 @@
+name: C audit - D62 displayed stock read views
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  displayed-stock-views:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '043b2b315b495787c7071df52da31c09ca0f08c0'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin exact D62
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = '043b2b315b495787c7071df52da31c09ca0f08c0'
+          test "$(git rev-parse 'HEAD^{tree}')" = 'ef8069c47abfd2d766df00ea8f7d7f712265e394'
+          test "$(git hash-object modern/tests/support/p3-genuine-v2-player.mjs)" = 'eb5bdac75042b1325971673a0128f6a7022eaec7'
+          test "$(git hash-object modern/tests/r4-d62-read-views-http.test.mjs)" = 'c89d485bf896787ba0a11f1af381fba07cb68a98'
+          test "$(git hash-object modern/scripts/dev-local.mjs)" = '030a7b8bf16e745504c8526818a63f7594c37758'
+          test -z "$(git status --porcelain)"
+      - name: Independent real local HTTP displayed stock and read-only restart
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c78-stock-views"
+          mkdir -p "$out"
+          copy=modern/tests/c78-stock-views.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          cat >"$copy" <<'NODE'
+          import test from 'node:test';
+          import assert from 'node:assert/strict';
+          import {genuinePlayer} from './support/p3-genuine-v2-player.mjs';
+          test('C78 live listed stock, price and tax read projection and two saved generations',async t=>{
+            const p=await genuinePlayer(t,{now:'896401',crossPeriod:true,marketCommerce:true});
+            await p.market(10);
+            await p.enoughTime(p.state.showcaseEditTimeSeconds??600);
+            const list=await p.post('/api/showcase',{expectedRevision:p.state.world.revision,itemId:10,shelf:0,per:200});
+            assert.equal(list.ok,true,JSON.stringify(list.details));
+            const w=p.state.world,shop=w.shops[0],count=shop.item[9],price=shop.price[0];
+            assert.ok(count>0);
+            const row=p.state.warehouse.marketItems.find(x=>x.itemId===10);
+            assert.equal(row.count,count);
+            assert.equal(row.displayedStock,count);
+            assert.equal(row.marketPrice,price);
+            assert.equal(row.lowestPrice,price);
+            assert.equal(row.highestPrice,price);
+            assert.equal(row.standardPrice,p.state.itemCatalog.find(x=>x.itemId===10).basePrice);
+            assert.ok(price>row.standardPrice);
+            assert.equal(p.state.warehouse.survey.length,1);
+            assert.deepEqual(p.state.warehouse.survey[0],row);
+            const taxRate=Math.min(99,Math.trunc((price/row.standardPrice-1)*5+0.5));
+            assert.ok(taxRate>0);
+            assert.deepEqual(p.state.showcaseView.rows,[{shelf:0,itemId:10,taxRate,tax:Math.trunc(price*taxRate/100)}]);
+            const view=s=>({warehouse:s.warehouse,showcaseView:s.showcaseView});
+            const before=structuredClone(view(p.state)),history=p.state.historyCommands;
+            for(let n=0;n<2;n++){
+              const read=await p.request('/api/state');
+              assert.deepEqual(read.world,w);
+              assert.equal(read.historyCommands,history);
+              assert.deepEqual(view(read),before);
+            }
+            const first=await p.saveAndRestart(0);
+            assert.deepEqual(view(p.state),before);
+            const denied=await p.post('/api/discard',{expectedRevision:first.revision-1,itemId:10,count});
+            assert.equal(denied.ok,false);assert.deepEqual(p.state.world,first);
+            assert.deepEqual(view(p.state),before);
+            await p.discard(10,count);
+            assert.equal(p.stock(10),0);
+            assert.equal(p.state.shop.showcase[0],10);
+            assert.equal(p.state.shop.price[0],price);
+            assert.deepEqual(p.state.warehouse.survey,[]);
+            const empty=p.state.warehouse.marketItems.find(x=>x.itemId===10);
+            assert.equal(empty.displayedStock,0);assert.equal(empty.marketPrice,null);
+            assert.equal(empty.count,0);
+            assert.deepEqual(p.state.showcaseView.rows,before.showcaseView.rows);
+            const after=structuredClone(view(p.state)),second=await p.saveAndRestart(1);
+            assert.equal(second.revision,first.revision+1);
+            assert.deepEqual(view(p.state),after);
+            t.diagnostic('C78_VIEWS '+JSON.stringify({listedCount:count,price,basePrice:row.standardPrice,taxRate,tax:Math.trunc(price*taxRate/100),surveyBefore:1,surveyAfter:0,emptyShelfItemRetained:true,readOnly:true,staleDenied:true,firstRevision:first.revision,secondRevision:second.revision,formalAccountACL:false}));
+          });
+          NODE
+          cp "$copy" "$out/test.mjs"
+          node --check "$copy"
+          set +e
+          node --test "$copy" 2>&1 | tee "$out/observation.log"
+          status=$?
+          set -e
+          rm -f "$copy"
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c78-stock-views
+          path: ${{ runner.temp }}/c78-stock-views/
+          if-no-files-found: warn
+          retention-days: 30
