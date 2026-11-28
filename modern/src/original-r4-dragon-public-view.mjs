@@ -69,7 +69,29 @@ export function projectDragonPublicView({review,mode,now,street,activeShopIds,to
     if(mode==='dra'||mode==='pr')return row([...commonDragon(r,now,L,mode==='pr'),amount(r.prize),result(r)],image(r,mode==='pr'));
     if(mode==='rc')return row([r.name,Object.hasOwn(townNames,r.town)?townNames[r.town]:'',age(now,r.birth),r.aprize+'万',amount(r.prize),result(r)]);
     if(mode==='st')return row([r.name,val(L.EMPHA,n(r.emp)),...['tr','con','wt'].map(k=>grade(r,k)),...['sp','sr','ag','pw','hl','fl'].map(k=>val(effect,n(r[k]))),result(r)]);
-    return row([r.name,age(now,r.birth),grade(r,'ahead'),grade(r,'back'),result(r),val(L.JKSP,n(r.sp)),val(['待機','落選','登録','出走'],n(r.race))]);
+    return jockeyRow(r,now,L);
   });
   return {...base,pageParam:'pg',pageInfo:pg,pageControlCopies:pg[5]?(mode==='dra'||mode==='pr'?1:2):0,rows:displayed};
+}
+function jockeyRow(r,now,L){return row([r.name,age(now,r.birth),grade(r,'ahead'),grade(r,'back'),result(r),val(L.JKSP,n(r.sp)),val(['待機','落選','登録','出走'],n(r.race))]);}
+const ownerJockeyReviews=new WeakMap();
+/** Private owner view, separate from the public mode allowlist. */
+export function reviewDragonOwnerJockey(sources){
+  const publicReview=reviewDragonPublicView(sources),s=sources.jock;
+  if(typeof s!=='string'||createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')!=='c44c99613f637b704bac7b9dd71907bc330536c1')fail('source drift jock');
+  const config=k=>{const m=sources.dragon.match(new RegExp('\\$'+k+'=(\\d+);'));if(!m)fail('source config missing '+k);return Number(m[1]);};
+  const token=Object.freeze({committable:false});ownerJockeyReviews.set(token,{...reviews.get(publicReview),max:config('JKmax'),cost:config('JKest')});return token;
+}
+/** D supplies authenticated actor ID and trusted read snapshot; not request body values. */
+export function projectDragonOwnerJockey({review,now,street,actorId,activeShopIds,jockeyFile=null}){
+  const cfg=ownerJockeyReviews.get(review);
+  if(!cfg||!nat(now)||typeof street!=='string'||!street||!nat(actorId)||actorId===0||!Array.isArray(activeShopIds)||activeShopIds.some(id=>!nat(id)||id===0)||!activeShopIds.includes(actorId))fail('authenticated owner snapshot required');
+  const all=rows(jockeyFile,cfg.fields.jk),ids=new Set(activeShopIds.map(String));
+  // ReadJock retains raw slots, overwrites MYJK on each qualifying own row.
+  const mine=all.filter(r=>r.town===street&&ids.has(r.owner)&&n(r.owner)===actorId).at(-1);
+  const base={mode:'jock',committable:false};
+  if(mine)return {...base,state:'owned',row:jockeyRow(mine,now,cfg.labels),form:null,messages:[]};
+  const messages=['騎手を雇っていないんだな。','騎手を雇えば，自分や他人のドラゴンの力をレースで引き出せる。'];
+  if(all.length>=cfg.max)return {...base,state:'full',row:null,form:null,messages:[...messages,'定員に達しているため，これ以上雇用できません。']};
+  return {...base,state:'available',row:null,messages,form:{route:'slime-s',back:'slime',mode:'jkedit',code:'new',nameSize:20,submit:'雇用',cost:cfg.cost,capacity:cfg.max}};
 }
