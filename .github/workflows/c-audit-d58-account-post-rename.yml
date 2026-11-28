@@ -1,0 +1,123 @@
+name: C audit - D58 account save post-publication boundary
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  account-post-rename:
+    if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'da4f3eb72695323ad04f043568b26ea9c0dace46'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact D58 and run unchanged credential persistence tests
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD 'HEAD^{tree}'
+          test "$(git rev-parse HEAD)" = 'da4f3eb72695323ad04f043568b26ea9c0dace46'
+          test "$(git rev-parse 'HEAD^{tree}')" = '61076d8c26b7928c2351255b90ebde2dcf25fc17'
+          test "$(git hash-object modern/tests/r4-owner-credential-persistence.test.mjs)" = '8b28f880bfce1d2101b85c52dd4fe18779fd0441'
+          test "$(git hash-object modern/src/local-world-save-store.mjs)" = '90ec07d76e0ea8029a22b8fce3fd0f29fd29e71e'
+          test "$(git hash-object modern/src/reviewed-history-checkpoint-store.mjs)" = '71023ff1ca7d940011d97fe8ad652e128d609304'
+          test "$(git hash-object modern/src/r4-owner-credential-record.mjs)" = '118b890497ca2715bb8e05f2442d0855b590871c'
+          test -z "$(git status --porcelain)"
+          mkdir -p "$RUNNER_TEMP/c73-account"
+          node --test modern/tests/r4-owner-credential-persistence.test.mjs | tee "$RUNNER_TEMP/c73-account/original.log"
+      - name: Observe actual dual-slot state after post-rename fsync and readback faults
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/c73-account"
+          original=modern/tests/r4-owner-credential-persistence.test.mjs
+          copy=modern/tests/c73-account-post-rename.mjs
+          test ! -e "$copy"
+          trap 'rm -f "$copy"' EXIT
+          cp "$original" "$copy"
+          cat >>"$copy" <<'NODE'
+
+          // C73 independent additions: original test fixture's explicitly controlled
+          // replay oracle; real on-disk account HMAC/slots. Not a crash durability
+          // proof, formal account publisher, or authenticated HTTP test.
+          import fs from 'node:fs';
+          for(const fault of ['directory-fsync','readback-verifier']){
+            test('C73 post-rename '+fault+' throws but visible slot has matching successor',async t=>{
+              const {directory,record,successor}=await fixture(t);
+              const store=setup(directory);
+              const oldSlot=join(directory,'world-b.json'),newSlot=join(directory,'world-a.json');
+              store.save(first,options(0,proof1,record));
+              const oldBytes=await readFile(oldSlot,'utf8');
+              let published=false,injections=0;
+              const renameSync=fs.renameSync,fsyncSync=fs.fsyncSync;
+              fs.renameSync=function(from,to){
+                const result=renameSync.call(this,from,to);
+                if(to===newSlot)published=true;
+                return result;
+              };
+              fs.fsyncSync=function(fd){
+                if(fault==='directory-fsync'&&published&&injections===0&&fs.fstatSync(fd).isDirectory()){
+                  injections++;
+                  throw Error('C73 isolated post-rename directory fsync fault');
+                }
+                return fsyncSync.call(this,fd);
+              };
+              // The second case changes only one controlled verifier read, after
+              // actual rename. The following clean reader sees the actual bytes.
+              const checkpointStore=createReviewedHistoryCheckpointStore({directory,sourceFingerprint:fingerprint,interpreter:'controlled-storage'});
+              const verifier={checkpointStore,verify({world,proof}){
+                if(fault==='readback-verifier'&&published&&world.revision===3&&injections===0){
+                  injections++;throw Error('C73 isolated post-rename readback fault');
+                }
+                const expected=world.revision===2?[first,proof1]:world.revision===3?[second,proof2]:null;
+                if(!expected||encodeMemorySnapshot(world)!==encodeMemorySnapshot(expected[0])||
+                   JSON.stringify(proof)!==JSON.stringify(expected[1]))throw Error('controlled replay mismatch');
+                return expected[0];
+              }};
+              const failing=createLocalWorldSaveStore({directory,historyReplay:verifier,accountMode:true});
+              try{
+                assert.throws(()=>failing.save(second,options(1,proof2,successor)),
+                  fault==='directory-fsync'?/C73 isolated post-rename directory fsync fault/:/post-save integrity re-read failed/);
+              }finally{
+                fs.renameSync=renameSync;fs.fsyncSync=fsyncSync;
+              }
+              assert.equal(published,true);assert.equal(injections,1);
+              assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+              const restarted=setup(directory),status=restarted.status(),committed=restarted.loadCommittedSnapshot();
+              assert.equal(status.generation,2);assert.equal(status.recoveryWarning,false);
+              assert.equal(encodeMemorySnapshot(committed.world),encodeMemorySnapshot(second));
+              assert.deepEqual(committed.ownerCredentials,[successor]);
+              const readRecord=createCommittedOwnerCredentialReader({readCommittedSnapshot:restarted.loadCommittedSnapshot});
+              assert.equal(readRecord({world:first,binding}),null);
+              assert.equal(readRecord({world:second,binding}),null);
+              assert.equal(await verifyOwnerCredential({record:readRecord({world:second,binding:nextBinding}),binding:nextBinding,password:'old_pw'}),true);
+              const nextBytes=await readFile(newSlot,'utf8');
+              assert.throws(()=>restarted.save(second,options(1,proof2,successor)),/世代衝突/);
+              assert.equal(await readFile(newSlot,'utf8'),nextBytes);
+              assert.equal(await readFile(oldSlot,'utf8'),oldBytes);
+              t.diagnostic('C73_POST_RENAME '+JSON.stringify({fault,saveThrew:true,published,injections,visibleGeneration:status.generation,visibleRevision:committed.world.revision,matchedPrivateSet:true,oldAliasDenied:true,staleGenerationDenied:true,crashDurabilityProven:false}));
+            });
+          }
+          NODE
+          git diff --no-index -- "$original" "$copy" >"$out/additions.diff" || test "$?" = 1
+          node --check "$copy"
+          set +e
+          node --test "$copy" 2>&1 | tee "$out/observation.log"
+          status=$?
+          set -e
+          rm -f "$copy"
+          test "$(git hash-object "$original")" = '8b28f880bfce1d2101b85c52dd4fe18779fd0441'
+          test "$(git hash-object modern/src/local-world-save-store.mjs)" = '90ec07d76e0ea8029a22b8fce3fd0f29fd29e71e'
+          test -z "$(git status --porcelain)"
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c73-account-post-rename
+          path: ${{ runner.temp }}/c73-account/
+          if-no-files-found: warn
+          retention-days: 30
