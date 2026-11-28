@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {normalizeLocalSourceText} from '../src/local-source-text.mjs';
 import {createPeriodMemoryWorld} from '../src/game-core-contract.mjs';
 import {createStableOwnerSessions} from '../src/r4-stable-owner-sessions.mjs';
-import {createOwnerCredentialRecord,verifyOwnerCredential,createCredentialOwnerAuthenticator,validateCommittedOwnerCredentials,createCommittedOwnerCredentialReader} from '../src/r4-owner-credential-record.mjs';
+import {createOwnerCredentialRecord,rebindOwnerCredentialForRename,changeOwnerCredentialPassword,verifyOwnerCredential,createCredentialOwnerAuthenticator,validateCommittedOwnerCredentials,createCommittedOwnerCredentialReader} from '../src/r4-owner-credential-record.mjs';
 import {createLifecycleCommandPreflight} from '../src/reviewed-shop-lifecycle-command.mjs';
 const read=p=>normalizeLocalSourceText(readFileSync(new URL(p,import.meta.url),'utf8'));
 const source={configSource:read('../../_config.cgi'),readSource:read('./original-perl/inc-func.cgi'),loginSource:read('./original-perl/pinned-login.cgi')};
@@ -90,7 +90,7 @@ test('LC-D1 actual private credential verifier binds stable identity and plugs i
 
 test('LC-D1 complete private committed set rejects partial, duplicate, retired or cross-world records',()=>{
  const f=fixture();
- const first={schema:'r4-owner-scrypt.v1',binding:{worldId:'w',streetId:'s',shopId:1,ownerName:'owner'},salt:'a'.repeat(32),hash:'b'.repeat(64)};
+ const first={schema:'r4-owner-scrypt.v2',binding:{worldId:'w',streetId:'s',shopId:1,ownerName:'owner'},salt:'a'.repeat(32),hash:'b'.repeat(64)};
  const second={...first,binding:{...first.binding,shopId:2,ownerName:'peer'}};
  const world={...f.world,shops:[...f.world.shops,{id:2,name:'peer',status:1}]};
  const validate=(records,w=world)=>validateCommittedOwnerCredentials({world:w,records});
@@ -113,7 +113,7 @@ test('LC-D1 complete private committed set rejects partial, duplicate, retired o
 
 test('LC-D1 trusted committed reader samples once, refuses same-revision divergence and never retains stale records',()=>{
  const f=fixture(),binding={worldId:'w',streetId:'s',shopId:1,ownerName:'owner'};
- const record={schema:'r4-owner-scrypt.v1',binding:{...binding},salt:'a'.repeat(32),hash:'b'.repeat(64)};
+ const record={schema:'r4-owner-scrypt.v2',binding:{...binding},salt:'a'.repeat(32),hash:'b'.repeat(64)};
  let committed={world:f.world,ownerCredentials:[record]},reads=0;
  const read=createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>{reads++;return committed;}});
  const old=read({world:f.world,binding});assert.deepEqual(old,record);assert.equal(reads,1);
@@ -129,4 +129,64 @@ test('LC-D1 trusted committed reader samples once, refuses same-revision diverge
  const bad=createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>{throw Error('private read failure');}});
  assert.throws(()=>bad({world:f.world,binding}),/private read failure/);
  assert.throws(()=>createCommittedOwnerCredentialReader({}),/trusted committed reader/);
+});
+
+test('LC-D1 immutable KDF keeps password through a committed rename and rejects old alias and cross-ID rebind',async()=>{
+ const f=fixture(),newSource=read('./original-perl/new.cgi'),membershipSource=read('./original-perl/pinned-membership-user.cgi');
+ const binding={worldId:'w',streetId:'s',shopId:1,ownerName:'owner'},nextBinding={...binding,ownerName:'renamed'};
+ let record=await createOwnerCredentialRecord({newSource,binding,password:'old_pw'});
+ const oldRecord=record;
+ const authenticateOwner=createCredentialOwnerAuthenticator({
+   readCredentials:req=>({ownerName:req.name,password:req.password}),
+   readCredentialRecord:createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>({world:f.world,ownerCredentials:[record]})}),
+ });
+ const a=createStableOwnerSessions({...f.deps,authenticateOwner});
+ const old=await a.issue({name:'owner',password:'old_pw'});
+ const rename=overrides=>rebindOwnerCredentialForRename({membershipSource,record,binding,nextBinding,...overrides});
+ assert.throws(()=>rename({nextBinding:{...nextBinding,shopId:2}}),/invalid registration credential/);
+ assert.throws(()=>rename({nextBinding:{...nextBinding,worldId:'foreign'}}),/invalid registration credential/);
+ assert.throws(()=>rename({binding:{...binding,ownerName:'stale'}}),/invalid registration credential/);
+ assert.throws(()=>rename({membershipSource:membershipSource+' '}),/invalid registration credential/);
+ record=rename({});
+ assert.equal(record.hash,oldRecord.hash);assert.equal(record.salt,oldRecord.salt);
+ assert.equal(oldRecord.binding.ownerName,'owner');
+ assert.equal(await verifyOwnerCredential({record,binding:nextBinding,password:'old_pw'}),true);
+ assert.equal(await verifyOwnerCredential({record,binding,password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record:{...record,schema:'r4-owner-scrypt.v1'},binding:nextBinding,password:'old_pw'}),false);
+ assert.throws(()=>validateCommittedOwnerCredentials({world:f.world,records:[record]}),/invalid registration credential/);
+ f.world={...f.world,revision:8,shops:[{...f.world.shops[0],name:'renamed'}]};
+ a.reconcileCommittedWorld();
+ assert.throws(()=>a.resolveAuthenticatedActor({request:{cookie:old.token},world:f.world}),/session denied/);
+ await assert.rejects(a.issue({name:'owner',password:'old_pw'}),/login denied/);
+ const fresh=await a.issue({name:'renamed',password:'old_pw'});
+ assert.equal(a.resolveAuthenticatedActor({request:{cookie:fresh.token},world:f.world}).shopId,1);
+});
+
+test('LC-D1 source repass accepts zero and current name but never registration-only or stale metadata shortcuts',async()=>{
+ const f=fixture(),newSource=read('./original-perl/new.cgi'),membershipSource=read('./original-perl/pinned-membership-user.cgi');
+ const binding={worldId:'w',streetId:'s',shopId:1,ownerName:'owner'};
+ let record=await createOwnerCredentialRecord({newSource,binding,password:'old_pw'});
+ const change=(password,confirmation=password,overrides={})=>changeOwnerCredentialPassword({membershipSource,record,binding,password,confirmation,...overrides});
+ for(const password of ['', 'x:y','abc\n','1234567890123'])await assert.rejects(change(password),/invalid registration credential/);
+ await assert.rejects(change('0','1'),/invalid registration credential/);
+ await assert.rejects(change('0','0',{binding:{...binding,ownerName:'stale'}}),/invalid registration credential/);
+ await assert.rejects(change('0','0',{membershipSource:membershipSource+' '}),/invalid registration credential/);
+ const old=record;record=await change('0');
+ assert.notEqual(record.salt,old.salt);assert.notEqual(record.hash,old.hash);
+ assert.equal(await verifyOwnerCredential({record,binding,password:'old_pw'}),false);
+ assert.equal(await verifyOwnerCredential({record,binding,password:'0'}),true);
+ const authenticateOwner=createCredentialOwnerAuthenticator({
+   readCredentials:req=>({ownerName:req.name,password:req.password}),
+   readCredentialRecord:createCommittedOwnerCredentialReader({readCommittedSnapshot:()=>({world:f.world,ownerCredentials:[record]})}),
+ });
+ const a=createStableOwnerSessions({...f.deps,authenticateOwner});
+ const zero=await a.issue({name:'owner',password:'0'});
+ assert.equal(a.resolveAuthenticatedActor({request:{cookie:zero.token},world:f.world}).shopId,1);
+ record=await change('owner');f.world={...f.world,revision:8};
+ // Controlled post-commit revocation; no durable publisher is implemented here.
+ assert.equal(a.revoke({cookie:zero.token}),true);
+ assert.throws(()=>a.resolveAuthenticatedActor({request:{cookie:zero.token},world:f.world}),/session denied/);
+ await assert.rejects(a.issue({name:'owner',password:'0'}),/login denied/);
+ const fresh=await a.issue({name:'owner',password:'owner'});
+ assert.equal(a.resolveAuthenticatedActor({request:{cookie:fresh.token},world:f.world}).shopId,1);
 });

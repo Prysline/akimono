@@ -6,7 +6,7 @@
 import {randomBytes,scrypt,timingSafeEqual,createHash} from 'node:crypto';
 import {promisify} from 'node:util';
 import {validateMemoryWorld,encodeMemorySnapshot,PERIOD_WORLD_SCHEMA} from './game-core-contract.mjs';
-const derive=promisify(scrypt),schema='r4-owner-scrypt.v1';
+const derive=promisify(scrypt),schema='r4-owner-scrypt.v2';
 const options=Object.freeze({N:131072,r:8,p:1,maxmem:192*1024*1024});
 const fail=()=>{throw new RangeError('R4 owner credential: invalid registration credential')};
 const bindingKeys=['worldId','streetId','shopId','ownerName'];
@@ -19,28 +19,51 @@ function exact(x,keys){
 const bounded=s=>typeof s==='string'&&s.length>0&&s.length<=100&&!/[\0\r\n\t]/.test(s);
 const validBinding=b=>exact(b,bindingKeys)&&bounded(b.worldId)&&bounded(b.streetId)&&bounded(b.ownerName)&&
   Number.isSafeInteger(b.shopId)&&b.shopId>0;
-// Perl's false scalar "0" fails the original required-password check.
-const passwordShape=p=>typeof p==='string'&&p.length>=1&&p.length<=12&&p!=='0'&&!/[^A-Za-z0-9_-]/.test(p);
+// Only registration uses Perl's false-scalar gate. repass accepts '0'.
+const passwordShape=p=>typeof p==='string'&&p.length>=1&&p.length<=12&&!/[^A-Za-z0-9_-]/.test(p);
+const registrationPassword=p=>passwordShape(p)&&p!=='0';
 const hex32=s=>typeof s==='string'&&s.length===64&&!/[^a-f0-9]/.test(s);
 const hex16=s=>typeof s==='string'&&s.length===32&&!/[^a-f0-9]/.test(s);
 const bindingText=b=>JSON.stringify(bindingKeys.map(k=>b[k]));
+const stableText=b=>JSON.stringify([b.worldId,b.streetId,b.shopId]);
 const validRecord=r=>exact(r,['schema','binding','salt','hash'])&&r.schema===schema&&
   validBinding(r.binding)&&hex16(r.salt)&&hex32(r.hash);
 const copyBinding=b=>Object.freeze(Object.fromEntries(bindingKeys.map(k=>[k,b[k]])));
 const copyRecord=r=>Object.freeze({schema,binding:copyBinding(r.binding),salt:r.salt,hash:r.hash});
 function saltFor(b,salt){
   // Bind the verifier to the stable identity, not name or row index alone.
-  return Buffer.concat([Buffer.from(schema+'\0'+bindingText(b)+'\0','utf8'),Buffer.from(salt,'hex')]);
+  return Buffer.concat([Buffer.from(schema+'\0'+stableText(b)+'\0','utf8'),Buffer.from(salt,'hex')]);
 }
 const sourcePin=s=>typeof s==='string'&&createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')==='9f0a590a6f1d4e93d2534056a0dc96c4d5c80ba7';
-export async function createOwnerCredentialRecord({newSource,binding,password}={}){
-  // Source password alphabet/length and distinct name are registration rules;
-  // scrypt and stable identity binding are modern private security measures.
-  if(!sourcePin(newSource)||!validBinding(binding)||!passwordShape(password)||password===binding.ownerName)fail();
-  const copied=Object.freeze(Object.fromEntries(bindingKeys.map(k=>[k,binding[k]])));
+const membershipPin=s=>typeof s==='string'&&createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex')==='8e817c535d4cd17e68d65f0e2f67846a344b5094';
+async function deriveRecord(binding,password){
+  const copied=copyBinding(binding);
   const salt=randomBytes(16).toString('hex');
   const hash=(await derive(password,saltFor(copied,salt),32,options)).toString('hex');
   return Object.freeze({schema,binding:copied,salt,hash});
+}
+export async function createOwnerCredentialRecord({newSource,binding,password}={}){
+  // Source password alphabet/length and distinct name are registration rules;
+  // scrypt and stable identity binding are modern private security measures.
+  if(!sourcePin(newSource)||!validBinding(binding)||!registrationPassword(password)||password===binding.ownerName)fail();
+  return deriveRecord(binding,password);
+}
+/** Private successor only: caller must authorize the source rename, validate
+ * both worlds and commit the new metadata with the world under the same CAS.
+ * No admission, fee, alias publication or session mutation occurs here. */
+export function rebindOwnerCredentialForRename({membershipSource,record,binding,nextBinding}={}){
+  if(!membershipPin(membershipSource)||!validRecord(record)||!validBinding(binding)||!validBinding(nextBinding)||
+    bindingText(record.binding)!==bindingText(binding)||stableText(binding)!==stableText(nextBinding)||
+    binding.ownerName===nextBinding.ownerName)fail();
+  return copyRecord({...record,binding:nextBinding});
+}
+/** Private successor only: authenticated repass (not registration).
+ * Publish with a new world revision and revoke the owner's session after CAS.
+ * The caller must enforce authorization and never log submitted secrets. */
+export async function changeOwnerCredentialPassword({membershipSource,record,binding,password,confirmation}={}){
+  if(!membershipPin(membershipSource)||!validRecord(record)||!validBinding(binding)||
+    bindingText(record.binding)!==bindingText(binding)||!passwordShape(password)||password!==confirmation)fail();
+  return deriveRecord(binding,password);
 }
 export async function verifyOwnerCredential({record,binding,password}={}){
   if(!validBinding(binding)||!passwordShape(password)||!validRecord(record)||
