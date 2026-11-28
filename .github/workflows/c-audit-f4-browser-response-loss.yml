@@ -7,7 +7,7 @@ permissions:
 jobs:
   f4-browser:
     if: ${{ github.event.number == 26 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'work/r0-r1-unified-audit-20261126' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -94,7 +94,7 @@ jobs:
             await page.goto(url);
             await page.waitForFunction(()=>document.getElementById('world-id').textContent==='尚未建立');
             // Ensure the initial network GET has finished and the UI handler can submit.
-            await page.waitForFunction(()=>document.getElementById('save-status').textContent==='尚未儲存');
+            await page.waitForFunction(()=>document.getElementById('market-offers').textContent.includes('請先建立商店或載入存檔'));
             await ok('/api/initialize',()=>page.locator('#initialize').click());
             await page.locator('#owner').fill('C71驗證');
             await page.locator('#shop-name').fill('C71商店');
